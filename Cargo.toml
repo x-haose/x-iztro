@@ -5,10 +5,22 @@ edition = "2024"
 description = "紫微斗数 Rust 核心库"
 license = "MIT"
 
+[lib]
+name = "rs_iztro"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 lunar_rust = "1.0"
+
+[dependencies.pyo3]
+version = "0.23"
+features = ["extension-module"]
+optional = true
+
+[features]
+python = ["pyo3"]
 
 [dev-dependencies]
 pretty_assertions = "1"

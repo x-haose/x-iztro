@@ -1,0 +1,12 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "rs-iztro"
+version = "0.1.0"
+description = "紫微斗数 Rust 核心库 Python 绑定"
+requires-python = ">=3.8"
+
+[tool.maturin]
+features = ["python"]

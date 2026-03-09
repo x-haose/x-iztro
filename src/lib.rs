@@ -6,6 +6,9 @@ pub mod i18n;
 pub mod utils;
 pub mod prompt;
 
+#[cfg(feature = "python")]
+mod python;
+
 // Re-export main public API
 pub use astro::builder::{by_solar, by_lunar};
 pub use astro::horoscope::get_horoscope;
