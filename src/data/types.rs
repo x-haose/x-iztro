@@ -26,6 +26,7 @@ pub enum FiveElements {
 
 /// 天干
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(usize)]
 pub enum HeavenlyStem {
     /// 甲
     Jia,
@@ -51,6 +52,7 @@ pub enum HeavenlyStem {
 
 /// 地支
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(usize)]
 pub enum EarthlyBranch {
     /// 子
     Zi,
@@ -80,6 +82,7 @@ pub enum EarthlyBranch {
 
 /// 十二宫位
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(usize)]
 pub enum Palace {
     /// 命宫
     Soul,
@@ -224,3 +227,36 @@ pub enum Algorithm {
 
 /// 时辰索引
 pub type TimeIndex = u8;
+
+impl HeavenlyStem {
+    pub fn index(&self) -> usize {
+        *self as usize
+    }
+    pub fn from_index(i: usize) -> Self {
+        crate::data::constants::HEAVENLY_STEMS[i % 10]
+    }
+}
+
+impl EarthlyBranch {
+    pub fn index(&self) -> usize {
+        *self as usize
+    }
+    pub fn from_index(i: usize) -> Self {
+        crate::data::constants::EARTHLY_BRANCHES[i % 12]
+    }
+}
+
+impl Palace {
+    pub fn index(&self) -> usize {
+        *self as usize
+    }
+    pub fn from_index(i: usize) -> Self {
+        crate::data::constants::PALACES[i % 12]
+    }
+}
+
+impl FiveElementsClass {
+    pub fn value(&self) -> usize {
+        *self as usize
+    }
+}
