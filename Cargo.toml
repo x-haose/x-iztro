@@ -1,0 +1,14 @@
+[package]
+name = "rs-iztro"
+version = "0.1.0"
+edition = "2024"
+description = "紫微斗数 Rust 核心库"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+lunar_rust = "1.0"
+
+[dev-dependencies]
+pretty_assertions = "1"
