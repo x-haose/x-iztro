@@ -92,11 +92,14 @@ pub fn fix_lunar_month_index(
 ///
 /// 对应 TS: fixLunarDayIndex
 /// 晚子时(time_index=12)属于次日，所以不减1
+/// 注意：此函数当前未在排盘主流程中直接使用，
+/// 因为 get_daily_star_index 内部已自行处理该逻辑。
+/// 保留供外部调用使用。
 pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32 {
     if time_index >= 12 {
         lunar_day
     } else {
-        lunar_day.saturating_sub(1).max(1)
+        lunar_day.saturating_sub(1)
     }
 }
 
@@ -130,6 +133,8 @@ pub fn by_solar(
     language: Language,
     algorithm: Algorithm,
 ) -> Astrolabe {
+    assert!(time_index <= 12, "time_index must be 0-12, got {time_index}");
+
     // 1. 解析阳历日期
     let parts: Vec<&str> = solar_date.split('-').collect();
     assert!(parts.len() == 3, "Invalid solar date format: {solar_date}");
@@ -430,7 +435,7 @@ mod tests {
     fn test_fix_lunar_day_index() {
         assert_eq!(fix_lunar_day_index(15, 0), 14);
         assert_eq!(fix_lunar_day_index(15, 12), 15);
-        assert_eq!(fix_lunar_day_index(1, 0), 1);
+        assert_eq!(fix_lunar_day_index(1, 0), 0);
     }
 
     #[test]
