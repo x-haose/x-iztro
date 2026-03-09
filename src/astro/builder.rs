@@ -358,6 +358,7 @@ pub fn by_solar(
         body: body_star,
         five_elements_class,
         palaces,
+        time_index,
     }
 }
 

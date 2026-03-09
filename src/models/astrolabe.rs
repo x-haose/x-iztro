@@ -23,6 +23,8 @@ pub struct Astrolabe {
     pub body: StarKey,
     pub five_elements_class: FiveElementsClass,
     pub palaces: Vec<PalaceData>,
+    /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)
+    pub time_index: u8,
 }
 
 impl Astrolabe {
