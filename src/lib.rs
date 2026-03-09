@@ -12,6 +12,7 @@ pub use astro::horoscope::get_horoscope;
 pub use models::astrolabe::Astrolabe;
 pub use models::horoscope::HoroscopeData;
 pub use data::types::*;
+pub use prompt::astrolabe_to_prompt;
 
 /// 便捷函数：排盘并返回 JSON
 pub fn by_solar_json(
