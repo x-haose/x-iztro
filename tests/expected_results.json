@@ -1,0 +1,845 @@
+{
+  "params": {
+    "solar_date": "2000-8-16",
+    "lunar_date": "2000-7-17",
+    "time_index": 2,
+    "gender": "女",
+    "horoscope_date": "2025-01-01"
+  },
+  "astro": {
+    "sign_by_solar": {
+      "2000-1-1": "摩羯座",
+      "2000-8-16": "狮子座",
+      "2000-3-21": "白羊座",
+      "2000-12-25": "摩羯座"
+    },
+    "sign_by_lunar": {
+      "2000-7-17": "狮子座"
+    },
+    "zodiac_by_solar": {
+      "2000-8-16": "龙",
+      "1988-5-20": "龙",
+      "2024-1-1": "兔"
+    },
+    "major_star_by_solar": {
+      "2000-8-16_2": "廉贞,天府",
+      "1990-6-15_5": "天同"
+    },
+    "major_star_by_lunar": {
+      "2000-7-17_2": "廉贞,天府"
+    }
+  },
+  "util": {
+    "time_to_index": {
+      "0": 0,
+      "1": 1,
+      "2": 1,
+      "3": 2,
+      "4": 2,
+      "5": 3,
+      "6": 3,
+      "7": 4,
+      "8": 4,
+      "9": 5,
+      "10": 5,
+      "11": 6,
+      "12": 6,
+      "13": 7,
+      "14": 7,
+      "15": 8,
+      "16": 8,
+      "17": 9,
+      "18": 9,
+      "19": 10,
+      "20": 10,
+      "21": 11,
+      "22": 11,
+      "23": 12
+    },
+    "fix_index": {
+      "0_12": 0,
+      "15_12": 3,
+      "-1_12": 11,
+      "13_12": 1,
+      "-5_12": 7
+    },
+    "get_age_index": {
+      "子": 8,
+      "丑": 5,
+      "寅": 2,
+      "卯": 11,
+      "辰": 8,
+      "巳": 5,
+      "午": 2,
+      "未": 11,
+      "申": 8,
+      "酉": 5,
+      "戌": 2,
+      "亥": 11
+    },
+    "get_mutagens_by_heavenly_stem": {
+      "甲": [
+        "廉贞",
+        "破军",
+        "武曲",
+        "太阳"
+      ],
+      "乙": [
+        "天机",
+        "天梁",
+        "紫微",
+        "太阴"
+      ],
+      "丙": [
+        "天同",
+        "天机",
+        "文昌",
+        "廉贞"
+      ],
+      "丁": [
+        "太阴",
+        "天同",
+        "天机",
+        "巨门"
+      ],
+      "戊": [
+        "贪狼",
+        "太阴",
+        "右弼",
+        "天机"
+      ],
+      "己": [
+        "武曲",
+        "贪狼",
+        "天梁",
+        "文曲"
+      ],
+      "庚": [
+        "太阳",
+        "武曲",
+        "太阴",
+        "天同"
+      ],
+      "辛": [
+        "巨门",
+        "太阳",
+        "文曲",
+        "文昌"
+      ],
+      "壬": [
+        "天梁",
+        "紫微",
+        "左辅",
+        "武曲"
+      ],
+      "癸": [
+        "破军",
+        "巨门",
+        "太阴",
+        "贪狼"
+      ]
+    },
+    "get_brightness": {
+      "紫微_0": "旺",
+      "紫微_6": "旺",
+      "武曲_0": "得"
+    },
+    "get_mutagen": {
+      "廉贞_甲": "禄",
+      "天机_乙": "禄",
+      "太阳_庚": "禄"
+    }
+  },
+  "astrolabe": {
+    "gender": "女",
+    "solar_date": "2000-8-16",
+    "lunar_date": "二〇〇〇年七月十七",
+    "chinese_date": "庚辰 甲申 丙午 庚寅",
+    "time": "寅时",
+    "time_range": "03:00~05:00",
+    "sign": "狮子座",
+    "zodiac": "龙",
+    "soul": "破军",
+    "body": "文昌",
+    "five_elements_class": "木三局",
+    "earthly_branch_of_soul_palace": "午",
+    "earthly_branch_of_body_palace": "戌",
+    "palaces_count": 12,
+    "palaces": [
+      {
+        "index": 0,
+        "name": "财帛",
+        "heavenly_stem": "戊",
+        "earthly_branch": "寅",
+        "major_stars_count": 2,
+        "minor_stars_count": 1,
+        "decadal_range": [
+          43,
+          52
+        ],
+        "decadal_heavenly_stem": "戊",
+        "decadal_earthly_branch": "寅"
+      },
+      {
+        "index": 1,
+        "name": "子女",
+        "heavenly_stem": "己",
+        "earthly_branch": "卯",
+        "major_stars_count": 2,
+        "minor_stars_count": 0,
+        "decadal_range": [
+          33,
+          42
+        ],
+        "decadal_heavenly_stem": "己",
+        "decadal_earthly_branch": "卯"
+      },
+      {
+        "index": 2,
+        "name": "夫妻",
+        "heavenly_stem": "庚",
+        "earthly_branch": "辰",
+        "major_stars_count": 1,
+        "minor_stars_count": 2,
+        "decadal_range": [
+          23,
+          32
+        ],
+        "decadal_heavenly_stem": "庚",
+        "decadal_earthly_branch": "辰"
+      },
+      {
+        "index": 3,
+        "name": "兄弟",
+        "heavenly_stem": "辛",
+        "earthly_branch": "巳",
+        "major_stars_count": 1,
+        "minor_stars_count": 0,
+        "decadal_range": [
+          13,
+          22
+        ],
+        "decadal_heavenly_stem": "辛",
+        "decadal_earthly_branch": "巳"
+      },
+      {
+        "index": 4,
+        "name": "命宫",
+        "heavenly_stem": "壬",
+        "earthly_branch": "午",
+        "major_stars_count": 1,
+        "minor_stars_count": 1,
+        "decadal_range": [
+          3,
+          12
+        ],
+        "decadal_heavenly_stem": "壬",
+        "decadal_earthly_branch": "午"
+      },
+      {
+        "index": 5,
+        "name": "父母",
+        "heavenly_stem": "癸",
+        "earthly_branch": "未",
+        "major_stars_count": 0,
+        "minor_stars_count": 2,
+        "decadal_range": [
+          113,
+          122
+        ],
+        "decadal_heavenly_stem": "癸",
+        "decadal_earthly_branch": "未"
+      },
+      {
+        "index": 6,
+        "name": "福德",
+        "heavenly_stem": "甲",
+        "earthly_branch": "申",
+        "major_stars_count": 1,
+        "minor_stars_count": 2,
+        "decadal_range": [
+          103,
+          112
+        ],
+        "decadal_heavenly_stem": "甲",
+        "decadal_earthly_branch": "申"
+      },
+      {
+        "index": 7,
+        "name": "田宅",
+        "heavenly_stem": "乙",
+        "earthly_branch": "酉",
+        "major_stars_count": 0,
+        "minor_stars_count": 2,
+        "decadal_range": [
+          93,
+          102
+        ],
+        "decadal_heavenly_stem": "乙",
+        "decadal_earthly_branch": "酉"
+      },
+      {
+        "index": 8,
+        "name": "官禄",
+        "heavenly_stem": "丙",
+        "earthly_branch": "戌",
+        "major_stars_count": 2,
+        "minor_stars_count": 1,
+        "decadal_range": [
+          83,
+          92
+        ],
+        "decadal_heavenly_stem": "丙",
+        "decadal_earthly_branch": "戌"
+      },
+      {
+        "index": 9,
+        "name": "仆役",
+        "heavenly_stem": "丁",
+        "earthly_branch": "亥",
+        "major_stars_count": 1,
+        "minor_stars_count": 0,
+        "decadal_range": [
+          73,
+          82
+        ],
+        "decadal_heavenly_stem": "丁",
+        "decadal_earthly_branch": "亥"
+      },
+      {
+        "index": 10,
+        "name": "迁移",
+        "heavenly_stem": "戊",
+        "earthly_branch": "子",
+        "major_stars_count": 1,
+        "minor_stars_count": 1,
+        "decadal_range": [
+          63,
+          72
+        ],
+        "decadal_heavenly_stem": "戊",
+        "decadal_earthly_branch": "子"
+      },
+      {
+        "index": 11,
+        "name": "疾厄",
+        "heavenly_stem": "己",
+        "earthly_branch": "丑",
+        "major_stars_count": 2,
+        "minor_stars_count": 2,
+        "decadal_range": [
+          53,
+          62
+        ],
+        "decadal_heavenly_stem": "己",
+        "decadal_earthly_branch": "丑"
+      }
+    ]
+  },
+  "palace": {
+    "0": {
+      "name": "财帛",
+      "index": 0,
+      "has_武曲": true,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": true,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": true,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "1": {
+      "name": "子女",
+      "index": 1,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": true,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": false,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "2": {
+      "name": "夫妻",
+      "index": 2,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": true,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "3": {
+      "name": "兄弟",
+      "index": 3,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "4": {
+      "name": "命宫",
+      "index": 4,
+      "has_武曲": false,
+      "has_紫微": true,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "5": {
+      "name": "父母",
+      "index": 5,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": true,
+      "flies_to_6_禄": true,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "6": {
+      "name": "福德",
+      "index": 6,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "7": {
+      "name": "田宅",
+      "index": 7,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": true,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "8": {
+      "name": "官禄",
+      "index": 8,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "9": {
+      "name": "仆役",
+      "index": 9,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": true,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": true,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "10": {
+      "name": "迁移",
+      "index": 10,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": false,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": true,
+      "self_mutaged_one_of": true,
+      "not_self_mutaged": false,
+      "mutaged_places_length": 4
+    },
+    "11": {
+      "name": "疾厄",
+      "index": 11,
+      "has_武曲": false,
+      "has_紫微": false,
+      "not_have_不存在": true,
+      "has_one_of_武曲_不存在": false,
+      "has_mutagen_禄": false,
+      "has_mutagen_权": false,
+      "has_mutagen_科": false,
+      "has_mutagen_忌": true,
+      "not_have_mutagen_禄": true,
+      "is_empty": false,
+      "flies_to_6_禄": false,
+      "flies_to_0_权": false,
+      "self_mutaged_禄": false,
+      "self_mutaged_one_of": false,
+      "not_self_mutaged": true,
+      "mutaged_places_length": 4
+    },
+    "by_name": {
+      "命宫": {
+        "name": "命宫",
+        "index": 4
+      },
+      "财帛": {
+        "name": "财帛",
+        "index": 0
+      },
+      "官禄": {
+        "name": "官禄",
+        "index": 8
+      },
+      "夫妻": {
+        "name": "夫妻",
+        "index": 2
+      }
+    }
+  },
+  "surround": {
+    "0": {
+      "target_name": "财帛",
+      "target_index": 0,
+      "opposite_name": "福德",
+      "opposite_index": 6,
+      "wealth_name": "官禄",
+      "wealth_index": 8,
+      "career_name": "命宫",
+      "career_index": 4,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": true,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": true,
+      "not_have_mutagen_禄": true
+    },
+    "1": {
+      "target_name": "子女",
+      "target_index": 1,
+      "opposite_name": "田宅",
+      "opposite_index": 7,
+      "wealth_name": "仆役",
+      "wealth_index": 9,
+      "career_name": "父母",
+      "career_index": 5,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": true,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": false
+    },
+    "2": {
+      "target_name": "夫妻",
+      "target_index": 2,
+      "opposite_name": "官禄",
+      "opposite_index": 8,
+      "wealth_name": "迁移",
+      "wealth_index": 10,
+      "career_name": "福德",
+      "career_index": 6,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": true
+    },
+    "3": {
+      "target_name": "兄弟",
+      "target_index": 3,
+      "opposite_name": "仆役",
+      "opposite_index": 9,
+      "wealth_name": "疾厄",
+      "wealth_index": 11,
+      "career_name": "田宅",
+      "career_index": 7,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": true
+    },
+    "4": {
+      "target_name": "命宫",
+      "target_index": 4,
+      "opposite_name": "迁移",
+      "opposite_index": 10,
+      "wealth_name": "财帛",
+      "wealth_index": 0,
+      "career_name": "官禄",
+      "career_index": 8,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": true,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": true,
+      "not_have_mutagen_禄": true
+    },
+    "5": {
+      "target_name": "父母",
+      "target_index": 5,
+      "opposite_name": "疾厄",
+      "opposite_index": 11,
+      "wealth_name": "子女",
+      "wealth_index": 1,
+      "career_name": "仆役",
+      "career_index": 9,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": true,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": false
+    },
+    "6": {
+      "target_name": "福德",
+      "target_index": 6,
+      "opposite_name": "财帛",
+      "opposite_index": 0,
+      "wealth_name": "夫妻",
+      "wealth_index": 2,
+      "career_name": "迁移",
+      "career_index": 10,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": true,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": true,
+      "not_have_mutagen_禄": true
+    },
+    "7": {
+      "target_name": "田宅",
+      "target_index": 7,
+      "opposite_name": "子女",
+      "opposite_index": 1,
+      "wealth_name": "兄弟",
+      "wealth_index": 3,
+      "career_name": "疾厄",
+      "career_index": 11,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": true,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": false
+    },
+    "8": {
+      "target_name": "官禄",
+      "target_index": 8,
+      "opposite_name": "夫妻",
+      "opposite_index": 2,
+      "wealth_name": "命宫",
+      "wealth_index": 4,
+      "career_name": "财帛",
+      "career_index": 0,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": true,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": true,
+      "not_have_mutagen_禄": true
+    },
+    "9": {
+      "target_name": "仆役",
+      "target_index": 9,
+      "opposite_name": "兄弟",
+      "opposite_index": 3,
+      "wealth_name": "父母",
+      "wealth_index": 5,
+      "career_name": "子女",
+      "career_index": 1,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": true,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": false
+    },
+    "10": {
+      "target_name": "迁移",
+      "target_index": 10,
+      "opposite_name": "命宫",
+      "opposite_index": 4,
+      "wealth_name": "福德",
+      "wealth_index": 6,
+      "career_name": "夫妻",
+      "career_index": 2,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": true
+    },
+    "11": {
+      "target_name": "疾厄",
+      "target_index": 11,
+      "opposite_name": "父母",
+      "opposite_index": 5,
+      "wealth_name": "田宅",
+      "wealth_index": 7,
+      "career_name": "兄弟",
+      "career_index": 3,
+      "have_不存在": false,
+      "not_have_不存在": true,
+      "have_one_of_武曲_不存在": false,
+      "have_mutagen_禄": false,
+      "have_mutagen_权": false,
+      "not_have_mutagen_禄": true
+    }
+  },
+  "horoscope": {
+    "lunar_date": "二〇二四年腊月初二",
+    "solar_date": "2025-1-1",
+    "decadal_index": 2,
+    "decadal_heavenly_stem": "庚",
+    "decadal_earthly_branch": "辰",
+    "decadal_mutagen": [
+      "太阳",
+      "武曲",
+      "太阴",
+      "天同"
+    ],
+    "age_index": 8,
+    "age_nominal_age": 25,
+    "yearly_index": 2,
+    "yearly_mutagen": [
+      "廉贞",
+      "破军",
+      "武曲",
+      "太阳"
+    ],
+    "monthly_index": 9,
+    "monthly_mutagen": [
+      "天同",
+      "天机",
+      "文昌",
+      "廉贞"
+    ],
+    "daily_index": 10,
+    "daily_mutagen": [
+      "太阳",
+      "武曲",
+      "太阴",
+      "天同"
+    ],
+    "hourly_index": 10,
+    "hourly_mutagen": [
+      "天同",
+      "天机",
+      "文昌",
+      "廉贞"
+    ],
+    "age_palace_name": "官禄",
+    "palace_命宫_origin": "命宫",
+    "palace_命宫_decadal": "夫妻",
+    "palace_命宫_yearly": "夫妻",
+    "has_horoscope_mutagen_命宫_decadal_禄": false,
+    "has_horoscope_mutagen_命宫_yearly_禄": false,
+    "has_horoscope_stars_命宫_decadal": false,
+    "not_have_horoscope_stars_命宫_decadal": true,
+    "surround_palaces_命宫_origin_target": "命宫"
+  }
+}
