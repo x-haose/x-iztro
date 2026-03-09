@@ -5,3 +5,37 @@ pub mod astro;
 pub mod i18n;
 pub mod utils;
 pub mod prompt;
+
+// Re-export main public API
+pub use astro::builder::{by_solar, by_lunar};
+pub use astro::horoscope::get_horoscope;
+pub use models::astrolabe::Astrolabe;
+pub use models::horoscope::HoroscopeData;
+pub use data::types::*;
+
+/// 便捷函数：排盘并返回 JSON
+pub fn by_solar_json(
+    solar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    fix_leap: bool,
+    language: Language,
+    algorithm: Algorithm,
+) -> String {
+    let astrolabe = by_solar(solar_date, time_index, gender, fix_leap, language, algorithm);
+    serde_json::to_string(&astrolabe).unwrap()
+}
+
+/// 便捷函数：农历排盘并返回 JSON
+pub fn by_lunar_json(
+    lunar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    is_leap_month: bool,
+    fix_leap: bool,
+    language: Language,
+    algorithm: Algorithm,
+) -> String {
+    let astrolabe = by_lunar(lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm);
+    serde_json::to_string(&astrolabe).unwrap()
+}
