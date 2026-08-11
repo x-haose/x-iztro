@@ -67,9 +67,10 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 - `examples/go/go.mod` 用 `replace` 指向 `../../go`
 
 ### 测试
-- Tier 1/2 金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下
-- Tier 3 使用 selfcheck baseline（Rust 自生成哈希，检测回归）
-- 金标为零容忍：全部用例（含 `ti=12` 晚子时）与 JS 输出完全一致，无任何容忍列表
+- 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
+- 覆盖矩阵（约 63 万例）：tier1 全字段 780 / tier2 紧凑 37K / tier3 全日期×性别×fix_leap 哈希 575K / 运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14K
+- tier3 与变体哈希基于规范化串（`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构）；不一致时用生成器 `--inspect*` 重放 JS 单例与 Rust 输出 diff
+- `cargo test` 跑常规层（~15s）；tier3 全量用 `cargo test --release --test golden_tier3 -- --ignored`（~20s）
 - 同步 iztro 新版本流程：升级 `tests/golden/package.json` 中的精确版本 → 重新生成金标数据 → `cargo test`，diff 即差异清单
 
 ### 多语言

@@ -283,3 +283,15 @@ pub fn sign_name(sign_index: usize) -> &'static str {
 pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
     ZODIAC_NAMES[branch.index()]
 }
+
+pub fn horoscope_name(n: HoroscopeName) -> &'static str {
+    match n {
+        HoroscopeName::Decadal => "大限",
+        HoroscopeName::Childhood => "子供",
+        HoroscopeName::Age => "小限",
+        HoroscopeName::Yearly => "流年",
+        HoroscopeName::Monthly => "流月",
+        HoroscopeName::Daily => "流日",
+        HoroscopeName::Hourly => "流時",
+    }
+}

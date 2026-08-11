@@ -140,18 +140,30 @@ fn main() {
         horoscope.age.nominal_age,
     );
     println!(
-        "流年：{} ({}{})",
-        horoscope.yearly.name,
-        translate_heavenly_stem(horoscope.yearly.heavenly_stem, lang),
-        translate_earthly_branch(horoscope.yearly.earthly_branch, lang),
+        "流年：{}{}",
+        translate_heavenly_stem(horoscope.yearly.base.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.yearly.base.earthly_branch, lang),
     );
-    println!("流月：{}", horoscope.monthly.name);
-    println!("流日：{}", horoscope.daily.name);
-    println!("流时：{}", horoscope.hourly.name);
+    println!(
+        "流月：{}{}",
+        translate_heavenly_stem(horoscope.monthly.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.monthly.earthly_branch, lang),
+    );
+    println!(
+        "流日：{}{}",
+        translate_heavenly_stem(horoscope.daily.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.daily.earthly_branch, lang),
+    );
+    println!(
+        "流时：{}{}",
+        translate_heavenly_stem(horoscope.hourly.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.hourly.earthly_branch, lang),
+    );
 
     // 流年四化
     let yearly_mutagen_names: Vec<String> = horoscope
         .yearly
+        .base
         .mutagen
         .iter()
         .map(|k| translate_star(*k, lang).to_string())

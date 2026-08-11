@@ -4,6 +4,7 @@
 
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
+use lunar_rust::lunar_year::{self, LunarYearRefHelper};
 use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 
@@ -406,12 +407,10 @@ pub fn by_solar(
     let time_str = translate_time(time_index, language).to_string();
     let time_range = TIME_RANGES[time_index as usize].to_string();
 
-    // 21. 农历日期字符串
-    let leap_prefix = if is_leap { "闰" } else { "" };
+    // 21. 农历日期字符串（lunar_rust 的月份中文名对闰月自带「闰」前缀）
     let lunar_date_str = format!(
-        "{}年{}{}月{}",
+        "{}年{}月{}",
         lunar_ref.get_year_in_chinese(),
-        leap_prefix,
         lunar_ref.get_month_in_chinese(),
         lunar_ref.get_day_in_chinese(),
     );
@@ -432,6 +431,7 @@ pub fn by_solar(
         five_elements_class,
         palaces,
         time_index,
+        algorithm,
     }
 }
 
@@ -461,13 +461,21 @@ pub fn by_lunar(
     let month: i64 = parts[1].parse().expect("Invalid month");
     let day: i64 = parts[2].parse().expect("Invalid day");
 
-    // 2. lunar_rust 中闰月用负数表示
-    let lunar_month = if is_leap_month { -month } else { month };
+    // 2. lunar_rust 中闰月用负数表示；该年该月并非闰月时 is_leap_month 不生效
+    //    （get_leap_months 对闰月返回带符号月号，取绝对值比较）
+    let year_has_this_leap =
+        lunar_year::LunarYear::from_lunar_year(year).get_leap_months().abs() == month;
+    let lunar_month = if is_leap_month && year_has_this_leap { -month } else { month };
     let lunar_ref = lunar::from_ymd(year, lunar_month, day);
 
-    // 3. 转换为阳历
+    // 3. 转换为阳历（日期串不带前导零）
     let solar_ref = lunar_ref.get_solar();
-    let solar_date = solar_ref.to_ymd();
+    let solar_date = format!(
+        "{}-{}-{}",
+        solar_ref.get_year(),
+        solar_ref.get_month(),
+        solar_ref.get_day(),
+    );
 
     // 4. 用阳历日期排盘
     by_solar(&solar_date, time_index, gender, fix_leap, language, algorithm)

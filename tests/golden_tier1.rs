@@ -7,7 +7,7 @@
 use rs_iztro::data::types::*;
 use rs_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
-    translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
+    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
 use rs_iztro::by_solar;
 use serde_json::Value;
@@ -67,6 +67,27 @@ fn check_case(case: &Value, case_idx: usize, failures: &mut Vec<String>) {
 
     // --- Top-level fields ---
     let checks: Vec<(&str, String, &str)> = vec![
+        ("gender",
+         translate_gender(astrolabe.gender, LANG).to_string(),
+         case["gender"].as_str().unwrap()),
+        ("lunar_date",
+         astrolabe.lunar_date.clone(),
+         case["lunar_date"].as_str().unwrap()),
+        ("chinese_date",
+         astrolabe.chinese_date.clone(),
+         case["chinese_date"].as_str().unwrap()),
+        ("time",
+         astrolabe.time.clone(),
+         case["time"].as_str().unwrap()),
+        ("time_range",
+         astrolabe.time_range.clone(),
+         case["time_range"].as_str().unwrap()),
+        ("sign",
+         astrolabe.sign.clone(),
+         case["sign"].as_str().unwrap()),
+        ("zodiac",
+         astrolabe.zodiac.clone(),
+         case["zodiac"].as_str().unwrap()),
         ("soul_branch",
          translate_earthly_branch(astrolabe.earthly_branch_of_soul_palace, LANG).to_string(),
          case["soul_palace_branch"].as_str().unwrap()),
@@ -105,6 +126,16 @@ fn check_case(case: &Value, case_idx: usize, failures: &mut Vec<String>) {
         let act_name = translate_palace(act_palace.name, LANG);
         if act_name != exp_name {
             failures.push(format!("{}: name expected={} actual={}", pl, exp_name, act_name));
+        }
+
+        // Body palace / original palace flags
+        let exp_body = exp_palace["is_body_palace"].as_bool().unwrap();
+        if act_palace.is_body_palace != exp_body {
+            failures.push(format!("{}: is_body_palace expected={} actual={}", pl, exp_body, act_palace.is_body_palace));
+        }
+        let exp_orig = exp_palace["is_original_palace"].as_bool().unwrap();
+        if act_palace.is_original_palace != exp_orig {
+            failures.push(format!("{}: is_original_palace expected={} actual={}", pl, exp_orig, act_palace.is_original_palace));
         }
 
         // Heavenly stem & earthly branch

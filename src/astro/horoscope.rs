@@ -8,14 +8,16 @@ use lunar_rust::{lunar, solar};
 use crate::astro::builder::{parse_earthly_branch, parse_heavenly_stem};
 use crate::astro::palace::get_palace_names;
 use crate::astro::surpalaces::SurroundedPalaces;
+use crate::data::constants::TIGER_RULE;
 use crate::data::heavenly_stems::get_heavenly_stem_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
-use crate::i18n::translate_star;
+use crate::i18n::{translate_horoscope_name, translate_star};
 use crate::models::astrolabe::Astrolabe;
-use crate::models::horoscope::{AgeItem, HoroscopeData, HoroscopeItem};
+use crate::models::horoscope::{AgeItem, HoroscopeData, HoroscopeItem, YearlyDecStar, YearlyItem};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
+use crate::star::decorative::get_yearly12;
 use crate::star::location::{
     get_chang_qu_index_by_stem, get_kui_yue_index, get_luan_xi_index, get_lu_yang_tuo_ma_index,
     get_nianjie_index,
@@ -157,7 +159,7 @@ pub fn get_horoscope_stars(
         });
     }
 
-    // 流年范围额外添加年解
+    // 流年范围额外安年解（按流年年支）
     if scope == Scope::Yearly {
         let nianjie_idx = get_nianjie_index(branch);
         stars[nianjie_idx].push(Star {
@@ -239,13 +241,13 @@ pub fn get_horoscope(
     // ---- 3. 计算虚岁 ----
     let nominal_age = (target_lunar_year - birthday_lunar_year + 1).max(1) as u32;
 
-    // ---- 4. 八字信息（目标日期） ----
+    // ---- 4. 目标日期干支四柱 ----
+    //     年柱按正月初一分界；月柱按初一分界以五虎遁推算，闰月下半月归下月；
+    //     日柱晚子时归次日；时柱天干随日柱推算
     let target_year_gan_str = target_lunar.get_year_gan();
     let target_year_zhi_str = target_lunar.get_year_zhi();
-    let target_month_gan_str = target_lunar.get_month_gan();
-    let target_month_zhi_str = target_lunar.get_month_zhi();
-    let target_day_gan_str = target_lunar.get_day_gan();
-    let target_day_zhi_str = target_lunar.get_day_zhi();
+    let target_day_gan_str = target_lunar.get_day_gan_exact();
+    let target_day_zhi_str = target_lunar.get_day_zhi_exact();
     let target_time_gan_str = target_lunar.get_time_gan();
     let target_time_zhi_str = target_lunar.get_time_zhi();
 
@@ -253,10 +255,16 @@ pub fn get_horoscope(
         parse_heavenly_stem(&target_year_gan_str).expect("Unknown target year stem");
     let target_year_branch =
         parse_earthly_branch(&target_year_zhi_str).expect("Unknown target year branch");
-    let target_month_stem =
-        parse_heavenly_stem(&target_month_gan_str).expect("Unknown target month stem");
+
+    let target_month_fix: i32 = if target_is_leap && target_lunar_day > 15 { 1 } else { 0 };
+    let target_month_stem = HeavenlyStem::from_index(fix_index(
+        TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
+            + target_month_fix,
+        10,
+    ));
     let target_month_branch =
-        parse_earthly_branch(&target_month_zhi_str).expect("Unknown target month branch");
+        EarthlyBranch::from_index(fix_index(2 + target_lunar_month - 1 + target_month_fix, 12));
+
     let target_day_stem =
         parse_heavenly_stem(&target_day_gan_str).expect("Unknown target day stem");
     let target_day_branch =
@@ -267,16 +275,27 @@ pub fn get_horoscope(
         parse_earthly_branch(&target_time_zhi_str).expect("Unknown target time branch");
 
     // ---- 5. 大限 ----
-    let decadal_palace_idx = find_decadal_palace(astrolabe, nominal_age);
-    let decadal_stem = astrolabe.palaces[decadal_palace_idx].decadal.heavenly_stem;
-    let decadal_branch = astrolabe.palaces[decadal_palace_idx].decadal.earthly_branch;
+    //     虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
+    //     按虚岁依次落在 命宫/财帛/疾厄/夫妻/福德/官禄，取本命宫位干支
+    let (decadal_palace_idx, is_childhood) = find_decadal_palace(astrolabe, nominal_age);
+    let (decadal_stem, decadal_branch) = if is_childhood {
+        let p = &astrolabe.palaces[decadal_palace_idx];
+        (p.heavenly_stem, p.earthly_branch)
+    } else {
+        let d = &astrolabe.palaces[decadal_palace_idx].decadal;
+        (d.heavenly_stem, d.earthly_branch)
+    };
     let decadal_mutagen = get_heavenly_stem_info(decadal_stem).mutagen.to_vec();
     let decadal_palace_names = get_palace_names(decadal_palace_idx).to_vec();
     let decadal_stars = get_horoscope_stars(decadal_stem, decadal_branch, Scope::Decadal, language);
 
     let decadal = HoroscopeItem {
         index: decadal_palace_idx,
-        name: format!("{:?}", astrolabe.palaces[decadal_palace_idx].name),
+        name: translate_horoscope_name(
+            if is_childhood { HoroscopeName::Childhood } else { HoroscopeName::Decadal },
+            language,
+        )
+        .to_string(),
         heavenly_stem: decadal_stem,
         earthly_branch: decadal_branch,
         palace_names: decadal_palace_names,
@@ -294,7 +313,7 @@ pub fn get_horoscope(
     let age = AgeItem {
         base: HoroscopeItem {
             index: age_palace_idx,
-            name: format!("{:?}", astrolabe.palaces[age_palace_idx].name),
+            name: translate_horoscope_name(HoroscopeName::Age, language).to_string(),
             heavenly_stem: age_stem,
             earthly_branch: age_branch,
             palace_names: age_palace_names,
@@ -304,21 +323,29 @@ pub fn get_horoscope(
         nominal_age,
     };
 
-    // ---- 7. 流年 ----
+    // ---- 7. 流年（含按目标年支起的岁前/将前十二神） ----
     let yearly_index = earthly_branch_to_palace_index(target_year_branch);
     let yearly_mutagen = get_heavenly_stem_info(target_year_stem).mutagen.to_vec();
     let yearly_palace_names = get_palace_names(yearly_index).to_vec();
     let yearly_stars =
         get_horoscope_stars(target_year_stem, target_year_branch, Scope::Yearly, language);
+    let (yearly_suiqian12, yearly_jiangqian12) =
+        get_yearly12(target_year_branch, astrolabe.algorithm);
 
-    let yearly = HoroscopeItem {
-        index: yearly_index,
-        name: format!("{}{}", target_year_gan_str, target_year_zhi_str),
-        heavenly_stem: target_year_stem,
-        earthly_branch: target_year_branch,
-        palace_names: yearly_palace_names,
-        mutagen: yearly_mutagen,
-        stars: Some(yearly_stars.to_vec()),
+    let yearly = YearlyItem {
+        base: HoroscopeItem {
+            index: yearly_index,
+            name: translate_horoscope_name(HoroscopeName::Yearly, language).to_string(),
+            heavenly_stem: target_year_stem,
+            earthly_branch: target_year_branch,
+            palace_names: yearly_palace_names,
+            mutagen: yearly_mutagen,
+            stars: Some(yearly_stars.to_vec()),
+        },
+        yearly_dec_star: YearlyDecStar {
+            jiangqian12: yearly_jiangqian12.to_vec(),
+            suiqian12: yearly_suiqian12.to_vec(),
+        },
     };
 
     // ---- 8. 流月 ----
@@ -352,7 +379,7 @@ pub fn get_horoscope(
 
     let monthly = HoroscopeItem {
         index: monthly_index,
-        name: format!("{}{}", target_month_gan_str, target_month_zhi_str),
+        name: translate_horoscope_name(HoroscopeName::Monthly, language).to_string(),
         heavenly_stem: target_month_stem,
         earthly_branch: target_month_branch,
         palace_names: monthly_palace_names,
@@ -369,7 +396,7 @@ pub fn get_horoscope(
 
     let daily = HoroscopeItem {
         index: daily_index,
-        name: format!("{}{}", target_day_gan_str, target_day_zhi_str),
+        name: translate_horoscope_name(HoroscopeName::Daily, language).to_string(),
         heavenly_stem: target_day_stem,
         earthly_branch: target_day_branch,
         palace_names: daily_palace_names,
@@ -391,7 +418,7 @@ pub fn get_horoscope(
 
     let hourly = HoroscopeItem {
         index: hourly_index,
-        name: format!("{}{}", target_time_gan_str, target_time_zhi_str),
+        name: translate_horoscope_name(HoroscopeName::Hourly, language).to_string(),
         heavenly_stem: target_time_stem,
         earthly_branch: target_time_branch,
         palace_names: hourly_palace_names,
@@ -399,12 +426,10 @@ pub fn get_horoscope(
         stars: Some(hourly_stars.to_vec()),
     };
 
-    // ---- 11. 农历日期字符串 ----
-    let leap_prefix = if target_is_leap { "闰" } else { "" };
+    // ---- 11. 农历日期字符串（lunar_rust 的月份中文名对闰月自带「闰」前缀） ----
     let lunar_date_str = format!(
-        "{}年{}{}月{}",
+        "{}年{}月{}",
         target_lunar.get_year_in_chinese(),
-        leap_prefix,
         target_lunar.get_month_in_chinese(),
         target_lunar.get_day_in_chinese(),
     );
@@ -425,31 +450,28 @@ pub fn get_horoscope(
 // 辅助函数
 // ============================================================
 
-/// 查找大限宫位索引
+/// 查找大限宫位索引，返回 (宫位索引, 是否童限)。
 ///
-/// 根据虚岁查找对应的大限宫位。
-/// 如果虚岁不在任何大限范围内（童限），使用童限映射。
-fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> usize {
-    // 尝试在大限范围中查找
+/// 虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
+/// 按虚岁依次映射到 [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]。
+fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool) {
     for p in &astrolabe.palaces {
         let (start, end) = p.decadal.range;
         if nominal_age >= start && nominal_age <= end {
-            return p.index;
+            return (p.index, false);
         }
     }
 
-    // 童限：虚岁 1-N (大限起始之前)
-    // 按虚岁映射到 [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄] 循环
     let childhood_idx = ((nominal_age as usize).saturating_sub(1)) % CHILDHOOD_PALACES.len();
     let target_palace = CHILDHOOD_PALACES[childhood_idx];
 
-    // 在星盘中找到该宫位名称对应的索引
-    astrolabe
+    let idx = astrolabe
         .palaces
         .iter()
         .find(|p| p.name == target_palace)
         .map(|p| p.index)
-        .unwrap_or(0)
+        .unwrap_or(0);
+    (idx, true)
 }
 
 /// 查找小限宫位索引
@@ -586,7 +608,7 @@ impl HoroscopeData {
         if let Some(stars) = self.decadal.stars.as_ref().and_then(|s| s.get(palace_idx)) {
             keys.extend(stars.iter().map(|s| s.key));
         }
-        if let Some(stars) = self.yearly.stars.as_ref().and_then(|s| s.get(palace_idx)) {
+        if let Some(stars) = self.yearly.base.stars.as_ref().and_then(|s| s.get(palace_idx)) {
             keys.extend(stars.iter().map(|s| s.key));
         }
         keys
@@ -596,7 +618,7 @@ impl HoroscopeData {
     fn scope_item(&self, scope: Scope) -> Option<&HoroscopeItem> {
         match scope {
             Scope::Decadal => Some(&self.decadal),
-            Scope::Yearly => Some(&self.yearly),
+            Scope::Yearly => Some(&self.yearly.base),
             Scope::Monthly => Some(&self.monthly),
             Scope::Daily => Some(&self.daily),
             Scope::Hourly => Some(&self.hourly),
@@ -637,8 +659,8 @@ mod tests {
         assert_eq!(dec_stars.len(), 12);
 
         // Yearly should have stars including nianjie
-        assert!(horoscope.yearly.stars.is_some());
-        let yr_stars = horoscope.yearly.stars.as_ref().unwrap();
+        assert!(horoscope.yearly.base.stars.is_some());
+        let yr_stars = horoscope.yearly.base.stars.as_ref().unwrap();
         assert_eq!(yr_stars.len(), 12);
 
         // Monthly, daily, hourly should have stars
@@ -651,7 +673,7 @@ mod tests {
 
         // Mutagen should have 4 entries
         assert_eq!(horoscope.decadal.mutagen.len(), 4);
-        assert_eq!(horoscope.yearly.mutagen.len(), 4);
+        assert_eq!(horoscope.yearly.base.mutagen.len(), 4);
         assert_eq!(horoscope.monthly.mutagen.len(), 4);
         assert_eq!(horoscope.daily.mutagen.len(), 4);
         assert_eq!(horoscope.hourly.mutagen.len(), 4);
@@ -694,10 +716,9 @@ mod tests {
             Scope::Yearly,
             Language::ZhCN,
         );
-        // Should place 10 + 1 (nianjie) = 11 stars
+        // 流耀 10 颗（魁钺昌曲禄羊陀马鸾喜）+ 流年额外的年解 = 11
         let total: usize = stars.iter().map(|v| v.len()).sum();
         assert_eq!(total, 11);
-        // Check nianjie exists
         let has_nianjie = stars
             .iter()
             .flat_map(|v| v.iter())

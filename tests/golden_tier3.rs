@@ -1,130 +1,100 @@
-//! Golden tier-3 self-check: hash verification of the full 60-year parameter space (~285K cases).
+//! Golden tier-3: JS 全参数空间哈希对照。
 //!
-//! First run: generates all hashes and saves to `tests/golden/selfcheck_baseline.csv`
-//! Subsequent runs: generates hashes and compares against the saved baseline.
-//! If any hash changes, the test fails (regression detected).
+//! 数据由 tests/golden/generate_tier3.mjs 生成：1984-2043 每一天 × 13 时辰
+//! × 男女 × fix_leap（闰月日期含 fix_leap=false），约 57 万例。
+//! 每例将排盘结果按规范化串（tests/common/mod.rs）取 SHA-256 前 32 个
+//! hex 字符与 JS 侧对照，任何字段偏差都会改变哈希。
 //!
-//! Marked `#[ignore]` — only runs manually via `cargo test --test golden_tier3 -- --ignored`
+//! 用例量大（约 40 秒），标记 `#[ignore]`，通过
+//! `cargo test --test golden_tier3 -- --ignored` 运行。
+//!
+//! 哈希不一致时的排查方式：用失败行参数运行
+//! `node tests/golden/generate_tier3.mjs --inspect <date> <ti> <男|女> <fl>`
+//! 得到 JS 规范化串，与失败输出中打印的 Rust 规范化串 diff 定位字段。
 
-use rs_iztro::data::types::*;
+mod common;
+
 use rs_iztro::by_solar;
-use sha2::{Sha256, Digest};
-use std::collections::HashMap;
+use rs_iztro::data::types::*;
+use sha2::{Digest, Sha256};
 use std::fs;
-use std::path::Path;
 
-const BASELINE_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/selfcheck_baseline.csv");
+const TIER3_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/tier3");
+const HASH_LEN: usize = 32;
+const MAX_FAILURES: usize = 20;
 
 fn hash_astrolabe(astrolabe: &rs_iztro::Astrolabe) -> String {
-    let json = serde_json::to_string(astrolabe).unwrap();
+    let canonical = common::canonical_astrolabe(astrolabe);
     let mut hasher = Sha256::new();
-    hasher.update(json.as_bytes());
-    hex::encode(hasher.finalize())
-}
-
-fn days_in_month(year: i32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
-                29
-            } else {
-                28
-            }
-        }
-        _ => unreachable!(),
-    }
+    hasher.update(canonical.as_bytes());
+    hex::encode(hasher.finalize())[..HASH_LEN].to_string()
 }
 
 #[test]
 #[ignore]
-fn test_tier3_selfcheck() {
-    let lang = Language::ZhCN;
-    let baseline_exists = Path::new(BASELINE_PATH).exists();
+fn golden_tier3_full_parameter_space() {
+    let mut entries: Vec<_> = fs::read_dir(TIER3_DIR)
+        .expect("tier3 directory missing — run `node tests/golden/generate_tier3.mjs` first")
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            let name = e.file_name();
+            let name = name.to_string_lossy();
+            name.starts_with("year_") && name.ends_with(".csv")
+        })
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+    assert!(!entries.is_empty(), "No tier3 year files found in {TIER3_DIR}");
 
-    let mut baseline: HashMap<String, String> = HashMap::new();
-
-    if baseline_exists {
-        let content = fs::read_to_string(BASELINE_PATH).unwrap();
-        for line in content.lines().skip(1) {
-            let fields: Vec<&str> = line.split(',').collect();
-            if fields.len() == 3 {
-                let key = format!("{},{}", fields[0], fields[1]);
-                baseline.insert(key, fields[2].to_string());
-            }
-        }
-        eprintln!("Loaded {} baseline hashes", baseline.len());
-    } else {
-        eprintln!(
-            "No baseline found. Generating baseline to {}",
-            BASELINE_PATH
-        );
-    }
-
-    let mut output = String::from("solar_date,time_index,hash\n");
     let mut total = 0usize;
-    let mut mismatches = 0usize;
-    let mut first_mismatches: Vec<String> = Vec::new();
+    let mut failures: Vec<String> = Vec::new();
 
-    for year in 1984..=2043i32 {
-        for month in 1..=12u32 {
-            let max_day = days_in_month(year, month);
-            for day in 1..=max_day {
-                let solar_date = format!("{}-{}-{}", year, month, day);
-                for t in 0..=12u8 {
-                    let astrolabe = by_solar(
-                        &solar_date,
-                        t,
-                        Gender::Male,
-                        true,
-                        lang,
-                        Algorithm::Default,
-                    );
-                    let hash = hash_astrolabe(&astrolabe);
+    'outer: for entry in &entries {
+        let path = entry.path();
+        let content = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("Failed to read {}: {}", path.display(), e));
 
-                    let key = format!("{},{}", solar_date, t);
-                    if baseline_exists
-                        && let Some(expected) = baseline.get(&key)
-                            && *expected != hash {
-                                mismatches += 1;
-                                if first_mismatches.len() < 20 {
-                                    first_mismatches.push(format!(
-                                        "{}: expected {}..., got {}...",
-                                        key,
-                                        &expected[..16.min(expected.len())],
-                                        &hash[..16.min(hash.len())]
-                                    ));
-                                }
-                            }
+        for line in content.lines() {
+            let fields: Vec<&str> = line.split(',').collect();
+            assert!(fields.len() == 5, "Bad tier3 line: {line}");
+            let (date, ti, g, fl, expected) =
+                (fields[0], fields[1], fields[2], fields[3], fields[4]);
+            let time_index: u8 = ti.parse().unwrap();
+            let gender = if g == "0" { Gender::Male } else { Gender::Female };
+            let fix_leap = fl == "1";
 
-                    output.push_str(&format!("{},{},{}\n", solar_date, t, hash));
-                    total += 1;
+            let astrolabe = by_solar(
+                date,
+                time_index,
+                gender,
+                fix_leap,
+                Language::ZhCN,
+                Algorithm::Default,
+            );
+            let actual = hash_astrolabe(&astrolabe);
+            total += 1;
+
+            if actual != expected {
+                failures.push(format!(
+                    "{date} ti={ti} g={g} fl={fl}: hash mismatch\n  rust canonical: {}",
+                    common::canonical_astrolabe(&astrolabe),
+                ));
+                if failures.len() >= MAX_FAILURES {
+                    break 'outer;
                 }
             }
         }
-        eprint!("\r  Year {}/2043 ({} cases)", year, total);
+        eprint!("\r  {} checked ({} total)", path.file_name().unwrap().to_string_lossy(), total);
+    }
+    eprintln!();
+
+    if !failures.is_empty() {
+        panic!(
+            "\n\nGolden tier-3 FAILED: {} mismatch(es) (showing up to {}):\n\n{}\n",
+            failures.len(),
+            MAX_FAILURES,
+            failures.join("\n\n"),
+        );
     }
 
-    // Always write the new baseline (or first baseline)
-    if !baseline_exists {
-        fs::write(BASELINE_PATH, &output).unwrap();
-        eprintln!(
-            "\nBaseline generated: {} hashes -> {}",
-            total, BASELINE_PATH
-        );
-    } else if mismatches > 0 {
-        // Write updated file for comparison
-        let new_path = format!("{}.new", BASELINE_PATH);
-        fs::write(&new_path, &output).unwrap();
-        panic!(
-            "\n{} hash mismatches out of {} cases! New hashes written to {}\nFirst mismatches:\n{}",
-            mismatches,
-            total,
-            new_path,
-            first_mismatches.join("\n")
-        );
-    } else {
-        eprintln!("\nAll {} hashes match baseline.", total);
-    }
+    eprintln!("Golden tier-3: all {total} cases match JS hashes!");
 }

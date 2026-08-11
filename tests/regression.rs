@@ -735,13 +735,13 @@ fn test_horoscope() {
 
     // Yearly
     assert_eq!(
-        horoscope.yearly.index,
+        horoscope.yearly.base.index,
         exp["yearly_index"].as_u64().unwrap() as usize,
         "Yearly index mismatch"
     );
     let exp_yearly_mutagen = exp["yearly_mutagen"].as_array().unwrap();
     for (i, exp_star) in exp_yearly_mutagen.iter().enumerate() {
-        let actual = translate_star(horoscope.yearly.mutagen[i], Language::ZhCN);
+        let actual = translate_star(horoscope.yearly.base.mutagen[i], Language::ZhCN);
         assert_eq!(
             actual,
             exp_star.as_str().unwrap(),

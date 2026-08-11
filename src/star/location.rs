@@ -375,15 +375,14 @@ pub fn get_jiesha_adj_index(branch: EarthlyBranch) -> usize {
     }
 }
 
-/// 14. 获取大耗的宫位索引
+/// 14. 获取大耗（杂耀）的宫位索引
 pub fn get_dahao_index(branch: EarthlyBranch) -> usize {
     use EarthlyBranch::*;
-    // 按地支索引查表: [Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen]
+    // 按年支索引查表得所落地支: [Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen]
     let matched: [EarthlyBranch; 12] = [
         Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen,
     ];
-    let m = matched[branch.index()];
-    fix_index(eb2pi(m) as i32 - 2, 12)
+    eb2pi(matched[branch.index()])
 }
 
 /// 15. 获取年解的宫位索引

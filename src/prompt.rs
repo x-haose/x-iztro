@@ -363,21 +363,19 @@ pub fn horoscope_to_prompt(
         l.yearly,
     ));
     out.push_str(&format!(
-        "{}: {} ({}{})\n",
+        "{}: {}{}\n",
         l.yearly,
-        horoscope.yearly.name,
-        translate_heavenly_stem(horoscope.yearly.heavenly_stem, lang),
-        translate_earthly_branch(horoscope.yearly.earthly_branch, lang),
+        translate_heavenly_stem(horoscope.yearly.base.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.yearly.base.earthly_branch, lang),
     ));
-    out.push_str(&format_mutagen_line(l.yearly, l.mutagen_fly, &horoscope.yearly.mutagen, lang));
-    out.push_str(&format_scope_palaces(&horoscope.yearly, astrolabe, lang, &l));
+    out.push_str(&format_mutagen_line(l.yearly, l.mutagen_fly, &horoscope.yearly.base.mutagen, lang));
+    out.push_str(&format_scope_palaces(&horoscope.yearly.base, astrolabe, lang, &l));
 
     // 流月/流日/流时 — 只输出四化，不展开十二宫
     let format_brief = |label: &str, item: &crate::models::horoscope::HoroscopeItem| -> String {
         let mut s = format!(
-            "\n{}: {} ({}{})\n",
+            "\n{}: {}{}\n",
             label,
-            item.name,
             translate_heavenly_stem(item.heavenly_stem, lang),
             translate_earthly_branch(item.earthly_branch, lang),
         );

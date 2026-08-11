@@ -6,6 +6,3 @@ __pycache__/
 
 # Golden test data
 tests/golden/node_modules/
-tests/golden/selfcheck_baseline.csv
-tests/golden/selfcheck_baseline.csv.new
-tests/golden/tier3_hashes.csv

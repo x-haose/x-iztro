@@ -196,6 +196,25 @@ pub enum Scope {
     Hourly,
 }
 
+/// 运限层级显示名
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HoroscopeName {
+    /// 大限
+    Decadal,
+    /// 童限（未起运时的大限位）
+    Childhood,
+    /// 小限
+    Age,
+    /// 流年
+    Yearly,
+    /// 流月
+    Monthly,
+    /// 流日
+    Daily,
+    /// 流时
+    Hourly,
+}
+
 /// 性别
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Gender {

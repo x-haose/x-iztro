@@ -91,27 +91,33 @@ cargo test
 cargo test -- --ignored
 ```
 
-### 测试金字塔
+### 金标覆盖矩阵
 
-对照 JS [iztro v2.5.8](https://github.com/SylarLong/iztro) 生成的测试基准数据，三层覆盖：
+全部数据对照 JS [iztro v2.5.8](https://github.com/SylarLong/iztro)（版本锁定）生成，零容忍差异：
 
-| 层级     | 用例数     | 覆盖范围                   | 数据格式        |
-|--------|---------|------------------------|-------------|
-| Tier 1 | 780     | 60 年 × 13 时辰，全字段逐一比对   | 完整 JSON     |
-| Tier 2 | 37,440  | 60 年 × 月/日/时辰/性别，紧凑比对  | 压缩 JSON     |
-| Tier 3 | 284,895 | 60 年 × 每日 × 13 时辰，哈希校验 | SHA-256 CSV |
+| 层级        | 用例数      | 覆盖范围                                            | 数据格式        |
+|-----------|----------|-------------------------------------------------|-------------|
+| Tier 1    | 780      | 60 年 × 13 时辰，全字段逐一比对（含展示字段与来因宫）                 | 完整 JSON     |
+| Tier 2    | 37,440   | 60 年 × 每月 1/15 号 × 13 时辰 × 男女，紧凑比对              | 压缩 JSON     |
+| Tier 3    | ~575,000 | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份），全字段哈希 | SHA-256 CSV |
+| Horoscope | 5,760    | 360 命盘 × 16 目标日期（12 流年支/童限/高龄/闰月/晚子时），六层级运限全字段  | 紧凑 JSON     |
+| Variants  | 14,268   | by_lunar 闰月逐日（含 is_leap/fix_leap 组合）、中州派、六语言    | CSV/JSON    |
+
+合计约 63 万对照用例，覆盖排盘与运限的全部参数空间。
 
 ### 生成测试基准数据
 
 ```bash
 cd tests/golden
 npm install
-node generate_tier1.mjs    # → tier1_data.json (~6MB)
-node generate_tier2.mjs    # → tier2/year_*.json (60 files, ~23MB)
-node generate_tier3.mjs    # → tier3_hashes.csv (~21MB, 需要几分钟)
+node generate_tier1.mjs      # → tier1_data.json (~6MB)
+node generate_tier2.mjs      # → tier2/year_*.json (60 files, ~23MB)
+node generate_tier3.mjs      # → tier3/year_*.csv (60 files, ~30MB, 约 30 分钟)
+node generate_horoscope.mjs  # → horoscope_data.json (~9MB)
+node generate_variants.mjs   # → variants_*.csv / variants_languages.json
 ```
 
-Tier 3 Rust 侧使用 selfcheck baseline 机制——首次运行生成 `selfcheck_baseline.csv`，后续运行对比检测回归。
+哈希不一致时用生成器的 `--inspect` 系列参数重放 JS 单例，与 Rust 失败输出中的规范化串 diff 定位字段（格式定义见 `tests/golden/canonical.mjs` 与 `tests/common/mod.rs`）。
 
 ## 项目结构
 

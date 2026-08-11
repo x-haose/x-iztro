@@ -120,6 +120,18 @@ pub fn translate_sign(sign_index: usize, lang: Language) -> &'static str {
     }
 }
 
+/// 运限层级显示名（大限/童限/小限/流年/流月/流日/流时）
+pub fn translate_horoscope_name(n: HoroscopeName, lang: Language) -> &'static str {
+    match lang {
+        Language::ZhCN => zh_cn::horoscope_name(n),
+        Language::ZhTW => zh_tw::horoscope_name(n),
+        Language::EnUS => en_us::horoscope_name(n),
+        Language::JaJP => ja_jp::horoscope_name(n),
+        Language::KoKR => ko_kr::horoscope_name(n),
+        Language::ViVN => vi_vn::horoscope_name(n),
+    }
+}
+
 /// 生肖名称（按年支）
 pub fn translate_zodiac(branch: EarthlyBranch, lang: Language) -> &'static str {
     match lang {

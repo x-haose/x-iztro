@@ -25,6 +25,8 @@ pub struct Astrolabe {
     pub palaces: Vec<PalaceData>,
     /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)
     pub time_index: u8,
+    /// 排盘算法（运限的流年十二神等派别差异依赖它）
+    pub algorithm: Algorithm,
 }
 
 impl Astrolabe {
