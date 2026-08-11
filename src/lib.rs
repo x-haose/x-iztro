@@ -9,13 +9,15 @@ pub mod prompt;
 #[cfg(feature = "python")]
 mod python;
 
+pub mod ffi;
+
 // Re-export main public API
 pub use astro::builder::{by_solar, by_lunar};
 pub use astro::horoscope::get_horoscope;
 pub use models::astrolabe::Astrolabe;
 pub use models::horoscope::HoroscopeData;
 pub use data::types::*;
-pub use prompt::astrolabe_to_prompt;
+pub use prompt::{astrolabe_to_prompt, horoscope_to_prompt};
 
 /// 便捷函数：排盘并返回 JSON
 pub fn by_solar_json(

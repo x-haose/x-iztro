@@ -1,0 +1,180 @@
+"""
+rs-iztro 排盘主类
+
+封装 Rust 原生模块，返回类型化的 dataclass 对象。
+"""
+
+from __future__ import annotations
+
+from rs_iztro.models import (
+    Astrolabe,
+    GenderType,
+    LanguageType,
+    AlgorithmType,
+    TimeIndexType,
+    Horoscope,
+)
+
+def _get_native():
+    """延迟加载 Rust 原生扩展模块，避免循环导入。"""
+    import rs_iztro._rs_iztro as mod
+    return mod
+
+
+class Astro:
+    """紫微斗数排盘主类"""
+
+    def by_solar(
+        self,
+        solar_date: str,
+        time_index: TimeIndexType,
+        gender: GenderType,
+        fix_leap: bool = True,
+        language: LanguageType = "zh_cn",
+        algorithm: AlgorithmType = "default",
+    ) -> Astrolabe:
+        """
+        阳历排盘
+
+        Args:
+            solar_date: 阳历日期，如 "2000-8-16"
+            time_index: 时辰索引 (0-12)
+            gender: "male" 或 "female"
+            fix_leap: 是否修正闰月
+            language: 输出语言
+            algorithm: 排盘算法
+
+        Returns:
+            Astrolabe 星盘对象
+        """
+        data = _get_native().by_solar(
+            solar_date, time_index, gender, fix_leap, language, algorithm,
+        )
+        return Astrolabe._from_dict(data)
+
+    def by_lunar(
+        self,
+        lunar_date: str,
+        time_index: TimeIndexType,
+        gender: GenderType,
+        is_leap_month: bool = False,
+        fix_leap: bool = True,
+        language: LanguageType = "zh_cn",
+        algorithm: AlgorithmType = "default",
+    ) -> Astrolabe:
+        """
+        农历排盘
+
+        Args:
+            lunar_date: 农历日期，如 "2000-7-17"
+            time_index: 时辰索引 (0-12)
+            gender: "male" 或 "female"
+            is_leap_month: 是否闰月
+            fix_leap: 是否修正闰月
+            language: 输出语言
+            algorithm: 排盘算法
+
+        Returns:
+            Astrolabe 星盘对象
+        """
+        data = _get_native().by_lunar(
+            lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm,
+        )
+        return Astrolabe._from_dict(data)
+
+    def get_horoscope(
+        self,
+        astrolabe: Astrolabe,
+        target_date: str,
+        time_index: TimeIndexType,
+        language: LanguageType = "zh_cn",
+    ) -> Horoscope:
+        """
+        计算运限
+
+        Args:
+            astrolabe: 星盘对象（由 by_solar 或 by_lunar 返回）
+            target_date: 目标日期，如 "2024-1-1"
+            time_index: 时辰索引 (0-12)
+            language: 输出语言
+
+        Returns:
+            Horoscope 运限对象
+        """
+        # 重新序列化为 dict 传给 Rust
+        astrolabe_dict = _astrolabe_to_dict(astrolabe)
+        data = _get_native().get_horoscope(
+            astrolabe_dict, target_date, time_index, language,
+        )
+        return Horoscope._from_dict(data)
+
+    def astrolabe_to_prompt(
+        self,
+        astrolabe: Astrolabe,
+        language: LanguageType = "zh_cn",
+    ) -> str:
+        """
+        生成 AI Prompt
+
+        Args:
+            astrolabe: 星盘对象
+            language: 输出语言
+
+        Returns:
+            结构化文本 prompt
+        """
+        astrolabe_dict = _astrolabe_to_dict(astrolabe)
+        return _get_native().astrolabe_to_prompt(astrolabe_dict, language)
+
+
+def _astrolabe_to_dict(a: Astrolabe) -> dict:
+    """将 Astrolabe dataclass 转回 Rust 可接受的 camelCase dict"""
+    return {
+        "gender": a.gender,
+        "solarDate": a.solar_date,
+        "lunarDate": a.lunar_date,
+        "chineseDate": a.chinese_date,
+        "time": a.time,
+        "timeRange": a.time_range,
+        "sign": a.sign,
+        "zodiac": a.zodiac,
+        "earthlyBranchOfSoulPalace": a.earthly_branch_of_soul_palace,
+        "earthlyBranchOfBodyPalace": a.earthly_branch_of_body_palace,
+        "soul": a.soul,
+        "body": a.body,
+        "fiveElementsClass": a.five_elements_class,
+        "palaces": [_palace_to_dict(p) for p in a.palaces],
+    }
+
+
+def _palace_to_dict(p) -> dict:
+    return {
+        "index": p.index,
+        "name": p.name,
+        "isBodyPalace": p.is_body_palace,
+        "isOriginalPalace": p.is_original_palace,
+        "heavenlyStem": p.heavenly_stem,
+        "earthlyBranch": p.earthly_branch,
+        "majorStars": [_star_to_dict(s) for s in p.major_stars],
+        "minorStars": [_star_to_dict(s) for s in p.minor_stars],
+        "adjectiveStars": [_star_to_dict(s) for s in p.adjective_stars],
+        "changsheng12": p.changsheng12,
+        "boshi12": p.boshi12,
+        "jiangqian12": p.jiangqian12,
+        "suiqian12": p.suiqian12,
+        "decadal": {
+            "range": list(p.decadal.range),
+            "heavenlyStem": p.decadal.heavenly_stem,
+            "earthlyBranch": p.decadal.earthly_branch,
+        },
+        "ages": p.ages,
+    }
+
+
+def _star_to_dict(s) -> dict:
+    d = {"name": s.name, "type": s.type, "scope": s.scope}
+    if s.brightness is not None:
+        d["brightness"] = s.brightness
+    if s.mutagen is not None:
+        d["mutagen"] = s.mutagen
+    return d

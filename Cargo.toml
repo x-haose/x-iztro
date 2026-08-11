@@ -19,8 +19,14 @@ version = "0.23"
 features = ["extension-module"]
 optional = true
 
+[dependencies.pythonize]
+version = "0.23"
+optional = true
+
 [features]
-python = ["pyo3"]
+python = ["pyo3", "pythonize"]
 
 [dev-dependencies]
 pretty_assertions = "1"
+sha2 = "0.10"
+hex = "0.4"
