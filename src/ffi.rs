@@ -5,7 +5,7 @@
 
 use std::ffi::{c_char, CStr, CString};
 
-use crate::data::types::{Algorithm, Gender, Language};
+use crate::data::types::{Algorithm, Config, Gender, Language};
 use crate::models::astrolabe::Astrolabe;
 
 /// Parse a gender string, returning Ok or an error message.
@@ -105,10 +105,10 @@ pub unsafe extern "C" fn iztro_by_solar(
 
         let gender = parse_gender(gender_str)?;
         let language = parse_language(language_str)?;
-        let algorithm = parse_algorithm(algorithm_str)?;
+        let config = Config { algorithm: parse_algorithm(algorithm_str)?, ..Config::default() };
 
         Ok(crate::by_solar_json(
-            solar_date, time_index, gender, fix_leap, language, algorithm,
+            solar_date, time_index, gender, fix_leap, language, config,
         ))
     })();
 
@@ -155,10 +155,10 @@ pub unsafe extern "C" fn iztro_by_lunar(
 
         let gender = parse_gender(gender_str)?;
         let language = parse_language(language_str)?;
-        let algorithm = parse_algorithm(algorithm_str)?;
+        let config = Config { algorithm: parse_algorithm(algorithm_str)?, ..Config::default() };
 
         Ok(crate::by_lunar_json(
-            lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm,
+            lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
         ))
     })();
 

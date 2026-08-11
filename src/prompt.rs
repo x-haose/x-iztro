@@ -405,7 +405,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         let prompt = astrolabe_to_prompt(&astrolabe, Language::ZhCN);
 
@@ -427,7 +427,7 @@ mod tests {
             Gender::Male,
             true,
             Language::EnUS,
-            Algorithm::Default,
+            Config::default(),
         );
         let prompt = astrolabe_to_prompt(&astrolabe, Language::EnUS);
 
@@ -440,7 +440,7 @@ mod tests {
     #[test]
     fn test_horoscope_to_prompt_zh_cn() {
         let lang = Language::ZhCN;
-        let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, lang, Algorithm::Default);
+        let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, lang, Config::default());
         let horoscope = get_horoscope(&astrolabe, "2024-10-1", 0, lang);
         let prompt = horoscope_to_prompt(&astrolabe, &horoscope, lang);
 

@@ -36,11 +36,15 @@ cargo build --release
 use rs_iztro::{by_solar, get_horoscope};
 use rs_iztro::data::types::*;
 
-let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Algorithm::Default);
-println!("命主：{}", astrolabe.soul);
+// Config 控制分界点与派别：year_divide / horoscope_divide / age_divide /
+// day_divide / algorithm，默认值与 JS iztro 一致
+let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default());
+println!("命主：{:?}", astrolabe.soul);
 
-let horoscope = get_horoscope( & astrolabe, "2024-1-1", 0, Language::ZhCN);
-println!("流年：{}", horoscope.yearly.name);
+// 中州派：Config { algorithm: Algorithm::Zhongzhou, ..Config::default() }
+
+let horoscope = get_horoscope(&astrolabe, "2024-1-1", 0, Language::ZhCN);
+println!("流年四化：{:?}", horoscope.yearly.base.mutagen);
 ```
 
 ### Python
@@ -102,6 +106,7 @@ cargo test -- --ignored
 | Tier 3    | ~575,000 | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份），全字段哈希 | SHA-256 CSV |
 | Horoscope | 5,760    | 360 命盘 × 16 目标日期（12 流年支/童限/高龄/闰月/晚子时），六层级运限全字段  | 紧凑 JSON     |
 | Variants  | 14,268   | by_lunar 闰月逐日（含 is_leap/fix_leap 组合）、中州派、六语言    | CSV/JSON    |
+| Config    | 8,544    | yearDivide=exact（立春窗口逐日）、dayDivide=current、ageDivide=birthday、horoscopeDivide=exact | CSV/JSON    |
 
 合计约 63 万对照用例，覆盖排盘与运限的全部参数空间。
 
@@ -115,6 +120,7 @@ node generate_tier2.mjs      # → tier2/year_*.json (60 files, ~23MB)
 node generate_tier3.mjs      # → tier3/year_*.csv (60 files, ~30MB, 约 30 分钟)
 node generate_horoscope.mjs  # → horoscope_data.json (~9MB)
 node generate_variants.mjs   # → variants_*.csv / variants_languages.json
+node generate_config.mjs     # → config_*.csv / config_*.json
 ```
 
 哈希不一致时用生成器的 `--inspect` 系列参数重放 JS 单例，与 Rust 失败输出中的规范化串 diff 定位字段（格式定义见 `tests/golden/canonical.mjs` 与 `tests/common/mod.rs`）。

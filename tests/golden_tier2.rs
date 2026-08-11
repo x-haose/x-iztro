@@ -67,7 +67,7 @@ fn golden_tier2_compact() {
             let gender = if case.g == 0 { Gender::Male } else { Gender::Female };
             let case_label = format!("{} [{}] d={} t={} g={}", file_name, ci, case.d, case.t, case.g);
 
-            let astrolabe = by_solar(&case.d, case.t, gender, true, LANG, Algorithm::Default);
+            let astrolabe = by_solar(&case.d, case.t, gender, true, LANG, Config::default());
 
             // Soul branch
             let act_sb = translate_earthly_branch(astrolabe.earthly_branch_of_soul_palace, LANG).to_string();

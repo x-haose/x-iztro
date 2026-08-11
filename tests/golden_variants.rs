@@ -66,7 +66,7 @@ fn golden_variants_by_lunar() {
             il == "1",
             fl == "1",
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         total += 1;
 
@@ -110,7 +110,7 @@ fn golden_variants_zhongzhou() {
             gender,
             true,
             Language::ZhCN,
-            Algorithm::Zhongzhou,
+            Config { algorithm: Algorithm::Zhongzhou, ..Config::default() },
         );
         total += 1;
 
@@ -150,7 +150,7 @@ fn golden_variants_languages() {
         let lang = parse_lang(p["lang"].as_str().unwrap());
         let label = format!("[{date} t{ti} {}]", p["lang"].as_str().unwrap());
 
-        let a = by_solar(date, ti, gender, true, lang, Algorithm::Default);
+        let a = by_solar(date, ti, gender, true, lang, Config::default());
 
         let star = |s: &rs_iztro::models::star::Star| {
             format!(

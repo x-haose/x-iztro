@@ -63,7 +63,7 @@ fn check_case(case: &Value, case_idx: usize, failures: &mut Vec<String>) {
         params["gender"].as_str().unwrap()
     );
 
-    let astrolabe = by_solar(solar_date, time_index, gender, true, LANG, Algorithm::Default);
+    let astrolabe = by_solar(solar_date, time_index, gender, true, LANG, Config::default());
 
     // --- Top-level fields ---
     let checks: Vec<(&str, String, &str)> = vec![
@@ -107,6 +107,34 @@ fn check_case(case: &Value, case_idx: usize, failures: &mut Vec<String>) {
     for (field, actual, expected) in &checks {
         if actual != expected {
             failures.push(format!("{}: {} expected={} actual={}", case_label, field, expected, actual));
+        }
+    }
+
+    // --- rawDates ---
+    let rl = &case["raw_lunar"];
+    let act_rl = &astrolabe.raw_dates.lunar_date;
+    if act_rl.lunar_year != rl["y"].as_i64().unwrap()
+        || act_rl.lunar_month as u64 != rl["m"].as_u64().unwrap()
+        || act_rl.lunar_day as u64 != rl["d"].as_u64().unwrap()
+        || act_rl.is_leap != rl["leap"].as_bool().unwrap()
+    {
+        failures.push(format!("{}: raw_lunar expected={:?} actual={:?}", case_label, rl, act_rl));
+    }
+
+    let rc = &case["raw_chinese"];
+    let act_rc = &astrolabe.raw_dates.chinese_date;
+    let pillar = |p: (HeavenlyStem, EarthlyBranch)| {
+        format!("{}{}", translate_heavenly_stem(p.0, LANG), translate_earthly_branch(p.1, LANG))
+    };
+    let pillar_checks = [
+        ("yearly", pillar(act_rc.yearly), rc["y"].as_str().unwrap()),
+        ("monthly", pillar(act_rc.monthly), rc["m"].as_str().unwrap()),
+        ("daily", pillar(act_rc.daily), rc["d"].as_str().unwrap()),
+        ("hourly", pillar(act_rc.hourly), rc["h"].as_str().unwrap()),
+    ];
+    for (field, actual, expected) in &pillar_checks {
+        if actual != expected {
+            failures.push(format!("{}: raw_chinese.{} expected={} actual={}", case_label, field, expected, actual));
         }
     }
 

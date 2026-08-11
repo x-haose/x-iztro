@@ -7,6 +7,41 @@ use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::utils::fix_index;
 
+/// 数字化农历日期
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct RawLunarDate {
+    /// 农历年
+    pub lunar_year: i64,
+    /// 农历月（1-12，闰月与否见 is_leap）
+    pub lunar_month: u32,
+    /// 农历日（1-30）
+    pub lunar_day: u32,
+    /// 是否闰月
+    pub is_leap: bool,
+}
+
+/// 四柱干支（枚举形式）
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct RawChineseDate {
+    /// 年柱 [天干, 地支]
+    pub yearly: (HeavenlyStem, EarthlyBranch),
+    /// 月柱 [天干, 地支]
+    pub monthly: (HeavenlyStem, EarthlyBranch),
+    /// 日柱 [天干, 地支]
+    pub daily: (HeavenlyStem, EarthlyBranch),
+    /// 时柱 [天干, 地支]
+    pub hourly: (HeavenlyStem, EarthlyBranch),
+}
+
+/// 结构化的出生日期信息（lunar_date / chinese_date 展示串的数据形式）
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct RawDates {
+    /// 数字化农历生日
+    pub lunar_date: RawLunarDate,
+    /// 四柱干支
+    pub chinese_date: RawChineseDate,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Astrolabe {
     pub gender: Gender,
@@ -23,10 +58,12 @@ pub struct Astrolabe {
     pub body: StarKey,
     pub five_elements_class: FiveElementsClass,
     pub palaces: Vec<PalaceData>,
-    /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)
+    /// 结构化的农历生日与四柱干支
+    pub raw_dates: RawDates,
+    /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)，晚子归当天的配置下仍保留原始值
     pub time_index: u8,
-    /// 排盘算法（运限的流年十二神等派别差异依赖它）
-    pub algorithm: Algorithm,
+    /// 排盘配置（运限的虚岁分界、干支分界与派别差异依赖它）
+    pub config: Config,
 }
 
 impl Astrolabe {
@@ -84,7 +121,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         )
     }
 

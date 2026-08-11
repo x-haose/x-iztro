@@ -26,9 +26,9 @@ pub fn by_solar_json(
     gender: Gender,
     fix_leap: bool,
     language: Language,
-    algorithm: Algorithm,
+    config: Config,
 ) -> String {
-    let astrolabe = by_solar(solar_date, time_index, gender, fix_leap, language, algorithm);
+    let astrolabe = by_solar(solar_date, time_index, gender, fix_leap, language, config);
     serde_json::to_string(&astrolabe).unwrap()
 }
 
@@ -40,8 +40,8 @@ pub fn by_lunar_json(
     is_leap_month: bool,
     fix_leap: bool,
     language: Language,
-    algorithm: Algorithm,
+    config: Config,
 ) -> String {
-    let astrolabe = by_lunar(lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm);
+    let astrolabe = by_lunar(lunar_date, time_index, gender, is_leap_month, fix_leap, language, config);
     serde_json::to_string(&astrolabe).unwrap()
 }

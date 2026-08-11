@@ -238,14 +238,34 @@ pub fn get_horoscope(
     let target_lunar_month = target_lunar_month_raw.unsigned_abs() as i32;
     let target_lunar_day = target_lunar.get_day() as u32;
 
-    // ---- 3. 计算虚岁 ----
-    let nominal_age = (target_lunar_year - birthday_lunar_year + 1).max(1) as u32;
+    // ---- 3. 计算虚岁（分界点由配置决定） ----
+    //     自然年分界：跨农历年即加一岁；生日分界：过了农历生日才加一岁
+    let mut nominal_age = (target_lunar_year - birthday_lunar_year) as i64;
+    match astrolabe.config.age_divide {
+        AgeDivide::Normal => nominal_age += 1,
+        AgeDivide::Birthday => {
+            let passed_birthday = (target_lunar_year == birthday_lunar_year
+                && target_lunar_month == birthday_lunar_month
+                && target_lunar_day > birthday_lunar_day)
+                || target_lunar_month > birthday_lunar_month;
+            if passed_birthday {
+                nominal_age += 1;
+            }
+        }
+    }
+    let nominal_age = nominal_age.max(1) as u32;
 
-    // ---- 4. 目标日期干支四柱 ----
-    //     年柱按正月初一分界；月柱按初一分界以五虎遁推算，闰月下半月归下月；
+    // ---- 4. 目标日期干支四柱（年月分界点由配置决定） ----
+    //     初一分界：年按正月初一换年，月按初一以五虎遁推算（闰月下半月归下月）；
+    //     节气分界：年按立春换年，月按节气精确时刻推算。
     //     日柱晚子时归次日；时柱天干随日柱推算
-    let target_year_gan_str = target_lunar.get_year_gan();
-    let target_year_zhi_str = target_lunar.get_year_zhi();
+    let (target_year_gan_str, target_year_zhi_str) = match astrolabe.config.horoscope_divide {
+        HoroscopeDivide::Normal => (target_lunar.get_year_gan(), target_lunar.get_year_zhi()),
+        HoroscopeDivide::Exact => (
+            target_lunar.get_year_gan_by_li_chun(),
+            target_lunar.get_year_zhi_by_li_chun(),
+        ),
+    };
     let target_day_gan_str = target_lunar.get_day_gan_exact();
     let target_day_zhi_str = target_lunar.get_day_zhi_exact();
     let target_time_gan_str = target_lunar.get_time_gan();
@@ -256,14 +276,33 @@ pub fn get_horoscope(
     let target_year_branch =
         parse_earthly_branch(&target_year_zhi_str).expect("Unknown target year branch");
 
-    let target_month_fix: i32 = if target_is_leap && target_lunar_day > 15 { 1 } else { 0 };
-    let target_month_stem = HeavenlyStem::from_index(fix_index(
-        TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
-            + target_month_fix,
-        10,
-    ));
-    let target_month_branch =
-        EarthlyBranch::from_index(fix_index(2 + target_lunar_month - 1 + target_month_fix, 12));
+    let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
+        HoroscopeDivide::Normal => {
+            let target_month_fix: i32 =
+                if target_is_leap && target_lunar_day > 15 { 1 } else { 0 };
+            (
+                HeavenlyStem::from_index(fix_index(
+                    TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
+                        + target_month_fix,
+                    10,
+                )),
+                EarthlyBranch::from_index(fix_index(
+                    2 + target_lunar_month - 1 + target_month_fix,
+                    12,
+                )),
+            )
+        }
+        HoroscopeDivide::Exact => {
+            let gan = target_lunar.get_month_gan_exact();
+            let zhi = target_lunar.get_month_zhi_exact();
+            (
+                parse_heavenly_stem(&gan)
+                    .unwrap_or_else(|| panic!("Unknown target month stem: {gan}")),
+                parse_earthly_branch(&zhi)
+                    .unwrap_or_else(|| panic!("Unknown target month branch: {zhi}")),
+            )
+        }
+    };
 
     let target_day_stem =
         parse_heavenly_stem(&target_day_gan_str).expect("Unknown target day stem");
@@ -330,7 +369,7 @@ pub fn get_horoscope(
     let yearly_stars =
         get_horoscope_stars(target_year_stem, target_year_branch, Scope::Yearly, language);
     let (yearly_suiqian12, yearly_jiangqian12) =
-        get_yearly12(target_year_branch, astrolabe.algorithm);
+        get_yearly12(target_year_branch, astrolabe.config.algorithm);
 
     let yearly = YearlyItem {
         base: HoroscopeItem {
@@ -639,7 +678,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         )
     }
 

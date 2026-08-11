@@ -6,7 +6,7 @@
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 
-use crate::data::types::{Algorithm, Gender, Language};
+use crate::data::types::{Algorithm, Config, Gender, Language};
 use crate::models::astrolabe::Astrolabe;
 
 /// Parse a gender string into the Rust enum.
@@ -82,9 +82,9 @@ fn by_solar(
 ) -> PyResult<PyObject> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let algorithm = parse_algorithm(algorithm)?;
+    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
 
-    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, algorithm);
+    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
     to_python(py, &astrolabe)
 }
 
@@ -116,10 +116,10 @@ fn by_lunar(
 ) -> PyResult<PyObject> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let algorithm = parse_algorithm(algorithm)?;
+    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
 
     let astrolabe = crate::by_lunar(
-        lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm,
+        lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
     );
     to_python(py, &astrolabe)
 }
@@ -184,9 +184,9 @@ fn by_solar_json(
 ) -> PyResult<String> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let algorithm = parse_algorithm(algorithm)?;
+    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
 
-    Ok(crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, algorithm))
+    Ok(crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config))
 }
 
 /// Generate an astrolabe from a lunar date and return as JSON string.
@@ -204,10 +204,10 @@ fn by_lunar_json(
 ) -> PyResult<String> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let algorithm = parse_algorithm(algorithm)?;
+    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
 
     Ok(crate::by_lunar_json(
-        lunar_date, time_index, gender, is_leap_month, fix_leap, language, algorithm,
+        lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
     ))
 }
 

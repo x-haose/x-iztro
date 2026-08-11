@@ -141,7 +141,7 @@ fn make_astrolabe() -> rs_iztro::Astrolabe {
         Gender::Female,
         true,
         Language::ZhCN,
-        Algorithm::Default,
+        Config::default(),
     )
 }
 

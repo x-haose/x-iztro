@@ -244,6 +244,70 @@ pub enum Algorithm {
     Zhongzhou,
 }
 
+/// 年分界点：排盘年干支（及其驱动的四化、命主身主等）按哪一天换年
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum YearDivide {
+    /// 正月初一分界
+    Normal,
+    /// 立春分界
+    Exact,
+}
+
+/// 运限分界点：运限干支与干支纪日的月柱按初一还是节气推算
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HoroscopeDivide {
+    /// 年按正月初一分界，月按初一以五虎遁推算
+    Normal,
+    /// 年按立春分界，月按节气分界
+    Exact,
+}
+
+/// 虚岁分界点
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AgeDivide {
+    /// 以自然农历年为界，跨年即加一岁
+    Normal,
+    /// 以生日为界，过了生日才加一岁
+    Birthday,
+}
+
+/// 晚子时（23:00-00:00）归属
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DayDivide {
+    /// 晚子时归次日
+    Forward,
+    /// 晚子时归当天（按当日早子时排盘）
+    Current,
+}
+
+/// 排盘配置：控制分界点与算法派别的全部开关
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Config {
+    /// 年分界点
+    pub year_divide: YearDivide,
+    /// 运限分界点
+    pub horoscope_divide: HoroscopeDivide,
+    /// 虚岁分界点
+    pub age_divide: AgeDivide,
+    /// 晚子时归属
+    pub day_divide: DayDivide,
+    /// 算法派别
+    pub algorithm: Algorithm,
+}
+
+impl Default for Config {
+    /// 与 JS iztro 的默认配置一致
+    fn default() -> Self {
+        Config {
+            year_divide: YearDivide::Normal,
+            horoscope_divide: HoroscopeDivide::Normal,
+            age_divide: AgeDivide::Normal,
+            day_divide: DayDivide::Forward,
+            algorithm: Algorithm::Default,
+        }
+    }
+}
+
 /// 时辰索引
 pub type TimeIndex = u8;
 

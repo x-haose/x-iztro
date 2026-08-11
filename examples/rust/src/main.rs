@@ -30,7 +30,7 @@ fn main() {
         Gender::Male,
         true,
         lang,
-        Algorithm::Default,
+        Config::default(),
     );
 
     println!("阳历：{}", astrolabe.solar_date);

@@ -21,6 +21,18 @@ for (let year = 1984; year <= 2043; year++) {
       gender: result.gender,
       lunar_date: result.lunarDate,
       chinese_date: result.chineseDate,
+      raw_lunar: {
+        y: result.rawDates.lunarDate.lunarYear,
+        m: result.rawDates.lunarDate.lunarMonth,
+        d: result.rawDates.lunarDate.lunarDay,
+        leap: result.rawDates.lunarDate.isLeap,
+      },
+      raw_chinese: {
+        y: result.rawDates.chineseDate.yearly.join(''),
+        m: result.rawDates.chineseDate.monthly.join(''),
+        d: result.rawDates.chineseDate.daily.join(''),
+        h: result.rawDates.chineseDate.hourly.join(''),
+      },
       time: result.time,
       time_range: result.timeRange,
       sign: result.sign,

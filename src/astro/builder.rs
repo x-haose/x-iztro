@@ -18,14 +18,14 @@ use crate::i18n::{
     translate_earthly_branch, translate_heavenly_stem, translate_sign, translate_time,
     translate_zodiac,
 };
-use crate::models::astrolabe::Astrolabe;
+use crate::models::astrolabe::{Astrolabe, RawChineseDate, RawDates, RawLunarDate};
 use crate::models::palace::PalaceData;
 use crate::star::adjective::get_adjective_stars;
 use crate::star::decorative::{get_boshi12, get_changsheng12, get_yearly12};
 use crate::star::location::{
     get_chang_qu_index, get_daily_star_index, get_huo_ling_index, get_kong_jie_index,
-    get_kui_yue_index, get_lu_yang_tuo_ma_index, get_monthly_star_index, get_start_index,
-    get_timely_star_index, get_yearly_star_index, get_zuo_you_index,
+    get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index, get_monthly_star_index,
+    get_start_index, get_timely_star_index, get_yearly_star_index, get_zuo_you_index,
 };
 use crate::star::major::get_major_stars;
 use crate::star::minor::get_minor_stars;
@@ -168,16 +168,23 @@ fn format_chinese_date(pillars: [(HeavenlyStem, EarthlyBranch); 4], lang: Langua
 /// - `gender`: 性别
 /// - `fix_leap`: 是否修正闰月
 /// - `language`: 语言
-/// - `algorithm`: 算法
+/// - `config`: 排盘配置（分界点与算法派别）
 pub fn by_solar(
     solar_date: &str,
     time_index: u8,
     gender: Gender,
     fix_leap: bool,
     language: Language,
-    algorithm: Algorithm,
+    config: Config,
 ) -> Astrolabe {
     assert!(time_index <= 12, "time_index must be 0-12, got {time_index}");
+
+    // 晚子时归当天的配置下，全部推算按当日早子时进行；展示仍用原始时辰
+    let effective_ti = if config.day_divide == DayDivide::Current && time_index >= 12 {
+        0
+    } else {
+        time_index
+    };
 
     // 1. 解析阳历日期
     let parts: Vec<&str> = solar_date.split('-').collect();
@@ -190,7 +197,7 @@ pub fn by_solar(
     let solar_ref = solar::from_ymd(year, month, day);
 
     // 用时辰对应的小时创建带时间的日期，以获取正确的时柱
-    let hour = time_index_to_hour(time_index);
+    let hour = time_index_to_hour(effective_ti);
     let solar_with_time = solar::from_ymdhms(year, month, day, hour, 0, 0);
     let lunar_ref = lunar::from_solar(&solar_with_time);
 
@@ -201,18 +208,37 @@ pub fn by_solar(
     let lunar_day = lunar_ref.get_day() as u32;
 
     // 4. 获取年干年支
-    let yearly_stem_str = lunar_ref.get_year_gan();
-    let yearly_branch_str = lunar_ref.get_year_zhi();
+    //    安星主体（四化、辅星、命主身主、宫位天干、长生/博士12、大限小限）按 year_divide；
+    //    年系杂耀与岁前/将前12（流年神煞）按 horoscope_divide
+    let (yearly_stem_str, yearly_branch_str) = match config.year_divide {
+        YearDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
+        YearDivide::Exact => (
+            lunar_ref.get_year_gan_by_li_chun(),
+            lunar_ref.get_year_zhi_by_li_chun(),
+        ),
+    };
     let yearly_stem = parse_heavenly_stem(&yearly_stem_str)
         .unwrap_or_else(|| panic!("Unknown heavenly stem: {yearly_stem_str}"));
     let yearly_branch = parse_earthly_branch(&yearly_branch_str)
         .unwrap_or_else(|| panic!("Unknown earthly branch: {yearly_branch_str}"));
 
+    let (flow_stem_str, flow_branch_str) = match config.horoscope_divide {
+        HoroscopeDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
+        HoroscopeDivide::Exact => (
+            lunar_ref.get_year_gan_by_li_chun(),
+            lunar_ref.get_year_zhi_by_li_chun(),
+        ),
+    };
+    let flow_yearly_stem = parse_heavenly_stem(&flow_stem_str)
+        .unwrap_or_else(|| panic!("Unknown heavenly stem: {flow_stem_str}"));
+    let flow_yearly_branch = parse_earthly_branch(&flow_branch_str)
+        .unwrap_or_else(|| panic!("Unknown earthly branch: {flow_branch_str}"));
+
     // 5. 计算月索引
-    let month_index = fix_lunar_month_index(lunar_month, lunar_day, is_leap, time_index, fix_leap);
+    let month_index = fix_lunar_month_index(lunar_month, lunar_day, is_leap, effective_ti, fix_leap);
 
     // 6. 命宫身宫
-    let soul_body = get_soul_and_body(month_index, time_index, yearly_stem);
+    let soul_body = get_soul_and_body(month_index, effective_ti, yearly_stem);
 
     // 7. 五行局
     let five_elements_class = get_five_elements_class(
@@ -225,7 +251,7 @@ pub fn by_solar(
         lunar_month::from_ym(lunar_ref.get_year(), lunar_month_raw).get_day_count() as u32;
     let start_idx = get_start_index(
         lunar_day,
-        time_index,
+        effective_ti,
         month_day_count,
         five_elements_class.value() as u32,
     );
@@ -234,25 +260,25 @@ pub fn by_solar(
     let lu_yang_tuo_ma = get_lu_yang_tuo_ma_index(yearly_stem, yearly_branch);
     let kui_yue = get_kui_yue_index(yearly_stem);
     let zuo_you = get_zuo_you_index(month_index as u32 + 1);
-    let chang_qu = get_chang_qu_index(time_index);
-    let kong_jie = get_kong_jie_index(time_index);
-    let huo_ling = get_huo_ling_index(yearly_branch, time_index);
+    let chang_qu = get_chang_qu_index(effective_ti);
+    let kong_jie = get_kong_jie_index(effective_ti);
+    let huo_ling = get_huo_ling_index(yearly_branch, effective_ti);
     let daily_stars = get_daily_star_index(
         lunar_day,
-        time_index,
+        effective_ti,
         zuo_you.zuo,
         zuo_you.you,
         chang_qu.chang,
         chang_qu.qu,
     );
-    let timely_stars = get_timely_star_index(time_index);
+    let timely_stars = get_timely_star_index(effective_ti);
     let yearly_stars = get_yearly_star_index(
         soul_body.soul_index,
         soul_body.body_index,
-        yearly_stem,
-        yearly_branch,
+        flow_yearly_stem,
+        flow_yearly_branch,
         gender,
-        algorithm,
+        config.algorithm,
     );
     let monthly_stars = get_monthly_star_index(month_index);
 
@@ -279,23 +305,24 @@ pub fn by_solar(
         language,
     );
 
-    // 12. 流耀
+    // 12. 流耀（岁前/将前12 属流年神煞，年支按 horoscope_divide）
     let changsheng12 = get_changsheng12(five_elements_class, gender, yearly_branch);
     let boshi12 = get_boshi12(lu_yang_tuo_ma.lu, gender, yearly_branch);
-    let (suiqian12, jiangqian12) = get_yearly12(yearly_branch, algorithm);
+    let (suiqian12, jiangqian12) = get_yearly12(flow_yearly_branch, config.algorithm);
 
-    // 13. 杂耀
+    // 13. 杂耀（红鸾天喜按 year_divide 年支，其余年系星按 horoscope_divide 年支）
+    let luan_xi = get_luan_xi_index(yearly_branch);
     let adjective_stars = get_adjective_stars(
         &yearly_stars,
         &monthly_stars,
         &daily_stars,
         timely_stars.taifu,
         timely_stars.fenggao,
-        yearly_stars.hongluan,
-        yearly_stars.tianxi,
+        luan_xi.hongluan,
+        luan_xi.tianxi,
         yearly_stars.xianchi,
         &suiqian12,
-        algorithm,
+        config.algorithm,
         language,
     );
 
@@ -357,7 +384,7 @@ pub fn by_solar(
     let body_palace_branch =
         EarthlyBranch::from_index(fix_index(soul_body.body_index as i32 + 2, 12));
 
-    let soul_star = if algorithm == Algorithm::Zhongzhou {
+    let soul_star = if config.algorithm == Algorithm::Zhongzhou {
         get_earthly_branch_info(yearly_branch).soul
     } else {
         get_earthly_branch_info(soul_palace_branch).soul
@@ -365,15 +392,32 @@ pub fn by_solar(
     let body_star = get_earthly_branch_info(yearly_branch).body;
 
     // 18. 干支纪日（八字四柱）
-    //     年柱按正月初一分界；月柱按初一分界以五虎遁推算，闰月下半月归下月；
+    //     年柱与安星年干支同分界；月柱按运限分界配置推算
+    //     （初一分界以五虎遁推，闰月下半月归下月；节气分界取精确时刻月柱）；
     //     日柱晚子时归次日；时柱天干随日柱推算
-    let month_fix: i32 = if is_leap && lunar_day > 15 { 1 } else { 0 };
-    let month_pillar_stem = HeavenlyStem::from_index(fix_index(
-        TIGER_RULE[yearly_stem.index()].index() as i32 + lunar_month as i32 - 1 + month_fix,
-        10,
-    ));
-    let month_pillar_branch =
-        EarthlyBranch::from_index(fix_index(2 + lunar_month as i32 - 1 + month_fix, 12));
+    let (month_pillar_stem, month_pillar_branch) = match config.horoscope_divide {
+        HoroscopeDivide::Normal => {
+            let month_fix: i32 = if is_leap && lunar_day > 15 { 1 } else { 0 };
+            (
+                HeavenlyStem::from_index(fix_index(
+                    TIGER_RULE[yearly_stem.index()].index() as i32 + lunar_month as i32 - 1
+                        + month_fix,
+                    10,
+                )),
+                EarthlyBranch::from_index(fix_index(2 + lunar_month as i32 - 1 + month_fix, 12)),
+            )
+        }
+        HoroscopeDivide::Exact => {
+            let gan = lunar_ref.get_month_gan_exact();
+            let zhi = lunar_ref.get_month_zhi_exact();
+            (
+                parse_heavenly_stem(&gan)
+                    .unwrap_or_else(|| panic!("Unknown month stem: {gan}")),
+                parse_earthly_branch(&zhi)
+                    .unwrap_or_else(|| panic!("Unknown month branch: {zhi}")),
+            )
+        }
+    };
 
     let day_gan_str = lunar_ref.get_day_gan_exact();
     let day_zhi_str = lunar_ref.get_day_zhi_exact();
@@ -430,8 +474,22 @@ pub fn by_solar(
         body: body_star,
         five_elements_class,
         palaces,
+        raw_dates: RawDates {
+            lunar_date: RawLunarDate {
+                lunar_year: lunar_ref.get_year(),
+                lunar_month,
+                lunar_day,
+                is_leap,
+            },
+            chinese_date: RawChineseDate {
+                yearly: (yearly_stem, yearly_branch),
+                monthly: (month_pillar_stem, month_pillar_branch),
+                daily: (day_pillar_stem, day_pillar_branch),
+                hourly: (time_pillar_stem, time_pillar_branch),
+            },
+        },
         time_index,
-        algorithm,
+        config,
     }
 }
 
@@ -444,7 +502,7 @@ pub fn by_solar(
 /// - `is_leap_month`: 是否为闰月
 /// - `fix_leap`: 是否修正闰月
 /// - `language`: 语言
-/// - `algorithm`: 算法
+/// - `config`: 排盘配置（分界点与算法派别）
 pub fn by_lunar(
     lunar_date: &str,
     time_index: u8,
@@ -452,7 +510,7 @@ pub fn by_lunar(
     is_leap_month: bool,
     fix_leap: bool,
     language: Language,
-    algorithm: Algorithm,
+    config: Config,
 ) -> Astrolabe {
     // 1. 解析农历日期
     let parts: Vec<&str> = lunar_date.split('-').collect();
@@ -478,7 +536,7 @@ pub fn by_lunar(
     );
 
     // 4. 用阳历日期排盘
-    by_solar(&solar_date, time_index, gender, fix_leap, language, algorithm)
+    by_solar(&solar_date, time_index, gender, fix_leap, language, config)
 }
 
 #[cfg(test)]
@@ -538,7 +596,7 @@ mod tests {
             Gender::Male,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         assert_eq!(astrolabe.gender, Gender::Male);
         assert_eq!(astrolabe.solar_date, "2000-8-16");
@@ -558,7 +616,7 @@ mod tests {
             Gender::Male,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
 
         // 应有14颗主星
@@ -588,7 +646,7 @@ mod tests {
             false,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         assert_eq!(astrolabe.gender, Gender::Male);
         assert_eq!(astrolabe.palaces.len(), 12);
@@ -603,7 +661,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         assert_eq!(astrolabe.time, "晚子时");
         assert_eq!(astrolabe.time_range, "23:00~00:00");
@@ -617,7 +675,7 @@ mod tests {
             Gender::Male,
             true,
             Language::ZhCN,
-            Algorithm::Zhongzhou,
+            Config { algorithm: Algorithm::Zhongzhou, ..Config::default() },
         );
         assert_eq!(astrolabe.palaces.len(), 12);
     }
@@ -630,7 +688,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         );
         let body_count = astrolabe.palaces.iter().filter(|p| p.is_body_palace).count();
         assert_eq!(body_count, 1);

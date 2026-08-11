@@ -68,7 +68,7 @@ fn golden_tier3_full_parameter_space() {
                 gender,
                 fix_leap,
                 Language::ZhCN,
-                Algorithm::Default,
+                Config::default(),
             );
             let actual = hash_astrolabe(&astrolabe);
             total += 1;

@@ -32,7 +32,7 @@ fn test_matrix_regression() {
         let gender_str = params["gender"].as_str().unwrap();
         let gender = parse_gender(gender_str);
 
-        let astrolabe = by_solar(solar_date, time_index, gender, true, lang, Algorithm::Default);
+        let astrolabe = by_solar(solar_date, time_index, gender, true, lang, Config::default());
 
         let context = format!(
             "case[{}]: solar_date={}, time_index={}, gender={}",

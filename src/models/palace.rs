@@ -143,7 +143,7 @@ mod tests {
             Gender::Female,
             true,
             Language::ZhCN,
-            Algorithm::Default,
+            Config::default(),
         )
     }
 
