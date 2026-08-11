@@ -254,3 +254,34 @@ pub fn gender_name(g: Gender) -> &'static str {
         Gender::Female => "female",
     }
 }
+
+/// Hour-of-birth names (index 0-12: early Rat hour ... late Rat hour).
+const TIME_NAMES: [&str; 13] = [
+    "early Rat hour", "Ox hour", "Tiger hour", "Rabbit hour", "Dragon hour",
+    "Snake hour", "Horse hour", "Goat hour", "Monkey hour", "Rooster hour",
+    "Dog hour", "Pig hour", "late Rat hour",
+];
+
+/// Zodiac sign names (index 0-11: Aries onward, in ecliptic order).
+const SIGN_NAMES: [&str; 12] = [
+    "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+    "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+];
+
+/// Chinese zodiac animal names (indexed by earthly branch: Zi=rat ... Hai=pig).
+const ZODIAC_NAMES: [&str; 12] = [
+    "rat", "ox", "tiger", "rabbit", "dragon", "snake",
+    "horse", "sheep", "monkey", "rooster", "dog", "pig",
+];
+
+pub fn time_name(time_index: u8) -> &'static str {
+    TIME_NAMES[time_index as usize]
+}
+
+pub fn sign_name(sign_index: usize) -> &'static str {
+    SIGN_NAMES[sign_index]
+}
+
+pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
+    ZODIAC_NAMES[branch.index()]
+}

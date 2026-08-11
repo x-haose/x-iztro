@@ -3,6 +3,7 @@
 //! 提供 `by_solar` 和 `by_lunar` 两个入口函数，从阳历或阴历日期生成完整的紫微斗数星盘。
 
 use lunar_rust::lunar::LunarRefHelper;
+use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
 use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 
@@ -12,6 +13,10 @@ use crate::astro::palace::{
 use crate::data::constants::{TIME_RANGES, TIGER_RULE};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::types::*;
+use crate::i18n::{
+    translate_earthly_branch, translate_heavenly_stem, translate_sign, translate_time,
+    translate_zodiac,
+};
 use crate::models::astrolabe::Astrolabe;
 use crate::models::palace::PalaceData;
 use crate::star::adjective::get_adjective_stars;
@@ -25,14 +30,21 @@ use crate::star::major::get_major_stars;
 use crate::star::minor::get_minor_stars;
 use crate::utils::fix_index;
 
-/// 中文时辰名称
-const CHINESE_TIMES: [&str; 13] = [
-    "早子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "晚子",
-];
-
 // ============================================================
 // 辅助函数
 // ============================================================
+
+/// lunar_rust 星座中文名转黄道索引（白羊=0 … 双鱼=11）
+fn parse_sign_index(name: &str) -> usize {
+    const XING_ZUO: [&str; 12] = [
+        "白羊", "金牛", "双子", "巨蟹", "狮子", "处女",
+        "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼",
+    ];
+    XING_ZUO
+        .iter()
+        .position(|s| *s == name)
+        .unwrap_or_else(|| panic!("Unknown xing zuo: {name}"))
+}
 
 /// 将中文天干字符串转换为枚举
 pub fn parse_heavenly_stem(s: &str) -> Option<HeavenlyStem> {
@@ -112,6 +124,37 @@ fn time_index_to_hour(time_index: u8) -> i64 {
     }
 }
 
+/// 按语言拼接四柱干支 [年, 月, 日, 时]。
+/// 词条均为单字符时柱内紧凑相连、柱间空格（如「庚辰 甲申 丁未 庚子」）；
+/// 任一词条为多字符时柱内空格、柱间「 - 」（如「geng chen - jia shen - …」）
+fn format_chinese_date(pillars: [(HeavenlyStem, EarthlyBranch); 4], lang: Language) -> String {
+    let translated: Vec<(&str, &str)> = pillars
+        .iter()
+        .map(|(s, b)| {
+            (
+                translate_heavenly_stem(*s, lang),
+                translate_earthly_branch(*b, lang),
+            )
+        })
+        .collect();
+    let compact = translated
+        .iter()
+        .all(|(s, b)| s.chars().count() == 1 && b.chars().count() == 1);
+    if compact {
+        translated
+            .iter()
+            .map(|(s, b)| format!("{s}{b}"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    } else {
+        translated
+            .iter()
+            .map(|(s, b)| format!("{s} {b}"))
+            .collect::<Vec<_>>()
+            .join(" - ")
+    }
+}
+
 // ============================================================
 // 主入口
 // ============================================================
@@ -176,13 +219,20 @@ pub fn by_solar(
         soul_body.earthly_branch_of_soul,
     );
 
-    // 8. 紫微天府起始宫位
-    let start_idx = get_start_index(lunar_day, five_elements_class.value() as u32);
+    // 8. 紫微天府起始宫位（晚子时按次日起，跨月回卷需要当月农历总天数）
+    let month_day_count =
+        lunar_month::from_ym(lunar_ref.get_year(), lunar_month_raw).get_day_count() as u32;
+    let start_idx = get_start_index(
+        lunar_day,
+        time_index,
+        month_day_count,
+        five_elements_class.value() as u32,
+    );
 
     // 9. 计算各星耀位置索引
     let lu_yang_tuo_ma = get_lu_yang_tuo_ma_index(yearly_stem, yearly_branch);
     let kui_yue = get_kui_yue_index(yearly_stem);
-    let zuo_you = get_zuo_you_index(lunar_month);
+    let zuo_you = get_zuo_you_index(month_index as u32 + 1);
     let chang_qu = get_chang_qu_index(time_index);
     let kong_jie = get_kong_jie_index(time_index);
     let huo_ling = get_huo_ling_index(yearly_branch, time_index);
@@ -313,24 +363,47 @@ pub fn by_solar(
     };
     let body_star = get_earthly_branch_info(yearly_branch).body;
 
-    // 18. 中文日期（八字格式）
-    let time_gan = lunar_ref.get_time_gan();
-    let time_zhi = lunar_ref.get_time_zhi();
-    let chinese_date = format!(
-        "{}年 {}月 {}日 {}{}时",
-        lunar_ref.get_year_in_gan_zhi(),
-        lunar_ref.get_month_in_gan_zhi(),
-        lunar_ref.get_day_in_gan_zhi(),
-        time_gan,
-        time_zhi,
+    // 18. 干支纪日（八字四柱）
+    //     年柱按正月初一分界；月柱按初一分界以五虎遁推算，闰月下半月归下月；
+    //     日柱晚子时归次日；时柱天干随日柱推算
+    let month_fix: i32 = if is_leap && lunar_day > 15 { 1 } else { 0 };
+    let month_pillar_stem = HeavenlyStem::from_index(fix_index(
+        TIGER_RULE[yearly_stem.index()].index() as i32 + lunar_month as i32 - 1 + month_fix,
+        10,
+    ));
+    let month_pillar_branch =
+        EarthlyBranch::from_index(fix_index(2 + lunar_month as i32 - 1 + month_fix, 12));
+
+    let day_gan_str = lunar_ref.get_day_gan_exact();
+    let day_zhi_str = lunar_ref.get_day_zhi_exact();
+    let day_pillar_stem = parse_heavenly_stem(&day_gan_str)
+        .unwrap_or_else(|| panic!("Unknown day stem: {day_gan_str}"));
+    let day_pillar_branch = parse_earthly_branch(&day_zhi_str)
+        .unwrap_or_else(|| panic!("Unknown day branch: {day_zhi_str}"));
+
+    let time_gan_str = lunar_ref.get_time_gan();
+    let time_zhi_str = lunar_ref.get_time_zhi();
+    let time_pillar_stem = parse_heavenly_stem(&time_gan_str)
+        .unwrap_or_else(|| panic!("Unknown time stem: {time_gan_str}"));
+    let time_pillar_branch = parse_earthly_branch(&time_zhi_str)
+        .unwrap_or_else(|| panic!("Unknown time branch: {time_zhi_str}"));
+
+    let chinese_date = format_chinese_date(
+        [
+            (yearly_stem, yearly_branch),
+            (month_pillar_stem, month_pillar_branch),
+            (day_pillar_stem, day_pillar_branch),
+            (time_pillar_stem, time_pillar_branch),
+        ],
+        language,
     );
 
     // 19. 星座与生肖
-    let sign = solar_ref.get_xing_zuo();
-    let zodiac = lunar_ref.get_year_sheng_xiao();
+    let sign = translate_sign(parse_sign_index(&solar_ref.get_xing_zuo()), language).to_string();
+    let zodiac = translate_zodiac(yearly_branch, language).to_string();
 
     // 20. 时辰显示
-    let time_str = CHINESE_TIMES[time_index as usize].to_string();
+    let time_str = translate_time(time_index, language).to_string();
     let time_range = TIME_RANGES[time_index as usize].to_string();
 
     // 21. 农历日期字符串
@@ -524,7 +597,7 @@ mod tests {
             Language::ZhCN,
             Algorithm::Default,
         );
-        assert_eq!(astrolabe.time, "晚子");
+        assert_eq!(astrolabe.time, "晚子时");
         assert_eq!(astrolabe.time_range, "23:00~00:00");
     }
 

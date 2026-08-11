@@ -150,13 +150,25 @@ pub struct YearlyStars {
 /// 1. 获取紫微和天府的起始宫位索引
 ///
 /// lunar_day: 农历日（1-30）
+/// time_index: 时辰索引（0-12）；晚子时(12)属次日，起紫微用次日日数
+/// month_day_count: 该农历月总天数（29/30），次日跨月时回卷到下月初一
 /// five_elements_value: 五行局数值（2/3/4/5/6）
-pub fn get_start_index(lunar_day: u32, five_elements_value: u32) -> StartIndex {
+pub fn get_start_index(
+    lunar_day: u32,
+    time_index: u8,
+    month_day_count: u32,
+    five_elements_value: u32,
+) -> StartIndex {
+    let mut day = if time_index == 12 { lunar_day + 1 } else { lunar_day };
+    if day > month_day_count {
+        day -= month_day_count;
+    }
+
     let mut offset: i32 = -1;
     let mut quotient: i32;
     loop {
         offset += 1;
-        let divisor = lunar_day as i32 + offset;
+        let divisor = day as i32 + offset;
         quotient = divisor / five_elements_value as i32;
         let remainder = divisor % five_elements_value as i32;
         if remainder == 0 {
@@ -230,7 +242,7 @@ pub fn get_kui_yue_index(stem: HeavenlyStem) -> KuiYue {
 
 /// 4. 获取左辅、右弼的宫位索引
 ///
-/// lunar_month: 农历月份（1-12）
+/// lunar_month: 经闰月修正后的农历月份（1-12，即 fix_lunar_month_index 结果 + 1）
 pub fn get_zuo_you_index(lunar_month: u32) -> ZuoYou {
     let zuo = fix_index(
         eb2pi(EarthlyBranch::Chen) as i32 + (lunar_month as i32 - 1),
@@ -464,26 +476,21 @@ pub fn get_yearly_star_index(
     let kongwang_table: [EarthlyBranch; 5] = [You, Wei, Si, Mao, Chou];
     let kongwang = eb2pi(kongwang_table[stem_idx % 5]);
 
-    // 旬空
+    // 旬空：从年支宫位起，加上年干到癸干的距离再进一位
     let xunkong_raw = fix_index(
         eb2pi(yearly_branch) as i32 + 9 - stem_idx as i32 + 1,
         12,
     );
-    // 调整阴阳奇偶：如果天干和地支的奇偶性不同则 +1
-    let stem_is_yang = stem_idx % 2 == 0;
-    let branch_is_yang = yearly_branch.index() % 2 == 0;
-    let xunkong = if stem_is_yang != branch_is_yang {
+    // 旬空落宫的奇偶须与年支索引的奇偶一致，不一致时进一位
+    let branch_is_yang = yearly_branch.index().is_multiple_of(2);
+    let xunkong = if yearly_branch.index() % 2 != xunkong_raw % 2 {
         fix_index(xunkong_raw as i32 + 1, 12)
     } else {
         xunkong_raw
     };
 
     // 劫空：地支为偶(阳)用截路，奇(阴)用空亡
-    let jiekong = if yearly_branch.index() % 2 == 0 {
-        jielu
-    } else {
-        kongwang
-    };
+    let jiekong = if branch_is_yang { jielu } else { kongwang };
 
     // 天伤 = PALACES[Friends] + soul_index = 5 + soul_index
     let mut tianshang = fix_index(5 + soul_index as i32, 12);
@@ -620,11 +627,24 @@ mod tests {
     #[test]
     fn test_get_start_index() {
         // 水二局，初一
-        let si = get_start_index(1, 2);
+        let si = get_start_index(1, 0, 30, 2);
         // 1+1=2, 2/2=1, remainder=0, offset=1(odd), quotient=1
         // ziwei = 1-1-1 = -1, fix_index(-1,12)=11
         assert_eq!(si.ziwei, 11);
         assert_eq!(si.tianfu, fix_index(12 - 11, 12));
+    }
+
+    #[test]
+    fn test_get_start_index_late_zi() {
+        // 晚子时按次日起紫微：初一晚子时等同初二
+        let late = get_start_index(1, 12, 30, 2);
+        let next_day = get_start_index(2, 0, 30, 2);
+        assert_eq!(late.ziwei, next_day.ziwei);
+
+        // 月末晚子时跨月回卷到初一
+        let wrapped = get_start_index(29, 12, 29, 2);
+        let first_day = get_start_index(1, 0, 29, 2);
+        assert_eq!(wrapped.ziwei, first_day.ziwei);
     }
 
     #[test]

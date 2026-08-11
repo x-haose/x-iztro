@@ -131,8 +131,8 @@ pub fn get_decadals_and_ages(
     for i in 0..12 {
         let ages_for_palace: Vec<u32> = (0..10).map(|j| (12 * j + i + 1) as u32).collect();
         let idx = match gender {
-            Gender::Male => fix_index(age_idx as i32 + i as i32, 12),
-            Gender::Female => fix_index(age_idx as i32 - i as i32, 12),
+            Gender::Male => fix_index(age_idx as i32 + i, 12),
+            Gender::Female => fix_index(age_idx as i32 - i, 12),
         };
         final_ages[idx] = ages_for_palace;
     }

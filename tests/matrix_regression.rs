@@ -80,17 +80,13 @@ fn test_matrix_regression() {
         }
 
         // Palace[0] major stars count
-        // Note: time_index=12 (late-zi) has a known discrepancy in star placement
-        // between JS iztro and rs-iztro, so we skip this check for late-zi.
-        if time_index != 12 {
-            let expected_p0_major = case["palace_0_major_count"].as_u64().unwrap() as usize;
-            let actual_p0_major = astrolabe.palaces[0].major_stars.len();
-            if actual_p0_major != expected_p0_major {
-                failures.push(format!(
-                    "{}: palace_0_major_count expected {}, got {}",
-                    context, expected_p0_major, actual_p0_major
-                ));
-            }
+        let expected_p0_major = case["palace_0_major_count"].as_u64().unwrap() as usize;
+        let actual_p0_major = astrolabe.palaces[0].major_stars.len();
+        if actual_p0_major != expected_p0_major {
+            failures.push(format!(
+                "{}: palace_0_major_count expected {}, got {}",
+                context, expected_p0_major, actual_p0_major
+            ));
         }
 
         // Soul star

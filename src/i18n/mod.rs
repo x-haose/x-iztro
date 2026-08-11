@@ -95,3 +95,39 @@ pub fn translate_gender(g: Gender, lang: Language) -> &'static str {
         Language::ViVN => vi_vn::gender_name(g),
     }
 }
+
+/// 时辰名称（time_index 0-12：早子时…晚子时）
+pub fn translate_time(time_index: u8, lang: Language) -> &'static str {
+    match lang {
+        Language::ZhCN => zh_cn::time_name(time_index),
+        Language::ZhTW => zh_tw::time_name(time_index),
+        Language::EnUS => en_us::time_name(time_index),
+        Language::JaJP => ja_jp::time_name(time_index),
+        Language::KoKR => ko_kr::time_name(time_index),
+        Language::ViVN => vi_vn::time_name(time_index),
+    }
+}
+
+/// 星座名称（sign_index 0-11：白羊座起，按黄道顺序）
+pub fn translate_sign(sign_index: usize, lang: Language) -> &'static str {
+    match lang {
+        Language::ZhCN => zh_cn::sign_name(sign_index),
+        Language::ZhTW => zh_tw::sign_name(sign_index),
+        Language::EnUS => en_us::sign_name(sign_index),
+        Language::JaJP => ja_jp::sign_name(sign_index),
+        Language::KoKR => ko_kr::sign_name(sign_index),
+        Language::ViVN => vi_vn::sign_name(sign_index),
+    }
+}
+
+/// 生肖名称（按年支）
+pub fn translate_zodiac(branch: EarthlyBranch, lang: Language) -> &'static str {
+    match lang {
+        Language::ZhCN => zh_cn::zodiac_name(branch),
+        Language::ZhTW => zh_tw::zodiac_name(branch),
+        Language::EnUS => en_us::zodiac_name(branch),
+        Language::JaJP => ja_jp::zodiac_name(branch),
+        Language::KoKR => ko_kr::zodiac_name(branch),
+        Language::ViVN => vi_vn::zodiac_name(branch),
+    }
+}

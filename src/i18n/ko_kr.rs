@@ -254,3 +254,33 @@ pub fn gender_name(g: Gender) -> &'static str {
         Gender::Female => "여자",
     }
 }
+
+/// 시진 이름표（색인 0-12: 아침 자시…밤에 자시）
+const TIME_NAMES: [&str; 13] = [
+    "아침 자시", "축시", "인시", "묘시", "진시", "사시", "오시",
+    "미시", "신시", "유시", "술시", "해시", "밤에 자시",
+];
+
+/// 별자리 이름표（색인 0-11: 백양궁부터 황도 순서）
+const SIGN_NAMES: [&str; 12] = [
+    "백양궁", "금우궁", "쌍아궁", "거해궁", "사자궁", "처녀궁",
+    "천칭궁", "천갈궁", "인마궁", "마갈궁", "보병궁", "쌍어궁",
+];
+
+/// 띠 동물 이름표（지지 색인 순: 자=쥐…해=돼지）
+const ZODIAC_NAMES: [&str; 12] = [
+    "쥐", "소", "호랑이", "토끼", "용", "뱀",
+    "말", "양", "원숭이", "닭", "개", "돼지",
+];
+
+pub fn time_name(time_index: u8) -> &'static str {
+    TIME_NAMES[time_index as usize]
+}
+
+pub fn sign_name(sign_index: usize) -> &'static str {
+    SIGN_NAMES[sign_index]
+}
+
+pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
+    ZODIAC_NAMES[branch.index()]
+}

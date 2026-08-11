@@ -63,7 +63,9 @@ pub fn get_adjective_stars(
     }
 
     // 杂耀（Adjective）
-    let adjective_stars: [(usize, StarKey); 28] = [
+    let adjective_stars: [(usize, StarKey); 30] = [
+        (yearly_stars.huagai, StarKey::Huagai),
+        (yearly_stars.tiande, StarKey::Tiande),
         (yearly_stars.tiankong, StarKey::Tiankong),
         (monthly_stars.tianxing, StarKey::Tianxing),
         (monthly_stars.yinsha, StarKey::Yinsha),
@@ -182,7 +184,7 @@ mod tests {
             Language::ZhCN,
         );
         let total: usize = result.iter().map(|v| v.len()).sum();
-        // 4 flower + 2 helper + 28 adjective + 2 (jielu + kongwang) = 36
-        assert_eq!(total, 36);
+        // 4 flower + 2 helper + 30 adjective + 2 (jielu + kongwang) = 38
+        assert_eq!(total, 38);
     }
 }

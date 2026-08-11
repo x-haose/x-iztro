@@ -254,3 +254,32 @@ pub fn gender_name(g: Gender) -> &'static str {
         Gender::Female => "女",
     }
 }
+
+/// 時辰名表（索引 0-12：早子時、丑時…亥時、晚子時）
+const TIME_NAMES: [&str; 13] = [
+    "早子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時",
+    "未時", "申時", "酉時", "戌時", "亥時", "晚子時",
+];
+
+/// 星座名表（索引 0-11：おひつじ座起、黄道順）
+const SIGN_NAMES: [&str; 12] = [
+    "おひつじ座", "おうし座", "ふたご座", "かに座", "しし座", "おとめ座",
+    "てんびん座", "さそり座", "いて座", "やぎ座", "みずがめ座", "うお座",
+];
+
+/// 干支動物名表（地支索引順：子鼠…亥豚）
+const ZODIAC_NAMES: [&str; 12] = [
+    "鼠", "牛", "虎", "兎", "龍", "蛇", "馬", "羊", "猿", "雞", "犬", "豚",
+];
+
+pub fn time_name(time_index: u8) -> &'static str {
+    TIME_NAMES[time_index as usize]
+}
+
+pub fn sign_name(sign_index: usize) -> &'static str {
+    SIGN_NAMES[sign_index]
+}
+
+pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
+    ZODIAC_NAMES[branch.index()]
+}

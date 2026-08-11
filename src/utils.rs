@@ -19,7 +19,7 @@ pub fn time_to_index(hour: u8) -> u8 {
     match hour {
         0 => 0,
         23 => 12,
-        h => (h + 1) / 2,
+        h => h.div_ceil(2),
     }
 }
 

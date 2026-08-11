@@ -1,0 +1,15 @@
+{
+  "name": "rs-iztro-golden-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen:tier1": "node generate_tier1.mjs",
+    "gen:tier2": "node generate_tier2.mjs",
+    "gen:tier3": "node generate_tier3.mjs",
+    "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3"
+  },
+  "dependencies": {
+    "iztro": "2.5.8"
+  }
+}
