@@ -14,8 +14,18 @@ use std::fs;
 
 const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/contract_data.json");
 
-/// 星盘 DTO 顶层允许比 JS 多出的扩展键。
-const ASTROLABE_EXTENSION_KEYS: &[&str] = &["genderKey", "timeIndex", "fixLeap", "language", "config"];
+/// DTO 允许比 JS 多出的扩展键（任意层级）：
+/// 排盘上下文（genderKey/timeIndex/fixLeap/language/config）
+/// 与语言无关标识（各 *key/*Key(s) 字段）。
+const EXTENSION_KEYS: &[&str] = &[
+    "genderKey", "timeIndex", "fixLeap", "language", "config",
+    "key", "nameKey", "brightnessKey", "mutagenKey",
+    "heavenlyStemKey", "earthlyBranchKey",
+    "earthlyBranchOfSoulPalaceKey", "earthlyBranchOfBodyPalaceKey",
+    "soulKey", "bodyKey", "fiveElementsClassKey",
+    "changsheng12Key", "boshi12Key", "jiangqian12Key", "suiqian12Key",
+    "palaceNameKeys", "mutagenKeys", "suiqian12Keys", "jiangqian12Keys",
+];
 
 fn parse_lang(s: &str) -> Language {
     match s {
@@ -30,24 +40,18 @@ fn parse_lang(s: &str) -> Language {
 }
 
 /// 深度对比：JS 值的每个键/元素在 Rust 值中必须存在且相等；
-/// 对象键集必须一致（顶层允许 Rust 额外的扩展键）。
-fn deep_compare(
-    path: &str,
-    js: &Value,
-    rust: &Value,
-    allowed_extra: &[&str],
-    failures: &mut Vec<String>,
-) {
+/// 对象键集必须一致，Rust 侧仅允许多出声明的扩展键。
+fn deep_compare(path: &str, js: &Value, rust: &Value, failures: &mut Vec<String>) {
     match (js, rust) {
         (Value::Object(jm), Value::Object(rm)) => {
             for (k, jv) in jm {
                 match rm.get(k) {
-                    Some(rv) => deep_compare(&format!("{path}.{k}"), jv, rv, &[], failures),
+                    Some(rv) => deep_compare(&format!("{path}.{k}"), jv, rv, failures),
                     None => failures.push(format!("{path}.{k}: missing in rust output")),
                 }
             }
             for k in rm.keys() {
-                if !jm.contains_key(k) && !allowed_extra.contains(&k.as_str()) {
+                if !jm.contains_key(k) && !EXTENSION_KEYS.contains(&k.as_str()) {
                     failures.push(format!("{path}.{k}: unexpected extra key in rust output"));
                 }
             }
@@ -58,7 +62,7 @@ fn deep_compare(
                 return;
             }
             for (i, (jv, rv)) in ja.iter().zip(ra.iter()).enumerate() {
-                deep_compare(&format!("{path}[{i}]"), jv, rv, &[], failures);
+                deep_compare(&format!("{path}[{i}]"), jv, rv, failures);
             }
         }
         _ => {
@@ -102,7 +106,6 @@ fn golden_contract_json() {
             &format!("{label} astrolabe"),
             &case["astrolabe"],
             &rust_astrolabe,
-            ASTROLABE_EXTENSION_KEYS,
             &mut failures,
         );
 
@@ -113,7 +116,6 @@ fn golden_contract_json() {
             &format!("{label} horoscope"),
             &case["horoscope"],
             &rust_horoscope,
-            &[],
             &mut failures,
         );
 

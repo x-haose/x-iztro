@@ -4,8 +4,9 @@
 // 通过纯 Go 的 wazero 运行时调用——无 cgo，保留 Go 的交叉编译能力，
 // `go get` 即用，无需本机安装 Rust 工具链。
 //
-// 返回值为 JS iztro 兼容 JSON（camelCase 键 + 按语言翻译的值）解析出的
-// map[string]any。计算失败时返回 error（对应 JSON 中的 error 字段）。
+// 返回类型化的 Astrolabe/Horoscope 结构体（见 types.go），字段同时携带
+// 翻译文本与语言无关标识（keys.go 常量），判断方法在任何输出语言下可用。
+// 计算失败时返回 error。
 //
 // 更新内嵌 wasm：在仓库根目录执行
 //
@@ -80,8 +81,8 @@ func getRuntime() (*runtime, error) {
 	return rt, rtErr
 }
 
-// call 将入参 JSON 写入 wasm 内存、调用函数并取回结果 JSON。
-func (r *runtime) call(fn api.Function, input any) (map[string]any, error) {
+// call 将入参 JSON 写入 wasm 内存、调用函数并取回结果 JSON 原文。
+func (r *runtime) call(fn api.Function, input any) ([]byte, error) {
 	payload, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("iztro: marshal input: %w", err)
@@ -120,29 +121,31 @@ func (r *runtime) call(fn api.Function, input any) (map[string]any, error) {
 		return nil, fmt.Errorf("iztro: free result: %w", err)
 	}
 
-	var decoded map[string]any
-	if err := json.Unmarshal(result, &decoded); err != nil {
+	var probe struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(result, &probe); err != nil {
 		return nil, fmt.Errorf("iztro: decode result: %w", err)
 	}
-	if msg, ok := decoded["error"].(string); ok {
-		return nil, fmt.Errorf("iztro: %s", msg)
+	if probe.Error != "" {
+		return nil, fmt.Errorf("iztro: %s", probe.Error)
 	}
-	return decoded, nil
+	return result, nil
 }
 
-// BySolar 以阳历日期排盘。
+// BySolar 以阳历日期排盘，返回类型化星盘。
 //   - solarDate: "YYYY-M-D"，如 "2000-8-16"
 //   - timeIndex: 时辰索引 0-12（0=早子时，12=晚子时）
 //   - gender: "male" 或 "female"
 //   - fixLeap: 是否修正闰月
 //   - language: "zh_cn"/"zh_tw"/"en_us"/"ja_jp"/"ko_kr"/"vi_vn"
 //   - config: 排盘配置，nil 取默认
-func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (map[string]any, error) {
+func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
 	r, err := getRuntime()
 	if err != nil {
 		return nil, err
 	}
-	return r.call(r.bySolar, map[string]any{
+	raw, err := r.call(r.bySolar, map[string]any{
 		"solarDate": solarDate,
 		"timeIndex": timeIndex,
 		"gender":    gender,
@@ -150,15 +153,23 @@ func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, lan
 		"language":  language,
 		"config":    config,
 	})
+	if err != nil {
+		return nil, err
+	}
+	var out Astrolabe
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
+	}
+	return &out, nil
 }
 
-// ByLunar 以农历日期排盘；isLeapMonth 在该月没有闰月时不生效。
-func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool, fixLeap bool, language string, config *Config) (map[string]any, error) {
+// ByLunar 以农历日期排盘，返回类型化星盘；isLeapMonth 在该月没有闰月时不生效。
+func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
 	r, err := getRuntime()
 	if err != nil {
 		return nil, err
 	}
-	return r.call(r.byLunar, map[string]any{
+	raw, err := r.call(r.byLunar, map[string]any{
 		"lunarDate":   lunarDate,
 		"timeIndex":   timeIndex,
 		"gender":      gender,
@@ -167,15 +178,23 @@ func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool,
 		"language":    language,
 		"config":      config,
 	})
+	if err != nil {
+		return nil, err
+	}
+	var out Astrolabe
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
+	}
+	return &out, nil
 }
 
-// Horoscope 计算运限（无状态：直接传出生排盘参数与目标日期）。
-func Horoscope(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config, targetDate string, targetTimeIndex uint8) (map[string]any, error) {
+// GetHoroscope 计算运限（无状态：直接传出生排盘参数与目标日期），返回类型化运限。
+func GetHoroscope(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config, targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
 	r, err := getRuntime()
 	if err != nil {
 		return nil, err
 	}
-	return r.call(r.horo, map[string]any{
+	raw, err := r.call(r.horo, map[string]any{
 		"solarDate":       solarDate,
 		"timeIndex":       timeIndex,
 		"gender":          gender,
@@ -185,4 +204,12 @@ func Horoscope(solarDate string, timeIndex uint8, gender string, fixLeap bool, l
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
 	})
+	if err != nil {
+		return nil, err
+	}
+	var out Horoscope
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("iztro: decode horoscope: %w", err)
+	}
+	return &out, nil
 }

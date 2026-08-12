@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from rs_iztro.models import (
     Astrolabe,
+    ChartConfig,
     GenderType,
     LanguageType,
     TimeIndexType,
@@ -23,12 +24,11 @@ def _get_native():
     return mod
 
 
-def _config_json(config: dict | None) -> str | None:
-    """用户 config dict（camelCase 键，可部分给出）转为绑定层 JSON。"""
+def _config_json(config: ChartConfig | None) -> str | None:
+    """排盘配置转为绑定层 JSON。"""
     if config is None:
         return None
-    import json
-    return json.dumps(config)
+    return config.to_json()
 
 
 class Astro:
@@ -41,7 +41,7 @@ class Astro:
         gender: GenderType,
         fix_leap: bool = True,
         language: LanguageType = "zh_cn",
-        config: dict | None = None,
+        config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
         阳历排盘
@@ -52,8 +52,8 @@ class Astro:
             gender: "male" 或 "female"
             fix_leap: 是否修正闰月
             language: 输出语言
-            config: 排盘配置（camelCase 键，可部分给出），如
-                {"algorithm": "zhongzhou", "yearDivide": "exact"}
+            config: 排盘配置，如
+                ChartConfig(algorithm=Algorithm.ZHONGZHOU, year_divide=YearDivide.EXACT)
 
         Returns:
             Astrolabe 星盘对象
@@ -71,7 +71,7 @@ class Astro:
         is_leap_month: bool = False,
         fix_leap: bool = True,
         language: LanguageType = "zh_cn",
-        config: dict | None = None,
+        config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
         农历排盘
@@ -83,7 +83,7 @@ class Astro:
             is_leap_month: 是否闰月（该月无闰月时不生效）
             fix_leap: 是否修正闰月
             language: 输出语言
-            config: 排盘配置（camelCase 键，可部分给出）
+            config: 排盘配置
 
         Returns:
             Astrolabe 星盘对象

@@ -343,3 +343,103 @@ impl FiveElementsClass {
         *self as usize
     }
 }
+
+
+impl Palace {
+    /// 语言无关的宫位标识（iztro i18n key，如 "soulPalace"）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            Palace::Soul => "soulPalace",
+            Palace::Parents => "parentsPalace",
+            Palace::Spirit => "spiritPalace",
+            Palace::Property => "propertyPalace",
+            Palace::Career => "careerPalace",
+            Palace::Friends => "friendsPalace",
+            Palace::Surface => "surfacePalace",
+            Palace::Health => "healthPalace",
+            Palace::Wealth => "wealthPalace",
+            Palace::Children => "childrenPalace",
+            Palace::Spouse => "spousePalace",
+            Palace::Siblings => "siblingsPalace",
+        }
+    }
+}
+
+impl HeavenlyStem {
+    /// 语言无关的天干标识（iztro i18n key，如 "jiaHeavenly"）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            HeavenlyStem::Jia => "jiaHeavenly",
+            HeavenlyStem::Yi => "yiHeavenly",
+            HeavenlyStem::Bing => "bingHeavenly",
+            HeavenlyStem::Ding => "dingHeavenly",
+            HeavenlyStem::Wu => "wuHeavenly",
+            HeavenlyStem::Ji => "jiHeavenly",
+            HeavenlyStem::Geng => "gengHeavenly",
+            HeavenlyStem::Xin => "xinHeavenly",
+            HeavenlyStem::Ren => "renHeavenly",
+            HeavenlyStem::Gui => "guiHeavenly",
+        }
+    }
+}
+
+impl EarthlyBranch {
+    /// 语言无关的地支标识（iztro i18n key，如 "ziEarthly"）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            EarthlyBranch::Zi => "ziEarthly",
+            EarthlyBranch::Chou => "chouEarthly",
+            EarthlyBranch::Yin => "yinEarthly",
+            EarthlyBranch::Mao => "maoEarthly",
+            EarthlyBranch::Chen => "chenEarthly",
+            EarthlyBranch::Si => "siEarthly",
+            EarthlyBranch::Wu => "wuEarthly",
+            EarthlyBranch::Wei => "weiEarthly",
+            EarthlyBranch::Shen => "shenEarthly",
+            EarthlyBranch::You => "youEarthly",
+            EarthlyBranch::Xu => "xuEarthly",
+            EarthlyBranch::Hai => "haiEarthly",
+        }
+    }
+}
+
+impl Mutagen {
+    /// 语言无关的四化标识（iztro i18n key，如 "sihuaLu"）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            Mutagen::Lu => "sihuaLu",
+            Mutagen::Quan => "sihuaQuan",
+            Mutagen::Ke => "sihuaKe",
+            Mutagen::Ji => "sihuaJi",
+        }
+    }
+}
+
+impl Brightness {
+    /// 语言无关的亮度标识（iztro i18n key，如 "miao"）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            Brightness::Miao => "miao",
+            Brightness::Wang => "wang",
+            Brightness::De => "de",
+            Brightness::Li => "li",
+            Brightness::Ping => "ping",
+            Brightness::Bu => "bu",
+            Brightness::Xian => "xian",
+        }
+    }
+}
+
+
+impl FiveElementsClass {
+    /// 语言无关的五行局标识（"water2nd" 等）。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            FiveElementsClass::Water2nd => "water2nd",
+            FiveElementsClass::Wood3rd => "wood3rd",
+            FiveElementsClass::Metal4th => "metal4th",
+            FiveElementsClass::Earth5th => "earth5th",
+            FiveElementsClass::Fire6th => "fire6th",
+        }
+    }
+}

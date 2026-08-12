@@ -94,8 +94,11 @@ def test_horoscope_matches_golden(case: dict) -> None:
 
 def test_zhongzhou_config() -> None:
     """中州派配置生效：岁前十二神含岁破、命主按年支。"""
-    a = astro.by_solar("1990-11-5", 4, "male", config={"algorithm": "zhongzhou"})
-    assert a.config.algorithm == "zhongzhou"
+    from rs_iztro import ChartConfig
+    from rs_iztro.enums import Algorithm
+
+    a = astro.by_solar("1990-11-5", 4, "male", config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
+    assert a.config.algorithm == Algorithm.ZHONGZHOU
     assert "岁破" in {p.suiqian12 for p in a.palaces}
 
 
@@ -127,3 +130,51 @@ def test_prompts() -> None:
     assert "=== 基本信息 ===" in natal and "十二宫" in natal
     fortune = astro.horoscope_to_prompt(a, "2024-1-1", 0)
     assert "=== 运限 ===" in fortune and "流年" in fortune
+
+
+def test_enums_work_across_languages() -> None:
+    """枚举基于语言无关 key：在任何输出语言的星盘上判断结果一致。"""
+    from rs_iztro.enums import MajorStar, Mutagen as Mu, PalaceName
+
+    results = {
+        lang: astro.by_solar("2000-8-16", 2, "female", language=lang)
+        for lang in ("zh_cn", "en_us", "ja_jp")
+    }
+    for lang, a in results.items():
+        soul_palace = a.palace(PalaceName.SOUL)
+        assert soul_palace is not None, lang
+        assert soul_palace.name_key == PalaceName.SOUL, lang
+        assert soul_palace.has([MajorStar.ZIWEI]), lang
+        assert a.soul_key == MajorStar.POJUN, lang
+        found = a.star_in_palace(MajorStar.WUQU)
+        assert found is not None and found[0].with_mutagen(Mu.QUAN), lang
+
+    # 各语言的判断结果互相一致
+    zh, en = results["zh_cn"], results["en_us"]
+    for m in Mu:
+        assert [p.has_mutagen(m) for p in zh.palaces] == [p.has_mutagen(m) for p in en.palaces]
+
+
+def test_flies_to_across_languages() -> None:
+    """四化飞星基于天干 key 表，非中文星盘同样正确。"""
+    from rs_iztro.enums import Mutagen as Mu
+
+    a = astro.by_solar("2000-8-16", 2, "female", language="en_us")
+    soul = a.palace(0)
+    places = soul.mutaged_places(a.palaces)
+    assert len(places) == 4 and all(p is not None for p in places)
+    assert any(soul.flies_to(t, Mu.LU) for t in a.palaces)
+
+
+def test_chart_config_typed() -> None:
+    """ChartConfig 类型化配置入参。"""
+    from rs_iztro import ChartConfig
+    from rs_iztro.enums import Algorithm, Suiqian12, YearDivide
+
+    a = astro.by_solar(
+        "1990-11-5", 4, "male",
+        config=ChartConfig(algorithm=Algorithm.ZHONGZHOU, year_divide=YearDivide.EXACT),
+    )
+    assert a.config.algorithm == Algorithm.ZHONGZHOU
+    assert a.config.year_divide == YearDivide.EXACT
+    assert Suiqian12.SUIPO in {p.suiqian12_key for p in a.palaces}

@@ -6,8 +6,11 @@
 //! `JSON.stringify` 输出一致（不含其 `plugins`/`copyright` 及运限对象内嵌的
 //! `astrolabe` 等实现细节字段）。
 //!
-//! 在 JS 字段集之外附加 `timeIndex`/`fixLeap`/`language`/`config` 四个排盘
-//! 上下文字段，使消费方能以纯参数（无状态）方式发起运限计算。
+//! 在 JS 字段集之外附加两类扩展：
+//! - 排盘上下文（`genderKey`/`timeIndex`/`fixLeap`/`language`/`config`），
+//!   使消费方能以纯参数（无状态）方式发起运限计算；
+//! - 语言无关标识（星/宫/干支/四化/亮度的 `*key`/`*Key(s)` 字段，取值为
+//!   iztro i18n key），供强类型绑定做跨语言的身份判断与枚举映射。
 
 use serde::{Deserialize, Serialize};
 
@@ -25,16 +28,27 @@ use crate::models::star::Star;
 /// 星耀 DTO。
 /// 主星/辅星的 `brightness` 恒存在（无亮度为空串）；无四化时省略 `mutagen` 键；
 /// 杂耀与运限流耀省略 `brightness` 与 `mutagen`。
+/// `key`/`brightnessKey`/`mutagenKey` 为语言无关标识（rs-iztro 扩展），
+/// 供强类型绑定做跨语言的身份判断。
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StarDto {
+    /// 语言无关星耀标识（iztro i18n key，如 "ziweiMaj"）
+    pub key: String,
     pub name: String,
     #[serde(rename = "type")]
     pub star_type: String,
     pub scope: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub brightness: Option<String>,
+    /// 语言无关亮度标识（"miao" 等），无亮度时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub brightness_key: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mutagen: Option<String>,
+    /// 语言无关四化标识（"sihuaLu" 等），无四化时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mutagen_key: Option<String>,
 }
 
 /// 大限区间与干支 DTO。
@@ -43,7 +57,11 @@ pub struct StarDto {
 pub struct DecadalDto {
     pub range: [u32; 2],
     pub heavenly_stem: String,
+    /// 语言无关天干标识（"jiaHeavenly" 等）
+    pub heavenly_stem_key: String,
     pub earthly_branch: String,
+    /// 语言无关地支标识（"ziEarthly" 等）
+    pub earthly_branch_key: String,
 }
 
 /// 宫位 DTO。
@@ -52,17 +70,31 @@ pub struct DecadalDto {
 pub struct PalaceDto {
     pub index: usize,
     pub name: String,
+    /// 语言无关宫位标识（"soulPalace" 等）
+    pub name_key: String,
     pub is_body_palace: bool,
     pub is_original_palace: bool,
     pub heavenly_stem: String,
+    /// 语言无关天干标识
+    pub heavenly_stem_key: String,
     pub earthly_branch: String,
+    /// 语言无关地支标识
+    pub earthly_branch_key: String,
     pub major_stars: Vec<StarDto>,
     pub minor_stars: Vec<StarDto>,
     pub adjective_stars: Vec<StarDto>,
     pub changsheng12: String,
+    /// 长生十二神的语言无关标识
+    pub changsheng12_key: String,
     pub boshi12: String,
+    /// 博士十二神的语言无关标识
+    pub boshi12_key: String,
     pub jiangqian12: String,
+    /// 将前十二神的语言无关标识
+    pub jiangqian12_key: String,
     pub suiqian12: String,
+    /// 岁前十二神的语言无关标识
+    pub suiqian12_key: String,
     pub decadal: DecadalDto,
     pub ages: Vec<u32>,
 }
@@ -124,10 +156,20 @@ pub struct AstrolabeDto {
     pub sign: String,
     pub zodiac: String,
     pub earthly_branch_of_soul_palace: String,
+    /// 命宫地支的语言无关标识
+    pub earthly_branch_of_soul_palace_key: String,
     pub earthly_branch_of_body_palace: String,
+    /// 身宫地支的语言无关标识
+    pub earthly_branch_of_body_palace_key: String,
     pub soul: String,
+    /// 命主星的语言无关标识
+    pub soul_key: String,
     pub body: String,
+    /// 身主星的语言无关标识
+    pub body_key: String,
     pub five_elements_class: String,
+    /// 五行局的语言无关标识（"water2nd" 等）
+    pub five_elements_class_key: String,
     pub palaces: Vec<PalaceDto>,
     /// rs-iztro 扩展：机器可读性别（"male"/"female"，无状态运限所需）
     pub gender_key: String,
@@ -148,9 +190,17 @@ pub struct HoroscopeScopeDto {
     pub index: usize,
     pub name: String,
     pub heavenly_stem: String,
+    /// 语言无关天干标识
+    pub heavenly_stem_key: String,
     pub earthly_branch: String,
+    /// 语言无关地支标识
+    pub earthly_branch_key: String,
     pub palace_names: Vec<String>,
+    /// 十二宫名的语言无关标识
+    pub palace_name_keys: Vec<String>,
     pub mutagen: Vec<String>,
+    /// 四化星 [禄权科忌] 的语言无关标识
+    pub mutagen_keys: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stars: Option<Vec<Vec<StarDto>>>,
 }
@@ -168,7 +218,13 @@ pub struct AgeDto {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YearlyDecStarDto {
     pub suiqian12: Vec<String>,
+    /// 岁前十二神的语言无关标识
+    #[serde(rename = "suiqian12Keys")]
+    pub suiqian12_keys: Vec<String>,
     pub jiangqian12: Vec<String>,
+    /// 将前十二神的语言无关标识
+    #[serde(rename = "jiangqian12Keys")]
+    pub jiangqian12_keys: Vec<String>,
 }
 
 /// 流年 DTO。
@@ -365,6 +421,7 @@ fn is_mutagen_candidate(key: crate::data::stars::StarKey) -> bool {
 /// 四化候选星恒带 mutagen 键（无四化为空串），其余省略。
 fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
     StarDto {
+        key: s.key.as_key().to_string(),
         name: s.name.clone(),
         star_type: star_type_str(s.star_type).to_string(),
         scope: scope_str(s.scope).to_string(),
@@ -373,6 +430,7 @@ fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
                 .map(|b| translate_brightness(b, lang).to_string())
                 .unwrap_or_default(),
         ),
+        brightness_key: s.brightness.map(|b| b.as_key().to_string()),
         mutagen: if is_mutagen_candidate(s.key) {
             Some(
                 s.mutagen
@@ -382,17 +440,21 @@ fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
         } else {
             None
         },
+        mutagen_key: s.mutagen.map(|m| m.as_key().to_string()),
     }
 }
 
 /// 杂耀/流耀条目：仅 name/type/scope 三键。
 fn bare_star_dto(s: &Star) -> StarDto {
     StarDto {
+        key: s.key.as_key().to_string(),
         name: s.name.clone(),
         star_type: star_type_str(s.star_type).to_string(),
         scope: scope_str(s.scope).to_string(),
         brightness: None,
+        brightness_key: None,
         mutagen: None,
+        mutagen_key: None,
     }
 }
 
@@ -407,21 +469,30 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
     PalaceDto {
         index: p.index,
         name: translate_palace(p.name, lang).to_string(),
+        name_key: p.name.as_key().to_string(),
         is_body_palace: p.is_body_palace,
         is_original_palace: p.is_original_palace,
         heavenly_stem: translate_heavenly_stem(p.heavenly_stem, lang).to_string(),
+        heavenly_stem_key: p.heavenly_stem.as_key().to_string(),
         earthly_branch: translate_earthly_branch(p.earthly_branch, lang).to_string(),
+        earthly_branch_key: p.earthly_branch.as_key().to_string(),
         major_stars: p.major_stars.iter().map(|s| primary_star_dto(s, lang)).collect(),
         minor_stars: p.minor_stars.iter().map(|s| primary_star_dto(s, lang)).collect(),
         adjective_stars: p.adjective_stars.iter().map(bare_star_dto).collect(),
         changsheng12: translate_star(p.changsheng12, lang).to_string(),
+        changsheng12_key: p.changsheng12.as_key().to_string(),
         boshi12: translate_star(p.boshi12, lang).to_string(),
+        boshi12_key: p.boshi12.as_key().to_string(),
         jiangqian12: translate_star(p.jiangqian12, lang).to_string(),
+        jiangqian12_key: p.jiangqian12.as_key().to_string(),
         suiqian12: translate_star(p.suiqian12, lang).to_string(),
+        suiqian12_key: p.suiqian12.as_key().to_string(),
         decadal: DecadalDto {
             range: [p.decadal.range.0, p.decadal.range.1],
             heavenly_stem: translate_heavenly_stem(p.decadal.heavenly_stem, lang).to_string(),
+            heavenly_stem_key: p.decadal.heavenly_stem.as_key().to_string(),
             earthly_branch: translate_earthly_branch(p.decadal.earthly_branch, lang).to_string(),
+            earthly_branch_key: p.decadal.earthly_branch.as_key().to_string(),
         },
         ages: p.ages.clone(),
     }
@@ -460,15 +531,20 @@ impl Astrolabe {
                 lang,
             )
             .to_string(),
+            earthly_branch_of_soul_palace_key: self.earthly_branch_of_soul_palace.as_key().to_string(),
             earthly_branch_of_body_palace: translate_earthly_branch(
                 self.earthly_branch_of_body_palace,
                 lang,
             )
             .to_string(),
+            earthly_branch_of_body_palace_key: self.earthly_branch_of_body_palace.as_key().to_string(),
             soul: translate_star(self.soul, lang).to_string(),
+            soul_key: self.soul.as_key().to_string(),
             body: translate_star(self.body, lang).to_string(),
+            body_key: self.body.as_key().to_string(),
             five_elements_class: translate_five_elements_class(self.five_elements_class, lang)
                 .to_string(),
+            five_elements_class_key: self.five_elements_class.as_key().to_string(),
             palaces: self.palaces.iter().map(|p| palace_dto(p, lang)).collect(),
             gender_key: match self.gender {
                 Gender::Male => "male",
@@ -488,17 +564,21 @@ fn scope_dto(item: &HoroscopeItem, lang: Language) -> HoroscopeScopeDto {
         index: item.index,
         name: item.name.clone(),
         heavenly_stem: translate_heavenly_stem(item.heavenly_stem, lang).to_string(),
+        heavenly_stem_key: item.heavenly_stem.as_key().to_string(),
         earthly_branch: translate_earthly_branch(item.earthly_branch, lang).to_string(),
+        earthly_branch_key: item.earthly_branch.as_key().to_string(),
         palace_names: item
             .palace_names
             .iter()
             .map(|p| translate_palace(*p, lang).to_string())
             .collect(),
+        palace_name_keys: item.palace_names.iter().map(|p| p.as_key().to_string()).collect(),
         mutagen: item
             .mutagen
             .iter()
             .map(|k| translate_star(*k, lang).to_string())
             .collect(),
+        mutagen_keys: item.mutagen.iter().map(|k| k.as_key().to_string()).collect(),
         stars: item.stars.as_ref().map(|groups| {
             groups
                 .iter()
@@ -529,12 +609,26 @@ impl HoroscopeData {
                         .iter()
                         .map(|k| translate_star(*k, lang).to_string())
                         .collect(),
+                    suiqian12_keys: self
+                        .yearly
+                        .yearly_dec_star
+                        .suiqian12
+                        .iter()
+                        .map(|k| k.as_key().to_string())
+                        .collect(),
                     jiangqian12: self
                         .yearly
                         .yearly_dec_star
                         .jiangqian12
                         .iter()
                         .map(|k| translate_star(*k, lang).to_string())
+                        .collect(),
+                    jiangqian12_keys: self
+                        .yearly
+                        .yearly_dec_star
+                        .jiangqian12
+                        .iter()
+                        .map(|k| k.as_key().to_string())
                         .collect(),
                 },
             },

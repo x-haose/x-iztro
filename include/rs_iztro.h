@@ -6,6 +6,12 @@
  * All returned strings are heap-allocated JSON. The caller MUST free them
  * with iztro_free_string(). Functions never return NULL; on error they
  * return a JSON string of the form {"error": "message"}.
+ *
+ * Result JSON carries two layers per field: translated display text
+ * (name, brightness, ...) in the requested language, and
+ * language-independent identifiers (key, nameKey, mutagenKey, ... using
+ * iztro i18n keys such as "ziweiMaj"/"soulPalace"/"sihuaLu") for
+ * programmatic matching that works in every output language.
  */
 
 #ifndef RS_IZTRO_H

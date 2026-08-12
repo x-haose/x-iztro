@@ -58,15 +58,17 @@ println!("流年四化：{:?}", horoscope.yearly.base.mutagen);
 ### Python
 
 ```python
-from rs_iztro import Astro
-from rs_iztro.enums import PalaceName, Mutagen
+from rs_iztro import Astro, ChartConfig
+from rs_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
 
 astro = Astro()
 result = astro.by_solar("2000-8-16", 2, "female")
-# 配置示例：astro.by_solar(..., config={"algorithm": "zhongzhou", "yearDivide": "exact"})
+# 配置：astro.by_solar(..., config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
 
+# 枚举基于语言无关 key，在任何输出语言的星盘上判断结果一致
 soul = result.palace(PalaceName.SOUL)
 print(f"命主：{result.soul}")
+print(f"命宫有紫微：{soul.has([MajorStar.ZIWEI])}")
 print(f"命宫化禄：{soul.has_mutagen(Mutagen.LU)}")
 
 horoscope = astro.get_horoscope(result, "2024-1-1", 0)
@@ -79,12 +81,16 @@ print(f"岁前十二神：{horoscope.yearly.yearly_dec_star.suiqian12}")
 ```go
 import "rs-iztro/go/iztro"
 
+// 返回类型化结构体；key 常量在任何输出语言下都有效
 result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
-fmt.Println(result["soul"])
+fmt.Println(result.Soul)
+
+soul := result.Palace(iztro.PalaceSoul)
+fmt.Println(soul.Has(iztro.StarZiweiMaj), soul.HasMutagen(iztro.MutagenLu))
 
 // 中州派：iztro.BySolar(..., &iztro.Config{Algorithm: "zhongzhou"})
-h, _ := iztro.Horoscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-1-1", 0)
-fmt.Println(h["yearly"])
+h, _ := iztro.GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-1-1", 0)
+fmt.Println(h.Yearly.HeavenlyStem, h.Yearly.Mutagen)
 ```
 
 ## 示例项目

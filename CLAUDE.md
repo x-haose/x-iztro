@@ -61,7 +61,10 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 
 ### 绑定契约（三语言共用）
 - `src/dto.rs` 定义 JS iztro 兼容的序列化 DTO：camelCase 键 + 按排盘语言翻译的值，
-  附加 genderKey/timeIndex/fixLeap/language/config 排盘上下文扩展键
+  附加两类扩展：排盘上下文（genderKey/timeIndex/fixLeap/language/config）与
+  语言无关标识（星/宫/干支/四化/亮度/五行局的 `*key`/`*Key(s)`，取值为 iztro i18n key）
+- 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
+  判断方法在任何输出语言的星盘上结果一致
 - 绑定接口无状态：运限/Prompt 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 

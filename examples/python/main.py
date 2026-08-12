@@ -11,7 +11,8 @@ rs-iztro Python 示例
     python examples/python/main.py
 """
 
-from rs_iztro import Astro, Astrolabe, Palace, Star
+from rs_iztro import Astro, ChartConfig
+from rs_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
 
 
 def main():
@@ -64,7 +65,7 @@ def main():
     # ============================================================
     print("===== 4. 命宫星耀 =====\n")
 
-    soul = result.palace("命宫")
+    soul = result.palace(PalaceName.SOUL)
     if soul:
         print(f"天干地支：{soul.heavenly_stem}{soul.earthly_branch}")
         print(f"大限：{soul.decadal.range[0]}-{soul.decadal.range[1]} 岁"
@@ -90,11 +91,11 @@ def main():
     print("===== 5. 宫位判断 =====\n")
 
     if soul:
-        print(f"有紫微：{soul.has(['紫微'])}")
-        print(f"有紫微或天府：{soul.has_one_of(['紫微', '天府'])}")
+        print(f"有紫微：{soul.has([MajorStar.ZIWEI])}")
+        print(f"有紫微或天府：{soul.has_one_of([MajorStar.ZIWEI, MajorStar.TIANFU])}")
         print(f"空宫：{soul.is_empty()}")
-        print(f"化禄：{soul.has_mutagen('禄')}")
-        print(f"化忌：{soul.has_mutagen('忌')}")
+        print(f"化禄：{soul.has_mutagen(Mutagen.LU)}")
+        print(f"化忌：{soul.has_mutagen(Mutagen.JI)}")
     print()
 
     # ============================================================
@@ -102,7 +103,7 @@ def main():
     # ============================================================
     print("===== 6. 查找星耀 =====\n")
 
-    for name in ["紫微", "天机", "太阳", "太阴", "禄存"]:
+    for name in [MajorStar.ZIWEI, MajorStar.TIANJI, MajorStar.TAIYANG, MajorStar.TAIYIN, "禄存"]:
         s = result.star(name)
         if s:
             info = f"  {s.name}"
