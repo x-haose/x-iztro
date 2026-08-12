@@ -28,17 +28,28 @@ jobs:
         run: cargo test
       - name: wasm 构建
         run: cargo build --release --target wasm32-wasip1
-      - name: 内嵌 wasm 与源码一致性
-        run: cmp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/x_iztro.wasm
+      - name: 上传 wasm 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm
+          path: target/wasm32-wasip1/release/x_iztro.wasm
 
   go:
+    needs: rust
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-      - name: Go 绑定金标测试
+      - name: Go 绑定金标测试（仓库内嵌 wasm）
+        run: cd go/iztro && go test ./...
+      - name: 下载源码新编的 wasm
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm
+          path: go/iztro
+      - name: Go 绑定金标测试（源码新编 wasm，防内嵌陈旧）
         run: cd go/iztro && go test ./...
       - name: Go 示例构建
         run: cd examples/go && go build .
