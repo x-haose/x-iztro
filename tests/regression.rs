@@ -1,12 +1,12 @@
 //! Regression tests that compare x-iztro output against JS-generated expected results.
 
+use serde_json::Value;
 use x_iztro::data::heavenly_stems::get_heavenly_stem_info;
 use x_iztro::data::stars::StarKey;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{translate_five_elements_class, translate_star};
 use x_iztro::utils::{fix_index, get_age_index, time_to_index};
 use x_iztro::{by_solar, get_horoscope};
-use serde_json::Value;
 
 static EXPECTED: &str = include_str!("expected_results.json");
 

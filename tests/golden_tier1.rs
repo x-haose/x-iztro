@@ -4,14 +4,14 @@
 //! brightness, mutagen, decorative stars, and decadals.
 //! All 780 cases (including time_index=12) must match the JS output exactly.
 
+use serde_json::Value;
+use std::collections::BTreeSet;
 use x_iztro::by_solar;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use serde_json::Value;
-use std::collections::BTreeSet;
 
 static GOLDEN_DATA: &str = include_str!("golden/tier1_data.json");
 const LANG: Language = Language::ZhCN;

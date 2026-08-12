@@ -14,10 +14,10 @@
 
 mod common;
 
-use x_iztro::by_solar;
-use x_iztro::data::types::*;
 use sha2::{Digest, Sha256};
 use std::fs;
+use x_iztro::by_solar;
+use x_iztro::data::types::*;
 
 const TIER3_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/tier3");
 const HASH_LEN: usize = 32;

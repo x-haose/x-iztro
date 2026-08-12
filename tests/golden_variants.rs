@@ -12,15 +12,15 @@
 
 mod common;
 
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use std::fs;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{
     translate_earthly_branch, translate_five_elements_class, translate_gender,
     translate_heavenly_stem, translate_palace, translate_star,
 };
 use x_iztro::{by_lunar, by_solar};
-use serde_json::Value;
-use sha2::{Digest, Sha256};
-use std::fs;
 
 const GOLDEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden");
 const HASH_LEN: usize = 32;

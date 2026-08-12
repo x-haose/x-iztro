@@ -5,13 +5,13 @@
 //! palace names, major star names (as sets), minor star names (as sets), decadal ranges.
 //! All cases (including time_index=12) must match the JS output exactly.
 
+use serde::Deserialize;
+use std::collections::BTreeSet;
 use x_iztro::by_solar;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{
     translate_earthly_branch, translate_five_elements_class, translate_palace, translate_star,
 };
-use serde::Deserialize;
-use std::collections::BTreeSet;
 
 const TIER2_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/tier2");
 const LANG: Language = Language::ZhCN;

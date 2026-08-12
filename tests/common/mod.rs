@@ -3,6 +3,7 @@
 //! 各测试二进制只使用其中一部分函数，未使用部分的 dead_code 告警予以豁免。
 #![allow(dead_code)]
 
+use serde_json::Value;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
@@ -12,7 +13,6 @@ use x_iztro::models::astrolabe::Astrolabe;
 use x_iztro::models::horoscope::HoroscopeItem;
 use x_iztro::models::star::Star;
 use x_iztro::{by_solar, get_horoscope};
-use serde_json::Value;
 
 const LANG: Language = Language::ZhCN;
 

@@ -54,9 +54,11 @@ jobs:
           python-version: "3.12"
       - name: 构建并安装 Python 绑定
         run: |
+          python -m venv .venv
+          source .venv/bin/activate
           pip install maturin pytest
           maturin develop --features python
         env:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
       - name: Python 端到端金标测试
-        run: pytest python/tests/ -q
+        run: .venv/bin/pytest python/tests/ -q

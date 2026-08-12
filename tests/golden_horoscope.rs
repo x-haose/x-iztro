@@ -7,9 +7,9 @@
 
 mod common;
 
-use x_iztro::data::types::*;
 use serde_json::Value;
 use std::fs;
+use x_iztro::data::types::*;
 
 const DATA_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),

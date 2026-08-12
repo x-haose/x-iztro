@@ -7,10 +7,10 @@
 
 mod common;
 
-use x_iztro::data::types::*;
-use x_iztro::{by_solar, get_horoscope};
 use serde_json::Value;
 use std::fs;
+use x_iztro::data::types::*;
+use x_iztro::{by_solar, get_horoscope};
 
 const DATA_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
