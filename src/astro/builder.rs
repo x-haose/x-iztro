@@ -90,7 +90,11 @@ pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), Iztr
     let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
     let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
     if !SUPPORTED_YEARS.contains(&year) {
-        return Err(err("year must be within 1583-9999"));
+        return Err(err(&format!(
+            "year must be within {}-{}",
+            SUPPORTED_YEARS.start(),
+            SUPPORTED_YEARS.end()
+        )));
     }
     if !(1..=12).contains(&month) {
         return Err(err("month must be within 1-12"));
@@ -116,7 +120,11 @@ fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, 
     let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
     let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
     if !SUPPORTED_YEARS.contains(&year) {
-        return Err(err("year must be within 1583-9999"));
+        return Err(err(&format!(
+            "year must be within {}-{}",
+            SUPPORTED_YEARS.start(),
+            SUPPORTED_YEARS.end()
+        )));
     }
     if !(1..=12).contains(&month) {
         return Err(err("month must be within 1-12"));
