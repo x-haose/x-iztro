@@ -1,6 +1,6 @@
 [package]
 name = "x-iztro"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "紫微斗数排盘核心库：100% 对齐 iztro，支持 Rust / Python / Go 调用"
 license = "MIT"

@@ -4,10 +4,28 @@ build-backend = "maturin"
 
 [project]
 name = "x-iztro"
-version = "0.1.0"
-description = "紫微斗数 Rust 核心库 Python 绑定"
+version = "0.1.1"
+description = "紫微斗数排盘库：Rust 原生性能，100% 对齐 iztro（66 万金标用例逐字段对照）"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "昊色居士", email = "xhrtxh@gmail.com" }]
 requires-python = ">=3.10"
 dependencies = []
+keywords = ["ziwei", "iztro", "astrology", "horoscope", "紫微斗数"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+    "Natural Language :: Chinese (Simplified)",
+]
+
+[project.urls]
+Homepage = "https://github.com/x-haose/x-iztro"
+Repository = "https://github.com/x-haose/x-iztro"
+Issues = "https://github.com/x-haose/x-iztro/issues"
 
 [tool.maturin]
 features = ["python"]
