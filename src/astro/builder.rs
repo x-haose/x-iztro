@@ -489,6 +489,8 @@ pub fn by_solar(
             },
         },
         time_index,
+        fix_leap,
+        language,
         config,
     }
 }

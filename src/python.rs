@@ -1,13 +1,13 @@
 //! PyO3 Python bindings for rs-iztro.
 //!
-//! This module is only compiled when the `python` feature is enabled.
-//! Functions return native Python dicts/lists instead of JSON strings.
+//! 仅在 `python` feature 下编译。所有函数为无状态接口：以排盘参数直接调用，
+//! 返回 JS iztro 兼容 DTO（camelCase 键 + 按语言翻译的值）的原生 Python dict。
 
-use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 
-use crate::data::types::{Algorithm, Config, Gender, Language};
-use crate::models::astrolabe::Astrolabe;
+use crate::data::types::{Gender, Language};
+use crate::dto::parse_config_json;
 
 /// Parse a gender string into the Rust enum.
 fn parse_gender(s: &str) -> PyResult<Gender> {
@@ -37,18 +37,6 @@ fn parse_language(s: &str) -> PyResult<Language> {
     }
 }
 
-/// Parse an algorithm string into the Rust enum.
-fn parse_algorithm(s: &str) -> PyResult<Algorithm> {
-    match s.to_lowercase().as_str() {
-        "default" => Ok(Algorithm::Default),
-        "zhongzhou" => Ok(Algorithm::Zhongzhou),
-        _ => Err(PyValueError::new_err(format!(
-            "Invalid algorithm '{}'. Expected 'default' or 'zhongzhou'.",
-            s
-        ))),
-    }
-}
-
 /// Convert a serde-serializable value to a Python object.
 fn to_python<T: serde::Serialize>(py: Python<'_>, value: &T) -> PyResult<PyObject> {
     pythonize::pythonize(py, value)
@@ -56,21 +44,9 @@ fn to_python<T: serde::Serialize>(py: Python<'_>, value: &T) -> PyResult<PyObjec
         .map_err(|e| PyValueError::new_err(format!("Failed to convert to Python object: {}", e)))
 }
 
-/// Generate an astrolabe from a solar (Gregorian) date.
-///
-/// Returns a Python dict with all astrolabe fields.
-///
-/// Args:
-///     solar_date: Date string, e.g. "2000-8-16"
-///     time_index: Time index (0-12)
-///     gender: "male" or "female"
-///     fix_leap: Whether to fix leap month
-///     language: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
-///     algorithm: "default" or "zhongzhou"
-///
-/// Returns:
-///     dict with astrolabe data
+/// 阳历排盘，返回 JS iztro 兼容的 dict。
 #[pyfunction]
+#[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json=None))]
 fn by_solar(
     py: Python<'_>,
     solar_date: &str,
@@ -78,32 +54,19 @@ fn by_solar(
     gender: &str,
     fix_leap: bool,
     language: &str,
-    algorithm: &str,
+    config_json: Option<&str>,
 ) -> PyResult<PyObject> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
     let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
-    to_python(py, &astrolabe)
+    to_python(py, &astrolabe.to_dto())
 }
 
-/// Generate an astrolabe from a lunar (Chinese calendar) date.
-///
-/// Returns a Python dict with all astrolabe fields.
-///
-/// Args:
-///     lunar_date: Lunar date string, e.g. "2000-7-16"
-///     time_index: Time index (0-12)
-///     gender: "male" or "female"
-///     is_leap_month: Whether the lunar month is a leap month
-///     fix_leap: Whether to fix leap month
-///     language: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
-///     algorithm: "default" or "zhongzhou"
-///
-/// Returns:
-///     dict with astrolabe data
+/// 农历排盘，返回 JS iztro 兼容的 dict。
 #[pyfunction]
+#[pyo3(signature = (lunar_date, time_index, gender, is_leap_month, fix_leap, language, config_json=None))]
 fn by_lunar(
     py: Python<'_>,
     lunar_date: &str,
@@ -112,87 +75,105 @@ fn by_lunar(
     is_leap_month: bool,
     fix_leap: bool,
     language: &str,
-    algorithm: &str,
+    config_json: Option<&str>,
 ) -> PyResult<PyObject> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
     let astrolabe = crate::by_lunar(
         lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
     );
-    to_python(py, &astrolabe)
+    to_python(py, &astrolabe.to_dto())
 }
 
-/// Calculate horoscope data from an astrolabe dict.
-///
-/// Args:
-///     astrolabe: dict (as returned by by_solar or by_lunar)
-///     target_date: Target date string, e.g. "2024-1-1"
-///     time_index: Time index (0-12)
-///     language: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
-///
-/// Returns:
-///     dict with horoscope data
+/// 计算运限（无状态：以出生排盘参数与目标日期直接调用），返回 dict。
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
+#[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json, target_date, target_time_index))]
 fn get_horoscope(
     py: Python<'_>,
-    astrolabe: &Bound<'_, pyo3::types::PyAny>,
-    target_date: &str,
+    solar_date: &str,
     time_index: u8,
+    gender: &str,
+    fix_leap: bool,
     language: &str,
+    config_json: Option<&str>,
+    target_date: &str,
+    target_time_index: u8,
 ) -> PyResult<PyObject> {
+    let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let astrolabe: Astrolabe = pythonize::depythonize(astrolabe)
-        .map_err(|e| PyValueError::new_err(format!("Failed to parse astrolabe: {}", e)))?;
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let horoscope = crate::get_horoscope(&astrolabe, target_date, time_index, language);
-    to_python(py, &horoscope)
+    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
+    let horoscope = crate::get_horoscope(&astrolabe, target_date, target_time_index, language);
+    to_python(py, &horoscope.to_dto(language))
 }
 
-/// Generate an AI prompt from an astrolabe dict.
-///
-/// Args:
-///     astrolabe: dict (as returned by by_solar or by_lunar)
-///     language: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
-///
-/// Returns:
-///     str with the AI prompt text
+/// 生成本命盘 AI Prompt（无状态）。
 #[pyfunction]
+#[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json=None))]
 fn astrolabe_to_prompt(
-    astrolabe: &Bound<'_, pyo3::types::PyAny>,
+    solar_date: &str,
+    time_index: u8,
+    gender: &str,
+    fix_leap: bool,
     language: &str,
+    config_json: Option<&str>,
 ) -> PyResult<String> {
+    let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let astrolabe: Astrolabe = pythonize::depythonize(astrolabe)
-        .map_err(|e| PyValueError::new_err(format!("Failed to parse astrolabe: {}", e)))?;
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
+    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
     Ok(crate::astrolabe_to_prompt(&astrolabe, language))
 }
 
-/// Generate an astrolabe from a solar date and return as JSON string.
-///
-/// Use by_solar() instead for a native Python dict.
+/// 生成运限 AI Prompt（无状态）。
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
+#[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json, target_date, target_time_index))]
+fn horoscope_to_prompt(
+    solar_date: &str,
+    time_index: u8,
+    gender: &str,
+    fix_leap: bool,
+    language: &str,
+    config_json: Option<&str>,
+    target_date: &str,
+    target_time_index: u8,
+) -> PyResult<String> {
+    let gender = parse_gender(gender)?;
+    let language = parse_language(language)?;
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
+
+    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
+    let horoscope = crate::get_horoscope(&astrolabe, target_date, target_time_index, language);
+    Ok(crate::horoscope_to_prompt(&astrolabe, &horoscope, language))
+}
+
+/// 阳历排盘并返回 JSON 字符串（内容与 by_solar 的 dict 一致）。
+#[pyfunction]
+#[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json=None))]
 fn by_solar_json(
     solar_date: &str,
     time_index: u8,
     gender: &str,
     fix_leap: bool,
     language: &str,
-    algorithm: &str,
+    config_json: Option<&str>,
 ) -> PyResult<String> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
     Ok(crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config))
 }
 
-/// Generate an astrolabe from a lunar date and return as JSON string.
-///
-/// Use by_lunar() instead for a native Python dict.
+/// 农历排盘并返回 JSON 字符串（内容与 by_lunar 的 dict 一致）。
 #[pyfunction]
+#[pyo3(signature = (lunar_date, time_index, gender, is_leap_month, fix_leap, language, config_json=None))]
 fn by_lunar_json(
     lunar_date: &str,
     time_index: u8,
@@ -200,11 +181,11 @@ fn by_lunar_json(
     is_leap_month: bool,
     fix_leap: bool,
     language: &str,
-    algorithm: &str,
+    config_json: Option<&str>,
 ) -> PyResult<String> {
     let gender = parse_gender(gender)?;
     let language = parse_language(language)?;
-    let config = Config { algorithm: parse_algorithm(algorithm)?, ..Config::default() };
+    let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
     Ok(crate::by_lunar_json(
         lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
@@ -214,13 +195,11 @@ fn by_lunar_json(
 /// The native rs_iztro Python module (internal, used by the Python wrapper).
 #[pymodule]
 fn _rs_iztro(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Native dict API (recommended)
     m.add_function(wrap_pyfunction!(by_solar, m)?)?;
     m.add_function(wrap_pyfunction!(by_lunar, m)?)?;
     m.add_function(wrap_pyfunction!(get_horoscope, m)?)?;
     m.add_function(wrap_pyfunction!(astrolabe_to_prompt, m)?)?;
-
-    // JSON string API (backward compatible)
+    m.add_function(wrap_pyfunction!(horoscope_to_prompt, m)?)?;
     m.add_function(wrap_pyfunction!(by_solar_json, m)?)?;
     m.add_function(wrap_pyfunction!(by_lunar_json, m)?)?;
     Ok(())

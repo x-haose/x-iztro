@@ -89,7 +89,7 @@ class PalaceName(StrEnum):
     WEALTH = "财帛"       # 财帛
     HEALTH = "疾厄"       # 疾厄
     SURFACE = "迁移"      # 迁移
-    FRIENDS = "交友"      # 交友（又名仆役）
+    FRIENDS = "仆役"      # 仆役（又名交友）
     CAREER = "官禄"       # 官禄
     PROPERTY = "田宅"     # 田宅
     SPIRIT = "福德"       # 福德
@@ -281,9 +281,8 @@ class Boshi12(StrEnum):
     XISHEN = "喜神"
     BINGFU = "病符"
     DAHAO = "大耗"
-    SUIPO = "伏兵"
-    FUBING = "官府"
-    GUANFU = "官符"
+    FUBING = "伏兵"
+    GUANFU = "官府"
 
 
 # ============================================================

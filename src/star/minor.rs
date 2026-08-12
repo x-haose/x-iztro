@@ -35,7 +35,9 @@ fn make_star(
     }
 }
 
-/// 获取14颗辅星的安放结果
+/// 获取14颗辅星的安放结果。
+/// 安放顺序（决定宫内星耀排列）：左辅、右弼、文昌、文曲、天魁、天钺、
+/// 禄存、天马、地空、地劫、火星、铃星、擎羊、陀罗。
 #[allow(clippy::too_many_arguments)]
 pub fn get_minor_stars(
     zuo_index: usize,
@@ -57,62 +59,27 @@ pub fn get_minor_stars(
 ) -> [Vec<Star>; 12] {
     let mut result: [Vec<Star>; 12] = Default::default();
 
-    // 吉星（Soft）— 有四化检查
-    let soft_with_mutagen: [(usize, StarKey); 4] = [
-        (zuo_index, StarKey::ZuofuMin),
-        (you_index, StarKey::YoubiMin),
-        (chang_index, StarKey::WenchangMin),
-        (qu_index, StarKey::WenquMin),
+    // (宫位索引, 星耀, 类型, 是否参与四化)
+    let placements: [(usize, StarKey, StarType, bool); 14] = [
+        (zuo_index, StarKey::ZuofuMin, StarType::Soft, true),
+        (you_index, StarKey::YoubiMin, StarType::Soft, true),
+        (chang_index, StarKey::WenchangMin, StarType::Soft, true),
+        (qu_index, StarKey::WenquMin, StarType::Soft, true),
+        (kui_index, StarKey::TiankuiMin, StarType::Soft, false),
+        (yue_index, StarKey::TianyueMin, StarType::Soft, false),
+        (lu_index, StarKey::LucunMin, StarType::Lucun, false),
+        (ma_index, StarKey::TianmaMin, StarType::Tianma, false),
+        (kong_index, StarKey::DikongMin, StarType::Tough, false),
+        (jie_index, StarKey::DijieMin, StarType::Tough, false),
+        (huo_index, StarKey::HuoxingMin, StarType::Tough, false),
+        (ling_index, StarKey::LingxingMin, StarType::Tough, false),
+        (yang_index, StarKey::QingyangMin, StarType::Tough, false),
+        (tuo_index, StarKey::TuoluoMin, StarType::Tough, false),
     ];
 
-    for (idx, key) in soft_with_mutagen {
-        let star = make_star(key, StarType::Soft, Scope::Origin, idx, Some(yearly_stem), lang);
-        result[idx].push(star);
-    }
-
-    // 吉星（Soft）— 无四化
-    let soft_no_mutagen: [(usize, StarKey); 2] = [
-        (kui_index, StarKey::TiankuiMin),
-        (yue_index, StarKey::TianyueMin),
-    ];
-
-    for (idx, key) in soft_no_mutagen {
-        let star = make_star(key, StarType::Soft, Scope::Origin, idx, None, lang);
-        result[idx].push(star);
-    }
-
-    // 禄存、天马 — 特殊类型，无四化
-    {
-        let star = make_star(StarKey::LucunMin, StarType::Lucun, Scope::Origin, lu_index, None, lang);
-        result[lu_index].push(star);
-    }
-    {
-        let star = make_star(StarKey::TianmaMin, StarType::Tianma, Scope::Origin, ma_index, None, lang);
-        result[ma_index].push(star);
-    }
-
-    // 煞星（Tough）— 有四化检查
-    let tough_with_mutagen: [(usize, StarKey); 2] = [
-        (yang_index, StarKey::QingyangMin),
-        (tuo_index, StarKey::TuoluoMin),
-    ];
-
-    for (idx, key) in tough_with_mutagen {
-        let star = make_star(key, StarType::Tough, Scope::Origin, idx, Some(yearly_stem), lang);
-        result[idx].push(star);
-    }
-
-    // 煞星（Tough）— 无四化
-    let tough_no_mutagen: [(usize, StarKey); 4] = [
-        (kong_index, StarKey::DikongMin),
-        (jie_index, StarKey::DijieMin),
-        (huo_index, StarKey::HuoxingMin),
-        (ling_index, StarKey::LingxingMin),
-    ];
-
-    for (idx, key) in tough_no_mutagen {
-        let star = make_star(key, StarType::Tough, Scope::Origin, idx, None, lang);
-        result[idx].push(star);
+    for (idx, key, star_type, with_mutagen) in placements {
+        let stem = if with_mutagen { Some(yearly_stem) } else { None };
+        result[idx].push(make_star(key, star_type, Scope::Origin, idx, stem, lang));
     }
 
     result

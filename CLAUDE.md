@@ -30,6 +30,9 @@ cargo test -- --ignored                  # 含 Tier 3 selfcheck（~4min，284K �
 # Python 绑定
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
+# Go 用 wasm
+cargo build --release --target wasm32-wasip1
+
 # 金标测试数据生成（需要 Node.js + iztro）
 cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2.mjs && node generate_tier3.mjs
 ```
@@ -56,16 +59,24 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 - `Cargo.toml` 的 lib crate-type 同时有 `cdylib`（FFI）和 `rlib`（Rust 依赖）
 - `python` feature 启用 PyO3 + pythonize
 
+### 绑定契约（三语言共用）
+- `src/dto.rs` 定义 JS iztro 兼容的序列化 DTO：camelCase 键 + 按排盘语言翻译的值，
+  附加 genderKey/timeIndex/fixLeap/language/config 排盘上下文扩展键
+- 绑定接口无状态：运限/Prompt 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
+- 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
+
 ### Python 绑定架构
-- Rust 侧（`src/python.rs`）返回 dict（via pythonize），模块名 `_rs_iztro`
-- Python 侧（`python/rs_iztro/`）用 dataclass 包装，提供类型化 API
+- Rust 侧（`src/python.rs`）返回 DTO dict（via pythonize），模块名 `_rs_iztro`
+- Python 侧（`python/rs_iztro/`）用 dataclass 包装，提供类型化 API；config 传 camelCase dict
 - `pyproject.toml` 配置 `python-source = "python"`, `module-name = "rs_iztro._rs_iztro"`
 - 不依赖 pydantic，纯 stdlib（dataclasses + StrEnum）
+- 端到端金标：`cd python && pytest tests/`（先 maturin develop）
 
 ### Go 绑定
-- `go/iztro/iztro.go` 通过 cgo 调用 `src/ffi.rs` 导出的 C 函数
-- 返回 JSON 字符串 → `map[string]any`
-- `examples/go/go.mod` 用 `replace` 指向 `../../go`
+- `go/iztro` 内嵌 `rs_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
+- 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
+- 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/`
+- `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
 
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异

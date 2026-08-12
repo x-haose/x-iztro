@@ -84,8 +84,123 @@ class Star:
             name=d["name"],
             type=d["type"],
             scope=d["scope"],
-            brightness=d.get("brightness"),
-            mutagen=d.get("mutagen"),
+            brightness=d.get("brightness") or None,
+            mutagen=d.get("mutagen") or None,
+        )
+
+
+# ============================================================
+# RawDates / ChartConfig
+# ============================================================
+
+@dataclass(frozen=True, slots=True)
+class RawLunarDate:
+    """数字化农历生日"""
+
+    lunar_year: int
+    """农历年"""
+
+    lunar_month: int
+    """农历月（1-12，闰月与否见 is_leap）"""
+
+    lunar_day: int
+    """农历日（1-30）"""
+
+    is_leap: bool
+    """是否闰月"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> RawLunarDate:
+        return cls(
+            lunar_year=d["lunarYear"],
+            lunar_month=d["lunarMonth"],
+            lunar_day=d["lunarDay"],
+            is_leap=d["isLeap"],
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class RawChineseDate:
+    """四柱干支（每柱为 [天干, 地支]，未本地化的干支原文）"""
+
+    yearly: tuple[str, str]
+    """年柱"""
+
+    monthly: tuple[str, str]
+    """月柱"""
+
+    daily: tuple[str, str]
+    """日柱"""
+
+    hourly: tuple[str, str]
+    """时柱"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> RawChineseDate:
+        return cls(
+            yearly=tuple(d["yearly"]),
+            monthly=tuple(d["monthly"]),
+            daily=tuple(d["daily"]),
+            hourly=tuple(d["hourly"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class RawDates:
+    """结构化的出生日期信息"""
+
+    lunar_date: RawLunarDate
+    """数字化农历生日"""
+
+    chinese_date: RawChineseDate
+    """四柱干支"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> RawDates:
+        return cls(
+            lunar_date=RawLunarDate._from_dict(d["lunarDate"]),
+            chinese_date=RawChineseDate._from_dict(d["chineseDate"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ChartConfig:
+    """排盘配置（字符串取值，与 config JSON 的键值一致）"""
+
+    year_divide: str
+    """年分界点：normal | exact"""
+
+    horoscope_divide: str
+    """运限分界点：normal | exact"""
+
+    age_divide: str
+    """虚岁分界点：normal | birthday"""
+
+    day_divide: str
+    """晚子时归属：forward | current"""
+
+    algorithm: str
+    """算法派别：default | zhongzhou"""
+
+    def to_json(self) -> str:
+        """转为绑定层接受的 config JSON"""
+        import json
+        return json.dumps({
+            "yearDivide": self.year_divide,
+            "horoscopeDivide": self.horoscope_divide,
+            "ageDivide": self.age_divide,
+            "dayDivide": self.day_divide,
+            "algorithm": self.algorithm,
+        })
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> ChartConfig:
+        return cls(
+            year_divide=d["yearDivide"],
+            horoscope_divide=d["horoscopeDivide"],
+            age_divide=d["ageDivide"],
+            day_divide=d["dayDivide"],
+            algorithm=d["algorithm"],
         )
 
 
@@ -416,16 +531,14 @@ class HoroscopeYearly(HoroscopeItem):
     """流年运限（含流年十二神）"""
 
     yearly_dec_star: YearlyDecStar | None = None
-    """流年十二神"""
+    """流年十二神（岁前/将前十二神按目标年支排布）"""
 
     @classmethod
     def _from_dict(cls, d: dict) -> HoroscopeYearly:
         stars = None
         if d.get("stars"):
             stars = [[Star._from_dict(s) for s in group] for group in d["stars"]]
-        yds = None
-        if d.get("yearlyDecStar"):
-            yds = YearlyDecStar._from_dict(d["yearlyDecStar"])
+        yds = YearlyDecStar._from_dict(d["yearlyDecStar"])
         return cls(
             index=d["index"],
             name=d["name"],
@@ -682,6 +795,24 @@ class Astrolabe:
     palaces: list[Palace]
     """十二宫数据"""
 
+    raw_dates: RawDates
+    """结构化的农历生日与四柱干支"""
+
+    gender_key: str
+    """机器可读性别：male | female"""
+
+    time_index: int
+    """出生时辰索引 (0-12)"""
+
+    fix_leap: bool
+    """是否修正闰月"""
+
+    language: str
+    """排盘语言（"zh_cn" 等）"""
+
+    config: ChartConfig
+    """排盘配置"""
+
     # ------ 宫位查询 ------
 
     def palace(self, index_or_name: int | str) -> Palace | None:
@@ -757,4 +888,10 @@ class Astrolabe:
             body=d["body"],
             five_elements_class=d["fiveElementsClass"],
             palaces=[Palace._from_dict(p) for p in d["palaces"]],
+            raw_dates=RawDates._from_dict(d["rawDates"]),
+            gender_key=d["genderKey"],
+            time_index=d["timeIndex"],
+            fix_leap=d["fixLeap"],
+            language=d["language"],
+            config=ChartConfig._from_dict(d["config"]),
         )

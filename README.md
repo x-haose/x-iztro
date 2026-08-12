@@ -23,9 +23,17 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
 ### Go
 
+Go 包内嵌 wasm、经纯 Go 的 wazero 运行时调用，无 cgo、无需本机 Rust 工具链：
+
 ```bash
-cargo build --release
-# Go 项目中引用 go/ 目录下的 iztro 包
+go get rs-iztro/go/iztro   # 或在 go.mod 中 replace 指向本仓库 go/iztro
+```
+
+开发者更新内嵌 wasm：
+
+```bash
+cargo build --release --target wasm32-wasip1
+cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/
 ```
 
 ## 快速开始
@@ -55,13 +63,15 @@ from rs_iztro.enums import PalaceName, Mutagen
 
 astro = Astro()
 result = astro.by_solar("2000-8-16", 2, "female")
+# 配置示例：astro.by_solar(..., config={"algorithm": "zhongzhou", "yearDivide": "exact"})
 
 soul = result.palace(PalaceName.SOUL)
 print(f"命主：{result.soul}")
 print(f"命宫化禄：{soul.has_mutagen(Mutagen.LU)}")
 
 horoscope = astro.get_horoscope(result, "2024-1-1", 0)
-print(f"流年：{horoscope.yearly.name}")
+print(f"流年：{horoscope.yearly.heavenly_stem}{horoscope.yearly.earthly_branch}")
+print(f"岁前十二神：{horoscope.yearly.yearly_dec_star.suiqian12}")
 ```
 
 ### Go
@@ -69,8 +79,12 @@ print(f"流年：{horoscope.yearly.name}")
 ```go
 import "rs-iztro/go/iztro"
 
-result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", "default")
+result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
 fmt.Println(result["soul"])
+
+// 中州派：iztro.BySolar(..., &iztro.Config{Algorithm: "zhongzhou"})
+h, _ := iztro.Horoscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-1-1", 0)
+fmt.Println(h["yearly"])
 ```
 
 ## 示例项目

@@ -135,6 +135,19 @@ pub fn get_horoscope_stars(
 
     let mut stars: [Vec<Star>; 12] = std::array::from_fn(|_| Vec::new());
 
+    // 流年范围额外安年解（按流年年支），先于十颗流耀安放
+    if scope == Scope::Yearly {
+        let nianjie_idx = get_nianjie_index(branch);
+        stars[nianjie_idx].push(Star {
+            key: StarKey::Nianjie,
+            name: translate_star(StarKey::Nianjie, lang).to_string(),
+            star_type: StarType::Helper,
+            scope: Scope::Yearly,
+            brightness: None,
+            mutagen: None,
+        });
+    }
+
     let placements = [
         (kui_yue.kui, star_keys.0, StarType::Soft),
         (kui_yue.yue, star_keys.1, StarType::Soft),
@@ -154,19 +167,6 @@ pub fn get_horoscope_stars(
             name: translate_star(key, lang).to_string(),
             star_type,
             scope,
-            brightness: None,
-            mutagen: None,
-        });
-    }
-
-    // 流年范围额外安年解（按流年年支）
-    if scope == Scope::Yearly {
-        let nianjie_idx = get_nianjie_index(branch);
-        stars[nianjie_idx].push(Star {
-            key: StarKey::Nianjie,
-            name: translate_star(StarKey::Nianjie, lang).to_string(),
-            star_type: StarType::Helper,
-            scope: Scope::Yearly,
             brightness: None,
             mutagen: None,
         });

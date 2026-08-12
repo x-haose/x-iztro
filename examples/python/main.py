@@ -122,14 +122,15 @@ def main():
     h = astro.get_horoscope(result, "2024-10-1", 0)
 
     print(f"日期：{h.solar_date} / {h.lunar_date}")
-    print(f"\n大限：{h.decadal.name} ({h.decadal.heavenly_stem}{h.decadal.earthly_branch})")
+    print(f"\n{h.decadal.name}：{h.decadal.heavenly_stem}{h.decadal.earthly_branch}")
     print(f"  四化：{'、'.join(h.decadal.mutagen)}")
-    print(f"\n小限：{h.age.name} (虚岁 {h.age.nominal_age})")
-    print(f"\n流年：{h.yearly.name} ({h.yearly.heavenly_stem}{h.yearly.earthly_branch})")
+    print(f"\n{h.age.name}：虚岁 {h.age.nominal_age}")
+    print(f"\n{h.yearly.name}：{h.yearly.heavenly_stem}{h.yearly.earthly_branch}")
     print(f"  四化：{'、'.join(h.yearly.mutagen)}")
-    print(f"\n流月：{h.monthly.name}")
-    print(f"流日：{h.daily.name}")
-    print(f"流时：{h.hourly.name}")
+    print(f"  岁前十二神[命宫位]：{h.yearly.yearly_dec_star.suiqian12[0]}")
+    print(f"\n{h.monthly.name}：{h.monthly.heavenly_stem}{h.monthly.earthly_branch}")
+    print(f"{h.daily.name}：{h.daily.heavenly_stem}{h.daily.earthly_branch}")
+    print(f"{h.hourly.name}：{h.hourly.heavenly_stem}{h.hourly.earthly_branch}")
     print()
 
     # ============================================================
@@ -139,6 +140,9 @@ def main():
 
     prompt = astro.astrolabe_to_prompt(result)
     print(prompt[:300] + "...\n")
+
+    fortune_prompt = astro.horoscope_to_prompt(result, "2024-10-1", 0)
+    print(fortune_prompt[:200] + "...\n")
 
     print("===== 示例完毕 =====")
 

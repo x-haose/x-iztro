@@ -1,7 +1,9 @@
 module rs-iztro-example
 
-go 1.25.4
+go 1.22
 
-require rs-iztro/go v0.0.0
+require rs-iztro/go/iztro v0.0.0
 
-replace rs-iztro/go => ../../go
+require github.com/tetratelabs/wazero v1.8.2 // indirect
+
+replace rs-iztro/go/iztro => ../../go/iztro

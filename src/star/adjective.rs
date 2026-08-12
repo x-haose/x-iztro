@@ -42,66 +42,41 @@ pub fn get_adjective_stars(
 ) -> [Vec<Star>; 12] {
     let mut result: [Vec<Star>; 12] = Default::default();
 
-    // 桃花星（Flower）
-    let flower_stars: [(usize, StarKey); 4] = [
-        (hongluan_index, StarKey::Hongluan),
-        (tianxi_index, StarKey::Tianxi),
-        (monthly_stars.tianyao, StarKey::Tianyao),
-        (xianchi_index, StarKey::Xianchi),
+    // 安放顺序决定宫内星耀排列：
+    // 桃花四星 → 解神 → 日/年/时/月系杂耀 → 派别专属星 → 孤寡等 → 年解收尾
+    let head: [(usize, StarKey, StarType); 25] = [
+        (hongluan_index, StarKey::Hongluan, StarType::Flower),
+        (tianxi_index, StarKey::Tianxi, StarType::Flower),
+        (monthly_stars.tianyao, StarKey::Tianyao, StarType::Flower),
+        (xianchi_index, StarKey::Xianchi, StarType::Flower),
+        (monthly_stars.jieshen, StarKey::Jieshen, StarType::Helper),
+        (daily_stars.santai, StarKey::Santai, StarType::Adjective),
+        (daily_stars.bazuo, StarKey::Bazuo, StarType::Adjective),
+        (daily_stars.enguang, StarKey::Engguang, StarType::Adjective),
+        (daily_stars.tiangui, StarKey::Tiangui, StarType::Adjective),
+        (yearly_stars.longchi, StarKey::Longchi, StarType::Adjective),
+        (yearly_stars.fengge, StarKey::Fengge, StarType::Adjective),
+        (yearly_stars.tiancai, StarKey::Tiancai, StarType::Adjective),
+        (yearly_stars.tianshou, StarKey::Tianshou, StarType::Adjective),
+        (timely_taifu, StarKey::Taifu, StarType::Adjective),
+        (timely_fenggao, StarKey::Fenggao, StarType::Adjective),
+        (monthly_stars.tianwu, StarKey::Tianwu, StarType::Adjective),
+        (yearly_stars.huagai, StarKey::Huagai, StarType::Adjective),
+        (yearly_stars.tianguan, StarKey::Tianguan, StarType::Adjective),
+        (yearly_stars.tianfu, StarKey::Tianfu, StarType::Adjective),
+        (yearly_stars.tianchu, StarKey::Tianchu, StarType::Adjective),
+        (monthly_stars.tianyue, StarKey::Tianyue2, StarType::Adjective),
+        (yearly_stars.tiande, StarKey::Tiande, StarType::Adjective),
+        (yearly_stars.yuede, StarKey::Yuede, StarType::Adjective),
+        (yearly_stars.tiankong, StarKey::Tiankong, StarType::Adjective),
+        (yearly_stars.xunkong, StarKey::Xunkong, StarType::Adjective),
     ];
-    for (idx, key) in flower_stars {
-        result[idx].push(make_adj_star(key, StarType::Flower, idx, lang));
+    for (idx, key, star_type) in head {
+        result[idx].push(make_adj_star(key, star_type, idx, lang));
     }
 
-    // 解神类（Helper）
-    let helper_stars: [(usize, StarKey); 2] = [
-        (monthly_stars.jieshen, StarKey::Jieshen),
-        (yearly_stars.nianjie, StarKey::Nianjie),
-    ];
-    for (idx, key) in helper_stars {
-        result[idx].push(make_adj_star(key, StarType::Helper, idx, lang));
-    }
-
-    // 杂耀（Adjective）
-    let adjective_stars: [(usize, StarKey); 30] = [
-        (yearly_stars.huagai, StarKey::Huagai),
-        (yearly_stars.tiande, StarKey::Tiande),
-        (yearly_stars.tiankong, StarKey::Tiankong),
-        (monthly_stars.tianxing, StarKey::Tianxing),
-        (monthly_stars.yinsha, StarKey::Yinsha),
-        (yearly_stars.tianguan, StarKey::Tianguan),
-        (yearly_stars.tianfu, StarKey::Tianfu),
-        (yearly_stars.tianku, StarKey::Tianku),
-        (yearly_stars.tianxu, StarKey::Tianxu),
-        (yearly_stars.longchi, StarKey::Longchi),
-        (yearly_stars.fengge, StarKey::Fengge),
-        (yearly_stars.guchen, StarKey::Guchen),
-        (yearly_stars.guasu, StarKey::Guasu),
-        (yearly_stars.feilian, StarKey::Feilian),
-        (yearly_stars.posui, StarKey::Posui),
-        (timely_taifu, StarKey::Taifu),
-        (timely_fenggao, StarKey::Fenggao),
-        (monthly_stars.tianwu, StarKey::Tianwu),
-        (monthly_stars.tianyue, StarKey::Tianyue2),
-        (daily_stars.santai, StarKey::Santai),
-        (daily_stars.bazuo, StarKey::Bazuo),
-        (daily_stars.enguang, StarKey::Engguang),
-        (daily_stars.tiangui, StarKey::Tiangui),
-        (yearly_stars.tiancai, StarKey::Tiancai),
-        (yearly_stars.tianshou, StarKey::Tianshou),
-        (yearly_stars.tianchu, StarKey::Tianchu),
-        (yearly_stars.xunkong, StarKey::Xunkong),
-        (yearly_stars.yuede, StarKey::Yuede),
-        (yearly_stars.tianshang, StarKey::Tianshang),
-        (yearly_stars.tianshi, StarKey::Tianshi),
-    ];
-    for (idx, key) in adjective_stars {
-        result[idx].push(make_adj_star(key, StarType::Adjective, idx, lang));
-    }
-
-    // 按算法区分
+    // 派别专属：默认派安截路空亡；中州派安龙德（取岁前12中龙德所落宫）、截空、劫杀、大耗
     if algorithm != Algorithm::Zhongzhou {
-        // 截路、空亡
         result[yearly_stars.jielu].push(make_adj_star(
             StarKey::Jielu,
             StarType::Adjective,
@@ -115,8 +90,6 @@ pub fn get_adjective_stars(
             lang,
         ));
     } else {
-        // 中州派：龙德、劫空、劫煞、大耗
-        // 龙德：从岁前12神中找到龙德的位置
         if let Some(longde_pos) = suiqian12.iter().position(|&k| k == StarKey::Longde) {
             result[longde_pos].push(make_adj_star(
                 StarKey::Longde,
@@ -143,6 +116,23 @@ pub fn get_adjective_stars(
             yearly_stars.dahao,
             lang,
         ));
+    }
+
+    let tail: [(usize, StarKey, StarType); 11] = [
+        (yearly_stars.guchen, StarKey::Guchen, StarType::Adjective),
+        (yearly_stars.guasu, StarKey::Guasu, StarType::Adjective),
+        (yearly_stars.feilian, StarKey::Feilian, StarType::Adjective),
+        (yearly_stars.posui, StarKey::Posui, StarType::Adjective),
+        (monthly_stars.tianxing, StarKey::Tianxing, StarType::Adjective),
+        (monthly_stars.yinsha, StarKey::Yinsha, StarType::Adjective),
+        (yearly_stars.tianku, StarKey::Tianku, StarType::Adjective),
+        (yearly_stars.tianxu, StarKey::Tianxu, StarType::Adjective),
+        (yearly_stars.tianshi, StarKey::Tianshi, StarType::Adjective),
+        (yearly_stars.tianshang, StarKey::Tianshang, StarType::Adjective),
+        (yearly_stars.nianjie, StarKey::Nianjie, StarType::Helper),
+    ];
+    for (idx, key, star_type) in tail {
+        result[idx].push(make_adj_star(key, star_type, idx, lang));
     }
 
     result

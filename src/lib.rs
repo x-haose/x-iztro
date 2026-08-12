@@ -1,4 +1,5 @@
 pub mod data;
+pub mod dto;
 pub mod models;
 pub mod star;
 pub mod astro;
@@ -10,6 +11,9 @@ pub mod prompt;
 mod python;
 
 pub mod ffi;
+
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
 
 // Re-export main public API
 pub use astro::builder::{by_solar, by_lunar};
@@ -29,7 +33,7 @@ pub fn by_solar_json(
     config: Config,
 ) -> String {
     let astrolabe = by_solar(solar_date, time_index, gender, fix_leap, language, config);
-    serde_json::to_string(&astrolabe).unwrap()
+    serde_json::to_string(&astrolabe.to_dto()).unwrap()
 }
 
 /// 便捷函数：农历排盘并返回 JSON
@@ -43,5 +47,5 @@ pub fn by_lunar_json(
     config: Config,
 ) -> String {
     let astrolabe = by_lunar(lunar_date, time_index, gender, is_leap_month, fix_leap, language, config);
-    serde_json::to_string(&astrolabe).unwrap()
+    serde_json::to_string(&astrolabe.to_dto()).unwrap()
 }

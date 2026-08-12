@@ -27,7 +27,8 @@ extern "C" {
  *   gender      - "male" or "female"
  *   fix_leap    - Whether to fix leap month
  *   language    - "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
- *   algorithm   - "default" or "zhongzhou"
+ *   config_json - NULL/empty for defaults, or a partial-config JSON such as
+ *                 {"algorithm":"zhongzhou","yearDivide":"exact"}
  *
  * Returns: JSON string (must be freed with iztro_free_string)
  */
@@ -37,7 +38,7 @@ char* iztro_by_solar(
     const char* gender,
     bool fix_leap,
     const char* language,
-    const char* algorithm
+    const char* config_json
 );
 
 /*
@@ -50,7 +51,7 @@ char* iztro_by_solar(
  *   is_leap_month  - Whether the lunar month is a leap month
  *   fix_leap       - Whether to fix leap month
  *   language       - "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
- *   algorithm      - "default" or "zhongzhou"
+ *   config_json    - NULL/empty for defaults, or a partial-config JSON
  *
  * Returns: JSON string (must be freed with iztro_free_string)
  */
@@ -61,25 +62,36 @@ char* iztro_by_lunar(
     bool is_leap_month,
     bool fix_leap,
     const char* language,
-    const char* algorithm
+    const char* config_json
 );
 
 /*
- * Calculate horoscope data from an astrolabe JSON string.
+ * Calculate horoscope data for a birth chart and a target date.
+ *
+ * Stateless interface: the birth chart is recomputed from its parameters,
+ * no chart JSON round-trip is needed.
  *
  * Parameters:
- *   astrolabe_json - JSON string from iztro_by_solar or iztro_by_lunar
- *   target_date    - Target date string, e.g. "2024-1-1"
- *   time_index     - Time index (0-12)
- *   language       - "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
+ *   solar_date        - Birth date string, e.g. "2000-8-16"
+ *   time_index        - Birth time index (0-12)
+ *   gender            - "male" or "female"
+ *   fix_leap          - Whether to fix leap month
+ *   language          - "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
+ *   config_json       - NULL/empty for defaults, or a partial-config JSON
+ *   target_date       - Target date string, e.g. "2024-1-1"
+ *   target_time_index - Target time index (0-12)
  *
  * Returns: JSON string (must be freed with iztro_free_string)
  */
 char* iztro_get_horoscope(
-    const char* astrolabe_json,
-    const char* target_date,
+    const char* solar_date,
     uint8_t time_index,
-    const char* language
+    const char* gender,
+    bool fix_leap,
+    const char* language,
+    const char* config_json,
+    const char* target_date,
+    uint8_t target_time_index
 );
 
 /*

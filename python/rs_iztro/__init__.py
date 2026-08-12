@@ -39,6 +39,10 @@ from rs_iztro.models import (
     HoroscopeYearly,
     AgeItem,
     YearlyDecStar,
+    RawDates,
+    RawLunarDate,
+    RawChineseDate,
+    ChartConfig,
 )
 
 # 枚举与常量
@@ -80,6 +84,10 @@ __all__ = [
     "HoroscopeYearly",
     "AgeItem",
     "YearlyDecStar",
+    "RawDates",
+    "RawLunarDate",
+    "RawChineseDate",
+    "ChartConfig",
     # 枚举
     "Gender",
     "Language",

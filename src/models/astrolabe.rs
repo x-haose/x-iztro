@@ -62,6 +62,10 @@ pub struct Astrolabe {
     pub raw_dates: RawDates,
     /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)，晚子归当天的配置下仍保留原始值
     pub time_index: u8,
+    /// 是否修正闰月（闰月下半月按下月安星）
+    pub fix_leap: bool,
+    /// 排盘输出语言
+    pub language: Language,
     /// 排盘配置（运限的虚岁分界、干支分界与派别差异依赖它）
     pub config: Config,
 }
