@@ -14,7 +14,7 @@ import (
 	"log"
 	"strings"
 
-	"x-iztro/go/iztro"
+	"github.com/x-haose/x-iztro/go/iztro"
 )
 
 func main() {

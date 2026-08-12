@@ -9,9 +9,9 @@
 ### Rust
 
 ```toml
-# Cargo.toml（本仓库尚未发布到 crates.io，用 path 或 git 依赖指向本仓库）
+# Cargo.toml
 [dependencies]
-x-iztro = { path = "../x-iztro" }
+x-iztro = { git = "https://github.com/x-haose/x-iztro" }
 ```
 
 ### Python
@@ -26,7 +26,7 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 Go 包内嵌 wasm、经纯 Go 的 wazero 运行时调用，无 cgo、无需本机 Rust 工具链：
 
 ```bash
-go get x-iztro/go/iztro   # 或在 go.mod 中 replace 指向本仓库 go/iztro
+go get github.com/x-haose/x-iztro/go/iztro
 ```
 
 开发者更新内嵌 wasm：
@@ -80,7 +80,7 @@ print(f"岁前十二神：{horoscope.yearly.yearly_dec_star.suiqian12}")
 ### Go
 
 ```go
-import "x-iztro/go/iztro"
+import "github.com/x-haose/x-iztro/go/iztro"
 
 // 返回类型化结构体；key 常量在任何输出语言下都有效
 result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)

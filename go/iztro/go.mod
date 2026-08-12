@@ -1,4 +1,4 @@
-module x-iztro/go/iztro
+module github.com/x-haose/x-iztro/go/iztro
 
 go 1.22
 

@@ -8,3 +8,4 @@ __pycache__/
 
 # Golden test data
 tests/golden/node_modules/
+.pytest_cache/

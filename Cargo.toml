@@ -2,8 +2,14 @@
 name = "x-iztro"
 version = "0.1.0"
 edition = "2024"
-description = "紫微斗数 Rust 核心库"
+description = "紫微斗数排盘核心库：100% 对齐 iztro，支持 Rust / Python / Go 调用"
 license = "MIT"
+repository = "https://github.com/x-haose/x-iztro"
+readme = "README.md"
+keywords = ["ziwei", "iztro", "astrology", "horoscope", "chinese"]
+categories = ["date-and-time", "science"]
+# crates.io 发布只含核心库（金标数据与各语言绑定包不随 crate 分发）
+include = ["src/**", "Cargo.toml", "README.md", "LICENSE", "include/*.h"]
 
 [lib]
 name = "x_iztro"

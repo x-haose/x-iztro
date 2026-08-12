@@ -1,0 +1,62 @@
+# 三语言 CI：Rust 核心（fmt/clippy/测试/wasm）、Go 绑定、Python 绑定。
+# tier3 全量金标（586K 例，需 release 编译）不在 CI 跑，属本地验证项。
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: 格式检查
+        run: cargo fmt --check
+      - name: Clippy（零告警）
+        run: cargo clippy --all-targets -- -D warnings
+      - name: 测试（常规层金标）
+        run: cargo test
+      - name: wasm 构建
+        run: cargo build --release --target wasm32-wasip1
+      - name: 内嵌 wasm 与源码一致性
+        run: cmp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/x_iztro.wasm
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Go 绑定金标测试
+        run: cd go/iztro && go test ./...
+      - name: Go 示例构建
+        run: cd examples/go && go build .
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 构建并安装 Python 绑定
+        run: |
+          pip install maturin pytest
+          maturin develop --features python
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+      - name: Python 端到端金标测试
+        run: pytest python/tests/ -q
