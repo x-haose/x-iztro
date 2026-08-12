@@ -44,7 +44,10 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
   - `astro/` — 排盘、运限、三方四正算法
   - `i18n/` — 多语言翻译
-  - `ffi.rs` — C FFI（Go 调用）
+  - `error.rs` — IztroError（入口前置校验的错误类型）
+  - `dto.rs` — JS 兼容序列化 DTO（三语言绑定共用）
+  - `ffi.rs` — C FFI（错误 JSON + catch_unwind 兜底）
+  - `wasm.rs` — wasm32 导出（Go 经 wazero 调用；wasm 上 catch_unwind 无效，防线在核心校验）
   - `python.rs` — PyO3 原生模块（`python` feature gate）
 - `python/rs_iztro/` — Python 包（dataclass 类型 + StrEnum 枚举，零外部依赖）
 - `go/iztro/` — Go FFI 绑定包

@@ -9,9 +9,9 @@
 ### Rust
 
 ```toml
-# Cargo.toml
+# Cargo.toml（本仓库尚未发布到 crates.io，用 path 或 git 依赖指向本仓库）
 [dependencies]
-rs-iztro = { git = "https://github.com/anthropic/rs-iztro" }
+rs-iztro = { path = "../rs-iztro" }
 ```
 
 ### Python
@@ -41,7 +41,7 @@ cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/
 ### Rust
 
 ```rust
-use rs_iztro::{by_solar, get_horoscope};
+use rs_iztro::{IztroError, by_solar, get_horoscope};
 use rs_iztro::data::types::*;
 
 // Config 控制分界点与派别：year_divide / horoscope_divide / age_divide /
@@ -94,6 +94,16 @@ h, _ := iztro.GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-1
 fmt.Println(h.Yearly.HeavenlyStem, h.Yearly.Mutagen)
 ```
 
+## 错误处理
+
+全部外部输入在核心层前置校验：日期格式与存在性、公历 1583-9999 年（下限为
+格里历改革次年、上限为农历表终点）、时辰索引 0-12。非法输入的表现按语言：
+
+- **Rust** — 排盘入口返回 `Result<_, IztroError>`
+- **Python** — 抛 `ValueError`（消息含具体原因）
+- **Go** — 返回 `error`
+- **C FFI** — 返回 `{"error":"..."}` JSON（serde 生成，转义完备）
+
 ## 示例项目
 
 `examples/` 下有三个独立可运行的完整项目：
@@ -128,12 +138,12 @@ cd go/iztro && go test ./...
 |-----------|----------|-------------------------------------------------|-------------|
 | Tier 1    | 780      | 60 年 × 13 时辰，全字段逐一比对（含展示字段与来因宫）                 | 完整 JSON     |
 | Tier 2    | 37,440   | 60 年 × 每月 1/15 号 × 13 时辰 × 男女，紧凑比对              | 压缩 JSON     |
-| Tier 3    | ~575,000 | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份），全字段哈希 | SHA-256 CSV |
+| Tier 3    | 586,430  | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份），全字段哈希 | SHA-256 CSV |
 | Horoscope | 5,760    | 360 命盘 × 16 目标日期（12 流年支/童限/高龄/闰月/晚子时），六层级运限全字段  | 紧凑 JSON     |
 | Variants  | 14,268   | by_lunar 闰月逐日（含 is_leap/fix_leap 组合）、中州派、六语言    | CSV/JSON    |
 | Config    | 8,544    | yearDivide=exact（立春窗口逐日）、dayDivide=current、ageDivide=birthday、horoscopeDivide=exact | CSV/JSON    |
 
-合计约 66 万对照用例，覆盖排盘与运限的全部参数空间；另有 Python 107 例、Go 金标端到端测试与绑定契约 JSON 逐键对照。
+合计约 66 万对照用例，覆盖排盘与运限的全部参数空间；另有 Python 108 例、Go 金标端到端测试（含 500 次非法输入轰炸）、C FFI 边界安全 16 例与绑定契约 JSON 逐键对照。
 
 ### 生成测试基准数据
 
@@ -155,11 +165,14 @@ node generate_config.mjs     # → config_*.csv / config_*.json
 ```
 src/
   lib.rs              # 公共 API
+  error.rs            # IztroError 错误类型
   data/               # 枚举、常量、天干地支、星耀数据
   models/             # Astrolabe、Palace、Star、Horoscope 结构体
   astro/              # 排盘、运限、三方四正算法
   i18n/               # 多语言翻译（zh-CN/zh-TW/en-US/ja-JP/ko-KR/vi-VN）
-  ffi.rs              # C FFI 导出（供 Go 等语言调用）
+  dto.rs              # JS 兼容序列化 DTO（三语言绑定共用）
+  ffi.rs              # C FFI 导出
+  wasm.rs             # wasm32 导出（Go 经 wazero 调用）
   python.rs           # PyO3 原生模块
   prompt.rs           # AI Prompt 生成
 
