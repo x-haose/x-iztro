@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_iztro import Astro
+from x_iztro import Astro
 
 GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "golden"
 
@@ -94,8 +94,8 @@ def test_horoscope_matches_golden(case: dict) -> None:
 
 def test_zhongzhou_config() -> None:
     """中州派配置生效：岁前十二神含岁破、命主按年支。"""
-    from rs_iztro import ChartConfig
-    from rs_iztro.enums import Algorithm
+    from x_iztro import ChartConfig
+    from x_iztro.enums import Algorithm
 
     a = astro.by_solar("1990-11-5", 4, "male", config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
     assert a.config.algorithm == Algorithm.ZHONGZHOU
@@ -134,7 +134,7 @@ def test_prompts() -> None:
 
 def test_enums_work_across_languages() -> None:
     """枚举基于语言无关 key：在任何输出语言的星盘上判断结果一致。"""
-    from rs_iztro.enums import MajorStar, Mutagen as Mu, PalaceName
+    from x_iztro.enums import MajorStar, Mutagen as Mu, PalaceName
 
     results = {
         lang: astro.by_solar("2000-8-16", 2, "female", language=lang)
@@ -157,7 +157,7 @@ def test_enums_work_across_languages() -> None:
 
 def test_flies_to_across_languages() -> None:
     """四化飞星基于天干 key 表，非中文星盘同样正确。"""
-    from rs_iztro.enums import Mutagen as Mu
+    from x_iztro.enums import Mutagen as Mu
 
     a = astro.by_solar("2000-8-16", 2, "female", language="en_us")
     soul = a.palace(0)
@@ -169,8 +169,8 @@ def test_flies_to_across_languages() -> None:
 
 def test_chart_config_typed() -> None:
     """ChartConfig 类型化配置入参。"""
-    from rs_iztro import ChartConfig
-    from rs_iztro.enums import Algorithm, Suiqian12, YearDivide
+    from x_iztro import ChartConfig
+    from x_iztro.enums import Algorithm, Suiqian12, YearDivide
 
     a = astro.by_solar(
         "1990-11-5", 4, "male",

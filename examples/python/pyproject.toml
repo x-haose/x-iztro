@@ -1,6 +1,6 @@
 [project]
-name = "rs-iztro-example"
+name = "x-iztro-example"
 version = "0.1.0"
-description = "rs-iztro Python 使用示例"
+description = "x-iztro Python 使用示例"
 requires-python = ">=3.10"
-dependencies = ["rs-iztro"]
+dependencies = ["x-iztro"]

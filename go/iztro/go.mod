@@ -1,4 +1,4 @@
-module rs-iztro/go/iztro
+module x-iztro/go/iztro
 
 go 1.22
 

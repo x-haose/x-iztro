@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-rs-iztro Python 示例
+x-iztro Python 示例
 
 前置步骤：
-    cd rs-iztro
+    cd x-iztro
     pip install maturin
     PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
@@ -11,8 +11,8 @@ rs-iztro Python 示例
     python examples/python/main.py
 """
 
-from rs_iztro import Astro, ChartConfig
-from rs_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
+from x_iztro import Astro, ChartConfig
+from x_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
 
 
 def main():

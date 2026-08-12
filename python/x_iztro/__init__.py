@@ -1,10 +1,10 @@
 """
-rs-iztro: 紫微斗数 Rust 核心库 Python 绑定
+x-iztro: 紫微斗数 Rust 核心库 Python 绑定
 
 使用方式::
 
-    from rs_iztro import Astro
-    from rs_iztro.enums import PalaceName, Mutagen, MajorStar
+    from x_iztro import Astro
+    from x_iztro.enums import PalaceName, Mutagen, MajorStar
 
     astro = Astro()
     result = astro.by_solar("2000-8-16", 2, "female")
@@ -28,7 +28,7 @@ rs-iztro: 紫微斗数 Rust 核心库 Python 绑定
 """
 
 # 数据模型
-from rs_iztro.models import (
+from x_iztro.models import (
     Astrolabe,
     Palace,
     Star,
@@ -46,7 +46,7 @@ from rs_iztro.models import (
 )
 
 # 枚举与常量
-from rs_iztro.enums import (
+from x_iztro.enums import (
     Gender,
     Language,
     Algorithm,
@@ -72,7 +72,7 @@ from rs_iztro.enums import (
 )
 
 # 主类
-from rs_iztro.astro import Astro
+from x_iztro.astro import Astro
 
 __all__ = [
     # 主类

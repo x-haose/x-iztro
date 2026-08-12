@@ -1,4 +1,4 @@
-// rs-iztro Go 示例
+// x-iztro Go 示例
 //
 // 通过内嵌 wasm + wazero（纯 Go，无 cgo）调用紫微斗数核心库，
 // 返回类型化结构体并以语言无关的 key 常量做判断。
@@ -14,7 +14,7 @@ import (
 	"log"
 	"strings"
 
-	"rs-iztro/go/iztro"
+	"x-iztro/go/iztro"
 )
 
 func main() {

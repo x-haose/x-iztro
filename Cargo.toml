@@ -1,12 +1,12 @@
 [package]
-name = "rs-iztro"
+name = "x-iztro"
 version = "0.1.0"
 edition = "2024"
 description = "紫微斗数 Rust 核心库"
 license = "MIT"
 
 [lib]
-name = "rs_iztro"
+name = "x_iztro"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]

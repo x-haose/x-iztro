@@ -1,5 +1,5 @@
 """
-rs-iztro 数据模型。
+x-iztro 数据模型。
 
 从 Rust 返回的星盘数据 1:1 映射的 frozen dataclass，零外部依赖。
 每个对象同时携带两层信息：
@@ -8,7 +8,7 @@ rs-iztro 数据模型。
 - 标识字段（`key`、`name_key` 等 `*_key`）：语言无关的 iztro i18n key。
 
 所有判断方法（`has`/`has_mutagen`/`flies_to`/`palace` 查询等）基于标识字段
-比较，传入 `rs_iztro.enums` 的枚举成员即可在任何输出语言的星盘上正确工作；
+比较，传入 `x_iztro.enums` 的枚举成员即可在任何输出语言的星盘上正确工作；
 为方便中文场景，接受星耀/宫位参数的方法同时兼容当前语言的翻译名。
 """
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from rs_iztro.enums import (
+from x_iztro.enums import (
     Brightness,
     Mutagen,
     PalaceName,
@@ -205,7 +205,7 @@ class RawDates:
 
 @dataclass(frozen=True, slots=True)
 class ChartConfig:
-    """排盘配置。字段取值见 `rs_iztro.enums` 的对应枚举；默认值与 JS iztro 一致。"""
+    """排盘配置。字段取值见 `x_iztro.enums` 的对应枚举；默认值与 JS iztro 一致。"""
 
     year_divide: str = "normal"
     """年分界点（`YearDivide`）：normal=正月初一 / exact=立春"""

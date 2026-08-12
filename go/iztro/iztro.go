@@ -1,6 +1,6 @@
 // Package iztro 提供紫微斗数排盘与运限计算的 Go API。
 //
-// 实现方式：内嵌 rs-iztro 编译出的 WebAssembly 模块（wasm32-wasip1），
+// 实现方式：内嵌 x-iztro 编译出的 WebAssembly 模块（wasm32-wasip1），
 // 通过纯 Go 的 wazero 运行时调用——无 cgo，保留 Go 的交叉编译能力，
 // `go get` 即用，无需本机安装 Rust 工具链。
 //
@@ -11,7 +11,7 @@
 // 更新内嵌 wasm：在仓库根目录执行
 //
 //	cargo build --release --target wasm32-wasip1
-//	cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/
+//	cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
 package iztro
 
 import (
@@ -27,7 +27,7 @@ import (
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
-//go:embed rs_iztro.wasm
+//go:embed x_iztro.wasm
 var wasmBytes []byte
 
 // Config 为排盘配置；nil 或缺省键取默认值（与 JS iztro 默认一致）。

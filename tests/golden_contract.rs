@@ -7,8 +7,8 @@
 
 mod common;
 
-use rs_iztro::data::types::*;
-use rs_iztro::{by_solar, get_horoscope};
+use x_iztro::data::types::*;
+use x_iztro::{by_solar, get_horoscope};
 use serde_json::Value;
 use std::fs;
 

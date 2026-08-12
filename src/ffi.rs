@@ -1,4 +1,4 @@
-//! C FFI bindings for rs-iztro.
+//! C FFI bindings for x-iztro.
 //!
 //! These functions expose the core astrolabe functionality via a C-compatible ABI,
 //! allowing the library to be called from Go, C, and any other C-compatible language.

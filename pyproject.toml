@@ -3,7 +3,7 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "rs-iztro"
+name = "x-iztro"
 version = "0.1.0"
 description = "紫微斗数 Rust 核心库 Python 绑定"
 requires-python = ">=3.10"
@@ -12,4 +12,4 @@ dependencies = []
 [tool.maturin]
 features = ["python"]
 python-source = "python"
-module-name = "rs_iztro._rs_iztro"
+module-name = "x_iztro._x_iztro"

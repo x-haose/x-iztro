@@ -1,12 +1,12 @@
-//! Golden tier-1 tests: compare rs-iztro output against 780 JS-generated cases.
+//! Golden tier-1 tests: compare x-iztro output against 780 JS-generated cases.
 //!
 //! Each case covers full astrolabe fields including all 12 palaces with stars,
 //! brightness, mutagen, decorative stars, and decadals.
 //! All 780 cases (including time_index=12) must match the JS output exactly.
 
-use rs_iztro::by_solar;
-use rs_iztro::data::types::*;
-use rs_iztro::i18n::{
+use x_iztro::by_solar;
+use x_iztro::data::types::*;
+use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };

@@ -1,4 +1,4 @@
-# rs-iztro
+# x-iztro
 
 紫微斗数 Rust 核心库，移植自 [iztro](https://github.com/SylarLong/iztro) v2.5.8。
 
@@ -11,7 +11,7 @@
 ```toml
 # Cargo.toml（本仓库尚未发布到 crates.io，用 path 或 git 依赖指向本仓库）
 [dependencies]
-rs-iztro = { path = "../rs-iztro" }
+x-iztro = { path = "../x-iztro" }
 ```
 
 ### Python
@@ -26,14 +26,14 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 Go 包内嵌 wasm、经纯 Go 的 wazero 运行时调用，无 cgo、无需本机 Rust 工具链：
 
 ```bash
-go get rs-iztro/go/iztro   # 或在 go.mod 中 replace 指向本仓库 go/iztro
+go get x-iztro/go/iztro   # 或在 go.mod 中 replace 指向本仓库 go/iztro
 ```
 
 开发者更新内嵌 wasm：
 
 ```bash
 cargo build --release --target wasm32-wasip1
-cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/
+cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
 ```
 
 ## 快速开始
@@ -41,8 +41,8 @@ cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/
 ### Rust
 
 ```rust
-use rs_iztro::{IztroError, by_solar, get_horoscope};
-use rs_iztro::data::types::*;
+use x_iztro::{IztroError, by_solar, get_horoscope};
+use x_iztro::data::types::*;
 
 // Config 控制分界点与派别：year_divide / horoscope_divide / age_divide /
 // day_divide / algorithm，默认值与 JS iztro 一致；
@@ -59,8 +59,8 @@ println!("流年四化：{:?}", horoscope.yearly.base.mutagen);
 ### Python
 
 ```python
-from rs_iztro import Astro, ChartConfig
-from rs_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
+from x_iztro import Astro, ChartConfig
+from x_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
 
 astro = Astro()
 result = astro.by_solar("2000-8-16", 2, "female")
@@ -80,7 +80,7 @@ print(f"岁前十二神：{horoscope.yearly.yearly_dec_star.suiqian12}")
 ### Go
 
 ```go
-import "rs-iztro/go/iztro"
+import "x-iztro/go/iztro"
 
 // 返回类型化结构体；key 常量在任何输出语言下都有效
 result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
@@ -176,7 +176,7 @@ src/
   python.rs           # PyO3 原生模块
   prompt.rs           # AI Prompt 生成
 
-python/rs_iztro/      # Python 包（dataclass 类型 + 枚举常量）
+python/x_iztro/      # Python 包（dataclass 类型 + 枚举常量）
 go/iztro/             # Go FFI 绑定包
 examples/             # Rust / Python / Go 示例项目
 tests/golden/         # JS 生成的测试基准数据

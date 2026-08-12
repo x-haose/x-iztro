@@ -1,13 +1,13 @@
-//! Golden tier-2 tests: compare rs-iztro output against ~37,440 compact JS-generated cases.
+//! Golden tier-2 tests: compare x-iztro output against ~37,440 compact JS-generated cases.
 //!
 //! Each year file contains ~624 cases in compact JSON format.
 //! Fields compared: soul/body branches, five elements class, soul/body stars,
 //! palace names, major star names (as sets), minor star names (as sets), decadal ranges.
 //! All cases (including time_index=12) must match the JS output exactly.
 
-use rs_iztro::by_solar;
-use rs_iztro::data::types::*;
-use rs_iztro::i18n::{
+use x_iztro::by_solar;
+use x_iztro::data::types::*;
+use x_iztro::i18n::{
     translate_earthly_branch, translate_five_elements_class, translate_palace, translate_star,
 };
 use serde::Deserialize;

@@ -7,7 +7,7 @@
 
 mod common;
 
-use rs_iztro::data::types::*;
+use x_iztro::data::types::*;
 use serde_json::Value;
 use std::fs;
 

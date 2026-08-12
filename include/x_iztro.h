@@ -1,5 +1,5 @@
 /*
- * rs_iztro C FFI header
+ * x_iztro C FFI header
  *
  * Purple Star Astrology (紫微斗数) library.
  *

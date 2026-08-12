@@ -1,4 +1,4 @@
-//! PyO3 Python bindings for rs-iztro.
+//! PyO3 Python bindings for x-iztro.
 //!
 //! 仅在 `python` feature 下编译。以排盘参数直接调用，
 //! 返回 camelCase 键、值按语言翻译的原生 Python dict。
@@ -235,9 +235,9 @@ fn by_lunar_json(
     })
 }
 
-/// The native rs_iztro Python module (internal, used by the Python wrapper).
+/// The native x_iztro Python module (internal, used by the Python wrapper).
 #[pymodule]
-fn _rs_iztro(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _x_iztro(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(by_solar, m)?)?;
     m.add_function(wrap_pyfunction!(by_lunar, m)?)?;
     m.add_function(wrap_pyfunction!(get_horoscope, m)?)?;

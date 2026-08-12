@@ -1,4 +1,4 @@
-"""rs-iztro Rust 原生模块的类型存根。"""
+"""x-iztro Rust 原生模块的类型存根。"""
 
 from typing import Any
 

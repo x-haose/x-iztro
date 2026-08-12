@@ -14,8 +14,8 @@
 
 mod common;
 
-use rs_iztro::by_solar;
-use rs_iztro::data::types::*;
+use x_iztro::by_solar;
+use x_iztro::data::types::*;
 use sha2::{Digest, Sha256};
 use std::fs;
 
@@ -23,7 +23,7 @@ const TIER3_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/tier3
 const HASH_LEN: usize = 32;
 const MAX_FAILURES: usize = 20;
 
-fn hash_astrolabe(astrolabe: &rs_iztro::Astrolabe) -> String {
+fn hash_astrolabe(astrolabe: &x_iztro::Astrolabe) -> String {
     let canonical = common::canonical_astrolabe(astrolabe);
     let mut hasher = Sha256::new();
     hasher.update(canonical.as_bytes());

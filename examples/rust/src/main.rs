@@ -1,4 +1,4 @@
-//! rs-iztro Rust 示例
+//! x-iztro Rust 示例
 //!
 //! 排盘 → 命盘信息 → 流年运限 → AI 提示词
 //!
@@ -6,13 +6,13 @@
 //!   cd examples/rust
 //!   cargo run
 
-use rs_iztro::data::stars::StarKey;
-use rs_iztro::data::types::*;
-use rs_iztro::i18n::{
+use x_iztro::data::stars::StarKey;
+use x_iztro::data::types::*;
+use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use rs_iztro::{IztroError, astrolabe_to_prompt, by_solar, get_horoscope, horoscope_to_prompt};
+use x_iztro::{IztroError, astrolabe_to_prompt, by_solar, get_horoscope, horoscope_to_prompt};
 
 fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;

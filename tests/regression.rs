@@ -1,11 +1,11 @@
-//! Regression tests that compare rs-iztro output against JS-generated expected results.
+//! Regression tests that compare x-iztro output against JS-generated expected results.
 
-use rs_iztro::data::heavenly_stems::get_heavenly_stem_info;
-use rs_iztro::data::stars::StarKey;
-use rs_iztro::data::types::*;
-use rs_iztro::i18n::{translate_five_elements_class, translate_star};
-use rs_iztro::utils::{fix_index, get_age_index, time_to_index};
-use rs_iztro::{by_solar, get_horoscope};
+use x_iztro::data::heavenly_stems::get_heavenly_stem_info;
+use x_iztro::data::stars::StarKey;
+use x_iztro::data::types::*;
+use x_iztro::i18n::{translate_five_elements_class, translate_star};
+use x_iztro::utils::{fix_index, get_age_index, time_to_index};
+use x_iztro::{by_solar, get_horoscope};
 use serde_json::Value;
 
 static EXPECTED: &str = include_str!("expected_results.json");
@@ -134,7 +134,7 @@ fn parse_scope(s: &str) -> Scope {
 // Helper: create the standard astrolabe from JSON params
 // ============================================================
 
-fn make_astrolabe() -> rs_iztro::Astrolabe {
+fn make_astrolabe() -> x_iztro::Astrolabe {
     by_solar(
         "2000-8-16",
         2,

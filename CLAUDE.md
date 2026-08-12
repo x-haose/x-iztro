@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-rs-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8。
+x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8。
 支持 Rust / Python(PyO3) / Go(C FFI) 三语言调用。
 
 ## 决策标准
@@ -49,7 +49,7 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
   - `ffi.rs` — C FFI（错误 JSON + catch_unwind 兜底）
   - `wasm.rs` — wasm32 导出（Go 经 wazero 调用；wasm 上 catch_unwind 无效，防线在核心校验）
   - `python.rs` — PyO3 原生模块（`python` feature gate）
-- `python/rs_iztro/` — Python 包（dataclass 类型 + StrEnum 枚举，零外部依赖）
+- `python/x_iztro/` — Python 包（dataclass 类型 + StrEnum 枚举，零外部依赖）
 - `go/iztro/` — Go FFI 绑定包
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
@@ -73,16 +73,16 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 
 ### Python 绑定架构
-- Rust 侧（`src/python.rs`）返回 DTO dict（via pythonize），模块名 `_rs_iztro`
-- Python 侧（`python/rs_iztro/`）用 dataclass 包装，提供类型化 API；config 传 camelCase dict
-- `pyproject.toml` 配置 `python-source = "python"`, `module-name = "rs_iztro._rs_iztro"`
+- Rust 侧（`src/python.rs`）返回 DTO dict（via pythonize），模块名 `_x_iztro`
+- Python 侧（`python/x_iztro/`）用 dataclass 包装，提供类型化 API；config 传 camelCase dict
+- `pyproject.toml` 配置 `python-source = "python"`, `module-name = "x_iztro._x_iztro"`
 - 不依赖 pydantic，纯 stdlib（dataclasses + StrEnum）
 - 端到端金标：`cd python && pytest tests/`（先 maturin develop）
 
 ### Go 绑定
-- `go/iztro` 内嵌 `rs_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
+- `go/iztro` 内嵌 `x_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
-- 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/rs_iztro.wasm go/iztro/`
+- 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
 
 ### 测试
@@ -103,5 +103,5 @@ cd examples/rust && cargo run                  # Rust 示例
 cd examples/go && go run .                     # Go 示例
 python examples/python/main.py                 # Python 示例
 cargo test --test golden_tier1 -- --nocapture  # 单跑 Tier 1 看输出
-nm target/release/librs_iztro.dylib | grep iztro  # 检查 FFI 符号导出
+nm target/release/libx_iztro.dylib | grep iztro  # 检查 FFI 符号导出
 ```

@@ -12,12 +12,12 @@
 
 mod common;
 
-use rs_iztro::data::types::*;
-use rs_iztro::i18n::{
+use x_iztro::data::types::*;
+use x_iztro::i18n::{
     translate_earthly_branch, translate_five_elements_class, translate_gender,
     translate_heavenly_stem, translate_palace, translate_star,
 };
-use rs_iztro::{by_lunar, by_solar};
+use x_iztro::{by_lunar, by_solar};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -26,7 +26,7 @@ const GOLDEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden");
 const HASH_LEN: usize = 32;
 const MAX_FAILURES: usize = 20;
 
-fn hash_astrolabe(astrolabe: &rs_iztro::Astrolabe) -> String {
+fn hash_astrolabe(astrolabe: &x_iztro::Astrolabe) -> String {
     let canonical = common::canonical_astrolabe(astrolabe);
     let mut hasher = Sha256::new();
     hasher.update(canonical.as_bytes());
@@ -169,15 +169,15 @@ fn golden_variants_languages() {
 
         let a = by_solar(date, ti, gender, true, lang, Config::default()).unwrap();
 
-        let star = |s: &rs_iztro::models::star::Star| {
+        let star = |s: &x_iztro::models::star::Star| {
             format!(
                 "{}:{}:{}",
                 s.name,
                 s.brightness
-                    .map(|b| rs_iztro::i18n::translate_brightness(b, lang))
+                    .map(|b| x_iztro::i18n::translate_brightness(b, lang))
                     .unwrap_or(""),
                 s.mutagen
-                    .map(|m| rs_iztro::i18n::translate_mutagen(m, lang))
+                    .map(|m| x_iztro::i18n::translate_mutagen(m, lang))
                     .unwrap_or(""),
             )
         };

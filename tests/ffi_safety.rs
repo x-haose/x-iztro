@@ -4,7 +4,7 @@
 use std::ffi::{CStr, CString, c_char};
 use std::ptr;
 
-use rs_iztro::ffi::{iztro_by_lunar, iztro_by_solar, iztro_free_string, iztro_get_horoscope};
+use x_iztro::ffi::{iztro_by_lunar, iztro_by_solar, iztro_free_string, iztro_get_horoscope};
 
 /// 调用返回后取出内容并释放缓冲，同时断言内容是合法 JSON
 /// （错误消息含引号、反斜杠、控制字符时转义必须完备）。

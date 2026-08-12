@@ -463,20 +463,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
-name = "rs-iztro"
-version = "0.1.0"
-dependencies = [
- "hex",
- "lunar_rust",
- "pretty_assertions",
- "pyo3",
- "pythonize",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -691,6 +677,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091"
 dependencies = [
  "windows-link",
+]
+
+[[package]]
+name = "x-iztro"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "lunar_rust",
+ "pretty_assertions",
+ "pyo3",
+ "pythonize",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 """
-rs-iztro 排盘主类
+x-iztro 排盘主类
 
 封装 Rust 原生模块，返回类型化的 dataclass 对象。
 运限与 Prompt 为无状态接口：从星盘对象自带的排盘上下文重新发起计算，
@@ -8,7 +8,7 @@ rs-iztro 排盘主类
 
 from __future__ import annotations
 
-from rs_iztro.models import (
+from x_iztro.models import (
     Astrolabe,
     ChartConfig,
     GenderType,
@@ -20,7 +20,7 @@ from rs_iztro.models import (
 
 def _get_native():
     """延迟加载 Rust 原生扩展模块，避免循环导入。"""
-    import rs_iztro._rs_iztro as mod
+    import x_iztro._x_iztro as mod
     return mod
 
 

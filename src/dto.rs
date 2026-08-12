@@ -27,7 +27,7 @@ use crate::models::star::Star;
 /// 星耀 DTO。
 /// 主星/辅星的 `brightness` 恒存在（无亮度为空串）；无四化时省略 `mutagen` 键；
 /// 杂耀与运限流耀省略 `brightness` 与 `mutagen`。
-/// `key`/`brightnessKey`/`mutagenKey` 为语言无关标识（rs-iztro 扩展），
+/// `key`/`brightnessKey`/`mutagenKey` 为语言无关标识（x-iztro 扩展），
 /// 供强类型绑定做跨语言的身份判断。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -218,15 +218,15 @@ pub struct AstrolabeDto {
     pub five_elements_class_key: String,
     /// 十二宫数据
     pub palaces: Vec<PalaceDto>,
-    /// rs-iztro 扩展：机器可读性别（"male"/"female"，无状态运限所需）
+    /// x-iztro 扩展：机器可读性别（"male"/"female"，无状态运限所需）
     pub gender_key: String,
-    /// rs-iztro 扩展：出生时辰索引（无状态运限所需）
+    /// x-iztro 扩展：出生时辰索引（无状态运限所需）
     pub time_index: u8,
-    /// rs-iztro 扩展：是否修正闰月
+    /// x-iztro 扩展：是否修正闰月
     pub fix_leap: bool,
-    /// rs-iztro 扩展：排盘语言（"zh_cn" 等）
+    /// x-iztro 扩展：排盘语言（"zh_cn" 等）
     pub language: String,
-    /// rs-iztro 扩展：排盘配置
+    /// x-iztro 扩展：排盘配置
     pub config: ConfigDto,
 }
 
