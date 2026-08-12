@@ -1,8 +1,4 @@
-"""
-rs-iztro Rust 原生模块类型存根
-
-由 Rust PyO3 编译生成的原生扩展模块的类型提示。
-"""
+"""rs-iztro Rust 原生模块的类型存根。"""
 
 from typing import Any
 
@@ -12,9 +8,9 @@ def by_solar(
     gender: str,
     fix_leap: bool,
     language: str,
-    algorithm: str,
+    config_json: str | None = None,
 ) -> dict[str, Any]:
-    """阳历排盘，返回 dict"""
+    """阳历排盘，返回星盘 dict"""
     ...
 
 def by_lunar(
@@ -24,25 +20,46 @@ def by_lunar(
     is_leap_month: bool,
     fix_leap: bool,
     language: str,
-    algorithm: str,
+    config_json: str | None = None,
 ) -> dict[str, Any]:
-    """农历排盘，返回 dict"""
+    """农历排盘，返回星盘 dict"""
     ...
 
 def get_horoscope(
-    astrolabe: dict[str, Any],
-    target_date: str,
+    solar_date: str,
     time_index: int,
+    gender: str,
+    fix_leap: bool,
     language: str,
+    config_json: str | None,
+    target_date: str,
+    target_time_index: int,
 ) -> dict[str, Any]:
-    """计算运限，返回 dict"""
+    """计算运限，返回运限 dict"""
     ...
 
 def astrolabe_to_prompt(
-    astrolabe: dict[str, Any],
+    solar_date: str,
+    time_index: int,
+    gender: str,
+    fix_leap: bool,
     language: str,
+    config_json: str | None = None,
 ) -> str:
-    """生成 AI Prompt"""
+    """生成本命盘 AI Prompt"""
+    ...
+
+def horoscope_to_prompt(
+    solar_date: str,
+    time_index: int,
+    gender: str,
+    fix_leap: bool,
+    language: str,
+    config_json: str | None,
+    target_date: str,
+    target_time_index: int,
+) -> str:
+    """生成运限 AI Prompt"""
     ...
 
 def by_solar_json(
@@ -51,9 +68,9 @@ def by_solar_json(
     gender: str,
     fix_leap: bool,
     language: str,
-    algorithm: str,
+    config_json: str | None = None,
 ) -> str:
-    """阳历排盘，返回 JSON 字符串"""
+    """阳历排盘，返回星盘 JSON 字符串"""
     ...
 
 def by_lunar_json(
@@ -63,7 +80,7 @@ def by_lunar_json(
     is_leap_month: bool,
     fix_leap: bool,
     language: str,
-    algorithm: str,
+    config_json: str | None = None,
 ) -> str:
-    """农历排盘，返回 JSON 字符串"""
+    """农历排盘，返回星盘 JSON 字符串"""
     ...

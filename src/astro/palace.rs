@@ -31,32 +31,20 @@ pub fn get_soul_and_body(
     let time_earthly_branch_index = fix_index(time_index as i32, 12);
 
     // 命宫索引 = 月 - 时辰地支
-    let soul_index = fix_index(
-        month_index as i32 - time_earthly_branch_index as i32,
-        12,
-    );
+    let soul_index = fix_index(month_index as i32 - time_earthly_branch_index as i32, 12);
 
     // 身宫索引 = 月 + 时辰地支
-    let body_index = fix_index(
-        month_index as i32 + time_earthly_branch_index as i32,
-        12,
-    );
+    let body_index = fix_index(month_index as i32 + time_earthly_branch_index as i32, 12);
 
     // 五虎遁得寅宫天干
     let start_stem = TIGER_RULE[yearly_stem.index()];
 
     // 命宫天干
-    let heavenly_stem_of_soul_index = fix_index(
-        start_stem.index() as i32 + soul_index as i32,
-        10,
-    );
+    let heavenly_stem_of_soul_index = fix_index(start_stem.index() as i32 + soul_index as i32, 10);
     let heavenly_stem_of_soul = HeavenlyStem::from_index(heavenly_stem_of_soul_index);
 
     // 命宫地支: 宫位索引0=寅(地支索引2), 所以 +2
-    let earthly_branch_of_soul = EarthlyBranch::from_index(fix_index(
-        soul_index as i32 + 2,
-        12,
-    ));
+    let earthly_branch_of_soul = EarthlyBranch::from_index(fix_index(soul_index as i32 + 2, 12));
 
     SoulAndBody {
         soul_index,
@@ -67,10 +55,7 @@ pub fn get_soul_and_body(
 }
 
 /// 计算五行局
-pub fn get_five_elements_class(
-    stem: HeavenlyStem,
-    branch: EarthlyBranch,
-) -> FiveElementsClass {
+pub fn get_five_elements_class(stem: HeavenlyStem, branch: EarthlyBranch) -> FiveElementsClass {
     // 天干编号: 甲乙→1, 丙丁→2, 戊己→3, 庚辛→4, 壬癸→5
     let stem_number = stem.index() / 2 + 1;
 

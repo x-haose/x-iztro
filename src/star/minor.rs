@@ -3,7 +3,7 @@
 //! 将14颗辅星安放到12宫中。
 
 use crate::data::heavenly_stems::get_heavenly_stem_info;
-use crate::data::stars::{get_brightness_table, StarKey};
+use crate::data::stars::{StarKey, get_brightness_table};
 use crate::data::types::*;
 use crate::i18n::translate_star;
 use crate::models::star::Star;
@@ -78,7 +78,11 @@ pub fn get_minor_stars(
     ];
 
     for (idx, key, star_type, with_mutagen) in placements {
-        let stem = if with_mutagen { Some(yearly_stem) } else { None };
+        let stem = if with_mutagen {
+            Some(yearly_stem)
+        } else {
+            None
+        };
         result[idx].push(make_star(key, star_type, Scope::Origin, idx, stem, lang));
     }
 
@@ -92,7 +96,20 @@ mod tests {
     #[test]
     fn test_minor_stars_count() {
         let result = get_minor_stars(
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            0,
+            1,
             HeavenlyStem::Jia,
             Language::ZhCN,
         );

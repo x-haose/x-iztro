@@ -3,7 +3,7 @@
 //! 根据紫微和天府的起始宫位索引，将14颗主星安放到12宫中。
 
 use crate::data::heavenly_stems::get_heavenly_stem_info;
-use crate::data::stars::{get_brightness_table, StarKey};
+use crate::data::stars::{StarKey, get_brightness_table};
 use crate::data::types::*;
 use crate::i18n::translate_star;
 use crate::models::star::Star;
@@ -61,7 +61,14 @@ pub fn get_major_stars(
 
     for (offset, key) in ziwei_group {
         let idx = fix_index(ziwei_index as i32 - offset as i32, 12);
-        let star = make_star(key, StarType::Major, Scope::Origin, idx, Some(yearly_stem), lang);
+        let star = make_star(
+            key,
+            StarType::Major,
+            Scope::Origin,
+            idx,
+            Some(yearly_stem),
+            lang,
+        );
         result[idx].push(star);
     }
 
@@ -81,7 +88,14 @@ pub fn get_major_stars(
 
     for (offset, key) in tianfu_group {
         let idx = fix_index(tianfu_index as i32 + offset as i32, 12);
-        let star = make_star(key, StarType::Major, Scope::Origin, idx, Some(yearly_stem), lang);
+        let star = make_star(
+            key,
+            StarType::Major,
+            Scope::Origin,
+            idx,
+            Some(yearly_stem),
+            lang,
+        );
         result[idx].push(star);
     }
 

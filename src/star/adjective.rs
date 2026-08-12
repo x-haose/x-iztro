@@ -9,12 +9,7 @@ use crate::models::star::Star;
 use crate::star::location::{DailyStar, MonthlyStar, YearlyStars};
 
 /// 创建一颗杂耀（无亮度、无四化）
-fn make_adj_star(
-    key: StarKey,
-    star_type: StarType,
-    _palace_index: usize,
-    lang: Language,
-) -> Star {
+fn make_adj_star(key: StarKey, star_type: StarType, _palace_index: usize, lang: Language) -> Star {
     Star {
         key,
         name: translate_star(key, lang).to_string(),
@@ -57,18 +52,34 @@ pub fn get_adjective_stars(
         (yearly_stars.longchi, StarKey::Longchi, StarType::Adjective),
         (yearly_stars.fengge, StarKey::Fengge, StarType::Adjective),
         (yearly_stars.tiancai, StarKey::Tiancai, StarType::Adjective),
-        (yearly_stars.tianshou, StarKey::Tianshou, StarType::Adjective),
+        (
+            yearly_stars.tianshou,
+            StarKey::Tianshou,
+            StarType::Adjective,
+        ),
         (timely_taifu, StarKey::Taifu, StarType::Adjective),
         (timely_fenggao, StarKey::Fenggao, StarType::Adjective),
         (monthly_stars.tianwu, StarKey::Tianwu, StarType::Adjective),
         (yearly_stars.huagai, StarKey::Huagai, StarType::Adjective),
-        (yearly_stars.tianguan, StarKey::Tianguan, StarType::Adjective),
+        (
+            yearly_stars.tianguan,
+            StarKey::Tianguan,
+            StarType::Adjective,
+        ),
         (yearly_stars.tianfu, StarKey::Tianfu, StarType::Adjective),
         (yearly_stars.tianchu, StarKey::Tianchu, StarType::Adjective),
-        (monthly_stars.tianyue, StarKey::Tianyue2, StarType::Adjective),
+        (
+            monthly_stars.tianyue,
+            StarKey::Tianyue2,
+            StarType::Adjective,
+        ),
         (yearly_stars.tiande, StarKey::Tiande, StarType::Adjective),
         (yearly_stars.yuede, StarKey::Yuede, StarType::Adjective),
-        (yearly_stars.tiankong, StarKey::Tiankong, StarType::Adjective),
+        (
+            yearly_stars.tiankong,
+            StarKey::Tiankong,
+            StarType::Adjective,
+        ),
         (yearly_stars.xunkong, StarKey::Xunkong, StarType::Adjective),
     ];
     for (idx, key, star_type) in head {
@@ -123,12 +134,20 @@ pub fn get_adjective_stars(
         (yearly_stars.guasu, StarKey::Guasu, StarType::Adjective),
         (yearly_stars.feilian, StarKey::Feilian, StarType::Adjective),
         (yearly_stars.posui, StarKey::Posui, StarType::Adjective),
-        (monthly_stars.tianxing, StarKey::Tianxing, StarType::Adjective),
+        (
+            monthly_stars.tianxing,
+            StarKey::Tianxing,
+            StarType::Adjective,
+        ),
         (monthly_stars.yinsha, StarKey::Yinsha, StarType::Adjective),
         (yearly_stars.tianku, StarKey::Tianku, StarType::Adjective),
         (yearly_stars.tianxu, StarKey::Tianxu, StarType::Adjective),
         (yearly_stars.tianshi, StarKey::Tianshi, StarType::Adjective),
-        (yearly_stars.tianshang, StarKey::Tianshang, StarType::Adjective),
+        (
+            yearly_stars.tianshang,
+            StarKey::Tianshang,
+            StarType::Adjective,
+        ),
         (yearly_stars.nianjie, StarKey::Nianjie, StarType::Helper),
     ];
     for (idx, key, star_type) in tail {
@@ -146,7 +165,8 @@ mod tests {
     #[test]
     fn test_adjective_stars_default() {
         let yearly = location::get_yearly_star_index(
-            0, 6,
+            0,
+            6,
             HeavenlyStem::Jia,
             EarthlyBranch::Zi,
             Gender::Male,
@@ -155,7 +175,14 @@ mod tests {
         let monthly = location::get_monthly_star_index(0);
         let zuo_you = location::get_zuo_you_index(1);
         let chang_qu = location::get_chang_qu_index(0);
-        let daily = location::get_daily_star_index(1, 0, zuo_you.zuo, zuo_you.you, chang_qu.chang, chang_qu.qu);
+        let daily = location::get_daily_star_index(
+            1,
+            0,
+            zuo_you.zuo,
+            zuo_you.you,
+            chang_qu.chang,
+            chang_qu.qu,
+        );
         let timely = location::get_timely_star_index(0);
         let luan_xi = location::get_luan_xi_index(EarthlyBranch::Zi);
         let suiqian12 = [StarKey::Suijian; 12]; // placeholder

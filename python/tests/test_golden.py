@@ -161,6 +161,7 @@ def test_flies_to_across_languages() -> None:
 
     a = astro.by_solar("2000-8-16", 2, "female", language="en_us")
     soul = a.palace(0)
+    assert soul is not None
     places = soul.mutaged_places(a.palaces)
     assert len(places) == 4 and all(p is not None for p in places)
     assert any(soul.flies_to(t, Mu.LU) for t in a.palaces)
@@ -178,3 +179,17 @@ def test_chart_config_typed() -> None:
     assert a.config.algorithm == Algorithm.ZHONGZHOU
     assert a.config.year_divide == YearDivide.EXACT
     assert Suiqian12.SUIPO in {p.suiqian12_key for p in a.palaces}
+
+
+def test_invalid_input_raises_value_error() -> None:
+    """任何非法输入抛 ValueError（而非 except Exception 捕不到的 PanicException）。"""
+    import pytest
+
+    with pytest.raises(ValueError):
+        astro.by_solar("not-a-date", 2, "female")
+    with pytest.raises(ValueError):
+        astro.by_solar("2000-8-16", 13, "female")  # pyright: ignore[reportArgumentType]
+    with pytest.raises(ValueError):
+        astro.by_solar("2000-8-16", 2, "unknown")  # pyright: ignore[reportArgumentType]
+    with pytest.raises(ValueError):
+        astro.get_horoscope(astro.by_solar("2000-8-16", 2, "female"), "garbage", 0)

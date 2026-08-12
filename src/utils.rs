@@ -10,7 +10,10 @@ pub fn fix_index(index: i32, max: i32) -> usize {
 /// 地支索引转宫位索引（寅宫为 0）
 /// 宫位从寅开始，所以需要减去寅的地支索引(2)
 pub fn earthly_branch_to_palace_index(branch: EarthlyBranch) -> usize {
-    fix_index(branch.index() as i32 - EarthlyBranch::Yin.index() as i32, 12)
+    fix_index(
+        branch.index() as i32 - EarthlyBranch::Yin.index() as i32,
+        12,
+    )
 }
 
 /// 小时转时辰索引

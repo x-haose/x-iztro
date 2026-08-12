@@ -1,6 +1,6 @@
 package iztro
 
-// 本文件定义绑定契约（JS iztro 兼容 DTO）的类型化数据结构。
+// 本文件定义星盘与运限的类型化数据结构。
 // 每个对象携带两层信息：
 //   - 翻译字段（Name、Brightness 等）：按排盘语言本地化的展示文本；
 //   - 标识字段（Key、NameKey 等）：语言无关的 iztro i18n key（见 keys.go 常量）。

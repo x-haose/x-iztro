@@ -5,13 +5,16 @@
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
-use crate::astro::builder::{parse_earthly_branch, parse_heavenly_stem};
+use crate::astro::builder::{
+    parse_earthly_branch, parse_heavenly_stem, parse_solar_date, validate_time_index,
+};
 use crate::astro::palace::get_palace_names;
 use crate::astro::surpalaces::SurroundedPalaces;
 use crate::data::constants::TIGER_RULE;
 use crate::data::heavenly_stems::get_heavenly_stem_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::error::IztroError;
 use crate::i18n::{translate_horoscope_name, translate_star};
 use crate::models::astrolabe::Astrolabe;
 use crate::models::horoscope::{AgeItem, HoroscopeData, HoroscopeItem, YearlyDecStar, YearlyItem};
@@ -19,7 +22,7 @@ use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::star::decorative::get_yearly12;
 use crate::star::location::{
-    get_chang_qu_index_by_stem, get_kui_yue_index, get_luan_xi_index, get_lu_yang_tuo_ma_index,
+    get_chang_qu_index_by_stem, get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index,
     get_nianjie_index,
 };
 use crate::utils::{earthly_branch_to_palace_index, fix_index};
@@ -192,25 +195,23 @@ fn time_index_to_hour(time_index: u8) -> i64 {
 ///
 /// # 参数
 /// - `astrolabe`: 出生星盘
-/// - `solar_date`: 目标阳历日期，格式 "YYYY-M-D"
+/// - `solar_date`: 目标阳历日期，格式 "YYYY-M-D"（支持 1583-9999 年）
 /// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `language`: 语言
+///
+/// # Errors
+/// 目标日期非法、目标时辰越界，或 `astrolabe.solar_date` 字段被改为
+/// 非法值时返回 [`IztroError`]。
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
     time_index: u8,
     language: Language,
-) -> HoroscopeData {
-    assert!(
-        time_index <= 12,
-        "time_index must be 0-12, got {time_index}"
-    );
+) -> Result<HoroscopeData, IztroError> {
+    validate_time_index(time_index)?;
 
     // ---- 1. 解析出生日期的农历信息 ----
-    let birth_parts: Vec<&str> = astrolabe.solar_date.split('-').collect();
-    let birth_year: i64 = birth_parts[0].parse().expect("Invalid birth year");
-    let birth_month: i64 = birth_parts[1].parse().expect("Invalid birth month");
-    let birth_day: i64 = birth_parts[2].parse().expect("Invalid birth day");
+    let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
 
     let birth_hour = time_index_to_hour(astrolabe.time_index);
     let birth_solar = solar::from_ymdhms(birth_year, birth_month, birth_day, birth_hour, 0, 0);
@@ -222,11 +223,7 @@ pub fn get_horoscope(
     let birthday_is_leap = birth_lunar.get_month() < 0;
 
     // ---- 2. 解析目标日期的农历信息 ----
-    let parts: Vec<&str> = solar_date.split('-').collect();
-    assert!(parts.len() == 3, "Invalid solar date format: {solar_date}");
-    let target_year: i64 = parts[0].parse().expect("Invalid year");
-    let target_month: i64 = parts[1].parse().expect("Invalid month");
-    let target_day: i64 = parts[2].parse().expect("Invalid day");
+    let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
 
     let target_hour = time_index_to_hour(time_index);
     let target_solar = solar::from_ymdhms(target_year, target_month, target_day, target_hour, 0, 0);
@@ -278,8 +275,11 @@ pub fn get_horoscope(
 
     let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
         HoroscopeDivide::Normal => {
-            let target_month_fix: i32 =
-                if target_is_leap && target_lunar_day > 15 { 1 } else { 0 };
+            let target_month_fix: i32 = if target_is_leap && target_lunar_day > 15 {
+                1
+            } else {
+                0
+            };
             (
                 HeavenlyStem::from_index(fix_index(
                     TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
@@ -331,7 +331,11 @@ pub fn get_horoscope(
     let decadal = HoroscopeItem {
         index: decadal_palace_idx,
         name: translate_horoscope_name(
-            if is_childhood { HoroscopeName::Childhood } else { HoroscopeName::Decadal },
+            if is_childhood {
+                HoroscopeName::Childhood
+            } else {
+                HoroscopeName::Decadal
+            },
             language,
         )
         .to_string(),
@@ -366,8 +370,12 @@ pub fn get_horoscope(
     let yearly_index = earthly_branch_to_palace_index(target_year_branch);
     let yearly_mutagen = get_heavenly_stem_info(target_year_stem).mutagen.to_vec();
     let yearly_palace_names = get_palace_names(yearly_index).to_vec();
-    let yearly_stars =
-        get_horoscope_stars(target_year_stem, target_year_branch, Scope::Yearly, language);
+    let yearly_stars = get_horoscope_stars(
+        target_year_stem,
+        target_year_branch,
+        Scope::Yearly,
+        language,
+    );
     let (yearly_suiqian12, yearly_jiangqian12) =
         get_yearly12(target_year_branch, astrolabe.config.algorithm);
 
@@ -473,7 +481,7 @@ pub fn get_horoscope(
         target_lunar.get_day_in_chinese(),
     );
 
-    HoroscopeData {
+    Ok(HoroscopeData {
         solar_date: solar_date.to_string(),
         lunar_date: lunar_date_str,
         decadal,
@@ -482,7 +490,7 @@ pub fn get_horoscope(
         monthly,
         daily,
         hourly,
-    }
+    })
 }
 
 // ============================================================
@@ -647,7 +655,13 @@ impl HoroscopeData {
         if let Some(stars) = self.decadal.stars.as_ref().and_then(|s| s.get(palace_idx)) {
             keys.extend(stars.iter().map(|s| s.key));
         }
-        if let Some(stars) = self.yearly.base.stars.as_ref().and_then(|s| s.get(palace_idx)) {
+        if let Some(stars) = self
+            .yearly
+            .base
+            .stars
+            .as_ref()
+            .and_then(|s| s.get(palace_idx))
+        {
             keys.extend(stars.iter().map(|s| s.key));
         }
         keys
@@ -680,12 +694,13 @@ mod tests {
             Language::ZhCN,
             Config::default(),
         )
+        .unwrap()
     }
 
     #[test]
     fn test_get_horoscope_basic() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
 
         // Basic structure checks
         assert_eq!(horoscope.solar_date, "2023-10-15");
@@ -722,7 +737,7 @@ mod tests {
     fn test_get_horoscope_nominal_age() {
         let astrolabe = make_astrolabe();
         // 2000年出生，2023年查询
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
         // 虚岁 = 目标农历年 - 出生农历年 + 1
         // 2000年出生 → 2023年大约24虚岁
         assert!(horoscope.age.nominal_age >= 23 && horoscope.age.nominal_age <= 25);
@@ -768,7 +783,7 @@ mod tests {
     #[test]
     fn test_horoscope_palace_query() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
 
         // Origin scope should find palace
         let soul = horoscope.palace(Palace::Soul, Scope::Origin, &astrolabe);
@@ -783,7 +798,7 @@ mod tests {
     #[test]
     fn test_horoscope_age_palace() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
         let age_palace = horoscope.age_palace(&astrolabe);
         assert!(age_palace.index < 12);
     }
@@ -791,7 +806,7 @@ mod tests {
     #[test]
     fn test_horoscope_surround_palaces() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
         let sp = horoscope.surround_palaces(Palace::Soul, Scope::Origin, &astrolabe);
         assert!(sp.is_some());
         let sp = sp.unwrap();
@@ -802,7 +817,7 @@ mod tests {
     fn test_childhood_decadal() {
         // Test with a very young age (birth year = target year)
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2000-12-1", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2000-12-1", 4, Language::ZhCN).unwrap();
         // Should be age 1, which may be in childhood range
         assert!(horoscope.age.nominal_age <= 2);
         // Decadal index should be valid
@@ -812,7 +827,7 @@ mod tests {
     #[test]
     fn test_has_horoscope_mutagen() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
 
         // The decadal's Lu mutagen star should exist in some palace
         let mutagen_star = horoscope.decadal.mutagen[0]; // Lu
@@ -832,20 +847,28 @@ mod tests {
             Palace::Spouse,
             Palace::Siblings,
         ] {
-            if horoscope.has_horoscope_mutagen(*palace_name, Scope::Decadal, Mutagen::Lu, &astrolabe)
-            {
+            if horoscope.has_horoscope_mutagen(
+                *palace_name,
+                Scope::Decadal,
+                Mutagen::Lu,
+                &astrolabe,
+            ) {
                 found = true;
                 break;
             }
         }
         // The mutagen star should be found in at least one palace
-        assert!(found, "Lu mutagen star {:?} should be in some palace", mutagen_star);
+        assert!(
+            found,
+            "Lu mutagen star {:?} should be in some palace",
+            mutagen_star
+        );
     }
 
     #[test]
     fn test_has_horoscope_stars_and_not() {
         let astrolabe = make_astrolabe();
-        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN);
+        let horoscope = get_horoscope(&astrolabe, "2023-10-15", 4, Language::ZhCN).unwrap();
 
         // Find a palace that has horoscope stars
         let dec_stars = horoscope.decadal.stars.as_ref().unwrap();
@@ -865,7 +888,12 @@ mod tests {
             // Use Origin scope so the palace is looked up by its native name
             assert!(horoscope.has_horoscope_stars(palace_name, Scope::Origin, &[key], &astrolabe));
             // not_have should return false for a star that exists
-            assert!(!horoscope.not_have_horoscope_stars(palace_name, Scope::Origin, &[key], &astrolabe));
+            assert!(!horoscope.not_have_horoscope_stars(
+                palace_name,
+                Scope::Origin,
+                &[key],
+                &astrolabe
+            ));
         }
     }
 }

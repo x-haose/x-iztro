@@ -11,9 +11,10 @@ use lunar_rust::{lunar, solar};
 use crate::astro::palace::{
     get_decadals_and_ages, get_five_elements_class, get_palace_names, get_soul_and_body,
 };
-use crate::data::constants::{TIME_RANGES, TIGER_RULE};
+use crate::data::constants::{TIGER_RULE, TIME_RANGES};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::types::*;
+use crate::error::IztroError;
 use crate::i18n::{
     translate_earthly_branch, translate_heavenly_stem, translate_sign, translate_time,
     translate_zodiac,
@@ -38,13 +39,105 @@ use crate::utils::fix_index;
 /// lunar_rust 星座中文名转黄道索引（白羊=0 … 双鱼=11）
 fn parse_sign_index(name: &str) -> usize {
     const XING_ZUO: [&str; 12] = [
-        "白羊", "金牛", "双子", "巨蟹", "狮子", "处女",
-        "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼",
+        "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶",
+        "双鱼",
     ];
     XING_ZUO
         .iter()
         .position(|s| *s == name)
         .unwrap_or_else(|| panic!("Unknown xing zuo: {name}"))
+}
+
+/// 支持的公历年份范围。下限避开 1582 年格里历改革（lunar_rust 对改革空洞
+/// 日期 panic），上限为 lunar_rust 农历表的覆盖终点。
+const SUPPORTED_YEARS: std::ops::RangeInclusive<i64> = 1583..=9999;
+
+/// 公历某月天数（格里历闰年规则）；月份非法返回 0。
+fn days_in_month(year: i64, month: i64) -> i64 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+                29
+            } else {
+                28
+            }
+        }
+        _ => 0,
+    }
+}
+
+/// 校验时辰索引在 0-12（0=早子时，12=晚子时）。
+pub(crate) fn validate_time_index(time_index: u8) -> Result<(), IztroError> {
+    if time_index > 12 {
+        return Err(IztroError::InvalidTimeIndex(time_index));
+    }
+    Ok(())
+}
+
+/// 解析并校验 "YYYY-M-D" 公历日期串，返回 (年, 月, 日)。
+/// 拒绝格式错误、不存在的日期与超出 [`SUPPORTED_YEARS`] 的年份。
+pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), IztroError> {
+    let err = |detail: &str| {
+        IztroError::InvalidDate(format!("invalid solar date '{solar_date}': {detail}"))
+    };
+    let parts: Vec<&str> = solar_date.split('-').collect();
+    if parts.len() != 3 {
+        return Err(err("expected 'YYYY-M-D'"));
+    }
+    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
+    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
+    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    if !SUPPORTED_YEARS.contains(&year) {
+        return Err(err("year must be within 1583-9999"));
+    }
+    if !(1..=12).contains(&month) {
+        return Err(err("month must be within 1-12"));
+    }
+    if day < 1 || day > days_in_month(year, month) {
+        return Err(err("day is out of range for that month"));
+    }
+    Ok((year, month, day))
+}
+
+/// 解析并校验 "YYYY-M-D" 农历日期串，返回 (年, 带符号月, 日)。
+/// 月为负值表示闰月；该年该月并非闰月时 `is_leap_month` 不生效，
+/// 与 JS iztro 行为一致。日按 lunar_rust 月表校验（大月 30 / 小月 29）。
+fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, i64), IztroError> {
+    let err = |detail: &str| {
+        IztroError::InvalidDate(format!("invalid lunar date '{lunar_date}': {detail}"))
+    };
+    let parts: Vec<&str> = lunar_date.split('-').collect();
+    if parts.len() != 3 {
+        return Err(err("expected 'YYYY-M-D'"));
+    }
+    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
+    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
+    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    if !SUPPORTED_YEARS.contains(&year) {
+        return Err(err("year must be within 1583-9999"));
+    }
+    if !(1..=12).contains(&month) {
+        return Err(err("month must be within 1-12"));
+    }
+    let year_has_this_leap = lunar_year::LunarYear::from_lunar_year(year)
+        .get_leap_months()
+        .abs()
+        == month;
+    let signed_month = if is_leap_month && year_has_this_leap {
+        -month
+    } else {
+        month
+    };
+    let day_count = lunar_year::LunarYear::from_lunar_year(year)
+        .get_month(signed_month)
+        .map(|m| m.get_day_count())
+        .ok_or_else(|| err("month does not exist in that lunar year"))?;
+    if day < 1 || day > day_count {
+        return Err(err("day is out of range for that lunar month"));
+    }
+    Ok((year, signed_month, day))
 }
 
 /// 将中文天干字符串转换为枚举
@@ -95,10 +188,7 @@ pub fn fix_lunar_month_index(
     fix_leap: bool,
 ) -> usize {
     let need_to_add = is_leap && fix_leap && lunar_day > 15 && time_index != 12;
-    fix_index(
-        lunar_month as i32 - 1 + if need_to_add { 1 } else { 0 },
-        12,
-    )
+    fix_index(lunar_month as i32 - 1 + if need_to_add { 1 } else { 0 }, 12)
 }
 
 /// 计算修正后的农历日索引
@@ -163,12 +253,15 @@ fn format_chinese_date(pillars: [(HeavenlyStem, EarthlyBranch); 4], lang: Langua
 /// 通过阳历日期排盘
 ///
 /// # 参数
-/// - `solar_date`: 阳历日期字符串，格式 "YYYY-M-D"
+/// - `solar_date`: 阳历日期字符串，格式 "YYYY-M-D"（支持 1583-9999 年）
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
 /// - `fix_leap`: 是否修正闰月
 /// - `language`: 语言
 /// - `config`: 排盘配置（分界点与算法派别）
+///
+/// # Errors
+/// 日期格式非法、日期不存在或超出支持范围、时辰索引越界时返回 [`IztroError`]。
 pub fn by_solar(
     solar_date: &str,
     time_index: u8,
@@ -176,8 +269,9 @@ pub fn by_solar(
     fix_leap: bool,
     language: Language,
     config: Config,
-) -> Astrolabe {
-    assert!(time_index <= 12, "time_index must be 0-12, got {time_index}");
+) -> Result<Astrolabe, IztroError> {
+    validate_time_index(time_index)?;
+    let (year, month, day) = parse_solar_date(solar_date)?;
 
     // 晚子时归当天的配置下，全部推算按当日早子时进行；展示仍用原始时辰
     let effective_ti = if config.day_divide == DayDivide::Current && time_index >= 12 {
@@ -185,13 +279,6 @@ pub fn by_solar(
     } else {
         time_index
     };
-
-    // 1. 解析阳历日期
-    let parts: Vec<&str> = solar_date.split('-').collect();
-    assert!(parts.len() == 3, "Invalid solar date format: {solar_date}");
-    let year: i64 = parts[0].parse().expect("Invalid year");
-    let month: i64 = parts[1].parse().expect("Invalid month");
-    let day: i64 = parts[2].parse().expect("Invalid day");
 
     // 2. 创建 lunar_rust 日期对象
     let solar_ref = solar::from_ymd(year, month, day);
@@ -235,7 +322,8 @@ pub fn by_solar(
         .unwrap_or_else(|| panic!("Unknown earthly branch: {flow_branch_str}"));
 
     // 5. 计算月索引
-    let month_index = fix_lunar_month_index(lunar_month, lunar_day, is_leap, effective_ti, fix_leap);
+    let month_index =
+        fix_lunar_month_index(lunar_month, lunar_day, is_leap, effective_ti, fix_leap);
 
     // 6. 命宫身宫
     let soul_body = get_soul_and_body(month_index, effective_ti, yearly_stem);
@@ -343,10 +431,7 @@ pub fn by_solar(
     let mut palaces = Vec::with_capacity(12);
 
     for i in 0..12usize {
-        let palace_stem_index = fix_index(
-            start_stem.index() as i32 + i as i32,
-            10,
-        );
+        let palace_stem_index = fix_index(start_stem.index() as i32 + i as i32, 10);
         let palace_stem = HeavenlyStem::from_index(palace_stem_index);
         let palace_branch = EarthlyBranch::from_index(fix_index(2 + i as i32, 12));
 
@@ -411,10 +496,8 @@ pub fn by_solar(
             let gan = lunar_ref.get_month_gan_exact();
             let zhi = lunar_ref.get_month_zhi_exact();
             (
-                parse_heavenly_stem(&gan)
-                    .unwrap_or_else(|| panic!("Unknown month stem: {gan}")),
-                parse_earthly_branch(&zhi)
-                    .unwrap_or_else(|| panic!("Unknown month branch: {zhi}")),
+                parse_heavenly_stem(&gan).unwrap_or_else(|| panic!("Unknown month stem: {gan}")),
+                parse_earthly_branch(&zhi).unwrap_or_else(|| panic!("Unknown month branch: {zhi}")),
             )
         }
     };
@@ -459,7 +542,7 @@ pub fn by_solar(
         lunar_ref.get_day_in_chinese(),
     );
 
-    Astrolabe {
+    Ok(Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
         lunar_date: lunar_date_str,
@@ -492,7 +575,7 @@ pub fn by_solar(
         fix_leap,
         language,
         config,
-    }
+    })
 }
 
 /// 通过农历日期排盘
@@ -513,19 +596,11 @@ pub fn by_lunar(
     fix_leap: bool,
     language: Language,
     config: Config,
-) -> Astrolabe {
-    // 1. 解析农历日期
-    let parts: Vec<&str> = lunar_date.split('-').collect();
-    assert!(parts.len() == 3, "Invalid lunar date format: {lunar_date}");
-    let year: i64 = parts[0].parse().expect("Invalid year");
-    let month: i64 = parts[1].parse().expect("Invalid month");
-    let day: i64 = parts[2].parse().expect("Invalid day");
+) -> Result<Astrolabe, IztroError> {
+    validate_time_index(time_index)?;
 
-    // 2. lunar_rust 中闰月用负数表示；该年该月并非闰月时 is_leap_month 不生效
-    //    （get_leap_months 对闰月返回带符号月号，取绝对值比较）
-    let year_has_this_leap =
-        lunar_year::LunarYear::from_lunar_year(year).get_leap_months().abs() == month;
-    let lunar_month = if is_leap_month && year_has_this_leap { -month } else { month };
+    // 1. 解析并校验农历日期（闰月在 lunar_rust 中用负数月号表示）
+    let (year, lunar_month, day) = parse_lunar_date(lunar_date, is_leap_month)?;
     let lunar_ref = lunar::from_ymd(year, lunar_month, day);
 
     // 3. 转换为阳历（日期串不带前导零）
@@ -599,7 +674,8 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
         assert_eq!(astrolabe.gender, Gender::Male);
         assert_eq!(astrolabe.solar_date, "2000-8-16");
         assert_eq!(astrolabe.palaces.len(), 12);
@@ -619,22 +695,15 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
 
         // 应有14颗主星
-        let total_major: usize = astrolabe
-            .palaces
-            .iter()
-            .map(|p| p.major_stars.len())
-            .sum();
+        let total_major: usize = astrolabe.palaces.iter().map(|p| p.major_stars.len()).sum();
         assert_eq!(total_major, 14);
 
         // 应有14颗辅星
-        let total_minor: usize = astrolabe
-            .palaces
-            .iter()
-            .map(|p| p.minor_stars.len())
-            .sum();
+        let total_minor: usize = astrolabe.palaces.iter().map(|p| p.minor_stars.len()).sum();
         assert_eq!(total_minor, 14);
     }
 
@@ -649,7 +718,8 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
         assert_eq!(astrolabe.gender, Gender::Male);
         assert_eq!(astrolabe.palaces.len(), 12);
     }
@@ -664,7 +734,8 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
         assert_eq!(astrolabe.time, "晚子时");
         assert_eq!(astrolabe.time_range, "23:00~00:00");
     }
@@ -677,8 +748,12 @@ mod tests {
             Gender::Male,
             true,
             Language::ZhCN,
-            Config { algorithm: Algorithm::Zhongzhou, ..Config::default() },
-        );
+            Config {
+                algorithm: Algorithm::Zhongzhou,
+                ..Config::default()
+            },
+        )
+        .unwrap();
         assert_eq!(astrolabe.palaces.len(), 12);
     }
 
@@ -691,8 +766,13 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
-        let body_count = astrolabe.palaces.iter().filter(|p| p.is_body_palace).count();
+        )
+        .unwrap();
+        let body_count = astrolabe
+            .palaces
+            .iter()
+            .filter(|p| p.is_body_palace)
+            .count();
         assert_eq!(body_count, 1);
     }
 }

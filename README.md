@@ -45,13 +45,14 @@ use rs_iztro::{by_solar, get_horoscope};
 use rs_iztro::data::types::*;
 
 // Config 控制分界点与派别：year_divide / horoscope_divide / age_divide /
-// day_divide / algorithm，默认值与 JS iztro 一致
-let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default());
+// day_divide / algorithm，默认值与 JS iztro 一致；
+// 入参非法（日期格式/范围、时辰索引）时返回 Err(IztroError)
+let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
 println!("命主：{:?}", astrolabe.soul);
 
 // 中州派：Config { algorithm: Algorithm::Zhongzhou, ..Config::default() }
 
-let horoscope = get_horoscope(&astrolabe, "2024-1-1", 0, Language::ZhCN);
+let horoscope = get_horoscope(&astrolabe, "2024-1-1", 0, Language::ZhCN)?;
 println!("流年四化：{:?}", horoscope.yearly.base.mutagen);
 ```
 
@@ -108,11 +109,15 @@ examples/go/       # go run .
 ### 运行测试
 
 ```bash
-# 常规测试（单元测试 + Tier 1 + Tier 2，~8 秒）
+# 常规测试（单元 + tier1/tier2/运限/变体/配置/契约金标，~15 秒）
 cargo test
 
-# 含 Tier 3 完整回归（~4 分钟，284,895 用例）
-cargo test -- --ignored
+# Tier 3 全参数空间（586,430 例，~20 秒）
+cargo test --release --test golden_tier3 -- --ignored
+
+# Python / Go 端到端金标
+cd python && pytest tests/          # 先 maturin develop
+cd go/iztro && go test ./...
 ```
 
 ### 金标覆盖矩阵
@@ -128,7 +133,7 @@ cargo test -- --ignored
 | Variants  | 14,268   | by_lunar 闰月逐日（含 is_leap/fix_leap 组合）、中州派、六语言    | CSV/JSON    |
 | Config    | 8,544    | yearDivide=exact（立春窗口逐日）、dayDivide=current、ageDivide=birthday、horoscopeDivide=exact | CSV/JSON    |
 
-合计约 63 万对照用例，覆盖排盘与运限的全部参数空间。
+合计约 66 万对照用例，覆盖排盘与运限的全部参数空间；另有 Python 107 例、Go 金标端到端测试与绑定契约 JSON 逐键对照。
 
 ### 生成测试基准数据
 

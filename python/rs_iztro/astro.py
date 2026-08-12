@@ -57,6 +57,9 @@ class Astro:
 
         Returns:
             Astrolabe 星盘对象
+
+        Raises:
+            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = _get_native().by_solar(
             solar_date, time_index, gender, fix_leap, language, _config_json(config),
@@ -87,6 +90,9 @@ class Astro:
 
         Returns:
             Astrolabe 星盘对象
+
+        Raises:
+            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = _get_native().by_lunar(
             lunar_date, time_index, gender, is_leap_month, fix_leap, language,
@@ -110,6 +116,9 @@ class Astro:
 
         Returns:
             Horoscope 运限对象
+
+        Raises:
+            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = _get_native().get_horoscope(
             astrolabe.solar_date,
@@ -132,6 +141,9 @@ class Astro:
 
         Returns:
             结构化文本 prompt
+
+        Raises:
+            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return _get_native().astrolabe_to_prompt(
             astrolabe.solar_date,
@@ -158,6 +170,9 @@ class Astro:
 
         Returns:
             结构化文本 prompt
+
+        Raises:
+            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return _get_native().horoscope_to_prompt(
             astrolabe.solar_date,

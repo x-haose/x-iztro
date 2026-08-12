@@ -1,12 +1,11 @@
 // 提示信息模块
 
+use crate::data::stars::StarKey;
 use crate::data::types::Language;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
-    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace,
-    translate_star,
+    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use crate::data::stars::StarKey;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::horoscope::HoroscopeData;
 use crate::models::star::Star;
@@ -265,8 +264,16 @@ pub fn astrolabe_to_prompt(astrolabe: &Astrolabe, lang: Language) -> String {
 }
 
 /// 输出某运限层级的四化信息
-fn format_mutagen_line(label: &str, mutagen_label: &str, keys: &[StarKey], lang: Language) -> String {
-    let names: Vec<String> = keys.iter().map(|k| translate_star(*k, lang).to_string()).collect();
+fn format_mutagen_line(
+    label: &str,
+    mutagen_label: &str,
+    keys: &[StarKey],
+    lang: Language,
+) -> String {
+    let names: Vec<String> = keys
+        .iter()
+        .map(|k| translate_star(*k, lang).to_string())
+        .collect();
     format!("  {}{}: {}\n", label, mutagen_label, names.join(", "))
 }
 
@@ -291,18 +298,29 @@ fn format_scope_palaces(
         if scope_palace_name == natal_palace_name {
             out.push_str(&format!("  {}:\n", scope_palace_name));
         } else {
-            out.push_str(&format!("  {} ({}):\n", scope_palace_name, natal_palace_name));
+            out.push_str(&format!(
+                "  {} ({}):\n",
+                scope_palace_name, natal_palace_name
+            ));
         }
 
         // 本命主星
         if !palace.major_stars.is_empty() {
-            let stars: Vec<String> = palace.major_stars.iter().map(|s| format_star(s, lang)).collect();
+            let stars: Vec<String> = palace
+                .major_stars
+                .iter()
+                .map(|s| format_star(s, lang))
+                .collect();
             out.push_str(&format!("    {}: {}\n", l.major_stars, stars.join(", ")));
         }
 
         // 本命辅星
         if !palace.minor_stars.is_empty() {
-            let stars: Vec<String> = palace.minor_stars.iter().map(|s| format_star(s, lang)).collect();
+            let stars: Vec<String> = palace
+                .minor_stars
+                .iter()
+                .map(|s| format_star(s, lang))
+                .collect();
             out.push_str(&format!("    {}: {}\n", l.minor_stars, stars.join(", ")));
         }
 
@@ -310,7 +328,10 @@ fn format_scope_palaces(
         if let Some(all_stars) = scope_stars {
             let scope_star_list = all_stars.get(i).cloned().unwrap_or_default();
             if !scope_star_list.is_empty() {
-                let stars: Vec<String> = scope_star_list.iter().map(|s| format_star(s, lang)).collect();
+                let stars: Vec<String> = scope_star_list
+                    .iter()
+                    .map(|s| format_star(s, lang))
+                    .collect();
                 out.push_str(&format!("    {}: {}\n", l.scope_stars, stars.join(", ")));
             }
         }
@@ -334,10 +355,7 @@ pub fn horoscope_to_prompt(
     ));
 
     // 大限
-    out.push_str(&format!(
-        "--- {} ---\n",
-        l.decadal_fortune,
-    ));
+    out.push_str(&format!("--- {} ---\n", l.decadal_fortune,));
     out.push_str(&format!(
         "{}: {} ({}{})\n",
         l.decadal_fortune,
@@ -345,8 +363,18 @@ pub fn horoscope_to_prompt(
         translate_heavenly_stem(horoscope.decadal.heavenly_stem, lang),
         translate_earthly_branch(horoscope.decadal.earthly_branch, lang),
     ));
-    out.push_str(&format_mutagen_line(l.decadal_fortune, l.mutagen_fly, &horoscope.decadal.mutagen, lang));
-    out.push_str(&format_scope_palaces(&horoscope.decadal, astrolabe, lang, &l));
+    out.push_str(&format_mutagen_line(
+        l.decadal_fortune,
+        l.mutagen_fly,
+        &horoscope.decadal.mutagen,
+        lang,
+    ));
+    out.push_str(&format_scope_palaces(
+        &horoscope.decadal,
+        astrolabe,
+        lang,
+        &l,
+    ));
 
     // 小限
     out.push_str(&format!(
@@ -358,18 +386,25 @@ pub fn horoscope_to_prompt(
     ));
 
     // 流年
-    out.push_str(&format!(
-        "\n--- {} ---\n",
-        l.yearly,
-    ));
+    out.push_str(&format!("\n--- {} ---\n", l.yearly,));
     out.push_str(&format!(
         "{}: {}{}\n",
         l.yearly,
         translate_heavenly_stem(horoscope.yearly.base.heavenly_stem, lang),
         translate_earthly_branch(horoscope.yearly.base.earthly_branch, lang),
     ));
-    out.push_str(&format_mutagen_line(l.yearly, l.mutagen_fly, &horoscope.yearly.base.mutagen, lang));
-    out.push_str(&format_scope_palaces(&horoscope.yearly.base, astrolabe, lang, &l));
+    out.push_str(&format_mutagen_line(
+        l.yearly,
+        l.mutagen_fly,
+        &horoscope.yearly.base.mutagen,
+        lang,
+    ));
+    out.push_str(&format_scope_palaces(
+        &horoscope.yearly.base,
+        astrolabe,
+        lang,
+        &l,
+    ));
 
     // 流月/流日/流时 — 只输出四化，不展开十二宫
     let format_brief = |label: &str, item: &crate::models::horoscope::HoroscopeItem| -> String {
@@ -379,7 +414,12 @@ pub fn horoscope_to_prompt(
             translate_heavenly_stem(item.heavenly_stem, lang),
             translate_earthly_branch(item.earthly_branch, lang),
         );
-        s.push_str(&format_mutagen_line(label, l.mutagen_fly, &item.mutagen, lang));
+        s.push_str(&format_mutagen_line(
+            label,
+            l.mutagen_fly,
+            &item.mutagen,
+            lang,
+        ));
         s
     };
 
@@ -406,7 +446,8 @@ mod tests {
             true,
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
         let prompt = astrolabe_to_prompt(&astrolabe, Language::ZhCN);
 
         assert!(!prompt.is_empty());
@@ -428,7 +469,8 @@ mod tests {
             true,
             Language::EnUS,
             Config::default(),
-        );
+        )
+        .unwrap();
         let prompt = astrolabe_to_prompt(&astrolabe, Language::EnUS);
 
         assert!(!prompt.is_empty());
@@ -440,8 +482,16 @@ mod tests {
     #[test]
     fn test_horoscope_to_prompt_zh_cn() {
         let lang = Language::ZhCN;
-        let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, lang, Config::default());
-        let horoscope = get_horoscope(&astrolabe, "2024-10-1", 0, lang);
+        let astrolabe = by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            true,
+            lang,
+            Config::default(),
+        )
+        .unwrap();
+        let horoscope = get_horoscope(&astrolabe, "2024-10-1", 0, lang).unwrap();
         let prompt = horoscope_to_prompt(&astrolabe, &horoscope, lang);
 
         assert!(!prompt.is_empty());

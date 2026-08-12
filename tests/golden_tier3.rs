@@ -43,7 +43,10 @@ fn golden_tier3_full_parameter_space() {
         })
         .collect();
     entries.sort_by_key(|e| e.file_name());
-    assert!(!entries.is_empty(), "No tier3 year files found in {TIER3_DIR}");
+    assert!(
+        !entries.is_empty(),
+        "No tier3 year files found in {TIER3_DIR}"
+    );
 
     let mut total = 0usize;
     let mut failures: Vec<String> = Vec::new();
@@ -59,7 +62,11 @@ fn golden_tier3_full_parameter_space() {
             let (date, ti, g, fl, expected) =
                 (fields[0], fields[1], fields[2], fields[3], fields[4]);
             let time_index: u8 = ti.parse().unwrap();
-            let gender = if g == "0" { Gender::Male } else { Gender::Female };
+            let gender = if g == "0" {
+                Gender::Male
+            } else {
+                Gender::Female
+            };
             let fix_leap = fl == "1";
 
             let astrolabe = by_solar(
@@ -69,7 +76,8 @@ fn golden_tier3_full_parameter_space() {
                 fix_leap,
                 Language::ZhCN,
                 Config::default(),
-            );
+            )
+            .unwrap();
             let actual = hash_astrolabe(&astrolabe);
             total += 1;
 
@@ -83,7 +91,11 @@ fn golden_tier3_full_parameter_space() {
                 }
             }
         }
-        eprint!("\r  {} checked ({} total)", path.file_name().unwrap().to_string_lossy(), total);
+        eprint!(
+            "\r  {} checked ({} total)",
+            path.file_name().unwrap().to_string_lossy(),
+            total
+        );
     }
     eprintln!();
 

@@ -13,133 +13,196 @@ use crate::utils::{earthly_branch_to_palace_index as eb2pi, fix_index};
 /// 紫微、天府起始宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct StartIndex {
+    /// 紫微起始宫位索引
     pub ziwei: usize,
+    /// 天府起始宫位索引
     pub tianfu: usize,
 }
 
 /// 禄存、擎羊、陀罗、天马宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct LuYangTuoMa {
+    /// 禄存宫位索引
     pub lu: usize,
+    /// 擎羊宫位索引
     pub yang: usize,
+    /// 陀罗宫位索引
     pub tuo: usize,
+    /// 天马宫位索引
     pub ma: usize,
 }
 
 /// 天魁、天钺宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct KuiYue {
+    /// 天魁宫位索引
     pub kui: usize,
+    /// 天钺宫位索引
     pub yue: usize,
 }
 
 /// 左辅、右弼宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct ZuoYou {
+    /// 左辅宫位索引
     pub zuo: usize,
+    /// 右弼宫位索引
     pub you: usize,
 }
 
 /// 文昌、文曲宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct ChangQu {
+    /// 文昌宫位索引
     pub chang: usize,
+    /// 文曲宫位索引
     pub qu: usize,
 }
 
 /// 日系星耀索引
 #[derive(Debug, Clone, Copy)]
 pub struct DailyStar {
+    /// 三台宫位索引
     pub santai: usize,
+    /// 八座宫位索引
     pub bazuo: usize,
+    /// 恩光宫位索引
     pub enguang: usize,
+    /// 天贵宫位索引
     pub tiangui: usize,
 }
 
 /// 时系星耀索引（台辅、封诰）
 #[derive(Debug, Clone, Copy)]
 pub struct TimelyStars {
+    /// 台辅宫位索引
     pub taifu: usize,
+    /// 封诰宫位索引
     pub fenggao: usize,
 }
 
 /// 地空、地劫宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct KongJie {
+    /// 地空宫位索引
     pub kong: usize,
+    /// 地劫宫位索引
     pub jie: usize,
 }
 
 /// 火星、铃星宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct HuoLing {
+    /// 火星宫位索引
     pub huo: usize,
+    /// 铃星宫位索引
     pub ling: usize,
 }
 
 /// 红鸾、天喜宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct LuanXi {
+    /// 红鸾宫位索引
     pub hongluan: usize,
+    /// 天喜宫位索引
     pub tianxi: usize,
 }
 
 /// 华盖、咸池宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct HuagaiXianchi {
+    /// 华盖宫位索引
     pub huagai: usize,
+    /// 咸池宫位索引
     pub xianchi: usize,
 }
 
 /// 孤辰、寡宿宫位索引
 #[derive(Debug, Clone, Copy)]
 pub struct GuGua {
+    /// 孤辰宫位索引
     pub guchen: usize,
+    /// 寡宿宫位索引
     pub guasu: usize,
 }
 
 /// 月系星耀索引
 #[derive(Debug, Clone, Copy)]
 pub struct MonthlyStar {
+    /// 解神宫位索引
     pub jieshen: usize,
+    /// 天姚宫位索引
     pub tianyao: usize,
+    /// 天刑宫位索引
     pub tianxing: usize,
+    /// 阴煞宫位索引
     pub yinsha: usize,
+    /// 天月宫位索引
     pub tianyue: usize,
+    /// 天巫宫位索引
     pub tianwu: usize,
 }
 
 /// 年系星耀索引
 #[derive(Debug, Clone, Copy)]
 pub struct YearlyStars {
+    /// 天才宫位索引
     pub tiancai: usize,
+    /// 天寿宫位索引
     pub tianshou: usize,
+    /// 天厨宫位索引
     pub tianchu: usize,
+    /// 破碎宫位索引
     pub posui: usize,
+    /// 蜚廉宫位索引
     pub feilian: usize,
+    /// 龙池宫位索引
     pub longchi: usize,
+    /// 凤阁宫位索引
     pub fengge: usize,
+    /// 天哭宫位索引
     pub tianku: usize,
+    /// 天虚宫位索引
     pub tianxu: usize,
+    /// 天官宫位索引
     pub tianguan: usize,
+    /// 天福宫位索引
     pub tianfu: usize,
+    /// 天德宫位索引
     pub tiande: usize,
+    /// 月德宫位索引
     pub yuede: usize,
+    /// 天空宫位索引
     pub tiankong: usize,
+    /// 截路宫位索引
     pub jielu: usize,
+    /// 空亡宫位索引
     pub kongwang: usize,
+    /// 旬空宫位索引
     pub xunkong: usize,
+    /// 截空宫位索引（中州派）
     pub jiekong: usize,
+    /// 天伤宫位索引
     pub tianshang: usize,
+    /// 天使宫位索引
     pub tianshi: usize,
+    /// 华盖宫位索引
     pub huagai: usize,
+    /// 咸池宫位索引
     pub xianchi: usize,
+    /// 孤辰宫位索引
     pub guchen: usize,
+    /// 寡宿宫位索引
     pub guasu: usize,
+    /// 劫杀宫位索引（中州派杂耀）
     pub jiesha: usize,
+    /// 年解宫位索引
     pub nianjie: usize,
+    /// 大耗宫位索引（中州派杂耀）
     pub dahao: usize,
+    /// 红鸾宫位索引
     pub hongluan: usize,
+    /// 天喜宫位索引
     pub tianxi: usize,
 }
 
@@ -159,7 +222,11 @@ pub fn get_start_index(
     month_day_count: u32,
     five_elements_value: u32,
 ) -> StartIndex {
-    let mut day = if time_index == 12 { lunar_day + 1 } else { lunar_day };
+    let mut day = if time_index == 12 {
+        lunar_day + 1
+    } else {
+        lunar_day
+    };
     if day > month_day_count {
         day -= month_day_count;
     }
@@ -188,10 +255,7 @@ pub fn get_start_index(
 }
 
 /// 2. 获取禄存、擎羊、陀罗、天马的宫位索引
-pub fn get_lu_yang_tuo_ma_index(
-    stem: HeavenlyStem,
-    branch: EarthlyBranch,
-) -> LuYangTuoMa {
+pub fn get_lu_yang_tuo_ma_index(stem: HeavenlyStem, branch: EarthlyBranch) -> LuYangTuoMa {
     use EarthlyBranch::*;
     use HeavenlyStem as HS;
 
@@ -324,10 +388,7 @@ pub fn get_huo_ling_index(branch: EarthlyBranch, time_index: u8) -> HuoLing {
 
 /// 10. 获取红鸾、天喜的宫位索引
 pub fn get_luan_xi_index(branch: EarthlyBranch) -> LuanXi {
-    let hongluan = fix_index(
-        eb2pi(EarthlyBranch::Mao) as i32 - branch.index() as i32,
-        12,
-    );
+    let hongluan = fix_index(eb2pi(EarthlyBranch::Mao) as i32 - branch.index() as i32, 12);
     let tianxi = fix_index(hongluan as i32 + 6, 12);
     LuanXi { hongluan, tianxi }
 }
@@ -379,9 +440,7 @@ pub fn get_jiesha_adj_index(branch: EarthlyBranch) -> usize {
 pub fn get_dahao_index(branch: EarthlyBranch) -> usize {
     use EarthlyBranch::*;
     // 按年支索引查表得所落地支: [Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen]
-    let matched: [EarthlyBranch; 12] = [
-        Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen,
-    ];
+    let matched: [EarthlyBranch; 12] = [Wei, Wu, You, Shen, Hai, Xu, Chou, Zi, Mao, Yin, Si, Chen];
     eb2pi(matched[branch.index()])
 }
 
@@ -389,9 +448,7 @@ pub fn get_dahao_index(branch: EarthlyBranch) -> usize {
 pub fn get_nianjie_index(branch: EarthlyBranch) -> usize {
     use EarthlyBranch::*;
     // 按地支索引查表: [Xu, You, Shen, Wei, Wu, Si, Chen, Mao, Yin, Chou, Zi, Hai]
-    let lookup: [EarthlyBranch; 12] = [
-        Xu, You, Shen, Wei, Wu, Si, Chen, Mao, Yin, Chou, Zi, Hai,
-    ];
+    let lookup: [EarthlyBranch; 12] = [Xu, You, Shen, Wei, Wu, Si, Chen, Mao, Yin, Chou, Zi, Hai];
     eb2pi(lookup[branch.index()])
 }
 
@@ -422,9 +479,7 @@ pub fn get_yearly_star_index(
     let tianshou = fix_index(body_index as i32 + branch_idx, 12);
 
     // 天厨：按天干查表 [Si, Wu, Zi, Si, Wu, Shen, Yin, Wu, You, Hai]
-    let tianchu_table: [EarthlyBranch; 10] = [
-        Si, Wu, Zi, Si, Wu, Shen, Yin, Wu, You, Hai,
-    ];
+    let tianchu_table: [EarthlyBranch; 10] = [Si, Wu, Zi, Si, Wu, Shen, Yin, Wu, You, Hai];
     let tianchu = eb2pi(tianchu_table[stem_idx]);
 
     // 破碎：按地支索引 % 3 查表 [Si, Chou, You]
@@ -432,9 +487,8 @@ pub fn get_yearly_star_index(
     let posui = eb2pi(posui_table[yearly_branch.index() % 3]);
 
     // 蜚廉：12元素查表
-    let feilian_table: [EarthlyBranch; 12] = [
-        Shen, You, Xu, Si, Wu, Wei, Yin, Mao, Chen, Hai, Zi, Chou,
-    ];
+    let feilian_table: [EarthlyBranch; 12] =
+        [Shen, You, Xu, Si, Wu, Wei, Yin, Mao, Chen, Hai, Zi, Chou];
     let feilian = eb2pi(feilian_table[yearly_branch.index()]);
 
     // 龙池
@@ -448,15 +502,11 @@ pub fn get_yearly_star_index(
     let tianxu = fix_index(eb2pi(Wu) as i32 + branch_idx, 12);
 
     // 天官：10元素按天干查表
-    let tianguan_table: [EarthlyBranch; 10] = [
-        Wei, Chen, Si, Yin, Mao, You, Hai, You, Xu, Wu,
-    ];
+    let tianguan_table: [EarthlyBranch; 10] = [Wei, Chen, Si, Yin, Mao, You, Hai, You, Xu, Wu];
     let tianguan = eb2pi(tianguan_table[stem_idx]);
 
     // 天福：10元素按天干查表
-    let tianfu_table: [EarthlyBranch; 10] = [
-        You, Shen, Zi, Hai, Mao, Yin, Wu, Si, Wu, Si,
-    ];
+    let tianfu_table: [EarthlyBranch; 10] = [You, Shen, Zi, Hai, Mao, Yin, Wu, Si, Wu, Si];
     let tianfu = eb2pi(tianfu_table[stem_idx]);
 
     // 天德
@@ -476,10 +526,7 @@ pub fn get_yearly_star_index(
     let kongwang = eb2pi(kongwang_table[stem_idx % 5]);
 
     // 旬空：从年支宫位起，加上年干到癸干的距离再进一位
-    let xunkong_raw = fix_index(
-        eb2pi(yearly_branch) as i32 + 9 - stem_idx as i32 + 1,
-        12,
-    );
+    let xunkong_raw = fix_index(eb2pi(yearly_branch) as i32 + 9 - stem_idx as i32 + 1, 12);
     // 旬空落宫的奇偶须与年支索引的奇偶一致，不一致时进一位
     let branch_is_yang = yearly_branch.index().is_multiple_of(2);
     let xunkong = if yearly_branch.index() % 2 != xunkong_raw % 2 {
@@ -561,25 +608,18 @@ pub fn get_monthly_star_index(month_index: usize) -> MonthlyStar {
     let jieshen = eb2pi(jieshen_table[month_index / 2]);
 
     // 天姚
-    let tianyao = fix_index(
-        eb2pi(Chou) as i32 + month_index as i32,
-        12,
-    );
+    let tianyao = fix_index(eb2pi(Chou) as i32 + month_index as i32, 12);
 
     // 天刑
-    let tianxing = fix_index(
-        eb2pi(You) as i32 + month_index as i32,
-        12,
-    );
+    let tianxing = fix_index(eb2pi(You) as i32 + month_index as i32, 12);
 
     // 阴煞：按 month_index % 6 查表 [Yin, Zi, Xu, Shen, Wu, Chen]
     let yinsha_table: [EarthlyBranch; 6] = [Yin, Zi, Xu, Shen, Wu, Chen];
     let yinsha = eb2pi(yinsha_table[month_index % 6]);
 
     // 天月：12元素查表 [Xu, Si, Chen, Yin, Wei, Mao, Hai, Wei, Yin, Wu, Xu, Yin]
-    let tianyue_table: [EarthlyBranch; 12] = [
-        Xu, Si, Chen, Yin, Wei, Mao, Hai, Wei, Yin, Wu, Xu, Yin,
-    ];
+    let tianyue_table: [EarthlyBranch; 12] =
+        [Xu, Si, Chen, Yin, Wei, Mao, Hai, Wei, Yin, Wu, Xu, Yin];
     let tianyue = eb2pi(tianyue_table[month_index]);
 
     // 天巫：按 month_index % 4 查表 [Si, Shen, Yin, Hai]

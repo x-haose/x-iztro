@@ -227,11 +227,17 @@ pub enum Gender {
 /// 语言
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Language {
+    /// 简体中文
     ZhCN,
+    /// 繁体中文
     ZhTW,
+    /// 英文
     EnUS,
+    /// 日文
     JaJP,
+    /// 韩文
     KoKR,
+    /// 越南文
     ViVN,
 }
 
@@ -312,38 +318,44 @@ impl Default for Config {
 pub type TimeIndex = u8;
 
 impl HeavenlyStem {
+    /// 天干序号（甲=0 … 癸=9）
     pub fn index(&self) -> usize {
         *self as usize
     }
+    /// 由序号取天干（对 10 取模）
     pub fn from_index(i: usize) -> Self {
         crate::data::constants::HEAVENLY_STEMS[i % 10]
     }
 }
 
 impl EarthlyBranch {
+    /// 地支序号（子=0 … 亥=11）
     pub fn index(&self) -> usize {
         *self as usize
     }
+    /// 由序号取地支（对 12 取模）
     pub fn from_index(i: usize) -> Self {
         crate::data::constants::EARTHLY_BRANCHES[i % 12]
     }
 }
 
 impl Palace {
+    /// 宫位在 [`crate::data::constants::PALACES`] 中的序号
     pub fn index(&self) -> usize {
         *self as usize
     }
+    /// 由序号取宫位名（对 12 取模）
     pub fn from_index(i: usize) -> Self {
         crate::data::constants::PALACES[i % 12]
     }
 }
 
 impl FiveElementsClass {
+    /// 五行局数值（水二局=2 … 火六局=6）
     pub fn value(&self) -> usize {
         *self as usize
     }
 }
-
 
 impl Palace {
     /// 语言无关的宫位标识（iztro i18n key，如 "soulPalace"）。
@@ -429,7 +441,6 @@ impl Brightness {
         }
     }
 }
-
 
 impl FiveElementsClass {
     /// 语言无关的五行局标识（"water2nd" 等）。

@@ -25,7 +25,7 @@ rs-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com
 ```bash
 cargo build --release                    # 构建（含 cdylib + rlib）
 cargo test                               # 常规测试（~8s，含 Tier 1/2 金标测试）
-cargo test -- --ignored                  # 含 Tier 3 selfcheck（~4min，284K 用例）
+cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586K 例，~20s）
 
 # Python 绑定
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
@@ -56,6 +56,7 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 ### Rust
 - Edition 2024，unsafe 用 `#[unsafe(no_mangle)]` 语法
 - 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
+- 入口返回 `Result<_, IztroError>`：全部外部输入前置校验（日期格式与存在性、公历 1583-9999、时辰 0-12），非法输入不 panic——wasm 下 panic 即 trap 且累积损耗实例栈空间，绑定层 catch_unwind 仅兜底库内部缺陷
 - `Cargo.toml` 的 lib crate-type 同时有 `cdylib`（FFI）和 `rlib`（Rust 依赖）
 - `python` feature 启用 PyO3 + pythonize
 
@@ -95,7 +96,6 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 ## 常用命令速查
 
 ```bash
-cargo run --example basic                      # 从根目录跑旧 example（如果有）
 cd examples/rust && cargo run                  # Rust 示例
 cd examples/go && go run .                     # Go 示例
 python examples/python/main.py                 # Python 示例

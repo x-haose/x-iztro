@@ -1,7 +1,7 @@
 """
 rs-iztro 数据模型。
 
-从绑定契约（JS iztro 兼容 DTO）1:1 映射的 frozen dataclass，零外部依赖。
+从 Rust 返回的星盘数据 1:1 映射的 frozen dataclass，零外部依赖。
 每个对象同时携带两层信息：
 
 - 翻译字段（`name`、`brightness` 等）：按排盘语言本地化的展示文本；

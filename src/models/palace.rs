@@ -5,29 +5,49 @@ use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::models::star::Star;
 
+/// 宫位上的大限信息。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Decadal {
+    /// 大限起止虚岁（含两端）
     pub range: (u32, u32),
+    /// 大限天干
     pub heavenly_stem: HeavenlyStem,
+    /// 大限地支
     pub earthly_branch: EarthlyBranch,
 }
 
+/// 单个宫位：星耀、干支、四组十二神与大限小限信息。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PalaceData {
+    /// 宫位索引（0-11，寅宫为 0）
     pub index: usize,
+    /// 宫位名称
     pub name: Palace,
+    /// 是否身宫
     pub is_body_palace: bool,
+    /// 是否来因宫（宫干与年干相同且不在子丑二宫）
     pub is_original_palace: bool,
+    /// 宫位天干
     pub heavenly_stem: HeavenlyStem,
+    /// 宫位地支
     pub earthly_branch: EarthlyBranch,
+    /// 主星列表（按安放顺序）
     pub major_stars: Vec<Star>,
+    /// 辅星列表（按安放顺序）
     pub minor_stars: Vec<Star>,
+    /// 杂耀列表（按安放顺序）
     pub adjective_stars: Vec<Star>,
+    /// 长生十二神
     pub changsheng12: StarKey,
+    /// 博士十二神
     pub boshi12: StarKey,
+    /// 将前十二神
     pub jiangqian12: StarKey,
+    /// 岁前十二神
     pub suiqian12: StarKey,
+    /// 大限信息
     pub decadal: Decadal,
+    /// 小限经过的虚岁列表
     pub ages: Vec<u32>,
 }
 
@@ -81,7 +101,10 @@ impl PalaceData {
 
     /// 判断是否空宫（没有 star_type == Major 的主星）
     pub fn is_empty(&self) -> bool {
-        !self.major_stars.iter().any(|s| s.star_type == StarType::Major)
+        !self
+            .major_stars
+            .iter()
+            .any(|s| s.star_type == StarType::Major)
     }
 
     /// 飞化到目标宫位
@@ -115,16 +138,20 @@ impl PalaceData {
         !self.self_mutaged_one_of()
     }
 
-    /// 获取四化飞入的宫位索引（禄、权、科、忌对应的星所在宫位）
-    /// Returns Vec of Option<usize> for [禄,权,科,忌]
+    /// 获取四化飞入的宫位索引：依次为禄、权、科、忌对应的星所在宫位，
+    /// 未找到的项为 None
     pub fn mutaged_places(&self, all_palaces: &[PalaceData]) -> Vec<Option<usize>> {
         let info = get_heavenly_stem_info(self.heavenly_stem);
         info.mutagen
             .iter()
             .map(|star_key| {
-                all_palaces
-                    .iter()
-                    .find_map(|p| if p.has(&[*star_key]) { Some(p.index) } else { None })
+                all_palaces.iter().find_map(|p| {
+                    if p.has(&[*star_key]) {
+                        Some(p.index)
+                    } else {
+                        None
+                    }
+                })
             })
             .collect()
     }
@@ -145,17 +172,17 @@ mod tests {
             Language::ZhCN,
             Config::default(),
         )
+        .unwrap()
     }
 
     #[test]
     fn test_palace_has() {
         let a = make_astrolabe();
         // Find a palace with a known major star and test has()
-        let found = a.palaces.iter().find(|p| {
-            p.major_stars
-                .iter()
-                .any(|s| s.key == StarKey::ZiweiMaj)
-        });
+        let found = a
+            .palaces
+            .iter()
+            .find(|p| p.major_stars.iter().any(|s| s.key == StarKey::ZiweiMaj));
         assert!(found.is_some());
         let p = found.unwrap();
         assert!(p.has(&[StarKey::ZiweiMaj]));
@@ -165,18 +192,33 @@ mod tests {
     fn test_palace_not_have() {
         let a = make_astrolabe();
         // The palace with Ziwei should not have all 14 major stars
-        let p = a.palaces.iter().find(|p| p.has(&[StarKey::ZiweiMaj])).unwrap();
+        let p = a
+            .palaces
+            .iter()
+            .find(|p| p.has(&[StarKey::ZiweiMaj]))
+            .unwrap();
         // Ziwei and Pojun can't be in the same palace
         assert!(p.not_have(&[StarKey::PojunMaj]) || p.has(&[StarKey::PojunMaj]));
         // A star not present should return true for not_have
-        let not_here: Vec<StarKey> = vec![StarKey::ZiweiMaj, StarKey::TianjiMaj, StarKey::TaiyangMaj,
-            StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::LianzhenMaj,
-            StarKey::TianfuMaj, StarKey::TaiyinMaj, StarKey::TanlangMaj,
-            StarKey::JumenMaj, StarKey::TianxiangMaj, StarKey::TianliangMaj,
-            StarKey::QishaMaj, StarKey::PojunMaj]
-            .into_iter()
-            .filter(|k| !p.has(&[*k]))
-            .collect();
+        let not_here: Vec<StarKey> = vec![
+            StarKey::ZiweiMaj,
+            StarKey::TianjiMaj,
+            StarKey::TaiyangMaj,
+            StarKey::WuquMaj,
+            StarKey::TiantongMaj,
+            StarKey::LianzhenMaj,
+            StarKey::TianfuMaj,
+            StarKey::TaiyinMaj,
+            StarKey::TanlangMaj,
+            StarKey::JumenMaj,
+            StarKey::TianxiangMaj,
+            StarKey::TianliangMaj,
+            StarKey::QishaMaj,
+            StarKey::PojunMaj,
+        ]
+        .into_iter()
+        .filter(|k| !p.has(&[*k]))
+        .collect();
         if !not_here.is_empty() {
             assert!(p.not_have(&not_here));
         }
@@ -188,11 +230,20 @@ mod tests {
         let _p = &a.palaces[0];
         // Should have at least one of all 14 major stars (some palace has at least one)
         let all_majors = [
-            StarKey::ZiweiMaj, StarKey::TianjiMaj, StarKey::TaiyangMaj,
-            StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::LianzhenMaj,
-            StarKey::TianfuMaj, StarKey::TaiyinMaj, StarKey::TanlangMaj,
-            StarKey::JumenMaj, StarKey::TianxiangMaj, StarKey::TianliangMaj,
-            StarKey::QishaMaj, StarKey::PojunMaj,
+            StarKey::ZiweiMaj,
+            StarKey::TianjiMaj,
+            StarKey::TaiyangMaj,
+            StarKey::WuquMaj,
+            StarKey::TiantongMaj,
+            StarKey::LianzhenMaj,
+            StarKey::TianfuMaj,
+            StarKey::TaiyinMaj,
+            StarKey::TanlangMaj,
+            StarKey::JumenMaj,
+            StarKey::TianxiangMaj,
+            StarKey::TianliangMaj,
+            StarKey::QishaMaj,
+            StarKey::PojunMaj,
         ];
         // At least some palace has one of these
         let any_has = a.palaces.iter().any(|p| p.has_one_of(&all_majors));
@@ -259,7 +310,10 @@ mod tests {
         assert_eq!(places.len(), 4);
         // Each mutagen star must exist in exactly one palace
         for place in &places {
-            assert!(place.is_some(), "Each mutagen star should be found in some palace");
+            assert!(
+                place.is_some(),
+                "Each mutagen star should be found in some palace"
+            );
         }
     }
 }

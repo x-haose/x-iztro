@@ -12,19 +12,39 @@ use rs_iztro::{by_solar, get_horoscope};
 use serde_json::Value;
 use std::fs;
 
-const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/contract_data.json");
+const DATA_PATH: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/golden/contract_data.json"
+);
 
 /// DTO 允许比 JS 多出的扩展键（任意层级）：
 /// 排盘上下文（genderKey/timeIndex/fixLeap/language/config）
 /// 与语言无关标识（各 *key/*Key(s) 字段）。
 const EXTENSION_KEYS: &[&str] = &[
-    "genderKey", "timeIndex", "fixLeap", "language", "config",
-    "key", "nameKey", "brightnessKey", "mutagenKey",
-    "heavenlyStemKey", "earthlyBranchKey",
-    "earthlyBranchOfSoulPalaceKey", "earthlyBranchOfBodyPalaceKey",
-    "soulKey", "bodyKey", "fiveElementsClassKey",
-    "changsheng12Key", "boshi12Key", "jiangqian12Key", "suiqian12Key",
-    "palaceNameKeys", "mutagenKeys", "suiqian12Keys", "jiangqian12Keys",
+    "genderKey",
+    "timeIndex",
+    "fixLeap",
+    "language",
+    "config",
+    "key",
+    "nameKey",
+    "brightnessKey",
+    "mutagenKey",
+    "heavenlyStemKey",
+    "earthlyBranchKey",
+    "earthlyBranchOfSoulPalaceKey",
+    "earthlyBranchOfBodyPalaceKey",
+    "soulKey",
+    "bodyKey",
+    "fiveElementsClassKey",
+    "changsheng12Key",
+    "boshi12Key",
+    "jiangqian12Key",
+    "suiqian12Key",
+    "palaceNameKeys",
+    "mutagenKeys",
+    "suiqian12Keys",
+    "jiangqian12Keys",
 ];
 
 fn parse_lang(s: &str) -> Language {
@@ -58,7 +78,11 @@ fn deep_compare(path: &str, js: &Value, rust: &Value, failures: &mut Vec<String>
         }
         (Value::Array(ja), Value::Array(ra)) => {
             if ja.len() != ra.len() {
-                failures.push(format!("{path}: array len js={} rust={}", ja.len(), ra.len()));
+                failures.push(format!(
+                    "{path}: array len js={} rust={}",
+                    ja.len(),
+                    ra.len()
+                ));
                 return;
             }
             for (i, (jv, rv)) in ja.iter().zip(ra.iter()).enumerate() {
@@ -85,13 +109,21 @@ fn golden_contract_json() {
         let p = &case["p"];
         let date = p["d"].as_str().unwrap();
         let ti = p["t"].as_u64().unwrap() as u8;
-        let gender = if p["g"].as_u64().unwrap() == 0 { Gender::Male } else { Gender::Female };
+        let gender = if p["g"].as_u64().unwrap() == 0 {
+            Gender::Male
+        } else {
+            Gender::Female
+        };
         let lang = parse_lang(p["lang"].as_str().unwrap());
         let algorithm = match p["algorithm"].as_str().unwrap() {
             "zhongzhou" => Algorithm::Zhongzhou,
             _ => Algorithm::Default,
         };
-        let label = format!("[{date} t{ti} {} {}]", p["lang"].as_str().unwrap(), p["algorithm"].as_str().unwrap());
+        let label = format!(
+            "[{date} t{ti} {} {}]",
+            p["lang"].as_str().unwrap(),
+            p["algorithm"].as_str().unwrap()
+        );
 
         let astrolabe = by_solar(
             date,
@@ -99,8 +131,12 @@ fn golden_contract_json() {
             gender,
             true,
             lang,
-            Config { algorithm, ..Config::default() },
-        );
+            Config {
+                algorithm,
+                ..Config::default()
+            },
+        )
+        .unwrap();
         let rust_astrolabe = serde_json::to_value(astrolabe.to_dto()).unwrap();
         deep_compare(
             &format!("{label} astrolabe"),
@@ -110,7 +146,7 @@ fn golden_contract_json() {
         );
 
         let target_date = p["td"].as_str().unwrap();
-        let horoscope = get_horoscope(&astrolabe, target_date, 3, lang);
+        let horoscope = get_horoscope(&astrolabe, target_date, 3, lang).unwrap();
         let rust_horoscope = serde_json::to_value(horoscope.to_dto(lang)).unwrap();
         deep_compare(
             &format!("{label} horoscope"),
@@ -130,5 +166,8 @@ fn golden_contract_json() {
         failures.len(),
         failures.join("\n  "),
     );
-    eprintln!("Golden contract: all {} cases match the JS JSON!", cases.len());
+    eprintln!(
+        "Golden contract: all {} cases match the JS JSON!",
+        cases.len()
+    );
 }

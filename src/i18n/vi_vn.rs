@@ -1,6 +1,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 
+/// 星耀名称
 pub fn star_name(key: StarKey) -> &'static str {
     match key {
         StarKey::ZiweiMaj => "Tử Vi",
@@ -168,6 +169,7 @@ pub fn star_name(key: StarKey) -> &'static str {
     }
 }
 
+/// 宫位名称
 pub fn palace_name(palace: Palace) -> &'static str {
     match palace {
         Palace::Soul => "Mệnh",
@@ -185,6 +187,7 @@ pub fn palace_name(palace: Palace) -> &'static str {
     }
 }
 
+/// 天干名称
 pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     match stem {
         HeavenlyStem::Jia => "Giáp",
@@ -200,6 +203,7 @@ pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     }
 }
 
+/// 地支名称
 pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     match branch {
         EarthlyBranch::Zi => "Tý",
@@ -217,6 +221,7 @@ pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     }
 }
 
+/// 亮度名称
 pub fn brightness_name(b: Brightness) -> &'static str {
     match b {
         Brightness::Miao => "Miếu",
@@ -229,6 +234,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
     }
 }
 
+/// 四化名称
 pub fn mutagen_name(m: Mutagen) -> &'static str {
     match m {
         Mutagen::Lu => "Lộc",
@@ -238,6 +244,7 @@ pub fn mutagen_name(m: Mutagen) -> &'static str {
     }
 }
 
+/// 五行局名称
 pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     match c {
         FiveElementsClass::Water2nd => "Thủy Nhị Cục",
@@ -248,6 +255,7 @@ pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     }
 }
 
+/// 性别名称
 pub fn gender_name(g: Gender) -> &'static str {
     match g {
         Gender::Male => "Nam",
@@ -257,36 +265,58 @@ pub fn gender_name(g: Gender) -> &'static str {
 
 /// Bảng tên giờ sinh (chỉ số 0-12: Giờ tý sớm … Giờ tý muộn).
 const TIME_NAMES: [&str; 13] = [
-    "Giờ tý sớm", "Giờ sửu", "Giờ dần", "Giờ mão", "Giờ thìn", "Giờ tỵ",
-    "Giờ ngọ", "Giờ mùi", "Giờ thân", "Giờ dậu", "Giờ tuất", "Giờ hợi",
+    "Giờ tý sớm",
+    "Giờ sửu",
+    "Giờ dần",
+    "Giờ mão",
+    "Giờ thìn",
+    "Giờ tỵ",
+    "Giờ ngọ",
+    "Giờ mùi",
+    "Giờ thân",
+    "Giờ dậu",
+    "Giờ tuất",
+    "Giờ hợi",
     "Giờ tý muộn",
 ];
 
 /// Bảng tên cung hoàng đạo (chỉ số 0-11: Bạch Dương trở đi theo thứ tự hoàng đạo).
 const SIGN_NAMES: [&str; 12] = [
-    "Cung Bạch Dương", "Cung Kim Ngưu", "Cung Song Tử", "Cung Cự Giải",
-    "Cung Sư Tử", "Cung Xử Nữ", "Cung Thiên Bình", "Cung Thiên Yết",
-    "Cung Xạ Thủ", "Cung Ma Kết", "Cung Thủy Bình", "Cung Song Ngư",
+    "Cung Bạch Dương",
+    "Cung Kim Ngưu",
+    "Cung Song Tử",
+    "Cung Cự Giải",
+    "Cung Sư Tử",
+    "Cung Xử Nữ",
+    "Cung Thiên Bình",
+    "Cung Thiên Yết",
+    "Cung Xạ Thủ",
+    "Cung Ma Kết",
+    "Cung Thủy Bình",
+    "Cung Song Ngư",
 ];
 
 /// Bảng tên con giáp (theo chỉ số địa chi: Tý=Chuột … Hợi=Lợn).
 const ZODIAC_NAMES: [&str; 12] = [
-    "Chuột", "Trâu", "Hổ", "Mèo", "Rồng", "Rắn",
-    "Ngựa", "Dê", "Khỉ", "Gà", "Chó", "Lợn",
+    "Chuột", "Trâu", "Hổ", "Mèo", "Rồng", "Rắn", "Ngựa", "Dê", "Khỉ", "Gà", "Chó", "Lợn",
 ];
 
+/// 时辰名称（索引 0-12）
 pub fn time_name(time_index: u8) -> &'static str {
     TIME_NAMES[time_index as usize]
 }
 
+/// 星座名称（索引 0-11，白羊座起）
 pub fn sign_name(sign_index: usize) -> &'static str {
     SIGN_NAMES[sign_index]
 }
 
+/// 生肖名称（按地支）
 pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
     ZODIAC_NAMES[branch.index()]
 }
 
+/// 运限层级名称
 pub fn horoscope_name(n: HoroscopeName) -> &'static str {
     match n {
         HoroscopeName::Decadal => "Đại Hạn",

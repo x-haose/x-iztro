@@ -1,13 +1,22 @@
-pub mod zh_cn;
-pub mod zh_tw;
+//! 六语言词表与翻译入口。
+
+/// 英文词表
 pub mod en_us;
+/// 日文词表
 pub mod ja_jp;
+/// 韩文词表
 pub mod ko_kr;
+/// 越南文词表
 pub mod vi_vn;
+/// 简体中文词表
+pub mod zh_cn;
+/// 繁体中文词表
+pub mod zh_tw;
 
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 
+/// 星耀名称（按语言）
 pub fn translate_star(key: StarKey, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::star_name(key),
@@ -19,6 +28,7 @@ pub fn translate_star(key: StarKey, lang: Language) -> &'static str {
     }
 }
 
+/// 宫位名称（按语言）
 pub fn translate_palace(palace: Palace, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::palace_name(palace),
@@ -30,6 +40,7 @@ pub fn translate_palace(palace: Palace, lang: Language) -> &'static str {
     }
 }
 
+/// 天干名称（按语言）
 pub fn translate_heavenly_stem(stem: HeavenlyStem, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::heavenly_stem_name(stem),
@@ -41,6 +52,7 @@ pub fn translate_heavenly_stem(stem: HeavenlyStem, lang: Language) -> &'static s
     }
 }
 
+/// 地支名称（按语言）
 pub fn translate_earthly_branch(branch: EarthlyBranch, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::earthly_branch_name(branch),
@@ -52,6 +64,7 @@ pub fn translate_earthly_branch(branch: EarthlyBranch, lang: Language) -> &'stat
     }
 }
 
+/// 亮度名称（按语言）
 pub fn translate_brightness(b: Brightness, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::brightness_name(b),
@@ -63,6 +76,7 @@ pub fn translate_brightness(b: Brightness, lang: Language) -> &'static str {
     }
 }
 
+/// 四化名称（按语言）
 pub fn translate_mutagen(m: Mutagen, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::mutagen_name(m),
@@ -74,6 +88,7 @@ pub fn translate_mutagen(m: Mutagen, lang: Language) -> &'static str {
     }
 }
 
+/// 五行局名称（按语言）
 pub fn translate_five_elements_class(c: FiveElementsClass, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::five_elements_class_name(c),
@@ -85,6 +100,7 @@ pub fn translate_five_elements_class(c: FiveElementsClass, lang: Language) -> &'
     }
 }
 
+/// 性别名称（按语言）
 pub fn translate_gender(g: Gender, lang: Language) -> &'static str {
     match lang {
         Language::ZhCN => zh_cn::gender_name(g),

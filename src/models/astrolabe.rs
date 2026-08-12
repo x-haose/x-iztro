@@ -42,21 +42,36 @@ pub struct RawDates {
     pub chinese_date: RawChineseDate,
 }
 
+/// 完整星盘：排盘入口的返回值，承载十二宫与全部命盘信息。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Astrolabe {
+    /// 性别
     pub gender: Gender,
+    /// 阳历日期（与排盘入参一致，"YYYY-M-D"）
     pub solar_date: String,
+    /// 农历日期中文表示（如「二〇〇〇年七月十七」）
     pub lunar_date: String,
+    /// 干支纪日四柱展示串（按排盘语言）
     pub chinese_date: String,
+    /// 时辰名称（按排盘语言，如「寅时」）
     pub time: String,
+    /// 时辰对应的时间段（如「03:00~05:00」）
     pub time_range: String,
+    /// 星座（按排盘语言，如「狮子座」）
     pub sign: String,
+    /// 生肖（按排盘语言，按年支）
     pub zodiac: String,
+    /// 命宫地支
     pub earthly_branch_of_soul_palace: EarthlyBranch,
+    /// 身宫地支
     pub earthly_branch_of_body_palace: EarthlyBranch,
+    /// 命主星
     pub soul: StarKey,
+    /// 身主星
     pub body: StarKey,
+    /// 五行局
     pub five_elements_class: FiveElementsClass,
+    /// 十二宫数据（索引 0 为寅宫）
     pub palaces: Vec<PalaceData>,
     /// 结构化的农历生日与四柱干支
     pub raw_dates: RawDates,
@@ -127,6 +142,7 @@ mod tests {
             Language::ZhCN,
             Config::default(),
         )
+        .unwrap()
     }
 
     #[test]
@@ -146,9 +162,18 @@ mod tests {
 
         // All 12 palace names should be findable
         let names = [
-            Palace::Soul, Palace::Parents, Palace::Spirit, Palace::Property,
-            Palace::Career, Palace::Friends, Palace::Surface, Palace::Health,
-            Palace::Wealth, Palace::Children, Palace::Spouse, Palace::Siblings,
+            Palace::Soul,
+            Palace::Parents,
+            Palace::Spirit,
+            Palace::Property,
+            Palace::Career,
+            Palace::Friends,
+            Palace::Surface,
+            Palace::Health,
+            Palace::Wealth,
+            Palace::Children,
+            Palace::Spouse,
+            Palace::Siblings,
         ];
         for name in &names {
             assert!(a.palace_by_name(*name).is_some());
@@ -160,11 +185,20 @@ mod tests {
         let a = make_astrolabe();
         // Every major star should be findable
         let major_keys = [
-            StarKey::ZiweiMaj, StarKey::TianjiMaj, StarKey::TaiyangMaj,
-            StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::LianzhenMaj,
-            StarKey::TianfuMaj, StarKey::TaiyinMaj, StarKey::TanlangMaj,
-            StarKey::JumenMaj, StarKey::TianxiangMaj, StarKey::TianliangMaj,
-            StarKey::QishaMaj, StarKey::PojunMaj,
+            StarKey::ZiweiMaj,
+            StarKey::TianjiMaj,
+            StarKey::TaiyangMaj,
+            StarKey::WuquMaj,
+            StarKey::TiantongMaj,
+            StarKey::LianzhenMaj,
+            StarKey::TianfuMaj,
+            StarKey::TaiyinMaj,
+            StarKey::TanlangMaj,
+            StarKey::JumenMaj,
+            StarKey::TianxiangMaj,
+            StarKey::TianliangMaj,
+            StarKey::QishaMaj,
+            StarKey::PojunMaj,
         ];
         for key in &major_keys {
             let result = a.star(*key);
@@ -182,8 +216,8 @@ mod tests {
         // Test palace 3
         let sp = a.surrounded_palaces(3);
         assert_eq!(sp.target.index, 3);
-        assert_eq!(sp.opposite.index, 9);   // 3+6
-        assert_eq!(sp.career.index, 7);     // 3+4
-        assert_eq!(sp.wealth.index, 11);    // 3+8
+        assert_eq!(sp.opposite.index, 9); // 3+6
+        assert_eq!(sp.career.index, 7); // 3+4
+        assert_eq!(sp.wealth.index, 11); // 3+8
     }
 }

@@ -40,9 +40,21 @@ fn check_hash_csv(file: &str, config: Config) {
         let f: Vec<&str> = line.split(',').collect();
         assert!(f.len() == 4, "Bad line in {file}: {line}");
         let (date, ti, g, expected) = (f[0], f[1], f[2], f[3]);
-        let gender = if g == "0" { Gender::Male } else { Gender::Female };
+        let gender = if g == "0" {
+            Gender::Male
+        } else {
+            Gender::Female
+        };
 
-        let astrolabe = by_solar(date, ti.parse().unwrap(), gender, true, Language::ZhCN, config);
+        let astrolabe = by_solar(
+            date,
+            ti.parse().unwrap(),
+            gender,
+            true,
+            Language::ZhCN,
+            config,
+        )
+        .unwrap();
         total += 1;
 
         if hash_astrolabe(&astrolabe) != expected {
@@ -92,7 +104,10 @@ fn check_horoscope_json(file: &str, config: Config) {
 fn golden_config_year_divide_exact() {
     check_hash_csv(
         "config_yeardivide.csv",
-        Config { year_divide: YearDivide::Exact, ..Config::default() },
+        Config {
+            year_divide: YearDivide::Exact,
+            ..Config::default()
+        },
     );
 }
 
@@ -100,7 +115,10 @@ fn golden_config_year_divide_exact() {
 fn golden_config_day_divide_current() {
     check_hash_csv(
         "config_daydivide.csv",
-        Config { day_divide: DayDivide::Current, ..Config::default() },
+        Config {
+            day_divide: DayDivide::Current,
+            ..Config::default()
+        },
     );
 }
 
@@ -108,7 +126,10 @@ fn golden_config_day_divide_current() {
 fn golden_config_age_divide_birthday() {
     check_horoscope_json(
         "config_agedivide.json",
-        Config { age_divide: AgeDivide::Birthday, ..Config::default() },
+        Config {
+            age_divide: AgeDivide::Birthday,
+            ..Config::default()
+        },
     );
 }
 
@@ -116,6 +137,9 @@ fn golden_config_age_divide_birthday() {
 fn golden_config_horoscope_divide_exact() {
     check_horoscope_json(
         "config_horoscopedivide.json",
-        Config { horoscope_divide: HoroscopeDivide::Exact, ..Config::default() },
+        Config {
+            horoscope_divide: HoroscopeDivide::Exact,
+            ..Config::default()
+        },
     );
 }

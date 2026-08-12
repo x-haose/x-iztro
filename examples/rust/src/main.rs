@@ -12,9 +12,9 @@ use rs_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use rs_iztro::{astrolabe_to_prompt, by_solar, get_horoscope, horoscope_to_prompt};
+use rs_iztro::{IztroError, astrolabe_to_prompt, by_solar, get_horoscope, horoscope_to_prompt};
 
-fn main() {
+fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;
 
     // ============================================================
@@ -31,7 +31,7 @@ fn main() {
         true,
         lang,
         Config::default(),
-    );
+    )?;
 
     println!("阳历：{}", astrolabe.solar_date);
     println!("农历：{}", astrolabe.lunar_date);
@@ -125,7 +125,7 @@ fn main() {
     // ============================================================
     println!("\n===== 流年运限 (2026-10-01) =====\n");
 
-    let horoscope = get_horoscope(&astrolabe, "2027-10-1", 0, lang);
+    let horoscope = get_horoscope(&astrolabe, "2027-10-1", 0, lang)?;
 
     println!("日期：{} / {}", horoscope.solar_date, horoscope.lunar_date);
     println!(
@@ -183,4 +183,6 @@ fn main() {
     println!("（Prompt 共 {} 字符）", full_prompt.chars().count());
 
     println!("\n===== 完毕 =====");
+
+    Ok(())
 }

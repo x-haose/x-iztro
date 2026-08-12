@@ -11,14 +11,19 @@ use rs_iztro::data::types::*;
 use serde_json::Value;
 use std::fs;
 
-const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/horoscope_data.json");
+const DATA_PATH: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/golden/horoscope_data.json"
+);
 const MAX_FAILURES: usize = 50;
 
 #[test]
 fn golden_horoscope_full() {
-    let data = fs::read_to_string(DATA_PATH)
-        .expect("horoscope_data.json missing — run `node tests/golden/generate_horoscope.mjs` first");
-    let cases: Vec<Value> = serde_json::from_str(&data).expect("Failed to parse horoscope_data.json");
+    let data = fs::read_to_string(DATA_PATH).expect(
+        "horoscope_data.json missing — run `node tests/golden/generate_horoscope.mjs` first",
+    );
+    let cases: Vec<Value> =
+        serde_json::from_str(&data).expect("Failed to parse horoscope_data.json");
 
     let mut failures: Vec<String> = Vec::new();
 

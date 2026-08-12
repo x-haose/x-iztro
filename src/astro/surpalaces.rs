@@ -80,6 +80,7 @@ mod tests {
             Language::ZhCN,
             Config::default(),
         )
+        .unwrap()
     }
 
     #[test]
@@ -131,11 +132,20 @@ mod tests {
         // Collect all star keys in the surrounded palaces
         // Then pick a star NOT present to test not_have
         let all_majors = [
-            StarKey::ZiweiMaj, StarKey::TianjiMaj, StarKey::TaiyangMaj,
-            StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::LianzhenMaj,
-            StarKey::TianfuMaj, StarKey::TaiyinMaj, StarKey::TanlangMaj,
-            StarKey::JumenMaj, StarKey::TianxiangMaj, StarKey::TianliangMaj,
-            StarKey::QishaMaj, StarKey::PojunMaj,
+            StarKey::ZiweiMaj,
+            StarKey::TianjiMaj,
+            StarKey::TaiyangMaj,
+            StarKey::WuquMaj,
+            StarKey::TiantongMaj,
+            StarKey::LianzhenMaj,
+            StarKey::TianfuMaj,
+            StarKey::TaiyinMaj,
+            StarKey::TanlangMaj,
+            StarKey::JumenMaj,
+            StarKey::TianxiangMaj,
+            StarKey::TianliangMaj,
+            StarKey::QishaMaj,
+            StarKey::PojunMaj,
         ];
         let missing: Vec<StarKey> = all_majors
             .iter()

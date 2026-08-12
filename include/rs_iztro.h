@@ -5,7 +5,9 @@
  *
  * All returned strings are heap-allocated JSON. The caller MUST free them
  * with iztro_free_string(). Functions never return NULL; on error they
- * return a JSON string of the form {"error": "message"}.
+ * return a JSON string of the form {"error": "message"}. All input is
+ * validated up front (date format/existence, Gregorian years 1583-9999,
+ * time index 0-12); invalid input yields an error JSON, never a crash.
  *
  * Result JSON carries two layers per field: translated display text
  * (name, brightness, ...) in the requested language, and

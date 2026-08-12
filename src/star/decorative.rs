@@ -69,11 +69,7 @@ pub fn get_changsheng12(
 /// 博士12神
 ///
 /// 从禄存位置开始，根据性别阴阳与年支阴阳决定顺逆。
-pub fn get_boshi12(
-    lu_index: usize,
-    gender: Gender,
-    yearly_branch: EarthlyBranch,
-) -> [StarKey; 12] {
+pub fn get_boshi12(lu_index: usize, gender: Gender, yearly_branch: EarthlyBranch) -> [StarKey; 12] {
     let clockwise = same_yinyang(gender, yearly_branch);
 
     let stars = [
@@ -195,11 +191,7 @@ mod tests {
 
     #[test]
     fn test_changsheng12_all_unique() {
-        let result = get_changsheng12(
-            FiveElementsClass::Water2nd,
-            Gender::Male,
-            EarthlyBranch::Zi,
-        );
+        let result = get_changsheng12(FiveElementsClass::Water2nd, Gender::Male, EarthlyBranch::Zi);
         // All 12 should be distinct
         let mut seen = std::collections::HashSet::new();
         for key in &result {

@@ -1,12 +1,17 @@
 //! wasm32 导出：供 wazero 等 WebAssembly 运行时（Go 绑定）调用。
 //!
+//! 全部外部输入（含日期与时辰）在核心层校验并以错误 JSON 返回，正常使用
+//! 不会触发 panic。wasm 下 panic 即 abort（trap），且每次 trap 都永久损耗
+//! 模块实例的栈空间——trap 仅在库内部缺陷时可能发生，宿主一旦观察到
+//! trap 应重建模块实例。
+//!
 //! 内存协定：
 //! - 调用方用 `iztro_wasm_alloc` 申请入参缓冲并写入 UTF-8 JSON；
 //! - 功能函数接收 (ptr, len)，返回 `(ptr << 32) | len` 打包的结果缓冲，
 //!   内容为 DTO JSON 或 `{"error":"..."}`；
 //! - 双方的缓冲都用 `iztro_wasm_free` 释放。
 //!
-//! 入参 JSON 与绑定契约同构（camelCase）：
+//! 入参 JSON 键为 camelCase：
 //! - by_solar:  {solarDate, timeIndex, gender, fixLeap, language, config?}
 //! - by_lunar:  {lunarDate, timeIndex, gender, isLeapMonth, fixLeap, language, config?}
 //! - horoscope: by_solar 字段 + {targetDate, targetTimeIndex}
@@ -57,7 +62,9 @@ fn parse_gender(s: &str) -> Result<Gender, String> {
     match s.to_lowercase().as_str() {
         "male" => Ok(Gender::Male),
         "female" => Ok(Gender::Female),
-        _ => Err(format!("Invalid gender '{s}'. Expected 'male' or 'female'.")),
+        _ => Err(format!(
+            "Invalid gender '{s}'. Expected 'male' or 'female'."
+        )),
     }
 }
 
@@ -91,7 +98,7 @@ fn hand_over(s: String) -> u64 {
 }
 
 fn error_result(msg: &str) -> u64 {
-    hand_over(format!(r#"{{"error":"{}"}}"#, msg.replace('"', "\\\"")))
+    hand_over(serde_json::json!({ "error": msg }).to_string())
 }
 
 /// 读取调用方写入的入参缓冲。
@@ -118,7 +125,10 @@ pub extern "C" fn iztro_wasm_alloc(len: u32) -> *mut u8 {
 pub unsafe extern "C" fn iztro_wasm_free(ptr: *mut u8, len: u32) {
     if !ptr.is_null() {
         unsafe {
-            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len as usize)));
+            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                ptr,
+                len as usize,
+            )));
         }
     }
 }
@@ -129,8 +139,8 @@ pub unsafe extern "C" fn iztro_wasm_free(ptr: *mut u8, len: u32) {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_by_solar(ptr: *const u8, len: u32) -> u64 {
-    let result = (|| -> Result<String, String> {
-        let input = unsafe { read_input(ptr, len)? };
+    let input = unsafe { read_input(ptr, len) };
+    let result = input.and_then(|input| {
         let input: BySolarInput =
             serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
         let gender = parse_gender(&input.gender)?;
@@ -143,9 +153,10 @@ pub unsafe extern "C" fn iztro_wasm_by_solar(ptr: *const u8, len: u32) -> u64 {
             input.fix_leap,
             language,
             config,
-        );
+        )
+        .map_err(|e| e.to_string())?;
         serde_json::to_string(&astrolabe.to_dto()).map_err(|e| e.to_string())
-    })();
+    });
 
     match result {
         Ok(json) => hand_over(json),
@@ -159,8 +170,8 @@ pub unsafe extern "C" fn iztro_wasm_by_solar(ptr: *const u8, len: u32) -> u64 {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_by_lunar(ptr: *const u8, len: u32) -> u64 {
-    let result = (|| -> Result<String, String> {
-        let input = unsafe { read_input(ptr, len)? };
+    let input = unsafe { read_input(ptr, len) };
+    let result = input.and_then(|input| {
         let input: ByLunarInput =
             serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
         let gender = parse_gender(&input.gender)?;
@@ -174,9 +185,10 @@ pub unsafe extern "C" fn iztro_wasm_by_lunar(ptr: *const u8, len: u32) -> u64 {
             input.fix_leap,
             language,
             config,
-        );
+        )
+        .map_err(|e| e.to_string())?;
         serde_json::to_string(&astrolabe.to_dto()).map_err(|e| e.to_string())
-    })();
+    });
 
     match result {
         Ok(json) => hand_over(json),
@@ -190,8 +202,8 @@ pub unsafe extern "C" fn iztro_wasm_by_lunar(ptr: *const u8, len: u32) -> u64 {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_horoscope(ptr: *const u8, len: u32) -> u64 {
-    let result = (|| -> Result<String, String> {
-        let input = unsafe { read_input(ptr, len)? };
+    let input = unsafe { read_input(ptr, len) };
+    let result = input.and_then(|input| {
         let input: HoroscopeInput =
             serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
         let gender = parse_gender(&input.gender)?;
@@ -204,15 +216,17 @@ pub unsafe extern "C" fn iztro_wasm_horoscope(ptr: *const u8, len: u32) -> u64 {
             input.fix_leap,
             language,
             config,
-        );
+        )
+        .map_err(|e| e.to_string())?;
         let horoscope = crate::get_horoscope(
             &astrolabe,
             &input.target_date,
             input.target_time_index,
             language,
-        );
+        )
+        .map_err(|e| e.to_string())?;
         serde_json::to_string(&horoscope.to_dto(language)).map_err(|e| e.to_string())
-    })();
+    });
 
     match result {
         Ok(json) => hand_over(json),

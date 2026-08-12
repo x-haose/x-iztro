@@ -3,6 +3,8 @@
 .idea/
 __pycache__/
 *.pyc
+*.so
+.venv/
 
 # Golden test data
 tests/golden/node_modules/

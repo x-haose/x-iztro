@@ -1,6 +1,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 
+/// 星耀名称
 pub fn star_name(key: StarKey) -> &'static str {
     match key {
         StarKey::ZiweiMaj => "emperor",
@@ -168,6 +169,7 @@ pub fn star_name(key: StarKey) -> &'static str {
     }
 }
 
+/// 宫位名称
 pub fn palace_name(palace: Palace) -> &'static str {
     match palace {
         Palace::Soul => "soul",
@@ -185,6 +187,7 @@ pub fn palace_name(palace: Palace) -> &'static str {
     }
 }
 
+/// 天干名称
 pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     match stem {
         HeavenlyStem::Jia => "jia",
@@ -200,6 +203,7 @@ pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     }
 }
 
+/// 地支名称
 pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     match branch {
         EarthlyBranch::Zi => "zi",
@@ -217,6 +221,7 @@ pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     }
 }
 
+/// 亮度名称
 pub fn brightness_name(b: Brightness) -> &'static str {
     match b {
         Brightness::Miao => "[+3]",
@@ -229,6 +234,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
     }
 }
 
+/// 四化名称
 pub fn mutagen_name(m: Mutagen) -> &'static str {
     match m {
         Mutagen::Lu => "A",
@@ -238,6 +244,7 @@ pub fn mutagen_name(m: Mutagen) -> &'static str {
     }
 }
 
+/// 五行局名称
 pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     match c {
         FiveElementsClass::Water2nd => "water 2nd",
@@ -248,6 +255,7 @@ pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     }
 }
 
+/// 性别名称
 pub fn gender_name(g: Gender) -> &'static str {
     match g {
         Gender::Male => "male",
@@ -257,35 +265,59 @@ pub fn gender_name(g: Gender) -> &'static str {
 
 /// Hour-of-birth names (index 0-12: early Rat hour ... late Rat hour).
 const TIME_NAMES: [&str; 13] = [
-    "early Rat hour", "Ox hour", "Tiger hour", "Rabbit hour", "Dragon hour",
-    "Snake hour", "Horse hour", "Goat hour", "Monkey hour", "Rooster hour",
-    "Dog hour", "Pig hour", "late Rat hour",
+    "early Rat hour",
+    "Ox hour",
+    "Tiger hour",
+    "Rabbit hour",
+    "Dragon hour",
+    "Snake hour",
+    "Horse hour",
+    "Goat hour",
+    "Monkey hour",
+    "Rooster hour",
+    "Dog hour",
+    "Pig hour",
+    "late Rat hour",
 ];
 
 /// Zodiac sign names (index 0-11: Aries onward, in ecliptic order).
 const SIGN_NAMES: [&str; 12] = [
-    "aries", "taurus", "gemini", "cancer", "leo", "virgo",
-    "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+    "aries",
+    "taurus",
+    "gemini",
+    "cancer",
+    "leo",
+    "virgo",
+    "libra",
+    "scorpio",
+    "sagittarius",
+    "capricorn",
+    "aquarius",
+    "pisces",
 ];
 
 /// Chinese zodiac animal names (indexed by earthly branch: Zi=rat ... Hai=pig).
 const ZODIAC_NAMES: [&str; 12] = [
-    "rat", "ox", "tiger", "rabbit", "dragon", "snake",
-    "horse", "sheep", "monkey", "rooster", "dog", "pig",
+    "rat", "ox", "tiger", "rabbit", "dragon", "snake", "horse", "sheep", "monkey", "rooster",
+    "dog", "pig",
 ];
 
+/// 时辰名称（索引 0-12）
 pub fn time_name(time_index: u8) -> &'static str {
     TIME_NAMES[time_index as usize]
 }
 
+/// 星座名称（索引 0-11，白羊座起）
 pub fn sign_name(sign_index: usize) -> &'static str {
     SIGN_NAMES[sign_index]
 }
 
+/// 生肖名称（按地支）
 pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
     ZODIAC_NAMES[branch.index()]
 }
 
+/// 运限层级名称
 pub fn horoscope_name(n: HoroscopeName) -> &'static str {
     match n {
         HoroscopeName::Decadal => "decadal",

@@ -130,3 +130,39 @@ func TestErrorPropagation(t *testing.T) {
 		t.Error("invalid gender should return an error")
 	}
 }
+
+// TestInvalidInputBombardment 验证大量非法输入全部走校验错误路径（不触发
+// wasm trap——trap 会永久损耗共享实例的栈空间，累积数百次后连合法调用也会
+// 失败），且之后同一实例仍可正常排盘。
+func TestInvalidInputBombardment(t *testing.T) {
+	bad := []struct {
+		date string
+		ti   uint8
+	}{
+		{"not-a-date", 2},
+		{"2000-8-16", 13},
+		{"2000-13-1", 2},
+		{"2000-2-30", 2},
+		{"1582-10-10", 2},
+		{"garbage-x-y", 2},
+	}
+	for i := 0; i < 500; i++ {
+		c := bad[i%len(bad)]
+		if _, err := BySolar(c.date, c.ti, "male", true, "zh_cn", nil); err == nil {
+			t.Fatalf("round %d: %q ti=%d should return an error", i, c.date, c.ti)
+		}
+	}
+	a, err := BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
+	if err != nil {
+		t.Fatalf("chart after 500 invalid calls should succeed: %v", err)
+	}
+	if len(a.Palaces) != 12 {
+		t.Errorf("palaces: got %d want 12", len(a.Palaces))
+	}
+	if _, err := GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "garbage", 13); err == nil {
+		t.Error("invalid horoscope target should return an error")
+	}
+	if _, err := ByLunar("2000-7-31", 2, "male", false, true, "zh_cn", nil); err == nil {
+		t.Error("out-of-range lunar day should return an error")
+	}
+}

@@ -57,7 +57,11 @@ fn golden_variants_by_lunar() {
         let f: Vec<&str> = line.split(',').collect();
         assert!(f.len() == 6, "Bad bylunar line: {line}");
         let (ld, ti, g, il, fl, expected) = (f[0], f[1], f[2], f[3], f[4], f[5]);
-        let gender = if g == "0" { Gender::Male } else { Gender::Female };
+        let gender = if g == "0" {
+            Gender::Male
+        } else {
+            Gender::Female
+        };
 
         let astrolabe = by_lunar(
             ld,
@@ -67,7 +71,8 @@ fn golden_variants_by_lunar() {
             fl == "1",
             Language::ZhCN,
             Config::default(),
-        );
+        )
+        .unwrap();
         total += 1;
 
         if hash_astrolabe(&astrolabe) != expected {
@@ -102,7 +107,11 @@ fn golden_variants_zhongzhou() {
         let f: Vec<&str> = line.split(',').collect();
         assert!(f.len() == 4, "Bad zhongzhou line: {line}");
         let (date, ti, g, expected) = (f[0], f[1], f[2], f[3]);
-        let gender = if g == "0" { Gender::Male } else { Gender::Female };
+        let gender = if g == "0" {
+            Gender::Male
+        } else {
+            Gender::Female
+        };
 
         let astrolabe = by_solar(
             date,
@@ -110,8 +119,12 @@ fn golden_variants_zhongzhou() {
             gender,
             true,
             Language::ZhCN,
-            Config { algorithm: Algorithm::Zhongzhou, ..Config::default() },
-        );
+            Config {
+                algorithm: Algorithm::Zhongzhou,
+                ..Config::default()
+            },
+        )
+        .unwrap();
         total += 1;
 
         if hash_astrolabe(&astrolabe) != expected {
@@ -146,39 +159,69 @@ fn golden_variants_languages() {
         let p = &case["p"];
         let date = p["d"].as_str().unwrap();
         let ti = p["t"].as_u64().unwrap() as u8;
-        let gender = if p["g"].as_u64().unwrap() == 0 { Gender::Male } else { Gender::Female };
+        let gender = if p["g"].as_u64().unwrap() == 0 {
+            Gender::Male
+        } else {
+            Gender::Female
+        };
         let lang = parse_lang(p["lang"].as_str().unwrap());
         let label = format!("[{date} t{ti} {}]", p["lang"].as_str().unwrap());
 
-        let a = by_solar(date, ti, gender, true, lang, Config::default());
+        let a = by_solar(date, ti, gender, true, lang, Config::default()).unwrap();
 
         let star = |s: &rs_iztro::models::star::Star| {
             format!(
                 "{}:{}:{}",
                 s.name,
-                s.brightness.map(|b| rs_iztro::i18n::translate_brightness(b, lang)).unwrap_or(""),
-                s.mutagen.map(|m| rs_iztro::i18n::translate_mutagen(m, lang)).unwrap_or(""),
+                s.brightness
+                    .map(|b| rs_iztro::i18n::translate_brightness(b, lang))
+                    .unwrap_or(""),
+                s.mutagen
+                    .map(|m| rs_iztro::i18n::translate_mutagen(m, lang))
+                    .unwrap_or(""),
             )
         };
 
         let top_checks: Vec<(&str, String, &str)> = vec![
-            ("gender", translate_gender(a.gender, lang).to_string(), case["gender"].as_str().unwrap()),
+            (
+                "gender",
+                translate_gender(a.gender, lang).to_string(),
+                case["gender"].as_str().unwrap(),
+            ),
             ("time", a.time.clone(), case["time"].as_str().unwrap()),
             ("sign", a.sign.clone(), case["sign"].as_str().unwrap()),
             ("zodiac", a.zodiac.clone(), case["zodiac"].as_str().unwrap()),
-            ("chinese_date", a.chinese_date.clone(), case["chinese_date"].as_str().unwrap()),
-            ("soul", translate_star(a.soul, lang).to_string(), case["soul"].as_str().unwrap()),
-            ("body", translate_star(a.body, lang).to_string(), case["body"].as_str().unwrap()),
-            ("five_elements_class",
-             translate_five_elements_class(a.five_elements_class, lang).to_string(),
-             case["five_elements_class"].as_str().unwrap()),
-            ("soul_branch",
-             translate_earthly_branch(a.earthly_branch_of_soul_palace, lang).to_string(),
-             case["soul_branch"].as_str().unwrap()),
+            (
+                "chinese_date",
+                a.chinese_date.clone(),
+                case["chinese_date"].as_str().unwrap(),
+            ),
+            (
+                "soul",
+                translate_star(a.soul, lang).to_string(),
+                case["soul"].as_str().unwrap(),
+            ),
+            (
+                "body",
+                translate_star(a.body, lang).to_string(),
+                case["body"].as_str().unwrap(),
+            ),
+            (
+                "five_elements_class",
+                translate_five_elements_class(a.five_elements_class, lang).to_string(),
+                case["five_elements_class"].as_str().unwrap(),
+            ),
+            (
+                "soul_branch",
+                translate_earthly_branch(a.earthly_branch_of_soul_palace, lang).to_string(),
+                case["soul_branch"].as_str().unwrap(),
+            ),
         ];
         for (field, actual, expected) in &top_checks {
             if actual != expected {
-                failures.push(format!("{label} {field}: expected={expected} actual={actual}"));
+                failures.push(format!(
+                    "{label} {field}: expected={expected} actual={actual}"
+                ));
             }
         }
 
@@ -187,13 +230,41 @@ fn golden_variants_languages() {
             let pl = format!("{label} p[{pi}]");
 
             let checks: Vec<(&str, String, &str)> = vec![
-                ("name", translate_palace(ap.name, lang).to_string(), exp_p["name"].as_str().unwrap()),
-                ("hs", translate_heavenly_stem(ap.heavenly_stem, lang).to_string(), exp_p["hs"].as_str().unwrap()),
-                ("eb", translate_earthly_branch(ap.earthly_branch, lang).to_string(), exp_p["eb"].as_str().unwrap()),
-                ("cs", translate_star(ap.changsheng12, lang).to_string(), exp_p["cs"].as_str().unwrap()),
-                ("bo", translate_star(ap.boshi12, lang).to_string(), exp_p["bo"].as_str().unwrap()),
-                ("jq", translate_star(ap.jiangqian12, lang).to_string(), exp_p["jq"].as_str().unwrap()),
-                ("sq", translate_star(ap.suiqian12, lang).to_string(), exp_p["sq"].as_str().unwrap()),
+                (
+                    "name",
+                    translate_palace(ap.name, lang).to_string(),
+                    exp_p["name"].as_str().unwrap(),
+                ),
+                (
+                    "hs",
+                    translate_heavenly_stem(ap.heavenly_stem, lang).to_string(),
+                    exp_p["hs"].as_str().unwrap(),
+                ),
+                (
+                    "eb",
+                    translate_earthly_branch(ap.earthly_branch, lang).to_string(),
+                    exp_p["eb"].as_str().unwrap(),
+                ),
+                (
+                    "cs",
+                    translate_star(ap.changsheng12, lang).to_string(),
+                    exp_p["cs"].as_str().unwrap(),
+                ),
+                (
+                    "bo",
+                    translate_star(ap.boshi12, lang).to_string(),
+                    exp_p["bo"].as_str().unwrap(),
+                ),
+                (
+                    "jq",
+                    translate_star(ap.jiangqian12, lang).to_string(),
+                    exp_p["jq"].as_str().unwrap(),
+                ),
+                (
+                    "sq",
+                    translate_star(ap.suiqian12, lang).to_string(),
+                    exp_p["sq"].as_str().unwrap(),
+                ),
             ];
             for (field, actual, expected) in &checks {
                 if actual != expected {
@@ -201,21 +272,37 @@ fn golden_variants_languages() {
                 }
             }
 
-            let exp_ms: Vec<&str> = exp_p["ms"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+            let exp_ms: Vec<&str> = exp_p["ms"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap())
+                .collect();
             let act_ms: Vec<String> = ap.major_stars.iter().map(&star).collect();
             if act_ms != exp_ms {
                 failures.push(format!("{pl} ms: expected={exp_ms:?} actual={act_ms:?}"));
             }
 
-            let exp_ns: Vec<&str> = exp_p["ns"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+            let exp_ns: Vec<&str> = exp_p["ns"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap())
+                .collect();
             let mut act_ns: Vec<String> = ap.minor_stars.iter().map(&star).collect();
             act_ns.sort();
             if act_ns != exp_ns {
                 failures.push(format!("{pl} ns: expected={exp_ns:?} actual={act_ns:?}"));
             }
 
-            let exp_adj: Vec<&str> = exp_p["adj"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
-            let mut act_adj: Vec<String> = ap.adjective_stars.iter().map(|s| s.name.clone()).collect();
+            let exp_adj: Vec<&str> = exp_p["adj"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap())
+                .collect();
+            let mut act_adj: Vec<String> =
+                ap.adjective_stars.iter().map(|s| s.name.clone()).collect();
             act_adj.sort();
             if act_adj != exp_adj {
                 failures.push(format!("{pl} adj: expected={exp_adj:?} actual={act_adj:?}"));

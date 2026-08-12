@@ -3,7 +3,7 @@
 //! These functions expose the core astrolabe functionality via a C-compatible ABI,
 //! allowing the library to be called from Go, C, and any other C-compatible language.
 
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{CStr, CString, c_char};
 
 use crate::data::types::{Gender, Language};
 use crate::dto::parse_config_json;
@@ -48,16 +48,38 @@ unsafe fn cstr_to_str<'a>(ptr: *const c_char, param_name: &str) -> Result<&'a st
 }
 
 /// Helper: convert an optional C string pointer (NULL allowed) to Option<&str>.
-unsafe fn cstr_to_opt_str<'a>(ptr: *const c_char, param_name: &str) -> Result<Option<&'a str>, String> {
+unsafe fn cstr_to_opt_str<'a>(
+    ptr: *const c_char,
+    param_name: &str,
+) -> Result<Option<&'a str>, String> {
     if ptr.is_null() {
         return Ok(None);
     }
     unsafe { cstr_to_str(ptr, param_name) }.map(Some)
 }
 
-/// Helper: return a JSON error string as a C string.
+/// Helper: run the computation with panics converted into error strings, so
+/// that a defect inside the library can never unwind across the C ABI (which
+/// is undefined behavior). Input validation itself returns errors without
+/// panicking; this is a safety net only. Note: it relies on the default
+/// `panic = "unwind"` strategy — building with `panic = "abort"` turns any
+/// remaining panic into a process abort instead of an error JSON.
+fn catch(
+    f: impl FnOnce() -> Result<String, String> + std::panic::UnwindSafe,
+) -> Result<String, String> {
+    std::panic::catch_unwind(f).unwrap_or_else(|panic| {
+        Err(format!(
+            "Invalid input: {}",
+            crate::dto::panic_message(panic.as_ref())
+        ))
+    })
+}
+
+/// Helper: return a JSON error string as a C string. The message is JSON-encoded
+/// via serde so quotes, backslashes and control characters are always escaped;
+/// NUL bytes are escaped as \u0000, so `CString::new` cannot fail.
 fn error_json(msg: &str) -> *mut c_char {
-    let json = format!(r#"{{"error":"{}"}}"#, msg.replace('\"', "\\\""));
+    let json = serde_json::json!({ "error": msg }).to_string();
     CString::new(json).unwrap().into_raw()
 }
 
@@ -95,20 +117,24 @@ pub unsafe extern "C" fn iztro_by_solar(
     language: *const c_char,
     config_json: *const c_char,
 ) -> *mut c_char {
-    let result = (|| -> Result<String, String> {
+    let parsed = (|| -> Result<_, String> {
         let solar_date = unsafe { cstr_to_str(solar_date, "solar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
         let config_str = unsafe { cstr_to_opt_str(config_json, "config_json")? };
-
-        let gender = parse_gender(gender_str)?;
-        let language = parse_language(language_str)?;
-        let config = parse_config_json(config_str)?;
-
-        Ok(crate::by_solar_json(
-            solar_date, time_index, gender, fix_leap, language, config,
+        Ok((
+            solar_date,
+            parse_gender(gender_str)?,
+            parse_language(language_str)?,
+            parse_config_json(config_str)?,
         ))
     })();
+    let result = parsed.and_then(|(solar_date, gender, language, config)| {
+        catch(move || {
+            crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config)
+                .map_err(|e| e.to_string())
+        })
+    });
 
     match result {
         Ok(json) => ok_json(json),
@@ -145,20 +171,32 @@ pub unsafe extern "C" fn iztro_by_lunar(
     language: *const c_char,
     config_json: *const c_char,
 ) -> *mut c_char {
-    let result = (|| -> Result<String, String> {
+    let parsed = (|| -> Result<_, String> {
         let lunar_date = unsafe { cstr_to_str(lunar_date, "lunar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
         let config_str = unsafe { cstr_to_opt_str(config_json, "config_json")? };
-
-        let gender = parse_gender(gender_str)?;
-        let language = parse_language(language_str)?;
-        let config = parse_config_json(config_str)?;
-
-        Ok(crate::by_lunar_json(
-            lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
+        Ok((
+            lunar_date,
+            parse_gender(gender_str)?,
+            parse_language(language_str)?,
+            parse_config_json(config_str)?,
         ))
     })();
+    let result = parsed.and_then(|(lunar_date, gender, language, config)| {
+        catch(move || {
+            crate::by_lunar_json(
+                lunar_date,
+                time_index,
+                gender,
+                is_leap_month,
+                fix_leap,
+                language,
+                config,
+            )
+            .map_err(|e| e.to_string())
+        })
+    });
 
     match result {
         Ok(json) => ok_json(json),
@@ -201,25 +239,32 @@ pub unsafe extern "C" fn iztro_get_horoscope(
     target_date: *const c_char,
     target_time_index: u8,
 ) -> *mut c_char {
-    let result = (|| -> Result<String, String> {
+    let parsed = (|| -> Result<_, String> {
         let solar_date = unsafe { cstr_to_str(solar_date, "solar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
         let config_str = unsafe { cstr_to_opt_str(config_json, "config_json")? };
         let target_date = unsafe { cstr_to_str(target_date, "target_date")? };
-
-        let gender = parse_gender(gender_str)?;
-        let language = parse_language(language_str)?;
-        let config = parse_config_json(config_str)?;
-
-        let astrolabe =
-            crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
-        let horoscope =
-            crate::get_horoscope(&astrolabe, target_date, target_time_index, language);
-
-        serde_json::to_string(&horoscope.to_dto(language))
-            .map_err(|e| format!("Failed to serialize horoscope: {}", e))
+        Ok((
+            solar_date,
+            parse_gender(gender_str)?,
+            parse_language(language_str)?,
+            parse_config_json(config_str)?,
+            target_date,
+        ))
     })();
+    let result = parsed.and_then(|(solar_date, gender, language, config, target_date)| {
+        catch(move || {
+            let astrolabe =
+                crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)
+                    .map_err(|e| e.to_string())?;
+            let horoscope =
+                crate::get_horoscope(&astrolabe, target_date, target_time_index, language)
+                    .map_err(|e| e.to_string())?;
+            serde_json::to_string(&horoscope.to_dto(language))
+                .map_err(|e| format!("Failed to serialize horoscope: {}", e))
+        })
+    });
 
     match result {
         Ok(json) => ok_json(json),

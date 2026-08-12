@@ -1,6 +1,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 
+/// 星耀名称
 pub fn star_name(key: StarKey) -> &'static str {
     match key {
         StarKey::ZiweiMaj => "자미",
@@ -168,6 +169,7 @@ pub fn star_name(key: StarKey) -> &'static str {
     }
 }
 
+/// 宫位名称
 pub fn palace_name(palace: Palace) -> &'static str {
     match palace {
         Palace::Soul => "명궁",
@@ -185,6 +187,7 @@ pub fn palace_name(palace: Palace) -> &'static str {
     }
 }
 
+/// 天干名称
 pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     match stem {
         HeavenlyStem::Jia => "갑",
@@ -200,6 +203,7 @@ pub fn heavenly_stem_name(stem: HeavenlyStem) -> &'static str {
     }
 }
 
+/// 地支名称
 pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     match branch {
         EarthlyBranch::Zi => "자",
@@ -217,6 +221,7 @@ pub fn earthly_branch_name(branch: EarthlyBranch) -> &'static str {
     }
 }
 
+/// 亮度名称
 pub fn brightness_name(b: Brightness) -> &'static str {
     match b {
         Brightness::Miao => "[+3]",
@@ -229,6 +234,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
     }
 }
 
+/// 四化名称
 pub fn mutagen_name(m: Mutagen) -> &'static str {
     match m {
         Mutagen::Lu => "록",
@@ -238,6 +244,7 @@ pub fn mutagen_name(m: Mutagen) -> &'static str {
     }
 }
 
+/// 五行局名称
 pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     match c {
         FiveElementsClass::Water2nd => "수이국",
@@ -248,6 +255,7 @@ pub fn five_elements_class_name(c: FiveElementsClass) -> &'static str {
     }
 }
 
+/// 性别名称
 pub fn gender_name(g: Gender) -> &'static str {
     match g {
         Gender::Male => "남성",
@@ -257,34 +265,69 @@ pub fn gender_name(g: Gender) -> &'static str {
 
 /// 시진 이름표（색인 0-12: 아침 자시…밤에 자시）
 const TIME_NAMES: [&str; 13] = [
-    "아침 자시", "축시", "인시", "묘시", "진시", "사시", "오시",
-    "미시", "신시", "유시", "술시", "해시", "밤에 자시",
+    "아침 자시",
+    "축시",
+    "인시",
+    "묘시",
+    "진시",
+    "사시",
+    "오시",
+    "미시",
+    "신시",
+    "유시",
+    "술시",
+    "해시",
+    "밤에 자시",
 ];
 
 /// 별자리 이름표（색인 0-11: 백양궁부터 황도 순서）
 const SIGN_NAMES: [&str; 12] = [
-    "백양궁", "금우궁", "쌍아궁", "거해궁", "사자궁", "처녀궁",
-    "천칭궁", "천갈궁", "인마궁", "마갈궁", "보병궁", "쌍어궁",
+    "백양궁",
+    "금우궁",
+    "쌍아궁",
+    "거해궁",
+    "사자궁",
+    "처녀궁",
+    "천칭궁",
+    "천갈궁",
+    "인마궁",
+    "마갈궁",
+    "보병궁",
+    "쌍어궁",
 ];
 
 /// 띠 동물 이름표（지지 색인 순: 자=쥐…해=돼지）
 const ZODIAC_NAMES: [&str; 12] = [
-    "쥐", "소", "호랑이", "토끼", "용", "뱀",
-    "말", "양", "원숭이", "닭", "개", "돼지",
+    "쥐",
+    "소",
+    "호랑이",
+    "토끼",
+    "용",
+    "뱀",
+    "말",
+    "양",
+    "원숭이",
+    "닭",
+    "개",
+    "돼지",
 ];
 
+/// 时辰名称（索引 0-12）
 pub fn time_name(time_index: u8) -> &'static str {
     TIME_NAMES[time_index as usize]
 }
 
+/// 星座名称（索引 0-11，白羊座起）
 pub fn sign_name(sign_index: usize) -> &'static str {
     SIGN_NAMES[sign_index]
 }
 
+/// 生肖名称（按地支）
 pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
     ZODIAC_NAMES[branch.index()]
 }
 
+/// 运限层级名称
 pub fn horoscope_name(n: HoroscopeName) -> &'static str {
     match n {
         HoroscopeName::Decadal => "대한",

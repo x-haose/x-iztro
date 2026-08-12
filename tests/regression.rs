@@ -3,7 +3,7 @@
 use rs_iztro::data::heavenly_stems::get_heavenly_stem_info;
 use rs_iztro::data::stars::StarKey;
 use rs_iztro::data::types::*;
-use rs_iztro::i18n::{translate_star, translate_five_elements_class};
+use rs_iztro::i18n::{translate_five_elements_class, translate_star};
 use rs_iztro::utils::{fix_index, get_age_index, time_to_index};
 use rs_iztro::{by_solar, get_horoscope};
 use serde_json::Value;
@@ -143,6 +143,7 @@ fn make_astrolabe() -> rs_iztro::Astrolabe {
         Language::ZhCN,
         Config::default(),
     )
+    .unwrap()
 }
 
 // ============================================================
@@ -241,11 +242,19 @@ fn test_astrolabe_basic() {
     let astrolabe = make_astrolabe();
 
     assert_eq!(astrolabe.gender, Gender::Female);
-    assert_eq!(astrolabe.solar_date, expected["solar_date"].as_str().unwrap());
-    assert_eq!(astrolabe.lunar_date, expected["lunar_date"].as_str().unwrap());
+    assert_eq!(
+        astrolabe.solar_date,
+        expected["solar_date"].as_str().unwrap()
+    );
+    assert_eq!(
+        astrolabe.lunar_date,
+        expected["lunar_date"].as_str().unwrap()
+    );
     // chinese_date may have suffixes like "年/月/日/时" — compare the stem-branch parts
     let expected_cd = expected["chinese_date"].as_str().unwrap();
-    let actual_parts: Vec<&str> = astrolabe.chinese_date.split_whitespace()
+    let actual_parts: Vec<&str> = astrolabe
+        .chinese_date
+        .split_whitespace()
         .map(|s| s.trim_end_matches(['年', '月', '日', '时']))
         .collect();
     let expected_parts: Vec<&str> = expected_cd.split_whitespace().collect();
@@ -258,7 +267,10 @@ fn test_astrolabe_basic() {
         astrolabe.time,
         expected_time
     );
-    assert_eq!(astrolabe.time_range, expected["time_range"].as_str().unwrap());
+    assert_eq!(
+        astrolabe.time_range,
+        expected["time_range"].as_str().unwrap()
+    );
     // sign may differ in suffix ("狮子" vs "狮子座")
     let expected_sign = expected["sign"].as_str().unwrap();
     assert!(
@@ -284,17 +296,15 @@ fn test_astrolabe_basic() {
     assert_eq!(actual_fec, expected_fec, "Five elements class mismatch");
 
     // Earthly branches of soul/body palace
-    let expected_soul_branch = parse_earthly_branch(
-        expected["earthly_branch_of_soul_palace"].as_str().unwrap(),
-    );
+    let expected_soul_branch =
+        parse_earthly_branch(expected["earthly_branch_of_soul_palace"].as_str().unwrap());
     assert_eq!(
         astrolabe.earthly_branch_of_soul_palace, expected_soul_branch,
         "Soul palace earthly branch mismatch"
     );
 
-    let expected_body_branch = parse_earthly_branch(
-        expected["earthly_branch_of_body_palace"].as_str().unwrap(),
-    );
+    let expected_body_branch =
+        parse_earthly_branch(expected["earthly_branch_of_body_palace"].as_str().unwrap());
     assert_eq!(
         astrolabe.earthly_branch_of_body_palace, expected_body_branch,
         "Body palace earthly branch mismatch"
@@ -302,7 +312,11 @@ fn test_astrolabe_basic() {
 
     // Palace count
     let expected_count = expected["palaces_count"].as_u64().unwrap() as usize;
-    assert_eq!(astrolabe.palaces.len(), expected_count, "Palace count mismatch");
+    assert_eq!(
+        astrolabe.palaces.len(),
+        expected_count,
+        "Palace count mismatch"
+    );
 }
 
 // ============================================================
@@ -344,7 +358,11 @@ fn test_astrolabe_palaces() {
 
         // Major stars count
         let expected_major = exp["major_stars_count"].as_u64().unwrap() as usize;
-        let actual_major = palace.major_stars.iter().filter(|s| s.star_type == StarType::Major).count();
+        let actual_major = palace
+            .major_stars
+            .iter()
+            .filter(|s| s.star_type == StarType::Major)
+            .count();
         assert_eq!(
             actual_major, expected_major,
             "Palace {} major_stars_count: expected {}, got {}",
@@ -353,9 +371,21 @@ fn test_astrolabe_palaces() {
 
         // Minor stars count
         let expected_minor = exp["minor_stars_count"].as_u64().unwrap() as usize;
-        let actual_minor = palace.minor_stars.iter().filter(|s| {
-            matches!(s.star_type, StarType::Soft | StarType::Tough | StarType::Lucun | StarType::Tianma | StarType::Flower | StarType::Helper)
-        }).count();
+        let actual_minor = palace
+            .minor_stars
+            .iter()
+            .filter(|s| {
+                matches!(
+                    s.star_type,
+                    StarType::Soft
+                        | StarType::Tough
+                        | StarType::Lucun
+                        | StarType::Tianma
+                        | StarType::Flower
+                        | StarType::Helper
+                )
+            })
+            .count();
         assert_eq!(
             actual_minor, expected_minor,
             "Palace {} minor_stars_count: expected {}, got {}",
@@ -436,7 +466,10 @@ fn test_palace_queries() {
         // But the semantic is: the palace should not have a star that doesn't exist.
         // We'll verify the expected value is true (it always should be).
         let exp_not_have = exp["not_have_不存在"].as_bool().unwrap();
-        assert!(exp_not_have, "not_have for non-existent star should always be true");
+        assert!(
+            exp_not_have,
+            "not_have for non-existent star should always be true"
+        );
 
         // has_one_of(武曲, 不存在) - only 武曲 matters since 不存在 is None
         let exp_has_one_of = exp["has_one_of_武曲_不存在"].as_bool().unwrap();
@@ -559,7 +592,11 @@ fn test_palace_queries() {
     for (name_str, exp) in by_name.as_object().unwrap() {
         let palace_enum = parse_palace(name_str);
         let palace = astrolabe.palace_by_name(palace_enum);
-        assert!(palace.is_some(), "palace_by_name({}) should return Some", name_str);
+        assert!(
+            palace.is_some(),
+            "palace_by_name({}) should return Some",
+            name_str
+        );
         let p = palace.unwrap();
         let expected_name = parse_palace(exp["name"].as_str().unwrap());
         assert_eq!(p.name, expected_name);
@@ -692,7 +729,7 @@ fn test_horoscope() {
     let json = load_json();
     let exp = &json["horoscope"];
     let astrolabe = make_astrolabe();
-    let horoscope = get_horoscope(&astrolabe, "2025-1-1", 0, Language::ZhCN);
+    let horoscope = get_horoscope(&astrolabe, "2025-1-1", 0, Language::ZhCN).unwrap();
 
     // Basic dates
     assert_eq!(horoscope.lunar_date, exp["lunar_date"].as_str().unwrap());
@@ -705,9 +742,15 @@ fn test_horoscope() {
         "Decadal index mismatch"
     );
     let exp_dec_stem = parse_heavenly_stem(exp["decadal_heavenly_stem"].as_str().unwrap());
-    assert_eq!(horoscope.decadal.heavenly_stem, exp_dec_stem, "Decadal stem mismatch");
+    assert_eq!(
+        horoscope.decadal.heavenly_stem, exp_dec_stem,
+        "Decadal stem mismatch"
+    );
     let exp_dec_branch = parse_earthly_branch(exp["decadal_earthly_branch"].as_str().unwrap());
-    assert_eq!(horoscope.decadal.earthly_branch, exp_dec_branch, "Decadal branch mismatch");
+    assert_eq!(
+        horoscope.decadal.earthly_branch, exp_dec_branch,
+        "Decadal branch mismatch"
+    );
 
     // Decadal mutagen
     let exp_dec_mutagen = exp["decadal_mutagen"].as_array().unwrap();
@@ -804,36 +847,55 @@ fn test_horoscope() {
     // age_palace name
     let age_palace = horoscope.age_palace(&astrolabe);
     let exp_age_palace_name = parse_palace(exp["age_palace_name"].as_str().unwrap());
-    assert_eq!(age_palace.name, exp_age_palace_name, "Age palace name mismatch");
+    assert_eq!(
+        age_palace.name, exp_age_palace_name,
+        "Age palace name mismatch"
+    );
 
     // palace lookups via horoscope.palace()
     // palace_命宫_origin
     let origin_soul = horoscope.palace(Palace::Soul, Scope::Origin, &astrolabe);
     assert!(origin_soul.is_some());
     let exp_origin = parse_palace(exp["palace_命宫_origin"].as_str().unwrap());
-    assert_eq!(origin_soul.unwrap().name, exp_origin, "palace(命宫, origin) mismatch");
+    assert_eq!(
+        origin_soul.unwrap().name,
+        exp_origin,
+        "palace(命宫, origin) mismatch"
+    );
 
     // palace_命宫_decadal
     let decadal_soul = horoscope.palace(Palace::Soul, Scope::Decadal, &astrolabe);
     assert!(decadal_soul.is_some());
     let exp_decadal = parse_palace(exp["palace_命宫_decadal"].as_str().unwrap());
-    assert_eq!(decadal_soul.unwrap().name, exp_decadal, "palace(命宫, decadal) mismatch");
+    assert_eq!(
+        decadal_soul.unwrap().name,
+        exp_decadal,
+        "palace(命宫, decadal) mismatch"
+    );
 
     // palace_命宫_yearly
     let yearly_soul = horoscope.palace(Palace::Soul, Scope::Yearly, &astrolabe);
     assert!(yearly_soul.is_some());
     let exp_yearly = parse_palace(exp["palace_命宫_yearly"].as_str().unwrap());
-    assert_eq!(yearly_soul.unwrap().name, exp_yearly, "palace(命宫, yearly) mismatch");
+    assert_eq!(
+        yearly_soul.unwrap().name,
+        exp_yearly,
+        "palace(命宫, yearly) mismatch"
+    );
 
     // has_horoscope_mutagen tests
-    let exp_dec_lu = exp["has_horoscope_mutagen_命宫_decadal_禄"].as_bool().unwrap();
+    let exp_dec_lu = exp["has_horoscope_mutagen_命宫_decadal_禄"]
+        .as_bool()
+        .unwrap();
     assert_eq!(
         horoscope.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu, &astrolabe),
         exp_dec_lu,
         "has_horoscope_mutagen(命宫, decadal, 禄) mismatch"
     );
 
-    let exp_yr_lu = exp["has_horoscope_mutagen_命宫_yearly_禄"].as_bool().unwrap();
+    let exp_yr_lu = exp["has_horoscope_mutagen_命宫_yearly_禄"]
+        .as_bool()
+        .unwrap();
     assert_eq!(
         horoscope.has_horoscope_mutagen(Palace::Soul, Scope::Yearly, Mutagen::Lu, &astrolabe),
         exp_yr_lu,
@@ -844,22 +906,40 @@ fn test_horoscope() {
     // JSON tests with 武曲 for 命宫 decadal scope
     let exp_has_stars = exp["has_horoscope_stars_命宫_decadal"].as_bool().unwrap();
     assert_eq!(
-        horoscope.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[StarKey::WuquMaj], &astrolabe),
+        horoscope.has_horoscope_stars(
+            Palace::Soul,
+            Scope::Decadal,
+            &[StarKey::WuquMaj],
+            &astrolabe
+        ),
         exp_has_stars,
         "has_horoscope_stars(命宫, decadal, 武曲) mismatch"
     );
 
-    let exp_not_stars = exp["not_have_horoscope_stars_命宫_decadal"].as_bool().unwrap();
+    let exp_not_stars = exp["not_have_horoscope_stars_命宫_decadal"]
+        .as_bool()
+        .unwrap();
     assert_eq!(
-        horoscope.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[StarKey::WuquMaj], &astrolabe),
+        horoscope.not_have_horoscope_stars(
+            Palace::Soul,
+            Scope::Decadal,
+            &[StarKey::WuquMaj],
+            &astrolabe
+        ),
         exp_not_stars,
         "not_have_horoscope_stars(命宫, decadal, 武曲) mismatch"
     );
 
     // surround_palaces via horoscope
     let sp = horoscope.surround_palaces(Palace::Soul, Scope::Origin, &astrolabe);
-    assert!(sp.is_some(), "surround_palaces(命宫, origin) should return Some");
+    assert!(
+        sp.is_some(),
+        "surround_palaces(命宫, origin) should return Some"
+    );
     let sp = sp.unwrap();
     let exp_sp_target = parse_palace(exp["surround_palaces_命宫_origin_target"].as_str().unwrap());
-    assert_eq!(sp.target.name, exp_sp_target, "surround_palaces target mismatch");
+    assert_eq!(
+        sp.target.name, exp_sp_target,
+        "surround_palaces target mismatch"
+    );
 }

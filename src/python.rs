@@ -1,7 +1,7 @@
 //! PyO3 Python bindings for rs-iztro.
 //!
-//! 仅在 `python` feature 下编译。所有函数为无状态接口：以排盘参数直接调用，
-//! 返回 JS iztro 兼容 DTO（camelCase 键 + 按语言翻译的值）的原生 Python dict。
+//! 仅在 `python` feature 下编译。以排盘参数直接调用，
+//! 返回 camelCase 键、值按语言翻译的原生 Python dict。
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -44,6 +44,21 @@ fn to_python<T: serde::Serialize>(py: Python<'_>, value: &T) -> PyResult<PyObjec
         .map_err(|e| PyValueError::new_err(format!("Failed to convert to Python object: {}", e)))
 }
 
+/// 执行核心计算：入参错误（[`crate::IztroError`]）转为 ValueError；
+/// 库内部缺陷导致的 panic 同样兜底转为 ValueError，避免抛出
+/// `except Exception` 捕获不到的 PanicException。
+fn compute<T>(
+    f: impl FnOnce() -> Result<T, crate::IztroError> + std::panic::UnwindSafe,
+) -> PyResult<T> {
+    match std::panic::catch_unwind(f) {
+        Ok(result) => result.map_err(|e| PyValueError::new_err(e.to_string())),
+        Err(panic) => Err(PyValueError::new_err(format!(
+            "Invalid input: {}",
+            crate::dto::panic_message(panic.as_ref())
+        ))),
+    }
+}
+
 /// 阳历排盘，返回 JS iztro 兼容的 dict。
 #[pyfunction]
 #[pyo3(signature = (solar_date, time_index, gender, fix_leap, language, config_json=None))]
@@ -60,12 +75,14 @@ fn by_solar(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
+    let astrolabe =
+        compute(|| crate::by_solar(solar_date, time_index, gender, fix_leap, language, config))?;
     to_python(py, &astrolabe.to_dto())
 }
 
 /// 农历排盘，返回 JS iztro 兼容的 dict。
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (lunar_date, time_index, gender, is_leap_month, fix_leap, language, config_json=None))]
 fn by_lunar(
     py: Python<'_>,
@@ -81,9 +98,17 @@ fn by_lunar(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let astrolabe = crate::by_lunar(
-        lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
-    );
+    let astrolabe = compute(|| {
+        crate::by_lunar(
+            lunar_date,
+            time_index,
+            gender,
+            is_leap_month,
+            fix_leap,
+            language,
+            config,
+        )
+    })?;
     to_python(py, &astrolabe.to_dto())
 }
 
@@ -106,8 +131,11 @@ fn get_horoscope(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
-    let horoscope = crate::get_horoscope(&astrolabe, target_date, target_time_index, language);
+    let horoscope = compute(|| {
+        let astrolabe =
+            crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)?;
+        crate::get_horoscope(&astrolabe, target_date, target_time_index, language)
+    })?;
     to_python(py, &horoscope.to_dto(language))
 }
 
@@ -126,8 +154,11 @@ fn astrolabe_to_prompt(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
-    Ok(crate::astrolabe_to_prompt(&astrolabe, language))
+    compute(|| {
+        let astrolabe =
+            crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)?;
+        Ok(crate::astrolabe_to_prompt(&astrolabe, language))
+    })
 }
 
 /// 生成运限 AI Prompt（无状态）。
@@ -148,9 +179,12 @@ fn horoscope_to_prompt(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    let astrolabe = crate::by_solar(solar_date, time_index, gender, fix_leap, language, config);
-    let horoscope = crate::get_horoscope(&astrolabe, target_date, target_time_index, language);
-    Ok(crate::horoscope_to_prompt(&astrolabe, &horoscope, language))
+    compute(|| {
+        let astrolabe =
+            crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)?;
+        let horoscope = crate::get_horoscope(&astrolabe, target_date, target_time_index, language)?;
+        Ok(crate::horoscope_to_prompt(&astrolabe, &horoscope, language))
+    })
 }
 
 /// 阳历排盘并返回 JSON 字符串（内容与 by_solar 的 dict 一致）。
@@ -168,11 +202,12 @@ fn by_solar_json(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    Ok(crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config))
+    compute(|| crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config))
 }
 
 /// 农历排盘并返回 JSON 字符串（内容与 by_lunar 的 dict 一致）。
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (lunar_date, time_index, gender, is_leap_month, fix_leap, language, config_json=None))]
 fn by_lunar_json(
     lunar_date: &str,
@@ -187,9 +222,17 @@ fn by_lunar_json(
     let language = parse_language(language)?;
     let config = parse_config_json(config_json).map_err(PyValueError::new_err)?;
 
-    Ok(crate::by_lunar_json(
-        lunar_date, time_index, gender, is_leap_month, fix_leap, language, config,
-    ))
+    compute(|| {
+        crate::by_lunar_json(
+            lunar_date,
+            time_index,
+            gender,
+            is_leap_month,
+            fix_leap,
+            language,
+            config,
+        )
+    })
 }
 
 /// The native rs_iztro Python module (internal, used by the Python wrapper).
