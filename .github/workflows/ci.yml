@@ -1,4 +1,4 @@
-# 三语言 CI：Rust 核心（fmt/clippy/测试/wasm）、Go 绑定、Python 绑定。
+# 三语言 CI：Rust 核心（fmt/clippy/测试/wasm）、Go 绑定、Python 绑定，外加文档站构建。
 # tier3 全量金标（586K 例，需 release 编译）不在 CI 跑，属本地验证项。
 name: CI
 
@@ -73,3 +73,21 @@ jobs:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
       - name: Python 端到端金标测试
         run: .venv/bin/pytest python/tests/ -q
+
+  # 文档站与三语言代码无依赖，独立跑。类型检查拦 MDX 组件用错，
+  # 构建拦坏链接与坏 frontmatter——两者本地不跑就发现不了。
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - name: 安装依赖
+        run: cd docs && npm ci
+      - name: 类型检查
+        run: cd docs && npm run types:check
+      - name: 构建
+        run: cd docs && npm run build
