@@ -388,3 +388,166 @@ const (
 	// StarShima 为时马
 	StarShima = "shima"
 )
+
+// 天干标识（Palace.HeavenlyStemKey、Decadal.HeavenlyStemKey、
+// HoroscopeScope.HeavenlyStemKey，也是 mutagenTable 的键）。
+const (
+	// StemJia 为甲
+	StemJia = "jiaHeavenly"
+	// StemYi 为乙
+	StemYi = "yiHeavenly"
+	// StemBing 为丙
+	StemBing = "bingHeavenly"
+	// StemDing 为丁
+	StemDing = "dingHeavenly"
+	// StemWu 为戊
+	StemWu = "wuHeavenly"
+	// StemJi 为己
+	StemJi = "jiHeavenly"
+	// StemGeng 为庚
+	StemGeng = "gengHeavenly"
+	// StemXin 为辛
+	StemXin = "xinHeavenly"
+	// StemRen 为壬
+	StemRen = "renHeavenly"
+	// StemGui 为癸
+	StemGui = "guiHeavenly"
+)
+
+// 地支标识（Palace.EarthlyBranchKey、Decadal.EarthlyBranchKey、
+// HoroscopeScope.EarthlyBranchKey、Astrolabe.EarthlyBranchOfSoulPalaceKey 等）。
+const (
+	// BranchZi 为子
+	BranchZi = "ziEarthly"
+	// BranchChou 为丑
+	BranchChou = "chouEarthly"
+	// BranchYin 为寅
+	BranchYin = "yinEarthly"
+	// BranchMao 为卯
+	BranchMao = "maoEarthly"
+	// BranchChen 为辰
+	BranchChen = "chenEarthly"
+	// BranchSi 为巳
+	BranchSi = "siEarthly"
+	// BranchWu 为午
+	BranchWu = "wuEarthly"
+	// BranchWei 为未
+	BranchWei = "weiEarthly"
+	// BranchShen 为申
+	BranchShen = "shenEarthly"
+	// BranchYou 为酉
+	BranchYou = "youEarthly"
+	// BranchXu 为戌
+	BranchXu = "xuEarthly"
+	// BranchHai 为亥
+	BranchHai = "haiEarthly"
+)
+
+// 五行局标识（Astrolabe.FiveElementsClassKey）。
+const (
+	// ClassWater2nd 为水二局
+	ClassWater2nd = "water2nd"
+	// ClassWood3rd 为木三局
+	ClassWood3rd = "wood3rd"
+	// ClassMetal4th 为金四局
+	ClassMetal4th = "metal4th"
+	// ClassEarth5th 为土五局
+	ClassEarth5th = "earth5th"
+	// ClassFire6th 为火六局
+	ClassFire6th = "fire6th"
+)
+
+// 宫位定位的特殊标识：不是十二宫之一，而是定位「被标记为该角色的那一宫」，
+// 可传给 Astrolabe.Palace 与 Astrolabe.SurroundedPalaces。
+const (
+	// PalaceBody 定位身宫
+	PalaceBody = "bodyPalace"
+	// PalaceOriginal 定位来因宫（一张盘可能没有）
+	PalaceOriginal = "originalPalace"
+)
+
+// 运限层级标识（Star.Scope，以及 Horoscope 各查询方法的 scope 参数）。
+const (
+	// ScopeOrigin 为本命
+	ScopeOrigin = "origin"
+	// ScopeDecadal 为大限
+	ScopeDecadal = "decadal"
+	// ScopeYearly 为流年
+	ScopeYearly = "yearly"
+	// ScopeMonthly 为流月
+	ScopeMonthly = "monthly"
+	// ScopeDaily 为流日
+	ScopeDaily = "daily"
+	// ScopeHourly 为流时
+	ScopeHourly = "hourly"
+)
+
+// 年分界点（Config.YearDivide）：年干支按哪一天换年。
+const (
+	// YearDivideNormal 以正月初一换年
+	YearDivideNormal = "normal"
+	// YearDivideExact 以立春换年
+	YearDivideExact = "exact"
+)
+
+// 运限分界点（Config.HoroscopeDivide）：流年神煞取年支时按哪一天换年。
+const (
+	// HoroscopeDivideNormal 以正月初一换年
+	HoroscopeDivideNormal = "normal"
+	// HoroscopeDivideExact 以立春换年
+	HoroscopeDivideExact = "exact"
+)
+
+// 虚岁分界点（Config.AgeDivide）：虚岁在哪一天增长。
+const (
+	// AgeDivideNormal 以农历年换岁
+	AgeDivideNormal = "normal"
+	// AgeDivideBirthday 以生日换岁
+	AgeDivideBirthday = "birthday"
+)
+
+// 晚子时归属（Config.DayDivide）：23:00-24:00 出生算哪一天。
+const (
+	// DayDivideForward 晚子时归次日
+	DayDivideForward = "forward"
+	// DayDivideCurrent 晚子时归当日
+	DayDivideCurrent = "current"
+)
+
+// 算法派别（Config.Algorithm）。
+const (
+	// AlgorithmDefault 为默认派别
+	AlgorithmDefault = "default"
+	// AlgorithmZhongzhou 为中州派
+	AlgorithmZhongzhou = "zhongzhou"
+)
+
+// 排盘视角（Config.AstroType）：中州派的天盘、地盘、人盘。
+const (
+	// AstroHeaven 天盘：以命宫干支起五行局，即常规排盘结果
+	AstroHeaven = "heaven"
+	// AstroEarth 地盘：以身宫干支起五行局，身宫即为新盘的命宫
+	AstroEarth = "earth"
+	// AstroHuman 人盘：以福德宫干支起五行局，福德宫即为新盘的命宫
+	AstroHuman = "human"
+)
+
+// 星耀类型标识（Star.Type）。
+const (
+	// StarTypeMajor 主星
+	StarTypeMajor = "major"
+	// StarTypeSoft 吉星
+	StarTypeSoft = "soft"
+	// StarTypeTough 煞星
+	StarTypeTough = "tough"
+	// StarTypeAdjective 杂耀
+	StarTypeAdjective = "adjective"
+	// StarTypeFlower 桃花星
+	StarTypeFlower = "flower"
+	// StarTypeHelper 解神
+	StarTypeHelper = "helper"
+	// StarTypeLucun 禄存
+	StarTypeLucun = "lucun"
+	// StarTypeTianma 天马
+	StarTypeTianma = "tianma"
+)

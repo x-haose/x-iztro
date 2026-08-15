@@ -41,7 +41,7 @@ func TestBySolarMatchesGolden(t *testing.T) {
 		if c.Params.Gender == "女" {
 			gender = "female"
 		}
-		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, "zh_cn", nil)
+		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, "zh-CN", nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s t%d): %v", c.Params.SolarDate, c.Params.TimeIndex, err)
 		}
@@ -67,7 +67,7 @@ func TestBySolarMatchesGolden(t *testing.T) {
 
 // TestTypedQueries 验证类型化查询方法在任意输出语言下基于 key 正确工作。
 func TestTypedQueries(t *testing.T) {
-	for _, lang := range []string{"zh_cn", "en_us"} {
+	for _, lang := range []string{"zh-CN", "en-US"} {
 		a, err := BySolar("2000-8-16", 2, "female", true, lang, nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s): %v", lang, err)
@@ -89,7 +89,7 @@ func TestTypedQueries(t *testing.T) {
 		if !star.WithMutagen(MutagenQuan) {
 			t.Errorf("%s: Wuqu should carry Quan mutagen", lang)
 		}
-		sp := a.SurroundedPalaces(soul.Index)
+		sp := a.SurroundedPalacesByIndex(soul.Index)
 		if !sp.Have(StarZiweiMaj) {
 			t.Errorf("%s: surrounded palaces of soul should contain Ziwei", lang)
 		}
@@ -98,9 +98,9 @@ func TestTypedQueries(t *testing.T) {
 
 // TestHoroscopeAndConfig 验证运限与中州派配置经 wasm 链路生效。
 func TestHoroscopeAndConfig(t *testing.T) {
-	h, err := GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-10-1", 0)
+	h, err := chartForHoroscope(t).Horoscope("2024-10-1", 0)
 	if err != nil {
-		t.Fatalf("GetHoroscope: %v", err)
+		t.Fatalf("Horoscope: %v", err)
 	}
 	if h.Yearly.HeavenlyStem != "甲" || h.Yearly.EarthlyBranch != "辰" {
 		t.Errorf("yearly ganzhi: got %s%s want 甲辰", h.Yearly.HeavenlyStem, h.Yearly.EarthlyBranch)
@@ -109,7 +109,7 @@ func TestHoroscopeAndConfig(t *testing.T) {
 		t.Error("yearly.yearlyDecStar missing or incomplete")
 	}
 
-	zz, err := BySolar("1990-11-5", 4, "male", true, "zh_cn", &Config{Algorithm: "zhongzhou"})
+	zz, err := BySolar("1990-11-5", 4, "male", true, "zh-CN", &Config{Algorithm: "zhongzhou"})
 	if err != nil {
 		t.Fatalf("BySolar zhongzhou: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestHoroscopeAndConfig(t *testing.T) {
 
 // TestErrorPropagation 验证非法参数经 wasm 返回错误。
 func TestErrorPropagation(t *testing.T) {
-	if _, err := BySolar("2000-8-16", 2, "unknown", true, "zh_cn", nil); err == nil {
+	if _, err := BySolar("2000-8-16", 2, "unknown", true, "zh-CN", nil); err == nil {
 		t.Error("invalid gender should return an error")
 	}
 }
@@ -148,21 +148,31 @@ func TestInvalidInputBombardment(t *testing.T) {
 	}
 	for i := 0; i < 500; i++ {
 		c := bad[i%len(bad)]
-		if _, err := BySolar(c.date, c.ti, "male", true, "zh_cn", nil); err == nil {
+		if _, err := BySolar(c.date, c.ti, "male", true, "zh-CN", nil); err == nil {
 			t.Fatalf("round %d: %q ti=%d should return an error", i, c.date, c.ti)
 		}
 	}
-	a, err := BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
+	a, err := BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
 	if err != nil {
 		t.Fatalf("chart after 500 invalid calls should succeed: %v", err)
 	}
 	if len(a.Palaces) != 12 {
 		t.Errorf("palaces: got %d want 12", len(a.Palaces))
 	}
-	if _, err := GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "garbage", 13); err == nil {
+	if _, err := chartForHoroscope(t).Horoscope("garbage", 13); err == nil {
 		t.Error("invalid horoscope target should return an error")
 	}
-	if _, err := ByLunar("2000-7-31", 2, "male", false, true, "zh_cn", nil); err == nil {
+	if _, err := ByLunar("2000-7-31", 2, "male", false, true, "zh-CN", nil); err == nil {
 		t.Error("out-of-range lunar day should return an error")
 	}
+}
+
+// chartForHoroscope 提供运限测试共用的本命盘（2000-8-16 寅时 女）。
+func chartForHoroscope(t *testing.T) *Astrolabe {
+	t.Helper()
+	a, err := BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+	if err != nil {
+		t.Fatalf("BySolar: %v", err)
+	}
+	return a
 }

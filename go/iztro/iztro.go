@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -39,6 +40,18 @@ type Config struct {
 	AgeDivide       string `json:"ageDivide,omitempty"`
 	DayDivide       string `json:"dayDivide,omitempty"`
 	Algorithm       string `json:"algorithm,omitempty"`
+
+	// AstroType 为排盘视角："heaven" 天盘（默认）、"earth" 地盘、"human" 人盘。
+	// 地盘以身宫干支、人盘以福德宫干支起五行局重排。
+	AstroType string `json:"astroType,omitempty"`
+
+	// Mutagens 为自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
+	// 按天干整表替换默认值，未列出的天干仍用默认表。
+	Mutagens map[string][]string `json:"mutagens,omitempty"`
+
+	// Brightness 为自定义亮度表：星耀标识 → 十二宫亮度标识（十二项，
+	// 空串表示该宫无亮度，索引 0 为寅宫）。按星耀整表替换默认值。
+	Brightness map[string][]string `json:"brightness,omitempty"`
 }
 
 // runtime 持有一次性初始化的 wazero 实例；wasm 模块实例非并发安全，
@@ -51,6 +64,7 @@ type runtime struct {
 	bySolar api.Function
 	byLunar api.Function
 	horo    api.Function
+	query   api.Function
 }
 
 var (
@@ -76,6 +90,7 @@ func getRuntime() (*runtime, error) {
 			bySolar: mod.ExportedFunction("iztro_wasm_by_solar"),
 			byLunar: mod.ExportedFunction("iztro_wasm_by_lunar"),
 			horo:    mod.ExportedFunction("iztro_wasm_horoscope"),
+			query:   mod.ExportedFunction("iztro_wasm_query"),
 		}
 	})
 	return rt, rtErr
@@ -138,7 +153,7 @@ func (r *runtime) call(fn api.Function, input any) ([]byte, error) {
 //   - timeIndex: 时辰索引 0-12（0=早子时，12=晚子时）
 //   - gender: "male" 或 "female"
 //   - fixLeap: 是否修正闰月
-//   - language: "zh_cn"/"zh_tw"/"en_us"/"ja_jp"/"ko_kr"/"vi_vn"
+//   - language: "zh-CN"/"zh-TW"/"en-US"/"ja-JP"/"ko-KR"/"vi-VN"
 //   - config: 排盘配置，nil 取默认
 func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
 	r, err := getRuntime()
@@ -160,6 +175,40 @@ func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, lan
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
 	}
+	out.link()
+	return &out, nil
+}
+
+// Rearranged 以指定干支为命宫重排本盘，返回新盘；本盘不变。
+//
+// 传入的干支决定五行局，进而决定紫微天府落点、十二宫名、长生十二神与大限小限；
+// 辅星、杂耀（天伤天使天才除外）、博士十二神、岁前将前十二神沿用原盘。
+//
+// 常规的天盘、地盘、人盘用 Config.AstroType 指定即可，本方法用于从任意干支起盘。
+// fromStemKey / fromBranchKey 取 Stem* / Branch* 常量。
+func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astrolabe, error) {
+	r, err := getRuntime()
+	if err != nil {
+		return nil, err
+	}
+	raw, err := r.call(r.bySolar, map[string]any{
+		"solarDate":  a.SolarDate,
+		"timeIndex":  a.TimeIndex,
+		"gender":     a.GenderKey,
+		"fixLeap":    a.FixLeap,
+		"language":   a.Language,
+		"config":     &a.Config,
+		"fromStem":   fromStemKey,
+		"fromBranch": fromBranchKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var out Astrolabe
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
+	}
+	out.link()
 	return &out, nil
 }
 
@@ -185,22 +234,29 @@ func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool,
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
 	}
+	out.link()
 	return &out, nil
 }
 
-// GetHoroscope 计算运限（无状态：直接传出生排盘参数与目标日期），返回类型化运限。
-func GetHoroscope(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config, targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
+// Horoscope 以本命盘为起点计算目标日期的运限，返回的运限持有本盘。
+//
+//   - targetDate: 目标阳历日期，"YYYY-M-D"
+//   - targetTimeIndex: 目标时辰索引 0-12
+//
+// 排盘上下文（出生日期、时辰、性别、闰月修正、语言、配置）取自本盘，
+// 与 wasm 侧的无状态调用协定一致。
+func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
 	r, err := getRuntime()
 	if err != nil {
 		return nil, err
 	}
 	raw, err := r.call(r.horo, map[string]any{
-		"solarDate":       solarDate,
-		"timeIndex":       timeIndex,
-		"gender":          gender,
-		"fixLeap":         fixLeap,
-		"language":        language,
-		"config":          config,
+		"solarDate":       a.SolarDate,
+		"timeIndex":       a.TimeIndex,
+		"gender":          a.GenderKey,
+		"fixLeap":         a.FixLeap,
+		"language":        a.Language,
+		"config":          &a.Config,
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
 	})
@@ -211,5 +267,17 @@ func GetHoroscope(solarDate string, timeIndex uint8, gender string, fixLeap bool
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, fmt.Errorf("iztro: decode horoscope: %w", err)
 	}
+	out.astrolabe = a
 	return &out, nil
+}
+
+// HoroscopeNow 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
+func (a *Astrolabe) HoroscopeNow() (*Horoscope, error) {
+	now := time.Now()
+	date := fmt.Sprintf("%d-%d-%d", now.Year(), int(now.Month()), now.Day())
+	timeIndex, err := TimeToIndex(uint8(now.Hour()))
+	if err != nil {
+		return nil, err
+	}
+	return a.Horoscope(date, timeIndex)
 }
