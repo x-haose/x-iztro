@@ -74,3 +74,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          # 该版本已在 PyPI 上就跳过而非报错：标签被重打或工作流重跑时，
+          # 不该因为「版本已存在」把整条流水线判成失败
+          skip-existing: true
