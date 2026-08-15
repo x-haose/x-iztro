@@ -1,86 +1,29 @@
-"""x-iztro Rust 原生模块的类型存根。"""
+"""
+Rust 原生扩展模块的类型存根。
+
+入参为 camelCase 键的 dict，出参为 camelCase 键、值按语言翻译的原生对象；
+字段与取值约定见 Rust 侧的 `crate::bridge`。上层请用 `x_iztro._bridge`，
+它负责把 snake_case 关键字转成这里要求的 camelCase。
+"""
 
 from typing import Any
 
-def by_solar(
-    solar_date: str,
-    time_index: int,
-    gender: str,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None = None,
-) -> dict[str, Any]:
-    """阳历排盘，返回星盘 dict"""
-    ...
+__version__: str
 
-def by_lunar(
-    lunar_date: str,
-    time_index: int,
-    gender: str,
-    is_leap_month: bool,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None = None,
-) -> dict[str, Any]:
-    """农历排盘，返回星盘 dict"""
-    ...
+def by_solar(input: dict[str, Any]) -> dict[str, Any]:
+    """阳历排盘，返回星盘 DTO。"""
 
-def get_horoscope(
-    solar_date: str,
-    time_index: int,
-    gender: str,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None,
-    target_date: str,
-    target_time_index: int,
-) -> dict[str, Any]:
-    """计算运限，返回运限 dict"""
-    ...
+def by_lunar(input: dict[str, Any]) -> dict[str, Any]:
+    """农历排盘，返回星盘 DTO。"""
 
-def astrolabe_to_prompt(
-    solar_date: str,
-    time_index: int,
-    gender: str,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None = None,
-) -> str:
-    """生成本命盘 AI Prompt"""
-    ...
+def get_horoscope(input: dict[str, Any]) -> dict[str, Any]:
+    """运限，返回运限 DTO。"""
 
-def horoscope_to_prompt(
-    solar_date: str,
-    time_index: int,
-    gender: str,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None,
-    target_date: str,
-    target_time_index: int,
-) -> str:
-    """生成运限 AI Prompt"""
-    ...
+def query(input: dict[str, Any]) -> Any:
+    """统一查询，由入参的 kind 分派。"""
 
-def by_solar_json(
-    solar_date: str,
-    time_index: int,
-    gender: str,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None = None,
-) -> str:
-    """阳历排盘，返回星盘 JSON 字符串"""
-    ...
+def by_solar_json(input: dict[str, Any]) -> str:
+    """阳历排盘，返回星盘 DTO 的 JSON 字符串。"""
 
-def by_lunar_json(
-    lunar_date: str,
-    time_index: int,
-    gender: str,
-    is_leap_month: bool,
-    fix_leap: bool,
-    language: str,
-    config_json: str | None = None,
-) -> str:
-    """农历排盘，返回星盘 JSON 字符串"""
-    ...
+def by_lunar_json(input: dict[str, Any]) -> str:
+    """农历排盘，返回星盘 DTO 的 JSON 字符串。"""

@@ -14,7 +14,7 @@ x-iztro 数据模型。
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from x_iztro.enums import (
@@ -30,7 +30,7 @@ from x_iztro.enums import (
 
 TimeIndexType = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 GenderType = Literal["male", "female"]
-LanguageType = Literal["zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", "vi_vn"]
+LanguageType = Literal["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]
 StarTypeLiteral = Literal[
     "major", "soft", "tough", "adjective", "flower", "helper", "lucun", "tianma"
 ]
@@ -60,6 +60,23 @@ _MUTAGEN_INDEX: dict[str, int] = {
     Mutagen.KE: 2,
     Mutagen.JI: 3,
 }
+
+
+def _as_mutagen_list(mutagens: Mutagen | list[Mutagen]) -> list[Mutagen]:
+    """把单个四化或四化列表统一成列表。"""
+    if isinstance(mutagens, list):
+        return mutagens
+    return [mutagens]
+
+
+def _or_all_mutagens(
+    mutagens: Mutagen | list[Mutagen] | None,
+) -> list[Mutagen]:
+    """空值回退为全部四化，顺序为禄、权、科、忌。"""
+    if mutagens is None:
+        return list(Mutagen)
+    out = _as_mutagen_list(mutagens)
+    return out if out else list(Mutagen)
 
 
 # ============================================================
@@ -94,6 +111,12 @@ class Star:
     mutagen_key: str | None = None
     """语言无关四化标识（`Mutagen` 枚举值域），无四化为 None"""
 
+    _palace: Palace | None = field(default=None, compare=False, repr=False)
+    """星耀所在宫位，由星盘构造时回填"""
+
+    _astrolabe: Astrolabe | None = field(default=None, compare=False, repr=False)
+    """星耀所属星盘，由星盘构造时回填"""
+
     def with_brightness(self, brightness: Brightness | list[Brightness]) -> bool:
         """判断星耀是否具有指定亮度"""
         if isinstance(brightness, list):
@@ -105,6 +128,22 @@ class Star:
         if isinstance(mutagen, list):
             return self.mutagen_key in mutagen
         return self.mutagen_key == mutagen
+
+    def palace(self) -> Palace | None:
+        """星耀所在的宫位；脱离星盘单独构造的星耀返回 None"""
+        return self._palace
+
+    def opposite_palace(self) -> Palace | None:
+        """星耀所在宫位的对宫"""
+        if self._palace is None or self._astrolabe is None:
+            return None
+        return self._astrolabe.palaces[(self._palace.index + 6) % 12]
+
+    def surrounded_palaces(self) -> SurroundedPalaces | None:
+        """星耀所在宫位的三方四正"""
+        if self._palace is None or self._astrolabe is None:
+            return None
+        return self._astrolabe.surrounded_palaces(self._palace.index)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Star:
@@ -175,6 +214,22 @@ class RawChineseDate:
     hourly: tuple[str, str]
     """时柱"""
 
+    yearly_keys: tuple[str, str]
+    """年柱的语言无关标识（`HeavenlyStem`、`EarthlyBranch` 枚举值域）"""
+
+    monthly_keys: tuple[str, str]
+    """月柱的语言无关标识"""
+
+    daily_keys: tuple[str, str]
+    """日柱的语言无关标识"""
+
+    hourly_keys: tuple[str, str]
+    """时柱的语言无关标识"""
+
+    def pillar_keys(self) -> list[tuple[str, str]]:
+        """四柱标识 [年, 月, 日, 时]，可直接交给 `translate_chinese_date`"""
+        return [self.yearly_keys, self.monthly_keys, self.daily_keys, self.hourly_keys]
+
     @classmethod
     def _from_dict(cls, d: dict) -> RawChineseDate:
         return cls(
@@ -182,6 +237,10 @@ class RawChineseDate:
             monthly=tuple(d["monthly"]),
             daily=tuple(d["daily"]),
             hourly=tuple(d["hourly"]),
+            yearly_keys=tuple(d["yearlyKeys"]),
+            monthly_keys=tuple(d["monthlyKeys"]),
+            daily_keys=tuple(d["dailyKeys"]),
+            hourly_keys=tuple(d["hourlyKeys"]),
         )
 
 
@@ -222,16 +281,40 @@ class ChartConfig:
     algorithm: str = "default"
     """算法派别（`Algorithm`）：default / zhongzhou"""
 
-    def to_json(self) -> str:
-        """转为绑定层接受的 config JSON"""
-        import json
-        return json.dumps({
+    astro_type: str = "heaven"
+    """排盘视角（`AstroType`）：heaven=天盘 / earth=地盘 / human=人盘"""
+
+    mutagens: dict[str, list[str]] | None = None
+    """自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
+
+    按天干整表替换默认值，未列出的天干仍用默认表；键与值都用语言无关标识。
+    """
+
+    brightness: dict[str, list[str]] | None = None
+    """自定义亮度表：星耀标识 → 十二宫亮度标识（十二项，空串表示该宫无亮度）。
+
+    按星耀整表替换默认值，未列出的星耀仍用默认表；索引 0 为寅宫。
+    """
+
+    def to_dict(self) -> dict:
+        """转为绑定层接受的 config 对象"""
+        payload: dict = {
             "yearDivide": self.year_divide,
             "horoscopeDivide": self.horoscope_divide,
             "ageDivide": self.age_divide,
             "dayDivide": self.day_divide,
             "algorithm": self.algorithm,
-        })
+            "astroType": self.astro_type,
+        }
+        if self.mutagens:
+            payload["mutagens"] = {
+                str(k): [str(v) for v in vs] for k, vs in self.mutagens.items()
+            }
+        if self.brightness:
+            payload["brightness"] = {
+                str(k): [str(v) for v in vs] for k, vs in self.brightness.items()
+            }
+        return payload
 
     @classmethod
     def _from_dict(cls, d: dict) -> ChartConfig:
@@ -241,6 +324,7 @@ class ChartConfig:
             age_divide=d["ageDivide"],
             day_divide=d["dayDivide"],
             algorithm=d["algorithm"],
+            astro_type=d["astroType"],
         )
 
 
@@ -353,6 +437,9 @@ class Palace:
     ages: list[int]
     """小限经过年龄"""
 
+    _astrolabe: Astrolabe | None = field(default=None, compare=False, repr=False)
+    """宫位所属星盘，由星盘构造时回填"""
+
     # ------ 星耀判断 ------
 
     def has(self, stars: list[str]) -> bool:
@@ -380,55 +467,170 @@ class Palace:
         """判断宫位是否没有指定四化"""
         return not self.has_mutagen(mutagen)
 
-    def is_empty(self) -> bool:
-        """判断宫位是否为空宫（无主星）"""
-        return len(self.major_stars) == 0
+    def is_empty(self, exclude_stars: list[str] | None = None) -> bool:
+        """
+        判断宫位是否为空宫（无十四主星）。
+
+        Args:
+            exclude_stars: 视为「不空」的星耀；宫内出现其中任一颗即不作空宫论
+        """
+        if self.major_stars:
+            return False
+        if exclude_stars and self.has_one_of(exclude_stars):
+            return False
+        return True
+
+    def astrolabe(self) -> Astrolabe | None:
+        """宫位所属星盘；脱离星盘单独构造的宫位返回 None"""
+        return self._astrolabe
+
+    def opposite_palace(self) -> Palace | None:
+        """
+        本宫的对宫，即索引 +6 的那一宫；脱离星盘单独构造的宫位返回 None。
+
+        对宫与本宫永远相对而看：命宫对迁移、财帛对福德，依此类推。
+        """
+        if self._astrolabe is None:
+            return None
+        return self._astrolabe.palaces[(self.index + 6) % 12]
+
+    def surrounded_palaces(self) -> SurroundedPalaces | None:
+        """本宫的三方四正；脱离星盘单独构造的宫位返回 None"""
+        if self._astrolabe is None:
+            return None
+        return self._astrolabe.surrounded_palaces(self.index)
 
     # ------ 四化飞星 ------
 
-    def flies_to(self, target: Palace, mutagen: Mutagen) -> bool:
+    def mutagen_stars(self, mutagens: Mutagen | list[Mutagen]) -> list[str]:
         """
-        判断本宫天干四化是否飞入目标宫位。
+        本宫天干在指定四化位上对应的星耀标识。
+
+        顺序与传入顺序一致；查不到对应星耀的四化位会被跳过。
+        """
+        stars = _MUTAGEN_TABLE.get(self.heavenly_stem_key)
+        if stars is None:
+            return []
+        out: list[str] = []
+        for m in _as_mutagen_list(mutagens):
+            idx = _MUTAGEN_INDEX.get(m)
+            if idx is None or idx >= len(stars):
+                continue
+            out.append(stars[idx])
+        return out
+
+    def flies_to(
+        self,
+        target: Palace | int | str,
+        mutagens: Mutagen | list[Mutagen],
+    ) -> bool:
+        """
+        判断本宫天干的指定四化星是否 **全部** 落在目标宫位。
 
         Args:
-            target: 目标宫位
-            mutagen: 四化类型（`Mutagen` 枚举）
+            target: 目标宫位对象、宫位索引，或宫位标识/宫名
+            mutagens: 四化类型，单个或列表
+
+        四化列表为空时返回 False。
         """
-        star_key = self._mutagen_star(mutagen)
-        if star_key is None:
+        to = self._resolve_palace(target)
+        if to is None:
             return False
-        return target.has([star_key])
+        stars = self.mutagen_stars(mutagens)
+        if not stars:
+            return False
+        return to.has(stars)
 
-    def self_mutaged(self, mutagen: Mutagen) -> bool:
-        """判断本宫是否自化（天干四化星落在本宫）"""
-        return self.flies_to(self, mutagen)
+    def flies_one_of_to(
+        self,
+        target: Palace | int | str,
+        mutagens: Mutagen | list[Mutagen],
+    ) -> bool:
+        """
+        判断本宫天干的指定四化星是否有 **任意一颗** 落在目标宫位。
 
-    def self_mutaged_one_of(self) -> bool:
-        """判断本宫是否有任意一种自化"""
-        return any(self.self_mutaged(m) for m in Mutagen)
+        四化列表为空时返回 True。
+        """
+        to = self._resolve_palace(target)
+        if to is None:
+            return False
+        stars = self.mutagen_stars(mutagens)
+        if not stars:
+            return True
+        return to.has_one_of(stars)
 
-    def not_self_mutaged(self) -> bool:
-        """判断本宫是否没有任何自化"""
-        return not self.self_mutaged_one_of()
+    def not_fly_to(
+        self,
+        target: Palace | int | str,
+        mutagens: Mutagen | list[Mutagen],
+    ) -> bool:
+        """
+        判断本宫天干的指定四化星是否 **一颗都不** 落在目标宫位。
 
-    def mutaged_places(self, all_palaces: list[Palace]) -> list[Palace | None]:
+        四化列表为空时返回 True。
+        """
+        to = self._resolve_palace(target)
+        if to is None:
+            return False
+        stars = self.mutagen_stars(mutagens)
+        if not stars:
+            return True
+        return to.not_have(stars)
+
+    def self_mutaged(self, mutagens: Mutagen | list[Mutagen]) -> bool:
+        """判断本宫天干的指定四化星是否 **全部** 落在本宫（自化）"""
+        return self.has(self.mutagen_stars(mutagens))
+
+    def self_mutaged_one_of(
+        self, mutagens: Mutagen | list[Mutagen] | None = None
+    ) -> bool:
+        """
+        判断本宫是否有指定四化中的任意一种自化。
+
+        不传或传空表示检查全部四化。
+        """
+        return self.has_one_of(self.mutagen_stars(_or_all_mutagens(mutagens)))
+
+    def not_self_mutaged(
+        self, mutagens: Mutagen | list[Mutagen] | None = None
+    ) -> bool:
+        """
+        判断本宫是否没有指定四化中的任何一种自化。
+
+        不传或传空表示检查全部四化。
+        """
+        return self.not_have(self.mutagen_stars(_or_all_mutagens(mutagens)))
+
+    def mutaged_places(
+        self, all_palaces: list[Palace] | None = None
+    ) -> list[Palace | None]:
         """
         查看本宫天干四化分别飞入哪些宫位。
+
+        Args:
+            all_palaces: 检索范围；不传则取本宫所属星盘的十二宫
 
         Returns:
             长度为 4 的列表 [禄飞入宫, 权飞入宫, 科飞入宫, 忌飞入宫]，
             未找到时为 None。
         """
-        star_keys = _MUTAGEN_TABLE.get(self.heavenly_stem_key, ())
+        if all_palaces is None:
+            if self._astrolabe is None:
+                return []
+            all_palaces = self._astrolabe.palaces
+
         result: list[Palace | None] = []
-        for star_key in star_keys:
-            found = None
-            for p in all_palaces:
-                if p.has([star_key]):
-                    found = p
-                    break
-            result.append(found)
+        for star_key in self.mutagen_stars(list(Mutagen)):
+            result.append(next((p for p in all_palaces if p.has([star_key])), None))
         return result
+
+    def _resolve_palace(self, target: Palace | int | str) -> Palace | None:
+        """把宫位索引或宫名解析为宫位对象；宫位对象原样返回。"""
+        if isinstance(target, Palace):
+            return target
+        if self._astrolabe is None:
+            return None
+        return self._astrolabe.palace(target)
 
     # ------ 内部方法 ------
 
@@ -716,6 +918,17 @@ class Horoscope:
     hourly: HoroscopeItem
     """流时"""
 
+    _astrolabe: Astrolabe | None = field(default=None, compare=False, repr=False)
+    """发起这次运限查询的星盘；由 `Astrolabe.horoscope` 回填"""
+
+    def astrolabe(self) -> Astrolabe | None:
+        """发起这次运限查询的星盘；脱离星盘单独构造的运限返回 None"""
+        return self._astrolabe
+
+    def _chart(self, astrolabe: Astrolabe | None) -> Astrolabe | None:
+        """显式传入的星盘优先，否则用发起查询的那张盘。"""
+        return astrolabe if astrolabe is not None else self._astrolabe
+
     def scope_item(self, scope: Scope | ScopeLiteral) -> HoroscopeItem | None:
         """获取指定范围的运限项"""
         return {
@@ -726,15 +939,18 @@ class Horoscope:
             "hourly": self.hourly,
         }.get(scope)
 
-    def age_palace(self, astrolabe: Astrolabe) -> Palace:
-        """获取小限宫位"""
-        return astrolabe.palaces[self.age.index]
+    def age_palace(self, astrolabe: Astrolabe | None = None) -> Palace | None:
+        """获取小限宫位；不传星盘则取发起本次查询的那张盘"""
+        chart = self._chart(astrolabe)
+        if chart is None:
+            return None
+        return chart.palaces[self.age.index]
 
     def palace(
         self,
         name: PalaceName | str,
         scope: Scope | ScopeLiteral,
-        astrolabe: Astrolabe,
+        astrolabe: Astrolabe | None = None,
     ) -> Palace | None:
         """
         获取指定运限范围下的宫位。
@@ -742,36 +958,42 @@ class Horoscope:
         Args:
             name: 宫位标识（`PalaceName` 枚举，或当前语言的宫名）
             scope: 运限范围
-            astrolabe: 星盘对象
+            astrolabe: 星盘对象；不传则取发起本次查询的那张盘
         """
+        chart = self._chart(astrolabe)
+        if chart is None:
+            return None
         if scope == "origin":
-            return astrolabe.palace(name)
+            return chart.palace(name)
         item = self.scope_item(scope)
         if item is None:
             return None
         idx = item.palace_index_by_name(name)
         if idx is None:
             return None
-        return astrolabe.palaces[idx]
+        return chart.palaces[idx]
 
     def surround_palaces(
         self,
         name: PalaceName | str,
         scope: Scope | ScopeLiteral,
-        astrolabe: Astrolabe,
+        astrolabe: Astrolabe | None = None,
     ) -> SurroundedPalaces | None:
-        """获取指定运限范围下某宫的三方四正"""
-        p = self.palace(name, scope, astrolabe)
+        """获取指定运限范围下某宫的三方四正；不传星盘则取发起本次查询的那张盘"""
+        chart = self._chart(astrolabe)
+        if chart is None:
+            return None
+        p = self.palace(name, scope, chart)
         if p is None:
             return None
-        return astrolabe.surrounded_palaces(p.index)
+        return chart.surrounded_palaces(p.index)
 
     def has_horoscope_mutagen(
         self,
         name: PalaceName | str,
         scope: Scope | ScopeLiteral,
         mutagen: Mutagen,
-        astrolabe: Astrolabe,
+        astrolabe: Astrolabe | None = None,
     ) -> bool:
         """
         判断指定运限范围下某宫是否有运限四化。
@@ -780,7 +1002,7 @@ class Horoscope:
             name: 宫位标识
             scope: 运限范围（origin 总是返回 False）
             mutagen: 四化类型
-            astrolabe: 星盘对象
+            astrolabe: 星盘对象；不传则取发起本次查询的那张盘
         """
         if scope == "origin":
             return False
@@ -803,7 +1025,7 @@ class Horoscope:
         name: PalaceName | str,
         scope: Scope | ScopeLiteral,
         stars: list[str],
-        astrolabe: Astrolabe,
+        astrolabe: Astrolabe | None = None,
     ) -> bool:
         """判断指定运限宫位是否包含指定的所有流耀（接受星耀枚举或翻译名）"""
         p = self.palace(name, scope, astrolabe)
@@ -812,12 +1034,26 @@ class Horoscope:
         identifiers = self._collect_horoscope_star_identifiers(p.index)
         return all(s in identifiers for s in stars)
 
+    def has_one_of_horoscope_stars(
+        self,
+        name: PalaceName | str,
+        scope: Scope | ScopeLiteral,
+        stars: list[str],
+        astrolabe: Astrolabe | None = None,
+    ) -> bool:
+        """判断指定运限宫位是否包含指定流耀中的任意一颗（接受星耀枚举或翻译名）"""
+        p = self.palace(name, scope, astrolabe)
+        if p is None:
+            return False
+        identifiers = self._collect_horoscope_star_identifiers(p.index)
+        return any(s in identifiers for s in stars)
+
     def not_have_horoscope_stars(
         self,
         name: PalaceName | str,
         scope: Scope | ScopeLiteral,
         stars: list[str],
-        astrolabe: Astrolabe,
+        astrolabe: Astrolabe | None = None,
     ) -> bool:
         """判断指定运限宫位是否不包含指定的所有流耀"""
         p = self.palace(name, scope, astrolabe)
@@ -836,7 +1072,7 @@ class Horoscope:
         return out
 
     @classmethod
-    def _from_dict(cls, d: dict) -> Horoscope:
+    def _from_dict(cls, d: dict, astrolabe: Astrolabe | None = None) -> Horoscope:
         return cls(
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],
@@ -846,6 +1082,7 @@ class Horoscope:
             monthly=HoroscopeItem._from_dict(d["monthly"]),
             daily=HoroscopeItem._from_dict(d["daily"]),
             hourly=HoroscopeItem._from_dict(d["hourly"]),
+            _astrolabe=astrolabe,
         )
 
 
@@ -945,27 +1182,58 @@ class Astrolabe:
             if 0 <= index_or_name < len(self.palaces):
                 return self.palaces[index_or_name]
             return None
+        if index_or_name == PalaceName.BODY:
+            return next((p for p in self.palaces if p.is_body_palace), None)
+        if index_or_name == PalaceName.ORIGINAL:
+            return next((p for p in self.palaces if p.is_original_palace), None)
         for p in self.palaces:
             if index_or_name in (p.name_key, p.name):
                 return p
         return None
 
-    def surrounded_palaces(self, index: int) -> SurroundedPalaces:
+    def surrounded_palaces(
+        self, index_or_name: int | PalaceName | str
+    ) -> SurroundedPalaces | None:
         """
-        获取指定宫位的三方四正。
+        获取指定宫位的三方四正：本宫、对宫、财帛位、官禄位。
 
         Args:
-            index: 宫位索引 (0-11)
+            index_or_name: 宫位索引 (0-11)、`PalaceName` 枚举，或当前语言的宫名
 
         Returns:
-            SurroundedPalaces 包含本宫、对宫、财帛位、官禄位
+            SurroundedPalaces；宫位定位不到时返回 None
         """
+        palace = self.palace(index_or_name)
+        if palace is None:
+            return None
+        index = palace.index
         return SurroundedPalaces(
-            target=self.palaces[index],
+            target=self.palaces[index % 12],
             opposite=self.palaces[(index + 6) % 12],
             wealth=self.palaces[(index + 8) % 12],
             career=self.palaces[(index + 4) % 12],
         )
+
+    def is_surrounded(
+        self, index_or_name: int | PalaceName | str, stars: list[str]
+    ) -> bool:
+        """判断指定宫位的三方四正是否包含 **全部** 指定星耀"""
+        sp = self.surrounded_palaces(index_or_name)
+        return sp.have(stars) if sp else False
+
+    def is_surrounded_one_of(
+        self, index_or_name: int | PalaceName | str, stars: list[str]
+    ) -> bool:
+        """判断指定宫位的三方四正是否包含指定星耀中的 **任意一颗**"""
+        sp = self.surrounded_palaces(index_or_name)
+        return sp.have_one_of(stars) if sp else False
+
+    def not_surrounded(
+        self, index_or_name: int | PalaceName | str, stars: list[str]
+    ) -> bool:
+        """判断指定宫位的三方四正是否 **一颗都不** 包含指定星耀"""
+        sp = self.surrounded_palaces(index_or_name)
+        return sp.not_have(stars) if sp else False
 
     # ------ 星耀查询 ------
 
@@ -987,9 +1255,97 @@ class Astrolabe:
                     return (s, p)
         return None
 
+    def rearranged(self, from_stem: str, from_branch: str) -> Astrolabe:
+        """
+        以指定干支为命宫重排本盘，返回新盘；本盘不变。
+
+        传入的干支决定五行局，进而决定紫微天府落点、十二宫名、长生十二神与大限小限；
+        辅星、杂耀（天伤天使天才除外）、博士十二神、岁前将前十二神沿用原盘。
+
+        常规的天盘、地盘、人盘用 `ChartConfig(astro_type=...)` 指定即可，
+        本方法用于从任意干支起盘。
+
+        Args:
+            from_stem: 天干标识（`HeavenlyStem` 枚举值域）
+            from_branch: 地支标识（`EarthlyBranch` 枚举值域）
+
+        Raises:
+            ValueError: 干支标识非法
+        """
+        from x_iztro._bridge import by_solar
+
+        data = by_solar(
+            solar_date=self.solar_date,
+            time_index=self.time_index,
+            gender=self.gender_key,
+            fix_leap=self.fix_leap,
+            language=self.language,
+            config=self.config.to_dict(),
+            from_stem=str(from_stem),
+            from_branch=str(from_branch),
+        )
+        return Astrolabe._from_dict(data)
+
+    def horoscope(
+        self,
+        target_date: str | None = None,
+        target_time_index: int | None = None,
+    ) -> Horoscope:
+        """
+        以本命盘为起点计算目标日期的运限，结果持有本盘。
+
+        两个参数都可省略，省略时取本地时钟的当前日期与当前时辰。
+
+        Args:
+            target_date: 目标阳历日期，如 "2024-1-1"；不传取今天
+            target_time_index: 目标时辰索引 (0-12)；不传取此刻所属时辰
+
+        Returns:
+            Horoscope 运限对象；其查询方法不必再传星盘
+
+        Raises:
+            ValueError: 目标日期或时辰索引非法
+        """
+        from x_iztro._bridge import horoscope as bridge_horoscope
+        from x_iztro.utils import time_to_index
+
+        if target_date is None or target_time_index is None:
+            from datetime import datetime
+
+            now = datetime.now()
+            if target_date is None:
+                target_date = f"{now.year}-{now.month}-{now.day}"
+            if target_time_index is None:
+                target_time_index = time_to_index(now.hour)
+
+        data = bridge_horoscope(
+            solar_date=self.solar_date,
+            time_index=self.time_index,
+            gender=self.gender_key,
+            fix_leap=self.fix_leap,
+            language=self.language,
+            config=self.config.to_dict(),
+            target_date=target_date,
+            target_time_index=target_time_index,
+        )
+        return Horoscope._from_dict(data, self)
+
+    def _link(self) -> None:
+        """
+        回填宫位与星耀对星盘的反向引用。
+
+        `Palace.astrolabe()`、`Star.palace()`、按索引或宫名飞星等查询依赖这层引用；
+        模型是 frozen dataclass，因此用 `object.__setattr__` 在构造后写入。
+        """
+        for palace in self.palaces:
+            object.__setattr__(palace, "_astrolabe", self)
+            for star in palace.major_stars + palace.minor_stars + palace.adjective_stars:
+                object.__setattr__(star, "_palace", palace)
+                object.__setattr__(star, "_astrolabe", self)
+
     @classmethod
     def _from_dict(cls, d: dict) -> Astrolabe:
-        return cls(
+        chart = cls(
             gender=d["gender"],
             gender_key=d["genderKey"],
             solar_date=d["solarDate"],
@@ -1016,3 +1372,5 @@ class Astrolabe:
             language=d["language"],
             config=ChartConfig._from_dict(d["config"]),
         )
+        chart._link()
+        return chart

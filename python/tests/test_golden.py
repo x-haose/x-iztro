@@ -138,7 +138,7 @@ def test_enums_work_across_languages() -> None:
 
     results = {
         lang: astro.by_solar("2000-8-16", 2, "female", language=lang)
-        for lang in ("zh_cn", "en_us", "ja_jp")
+        for lang in ("zh-CN", "en-US", "ja-JP")
     }
     for lang, a in results.items():
         soul_palace = a.palace(PalaceName.SOUL)
@@ -150,7 +150,7 @@ def test_enums_work_across_languages() -> None:
         assert found is not None and found[0].with_mutagen(Mu.QUAN), lang
 
     # 各语言的判断结果互相一致
-    zh, en = results["zh_cn"], results["en_us"]
+    zh, en = results["zh-CN"], results["en-US"]
     for m in Mu:
         assert [p.has_mutagen(m) for p in zh.palaces] == [p.has_mutagen(m) for p in en.palaces]
 
@@ -159,7 +159,7 @@ def test_flies_to_across_languages() -> None:
     """四化飞星基于天干 key 表，非中文星盘同样正确。"""
     from x_iztro.enums import Mutagen as Mu
 
-    a = astro.by_solar("2000-8-16", 2, "female", language="en_us")
+    a = astro.by_solar("2000-8-16", 2, "female", language="en-US")
     soul = a.palace(0)
     assert soul is not None
     places = soul.mutaged_places(a.palaces)

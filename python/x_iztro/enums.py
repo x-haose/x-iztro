@@ -21,12 +21,12 @@ class Gender(StrEnum):
 class Language(StrEnum):
     """输出语言（排盘入参与 `Astrolabe.language`）"""
 
-    ZH_CN = "zh_cn"
-    ZH_TW = "zh_tw"
-    EN_US = "en_us"
-    JA_JP = "ja_jp"
-    KO_KR = "ko_kr"
-    VI_VN = "vi_vn"
+    ZH_CN = "zh-CN"
+    ZH_TW = "zh-TW"
+    EN_US = "en-US"
+    JA_JP = "ja-JP"
+    KO_KR = "ko-KR"
+    VI_VN = "vi-VN"
 
 
 class Algorithm(StrEnum):
@@ -34,6 +34,19 @@ class Algorithm(StrEnum):
 
     DEFAULT = "default"
     ZHONGZHOU = "zhongzhou"
+
+
+class AstroType(StrEnum):
+    """排盘视角（`ChartConfig.astro_type`）：中州派的天盘、地盘、人盘"""
+
+    HEAVEN = "heaven"
+    """天盘：以命宫干支起五行局，即常规排盘结果"""
+
+    EARTH = "earth"
+    """地盘：以身宫干支起五行局，身宫即为新盘的命宫"""
+
+    HUMAN = "human"
+    """人盘：以福德宫干支起五行局，福德宫即为新盘的命宫"""
 
 
 class YearDivide(StrEnum):
@@ -123,6 +136,11 @@ class PalaceName(StrEnum):
     """福德"""
     PARENTS = "parentsPalace"
     """父母"""
+
+    BODY = "bodyPalace"
+    """身宫。不是十二宫之一，而是「被标记为身宫的那一宫」，供查询方法定位使用"""
+    ORIGINAL = "originalPalace"
+    """来因宫。同上，定位被标记为来因宫的那一宫；一张盘可能没有"""
 
 
 class FiveElementsClass(StrEnum):

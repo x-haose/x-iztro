@@ -8,6 +8,7 @@ x-iztro 排盘主类
 
 from __future__ import annotations
 
+from x_iztro import _bridge as bridge
 from x_iztro.models import (
     Astrolabe,
     ChartConfig,
@@ -18,17 +19,9 @@ from x_iztro.models import (
 )
 
 
-def _get_native():
-    """延迟加载 Rust 原生扩展模块，避免循环导入。"""
-    import x_iztro._x_iztro as mod
-    return mod
-
-
-def _config_json(config: ChartConfig | None) -> str | None:
-    """排盘配置转为绑定层 JSON。"""
-    if config is None:
-        return None
-    return config.to_json()
+def _config(config: ChartConfig | None) -> dict | None:
+    """排盘配置转为绑定层入参。"""
+    return config.to_dict() if config is not None else None
 
 
 class Astro:
@@ -40,7 +33,7 @@ class Astro:
         time_index: TimeIndexType,
         gender: GenderType,
         fix_leap: bool = True,
-        language: LanguageType = "zh_cn",
+        language: LanguageType = "zh-CN",
         config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
@@ -61,8 +54,13 @@ class Astro:
         Raises:
             ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
-        data = _get_native().by_solar(
-            solar_date, time_index, gender, fix_leap, language, _config_json(config),
+        data = bridge.by_solar(
+            solar_date=solar_date,
+            time_index=time_index,
+            gender=gender,
+            fix_leap=fix_leap,
+            language=language,
+            config=_config(config),
         )
         return Astrolabe._from_dict(data)
 
@@ -73,7 +71,7 @@ class Astro:
         gender: GenderType,
         is_leap_month: bool = False,
         fix_leap: bool = True,
-        language: LanguageType = "zh_cn",
+        language: LanguageType = "zh-CN",
         config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
@@ -94,43 +92,38 @@ class Astro:
         Raises:
             ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
-        data = _get_native().by_lunar(
-            lunar_date, time_index, gender, is_leap_month, fix_leap, language,
-            _config_json(config),
+        data = bridge.by_lunar(
+            lunar_date=lunar_date,
+            time_index=time_index,
+            gender=gender,
+            is_leap_month=is_leap_month,
+            fix_leap=fix_leap,
+            language=language,
+            config=_config(config),
         )
         return Astrolabe._from_dict(data)
 
     def get_horoscope(
         self,
         astrolabe: Astrolabe,
-        target_date: str,
-        target_time_index: TimeIndexType,
+        target_date: str | None = None,
+        target_time_index: TimeIndexType | None = None,
     ) -> Horoscope:
         """
         计算运限（从星盘自带的排盘上下文无状态发起）
 
         Args:
             astrolabe: 星盘对象（由 by_solar 或 by_lunar 返回）
-            target_date: 目标阳历日期，如 "2024-1-1"
-            target_time_index: 目标时辰索引 (0-12)
+            target_date: 目标阳历日期，如 "2024-1-1"；不传取今天
+            target_time_index: 目标时辰索引 (0-12)；不传取此刻所属时辰
 
         Returns:
-            Horoscope 运限对象
+            Horoscope 运限对象，持有传入的星盘
 
         Raises:
             ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
-        data = _get_native().get_horoscope(
-            astrolabe.solar_date,
-            astrolabe.time_index,
-            astrolabe.gender_key,
-            astrolabe.fix_leap,
-            astrolabe.language,
-            astrolabe.config.to_json(),
-            target_date,
-            target_time_index,
-        )
-        return Horoscope._from_dict(data)
+        return astrolabe.horoscope(target_date, target_time_index)
 
     def astrolabe_to_prompt(self, astrolabe: Astrolabe) -> str:
         """
@@ -145,13 +138,14 @@ class Astro:
         Raises:
             ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
-        return _get_native().astrolabe_to_prompt(
-            astrolabe.solar_date,
-            astrolabe.time_index,
-            astrolabe.gender_key,
-            astrolabe.fix_leap,
-            astrolabe.language,
-            astrolabe.config.to_json(),
+        return bridge.query(
+            "astrolabeToPrompt",
+            solar_date=astrolabe.solar_date,
+            time_index=astrolabe.time_index,
+            gender=astrolabe.gender_key,
+            fix_leap=astrolabe.fix_leap,
+            language=astrolabe.language,
+            config=astrolabe.config.to_dict(),
         )
 
     def horoscope_to_prompt(
@@ -174,13 +168,14 @@ class Astro:
         Raises:
             ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
-        return _get_native().horoscope_to_prompt(
-            astrolabe.solar_date,
-            astrolabe.time_index,
-            astrolabe.gender_key,
-            astrolabe.fix_leap,
-            astrolabe.language,
-            astrolabe.config.to_json(),
-            target_date,
-            target_time_index,
+        return bridge.query(
+            "horoscopeToPrompt",
+            solar_date=astrolabe.solar_date,
+            time_index=astrolabe.time_index,
+            gender=astrolabe.gender_key,
+            fix_leap=astrolabe.fix_leap,
+            language=astrolabe.language,
+            config=astrolabe.config.to_dict(),
+            target_date=target_date,
+            target_time_index=target_time_index,
         )

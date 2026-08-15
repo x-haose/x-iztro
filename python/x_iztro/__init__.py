@@ -50,6 +50,7 @@ from x_iztro.enums import (
     Gender,
     Language,
     Algorithm,
+    AstroType,
     YearDivide,
     HoroscopeDivide,
     AgeDivide,
@@ -72,11 +73,27 @@ from x_iztro.enums import (
 )
 
 # 主类
+from x_iztro import data, i18n, plugin, query, star, utils
 from x_iztro.astro import Astro
+
+# 轻量查询
+from x_iztro.query import (
+    get_zodiac_by_solar_date,
+    get_sign_by_solar_date,
+    get_sign_by_lunar_date,
+    get_major_star_by_solar_date,
+    get_major_star_by_lunar_date,
+)
 
 __all__ = [
     # 主类
     "Astro",
+    # 轻量查询
+    "get_zodiac_by_solar_date",
+    "get_sign_by_solar_date",
+    "get_sign_by_lunar_date",
+    "get_major_star_by_solar_date",
+    "get_major_star_by_lunar_date",
     # 数据模型
     "Astrolabe",
     "Palace",
@@ -96,6 +113,7 @@ __all__ = [
     "Gender",
     "Language",
     "Algorithm",
+    "AstroType",
     "YearDivide",
     "HoroscopeDivide",
     "AgeDivide",
@@ -115,4 +133,11 @@ __all__ = [
     "Boshi12",
     "Suiqian12",
     "Jiangqian12",
+    # 子模块：安星、数据表、翻译
+    "star",
+    "data",
+    "i18n",
+    "utils",
+    "query",
+    "plugin",
 ]
