@@ -24,7 +24,7 @@ func main() {
 	fmt.Println("===== 1. 阳历排盘 =====")
 	fmt.Println()
 
-	astrolabe, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
+	astrolabe, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
 	if err != nil {
 		log.Fatalf("BySolar failed: %v", err)
 	}
@@ -82,23 +82,23 @@ func main() {
 	star, palace := astrolabe.Star(iztro.StarWuquMaj)
 	fmt.Printf("武曲落宫：%s，化权：%v\n", palace.Name, star.WithMutagen(iztro.MutagenQuan))
 
-	sp := astrolabe.SurroundedPalaces(soul.Index)
+	sp := astrolabe.SurroundedPalacesByIndex(soul.Index)
 	fmt.Printf("命宫三方四正有天府：%v\n", sp.Have(iztro.StarTianfuMaj))
 	fmt.Println()
 
 	// ============================================================
-	// 4. 运限（无状态）
+	// 4. 运限
 	// ============================================================
 	fmt.Println("===== 4. 运限 (2024-10-1) =====")
 	fmt.Println()
 
-	h, err := iztro.GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-10-1", 0)
+	h, err := astrolabe.Horoscope("2024-10-1", 0)
 	if err != nil {
-		log.Fatalf("GetHoroscope failed: %v", err)
+		log.Fatalf("Horoscope failed: %v", err)
 	}
 	fmt.Printf("目标日期：%s / %s\n", h.SolarDate, h.LunarDate)
 	fmt.Printf("%s：%s%s，四化：%v\n", h.Yearly.Name, h.Yearly.HeavenlyStem, h.Yearly.EarthlyBranch, h.Yearly.Mutagen)
-	fmt.Printf("%s：虚岁 %d\n", h.Age.Name, h.Age.NominalAge)
+	fmt.Printf("%s：虚岁 %d，落宫 %s\n", h.Age.Name, h.Age.NominalAge, h.AgePalace().Name)
 	fmt.Println()
 
 	// ============================================================
@@ -107,7 +107,7 @@ func main() {
 	fmt.Println("===== 5. 中州派 =====")
 	fmt.Println()
 
-	zz, err := iztro.BySolar("1990-11-5", 4, "male", true, "zh_cn", &iztro.Config{Algorithm: "zhongzhou"})
+	zz, err := iztro.BySolar("1990-11-5", 4, "male", true, "zh-CN", &iztro.Config{Algorithm: "zhongzhou"})
 	if err != nil {
 		log.Fatalf("BySolar zhongzhou failed: %v", err)
 	}

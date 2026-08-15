@@ -85,12 +85,47 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 - 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
 
+### 与 iztro 的 API 对齐
+- 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
+  硬要求：iztro 每个公开 API 三侧都要有等价物，且三侧能力完全一致，形式各随语言习惯
+- 已全数覆盖。改动后逐条自查用这两条线索——三侧测试都发现不了它们：
+  - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
+    等于对外不可用
+  - 反查取值（`key_of` ≡ iztro `kot`）依赖扫描顺序：iztro 按语言外层、locale 合并顺序内层，
+    8 处同形译名靠它消歧。金标须拿 `kot` 实际取值逐条对照（`tests/golden/i18n_kot.json`），
+    写成「反查到某个译文相同的标识」这类松断言查不出顺序分叉
+- 换了形状而非照抄的几处，别改回去：
+  - `astroType` 收进 `Config`（iztro 放在 `withOptions`，因其 `config()` 是全局单例装不下按盘变化的值）
+  - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `setLanguage`
+  - `get_decadals_and_ages` 直接收命宫索引与五行局，比 iztro `getHoroscope` 的 `from` 更一般
+  - 插件按语言惯用方式实现：Rust 扩展 trait、Python 类方法注入、Go 嵌入 `*Astrolabe`
+- 故意不做的（考察过，不是漏）：`astro/analyzer`（Palace/Surpalaces 方法的自由函数版）、
+  `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（iztro v2.5.8 里已是死代码，
+  活路径走 lunar-lite）、`initStars`（空盘工厂，类型系统已给定长数组）、
+  `astrolabeBySolarDate` / `astrolabeByLunarDate`（v2.0.5 起废弃的别名）、
+  `fixEarthlyBranchIndex`（与 `earthlyBranchIndexToPalaceIndex` 同义）、
+  `setPalace` / `setAstrolabe`（建链是内部行为）、i18next 实例、`Astrolabe.copyright`
+- 复刻的反直觉语义：`fliesTo` 星列表为空返回 false，而 `fliesOneOfTo` / `notFlyTo` 返回 true；
+  `getPalace` 额外接受 `bodyPalace` / `originalPalace`；`getMajorStarBySolarDate` 命宫空宫时借对宫；
+  iztro 在本命层级把红鸾误写为 `hongluanMin`，x-iztro 用正确的 `hongluan`
+- 用户视角的对应关系写在文档站「关于 → 与 iztro 的对应」一页
+
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（约 65 万例）：tier1 全字段 780（含 rawDates）/ tier2 紧凑 37K / tier3 全日期×性别×fix_leap 哈希 586K / 运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14K / Config 四开关非默认值 8.5K
 - tier3 与变体哈希基于规范化串（`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构）；不一致时用生成器 `--inspect*` 重放 JS 单例与 Rust 输出 diff
 - `cargo test` 跑常规层（~15s）；tier3 全量用 `cargo test --release --test golden_tier3 -- --ignored`（~20s）
-- 同步 iztro 新版本流程：升级 `tests/golden/package.json` 中的精确版本 → 重新生成金标数据 → `cargo test`，diff 即差异清单
+- 哪条结论由哪个测试守着：
+  - 排盘数值 → `golden_tier1/2/3`、`golden_variants`、`golden_horoscope`
+  - 序列化契约 → `golden_contract`（对 JS 的 `JSON.stringify` 逐键逐值）
+  - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
+  - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
+  - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`
+  - 自定义四化/亮度表 → `config_overrides`；Rust 扩展 trait → `extension`
+  - 三侧同盘同解 → `src/models/astrolabe.rs` 单测 + `python/tests/test_parity.py`
+    + `go/iztro/parity_check_test.go`；插件三侧同解 → 各自的 `test_plugin` / `plugin_test`
+- 同步 iztro 新版本流程：升级 `tests/golden/package.json` 中的精确版本 → 重新生成金标数据
+  → `cargo test`，diff 即数据差异清单；API 面的增删改金标不报，另按上面「与 iztro 的 API 对齐」自查
 
 ### 多语言
 - 支持 6 种语言：zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN

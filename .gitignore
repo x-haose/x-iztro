@@ -9,3 +9,9 @@ __pycache__/
 # Golden test data
 tests/golden/node_modules/
 .pytest_cache/
+
+# 过程文档：计划、核对表、迁移记录等只在施工期间有用的东西
+docs/plan/
+
+# Go 示例编译产物
+examples/go/x-iztro-example

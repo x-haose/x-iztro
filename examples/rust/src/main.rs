@@ -12,7 +12,7 @@ use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use x_iztro::{IztroError, astrolabe_to_prompt, by_solar, get_horoscope, horoscope_to_prompt};
+use x_iztro::{IztroError, astrolabe_to_prompt, by_solar, horoscope_to_prompt};
 
 fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;
@@ -62,7 +62,7 @@ fn main() -> Result<(), IztroError> {
 
     println!("\n— 十二宫 —\n");
     for i in 0..12 {
-        let p = astrolabe.palace(i);
+        let p = astrolabe.palace(i).expect("索引 0-11 必然命中");
         let major: Vec<String> = p
             .major_stars
             .iter()
@@ -104,11 +104,11 @@ fn main() -> Result<(), IztroError> {
         StarKey::TianmaMin,
     ];
     for key in &key_stars {
-        if let Some((star, palace)) = astrolabe.star(*key) {
+        if let Some(star) = astrolabe.star(*key) {
             let mut info = format!(
                 "  {} → {}",
                 translate_star(*key, lang),
-                translate_palace(palace.name, lang),
+                translate_palace(star.palace().name, lang),
             );
             if let Some(b) = star.brightness {
                 info.push_str(&format!(" ({})", translate_brightness(b, lang)));
@@ -125,18 +125,18 @@ fn main() -> Result<(), IztroError> {
     // ============================================================
     println!("\n===== 流年运限 (2026-10-01) =====\n");
 
-    let horoscope = get_horoscope(&astrolabe, "2027-10-1", 0, lang)?;
+    let horoscope = astrolabe.horoscope("2027-10-1", 0)?;
 
     println!("日期：{} / {}", horoscope.solar_date, horoscope.lunar_date);
     println!(
         "大限：{} ({}{})",
-        translate_palace(astrolabe.palace(horoscope.decadal.index).name, lang),
+        translate_palace(astrolabe.palace(horoscope.decadal.index).unwrap().name, lang),
         translate_heavenly_stem(horoscope.decadal.heavenly_stem, lang),
         translate_earthly_branch(horoscope.decadal.earthly_branch, lang),
     );
     println!(
         "小限：{} (虚岁 {})",
-        translate_palace(astrolabe.palace(horoscope.age.base.index).name, lang),
+        translate_palace(astrolabe.palace(horoscope.age.base.index).unwrap().name, lang),
         horoscope.age.nominal_age,
     );
     println!(

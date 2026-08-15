@@ -120,7 +120,7 @@ def main():
     # ============================================================
     print("===== 7. 运限 =====\n")
 
-    h = astro.get_horoscope(result, "2024-10-1", 0)
+    h = result.horoscope("2024-10-1", 0)
 
     print(f"日期：{h.solar_date} / {h.lunar_date}")
     print(f"\n{h.decadal.name}：{h.decadal.heavenly_stem}{h.decadal.earthly_branch}")
