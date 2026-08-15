@@ -22,18 +22,11 @@ fn parse_gender(s: &str) -> Result<Gender, String> {
 
 /// Parse a language string, returning Ok or an error message.
 fn parse_language(s: &str) -> Result<Language, String> {
-    match s.to_lowercase().as_str() {
-        "zh_cn" => Ok(Language::ZhCN),
-        "zh_tw" => Ok(Language::ZhTW),
-        "en_us" => Ok(Language::EnUS),
-        "ja_jp" => Ok(Language::JaJP),
-        "ko_kr" => Ok(Language::KoKR),
-        "vi_vn" => Ok(Language::ViVN),
-        _ => Err(format!(
-            "Invalid language '{}'. Expected one of: zh_cn, zh_tw, en_us, ja_jp, ko_kr, vi_vn.",
-            s
-        )),
-    }
+    Language::from_code(s).ok_or_else(|| {
+        format!(
+            "Invalid language '{s}'. Expected one of: zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN."
+        )
+    })
 }
 
 /// Helper: convert a C string pointer to a Rust &str.
@@ -95,7 +88,7 @@ fn ok_json(json: String) -> *mut c_char {
 /// - `time_index`: Time index (0-12)
 /// - `gender`: "male" or "female"
 /// - `fix_leap`: Whether to fix leap month
-/// - `language`: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
+/// - `language`: "zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", or "vi-VN"
 /// - `config_json`: NULL/empty for defaults, or a partial-config JSON such as
 ///   `{"algorithm":"zhongzhou","yearDivide":"exact"}` (keys: yearDivide,
 ///   horoscopeDivide, ageDivide, dayDivide, algorithm)
@@ -150,7 +143,7 @@ pub unsafe extern "C" fn iztro_by_solar(
 /// - `gender`: "male" or "female"
 /// - `is_leap_month`: Whether the lunar month is a leap month
 /// - `fix_leap`: Whether to fix leap month
-/// - `language`: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
+/// - `language`: "zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", or "vi-VN"
 /// - `config_json`: NULL/empty for defaults, or a partial-config JSON
 ///
 /// # Returns
@@ -215,7 +208,7 @@ pub unsafe extern "C" fn iztro_by_lunar(
 /// - `time_index`: Birth time index (0-12)
 /// - `gender`: "male" or "female"
 /// - `fix_leap`: Whether to fix leap month
-/// - `language`: "zh_cn", "zh_tw", "en_us", "ja_jp", "ko_kr", or "vi_vn"
+/// - `language`: "zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", or "vi-VN"
 /// - `config_json`: NULL/empty for defaults, or a partial-config JSON
 /// - `target_date`: Target date string, e.g. "2024-1-1"
 /// - `target_time_index`: Target time index (0-12)

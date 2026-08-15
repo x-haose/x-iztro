@@ -6,6 +6,9 @@
 
 #![warn(missing_docs)]
 
+/// 绑定层共用的编组与分派
+pub mod bridge;
+
 /// 排盘与运限主流程
 pub mod astro;
 /// 枚举、常量与星耀数据表
@@ -37,10 +40,20 @@ pub mod wasm;
 // Re-export main public API
 pub use astro::builder::{by_lunar, by_solar};
 pub use astro::horoscope::get_horoscope;
+pub use astro::palace::{get_five_elements_class, get_palace_names, get_soul_and_body};
+pub use astro::query::{
+    get_major_star_by_lunar_date, get_major_star_by_solar_date, get_sign_by_lunar_date,
+    get_sign_by_solar_date, get_zodiac_by_solar_date,
+};
+pub use astro::surpalaces::SurroundedPalaces;
+pub use data::stars::StarKey;
 pub use data::types::*;
 pub use error::IztroError;
-pub use models::astrolabe::Astrolabe;
-pub use models::horoscope::HoroscopeData;
+pub use i18n::lookup::{key_of, translate_key};
+pub use models::astrolabe::{Astrolabe, PalaceRef, PalaceTarget, RawDates, StarRef};
+pub use models::horoscope::{HoroscopeData, HoroscopeRef};
+pub use models::palace::{Decadal, PalaceData};
+pub use models::star::Star;
 pub use prompt::{astrolabe_to_prompt, horoscope_to_prompt};
 
 /// 便捷函数：排盘并返回 JSON

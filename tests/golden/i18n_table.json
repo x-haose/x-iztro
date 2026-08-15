@@ -1,0 +1,2081 @@
+{
+  "decadal": {
+    "zh-CN": "大限",
+    "zh-TW": "大限",
+    "en-US": "decadal",
+    "ja-JP": "大限",
+    "ko-KR": "대한",
+    "vi-VN": "Đại Hạn"
+  },
+  "childhood": {
+    "zh-CN": "童限",
+    "zh-TW": "童限",
+    "ja-JP": "子供",
+    "ko-KR": "어린",
+    "vi-VN": "đứa trẻ Hạn"
+  },
+  "yearly": {
+    "zh-CN": "流年",
+    "zh-TW": "流年",
+    "en-US": "yearly",
+    "ja-JP": "流年",
+    "ko-KR": "유년",
+    "vi-VN": "Lưu Niên"
+  },
+  "monthly": {
+    "zh-CN": "流月",
+    "zh-TW": "流月",
+    "en-US": "monthly",
+    "ja-JP": "流月",
+    "ko-KR": "유월",
+    "vi-VN": "Lưu Nguyệt"
+  },
+  "daily": {
+    "zh-CN": "流日",
+    "zh-TW": "流日",
+    "en-US": "daily",
+    "ja-JP": "流日",
+    "ko-KR": "유일",
+    "vi-VN": "Lưu Nhật"
+  },
+  "hourly": {
+    "zh-CN": "流时",
+    "zh-TW": "流時",
+    "en-US": "hourly",
+    "ja-JP": "流時",
+    "ko-KR": "유시",
+    "vi-VN": "Lưu Thì"
+  },
+  "turn": {
+    "zh-CN": "小限",
+    "zh-TW": "小限",
+    "en-US": "age",
+    "ja-JP": "小限",
+    "ko-KR": "소한",
+    "vi-VN": "Tiểu Hạn"
+  },
+  "rat": {
+    "zh-CN": "鼠",
+    "zh-TW": "鼠",
+    "en-US": "rat",
+    "ja-JP": "鼠",
+    "ko-KR": "쥐",
+    "vi-VN": "Chuột"
+  },
+  "ox": {
+    "zh-CN": "牛",
+    "zh-TW": "牛",
+    "en-US": "ox",
+    "ja-JP": "牛",
+    "ko-KR": "소",
+    "vi-VN": "Trâu"
+  },
+  "tiger": {
+    "zh-CN": "虎",
+    "zh-TW": "虎",
+    "en-US": "tiger",
+    "ja-JP": "虎",
+    "ko-KR": "호랑이",
+    "vi-VN": "Hổ"
+  },
+  "rabbit": {
+    "zh-CN": "兔",
+    "zh-TW": "兔",
+    "en-US": "rabbit",
+    "ja-JP": "兎",
+    "ko-KR": "토끼",
+    "vi-VN": "Mèo"
+  },
+  "dragon": {
+    "zh-CN": "龙",
+    "zh-TW": "龍",
+    "en-US": "dragon",
+    "ja-JP": "龍",
+    "ko-KR": "용",
+    "vi-VN": "Rồng"
+  },
+  "snake": {
+    "zh-CN": "蛇",
+    "zh-TW": "蛇",
+    "en-US": "snake",
+    "ja-JP": "蛇",
+    "ko-KR": "뱀",
+    "vi-VN": "Rắn"
+  },
+  "horse": {
+    "zh-CN": "马",
+    "zh-TW": "馬",
+    "en-US": "horse",
+    "ja-JP": "馬",
+    "ko-KR": "말",
+    "vi-VN": "Ngựa"
+  },
+  "sheep": {
+    "zh-CN": "羊",
+    "zh-TW": "羊",
+    "en-US": "sheep",
+    "ja-JP": "羊",
+    "ko-KR": "양",
+    "vi-VN": "Dê"
+  },
+  "monkey": {
+    "zh-CN": "猴",
+    "zh-TW": "猴",
+    "en-US": "monkey",
+    "ja-JP": "猿",
+    "ko-KR": "원숭이",
+    "vi-VN": "Khỉ"
+  },
+  "rooster": {
+    "zh-CN": "鸡",
+    "zh-TW": "雞",
+    "en-US": "rooster",
+    "ja-JP": "雞",
+    "ko-KR": "닭",
+    "vi-VN": "Gà"
+  },
+  "dog": {
+    "zh-CN": "狗",
+    "zh-TW": "狗",
+    "en-US": "dog",
+    "ja-JP": "犬",
+    "ko-KR": "개",
+    "vi-VN": "Chó"
+  },
+  "pig": {
+    "zh-CN": "猪",
+    "zh-TW": "豬",
+    "en-US": "pig",
+    "ja-JP": "豚",
+    "ko-KR": "돼지",
+    "vi-VN": "Lợn"
+  },
+  "earlyRatHour": {
+    "zh-CN": "早子时",
+    "zh-TW": "早子時",
+    "en-US": "early Rat hour",
+    "ja-JP": "早子時",
+    "ko-KR": "아침 자시",
+    "vi-VN": "Giờ tý sớm"
+  },
+  "oxHour": {
+    "zh-CN": "丑时",
+    "zh-TW": "丑時",
+    "en-US": "Ox hour",
+    "ja-JP": "丑時",
+    "ko-KR": "축시",
+    "vi-VN": "Giờ sửu"
+  },
+  "tigerHour": {
+    "zh-CN": "寅时",
+    "zh-TW": "寅時",
+    "en-US": "Tiger hour",
+    "ja-JP": "寅時",
+    "ko-KR": "인시",
+    "vi-VN": "Giờ dần"
+  },
+  "rabbitHour": {
+    "zh-CN": "卯时",
+    "zh-TW": "卯時",
+    "en-US": "Rabbit hour",
+    "ja-JP": "卯時",
+    "ko-KR": "묘시",
+    "vi-VN": "Giờ mão"
+  },
+  "dragonHour": {
+    "zh-CN": "辰时",
+    "zh-TW": "辰時",
+    "en-US": "Dragon hour",
+    "ja-JP": "辰時",
+    "ko-KR": "진시",
+    "vi-VN": "Giờ thìn"
+  },
+  "snakeHour": {
+    "zh-CN": "巳时",
+    "zh-TW": "巳時",
+    "en-US": "Snake hour",
+    "ja-JP": "巳時",
+    "ko-KR": "사시",
+    "vi-VN": "Giờ tỵ"
+  },
+  "horseHour": {
+    "zh-CN": "午时",
+    "zh-TW": "午時",
+    "en-US": "Horse hour",
+    "ja-JP": "午時",
+    "ko-KR": "오시",
+    "vi-VN": "Giờ ngọ"
+  },
+  "goatHour": {
+    "zh-CN": "未时",
+    "zh-TW": "未時",
+    "en-US": "Goat hour",
+    "ja-JP": "未時",
+    "ko-KR": "미시",
+    "vi-VN": "Giờ mùi"
+  },
+  "monkeyHour": {
+    "zh-CN": "申时",
+    "zh-TW": "申時",
+    "en-US": "Monkey hour",
+    "ja-JP": "申時",
+    "ko-KR": "신시",
+    "vi-VN": "Giờ thân"
+  },
+  "roosterHour": {
+    "zh-CN": "酉时",
+    "zh-TW": "酉時",
+    "en-US": "Rooster hour",
+    "ja-JP": "酉時",
+    "ko-KR": "유시",
+    "vi-VN": "Giờ dậu"
+  },
+  "dogHour": {
+    "zh-CN": "戌时",
+    "zh-TW": "戌時",
+    "en-US": "Dog hour",
+    "ja-JP": "戌時",
+    "ko-KR": "술시",
+    "vi-VN": "Giờ tuất"
+  },
+  "pigHour": {
+    "zh-CN": "亥时",
+    "zh-TW": "亥時",
+    "en-US": "Pig hour",
+    "ja-JP": "亥時",
+    "ko-KR": "해시",
+    "vi-VN": "Giờ hợi"
+  },
+  "lateRatHour": {
+    "zh-CN": "晚子时",
+    "zh-TW": "晚子時",
+    "en-US": "late Rat hour",
+    "ja-JP": "晚子時",
+    "ko-KR": "밤에 자시",
+    "vi-VN": "Giờ tý muộn"
+  },
+  "aries": {
+    "zh-CN": "白羊座",
+    "zh-TW": "白羊座",
+    "en-US": "aries",
+    "ja-JP": "おひつじ座",
+    "ko-KR": "백양궁",
+    "vi-VN": "Cung Bạch Dương"
+  },
+  "taurus": {
+    "zh-CN": "金牛座",
+    "zh-TW": "金牛座",
+    "en-US": "taurus",
+    "ja-JP": "おうし座",
+    "ko-KR": "금우궁",
+    "vi-VN": "Cung Kim Ngưu"
+  },
+  "gemini": {
+    "zh-CN": "双子座",
+    "zh-TW": "雙子座",
+    "en-US": "gemini",
+    "ja-JP": "ふたご座",
+    "ko-KR": "쌍아궁",
+    "vi-VN": "Cung Song Tử"
+  },
+  "cancer": {
+    "zh-CN": "巨蟹座",
+    "zh-TW": "巨蟹座",
+    "en-US": "cancer",
+    "ja-JP": "かに座",
+    "ko-KR": "거해궁",
+    "vi-VN": "Cung Cự Giải"
+  },
+  "leo": {
+    "zh-CN": "狮子座",
+    "zh-TW": "獅子座",
+    "en-US": "leo",
+    "ja-JP": "しし座",
+    "ko-KR": "사자궁",
+    "vi-VN": "Cung Sư Tử"
+  },
+  "virgo": {
+    "zh-CN": "处女座",
+    "zh-TW": "處女座",
+    "en-US": "virgo",
+    "ja-JP": "おとめ座",
+    "ko-KR": "처녀궁",
+    "vi-VN": "Cung Xử Nữ"
+  },
+  "libra": {
+    "zh-CN": "天秤座",
+    "zh-TW": "天秤座",
+    "en-US": "libra",
+    "ja-JP": "てんびん座",
+    "ko-KR": "천칭궁",
+    "vi-VN": "Cung Thiên Bình"
+  },
+  "scorpio": {
+    "zh-CN": "天蝎座",
+    "zh-TW": "天蠍座",
+    "en-US": "scorpio",
+    "ja-JP": "さそり座",
+    "ko-KR": "천갈궁",
+    "vi-VN": "Cung Thiên Yết"
+  },
+  "sagittarius": {
+    "zh-CN": "射手座",
+    "zh-TW": "射手座",
+    "en-US": "sagittarius",
+    "ja-JP": "いて座",
+    "ko-KR": "인마궁",
+    "vi-VN": "Cung Xạ Thủ"
+  },
+  "capricorn": {
+    "zh-CN": "摩羯座",
+    "zh-TW": "摩羯座",
+    "en-US": "capricorn",
+    "ja-JP": "やぎ座",
+    "ko-KR": "마갈궁",
+    "vi-VN": "Cung Ma Kết"
+  },
+  "aquarius": {
+    "zh-CN": "水瓶座",
+    "zh-TW": "水瓶座",
+    "en-US": "aquarius",
+    "ja-JP": "みずがめ座",
+    "ko-KR": "보병궁",
+    "vi-VN": "Cung Thủy Bình"
+  },
+  "pisces": {
+    "zh-CN": "双鱼座",
+    "zh-TW": "雙魚座",
+    "en-US": "pisces",
+    "ja-JP": "うお座",
+    "ko-KR": "쌍어궁",
+    "vi-VN": "Cung Song Ngư"
+  },
+  "water2nd": {
+    "zh-CN": "水二局",
+    "zh-TW": "水二局",
+    "en-US": "water 2nd",
+    "ja-JP": "水の二局",
+    "ko-KR": "수이국",
+    "vi-VN": "Thủy Nhị Cục"
+  },
+  "wood3rd": {
+    "zh-CN": "木三局",
+    "zh-TW": "木三局",
+    "en-US": "wood 3rd",
+    "ja-JP": "木の三局",
+    "ko-KR": "목삼국",
+    "vi-VN": "Mộc Tam Cục"
+  },
+  "metal4th": {
+    "zh-CN": "金四局",
+    "zh-TW": "金四局",
+    "en-US": "metal 4th",
+    "ja-JP": "金の四局",
+    "ko-KR": "금사국",
+    "vi-VN": "Kim Tứ Cục"
+  },
+  "earth5th": {
+    "zh-CN": "土五局",
+    "zh-TW": "土五局",
+    "en-US": "earth 5th",
+    "ja-JP": "土の五局",
+    "ko-KR": "토오국",
+    "vi-VN": "Thổ Ngũ Cục"
+  },
+  "fire6th": {
+    "zh-CN": "火六局",
+    "zh-TW": "火六局",
+    "en-US": "fire 6th",
+    "ja-JP": "火の六局",
+    "ko-KR": "화육국",
+    "vi-VN": "Hỏa Lục Cục"
+  },
+  "jiaHeavenly": {
+    "zh-CN": "甲",
+    "zh-TW": "甲",
+    "en-US": "jia",
+    "ja-JP": "甲",
+    "ko-KR": "갑",
+    "vi-VN": "Giáp"
+  },
+  "yiHeavenly": {
+    "zh-CN": "乙",
+    "zh-TW": "乙",
+    "en-US": "yi",
+    "ja-JP": "乙",
+    "ko-KR": "을",
+    "vi-VN": "Ất"
+  },
+  "bingHeavenly": {
+    "zh-CN": "丙",
+    "zh-TW": "丙",
+    "en-US": "bing",
+    "ja-JP": "丙",
+    "ko-KR": "병",
+    "vi-VN": "Bính"
+  },
+  "dingHeavenly": {
+    "zh-CN": "丁",
+    "zh-TW": "丁",
+    "en-US": "ding",
+    "ja-JP": "丁",
+    "ko-KR": "정",
+    "vi-VN": "Đinh"
+  },
+  "wuHeavenly": {
+    "zh-CN": "戊",
+    "zh-TW": "戊",
+    "en-US": "wu",
+    "ja-JP": "戊",
+    "ko-KR": "무",
+    "vi-VN": "Mậu"
+  },
+  "jiHeavenly": {
+    "zh-CN": "己",
+    "zh-TW": "己",
+    "en-US": "ji",
+    "ja-JP": "己",
+    "ko-KR": "기",
+    "vi-VN": "Kỷ"
+  },
+  "gengHeavenly": {
+    "zh-CN": "庚",
+    "zh-TW": "庚",
+    "en-US": "geng",
+    "ja-JP": "庚",
+    "ko-KR": "경",
+    "vi-VN": "Canh"
+  },
+  "xinHeavenly": {
+    "zh-CN": "辛",
+    "zh-TW": "辛",
+    "en-US": "xin",
+    "ja-JP": "辛",
+    "ko-KR": "신",
+    "vi-VN": "Tân"
+  },
+  "renHeavenly": {
+    "zh-CN": "壬",
+    "zh-TW": "壬",
+    "en-US": "ren",
+    "ja-JP": "壬",
+    "ko-KR": "임",
+    "vi-VN": "Nhâm"
+  },
+  "guiHeavenly": {
+    "zh-CN": "癸",
+    "zh-TW": "癸",
+    "en-US": "gui",
+    "ja-JP": "癸",
+    "ko-KR": "계",
+    "vi-VN": "Quý"
+  },
+  "ziEarthly": {
+    "zh-CN": "子",
+    "zh-TW": "子",
+    "en-US": "zi",
+    "ja-JP": "子",
+    "ko-KR": "자",
+    "vi-VN": "Tý"
+  },
+  "chouEarthly": {
+    "zh-CN": "丑",
+    "zh-TW": "丑",
+    "en-US": "chou",
+    "ja-JP": "丑",
+    "ko-KR": "축",
+    "vi-VN": "Sửu"
+  },
+  "yinEarthly": {
+    "zh-CN": "寅",
+    "zh-TW": "寅",
+    "en-US": "yin",
+    "ja-JP": "寅",
+    "ko-KR": "인",
+    "vi-VN": "Dần"
+  },
+  "maoEarthly": {
+    "zh-CN": "卯",
+    "zh-TW": "卯",
+    "en-US": "mao",
+    "ja-JP": "卯",
+    "ko-KR": "묘",
+    "vi-VN": "Mão"
+  },
+  "chenEarthly": {
+    "zh-CN": "辰",
+    "zh-TW": "辰",
+    "en-US": "chen",
+    "ja-JP": "辰",
+    "ko-KR": "진",
+    "vi-VN": "Thìn"
+  },
+  "siEarthly": {
+    "zh-CN": "巳",
+    "zh-TW": "巳",
+    "en-US": "si",
+    "ja-JP": "巳",
+    "ko-KR": "사",
+    "vi-VN": "Tỵ"
+  },
+  "wuEarthly": {
+    "zh-CN": "午",
+    "zh-TW": "午",
+    "en-US": "woo",
+    "ja-JP": "午",
+    "ko-KR": "오",
+    "vi-VN": "Ngọ"
+  },
+  "weiEarthly": {
+    "zh-CN": "未",
+    "zh-TW": "未",
+    "en-US": "wei",
+    "ja-JP": "未",
+    "ko-KR": "미",
+    "vi-VN": "Mùi"
+  },
+  "shenEarthly": {
+    "zh-CN": "申",
+    "zh-TW": "申",
+    "en-US": "shen",
+    "ja-JP": "申",
+    "ko-KR": "신",
+    "vi-VN": "Thân"
+  },
+  "youEarthly": {
+    "zh-CN": "酉",
+    "zh-TW": "酉",
+    "en-US": "you",
+    "ja-JP": "酉",
+    "ko-KR": "유",
+    "vi-VN": "Dậu"
+  },
+  "xuEarthly": {
+    "zh-CN": "戌",
+    "zh-TW": "戌",
+    "en-US": "xu",
+    "ja-JP": "戌",
+    "ko-KR": "술",
+    "vi-VN": "Tuất"
+  },
+  "haiEarthly": {
+    "zh-CN": "亥",
+    "zh-TW": "亥",
+    "en-US": "hai",
+    "ja-JP": "亥",
+    "ko-KR": "해",
+    "vi-VN": "Hợi"
+  },
+  "miao": {
+    "zh-CN": "庙",
+    "zh-TW": "廟",
+    "en-US": "[+3]",
+    "ja-JP": "廟",
+    "ko-KR": "[+3]",
+    "vi-VN": "Miếu"
+  },
+  "wang": {
+    "zh-CN": "旺",
+    "zh-TW": "旺",
+    "en-US": "[+2]",
+    "ja-JP": "旺",
+    "ko-KR": "[+2]",
+    "vi-VN": "Vượng"
+  },
+  "de": {
+    "zh-CN": "得",
+    "zh-TW": "得",
+    "en-US": "[+1]",
+    "ja-JP": "得",
+    "ko-KR": "[+1]",
+    "vi-VN": "Đắc"
+  },
+  "li": {
+    "zh-CN": "利",
+    "zh-TW": "利",
+    "en-US": "[0]",
+    "ja-JP": "利",
+    "ko-KR": "[0]",
+    "vi-VN": "Lợi"
+  },
+  "ping": {
+    "zh-CN": "平",
+    "zh-TW": "平",
+    "en-US": "[-1]",
+    "ja-JP": "平",
+    "ko-KR": "[-1]",
+    "vi-VN": "Bình"
+  },
+  "bu": {
+    "zh-CN": "不",
+    "zh-TW": "不",
+    "en-US": "[-2]",
+    "ja-JP": "不",
+    "ko-KR": "[-2]",
+    "vi-VN": "Bất"
+  },
+  "xian": {
+    "zh-CN": "陷",
+    "zh-TW": "陷",
+    "en-US": "[-3]",
+    "ja-JP": "陷",
+    "ko-KR": "[-3]",
+    "vi-VN": "Hạn"
+  },
+  "sihuaLu": {
+    "zh-CN": "禄",
+    "zh-TW": "祿",
+    "en-US": "A",
+    "ja-JP": "祿",
+    "ko-KR": "록",
+    "vi-VN": "Lộc"
+  },
+  "sihuaQuan": {
+    "zh-CN": "权",
+    "zh-TW": "權",
+    "en-US": "B",
+    "ja-JP": "權",
+    "ko-KR": "권",
+    "vi-VN": "Quyền"
+  },
+  "sihuaKe": {
+    "zh-CN": "科",
+    "zh-TW": "科",
+    "en-US": "C",
+    "ja-JP": "科",
+    "ko-KR": "과",
+    "vi-VN": "Khoa"
+  },
+  "sihuaJi": {
+    "zh-CN": "忌",
+    "zh-TW": "忌",
+    "en-US": "D",
+    "ja-JP": "忌",
+    "ko-KR": "기",
+    "vi-VN": "Kỵ"
+  },
+  "ziweiMaj": {
+    "zh-CN": "紫微",
+    "zh-TW": "紫微",
+    "en-US": "emperor",
+    "ja-JP": "紫微",
+    "ko-KR": "자미",
+    "vi-VN": "Tử Vi"
+  },
+  "tianjiMaj": {
+    "zh-CN": "天机",
+    "zh-TW": "天機",
+    "en-US": "advisor",
+    "ja-JP": "天機",
+    "ko-KR": "천기",
+    "vi-VN": "Thiên Cơ"
+  },
+  "taiyangMaj": {
+    "zh-CN": "太阳",
+    "zh-TW": "太陽",
+    "en-US": "sun",
+    "ja-JP": "太陽",
+    "ko-KR": "태양",
+    "vi-VN": "Thái Dương"
+  },
+  "wuquMaj": {
+    "zh-CN": "武曲",
+    "zh-TW": "武曲",
+    "en-US": "general",
+    "ja-JP": "武曲",
+    "ko-KR": "무곡",
+    "vi-VN": "Vũ Khúc"
+  },
+  "tiantongMaj": {
+    "zh-CN": "天同",
+    "zh-TW": "天同",
+    "en-US": "fortunate",
+    "ja-JP": "天同",
+    "ko-KR": "천동",
+    "vi-VN": "Thiên Đồng"
+  },
+  "lianzhenMaj": {
+    "zh-CN": "廉贞",
+    "zh-TW": "廉貞",
+    "en-US": "judge",
+    "ja-JP": "廉貞",
+    "ko-KR": "염정",
+    "vi-VN": "Liêm Trinh"
+  },
+  "tianfuMaj": {
+    "zh-CN": "天府",
+    "zh-TW": "天府",
+    "en-US": "empress",
+    "ja-JP": "天府",
+    "ko-KR": "천부",
+    "vi-VN": "Thiên Phủ"
+  },
+  "taiyinMaj": {
+    "zh-CN": "太阴",
+    "zh-TW": "太陰",
+    "en-US": "moon",
+    "ja-JP": "太陰",
+    "ko-KR": "태음",
+    "vi-VN": "Thái Âm"
+  },
+  "tanlangMaj": {
+    "zh-CN": "贪狼",
+    "zh-TW": "貪狼",
+    "en-US": "wolf",
+    "ja-JP": "貪狼",
+    "ko-KR": "탐랑",
+    "vi-VN": "Tham Lang"
+  },
+  "jumenMaj": {
+    "zh-CN": "巨门",
+    "zh-TW": "巨門",
+    "en-US": "advocator",
+    "ja-JP": "巨門",
+    "ko-KR": "거문",
+    "vi-VN": "Cự Môn"
+  },
+  "tianxiangMaj": {
+    "zh-CN": "天相",
+    "zh-TW": "天相",
+    "en-US": "minister",
+    "ja-JP": "天相",
+    "ko-KR": "천상",
+    "vi-VN": "Thiên Tướng"
+  },
+  "tianliangMaj": {
+    "zh-CN": "天梁",
+    "zh-TW": "天梁",
+    "en-US": "sage",
+    "ja-JP": "天梁",
+    "ko-KR": "천량",
+    "vi-VN": "Thiên Lương"
+  },
+  "qishaMaj": {
+    "zh-CN": "七杀",
+    "zh-TW": "七殺",
+    "en-US": "marshal",
+    "ja-JP": "七殺",
+    "ko-KR": "칠살",
+    "vi-VN": "Thất Sát"
+  },
+  "pojunMaj": {
+    "zh-CN": "破军",
+    "zh-TW": "破軍",
+    "en-US": "rebel",
+    "ja-JP": "破軍",
+    "ko-KR": "파군",
+    "vi-VN": "Phá Quân"
+  },
+  "zuofuMin": {
+    "zh-CN": "左辅",
+    "zh-TW": "左輔",
+    "en-US": "officer",
+    "ja-JP": "左輔",
+    "ko-KR": "좌보",
+    "vi-VN": "Tả Phù"
+  },
+  "youbiMin": {
+    "zh-CN": "右弼",
+    "zh-TW": "右弼",
+    "en-US": "helper",
+    "ja-JP": "右弼",
+    "ko-KR": "우필",
+    "vi-VN": "Hữu Bật"
+  },
+  "wenchangMin": {
+    "zh-CN": "文昌",
+    "zh-TW": "文昌",
+    "en-US": "scholar",
+    "ja-JP": "文昌",
+    "ko-KR": "문창",
+    "vi-VN": "Văn Xương"
+  },
+  "wenquMin": {
+    "zh-CN": "文曲",
+    "zh-TW": "文曲",
+    "en-US": "artist",
+    "ja-JP": "文曲",
+    "ko-KR": "문곡",
+    "vi-VN": "Văn Khúc"
+  },
+  "lucunMin": {
+    "zh-CN": "禄存",
+    "zh-TW": "祿存",
+    "en-US": "money",
+    "ja-JP": "祿存",
+    "ko-KR": "록존",
+    "vi-VN": "Lộc Tồn"
+  },
+  "tianmaMin": {
+    "zh-CN": "天马",
+    "zh-TW": "天馬",
+    "en-US": "horse",
+    "ja-JP": "天馬",
+    "ko-KR": "천마",
+    "vi-VN": "Thiên Mã"
+  },
+  "qingyangMin": {
+    "zh-CN": "擎羊",
+    "zh-TW": "擎羊",
+    "en-US": "driven",
+    "ja-JP": "擎羊",
+    "ko-KR": "경양",
+    "vi-VN": "Kình Dương"
+  },
+  "tuoluoMin": {
+    "zh-CN": "陀罗",
+    "zh-TW": "陀羅",
+    "en-US": "tangled",
+    "ja-JP": "陀羅",
+    "ko-KR": "타라",
+    "vi-VN": "Đà La"
+  },
+  "huoxingMin": {
+    "zh-CN": "火星",
+    "zh-TW": "火星",
+    "en-US": "impulsive",
+    "ja-JP": "火星",
+    "ko-KR": "화성",
+    "vi-VN": "Hỏa Tinh"
+  },
+  "lingxingMin": {
+    "zh-CN": "铃星",
+    "zh-TW": "鈴星",
+    "en-US": "spark",
+    "ja-JP": "鈴星",
+    "ko-KR": "령성",
+    "vi-VN": "Linh Tinh"
+  },
+  "tiankuiMin": {
+    "zh-CN": "天魁",
+    "zh-TW": "天魁",
+    "en-US": "assistant",
+    "ja-JP": "天魁",
+    "ko-KR": "천괴",
+    "vi-VN": "Thiên Khôi"
+  },
+  "tianyueMin": {
+    "zh-CN": "天钺",
+    "zh-TW": "天鉞",
+    "en-US": "aide",
+    "ja-JP": "天鉞",
+    "ko-KR": "천월",
+    "vi-VN": "Thiên Việt"
+  },
+  "dikongMin": {
+    "zh-CN": "地空",
+    "zh-TW": "地空",
+    "en-US": "ideologue",
+    "ja-JP": "地空",
+    "ko-KR": "지공",
+    "vi-VN": "Địa Không"
+  },
+  "dijieMin": {
+    "zh-CN": "地劫",
+    "zh-TW": "地劫",
+    "en-US": "fickle",
+    "ja-JP": "地劫",
+    "ko-KR": "지겁",
+    "vi-VN": "Địa Kiếp"
+  },
+  "jieshaAdj": {
+    "zh-CN": "劫杀",
+    "zh-TW": "劫殺",
+    "en-US": "murder",
+    "ja-JP": "劫殺",
+    "ko-KR": "겁살",
+    "vi-VN": "Kiếp Sát"
+  },
+  "tiankong": {
+    "zh-CN": "天空",
+    "zh-TW": "天空",
+    "en-US": "utopian",
+    "ja-JP": "天空",
+    "ko-KR": "천공",
+    "vi-VN": "Thiên Không"
+  },
+  "tianxing": {
+    "zh-CN": "天刑",
+    "zh-TW": "天刑",
+    "en-US": "serious",
+    "ja-JP": "天刑",
+    "ko-KR": "천형",
+    "vi-VN": "Thiên Hình"
+  },
+  "tianyao": {
+    "zh-CN": "天姚",
+    "zh-TW": "天姚",
+    "en-US": "social",
+    "ja-JP": "天姚",
+    "ko-KR": "천요",
+    "vi-VN": "Thiên Diêu"
+  },
+  "jieshen": {
+    "zh-CN": "解神",
+    "zh-TW": "解神",
+    "en-US": "considery",
+    "ja-JP": "解神",
+    "ko-KR": "해신",
+    "vi-VN": "Giải Thần"
+  },
+  "yinsha": {
+    "zh-CN": "阴煞",
+    "zh-TW": "陰煞",
+    "en-US": "gloomy",
+    "ja-JP": "陰煞",
+    "ko-KR": "음살",
+    "vi-VN": "Âm Sát"
+  },
+  "tianxi": {
+    "zh-CN": "天喜",
+    "zh-TW": "天喜",
+    "en-US": "cheerful",
+    "ja-JP": "天喜",
+    "ko-KR": "천희",
+    "vi-VN": "Thiên Hỷ"
+  },
+  "tianguan": {
+    "zh-CN": "天官",
+    "zh-TW": "天官",
+    "en-US": "solemn",
+    "ja-JP": "天官",
+    "ko-KR": "천관",
+    "vi-VN": "Thiên Quan"
+  },
+  "tianfu": {
+    "zh-CN": "天福",
+    "zh-TW": "天福",
+    "en-US": "lucky",
+    "ja-JP": "天福",
+    "ko-KR": "천복",
+    "vi-VN": "Thiên Phúc"
+  },
+  "tianku": {
+    "zh-CN": "天哭",
+    "zh-TW": "天哭",
+    "en-US": "upset",
+    "ja-JP": "天哭",
+    "ko-KR": "천곡",
+    "vi-VN": "Thiên Khốc"
+  },
+  "tianxu": {
+    "zh-CN": "天虚",
+    "zh-TW": "天虛",
+    "en-US": "frail",
+    "ja-JP": "天虛",
+    "ko-KR": "천허",
+    "vi-VN": "Thiên Hư"
+  },
+  "longchi": {
+    "zh-CN": "龙池",
+    "zh-TW": "龍池",
+    "en-US": "talented",
+    "ja-JP": "龍池",
+    "ko-KR": "용지",
+    "vi-VN": "Long Trì"
+  },
+  "fengge": {
+    "zh-CN": "凤阁",
+    "zh-TW": "鳳閣",
+    "en-US": "refined",
+    "ja-JP": "鳳閣",
+    "ko-KR": "봉각",
+    "vi-VN": "Phụng Các"
+  },
+  "hongluan": {
+    "zh-CN": "红鸾",
+    "zh-TW": "紅鸞",
+    "en-US": "attractive",
+    "ja-JP": "紅鸞",
+    "ko-KR": "홍란",
+    "vi-VN": "Hồng Loan"
+  },
+  "guchen": {
+    "zh-CN": "孤辰",
+    "zh-TW": "孤辰",
+    "en-US": "alone",
+    "ja-JP": "孤辰",
+    "ko-KR": "고진",
+    "vi-VN": "Cô Thần"
+  },
+  "guasu": {
+    "zh-CN": "寡宿",
+    "zh-TW": "寡宿",
+    "en-US": "lonely",
+    "ja-JP": "寡宿",
+    "ko-KR": "과숙",
+    "vi-VN": "Quả Tú"
+  },
+  "feilian": {
+    "zh-CN": "蜚廉",
+    "zh-TW": "蜚廉",
+    "en-US": "instigated",
+    "ja-JP": "蜚廉",
+    "ko-KR": "비렴",
+    "vi-VN": "Phi Liêm"
+  },
+  "posui": {
+    "zh-CN": "破碎",
+    "zh-TW": "破碎",
+    "en-US": "broken",
+    "ja-JP": "破碎",
+    "ko-KR": "파쇄",
+    "vi-VN": "Phá Toái"
+  },
+  "taifu": {
+    "zh-CN": "台辅",
+    "zh-TW": "台輔",
+    "en-US": "honorable",
+    "ja-JP": "台輔",
+    "ko-KR": "태보",
+    "vi-VN": "Đài Phụ"
+  },
+  "fenggao": {
+    "zh-CN": "封诰",
+    "zh-TW": "封誥",
+    "en-US": "awarded",
+    "ja-JP": "封誥",
+    "ko-KR": "봉고",
+    "vi-VN": "Phong Cáo"
+  },
+  "tianwu": {
+    "zh-CN": "天巫",
+    "zh-TW": "天巫",
+    "en-US": "psychic",
+    "ja-JP": "天巫",
+    "ko-KR": "천무",
+    "vi-VN": "Thiên Vu"
+  },
+  "tianyue": {
+    "zh-CN": "天月",
+    "zh-TW": "天月",
+    "en-US": "sickly",
+    "ja-JP": "天月",
+    "ko-KR": "천월",
+    "vi-VN": "Thiên Nguyệt"
+  },
+  "santai": {
+    "zh-CN": "三台",
+    "zh-TW": "三台",
+    "en-US": "senior",
+    "ja-JP": "三台",
+    "ko-KR": "삼태",
+    "vi-VN": "Tam Thai"
+  },
+  "bazuo": {
+    "zh-CN": "八座",
+    "zh-TW": "八座",
+    "en-US": "dignified",
+    "ja-JP": "八座",
+    "ko-KR": "팔좌",
+    "vi-VN": "Bát Tọa"
+  },
+  "engguang": {
+    "zh-CN": "恩光",
+    "zh-TW": "恩光",
+    "en-US": "grateful",
+    "ja-JP": "恩光",
+    "ko-KR": "은광",
+    "vi-VN": "Ân Quang"
+  },
+  "tiangui": {
+    "zh-CN": "天贵",
+    "zh-TW": "天貴",
+    "en-US": "noble",
+    "ja-JP": "天貴",
+    "ko-KR": "천귀",
+    "vi-VN": "Thiên Quý"
+  },
+  "tiancai": {
+    "zh-CN": "天才",
+    "zh-TW": "天才",
+    "en-US": "gifted",
+    "ja-JP": "天才",
+    "ko-KR": "천재",
+    "vi-VN": "Thiên Tài"
+  },
+  "tianshou": {
+    "zh-CN": "天寿",
+    "zh-TW": "天壽",
+    "en-US": "ageless",
+    "ja-JP": "天壽",
+    "ko-KR": "천수",
+    "vi-VN": "Thiên Thọ"
+  },
+  "jiekong": {
+    "zh-CN": "截空",
+    "zh-TW": "截空",
+    "en-US": "interrupted",
+    "ja-JP": "截空",
+    "ko-KR": "절중",
+    "vi-VN": "Triệt Không"
+  },
+  "xunzhong": {
+    "zh-CN": "旬中",
+    "zh-TW": "旬中",
+    "en-US": "meditative",
+    "ja-JP": "旬中",
+    "ko-KR": "순중",
+    "vi-VN": "Tuần Trung"
+  },
+  "xunkong": {
+    "zh-CN": "旬空",
+    "zh-TW": "旬空",
+    "en-US": "fancied",
+    "ja-JP": "旬空",
+    "ko-KR": "순공",
+    "vi-VN": "Tuần Không"
+  },
+  "kongwang": {
+    "zh-CN": "空亡",
+    "zh-TW": "空亡",
+    "en-US": "bottomless",
+    "ja-JP": "空亡",
+    "ko-KR": "공망",
+    "vi-VN": "Không Vong"
+  },
+  "jielu": {
+    "zh-CN": "截路",
+    "zh-TW": "截路",
+    "en-US": "intercepted",
+    "ja-JP": "截路",
+    "ko-KR": "절로",
+    "vi-VN": "Triệt Lộ"
+  },
+  "yuede": {
+    "zh-CN": "月德",
+    "zh-TW": "月德",
+    "en-US": "peaceful",
+    "ja-JP": "月德",
+    "ko-KR": "월덕",
+    "vi-VN": "Nguyệt Đức"
+  },
+  "tianshang": {
+    "zh-CN": "天伤",
+    "zh-TW": "天傷",
+    "en-US": "wounded",
+    "ja-JP": "天傷",
+    "ko-KR": "천상",
+    "vi-VN": "Thiên Thương"
+  },
+  "tianshi": {
+    "zh-CN": "天使",
+    "zh-TW": "天使",
+    "en-US": "heaven",
+    "ja-JP": "天使",
+    "ko-KR": "천사",
+    "vi-VN": "Thiên Sứ"
+  },
+  "tianchu": {
+    "zh-CN": "天厨",
+    "zh-TW": "天廚",
+    "en-US": "gourmet",
+    "ja-JP": "天廚",
+    "ko-KR": "천주",
+    "vi-VN": "Thiên Trù"
+  },
+  "changsheng": {
+    "zh-CN": "长生",
+    "zh-TW": "長生",
+    "en-US": "born",
+    "ja-JP": "長生",
+    "ko-KR": "장생",
+    "vi-VN": "Trường Sinh"
+  },
+  "muyu": {
+    "zh-CN": "沐浴",
+    "zh-TW": "沐浴",
+    "en-US": "infancy",
+    "ja-JP": "沐浴",
+    "ko-KR": "목욕",
+    "vi-VN": "Mục Dục"
+  },
+  "guandai": {
+    "zh-CN": "冠带",
+    "zh-TW": "冠帶",
+    "en-US": "adolescence",
+    "ja-JP": "冠帶",
+    "ko-KR": "관대",
+    "vi-VN": "Quan Đới"
+  },
+  "linguan": {
+    "zh-CN": "临官",
+    "zh-TW": "臨官",
+    "en-US": "adulthood",
+    "ja-JP": "臨官",
+    "ko-KR": "임관",
+    "vi-VN": "Lâm Quan"
+  },
+  "diwang": {
+    "zh-CN": "帝旺",
+    "zh-TW": "帝旺",
+    "en-US": "prime",
+    "ja-JP": "帝旺",
+    "ko-KR": "제왕",
+    "vi-VN": "Đế Vượng"
+  },
+  "shuai": {
+    "zh-CN": "衰",
+    "zh-TW": "衰",
+    "en-US": "weak",
+    "ja-JP": "衰",
+    "ko-KR": "쇠",
+    "vi-VN": "Suy"
+  },
+  "bing": {
+    "zh-CN": "病",
+    "zh-TW": "病",
+    "en-US": "sick",
+    "ja-JP": "病",
+    "ko-KR": "병",
+    "vi-VN": "Bệnh"
+  },
+  "si": {
+    "zh-CN": "死",
+    "zh-TW": "死",
+    "en-US": "dead",
+    "ja-JP": "死",
+    "ko-KR": "사",
+    "vi-VN": "Tử"
+  },
+  "mu": {
+    "zh-CN": "墓",
+    "zh-TW": "墓",
+    "en-US": "buried",
+    "ja-JP": "墓",
+    "ko-KR": "묘",
+    "vi-VN": "Mộ"
+  },
+  "jue": {
+    "zh-CN": "绝",
+    "zh-TW": "絕",
+    "en-US": "dissipated",
+    "ja-JP": "絕",
+    "ko-KR": "절",
+    "vi-VN": "Tuyệt"
+  },
+  "tai": {
+    "zh-CN": "胎",
+    "zh-TW": "胎",
+    "en-US": "embryo",
+    "ja-JP": "胎",
+    "ko-KR": "태",
+    "vi-VN": "Thai"
+  },
+  "yang": {
+    "zh-CN": "养",
+    "zh-TW": "養",
+    "en-US": "molding",
+    "ja-JP": "養",
+    "ko-KR": "양",
+    "vi-VN": "Dưỡng"
+  },
+  "boshi": {
+    "zh-CN": "博士",
+    "zh-TW": "博士",
+    "en-US": "doctor",
+    "ja-JP": "博士",
+    "ko-KR": "박사",
+    "vi-VN": "Bác Sỹ"
+  },
+  "lishi": {
+    "zh-CN": "力士",
+    "zh-TW": "力士",
+    "en-US": "sumo",
+    "ja-JP": "力士",
+    "ko-KR": "역사",
+    "vi-VN": "Lực Sỹ"
+  },
+  "qinglong": {
+    "zh-CN": "青龙",
+    "zh-TW": "青龍",
+    "en-US": "dragon",
+    "ja-JP": "青龍",
+    "ko-KR": "청룡",
+    "vi-VN": "Thanh Long"
+  },
+  "xiaohao": {
+    "zh-CN": "小耗",
+    "zh-TW": "小耗",
+    "en-US": "consumer",
+    "ja-JP": "小耗",
+    "ko-KR": "소모",
+    "vi-VN": "Tiểu Hao"
+  },
+  "jiangjun": {
+    "zh-CN": "将军",
+    "zh-TW": "將軍",
+    "en-US": "general",
+    "ja-JP": "將軍",
+    "ko-KR": "장군",
+    "vi-VN": "Tướng Quân"
+  },
+  "zhoushu": {
+    "zh-CN": "奏书",
+    "zh-TW": "奏書",
+    "en-US": "book",
+    "ja-JP": "奏書",
+    "ko-KR": "주서",
+    "vi-VN": "Tấu Thư"
+  },
+  "faylian": {
+    "zh-CN": "飞廉",
+    "zh-TW": "飛廉",
+    "en-US": "gossip",
+    "ja-JP": "飛廉",
+    "ko-KR": "비렴",
+    "vi-VN": "Phi Liêm"
+  },
+  "xishen": {
+    "zh-CN": "喜神",
+    "zh-TW": "喜神",
+    "en-US": "happiness",
+    "ja-JP": "喜神",
+    "ko-KR": "희신",
+    "vi-VN": "Hỷ Thần"
+  },
+  "bingfu": {
+    "zh-CN": "病符",
+    "zh-TW": "病符",
+    "en-US": "illness",
+    "ja-JP": "病符",
+    "ko-KR": "병부",
+    "vi-VN": "Bệnh Phù"
+  },
+  "dahao": {
+    "zh-CN": "大耗",
+    "zh-TW": "大耗",
+    "en-US": "wastrel",
+    "ja-JP": "大耗",
+    "ko-KR": "대모",
+    "vi-VN": "Đại Hao"
+  },
+  "suipo": {
+    "zh-CN": "岁破",
+    "zh-TW": "歲破",
+    "en-US": "wastrel",
+    "ja-JP": "歲破",
+    "ko-KR": "태파",
+    "vi-VN": "Tuế Phá"
+  },
+  "fubing": {
+    "zh-CN": "伏兵",
+    "zh-TW": "伏兵",
+    "en-US": "ambush",
+    "ja-JP": "伏兵",
+    "ko-KR": "복병",
+    "vi-VN": "Phục Binh"
+  },
+  "guanfu": {
+    "zh-CN": "官府",
+    "zh-TW": "官府",
+    "en-US": "government",
+    "ja-JP": "官府",
+    "ko-KR": "관부",
+    "vi-VN": "Quan Phủ"
+  },
+  "suijian": {
+    "zh-CN": "岁建",
+    "zh-TW": "歲建",
+    "en-US": "initial",
+    "ja-JP": "歲建",
+    "ko-KR": "태세",
+    "vi-VN": "Tuế Kiện"
+  },
+  "huiqi": {
+    "zh-CN": "晦气",
+    "zh-TW": "晦氣",
+    "en-US": "unlucky",
+    "ja-JP": "晦氣",
+    "ko-KR": "회기",
+    "vi-VN": "Hối Khí"
+  },
+  "sangmen": {
+    "zh-CN": "丧门",
+    "zh-TW": "喪門",
+    "en-US": "downcast",
+    "ja-JP": "喪門",
+    "ko-KR": "상문",
+    "vi-VN": "Tang Môn"
+  },
+  "guansuo": {
+    "zh-CN": "贯索",
+    "zh-TW": "貫索",
+    "en-US": "tied",
+    "ja-JP": "貫索",
+    "ko-KR": "관색",
+    "vi-VN": "Quán Tác"
+  },
+  "gwanfu": {
+    "zh-CN": "官符",
+    "zh-TW": "官符",
+    "en-US": "official",
+    "ja-JP": "官符",
+    "ko-KR": "관부",
+    "vi-VN": "Quan Phù"
+  },
+  "longde": {
+    "zh-CN": "龙德",
+    "zh-TW": "龍德",
+    "en-US": "virtuous",
+    "ja-JP": "龍德",
+    "ko-KR": "용덕",
+    "vi-VN": "Long Đức"
+  },
+  "baihu": {
+    "zh-CN": "白虎",
+    "zh-TW": "白虎",
+    "en-US": "sinister",
+    "ja-JP": "白虎",
+    "ko-KR": "백호",
+    "vi-VN": "Bạch Hổ"
+  },
+  "tiande": {
+    "zh-CN": "天德",
+    "zh-TW": "天德",
+    "en-US": "blessed",
+    "ja-JP": "天德",
+    "ko-KR": "복덕",
+    "vi-VN": "Thiên Đức"
+  },
+  "diaoke": {
+    "zh-CN": "吊客",
+    "zh-TW": "弔客",
+    "en-US": "sorrowing",
+    "ja-JP": "弔客",
+    "ko-KR": "조객",
+    "vi-VN": "Điếu Khách"
+  },
+  "jiangxing": {
+    "zh-CN": "将星",
+    "zh-TW": "將星",
+    "en-US": "capable",
+    "ja-JP": "將星",
+    "ko-KR": "장성",
+    "vi-VN": "Tướng Tinh"
+  },
+  "panan": {
+    "zh-CN": "攀鞍",
+    "zh-TW": "攀鞍",
+    "en-US": "admired",
+    "ja-JP": "攀鞍",
+    "ko-KR": "반안",
+    "vi-VN": "Phan Án"
+  },
+  "suiyi": {
+    "zh-CN": "岁驿",
+    "zh-TW": "歲驛",
+    "en-US": "varied",
+    "ja-JP": "歲驛",
+    "ko-KR": "세역",
+    "vi-VN": "Tuế Dịch"
+  },
+  "xiishen": {
+    "zh-CN": "息神",
+    "zh-TW": "息神",
+    "en-US": "listless",
+    "ja-JP": "息神",
+    "ko-KR": "식신",
+    "vi-VN": "Tức Thần"
+  },
+  "huagai": {
+    "zh-CN": "华盖",
+    "zh-TW": "華蓋",
+    "en-US": "religious",
+    "ja-JP": "華蓋",
+    "ko-KR": "화개",
+    "vi-VN": "Hoa Cái"
+  },
+  "jiesha": {
+    "zh-CN": "劫煞",
+    "zh-TW": "劫煞",
+    "en-US": "robbed",
+    "ja-JP": "劫煞",
+    "ko-KR": "겁살",
+    "vi-VN": "Kiếp Sát"
+  },
+  "zhaisha": {
+    "zh-CN": "灾煞",
+    "zh-TW": "災煞",
+    "en-US": "disastery",
+    "ja-JP": "災煞",
+    "ko-KR": "재살",
+    "vi-VN": "Tai Sát"
+  },
+  "tiansha": {
+    "zh-CN": "天煞",
+    "zh-TW": "天煞",
+    "en-US": "condemned",
+    "ja-JP": "天煞",
+    "ko-KR": "천살",
+    "vi-VN": "Thiên Sát"
+  },
+  "zhibei": {
+    "zh-CN": "指背",
+    "zh-TW": "指背",
+    "en-US": "insidious",
+    "ja-JP": "指背",
+    "ko-KR": "지배",
+    "vi-VN": "Chỉ Bối"
+  },
+  "xianchi": {
+    "zh-CN": "咸池",
+    "zh-TW": "咸池",
+    "en-US": "passionate",
+    "ja-JP": "咸池",
+    "ko-KR": "함지",
+    "vi-VN": "Hàm Trì"
+  },
+  "yuesha": {
+    "zh-CN": "月煞",
+    "zh-TW": "月煞",
+    "en-US": "hapless",
+    "ja-JP": "月煞",
+    "ko-KR": "월살",
+    "vi-VN": "Nguyệt Sát"
+  },
+  "wangshen": {
+    "zh-CN": "亡神",
+    "zh-TW": "亡神",
+    "en-US": "perished",
+    "ja-JP": "亡神",
+    "ko-KR": "망신",
+    "vi-VN": "Vong Thần"
+  },
+  "yunkui": {
+    "zh-CN": "运魁",
+    "zh-TW": "運魁",
+    "en-US": "assistant(D)",
+    "ja-JP": "限の魁",
+    "ko-KR": "천괴(십년)",
+    "vi-VN": "Vận Khôi"
+  },
+  "yunyue": {
+    "zh-CN": "运钺",
+    "zh-TW": "運鉞",
+    "en-US": "aide(D)",
+    "ja-JP": "限の钺",
+    "ko-KR": "천월(십년)",
+    "vi-VN": "Vận Việt"
+  },
+  "yunchang": {
+    "zh-CN": "运昌",
+    "zh-TW": "運昌",
+    "en-US": "scholar(D)",
+    "ja-JP": "限の昌",
+    "ko-KR": "문창(십년)",
+    "vi-VN": "Vận Xương"
+  },
+  "yunqu": {
+    "zh-CN": "运曲",
+    "zh-TW": "運曲",
+    "en-US": "artist(D)",
+    "ja-JP": "限の曲",
+    "ko-KR": "문곡(십년)",
+    "vi-VN": "Vận Khúc"
+  },
+  "yunluan": {
+    "zh-CN": "运鸾",
+    "zh-TW": "運鸞",
+    "en-US": "attractive(D)",
+    "ja-JP": "限の鸾",
+    "ko-KR": "홍란(십년)",
+    "vi-VN": "Vận Loan"
+  },
+  "yunxi": {
+    "zh-CN": "运喜",
+    "zh-TW": "運喜",
+    "en-US": "cheerful(D)",
+    "ja-JP": "限の喜",
+    "ko-KR": "천희(십년)",
+    "vi-VN": "Vận Hỷ"
+  },
+  "yunlu": {
+    "zh-CN": "运禄",
+    "zh-TW": "運祿",
+    "en-US": "money(D)",
+    "ja-JP": "限の祿",
+    "ko-KR": "록존(십년)",
+    "vi-VN": "Vận Lộc"
+  },
+  "yunyang": {
+    "zh-CN": "运羊",
+    "zh-TW": "運羊",
+    "en-US": "driven(D)",
+    "ja-JP": "限の羊",
+    "ko-KR": "경양(십년)",
+    "vi-VN": "Vận Dương"
+  },
+  "yuntuo": {
+    "zh-CN": "运陀",
+    "zh-TW": "運陀",
+    "en-US": "tangled(D)",
+    "ja-JP": "限の陀",
+    "ko-KR": "타라(십년)",
+    "vi-VN": "Vận Đà"
+  },
+  "yunma": {
+    "zh-CN": "运马",
+    "zh-TW": "運馬",
+    "en-US": "horse(D)",
+    "ja-JP": "限の馬",
+    "ko-KR": "천마(십년)",
+    "vi-VN": "Vận Mã"
+  },
+  "liukui": {
+    "zh-CN": "流魁",
+    "zh-TW": "流魁",
+    "en-US": "assistant(Y)",
+    "ja-JP": "年の魁",
+    "ko-KR": "천괴(년)",
+    "vi-VN": "Lưu Khôi"
+  },
+  "liuyue": {
+    "zh-CN": "流钺",
+    "zh-TW": "流鉞",
+    "en-US": "aide(Y)",
+    "ja-JP": "年の钺",
+    "ko-KR": "천월(년)",
+    "vi-VN": "Lưu Việt"
+  },
+  "liuchang": {
+    "zh-CN": "流昌",
+    "zh-TW": "流昌",
+    "en-US": "scholar(Y)",
+    "ja-JP": "年の昌",
+    "ko-KR": "문창(년)",
+    "vi-VN": "Lưu Xương"
+  },
+  "liuqu": {
+    "zh-CN": "流曲",
+    "zh-TW": "流曲",
+    "en-US": "artist(Y)",
+    "ja-JP": "年の曲",
+    "ko-KR": "문곡(년)",
+    "vi-VN": "Lưu Khúc"
+  },
+  "liuluan": {
+    "zh-CN": "流鸾",
+    "zh-TW": "流鸞",
+    "en-US": "attractive(Y)",
+    "ja-JP": "年の鸾",
+    "ko-KR": "홍란(년)",
+    "vi-VN": "Lưu Loan"
+  },
+  "liuxi": {
+    "zh-CN": "流喜",
+    "zh-TW": "流喜",
+    "en-US": "cheerful(Y)",
+    "ja-JP": "年の喜",
+    "ko-KR": "천희(년)",
+    "vi-VN": "Lưu Hỷ"
+  },
+  "liulu": {
+    "zh-CN": "流禄",
+    "zh-TW": "流祿",
+    "en-US": "money(Y)",
+    "ja-JP": "年の祿",
+    "ko-KR": "록존(년)",
+    "vi-VN": "Lưu Lộc"
+  },
+  "liuyang": {
+    "zh-CN": "流羊",
+    "zh-TW": "流羊",
+    "en-US": "driven(Y)",
+    "ja-JP": "年の羊",
+    "ko-KR": "경양(년)",
+    "vi-VN": "Lưu Dương"
+  },
+  "liutuo": {
+    "zh-CN": "流陀",
+    "zh-TW": "流陀",
+    "en-US": "tangled(Y)",
+    "ja-JP": "年の陀",
+    "ko-KR": "타라(년)",
+    "vi-VN": "Lưu Đà"
+  },
+  "liuma": {
+    "zh-CN": "流马",
+    "zh-TW": "流馬",
+    "en-US": "horse(Y)",
+    "ja-JP": "年の馬",
+    "ko-KR": "천마(년)",
+    "vi-VN": "Lưu Mã"
+  },
+  "nianjie": {
+    "zh-CN": "年解",
+    "zh-TW": "年解",
+    "en-US": "considery(Y)",
+    "ja-JP": "年の解",
+    "ko-KR": "해신(년)",
+    "vi-VN": "Niên Giải"
+  },
+  "yuekui": {
+    "zh-CN": "月魁",
+    "zh-TW": "月魁",
+    "en-US": "assistant(M)",
+    "ja-JP": "月の魁",
+    "ko-KR": "천괴(월)",
+    "vi-VN": "Thiên Khôi(M)"
+  },
+  "yueyue": {
+    "zh-CN": "月钺",
+    "zh-TW": "月鉞",
+    "en-US": "aide(M)",
+    "ja-JP": "月の钺",
+    "ko-KR": "천월(월)",
+    "vi-VN": "Thiên Nguyệt(M)"
+  },
+  "yuechang": {
+    "zh-CN": "月昌",
+    "zh-TW": "月昌",
+    "en-US": "scholar(M)",
+    "ja-JP": "月の昌",
+    "ko-KR": "문창(월)",
+    "vi-VN": "Văn Xương(M)"
+  },
+  "yuequ": {
+    "zh-CN": "月曲",
+    "zh-TW": "月曲",
+    "en-US": "artist(M)",
+    "ja-JP": "月の曲",
+    "ko-KR": "문곡(월)",
+    "vi-VN": "Văn Khúc(M)"
+  },
+  "yueluan": {
+    "zh-CN": "月鸾",
+    "zh-TW": "月鸞",
+    "en-US": "attractive(M)",
+    "ja-JP": "月の鸾",
+    "ko-KR": "홍란(월)",
+    "vi-VN": "Hồng Loan(M)"
+  },
+  "yuexi": {
+    "zh-CN": "月喜",
+    "zh-TW": "月喜",
+    "en-US": "cheerful(M)",
+    "ja-JP": "月の喜",
+    "ko-KR": "천희(월)",
+    "vi-VN": "Thiên Hỷ(M)"
+  },
+  "yuelu": {
+    "zh-CN": "月禄",
+    "zh-TW": "月祿",
+    "en-US": "money(M)",
+    "ja-JP": "月の祿",
+    "ko-KR": "록존(월)",
+    "vi-VN": "Lộc Tồn(M)"
+  },
+  "yueyang": {
+    "zh-CN": "月羊",
+    "zh-TW": "月羊",
+    "en-US": "driven(M)",
+    "ja-JP": "月の羊",
+    "ko-KR": "경양(월)",
+    "vi-VN": "Kình Dương(M)"
+  },
+  "yuetuo": {
+    "zh-CN": "月陀",
+    "zh-TW": "月陀",
+    "en-US": "tangled(M)",
+    "ja-JP": "月の陀",
+    "ko-KR": "타라(월)",
+    "vi-VN": "Đà La(M)"
+  },
+  "yuema": {
+    "zh-CN": "月马",
+    "zh-TW": "月馬",
+    "en-US": "horse(M)",
+    "ja-JP": "月の馬",
+    "ko-KR": "천마(월)",
+    "vi-VN": "Thiên Mã(M)"
+  },
+  "rikui": {
+    "zh-CN": "日魁",
+    "zh-TW": "日魁",
+    "en-US": "assistant(d)",
+    "ja-JP": "日の魁",
+    "ko-KR": "천괴(일)",
+    "vi-VN": "Thiên Khôi(d)"
+  },
+  "riyue": {
+    "zh-CN": "日钺",
+    "zh-TW": "日鉞",
+    "en-US": "aide(d)",
+    "ja-JP": "日の钺",
+    "ko-KR": "천월(일)",
+    "vi-VN": "Thiên Nguyệt(d)"
+  },
+  "richang": {
+    "zh-CN": "日昌",
+    "zh-TW": "日昌",
+    "en-US": "scholar(d)",
+    "ja-JP": "日の昌",
+    "ko-KR": "문창(일)",
+    "vi-VN": "Văn Xương(d)"
+  },
+  "riqu": {
+    "zh-CN": "日曲",
+    "zh-TW": "日曲",
+    "en-US": "artist(d)",
+    "ja-JP": "日の曲",
+    "ko-KR": "문곡(일)",
+    "vi-VN": "Văn Khúc(d)"
+  },
+  "riluan": {
+    "zh-CN": "日鸾",
+    "zh-TW": "日鸞",
+    "en-US": "attractive(d)",
+    "ja-JP": "日の鸾",
+    "ko-KR": "홍란(일)",
+    "vi-VN": "Hồng Loan(d)"
+  },
+  "rixi": {
+    "zh-CN": "日喜",
+    "zh-TW": "日喜",
+    "en-US": "cheerful(d)",
+    "ja-JP": "日の喜",
+    "ko-KR": "천희(일)",
+    "vi-VN": "Thiên Hỷ(d)"
+  },
+  "rilu": {
+    "zh-CN": "日禄",
+    "zh-TW": "日祿",
+    "en-US": "money(d)",
+    "ja-JP": "日の祿",
+    "ko-KR": "록존(일)",
+    "vi-VN": "Lộc Tồn(d)"
+  },
+  "riyang": {
+    "zh-CN": "日羊",
+    "zh-TW": "日羊",
+    "en-US": "driven(d)",
+    "ja-JP": "日の羊",
+    "ko-KR": "경양(일)",
+    "vi-VN": "Kình Dương(d)"
+  },
+  "rituo": {
+    "zh-CN": "日陀",
+    "zh-TW": "日陀",
+    "en-US": "tangled(d)",
+    "ja-JP": "日の陀",
+    "ko-KR": "타라(일)",
+    "vi-VN": "Đà La(d)"
+  },
+  "rima": {
+    "zh-CN": "日马",
+    "zh-TW": "日馬",
+    "en-US": "horse(d)",
+    "ja-JP": "日の馬",
+    "ko-KR": "천마(일)",
+    "vi-VN": "Thiên Mã(d)"
+  },
+  "shikui": {
+    "zh-CN": "时魁",
+    "zh-TW": "時魁",
+    "en-US": "assistant(H)",
+    "ja-JP": "時の魁",
+    "ko-KR": "천괴(시)",
+    "vi-VN": "Thiên Khôi(H)"
+  },
+  "shiyue": {
+    "zh-CN": "时钺",
+    "zh-TW": "時鉞",
+    "en-US": "aide(H)",
+    "ja-JP": "時の钺",
+    "ko-KR": "천월(시)",
+    "vi-VN": "Thiên Nguyệt(H)"
+  },
+  "shichang": {
+    "zh-CN": "时昌",
+    "zh-TW": "時昌",
+    "en-US": "scholar(H)",
+    "ja-JP": "時の昌",
+    "ko-KR": "문창(시)",
+    "vi-VN": "Văn Xương(H)"
+  },
+  "shiqu": {
+    "zh-CN": "时曲",
+    "zh-TW": "時曲",
+    "en-US": "artist(H)",
+    "ja-JP": "時の曲",
+    "ko-KR": "문곡(시)",
+    "vi-VN": "Văn Khúc(H)"
+  },
+  "shiluan": {
+    "zh-CN": "时鸾",
+    "zh-TW": "時鸞",
+    "en-US": "attractive(H)",
+    "ja-JP": "時の鸾",
+    "ko-KR": "홍란(시)",
+    "vi-VN": "Hồng Loan(H)"
+  },
+  "shixi": {
+    "zh-CN": "时喜",
+    "zh-TW": "時喜",
+    "en-US": "cheerful(H)",
+    "ja-JP": "時の喜",
+    "ko-KR": "천희(시)",
+    "vi-VN": "Thiên Hỷ(H)"
+  },
+  "shilu": {
+    "zh-CN": "时禄",
+    "zh-TW": "時祿",
+    "en-US": "money(H)",
+    "ja-JP": "時の祿",
+    "ko-KR": "록존(시)",
+    "vi-VN": "Lộc Tồn(H)"
+  },
+  "shiyang": {
+    "zh-CN": "时羊",
+    "zh-TW": "時羊",
+    "en-US": "driven(H)",
+    "ja-JP": "時の羊",
+    "ko-KR": "경양(시)",
+    "vi-VN": "Kình Dương(H)"
+  },
+  "shituo": {
+    "zh-CN": "时陀",
+    "zh-TW": "時陀",
+    "en-US": "tangled(H)",
+    "ja-JP": "時の陀",
+    "ko-KR": "타라(시)",
+    "vi-VN": "Đà La(H)"
+  },
+  "shima": {
+    "zh-CN": "时马",
+    "zh-TW": "時馬",
+    "en-US": "horse(H)",
+    "ja-JP": "時の馬",
+    "ko-KR": "천마(시)",
+    "vi-VN": "Thiên Mã(H)"
+  },
+  "soulPalace": {
+    "zh-CN": "命宫",
+    "zh-TW": "命宮",
+    "en-US": "soul",
+    "ja-JP": "命宮",
+    "ko-KR": "명궁",
+    "vi-VN": "Mệnh"
+  },
+  "bodyPalace": {
+    "zh-CN": "身宫",
+    "zh-TW": "身宮",
+    "en-US": "body",
+    "ja-JP": "身宮",
+    "ko-KR": "신궁",
+    "vi-VN": "Thân"
+  },
+  "siblingsPalace": {
+    "zh-CN": "兄弟",
+    "zh-TW": "兄弟",
+    "en-US": "siblings",
+    "ja-JP": "兄弟",
+    "ko-KR": "형제",
+    "vi-VN": "Huynh Đệ"
+  },
+  "spousePalace": {
+    "zh-CN": "夫妻",
+    "zh-TW": "夫妻",
+    "en-US": "spouse",
+    "ja-JP": "夫妻",
+    "ko-KR": "부처",
+    "vi-VN": "Phu Thê"
+  },
+  "childrenPalace": {
+    "zh-CN": "子女",
+    "zh-TW": "子女",
+    "en-US": "children",
+    "ja-JP": "子女",
+    "ko-KR": "자녀",
+    "vi-VN": "Tử Nữ"
+  },
+  "wealthPalace": {
+    "zh-CN": "财帛",
+    "zh-TW": "財帛",
+    "en-US": "wealth",
+    "ja-JP": "財帛",
+    "ko-KR": "재백",
+    "vi-VN": "Tài Bạch"
+  },
+  "healthPalace": {
+    "zh-CN": "疾厄",
+    "zh-TW": "疾厄",
+    "en-US": "health",
+    "ja-JP": "疾厄",
+    "ko-KR": "질액",
+    "vi-VN": "Tật Ách"
+  },
+  "surfacePalace": {
+    "zh-CN": "迁移",
+    "zh-TW": "遷移",
+    "en-US": "surface",
+    "ja-JP": "遷移",
+    "ko-KR": "천이",
+    "vi-VN": "Thiên Di"
+  },
+  "friendsPalace": {
+    "zh-CN": "仆役",
+    "zh-TW": "僕役",
+    "en-US": "friends",
+    "ja-JP": "僕役",
+    "ko-KR": "노복",
+    "vi-VN": "Nô Bộc"
+  },
+  "careerPalace": {
+    "zh-CN": "官禄",
+    "zh-TW": "官祿",
+    "en-US": "career",
+    "ja-JP": "官祿",
+    "ko-KR": "관록",
+    "vi-VN": "Quan Lộc"
+  },
+  "propertyPalace": {
+    "zh-CN": "田宅",
+    "zh-TW": "田宅",
+    "en-US": "property",
+    "ja-JP": "田宅",
+    "ko-KR": "전택",
+    "vi-VN": "Điền Trạch"
+  },
+  "spiritPalace": {
+    "zh-CN": "福德",
+    "zh-TW": "福德",
+    "en-US": "spirit",
+    "ja-JP": "福德",
+    "ko-KR": "복덕",
+    "vi-VN": "Phúc Đức"
+  },
+  "parentsPalace": {
+    "zh-CN": "父母",
+    "zh-TW": "父母",
+    "en-US": "parents",
+    "ja-JP": "父母",
+    "ko-KR": "부모",
+    "vi-VN": "Phụ Mẫu"
+  },
+  "originalPalace": {
+    "zh-CN": "来因",
+    "zh-TW": "来因",
+    "en-US": "origin",
+    "ja-JP": "来因",
+    "ko-KR": "라인",
+    "vi-VN": "Lai Nhân"
+  },
+  "male": {
+    "zh-CN": "男",
+    "zh-TW": "男",
+    "en-US": "male",
+    "ja-JP": "男",
+    "ko-KR": "남성",
+    "vi-VN": "Nam"
+  },
+  "female": {
+    "zh-CN": "女",
+    "zh-TW": "女",
+    "en-US": "female",
+    "ja-JP": "女",
+    "ko-KR": "여자",
+    "vi-VN": "Nữ"
+  }
+}

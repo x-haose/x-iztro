@@ -1,5 +1,8 @@
 //! wasm32 导出：供 wazero 等 WebAssembly 运行时（Go 绑定）调用。
 //!
+//! 只负责内存协定与 JSON 收发，计算与编组一律走 [`crate::bridge`]——
+//! 与 Python 绑定同一条代码路径，两侧的行为没有分叉的余地。
+//!
 //! 全部外部输入（含日期与时辰）在核心层校验并以错误 JSON 返回，正常使用
 //! 不会触发 panic。wasm 下 panic 即 abort（trap），且每次 trap 都永久损耗
 //! 模块实例的栈空间——trap 仅在库内部缺陷时可能发生，宿主一旦观察到
@@ -11,83 +14,13 @@
 //!   内容为 DTO JSON 或 `{"error":"..."}`；
 //! - 双方的缓冲都用 `iztro_wasm_free` 释放。
 //!
-//! 入参 JSON 键为 camelCase：
-//! - by_solar:  {solarDate, timeIndex, gender, fixLeap, language, config?}
-//! - by_lunar:  {lunarDate, timeIndex, gender, isLeapMonth, fixLeap, language, config?}
-//! - horoscope: by_solar 字段 + {targetDate, targetTimeIndex}
-//! 其中 config 为部分键对象（如 {"algorithm":"zhongzhou"}），省略取默认。
+//! 入参 JSON 键为 camelCase，字段见 [`crate::bridge`] 的入参结构体：
+//! - by_solar / by_lunar / horoscope：各自的排盘参数
+//! - query：`{kind, ...}` 统一入口，返回 `{"value": <JSON>}`
 
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
-use crate::data::types::{Config, Gender, Language};
-use crate::dto::parse_config_json;
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct BySolarInput {
-    solar_date: String,
-    time_index: u8,
-    gender: String,
-    fix_leap: bool,
-    language: String,
-    config: Option<serde_json::Value>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ByLunarInput {
-    lunar_date: String,
-    time_index: u8,
-    gender: String,
-    is_leap_month: bool,
-    fix_leap: bool,
-    language: String,
-    config: Option<serde_json::Value>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct HoroscopeInput {
-    solar_date: String,
-    time_index: u8,
-    gender: String,
-    fix_leap: bool,
-    language: String,
-    config: Option<serde_json::Value>,
-    target_date: String,
-    target_time_index: u8,
-}
-
-fn parse_gender(s: &str) -> Result<Gender, String> {
-    match s.to_lowercase().as_str() {
-        "male" => Ok(Gender::Male),
-        "female" => Ok(Gender::Female),
-        _ => Err(format!(
-            "Invalid gender '{s}'. Expected 'male' or 'female'."
-        )),
-    }
-}
-
-fn parse_language(s: &str) -> Result<Language, String> {
-    match s.to_lowercase().as_str() {
-        "zh_cn" => Ok(Language::ZhCN),
-        "zh_tw" => Ok(Language::ZhTW),
-        "en_us" => Ok(Language::EnUS),
-        "ja_jp" => Ok(Language::JaJP),
-        "ko_kr" => Ok(Language::KoKR),
-        "vi_vn" => Ok(Language::ViVN),
-        _ => Err(format!(
-            "Invalid language '{s}'. Expected one of: zh_cn, zh_tw, en_us, ja_jp, ko_kr, vi_vn."
-        )),
-    }
-}
-
-fn parse_config_value(v: &Option<serde_json::Value>) -> Result<Config, String> {
-    match v {
-        None => Ok(Config::default()),
-        Some(value) => parse_config_json(Some(&value.to_string())),
-    }
-}
+use crate::bridge::{self, HoroscopeInput, LunarChartInput, QueryInput, SolarChartInput};
 
 /// 将结果字符串移交给调用方：泄漏缓冲并打包 (ptr << 32) | len。
 fn hand_over(s: String) -> u64 {
@@ -108,6 +41,28 @@ fn error_result(msg: &str) -> u64 {
 unsafe fn read_input(ptr: *const u8, len: u32) -> Result<String, String> {
     let slice = unsafe { std::slice::from_raw_parts(ptr, len as usize) };
     String::from_utf8(slice.to_vec()).map_err(|e| format!("Input is not valid UTF-8: {e}"))
+}
+
+/// 读入参、反序列化、交给 bridge、序列化结果，任一步出错都落成错误 JSON。
+///
+/// # Safety
+/// (ptr, len) 须满足 [`read_input`] 的要求。
+unsafe fn run<T, F>(ptr: *const u8, len: u32, compute: F) -> u64
+where
+    T: DeserializeOwned,
+    F: FnOnce(&T) -> Result<serde_json::Value, String>,
+{
+    let result = unsafe { read_input(ptr, len) }.and_then(|raw| {
+        let input: T =
+            serde_json::from_str(&raw).map_err(|e| format!("Invalid input JSON: {e}"))?;
+        let value = compute(&input)?;
+        serde_json::to_string(&value).map_err(|e| e.to_string())
+    });
+
+    match result {
+        Ok(json) => hand_over(json),
+        Err(msg) => error_result(&msg),
+    }
 }
 
 /// 分配 len 字节的缓冲，供调用方写入入参。
@@ -139,29 +94,7 @@ pub unsafe extern "C" fn iztro_wasm_free(ptr: *mut u8, len: u32) {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_by_solar(ptr: *const u8, len: u32) -> u64 {
-    let input = unsafe { read_input(ptr, len) };
-    let result = input.and_then(|input| {
-        let input: BySolarInput =
-            serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
-        let gender = parse_gender(&input.gender)?;
-        let language = parse_language(&input.language)?;
-        let config = parse_config_value(&input.config)?;
-        let astrolabe = crate::by_solar(
-            &input.solar_date,
-            input.time_index,
-            gender,
-            input.fix_leap,
-            language,
-            config,
-        )
-        .map_err(|e| e.to_string())?;
-        serde_json::to_string(&astrolabe.to_dto()).map_err(|e| e.to_string())
-    });
-
-    match result {
-        Ok(json) => hand_over(json),
-        Err(msg) => error_result(&msg),
-    }
+    unsafe { run(ptr, len, |input: &SolarChartInput| bridge::by_solar(input)) }
 }
 
 /// 农历排盘：入参 by_lunar JSON，返回 DTO JSON 缓冲。
@@ -170,30 +103,7 @@ pub unsafe extern "C" fn iztro_wasm_by_solar(ptr: *const u8, len: u32) -> u64 {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_by_lunar(ptr: *const u8, len: u32) -> u64 {
-    let input = unsafe { read_input(ptr, len) };
-    let result = input.and_then(|input| {
-        let input: ByLunarInput =
-            serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
-        let gender = parse_gender(&input.gender)?;
-        let language = parse_language(&input.language)?;
-        let config = parse_config_value(&input.config)?;
-        let astrolabe = crate::by_lunar(
-            &input.lunar_date,
-            input.time_index,
-            gender,
-            input.is_leap_month,
-            input.fix_leap,
-            language,
-            config,
-        )
-        .map_err(|e| e.to_string())?;
-        serde_json::to_string(&astrolabe.to_dto()).map_err(|e| e.to_string())
-    });
-
-    match result {
-        Ok(json) => hand_over(json),
-        Err(msg) => error_result(&msg),
-    }
+    unsafe { run(ptr, len, |input: &LunarChartInput| bridge::by_lunar(input)) }
 }
 
 /// 运限（无状态）：入参 horoscope JSON，返回 DTO JSON 缓冲。
@@ -202,34 +112,21 @@ pub unsafe extern "C" fn iztro_wasm_by_lunar(ptr: *const u8, len: u32) -> u64 {
 /// (ptr, len) 须满足 `read_input` 的要求。
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn iztro_wasm_horoscope(ptr: *const u8, len: u32) -> u64 {
-    let input = unsafe { read_input(ptr, len) };
-    let result = input.and_then(|input| {
-        let input: HoroscopeInput =
-            serde_json::from_str(&input).map_err(|e| format!("Invalid input JSON: {e}"))?;
-        let gender = parse_gender(&input.gender)?;
-        let language = parse_language(&input.language)?;
-        let config = parse_config_value(&input.config)?;
-        let astrolabe = crate::by_solar(
-            &input.solar_date,
-            input.time_index,
-            gender,
-            input.fix_leap,
-            language,
-            config,
-        )
-        .map_err(|e| e.to_string())?;
-        let horoscope = crate::get_horoscope(
-            &astrolabe,
-            &input.target_date,
-            input.target_time_index,
-            language,
-        )
-        .map_err(|e| e.to_string())?;
-        serde_json::to_string(&horoscope.to_dto(language)).map_err(|e| e.to_string())
-    });
+    unsafe { run(ptr, len, |input: &HoroscopeInput| bridge::horoscope(input)) }
+}
 
-    match result {
-        Ok(json) => hand_over(json),
-        Err(msg) => error_result(&msg),
+/// 统一查询：入参 QueryInput JSON，返回 `{"value": <JSON>}` 缓冲。
+///
+/// 全部轻量查询、工具函数、安星、数据表与翻译共用此入口，由 `kind` 分派——
+/// 免去为每个函数各开一个 wasm 符号与一套内存往返。
+///
+/// # Safety
+/// (ptr, len) 须满足 `read_input` 的要求。
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn iztro_wasm_query(ptr: *const u8, len: u32) -> u64 {
+    unsafe {
+        run(ptr, len, |input: &QueryInput| {
+            bridge::query(input).map(|value| serde_json::json!({ "value": value }))
+        })
     }
 }

@@ -1,0 +1,9356 @@
+[
+  {
+    "text": "大限",
+    "lang": "zh-CN",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "大限",
+    "lang": "zh-TW",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "decadal",
+    "lang": "en-US",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "大限",
+    "lang": "ja-JP",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "대한",
+    "lang": "ko-KR",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "Đại Hạn",
+    "lang": "vi-VN",
+    "key": "decadal",
+    "kot": "decadal"
+  },
+  {
+    "text": "童限",
+    "lang": "zh-CN",
+    "key": "childhood",
+    "kot": "childhood"
+  },
+  {
+    "text": "童限",
+    "lang": "zh-TW",
+    "key": "childhood",
+    "kot": "childhood"
+  },
+  {
+    "text": "子供",
+    "lang": "ja-JP",
+    "key": "childhood",
+    "kot": "childhood"
+  },
+  {
+    "text": "어린",
+    "lang": "ko-KR",
+    "key": "childhood",
+    "kot": "childhood"
+  },
+  {
+    "text": "đứa trẻ Hạn",
+    "lang": "vi-VN",
+    "key": "childhood",
+    "kot": "childhood"
+  },
+  {
+    "text": "流年",
+    "lang": "zh-CN",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "流年",
+    "lang": "zh-TW",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "yearly",
+    "lang": "en-US",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "流年",
+    "lang": "ja-JP",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "유년",
+    "lang": "ko-KR",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "Lưu Niên",
+    "lang": "vi-VN",
+    "key": "yearly",
+    "kot": "yearly"
+  },
+  {
+    "text": "流月",
+    "lang": "zh-CN",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "流月",
+    "lang": "zh-TW",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "monthly",
+    "lang": "en-US",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "流月",
+    "lang": "ja-JP",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "유월",
+    "lang": "ko-KR",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "Lưu Nguyệt",
+    "lang": "vi-VN",
+    "key": "monthly",
+    "kot": "monthly"
+  },
+  {
+    "text": "流日",
+    "lang": "zh-CN",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "流日",
+    "lang": "zh-TW",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "daily",
+    "lang": "en-US",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "流日",
+    "lang": "ja-JP",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "유일",
+    "lang": "ko-KR",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "Lưu Nhật",
+    "lang": "vi-VN",
+    "key": "daily",
+    "kot": "daily"
+  },
+  {
+    "text": "流时",
+    "lang": "zh-CN",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "流時",
+    "lang": "zh-TW",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "hourly",
+    "lang": "en-US",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "流時",
+    "lang": "ja-JP",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "유시",
+    "lang": "ko-KR",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "Lưu Thì",
+    "lang": "vi-VN",
+    "key": "hourly",
+    "kot": "hourly"
+  },
+  {
+    "text": "小限",
+    "lang": "zh-CN",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "小限",
+    "lang": "zh-TW",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "age",
+    "lang": "en-US",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "小限",
+    "lang": "ja-JP",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "소한",
+    "lang": "ko-KR",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "Tiểu Hạn",
+    "lang": "vi-VN",
+    "key": "turn",
+    "kot": "turn"
+  },
+  {
+    "text": "鼠",
+    "lang": "zh-CN",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "鼠",
+    "lang": "zh-TW",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "rat",
+    "lang": "en-US",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "鼠",
+    "lang": "ja-JP",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "쥐",
+    "lang": "ko-KR",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "Chuột",
+    "lang": "vi-VN",
+    "key": "rat",
+    "kot": "rat"
+  },
+  {
+    "text": "牛",
+    "lang": "zh-CN",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "牛",
+    "lang": "zh-TW",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "ox",
+    "lang": "en-US",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "牛",
+    "lang": "ja-JP",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "소",
+    "lang": "ko-KR",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "Trâu",
+    "lang": "vi-VN",
+    "key": "ox",
+    "kot": "ox"
+  },
+  {
+    "text": "虎",
+    "lang": "zh-CN",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "虎",
+    "lang": "zh-TW",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "tiger",
+    "lang": "en-US",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "虎",
+    "lang": "ja-JP",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "호랑이",
+    "lang": "ko-KR",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "Hổ",
+    "lang": "vi-VN",
+    "key": "tiger",
+    "kot": "tiger"
+  },
+  {
+    "text": "兔",
+    "lang": "zh-CN",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "兔",
+    "lang": "zh-TW",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "rabbit",
+    "lang": "en-US",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "兎",
+    "lang": "ja-JP",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "토끼",
+    "lang": "ko-KR",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "Mèo",
+    "lang": "vi-VN",
+    "key": "rabbit",
+    "kot": "rabbit"
+  },
+  {
+    "text": "龙",
+    "lang": "zh-CN",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "龍",
+    "lang": "zh-TW",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "dragon",
+    "lang": "en-US",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "龍",
+    "lang": "ja-JP",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "용",
+    "lang": "ko-KR",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "Rồng",
+    "lang": "vi-VN",
+    "key": "dragon",
+    "kot": "dragon"
+  },
+  {
+    "text": "蛇",
+    "lang": "zh-CN",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "蛇",
+    "lang": "zh-TW",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "snake",
+    "lang": "en-US",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "蛇",
+    "lang": "ja-JP",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "뱀",
+    "lang": "ko-KR",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "Rắn",
+    "lang": "vi-VN",
+    "key": "snake",
+    "kot": "snake"
+  },
+  {
+    "text": "马",
+    "lang": "zh-CN",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "馬",
+    "lang": "zh-TW",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "horse",
+    "lang": "en-US",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "馬",
+    "lang": "ja-JP",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "말",
+    "lang": "ko-KR",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "Ngựa",
+    "lang": "vi-VN",
+    "key": "horse",
+    "kot": "horse"
+  },
+  {
+    "text": "羊",
+    "lang": "zh-CN",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "羊",
+    "lang": "zh-TW",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "sheep",
+    "lang": "en-US",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "羊",
+    "lang": "ja-JP",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "양",
+    "lang": "ko-KR",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "Dê",
+    "lang": "vi-VN",
+    "key": "sheep",
+    "kot": "sheep"
+  },
+  {
+    "text": "猴",
+    "lang": "zh-CN",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "猴",
+    "lang": "zh-TW",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "monkey",
+    "lang": "en-US",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "猿",
+    "lang": "ja-JP",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "원숭이",
+    "lang": "ko-KR",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "Khỉ",
+    "lang": "vi-VN",
+    "key": "monkey",
+    "kot": "monkey"
+  },
+  {
+    "text": "鸡",
+    "lang": "zh-CN",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "雞",
+    "lang": "zh-TW",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "rooster",
+    "lang": "en-US",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "雞",
+    "lang": "ja-JP",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "닭",
+    "lang": "ko-KR",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "Gà",
+    "lang": "vi-VN",
+    "key": "rooster",
+    "kot": "rooster"
+  },
+  {
+    "text": "狗",
+    "lang": "zh-CN",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "狗",
+    "lang": "zh-TW",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "dog",
+    "lang": "en-US",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "犬",
+    "lang": "ja-JP",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "개",
+    "lang": "ko-KR",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "Chó",
+    "lang": "vi-VN",
+    "key": "dog",
+    "kot": "dog"
+  },
+  {
+    "text": "猪",
+    "lang": "zh-CN",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "豬",
+    "lang": "zh-TW",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "pig",
+    "lang": "en-US",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "豚",
+    "lang": "ja-JP",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "돼지",
+    "lang": "ko-KR",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "Lợn",
+    "lang": "vi-VN",
+    "key": "pig",
+    "kot": "pig"
+  },
+  {
+    "text": "早子时",
+    "lang": "zh-CN",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "早子時",
+    "lang": "zh-TW",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "early Rat hour",
+    "lang": "en-US",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "早子時",
+    "lang": "ja-JP",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "아침 자시",
+    "lang": "ko-KR",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "Giờ tý sớm",
+    "lang": "vi-VN",
+    "key": "earlyRatHour",
+    "kot": "earlyRatHour"
+  },
+  {
+    "text": "丑时",
+    "lang": "zh-CN",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "丑時",
+    "lang": "zh-TW",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "Ox hour",
+    "lang": "en-US",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "丑時",
+    "lang": "ja-JP",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "축시",
+    "lang": "ko-KR",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "Giờ sửu",
+    "lang": "vi-VN",
+    "key": "oxHour",
+    "kot": "oxHour"
+  },
+  {
+    "text": "寅时",
+    "lang": "zh-CN",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "寅時",
+    "lang": "zh-TW",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "Tiger hour",
+    "lang": "en-US",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "寅時",
+    "lang": "ja-JP",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "인시",
+    "lang": "ko-KR",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "Giờ dần",
+    "lang": "vi-VN",
+    "key": "tigerHour",
+    "kot": "tigerHour"
+  },
+  {
+    "text": "卯时",
+    "lang": "zh-CN",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "卯時",
+    "lang": "zh-TW",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "Rabbit hour",
+    "lang": "en-US",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "卯時",
+    "lang": "ja-JP",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "묘시",
+    "lang": "ko-KR",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "Giờ mão",
+    "lang": "vi-VN",
+    "key": "rabbitHour",
+    "kot": "rabbitHour"
+  },
+  {
+    "text": "辰时",
+    "lang": "zh-CN",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "辰時",
+    "lang": "zh-TW",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "Dragon hour",
+    "lang": "en-US",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "辰時",
+    "lang": "ja-JP",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "진시",
+    "lang": "ko-KR",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "Giờ thìn",
+    "lang": "vi-VN",
+    "key": "dragonHour",
+    "kot": "dragonHour"
+  },
+  {
+    "text": "巳时",
+    "lang": "zh-CN",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "巳時",
+    "lang": "zh-TW",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "Snake hour",
+    "lang": "en-US",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "巳時",
+    "lang": "ja-JP",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "사시",
+    "lang": "ko-KR",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "Giờ tỵ",
+    "lang": "vi-VN",
+    "key": "snakeHour",
+    "kot": "snakeHour"
+  },
+  {
+    "text": "午时",
+    "lang": "zh-CN",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "午時",
+    "lang": "zh-TW",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "Horse hour",
+    "lang": "en-US",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "午時",
+    "lang": "ja-JP",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "오시",
+    "lang": "ko-KR",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "Giờ ngọ",
+    "lang": "vi-VN",
+    "key": "horseHour",
+    "kot": "horseHour"
+  },
+  {
+    "text": "未时",
+    "lang": "zh-CN",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "未時",
+    "lang": "zh-TW",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "Goat hour",
+    "lang": "en-US",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "未時",
+    "lang": "ja-JP",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "미시",
+    "lang": "ko-KR",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "Giờ mùi",
+    "lang": "vi-VN",
+    "key": "goatHour",
+    "kot": "goatHour"
+  },
+  {
+    "text": "申时",
+    "lang": "zh-CN",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "申時",
+    "lang": "zh-TW",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "Monkey hour",
+    "lang": "en-US",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "申時",
+    "lang": "ja-JP",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "신시",
+    "lang": "ko-KR",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "Giờ thân",
+    "lang": "vi-VN",
+    "key": "monkeyHour",
+    "kot": "monkeyHour"
+  },
+  {
+    "text": "酉时",
+    "lang": "zh-CN",
+    "key": "roosterHour",
+    "kot": "roosterHour"
+  },
+  {
+    "text": "酉時",
+    "lang": "zh-TW",
+    "key": "roosterHour",
+    "kot": "roosterHour"
+  },
+  {
+    "text": "Rooster hour",
+    "lang": "en-US",
+    "key": "roosterHour",
+    "kot": "roosterHour"
+  },
+  {
+    "text": "酉時",
+    "lang": "ja-JP",
+    "key": "roosterHour",
+    "kot": "roosterHour"
+  },
+  {
+    "text": "유시",
+    "lang": "ko-KR",
+    "key": "roosterHour",
+    "kot": "hourly"
+  },
+  {
+    "text": "Giờ dậu",
+    "lang": "vi-VN",
+    "key": "roosterHour",
+    "kot": "roosterHour"
+  },
+  {
+    "text": "戌时",
+    "lang": "zh-CN",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "戌時",
+    "lang": "zh-TW",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "Dog hour",
+    "lang": "en-US",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "戌時",
+    "lang": "ja-JP",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "술시",
+    "lang": "ko-KR",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "Giờ tuất",
+    "lang": "vi-VN",
+    "key": "dogHour",
+    "kot": "dogHour"
+  },
+  {
+    "text": "亥时",
+    "lang": "zh-CN",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "亥時",
+    "lang": "zh-TW",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "Pig hour",
+    "lang": "en-US",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "亥時",
+    "lang": "ja-JP",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "해시",
+    "lang": "ko-KR",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "Giờ hợi",
+    "lang": "vi-VN",
+    "key": "pigHour",
+    "kot": "pigHour"
+  },
+  {
+    "text": "晚子时",
+    "lang": "zh-CN",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "晚子時",
+    "lang": "zh-TW",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "late Rat hour",
+    "lang": "en-US",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "晚子時",
+    "lang": "ja-JP",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "밤에 자시",
+    "lang": "ko-KR",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "Giờ tý muộn",
+    "lang": "vi-VN",
+    "key": "lateRatHour",
+    "kot": "lateRatHour"
+  },
+  {
+    "text": "白羊座",
+    "lang": "zh-CN",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "白羊座",
+    "lang": "zh-TW",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "aries",
+    "lang": "en-US",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "おひつじ座",
+    "lang": "ja-JP",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "백양궁",
+    "lang": "ko-KR",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "Cung Bạch Dương",
+    "lang": "vi-VN",
+    "key": "aries",
+    "kot": "aries"
+  },
+  {
+    "text": "金牛座",
+    "lang": "zh-CN",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "金牛座",
+    "lang": "zh-TW",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "taurus",
+    "lang": "en-US",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "おうし座",
+    "lang": "ja-JP",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "금우궁",
+    "lang": "ko-KR",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "Cung Kim Ngưu",
+    "lang": "vi-VN",
+    "key": "taurus",
+    "kot": "taurus"
+  },
+  {
+    "text": "双子座",
+    "lang": "zh-CN",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "雙子座",
+    "lang": "zh-TW",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "gemini",
+    "lang": "en-US",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "ふたご座",
+    "lang": "ja-JP",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "쌍아궁",
+    "lang": "ko-KR",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "Cung Song Tử",
+    "lang": "vi-VN",
+    "key": "gemini",
+    "kot": "gemini"
+  },
+  {
+    "text": "巨蟹座",
+    "lang": "zh-CN",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "巨蟹座",
+    "lang": "zh-TW",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "cancer",
+    "lang": "en-US",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "かに座",
+    "lang": "ja-JP",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "거해궁",
+    "lang": "ko-KR",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "Cung Cự Giải",
+    "lang": "vi-VN",
+    "key": "cancer",
+    "kot": "cancer"
+  },
+  {
+    "text": "狮子座",
+    "lang": "zh-CN",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "獅子座",
+    "lang": "zh-TW",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "leo",
+    "lang": "en-US",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "しし座",
+    "lang": "ja-JP",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "사자궁",
+    "lang": "ko-KR",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "Cung Sư Tử",
+    "lang": "vi-VN",
+    "key": "leo",
+    "kot": "leo"
+  },
+  {
+    "text": "处女座",
+    "lang": "zh-CN",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "處女座",
+    "lang": "zh-TW",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "virgo",
+    "lang": "en-US",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "おとめ座",
+    "lang": "ja-JP",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "처녀궁",
+    "lang": "ko-KR",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "Cung Xử Nữ",
+    "lang": "vi-VN",
+    "key": "virgo",
+    "kot": "virgo"
+  },
+  {
+    "text": "天秤座",
+    "lang": "zh-CN",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "天秤座",
+    "lang": "zh-TW",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "libra",
+    "lang": "en-US",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "てんびん座",
+    "lang": "ja-JP",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "천칭궁",
+    "lang": "ko-KR",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "Cung Thiên Bình",
+    "lang": "vi-VN",
+    "key": "libra",
+    "kot": "libra"
+  },
+  {
+    "text": "天蝎座",
+    "lang": "zh-CN",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "天蠍座",
+    "lang": "zh-TW",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "scorpio",
+    "lang": "en-US",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "さそり座",
+    "lang": "ja-JP",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "천갈궁",
+    "lang": "ko-KR",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "Cung Thiên Yết",
+    "lang": "vi-VN",
+    "key": "scorpio",
+    "kot": "scorpio"
+  },
+  {
+    "text": "射手座",
+    "lang": "zh-CN",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "射手座",
+    "lang": "zh-TW",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "sagittarius",
+    "lang": "en-US",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "いて座",
+    "lang": "ja-JP",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "인마궁",
+    "lang": "ko-KR",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "Cung Xạ Thủ",
+    "lang": "vi-VN",
+    "key": "sagittarius",
+    "kot": "sagittarius"
+  },
+  {
+    "text": "摩羯座",
+    "lang": "zh-CN",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "摩羯座",
+    "lang": "zh-TW",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "capricorn",
+    "lang": "en-US",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "やぎ座",
+    "lang": "ja-JP",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "마갈궁",
+    "lang": "ko-KR",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "Cung Ma Kết",
+    "lang": "vi-VN",
+    "key": "capricorn",
+    "kot": "capricorn"
+  },
+  {
+    "text": "水瓶座",
+    "lang": "zh-CN",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "水瓶座",
+    "lang": "zh-TW",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "aquarius",
+    "lang": "en-US",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "みずがめ座",
+    "lang": "ja-JP",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "보병궁",
+    "lang": "ko-KR",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "Cung Thủy Bình",
+    "lang": "vi-VN",
+    "key": "aquarius",
+    "kot": "aquarius"
+  },
+  {
+    "text": "双鱼座",
+    "lang": "zh-CN",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "雙魚座",
+    "lang": "zh-TW",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "pisces",
+    "lang": "en-US",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "うお座",
+    "lang": "ja-JP",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "쌍어궁",
+    "lang": "ko-KR",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "Cung Song Ngư",
+    "lang": "vi-VN",
+    "key": "pisces",
+    "kot": "pisces"
+  },
+  {
+    "text": "水二局",
+    "lang": "zh-CN",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "水二局",
+    "lang": "zh-TW",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "water 2nd",
+    "lang": "en-US",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "水の二局",
+    "lang": "ja-JP",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "수이국",
+    "lang": "ko-KR",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "Thủy Nhị Cục",
+    "lang": "vi-VN",
+    "key": "water2nd",
+    "kot": "water2nd"
+  },
+  {
+    "text": "木三局",
+    "lang": "zh-CN",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "木三局",
+    "lang": "zh-TW",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "wood 3rd",
+    "lang": "en-US",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "木の三局",
+    "lang": "ja-JP",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "목삼국",
+    "lang": "ko-KR",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "Mộc Tam Cục",
+    "lang": "vi-VN",
+    "key": "wood3rd",
+    "kot": "wood3rd"
+  },
+  {
+    "text": "金四局",
+    "lang": "zh-CN",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "金四局",
+    "lang": "zh-TW",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "metal 4th",
+    "lang": "en-US",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "金の四局",
+    "lang": "ja-JP",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "금사국",
+    "lang": "ko-KR",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "Kim Tứ Cục",
+    "lang": "vi-VN",
+    "key": "metal4th",
+    "kot": "metal4th"
+  },
+  {
+    "text": "土五局",
+    "lang": "zh-CN",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "土五局",
+    "lang": "zh-TW",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "earth 5th",
+    "lang": "en-US",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "土の五局",
+    "lang": "ja-JP",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "토오국",
+    "lang": "ko-KR",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "Thổ Ngũ Cục",
+    "lang": "vi-VN",
+    "key": "earth5th",
+    "kot": "earth5th"
+  },
+  {
+    "text": "火六局",
+    "lang": "zh-CN",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "火六局",
+    "lang": "zh-TW",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "fire 6th",
+    "lang": "en-US",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "火の六局",
+    "lang": "ja-JP",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "화육국",
+    "lang": "ko-KR",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "Hỏa Lục Cục",
+    "lang": "vi-VN",
+    "key": "fire6th",
+    "kot": "fire6th"
+  },
+  {
+    "text": "甲",
+    "lang": "zh-CN",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "甲",
+    "lang": "zh-TW",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "jia",
+    "lang": "en-US",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "甲",
+    "lang": "ja-JP",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "갑",
+    "lang": "ko-KR",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "Giáp",
+    "lang": "vi-VN",
+    "key": "jiaHeavenly",
+    "kot": "jiaHeavenly"
+  },
+  {
+    "text": "乙",
+    "lang": "zh-CN",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "乙",
+    "lang": "zh-TW",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "yi",
+    "lang": "en-US",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "乙",
+    "lang": "ja-JP",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "을",
+    "lang": "ko-KR",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "Ất",
+    "lang": "vi-VN",
+    "key": "yiHeavenly",
+    "kot": "yiHeavenly"
+  },
+  {
+    "text": "丙",
+    "lang": "zh-CN",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "丙",
+    "lang": "zh-TW",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "bing",
+    "lang": "en-US",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "丙",
+    "lang": "ja-JP",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "병",
+    "lang": "ko-KR",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "Bính",
+    "lang": "vi-VN",
+    "key": "bingHeavenly",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "丁",
+    "lang": "zh-CN",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "丁",
+    "lang": "zh-TW",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "ding",
+    "lang": "en-US",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "丁",
+    "lang": "ja-JP",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "정",
+    "lang": "ko-KR",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "Đinh",
+    "lang": "vi-VN",
+    "key": "dingHeavenly",
+    "kot": "dingHeavenly"
+  },
+  {
+    "text": "戊",
+    "lang": "zh-CN",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "戊",
+    "lang": "zh-TW",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "wu",
+    "lang": "en-US",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "戊",
+    "lang": "ja-JP",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "무",
+    "lang": "ko-KR",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "Mậu",
+    "lang": "vi-VN",
+    "key": "wuHeavenly",
+    "kot": "wuHeavenly"
+  },
+  {
+    "text": "己",
+    "lang": "zh-CN",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "己",
+    "lang": "zh-TW",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "ji",
+    "lang": "en-US",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "己",
+    "lang": "ja-JP",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "기",
+    "lang": "ko-KR",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "Kỷ",
+    "lang": "vi-VN",
+    "key": "jiHeavenly",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "庚",
+    "lang": "zh-CN",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "庚",
+    "lang": "zh-TW",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "geng",
+    "lang": "en-US",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "庚",
+    "lang": "ja-JP",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "경",
+    "lang": "ko-KR",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "Canh",
+    "lang": "vi-VN",
+    "key": "gengHeavenly",
+    "kot": "gengHeavenly"
+  },
+  {
+    "text": "辛",
+    "lang": "zh-CN",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "辛",
+    "lang": "zh-TW",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "xin",
+    "lang": "en-US",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "辛",
+    "lang": "ja-JP",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "신",
+    "lang": "ko-KR",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "Tân",
+    "lang": "vi-VN",
+    "key": "xinHeavenly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "壬",
+    "lang": "zh-CN",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "壬",
+    "lang": "zh-TW",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "ren",
+    "lang": "en-US",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "壬",
+    "lang": "ja-JP",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "임",
+    "lang": "ko-KR",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "Nhâm",
+    "lang": "vi-VN",
+    "key": "renHeavenly",
+    "kot": "renHeavenly"
+  },
+  {
+    "text": "癸",
+    "lang": "zh-CN",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "癸",
+    "lang": "zh-TW",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "gui",
+    "lang": "en-US",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "癸",
+    "lang": "ja-JP",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "계",
+    "lang": "ko-KR",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "Quý",
+    "lang": "vi-VN",
+    "key": "guiHeavenly",
+    "kot": "guiHeavenly"
+  },
+  {
+    "text": "子",
+    "lang": "zh-CN",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "子",
+    "lang": "zh-TW",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "zi",
+    "lang": "en-US",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "子",
+    "lang": "ja-JP",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "자",
+    "lang": "ko-KR",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "Tý",
+    "lang": "vi-VN",
+    "key": "ziEarthly",
+    "kot": "ziEarthly"
+  },
+  {
+    "text": "丑",
+    "lang": "zh-CN",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "丑",
+    "lang": "zh-TW",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "chou",
+    "lang": "en-US",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "丑",
+    "lang": "ja-JP",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "축",
+    "lang": "ko-KR",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "Sửu",
+    "lang": "vi-VN",
+    "key": "chouEarthly",
+    "kot": "chouEarthly"
+  },
+  {
+    "text": "寅",
+    "lang": "zh-CN",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "寅",
+    "lang": "zh-TW",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "yin",
+    "lang": "en-US",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "寅",
+    "lang": "ja-JP",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "인",
+    "lang": "ko-KR",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "Dần",
+    "lang": "vi-VN",
+    "key": "yinEarthly",
+    "kot": "yinEarthly"
+  },
+  {
+    "text": "卯",
+    "lang": "zh-CN",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "卯",
+    "lang": "zh-TW",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "mao",
+    "lang": "en-US",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "卯",
+    "lang": "ja-JP",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "묘",
+    "lang": "ko-KR",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "Mão",
+    "lang": "vi-VN",
+    "key": "maoEarthly",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "辰",
+    "lang": "zh-CN",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "辰",
+    "lang": "zh-TW",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "chen",
+    "lang": "en-US",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "辰",
+    "lang": "ja-JP",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "진",
+    "lang": "ko-KR",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "Thìn",
+    "lang": "vi-VN",
+    "key": "chenEarthly",
+    "kot": "chenEarthly"
+  },
+  {
+    "text": "巳",
+    "lang": "zh-CN",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "巳",
+    "lang": "zh-TW",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "si",
+    "lang": "en-US",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "巳",
+    "lang": "ja-JP",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "사",
+    "lang": "ko-KR",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "Tỵ",
+    "lang": "vi-VN",
+    "key": "siEarthly",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "午",
+    "lang": "zh-CN",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "午",
+    "lang": "zh-TW",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "woo",
+    "lang": "en-US",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "午",
+    "lang": "ja-JP",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "오",
+    "lang": "ko-KR",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "Ngọ",
+    "lang": "vi-VN",
+    "key": "wuEarthly",
+    "kot": "wuEarthly"
+  },
+  {
+    "text": "未",
+    "lang": "zh-CN",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "未",
+    "lang": "zh-TW",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "wei",
+    "lang": "en-US",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "未",
+    "lang": "ja-JP",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "미",
+    "lang": "ko-KR",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "Mùi",
+    "lang": "vi-VN",
+    "key": "weiEarthly",
+    "kot": "weiEarthly"
+  },
+  {
+    "text": "申",
+    "lang": "zh-CN",
+    "key": "shenEarthly",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "申",
+    "lang": "zh-TW",
+    "key": "shenEarthly",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "shen",
+    "lang": "en-US",
+    "key": "shenEarthly",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "申",
+    "lang": "ja-JP",
+    "key": "shenEarthly",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "신",
+    "lang": "ko-KR",
+    "key": "shenEarthly",
+    "kot": "xinHeavenly"
+  },
+  {
+    "text": "Thân",
+    "lang": "vi-VN",
+    "key": "shenEarthly",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "酉",
+    "lang": "zh-CN",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "酉",
+    "lang": "zh-TW",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "you",
+    "lang": "en-US",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "酉",
+    "lang": "ja-JP",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "유",
+    "lang": "ko-KR",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "Dậu",
+    "lang": "vi-VN",
+    "key": "youEarthly",
+    "kot": "youEarthly"
+  },
+  {
+    "text": "戌",
+    "lang": "zh-CN",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "戌",
+    "lang": "zh-TW",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "xu",
+    "lang": "en-US",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "戌",
+    "lang": "ja-JP",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "술",
+    "lang": "ko-KR",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "Tuất",
+    "lang": "vi-VN",
+    "key": "xuEarthly",
+    "kot": "xuEarthly"
+  },
+  {
+    "text": "亥",
+    "lang": "zh-CN",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "亥",
+    "lang": "zh-TW",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "hai",
+    "lang": "en-US",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "亥",
+    "lang": "ja-JP",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "해",
+    "lang": "ko-KR",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "Hợi",
+    "lang": "vi-VN",
+    "key": "haiEarthly",
+    "kot": "haiEarthly"
+  },
+  {
+    "text": "庙",
+    "lang": "zh-CN",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "廟",
+    "lang": "zh-TW",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "[+3]",
+    "lang": "en-US",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "廟",
+    "lang": "ja-JP",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "[+3]",
+    "lang": "ko-KR",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "Miếu",
+    "lang": "vi-VN",
+    "key": "miao",
+    "kot": "miao"
+  },
+  {
+    "text": "旺",
+    "lang": "zh-CN",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "旺",
+    "lang": "zh-TW",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "[+2]",
+    "lang": "en-US",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "旺",
+    "lang": "ja-JP",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "[+2]",
+    "lang": "ko-KR",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "Vượng",
+    "lang": "vi-VN",
+    "key": "wang",
+    "kot": "wang"
+  },
+  {
+    "text": "得",
+    "lang": "zh-CN",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "得",
+    "lang": "zh-TW",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "[+1]",
+    "lang": "en-US",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "得",
+    "lang": "ja-JP",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "[+1]",
+    "lang": "ko-KR",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "Đắc",
+    "lang": "vi-VN",
+    "key": "de",
+    "kot": "de"
+  },
+  {
+    "text": "利",
+    "lang": "zh-CN",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "利",
+    "lang": "zh-TW",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "[0]",
+    "lang": "en-US",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "利",
+    "lang": "ja-JP",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "[0]",
+    "lang": "ko-KR",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "Lợi",
+    "lang": "vi-VN",
+    "key": "li",
+    "kot": "li"
+  },
+  {
+    "text": "平",
+    "lang": "zh-CN",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "平",
+    "lang": "zh-TW",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "[-1]",
+    "lang": "en-US",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "平",
+    "lang": "ja-JP",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "[-1]",
+    "lang": "ko-KR",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "Bình",
+    "lang": "vi-VN",
+    "key": "ping",
+    "kot": "ping"
+  },
+  {
+    "text": "不",
+    "lang": "zh-CN",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "不",
+    "lang": "zh-TW",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "[-2]",
+    "lang": "en-US",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "不",
+    "lang": "ja-JP",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "[-2]",
+    "lang": "ko-KR",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "Bất",
+    "lang": "vi-VN",
+    "key": "bu",
+    "kot": "bu"
+  },
+  {
+    "text": "陷",
+    "lang": "zh-CN",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "陷",
+    "lang": "zh-TW",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "[-3]",
+    "lang": "en-US",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "陷",
+    "lang": "ja-JP",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "[-3]",
+    "lang": "ko-KR",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "Hạn",
+    "lang": "vi-VN",
+    "key": "xian",
+    "kot": "xian"
+  },
+  {
+    "text": "禄",
+    "lang": "zh-CN",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "祿",
+    "lang": "zh-TW",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "A",
+    "lang": "en-US",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "祿",
+    "lang": "ja-JP",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "록",
+    "lang": "ko-KR",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "Lộc",
+    "lang": "vi-VN",
+    "key": "sihuaLu",
+    "kot": "sihuaLu"
+  },
+  {
+    "text": "权",
+    "lang": "zh-CN",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "權",
+    "lang": "zh-TW",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "B",
+    "lang": "en-US",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "權",
+    "lang": "ja-JP",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "권",
+    "lang": "ko-KR",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "Quyền",
+    "lang": "vi-VN",
+    "key": "sihuaQuan",
+    "kot": "sihuaQuan"
+  },
+  {
+    "text": "科",
+    "lang": "zh-CN",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "科",
+    "lang": "zh-TW",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "C",
+    "lang": "en-US",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "科",
+    "lang": "ja-JP",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "과",
+    "lang": "ko-KR",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "Khoa",
+    "lang": "vi-VN",
+    "key": "sihuaKe",
+    "kot": "sihuaKe"
+  },
+  {
+    "text": "忌",
+    "lang": "zh-CN",
+    "key": "sihuaJi",
+    "kot": "sihuaJi"
+  },
+  {
+    "text": "忌",
+    "lang": "zh-TW",
+    "key": "sihuaJi",
+    "kot": "sihuaJi"
+  },
+  {
+    "text": "D",
+    "lang": "en-US",
+    "key": "sihuaJi",
+    "kot": "sihuaJi"
+  },
+  {
+    "text": "忌",
+    "lang": "ja-JP",
+    "key": "sihuaJi",
+    "kot": "sihuaJi"
+  },
+  {
+    "text": "기",
+    "lang": "ko-KR",
+    "key": "sihuaJi",
+    "kot": "jiHeavenly"
+  },
+  {
+    "text": "Kỵ",
+    "lang": "vi-VN",
+    "key": "sihuaJi",
+    "kot": "sihuaJi"
+  },
+  {
+    "text": "紫微",
+    "lang": "zh-CN",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "紫微",
+    "lang": "zh-TW",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "emperor",
+    "lang": "en-US",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "紫微",
+    "lang": "ja-JP",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "자미",
+    "lang": "ko-KR",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "Tử Vi",
+    "lang": "vi-VN",
+    "key": "ziweiMaj",
+    "kot": "ziweiMaj"
+  },
+  {
+    "text": "天机",
+    "lang": "zh-CN",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "天機",
+    "lang": "zh-TW",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "advisor",
+    "lang": "en-US",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "天機",
+    "lang": "ja-JP",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "천기",
+    "lang": "ko-KR",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "Thiên Cơ",
+    "lang": "vi-VN",
+    "key": "tianjiMaj",
+    "kot": "tianjiMaj"
+  },
+  {
+    "text": "太阳",
+    "lang": "zh-CN",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "太陽",
+    "lang": "zh-TW",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "sun",
+    "lang": "en-US",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "太陽",
+    "lang": "ja-JP",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "태양",
+    "lang": "ko-KR",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "Thái Dương",
+    "lang": "vi-VN",
+    "key": "taiyangMaj",
+    "kot": "taiyangMaj"
+  },
+  {
+    "text": "武曲",
+    "lang": "zh-CN",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "武曲",
+    "lang": "zh-TW",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "general",
+    "lang": "en-US",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "武曲",
+    "lang": "ja-JP",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "무곡",
+    "lang": "ko-KR",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "Vũ Khúc",
+    "lang": "vi-VN",
+    "key": "wuquMaj",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "天同",
+    "lang": "zh-CN",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "天同",
+    "lang": "zh-TW",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "fortunate",
+    "lang": "en-US",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "天同",
+    "lang": "ja-JP",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "천동",
+    "lang": "ko-KR",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "Thiên Đồng",
+    "lang": "vi-VN",
+    "key": "tiantongMaj",
+    "kot": "tiantongMaj"
+  },
+  {
+    "text": "廉贞",
+    "lang": "zh-CN",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "廉貞",
+    "lang": "zh-TW",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "judge",
+    "lang": "en-US",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "廉貞",
+    "lang": "ja-JP",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "염정",
+    "lang": "ko-KR",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "Liêm Trinh",
+    "lang": "vi-VN",
+    "key": "lianzhenMaj",
+    "kot": "lianzhenMaj"
+  },
+  {
+    "text": "天府",
+    "lang": "zh-CN",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "天府",
+    "lang": "zh-TW",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "empress",
+    "lang": "en-US",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "天府",
+    "lang": "ja-JP",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "천부",
+    "lang": "ko-KR",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "Thiên Phủ",
+    "lang": "vi-VN",
+    "key": "tianfuMaj",
+    "kot": "tianfuMaj"
+  },
+  {
+    "text": "太阴",
+    "lang": "zh-CN",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "太陰",
+    "lang": "zh-TW",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "moon",
+    "lang": "en-US",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "太陰",
+    "lang": "ja-JP",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "태음",
+    "lang": "ko-KR",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "Thái Âm",
+    "lang": "vi-VN",
+    "key": "taiyinMaj",
+    "kot": "taiyinMaj"
+  },
+  {
+    "text": "贪狼",
+    "lang": "zh-CN",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "貪狼",
+    "lang": "zh-TW",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "wolf",
+    "lang": "en-US",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "貪狼",
+    "lang": "ja-JP",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "탐랑",
+    "lang": "ko-KR",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "Tham Lang",
+    "lang": "vi-VN",
+    "key": "tanlangMaj",
+    "kot": "tanlangMaj"
+  },
+  {
+    "text": "巨门",
+    "lang": "zh-CN",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "巨門",
+    "lang": "zh-TW",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "advocator",
+    "lang": "en-US",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "巨門",
+    "lang": "ja-JP",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "거문",
+    "lang": "ko-KR",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "Cự Môn",
+    "lang": "vi-VN",
+    "key": "jumenMaj",
+    "kot": "jumenMaj"
+  },
+  {
+    "text": "天相",
+    "lang": "zh-CN",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "天相",
+    "lang": "zh-TW",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "minister",
+    "lang": "en-US",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "天相",
+    "lang": "ja-JP",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "천상",
+    "lang": "ko-KR",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "Thiên Tướng",
+    "lang": "vi-VN",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "天梁",
+    "lang": "zh-CN",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "天梁",
+    "lang": "zh-TW",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "sage",
+    "lang": "en-US",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "天梁",
+    "lang": "ja-JP",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "천량",
+    "lang": "ko-KR",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "Thiên Lương",
+    "lang": "vi-VN",
+    "key": "tianliangMaj",
+    "kot": "tianliangMaj"
+  },
+  {
+    "text": "七杀",
+    "lang": "zh-CN",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "七殺",
+    "lang": "zh-TW",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "marshal",
+    "lang": "en-US",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "七殺",
+    "lang": "ja-JP",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "칠살",
+    "lang": "ko-KR",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "Thất Sát",
+    "lang": "vi-VN",
+    "key": "qishaMaj",
+    "kot": "qishaMaj"
+  },
+  {
+    "text": "破军",
+    "lang": "zh-CN",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "破軍",
+    "lang": "zh-TW",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "rebel",
+    "lang": "en-US",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "破軍",
+    "lang": "ja-JP",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "파군",
+    "lang": "ko-KR",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "Phá Quân",
+    "lang": "vi-VN",
+    "key": "pojunMaj",
+    "kot": "pojunMaj"
+  },
+  {
+    "text": "左辅",
+    "lang": "zh-CN",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "左輔",
+    "lang": "zh-TW",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "officer",
+    "lang": "en-US",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "左輔",
+    "lang": "ja-JP",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "좌보",
+    "lang": "ko-KR",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "Tả Phù",
+    "lang": "vi-VN",
+    "key": "zuofuMin",
+    "kot": "zuofuMin"
+  },
+  {
+    "text": "右弼",
+    "lang": "zh-CN",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "右弼",
+    "lang": "zh-TW",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "helper",
+    "lang": "en-US",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "右弼",
+    "lang": "ja-JP",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "우필",
+    "lang": "ko-KR",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "Hữu Bật",
+    "lang": "vi-VN",
+    "key": "youbiMin",
+    "kot": "youbiMin"
+  },
+  {
+    "text": "文昌",
+    "lang": "zh-CN",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "文昌",
+    "lang": "zh-TW",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "scholar",
+    "lang": "en-US",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "文昌",
+    "lang": "ja-JP",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "문창",
+    "lang": "ko-KR",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "Văn Xương",
+    "lang": "vi-VN",
+    "key": "wenchangMin",
+    "kot": "wenchangMin"
+  },
+  {
+    "text": "文曲",
+    "lang": "zh-CN",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "文曲",
+    "lang": "zh-TW",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "artist",
+    "lang": "en-US",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "文曲",
+    "lang": "ja-JP",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "문곡",
+    "lang": "ko-KR",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "Văn Khúc",
+    "lang": "vi-VN",
+    "key": "wenquMin",
+    "kot": "wenquMin"
+  },
+  {
+    "text": "禄存",
+    "lang": "zh-CN",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "祿存",
+    "lang": "zh-TW",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "money",
+    "lang": "en-US",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "祿存",
+    "lang": "ja-JP",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "록존",
+    "lang": "ko-KR",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "Lộc Tồn",
+    "lang": "vi-VN",
+    "key": "lucunMin",
+    "kot": "lucunMin"
+  },
+  {
+    "text": "天马",
+    "lang": "zh-CN",
+    "key": "tianmaMin",
+    "kot": "tianmaMin"
+  },
+  {
+    "text": "天馬",
+    "lang": "zh-TW",
+    "key": "tianmaMin",
+    "kot": "tianmaMin"
+  },
+  {
+    "text": "horse",
+    "lang": "en-US",
+    "key": "tianmaMin",
+    "kot": "horse"
+  },
+  {
+    "text": "天馬",
+    "lang": "ja-JP",
+    "key": "tianmaMin",
+    "kot": "tianmaMin"
+  },
+  {
+    "text": "천마",
+    "lang": "ko-KR",
+    "key": "tianmaMin",
+    "kot": "tianmaMin"
+  },
+  {
+    "text": "Thiên Mã",
+    "lang": "vi-VN",
+    "key": "tianmaMin",
+    "kot": "tianmaMin"
+  },
+  {
+    "text": "擎羊",
+    "lang": "zh-CN",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "擎羊",
+    "lang": "zh-TW",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "driven",
+    "lang": "en-US",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "擎羊",
+    "lang": "ja-JP",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "경양",
+    "lang": "ko-KR",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "Kình Dương",
+    "lang": "vi-VN",
+    "key": "qingyangMin",
+    "kot": "qingyangMin"
+  },
+  {
+    "text": "陀罗",
+    "lang": "zh-CN",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "陀羅",
+    "lang": "zh-TW",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "tangled",
+    "lang": "en-US",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "陀羅",
+    "lang": "ja-JP",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "타라",
+    "lang": "ko-KR",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "Đà La",
+    "lang": "vi-VN",
+    "key": "tuoluoMin",
+    "kot": "tuoluoMin"
+  },
+  {
+    "text": "火星",
+    "lang": "zh-CN",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "火星",
+    "lang": "zh-TW",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "impulsive",
+    "lang": "en-US",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "火星",
+    "lang": "ja-JP",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "화성",
+    "lang": "ko-KR",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "Hỏa Tinh",
+    "lang": "vi-VN",
+    "key": "huoxingMin",
+    "kot": "huoxingMin"
+  },
+  {
+    "text": "铃星",
+    "lang": "zh-CN",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "鈴星",
+    "lang": "zh-TW",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "spark",
+    "lang": "en-US",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "鈴星",
+    "lang": "ja-JP",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "령성",
+    "lang": "ko-KR",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "Linh Tinh",
+    "lang": "vi-VN",
+    "key": "lingxingMin",
+    "kot": "lingxingMin"
+  },
+  {
+    "text": "天魁",
+    "lang": "zh-CN",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "天魁",
+    "lang": "zh-TW",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "assistant",
+    "lang": "en-US",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "天魁",
+    "lang": "ja-JP",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "천괴",
+    "lang": "ko-KR",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "Thiên Khôi",
+    "lang": "vi-VN",
+    "key": "tiankuiMin",
+    "kot": "tiankuiMin"
+  },
+  {
+    "text": "天钺",
+    "lang": "zh-CN",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "天鉞",
+    "lang": "zh-TW",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "aide",
+    "lang": "en-US",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "天鉞",
+    "lang": "ja-JP",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "천월",
+    "lang": "ko-KR",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "Thiên Việt",
+    "lang": "vi-VN",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "地空",
+    "lang": "zh-CN",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "地空",
+    "lang": "zh-TW",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "ideologue",
+    "lang": "en-US",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "地空",
+    "lang": "ja-JP",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "지공",
+    "lang": "ko-KR",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "Địa Không",
+    "lang": "vi-VN",
+    "key": "dikongMin",
+    "kot": "dikongMin"
+  },
+  {
+    "text": "地劫",
+    "lang": "zh-CN",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "地劫",
+    "lang": "zh-TW",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "fickle",
+    "lang": "en-US",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "地劫",
+    "lang": "ja-JP",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "지겁",
+    "lang": "ko-KR",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "Địa Kiếp",
+    "lang": "vi-VN",
+    "key": "dijieMin",
+    "kot": "dijieMin"
+  },
+  {
+    "text": "劫杀",
+    "lang": "zh-CN",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "劫殺",
+    "lang": "zh-TW",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "murder",
+    "lang": "en-US",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "劫殺",
+    "lang": "ja-JP",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "겁살",
+    "lang": "ko-KR",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "Kiếp Sát",
+    "lang": "vi-VN",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "天空",
+    "lang": "zh-CN",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "天空",
+    "lang": "zh-TW",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "utopian",
+    "lang": "en-US",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "天空",
+    "lang": "ja-JP",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "천공",
+    "lang": "ko-KR",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "Thiên Không",
+    "lang": "vi-VN",
+    "key": "tiankong",
+    "kot": "tiankong"
+  },
+  {
+    "text": "天刑",
+    "lang": "zh-CN",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "天刑",
+    "lang": "zh-TW",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "serious",
+    "lang": "en-US",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "天刑",
+    "lang": "ja-JP",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "천형",
+    "lang": "ko-KR",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "Thiên Hình",
+    "lang": "vi-VN",
+    "key": "tianxing",
+    "kot": "tianxing"
+  },
+  {
+    "text": "天姚",
+    "lang": "zh-CN",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "天姚",
+    "lang": "zh-TW",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "social",
+    "lang": "en-US",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "天姚",
+    "lang": "ja-JP",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "천요",
+    "lang": "ko-KR",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "Thiên Diêu",
+    "lang": "vi-VN",
+    "key": "tianyao",
+    "kot": "tianyao"
+  },
+  {
+    "text": "解神",
+    "lang": "zh-CN",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "解神",
+    "lang": "zh-TW",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "considery",
+    "lang": "en-US",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "解神",
+    "lang": "ja-JP",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "해신",
+    "lang": "ko-KR",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "Giải Thần",
+    "lang": "vi-VN",
+    "key": "jieshen",
+    "kot": "jieshen"
+  },
+  {
+    "text": "阴煞",
+    "lang": "zh-CN",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "陰煞",
+    "lang": "zh-TW",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "gloomy",
+    "lang": "en-US",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "陰煞",
+    "lang": "ja-JP",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "음살",
+    "lang": "ko-KR",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "Âm Sát",
+    "lang": "vi-VN",
+    "key": "yinsha",
+    "kot": "yinsha"
+  },
+  {
+    "text": "天喜",
+    "lang": "zh-CN",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "天喜",
+    "lang": "zh-TW",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "cheerful",
+    "lang": "en-US",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "天喜",
+    "lang": "ja-JP",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "천희",
+    "lang": "ko-KR",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "Thiên Hỷ",
+    "lang": "vi-VN",
+    "key": "tianxi",
+    "kot": "tianxi"
+  },
+  {
+    "text": "天官",
+    "lang": "zh-CN",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "天官",
+    "lang": "zh-TW",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "solemn",
+    "lang": "en-US",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "天官",
+    "lang": "ja-JP",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "천관",
+    "lang": "ko-KR",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "Thiên Quan",
+    "lang": "vi-VN",
+    "key": "tianguan",
+    "kot": "tianguan"
+  },
+  {
+    "text": "天福",
+    "lang": "zh-CN",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "天福",
+    "lang": "zh-TW",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "lucky",
+    "lang": "en-US",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "天福",
+    "lang": "ja-JP",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "천복",
+    "lang": "ko-KR",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "Thiên Phúc",
+    "lang": "vi-VN",
+    "key": "tianfu",
+    "kot": "tianfu"
+  },
+  {
+    "text": "天哭",
+    "lang": "zh-CN",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "天哭",
+    "lang": "zh-TW",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "upset",
+    "lang": "en-US",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "天哭",
+    "lang": "ja-JP",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "천곡",
+    "lang": "ko-KR",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "Thiên Khốc",
+    "lang": "vi-VN",
+    "key": "tianku",
+    "kot": "tianku"
+  },
+  {
+    "text": "天虚",
+    "lang": "zh-CN",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "天虛",
+    "lang": "zh-TW",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "frail",
+    "lang": "en-US",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "天虛",
+    "lang": "ja-JP",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "천허",
+    "lang": "ko-KR",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "Thiên Hư",
+    "lang": "vi-VN",
+    "key": "tianxu",
+    "kot": "tianxu"
+  },
+  {
+    "text": "龙池",
+    "lang": "zh-CN",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "龍池",
+    "lang": "zh-TW",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "talented",
+    "lang": "en-US",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "龍池",
+    "lang": "ja-JP",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "용지",
+    "lang": "ko-KR",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "Long Trì",
+    "lang": "vi-VN",
+    "key": "longchi",
+    "kot": "longchi"
+  },
+  {
+    "text": "凤阁",
+    "lang": "zh-CN",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "鳳閣",
+    "lang": "zh-TW",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "refined",
+    "lang": "en-US",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "鳳閣",
+    "lang": "ja-JP",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "봉각",
+    "lang": "ko-KR",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "Phụng Các",
+    "lang": "vi-VN",
+    "key": "fengge",
+    "kot": "fengge"
+  },
+  {
+    "text": "红鸾",
+    "lang": "zh-CN",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "紅鸞",
+    "lang": "zh-TW",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "attractive",
+    "lang": "en-US",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "紅鸞",
+    "lang": "ja-JP",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "홍란",
+    "lang": "ko-KR",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "Hồng Loan",
+    "lang": "vi-VN",
+    "key": "hongluan",
+    "kot": "hongluan"
+  },
+  {
+    "text": "孤辰",
+    "lang": "zh-CN",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "孤辰",
+    "lang": "zh-TW",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "alone",
+    "lang": "en-US",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "孤辰",
+    "lang": "ja-JP",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "고진",
+    "lang": "ko-KR",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "Cô Thần",
+    "lang": "vi-VN",
+    "key": "guchen",
+    "kot": "guchen"
+  },
+  {
+    "text": "寡宿",
+    "lang": "zh-CN",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "寡宿",
+    "lang": "zh-TW",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "lonely",
+    "lang": "en-US",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "寡宿",
+    "lang": "ja-JP",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "과숙",
+    "lang": "ko-KR",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "Quả Tú",
+    "lang": "vi-VN",
+    "key": "guasu",
+    "kot": "guasu"
+  },
+  {
+    "text": "蜚廉",
+    "lang": "zh-CN",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "蜚廉",
+    "lang": "zh-TW",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "instigated",
+    "lang": "en-US",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "蜚廉",
+    "lang": "ja-JP",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "비렴",
+    "lang": "ko-KR",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "Phi Liêm",
+    "lang": "vi-VN",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "破碎",
+    "lang": "zh-CN",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "破碎",
+    "lang": "zh-TW",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "broken",
+    "lang": "en-US",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "破碎",
+    "lang": "ja-JP",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "파쇄",
+    "lang": "ko-KR",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "Phá Toái",
+    "lang": "vi-VN",
+    "key": "posui",
+    "kot": "posui"
+  },
+  {
+    "text": "台辅",
+    "lang": "zh-CN",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "台輔",
+    "lang": "zh-TW",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "honorable",
+    "lang": "en-US",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "台輔",
+    "lang": "ja-JP",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "태보",
+    "lang": "ko-KR",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "Đài Phụ",
+    "lang": "vi-VN",
+    "key": "taifu",
+    "kot": "taifu"
+  },
+  {
+    "text": "封诰",
+    "lang": "zh-CN",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "封誥",
+    "lang": "zh-TW",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "awarded",
+    "lang": "en-US",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "封誥",
+    "lang": "ja-JP",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "봉고",
+    "lang": "ko-KR",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "Phong Cáo",
+    "lang": "vi-VN",
+    "key": "fenggao",
+    "kot": "fenggao"
+  },
+  {
+    "text": "天巫",
+    "lang": "zh-CN",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "天巫",
+    "lang": "zh-TW",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "psychic",
+    "lang": "en-US",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "天巫",
+    "lang": "ja-JP",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "천무",
+    "lang": "ko-KR",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "Thiên Vu",
+    "lang": "vi-VN",
+    "key": "tianwu",
+    "kot": "tianwu"
+  },
+  {
+    "text": "天月",
+    "lang": "zh-CN",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "天月",
+    "lang": "zh-TW",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "sickly",
+    "lang": "en-US",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "天月",
+    "lang": "ja-JP",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "천월",
+    "lang": "ko-KR",
+    "key": "tianyue",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "Thiên Nguyệt",
+    "lang": "vi-VN",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "三台",
+    "lang": "zh-CN",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "三台",
+    "lang": "zh-TW",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "senior",
+    "lang": "en-US",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "三台",
+    "lang": "ja-JP",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "삼태",
+    "lang": "ko-KR",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "Tam Thai",
+    "lang": "vi-VN",
+    "key": "santai",
+    "kot": "santai"
+  },
+  {
+    "text": "八座",
+    "lang": "zh-CN",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "八座",
+    "lang": "zh-TW",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "dignified",
+    "lang": "en-US",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "八座",
+    "lang": "ja-JP",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "팔좌",
+    "lang": "ko-KR",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "Bát Tọa",
+    "lang": "vi-VN",
+    "key": "bazuo",
+    "kot": "bazuo"
+  },
+  {
+    "text": "恩光",
+    "lang": "zh-CN",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "恩光",
+    "lang": "zh-TW",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "grateful",
+    "lang": "en-US",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "恩光",
+    "lang": "ja-JP",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "은광",
+    "lang": "ko-KR",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "Ân Quang",
+    "lang": "vi-VN",
+    "key": "engguang",
+    "kot": "engguang"
+  },
+  {
+    "text": "天贵",
+    "lang": "zh-CN",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "天貴",
+    "lang": "zh-TW",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "noble",
+    "lang": "en-US",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "天貴",
+    "lang": "ja-JP",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "천귀",
+    "lang": "ko-KR",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "Thiên Quý",
+    "lang": "vi-VN",
+    "key": "tiangui",
+    "kot": "tiangui"
+  },
+  {
+    "text": "天才",
+    "lang": "zh-CN",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "天才",
+    "lang": "zh-TW",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "gifted",
+    "lang": "en-US",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "天才",
+    "lang": "ja-JP",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "천재",
+    "lang": "ko-KR",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "Thiên Tài",
+    "lang": "vi-VN",
+    "key": "tiancai",
+    "kot": "tiancai"
+  },
+  {
+    "text": "天寿",
+    "lang": "zh-CN",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "天壽",
+    "lang": "zh-TW",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "ageless",
+    "lang": "en-US",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "天壽",
+    "lang": "ja-JP",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "천수",
+    "lang": "ko-KR",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "Thiên Thọ",
+    "lang": "vi-VN",
+    "key": "tianshou",
+    "kot": "tianshou"
+  },
+  {
+    "text": "截空",
+    "lang": "zh-CN",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "截空",
+    "lang": "zh-TW",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "interrupted",
+    "lang": "en-US",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "截空",
+    "lang": "ja-JP",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "절중",
+    "lang": "ko-KR",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "Triệt Không",
+    "lang": "vi-VN",
+    "key": "jiekong",
+    "kot": "jiekong"
+  },
+  {
+    "text": "旬中",
+    "lang": "zh-CN",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "旬中",
+    "lang": "zh-TW",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "meditative",
+    "lang": "en-US",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "旬中",
+    "lang": "ja-JP",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "순중",
+    "lang": "ko-KR",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "Tuần Trung",
+    "lang": "vi-VN",
+    "key": "xunzhong",
+    "kot": "xunzhong"
+  },
+  {
+    "text": "旬空",
+    "lang": "zh-CN",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "旬空",
+    "lang": "zh-TW",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "fancied",
+    "lang": "en-US",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "旬空",
+    "lang": "ja-JP",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "순공",
+    "lang": "ko-KR",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "Tuần Không",
+    "lang": "vi-VN",
+    "key": "xunkong",
+    "kot": "xunkong"
+  },
+  {
+    "text": "空亡",
+    "lang": "zh-CN",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "空亡",
+    "lang": "zh-TW",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "bottomless",
+    "lang": "en-US",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "空亡",
+    "lang": "ja-JP",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "공망",
+    "lang": "ko-KR",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "Không Vong",
+    "lang": "vi-VN",
+    "key": "kongwang",
+    "kot": "kongwang"
+  },
+  {
+    "text": "截路",
+    "lang": "zh-CN",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "截路",
+    "lang": "zh-TW",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "intercepted",
+    "lang": "en-US",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "截路",
+    "lang": "ja-JP",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "절로",
+    "lang": "ko-KR",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "Triệt Lộ",
+    "lang": "vi-VN",
+    "key": "jielu",
+    "kot": "jielu"
+  },
+  {
+    "text": "月德",
+    "lang": "zh-CN",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "月德",
+    "lang": "zh-TW",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "peaceful",
+    "lang": "en-US",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "月德",
+    "lang": "ja-JP",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "월덕",
+    "lang": "ko-KR",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "Nguyệt Đức",
+    "lang": "vi-VN",
+    "key": "yuede",
+    "kot": "yuede"
+  },
+  {
+    "text": "天伤",
+    "lang": "zh-CN",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "天傷",
+    "lang": "zh-TW",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "wounded",
+    "lang": "en-US",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "天傷",
+    "lang": "ja-JP",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "천상",
+    "lang": "ko-KR",
+    "key": "tianshang",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "Thiên Thương",
+    "lang": "vi-VN",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "天使",
+    "lang": "zh-CN",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "天使",
+    "lang": "zh-TW",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "heaven",
+    "lang": "en-US",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "天使",
+    "lang": "ja-JP",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "천사",
+    "lang": "ko-KR",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "Thiên Sứ",
+    "lang": "vi-VN",
+    "key": "tianshi",
+    "kot": "tianshi"
+  },
+  {
+    "text": "天厨",
+    "lang": "zh-CN",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "天廚",
+    "lang": "zh-TW",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "gourmet",
+    "lang": "en-US",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "天廚",
+    "lang": "ja-JP",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "천주",
+    "lang": "ko-KR",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "Thiên Trù",
+    "lang": "vi-VN",
+    "key": "tianchu",
+    "kot": "tianchu"
+  },
+  {
+    "text": "长生",
+    "lang": "zh-CN",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "長生",
+    "lang": "zh-TW",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "born",
+    "lang": "en-US",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "長生",
+    "lang": "ja-JP",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "장생",
+    "lang": "ko-KR",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "Trường Sinh",
+    "lang": "vi-VN",
+    "key": "changsheng",
+    "kot": "changsheng"
+  },
+  {
+    "text": "沐浴",
+    "lang": "zh-CN",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "沐浴",
+    "lang": "zh-TW",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "infancy",
+    "lang": "en-US",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "沐浴",
+    "lang": "ja-JP",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "목욕",
+    "lang": "ko-KR",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "Mục Dục",
+    "lang": "vi-VN",
+    "key": "muyu",
+    "kot": "muyu"
+  },
+  {
+    "text": "冠带",
+    "lang": "zh-CN",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "冠帶",
+    "lang": "zh-TW",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "adolescence",
+    "lang": "en-US",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "冠帶",
+    "lang": "ja-JP",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "관대",
+    "lang": "ko-KR",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "Quan Đới",
+    "lang": "vi-VN",
+    "key": "guandai",
+    "kot": "guandai"
+  },
+  {
+    "text": "临官",
+    "lang": "zh-CN",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "臨官",
+    "lang": "zh-TW",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "adulthood",
+    "lang": "en-US",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "臨官",
+    "lang": "ja-JP",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "임관",
+    "lang": "ko-KR",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "Lâm Quan",
+    "lang": "vi-VN",
+    "key": "linguan",
+    "kot": "linguan"
+  },
+  {
+    "text": "帝旺",
+    "lang": "zh-CN",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "帝旺",
+    "lang": "zh-TW",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "prime",
+    "lang": "en-US",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "帝旺",
+    "lang": "ja-JP",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "제왕",
+    "lang": "ko-KR",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "Đế Vượng",
+    "lang": "vi-VN",
+    "key": "diwang",
+    "kot": "diwang"
+  },
+  {
+    "text": "衰",
+    "lang": "zh-CN",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "衰",
+    "lang": "zh-TW",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "weak",
+    "lang": "en-US",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "衰",
+    "lang": "ja-JP",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "쇠",
+    "lang": "ko-KR",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "Suy",
+    "lang": "vi-VN",
+    "key": "shuai",
+    "kot": "shuai"
+  },
+  {
+    "text": "病",
+    "lang": "zh-CN",
+    "key": "bing",
+    "kot": "bing"
+  },
+  {
+    "text": "病",
+    "lang": "zh-TW",
+    "key": "bing",
+    "kot": "bing"
+  },
+  {
+    "text": "sick",
+    "lang": "en-US",
+    "key": "bing",
+    "kot": "bing"
+  },
+  {
+    "text": "病",
+    "lang": "ja-JP",
+    "key": "bing",
+    "kot": "bing"
+  },
+  {
+    "text": "병",
+    "lang": "ko-KR",
+    "key": "bing",
+    "kot": "bingHeavenly"
+  },
+  {
+    "text": "Bệnh",
+    "lang": "vi-VN",
+    "key": "bing",
+    "kot": "bing"
+  },
+  {
+    "text": "死",
+    "lang": "zh-CN",
+    "key": "si",
+    "kot": "si"
+  },
+  {
+    "text": "死",
+    "lang": "zh-TW",
+    "key": "si",
+    "kot": "si"
+  },
+  {
+    "text": "dead",
+    "lang": "en-US",
+    "key": "si",
+    "kot": "si"
+  },
+  {
+    "text": "死",
+    "lang": "ja-JP",
+    "key": "si",
+    "kot": "si"
+  },
+  {
+    "text": "사",
+    "lang": "ko-KR",
+    "key": "si",
+    "kot": "siEarthly"
+  },
+  {
+    "text": "Tử",
+    "lang": "vi-VN",
+    "key": "si",
+    "kot": "si"
+  },
+  {
+    "text": "墓",
+    "lang": "zh-CN",
+    "key": "mu",
+    "kot": "mu"
+  },
+  {
+    "text": "墓",
+    "lang": "zh-TW",
+    "key": "mu",
+    "kot": "mu"
+  },
+  {
+    "text": "buried",
+    "lang": "en-US",
+    "key": "mu",
+    "kot": "mu"
+  },
+  {
+    "text": "墓",
+    "lang": "ja-JP",
+    "key": "mu",
+    "kot": "mu"
+  },
+  {
+    "text": "묘",
+    "lang": "ko-KR",
+    "key": "mu",
+    "kot": "maoEarthly"
+  },
+  {
+    "text": "Mộ",
+    "lang": "vi-VN",
+    "key": "mu",
+    "kot": "mu"
+  },
+  {
+    "text": "绝",
+    "lang": "zh-CN",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "絕",
+    "lang": "zh-TW",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "dissipated",
+    "lang": "en-US",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "絕",
+    "lang": "ja-JP",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "절",
+    "lang": "ko-KR",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "Tuyệt",
+    "lang": "vi-VN",
+    "key": "jue",
+    "kot": "jue"
+  },
+  {
+    "text": "胎",
+    "lang": "zh-CN",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "胎",
+    "lang": "zh-TW",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "embryo",
+    "lang": "en-US",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "胎",
+    "lang": "ja-JP",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "태",
+    "lang": "ko-KR",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "Thai",
+    "lang": "vi-VN",
+    "key": "tai",
+    "kot": "tai"
+  },
+  {
+    "text": "养",
+    "lang": "zh-CN",
+    "key": "yang",
+    "kot": "yang"
+  },
+  {
+    "text": "養",
+    "lang": "zh-TW",
+    "key": "yang",
+    "kot": "yang"
+  },
+  {
+    "text": "molding",
+    "lang": "en-US",
+    "key": "yang",
+    "kot": "yang"
+  },
+  {
+    "text": "養",
+    "lang": "ja-JP",
+    "key": "yang",
+    "kot": "yang"
+  },
+  {
+    "text": "양",
+    "lang": "ko-KR",
+    "key": "yang",
+    "kot": "sheep"
+  },
+  {
+    "text": "Dưỡng",
+    "lang": "vi-VN",
+    "key": "yang",
+    "kot": "yang"
+  },
+  {
+    "text": "博士",
+    "lang": "zh-CN",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "博士",
+    "lang": "zh-TW",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "doctor",
+    "lang": "en-US",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "博士",
+    "lang": "ja-JP",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "박사",
+    "lang": "ko-KR",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "Bác Sỹ",
+    "lang": "vi-VN",
+    "key": "boshi",
+    "kot": "boshi"
+  },
+  {
+    "text": "力士",
+    "lang": "zh-CN",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "力士",
+    "lang": "zh-TW",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "sumo",
+    "lang": "en-US",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "力士",
+    "lang": "ja-JP",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "역사",
+    "lang": "ko-KR",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "Lực Sỹ",
+    "lang": "vi-VN",
+    "key": "lishi",
+    "kot": "lishi"
+  },
+  {
+    "text": "青龙",
+    "lang": "zh-CN",
+    "key": "qinglong",
+    "kot": "qinglong"
+  },
+  {
+    "text": "青龍",
+    "lang": "zh-TW",
+    "key": "qinglong",
+    "kot": "qinglong"
+  },
+  {
+    "text": "dragon",
+    "lang": "en-US",
+    "key": "qinglong",
+    "kot": "dragon"
+  },
+  {
+    "text": "青龍",
+    "lang": "ja-JP",
+    "key": "qinglong",
+    "kot": "qinglong"
+  },
+  {
+    "text": "청룡",
+    "lang": "ko-KR",
+    "key": "qinglong",
+    "kot": "qinglong"
+  },
+  {
+    "text": "Thanh Long",
+    "lang": "vi-VN",
+    "key": "qinglong",
+    "kot": "qinglong"
+  },
+  {
+    "text": "小耗",
+    "lang": "zh-CN",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "小耗",
+    "lang": "zh-TW",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "consumer",
+    "lang": "en-US",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "小耗",
+    "lang": "ja-JP",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "소모",
+    "lang": "ko-KR",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "Tiểu Hao",
+    "lang": "vi-VN",
+    "key": "xiaohao",
+    "kot": "xiaohao"
+  },
+  {
+    "text": "将军",
+    "lang": "zh-CN",
+    "key": "jiangjun",
+    "kot": "jiangjun"
+  },
+  {
+    "text": "將軍",
+    "lang": "zh-TW",
+    "key": "jiangjun",
+    "kot": "jiangjun"
+  },
+  {
+    "text": "general",
+    "lang": "en-US",
+    "key": "jiangjun",
+    "kot": "wuquMaj"
+  },
+  {
+    "text": "將軍",
+    "lang": "ja-JP",
+    "key": "jiangjun",
+    "kot": "jiangjun"
+  },
+  {
+    "text": "장군",
+    "lang": "ko-KR",
+    "key": "jiangjun",
+    "kot": "jiangjun"
+  },
+  {
+    "text": "Tướng Quân",
+    "lang": "vi-VN",
+    "key": "jiangjun",
+    "kot": "jiangjun"
+  },
+  {
+    "text": "奏书",
+    "lang": "zh-CN",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "奏書",
+    "lang": "zh-TW",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "book",
+    "lang": "en-US",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "奏書",
+    "lang": "ja-JP",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "주서",
+    "lang": "ko-KR",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "Tấu Thư",
+    "lang": "vi-VN",
+    "key": "zhoushu",
+    "kot": "zhoushu"
+  },
+  {
+    "text": "飞廉",
+    "lang": "zh-CN",
+    "key": "faylian",
+    "kot": "faylian"
+  },
+  {
+    "text": "飛廉",
+    "lang": "zh-TW",
+    "key": "faylian",
+    "kot": "faylian"
+  },
+  {
+    "text": "gossip",
+    "lang": "en-US",
+    "key": "faylian",
+    "kot": "faylian"
+  },
+  {
+    "text": "飛廉",
+    "lang": "ja-JP",
+    "key": "faylian",
+    "kot": "faylian"
+  },
+  {
+    "text": "비렴",
+    "lang": "ko-KR",
+    "key": "faylian",
+    "kot": "feilian"
+  },
+  {
+    "text": "Phi Liêm",
+    "lang": "vi-VN",
+    "key": "faylian",
+    "kot": "feilian"
+  },
+  {
+    "text": "喜神",
+    "lang": "zh-CN",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "喜神",
+    "lang": "zh-TW",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "happiness",
+    "lang": "en-US",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "喜神",
+    "lang": "ja-JP",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "희신",
+    "lang": "ko-KR",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "Hỷ Thần",
+    "lang": "vi-VN",
+    "key": "xishen",
+    "kot": "xishen"
+  },
+  {
+    "text": "病符",
+    "lang": "zh-CN",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "病符",
+    "lang": "zh-TW",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "illness",
+    "lang": "en-US",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "病符",
+    "lang": "ja-JP",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "병부",
+    "lang": "ko-KR",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "Bệnh Phù",
+    "lang": "vi-VN",
+    "key": "bingfu",
+    "kot": "bingfu"
+  },
+  {
+    "text": "大耗",
+    "lang": "zh-CN",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "大耗",
+    "lang": "zh-TW",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "wastrel",
+    "lang": "en-US",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "大耗",
+    "lang": "ja-JP",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "대모",
+    "lang": "ko-KR",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "Đại Hao",
+    "lang": "vi-VN",
+    "key": "dahao",
+    "kot": "dahao"
+  },
+  {
+    "text": "岁破",
+    "lang": "zh-CN",
+    "key": "suipo",
+    "kot": "suipo"
+  },
+  {
+    "text": "歲破",
+    "lang": "zh-TW",
+    "key": "suipo",
+    "kot": "suipo"
+  },
+  {
+    "text": "wastrel",
+    "lang": "en-US",
+    "key": "suipo",
+    "kot": "dahao"
+  },
+  {
+    "text": "歲破",
+    "lang": "ja-JP",
+    "key": "suipo",
+    "kot": "suipo"
+  },
+  {
+    "text": "태파",
+    "lang": "ko-KR",
+    "key": "suipo",
+    "kot": "suipo"
+  },
+  {
+    "text": "Tuế Phá",
+    "lang": "vi-VN",
+    "key": "suipo",
+    "kot": "suipo"
+  },
+  {
+    "text": "伏兵",
+    "lang": "zh-CN",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "伏兵",
+    "lang": "zh-TW",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "ambush",
+    "lang": "en-US",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "伏兵",
+    "lang": "ja-JP",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "복병",
+    "lang": "ko-KR",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "Phục Binh",
+    "lang": "vi-VN",
+    "key": "fubing",
+    "kot": "fubing"
+  },
+  {
+    "text": "官府",
+    "lang": "zh-CN",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "官府",
+    "lang": "zh-TW",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "government",
+    "lang": "en-US",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "官府",
+    "lang": "ja-JP",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "관부",
+    "lang": "ko-KR",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "Quan Phủ",
+    "lang": "vi-VN",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "岁建",
+    "lang": "zh-CN",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "歲建",
+    "lang": "zh-TW",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "initial",
+    "lang": "en-US",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "歲建",
+    "lang": "ja-JP",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "태세",
+    "lang": "ko-KR",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "Tuế Kiện",
+    "lang": "vi-VN",
+    "key": "suijian",
+    "kot": "suijian"
+  },
+  {
+    "text": "晦气",
+    "lang": "zh-CN",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "晦氣",
+    "lang": "zh-TW",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "unlucky",
+    "lang": "en-US",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "晦氣",
+    "lang": "ja-JP",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "회기",
+    "lang": "ko-KR",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "Hối Khí",
+    "lang": "vi-VN",
+    "key": "huiqi",
+    "kot": "huiqi"
+  },
+  {
+    "text": "丧门",
+    "lang": "zh-CN",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "喪門",
+    "lang": "zh-TW",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "downcast",
+    "lang": "en-US",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "喪門",
+    "lang": "ja-JP",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "상문",
+    "lang": "ko-KR",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "Tang Môn",
+    "lang": "vi-VN",
+    "key": "sangmen",
+    "kot": "sangmen"
+  },
+  {
+    "text": "贯索",
+    "lang": "zh-CN",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "貫索",
+    "lang": "zh-TW",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "tied",
+    "lang": "en-US",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "貫索",
+    "lang": "ja-JP",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "관색",
+    "lang": "ko-KR",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "Quán Tác",
+    "lang": "vi-VN",
+    "key": "guansuo",
+    "kot": "guansuo"
+  },
+  {
+    "text": "官符",
+    "lang": "zh-CN",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "官符",
+    "lang": "zh-TW",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "official",
+    "lang": "en-US",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "官符",
+    "lang": "ja-JP",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "관부",
+    "lang": "ko-KR",
+    "key": "gwanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "Quan Phù",
+    "lang": "vi-VN",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "龙德",
+    "lang": "zh-CN",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "龍德",
+    "lang": "zh-TW",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "virtuous",
+    "lang": "en-US",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "龍德",
+    "lang": "ja-JP",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "용덕",
+    "lang": "ko-KR",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "Long Đức",
+    "lang": "vi-VN",
+    "key": "longde",
+    "kot": "longde"
+  },
+  {
+    "text": "白虎",
+    "lang": "zh-CN",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "白虎",
+    "lang": "zh-TW",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "sinister",
+    "lang": "en-US",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "白虎",
+    "lang": "ja-JP",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "백호",
+    "lang": "ko-KR",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "Bạch Hổ",
+    "lang": "vi-VN",
+    "key": "baihu",
+    "kot": "baihu"
+  },
+  {
+    "text": "天德",
+    "lang": "zh-CN",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "天德",
+    "lang": "zh-TW",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "blessed",
+    "lang": "en-US",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "天德",
+    "lang": "ja-JP",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "복덕",
+    "lang": "ko-KR",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "Thiên Đức",
+    "lang": "vi-VN",
+    "key": "tiande",
+    "kot": "tiande"
+  },
+  {
+    "text": "吊客",
+    "lang": "zh-CN",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "弔客",
+    "lang": "zh-TW",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "sorrowing",
+    "lang": "en-US",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "弔客",
+    "lang": "ja-JP",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "조객",
+    "lang": "ko-KR",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "Điếu Khách",
+    "lang": "vi-VN",
+    "key": "diaoke",
+    "kot": "diaoke"
+  },
+  {
+    "text": "将星",
+    "lang": "zh-CN",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "將星",
+    "lang": "zh-TW",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "capable",
+    "lang": "en-US",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "將星",
+    "lang": "ja-JP",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "장성",
+    "lang": "ko-KR",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "Tướng Tinh",
+    "lang": "vi-VN",
+    "key": "jiangxing",
+    "kot": "jiangxing"
+  },
+  {
+    "text": "攀鞍",
+    "lang": "zh-CN",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "攀鞍",
+    "lang": "zh-TW",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "admired",
+    "lang": "en-US",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "攀鞍",
+    "lang": "ja-JP",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "반안",
+    "lang": "ko-KR",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "Phan Án",
+    "lang": "vi-VN",
+    "key": "panan",
+    "kot": "panan"
+  },
+  {
+    "text": "岁驿",
+    "lang": "zh-CN",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "歲驛",
+    "lang": "zh-TW",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "varied",
+    "lang": "en-US",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "歲驛",
+    "lang": "ja-JP",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "세역",
+    "lang": "ko-KR",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "Tuế Dịch",
+    "lang": "vi-VN",
+    "key": "suiyi",
+    "kot": "suiyi"
+  },
+  {
+    "text": "息神",
+    "lang": "zh-CN",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "息神",
+    "lang": "zh-TW",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "listless",
+    "lang": "en-US",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "息神",
+    "lang": "ja-JP",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "식신",
+    "lang": "ko-KR",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "Tức Thần",
+    "lang": "vi-VN",
+    "key": "xiishen",
+    "kot": "xiishen"
+  },
+  {
+    "text": "华盖",
+    "lang": "zh-CN",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "華蓋",
+    "lang": "zh-TW",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "religious",
+    "lang": "en-US",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "華蓋",
+    "lang": "ja-JP",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "화개",
+    "lang": "ko-KR",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "Hoa Cái",
+    "lang": "vi-VN",
+    "key": "huagai",
+    "kot": "huagai"
+  },
+  {
+    "text": "劫煞",
+    "lang": "zh-CN",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "劫煞",
+    "lang": "zh-TW",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "robbed",
+    "lang": "en-US",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "劫煞",
+    "lang": "ja-JP",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "겁살",
+    "lang": "ko-KR",
+    "key": "jiesha",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "Kiếp Sát",
+    "lang": "vi-VN",
+    "key": "jiesha",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "灾煞",
+    "lang": "zh-CN",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "災煞",
+    "lang": "zh-TW",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "disastery",
+    "lang": "en-US",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "災煞",
+    "lang": "ja-JP",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "재살",
+    "lang": "ko-KR",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "Tai Sát",
+    "lang": "vi-VN",
+    "key": "zhaisha",
+    "kot": "zhaisha"
+  },
+  {
+    "text": "天煞",
+    "lang": "zh-CN",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "天煞",
+    "lang": "zh-TW",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "condemned",
+    "lang": "en-US",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "天煞",
+    "lang": "ja-JP",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "천살",
+    "lang": "ko-KR",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "Thiên Sát",
+    "lang": "vi-VN",
+    "key": "tiansha",
+    "kot": "tiansha"
+  },
+  {
+    "text": "指背",
+    "lang": "zh-CN",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "指背",
+    "lang": "zh-TW",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "insidious",
+    "lang": "en-US",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "指背",
+    "lang": "ja-JP",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "지배",
+    "lang": "ko-KR",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "Chỉ Bối",
+    "lang": "vi-VN",
+    "key": "zhibei",
+    "kot": "zhibei"
+  },
+  {
+    "text": "咸池",
+    "lang": "zh-CN",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "咸池",
+    "lang": "zh-TW",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "passionate",
+    "lang": "en-US",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "咸池",
+    "lang": "ja-JP",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "함지",
+    "lang": "ko-KR",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "Hàm Trì",
+    "lang": "vi-VN",
+    "key": "xianchi",
+    "kot": "xianchi"
+  },
+  {
+    "text": "月煞",
+    "lang": "zh-CN",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "月煞",
+    "lang": "zh-TW",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "hapless",
+    "lang": "en-US",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "月煞",
+    "lang": "ja-JP",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "월살",
+    "lang": "ko-KR",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "Nguyệt Sát",
+    "lang": "vi-VN",
+    "key": "yuesha",
+    "kot": "yuesha"
+  },
+  {
+    "text": "亡神",
+    "lang": "zh-CN",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "亡神",
+    "lang": "zh-TW",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "perished",
+    "lang": "en-US",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "亡神",
+    "lang": "ja-JP",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "망신",
+    "lang": "ko-KR",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "Vong Thần",
+    "lang": "vi-VN",
+    "key": "wangshen",
+    "kot": "wangshen"
+  },
+  {
+    "text": "运魁",
+    "lang": "zh-CN",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "運魁",
+    "lang": "zh-TW",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "assistant(D)",
+    "lang": "en-US",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "限の魁",
+    "lang": "ja-JP",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "천괴(십년)",
+    "lang": "ko-KR",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "Vận Khôi",
+    "lang": "vi-VN",
+    "key": "yunkui",
+    "kot": "yunkui"
+  },
+  {
+    "text": "运钺",
+    "lang": "zh-CN",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "運鉞",
+    "lang": "zh-TW",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "aide(D)",
+    "lang": "en-US",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "限の钺",
+    "lang": "ja-JP",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "천월(십년)",
+    "lang": "ko-KR",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "Vận Việt",
+    "lang": "vi-VN",
+    "key": "yunyue",
+    "kot": "yunyue"
+  },
+  {
+    "text": "运昌",
+    "lang": "zh-CN",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "運昌",
+    "lang": "zh-TW",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "scholar(D)",
+    "lang": "en-US",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "限の昌",
+    "lang": "ja-JP",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "문창(십년)",
+    "lang": "ko-KR",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "Vận Xương",
+    "lang": "vi-VN",
+    "key": "yunchang",
+    "kot": "yunchang"
+  },
+  {
+    "text": "运曲",
+    "lang": "zh-CN",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "運曲",
+    "lang": "zh-TW",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "artist(D)",
+    "lang": "en-US",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "限の曲",
+    "lang": "ja-JP",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "문곡(십년)",
+    "lang": "ko-KR",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "Vận Khúc",
+    "lang": "vi-VN",
+    "key": "yunqu",
+    "kot": "yunqu"
+  },
+  {
+    "text": "运鸾",
+    "lang": "zh-CN",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "運鸞",
+    "lang": "zh-TW",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "attractive(D)",
+    "lang": "en-US",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "限の鸾",
+    "lang": "ja-JP",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "홍란(십년)",
+    "lang": "ko-KR",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "Vận Loan",
+    "lang": "vi-VN",
+    "key": "yunluan",
+    "kot": "yunluan"
+  },
+  {
+    "text": "运喜",
+    "lang": "zh-CN",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "運喜",
+    "lang": "zh-TW",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "cheerful(D)",
+    "lang": "en-US",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "限の喜",
+    "lang": "ja-JP",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "천희(십년)",
+    "lang": "ko-KR",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "Vận Hỷ",
+    "lang": "vi-VN",
+    "key": "yunxi",
+    "kot": "yunxi"
+  },
+  {
+    "text": "运禄",
+    "lang": "zh-CN",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "運祿",
+    "lang": "zh-TW",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "money(D)",
+    "lang": "en-US",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "限の祿",
+    "lang": "ja-JP",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "록존(십년)",
+    "lang": "ko-KR",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "Vận Lộc",
+    "lang": "vi-VN",
+    "key": "yunlu",
+    "kot": "yunlu"
+  },
+  {
+    "text": "运羊",
+    "lang": "zh-CN",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "運羊",
+    "lang": "zh-TW",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "driven(D)",
+    "lang": "en-US",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "限の羊",
+    "lang": "ja-JP",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "경양(십년)",
+    "lang": "ko-KR",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "Vận Dương",
+    "lang": "vi-VN",
+    "key": "yunyang",
+    "kot": "yunyang"
+  },
+  {
+    "text": "运陀",
+    "lang": "zh-CN",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "運陀",
+    "lang": "zh-TW",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "tangled(D)",
+    "lang": "en-US",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "限の陀",
+    "lang": "ja-JP",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "타라(십년)",
+    "lang": "ko-KR",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "Vận Đà",
+    "lang": "vi-VN",
+    "key": "yuntuo",
+    "kot": "yuntuo"
+  },
+  {
+    "text": "运马",
+    "lang": "zh-CN",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "運馬",
+    "lang": "zh-TW",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "horse(D)",
+    "lang": "en-US",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "限の馬",
+    "lang": "ja-JP",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "천마(십년)",
+    "lang": "ko-KR",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "Vận Mã",
+    "lang": "vi-VN",
+    "key": "yunma",
+    "kot": "yunma"
+  },
+  {
+    "text": "流魁",
+    "lang": "zh-CN",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "流魁",
+    "lang": "zh-TW",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "assistant(Y)",
+    "lang": "en-US",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "年の魁",
+    "lang": "ja-JP",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "천괴(년)",
+    "lang": "ko-KR",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "Lưu Khôi",
+    "lang": "vi-VN",
+    "key": "liukui",
+    "kot": "liukui"
+  },
+  {
+    "text": "流钺",
+    "lang": "zh-CN",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "流鉞",
+    "lang": "zh-TW",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "aide(Y)",
+    "lang": "en-US",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "年の钺",
+    "lang": "ja-JP",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "천월(년)",
+    "lang": "ko-KR",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "Lưu Việt",
+    "lang": "vi-VN",
+    "key": "liuyue",
+    "kot": "liuyue"
+  },
+  {
+    "text": "流昌",
+    "lang": "zh-CN",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "流昌",
+    "lang": "zh-TW",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "scholar(Y)",
+    "lang": "en-US",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "年の昌",
+    "lang": "ja-JP",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "문창(년)",
+    "lang": "ko-KR",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "Lưu Xương",
+    "lang": "vi-VN",
+    "key": "liuchang",
+    "kot": "liuchang"
+  },
+  {
+    "text": "流曲",
+    "lang": "zh-CN",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "流曲",
+    "lang": "zh-TW",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "artist(Y)",
+    "lang": "en-US",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "年の曲",
+    "lang": "ja-JP",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "문곡(년)",
+    "lang": "ko-KR",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "Lưu Khúc",
+    "lang": "vi-VN",
+    "key": "liuqu",
+    "kot": "liuqu"
+  },
+  {
+    "text": "流鸾",
+    "lang": "zh-CN",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "流鸞",
+    "lang": "zh-TW",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "attractive(Y)",
+    "lang": "en-US",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "年の鸾",
+    "lang": "ja-JP",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "홍란(년)",
+    "lang": "ko-KR",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "Lưu Loan",
+    "lang": "vi-VN",
+    "key": "liuluan",
+    "kot": "liuluan"
+  },
+  {
+    "text": "流喜",
+    "lang": "zh-CN",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "流喜",
+    "lang": "zh-TW",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "cheerful(Y)",
+    "lang": "en-US",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "年の喜",
+    "lang": "ja-JP",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "천희(년)",
+    "lang": "ko-KR",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "Lưu Hỷ",
+    "lang": "vi-VN",
+    "key": "liuxi",
+    "kot": "liuxi"
+  },
+  {
+    "text": "流禄",
+    "lang": "zh-CN",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "流祿",
+    "lang": "zh-TW",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "money(Y)",
+    "lang": "en-US",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "年の祿",
+    "lang": "ja-JP",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "록존(년)",
+    "lang": "ko-KR",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "Lưu Lộc",
+    "lang": "vi-VN",
+    "key": "liulu",
+    "kot": "liulu"
+  },
+  {
+    "text": "流羊",
+    "lang": "zh-CN",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "流羊",
+    "lang": "zh-TW",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "driven(Y)",
+    "lang": "en-US",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "年の羊",
+    "lang": "ja-JP",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "경양(년)",
+    "lang": "ko-KR",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "Lưu Dương",
+    "lang": "vi-VN",
+    "key": "liuyang",
+    "kot": "liuyang"
+  },
+  {
+    "text": "流陀",
+    "lang": "zh-CN",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "流陀",
+    "lang": "zh-TW",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "tangled(Y)",
+    "lang": "en-US",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "年の陀",
+    "lang": "ja-JP",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "타라(년)",
+    "lang": "ko-KR",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "Lưu Đà",
+    "lang": "vi-VN",
+    "key": "liutuo",
+    "kot": "liutuo"
+  },
+  {
+    "text": "流马",
+    "lang": "zh-CN",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "流馬",
+    "lang": "zh-TW",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "horse(Y)",
+    "lang": "en-US",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "年の馬",
+    "lang": "ja-JP",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "천마(년)",
+    "lang": "ko-KR",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "Lưu Mã",
+    "lang": "vi-VN",
+    "key": "liuma",
+    "kot": "liuma"
+  },
+  {
+    "text": "年解",
+    "lang": "zh-CN",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "年解",
+    "lang": "zh-TW",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "considery(Y)",
+    "lang": "en-US",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "年の解",
+    "lang": "ja-JP",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "해신(년)",
+    "lang": "ko-KR",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "Niên Giải",
+    "lang": "vi-VN",
+    "key": "nianjie",
+    "kot": "nianjie"
+  },
+  {
+    "text": "月魁",
+    "lang": "zh-CN",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "月魁",
+    "lang": "zh-TW",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "assistant(M)",
+    "lang": "en-US",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "月の魁",
+    "lang": "ja-JP",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "천괴(월)",
+    "lang": "ko-KR",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "Thiên Khôi(M)",
+    "lang": "vi-VN",
+    "key": "yuekui",
+    "kot": "yuekui"
+  },
+  {
+    "text": "月钺",
+    "lang": "zh-CN",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "月鉞",
+    "lang": "zh-TW",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "aide(M)",
+    "lang": "en-US",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "月の钺",
+    "lang": "ja-JP",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "천월(월)",
+    "lang": "ko-KR",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "Thiên Nguyệt(M)",
+    "lang": "vi-VN",
+    "key": "yueyue",
+    "kot": "yueyue"
+  },
+  {
+    "text": "月昌",
+    "lang": "zh-CN",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "月昌",
+    "lang": "zh-TW",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "scholar(M)",
+    "lang": "en-US",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "月の昌",
+    "lang": "ja-JP",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "문창(월)",
+    "lang": "ko-KR",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "Văn Xương(M)",
+    "lang": "vi-VN",
+    "key": "yuechang",
+    "kot": "yuechang"
+  },
+  {
+    "text": "月曲",
+    "lang": "zh-CN",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "月曲",
+    "lang": "zh-TW",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "artist(M)",
+    "lang": "en-US",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "月の曲",
+    "lang": "ja-JP",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "문곡(월)",
+    "lang": "ko-KR",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "Văn Khúc(M)",
+    "lang": "vi-VN",
+    "key": "yuequ",
+    "kot": "yuequ"
+  },
+  {
+    "text": "月鸾",
+    "lang": "zh-CN",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "月鸞",
+    "lang": "zh-TW",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "attractive(M)",
+    "lang": "en-US",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "月の鸾",
+    "lang": "ja-JP",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "홍란(월)",
+    "lang": "ko-KR",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "Hồng Loan(M)",
+    "lang": "vi-VN",
+    "key": "yueluan",
+    "kot": "yueluan"
+  },
+  {
+    "text": "月喜",
+    "lang": "zh-CN",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "月喜",
+    "lang": "zh-TW",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "cheerful(M)",
+    "lang": "en-US",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "月の喜",
+    "lang": "ja-JP",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "천희(월)",
+    "lang": "ko-KR",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "Thiên Hỷ(M)",
+    "lang": "vi-VN",
+    "key": "yuexi",
+    "kot": "yuexi"
+  },
+  {
+    "text": "月禄",
+    "lang": "zh-CN",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "月祿",
+    "lang": "zh-TW",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "money(M)",
+    "lang": "en-US",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "月の祿",
+    "lang": "ja-JP",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "록존(월)",
+    "lang": "ko-KR",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "Lộc Tồn(M)",
+    "lang": "vi-VN",
+    "key": "yuelu",
+    "kot": "yuelu"
+  },
+  {
+    "text": "月羊",
+    "lang": "zh-CN",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "月羊",
+    "lang": "zh-TW",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "driven(M)",
+    "lang": "en-US",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "月の羊",
+    "lang": "ja-JP",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "경양(월)",
+    "lang": "ko-KR",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "Kình Dương(M)",
+    "lang": "vi-VN",
+    "key": "yueyang",
+    "kot": "yueyang"
+  },
+  {
+    "text": "月陀",
+    "lang": "zh-CN",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "月陀",
+    "lang": "zh-TW",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "tangled(M)",
+    "lang": "en-US",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "月の陀",
+    "lang": "ja-JP",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "타라(월)",
+    "lang": "ko-KR",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "Đà La(M)",
+    "lang": "vi-VN",
+    "key": "yuetuo",
+    "kot": "yuetuo"
+  },
+  {
+    "text": "月马",
+    "lang": "zh-CN",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "月馬",
+    "lang": "zh-TW",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "horse(M)",
+    "lang": "en-US",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "月の馬",
+    "lang": "ja-JP",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "천마(월)",
+    "lang": "ko-KR",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "Thiên Mã(M)",
+    "lang": "vi-VN",
+    "key": "yuema",
+    "kot": "yuema"
+  },
+  {
+    "text": "日魁",
+    "lang": "zh-CN",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "日魁",
+    "lang": "zh-TW",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "assistant(d)",
+    "lang": "en-US",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "日の魁",
+    "lang": "ja-JP",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "천괴(일)",
+    "lang": "ko-KR",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "Thiên Khôi(d)",
+    "lang": "vi-VN",
+    "key": "rikui",
+    "kot": "rikui"
+  },
+  {
+    "text": "日钺",
+    "lang": "zh-CN",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "日鉞",
+    "lang": "zh-TW",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "aide(d)",
+    "lang": "en-US",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "日の钺",
+    "lang": "ja-JP",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "천월(일)",
+    "lang": "ko-KR",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "Thiên Nguyệt(d)",
+    "lang": "vi-VN",
+    "key": "riyue",
+    "kot": "riyue"
+  },
+  {
+    "text": "日昌",
+    "lang": "zh-CN",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "日昌",
+    "lang": "zh-TW",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "scholar(d)",
+    "lang": "en-US",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "日の昌",
+    "lang": "ja-JP",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "문창(일)",
+    "lang": "ko-KR",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "Văn Xương(d)",
+    "lang": "vi-VN",
+    "key": "richang",
+    "kot": "richang"
+  },
+  {
+    "text": "日曲",
+    "lang": "zh-CN",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "日曲",
+    "lang": "zh-TW",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "artist(d)",
+    "lang": "en-US",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "日の曲",
+    "lang": "ja-JP",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "문곡(일)",
+    "lang": "ko-KR",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "Văn Khúc(d)",
+    "lang": "vi-VN",
+    "key": "riqu",
+    "kot": "riqu"
+  },
+  {
+    "text": "日鸾",
+    "lang": "zh-CN",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "日鸞",
+    "lang": "zh-TW",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "attractive(d)",
+    "lang": "en-US",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "日の鸾",
+    "lang": "ja-JP",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "홍란(일)",
+    "lang": "ko-KR",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "Hồng Loan(d)",
+    "lang": "vi-VN",
+    "key": "riluan",
+    "kot": "riluan"
+  },
+  {
+    "text": "日喜",
+    "lang": "zh-CN",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "日喜",
+    "lang": "zh-TW",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "cheerful(d)",
+    "lang": "en-US",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "日の喜",
+    "lang": "ja-JP",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "천희(일)",
+    "lang": "ko-KR",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "Thiên Hỷ(d)",
+    "lang": "vi-VN",
+    "key": "rixi",
+    "kot": "rixi"
+  },
+  {
+    "text": "日禄",
+    "lang": "zh-CN",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "日祿",
+    "lang": "zh-TW",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "money(d)",
+    "lang": "en-US",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "日の祿",
+    "lang": "ja-JP",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "록존(일)",
+    "lang": "ko-KR",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "Lộc Tồn(d)",
+    "lang": "vi-VN",
+    "key": "rilu",
+    "kot": "rilu"
+  },
+  {
+    "text": "日羊",
+    "lang": "zh-CN",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "日羊",
+    "lang": "zh-TW",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "driven(d)",
+    "lang": "en-US",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "日の羊",
+    "lang": "ja-JP",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "경양(일)",
+    "lang": "ko-KR",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "Kình Dương(d)",
+    "lang": "vi-VN",
+    "key": "riyang",
+    "kot": "riyang"
+  },
+  {
+    "text": "日陀",
+    "lang": "zh-CN",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "日陀",
+    "lang": "zh-TW",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "tangled(d)",
+    "lang": "en-US",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "日の陀",
+    "lang": "ja-JP",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "타라(일)",
+    "lang": "ko-KR",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "Đà La(d)",
+    "lang": "vi-VN",
+    "key": "rituo",
+    "kot": "rituo"
+  },
+  {
+    "text": "日马",
+    "lang": "zh-CN",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "日馬",
+    "lang": "zh-TW",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "horse(d)",
+    "lang": "en-US",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "日の馬",
+    "lang": "ja-JP",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "천마(일)",
+    "lang": "ko-KR",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "Thiên Mã(d)",
+    "lang": "vi-VN",
+    "key": "rima",
+    "kot": "rima"
+  },
+  {
+    "text": "时魁",
+    "lang": "zh-CN",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "時魁",
+    "lang": "zh-TW",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "assistant(H)",
+    "lang": "en-US",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "時の魁",
+    "lang": "ja-JP",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "천괴(시)",
+    "lang": "ko-KR",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "Thiên Khôi(H)",
+    "lang": "vi-VN",
+    "key": "shikui",
+    "kot": "shikui"
+  },
+  {
+    "text": "时钺",
+    "lang": "zh-CN",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "時鉞",
+    "lang": "zh-TW",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "aide(H)",
+    "lang": "en-US",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "時の钺",
+    "lang": "ja-JP",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "천월(시)",
+    "lang": "ko-KR",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "Thiên Nguyệt(H)",
+    "lang": "vi-VN",
+    "key": "shiyue",
+    "kot": "shiyue"
+  },
+  {
+    "text": "时昌",
+    "lang": "zh-CN",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "時昌",
+    "lang": "zh-TW",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "scholar(H)",
+    "lang": "en-US",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "時の昌",
+    "lang": "ja-JP",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "문창(시)",
+    "lang": "ko-KR",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "Văn Xương(H)",
+    "lang": "vi-VN",
+    "key": "shichang",
+    "kot": "shichang"
+  },
+  {
+    "text": "时曲",
+    "lang": "zh-CN",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "時曲",
+    "lang": "zh-TW",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "artist(H)",
+    "lang": "en-US",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "時の曲",
+    "lang": "ja-JP",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "문곡(시)",
+    "lang": "ko-KR",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "Văn Khúc(H)",
+    "lang": "vi-VN",
+    "key": "shiqu",
+    "kot": "shiqu"
+  },
+  {
+    "text": "时鸾",
+    "lang": "zh-CN",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "時鸞",
+    "lang": "zh-TW",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "attractive(H)",
+    "lang": "en-US",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "時の鸾",
+    "lang": "ja-JP",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "홍란(시)",
+    "lang": "ko-KR",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "Hồng Loan(H)",
+    "lang": "vi-VN",
+    "key": "shiluan",
+    "kot": "shiluan"
+  },
+  {
+    "text": "时喜",
+    "lang": "zh-CN",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "時喜",
+    "lang": "zh-TW",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "cheerful(H)",
+    "lang": "en-US",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "時の喜",
+    "lang": "ja-JP",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "천희(시)",
+    "lang": "ko-KR",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "Thiên Hỷ(H)",
+    "lang": "vi-VN",
+    "key": "shixi",
+    "kot": "shixi"
+  },
+  {
+    "text": "时禄",
+    "lang": "zh-CN",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "時祿",
+    "lang": "zh-TW",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "money(H)",
+    "lang": "en-US",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "時の祿",
+    "lang": "ja-JP",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "록존(시)",
+    "lang": "ko-KR",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "Lộc Tồn(H)",
+    "lang": "vi-VN",
+    "key": "shilu",
+    "kot": "shilu"
+  },
+  {
+    "text": "时羊",
+    "lang": "zh-CN",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "時羊",
+    "lang": "zh-TW",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "driven(H)",
+    "lang": "en-US",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "時の羊",
+    "lang": "ja-JP",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "경양(시)",
+    "lang": "ko-KR",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "Kình Dương(H)",
+    "lang": "vi-VN",
+    "key": "shiyang",
+    "kot": "shiyang"
+  },
+  {
+    "text": "时陀",
+    "lang": "zh-CN",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "時陀",
+    "lang": "zh-TW",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "tangled(H)",
+    "lang": "en-US",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "時の陀",
+    "lang": "ja-JP",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "타라(시)",
+    "lang": "ko-KR",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "Đà La(H)",
+    "lang": "vi-VN",
+    "key": "shituo",
+    "kot": "shituo"
+  },
+  {
+    "text": "时马",
+    "lang": "zh-CN",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "時馬",
+    "lang": "zh-TW",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "horse(H)",
+    "lang": "en-US",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "時の馬",
+    "lang": "ja-JP",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "천마(시)",
+    "lang": "ko-KR",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "Thiên Mã(H)",
+    "lang": "vi-VN",
+    "key": "shima",
+    "kot": "shima"
+  },
+  {
+    "text": "命宫",
+    "lang": "zh-CN",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "命宮",
+    "lang": "zh-TW",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "soul",
+    "lang": "en-US",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "命宮",
+    "lang": "ja-JP",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "명궁",
+    "lang": "ko-KR",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "Mệnh",
+    "lang": "vi-VN",
+    "key": "soulPalace",
+    "kot": "soulPalace"
+  },
+  {
+    "text": "身宫",
+    "lang": "zh-CN",
+    "key": "bodyPalace",
+    "kot": "bodyPalace"
+  },
+  {
+    "text": "身宮",
+    "lang": "zh-TW",
+    "key": "bodyPalace",
+    "kot": "bodyPalace"
+  },
+  {
+    "text": "body",
+    "lang": "en-US",
+    "key": "bodyPalace",
+    "kot": "bodyPalace"
+  },
+  {
+    "text": "身宮",
+    "lang": "ja-JP",
+    "key": "bodyPalace",
+    "kot": "bodyPalace"
+  },
+  {
+    "text": "신궁",
+    "lang": "ko-KR",
+    "key": "bodyPalace",
+    "kot": "bodyPalace"
+  },
+  {
+    "text": "Thân",
+    "lang": "vi-VN",
+    "key": "bodyPalace",
+    "kot": "shenEarthly"
+  },
+  {
+    "text": "兄弟",
+    "lang": "zh-CN",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "兄弟",
+    "lang": "zh-TW",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "siblings",
+    "lang": "en-US",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "兄弟",
+    "lang": "ja-JP",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "형제",
+    "lang": "ko-KR",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "Huynh Đệ",
+    "lang": "vi-VN",
+    "key": "siblingsPalace",
+    "kot": "siblingsPalace"
+  },
+  {
+    "text": "夫妻",
+    "lang": "zh-CN",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "夫妻",
+    "lang": "zh-TW",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "spouse",
+    "lang": "en-US",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "夫妻",
+    "lang": "ja-JP",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "부처",
+    "lang": "ko-KR",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "Phu Thê",
+    "lang": "vi-VN",
+    "key": "spousePalace",
+    "kot": "spousePalace"
+  },
+  {
+    "text": "子女",
+    "lang": "zh-CN",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "子女",
+    "lang": "zh-TW",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "children",
+    "lang": "en-US",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "子女",
+    "lang": "ja-JP",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "자녀",
+    "lang": "ko-KR",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "Tử Nữ",
+    "lang": "vi-VN",
+    "key": "childrenPalace",
+    "kot": "childrenPalace"
+  },
+  {
+    "text": "财帛",
+    "lang": "zh-CN",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "財帛",
+    "lang": "zh-TW",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "wealth",
+    "lang": "en-US",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "財帛",
+    "lang": "ja-JP",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "재백",
+    "lang": "ko-KR",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "Tài Bạch",
+    "lang": "vi-VN",
+    "key": "wealthPalace",
+    "kot": "wealthPalace"
+  },
+  {
+    "text": "疾厄",
+    "lang": "zh-CN",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "疾厄",
+    "lang": "zh-TW",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "health",
+    "lang": "en-US",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "疾厄",
+    "lang": "ja-JP",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "질액",
+    "lang": "ko-KR",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "Tật Ách",
+    "lang": "vi-VN",
+    "key": "healthPalace",
+    "kot": "healthPalace"
+  },
+  {
+    "text": "迁移",
+    "lang": "zh-CN",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "遷移",
+    "lang": "zh-TW",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "surface",
+    "lang": "en-US",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "遷移",
+    "lang": "ja-JP",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "천이",
+    "lang": "ko-KR",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "Thiên Di",
+    "lang": "vi-VN",
+    "key": "surfacePalace",
+    "kot": "surfacePalace"
+  },
+  {
+    "text": "仆役",
+    "lang": "zh-CN",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "僕役",
+    "lang": "zh-TW",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "friends",
+    "lang": "en-US",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "僕役",
+    "lang": "ja-JP",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "노복",
+    "lang": "ko-KR",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "Nô Bộc",
+    "lang": "vi-VN",
+    "key": "friendsPalace",
+    "kot": "friendsPalace"
+  },
+  {
+    "text": "官禄",
+    "lang": "zh-CN",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "官祿",
+    "lang": "zh-TW",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "career",
+    "lang": "en-US",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "官祿",
+    "lang": "ja-JP",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "관록",
+    "lang": "ko-KR",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "Quan Lộc",
+    "lang": "vi-VN",
+    "key": "careerPalace",
+    "kot": "careerPalace"
+  },
+  {
+    "text": "田宅",
+    "lang": "zh-CN",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "田宅",
+    "lang": "zh-TW",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "property",
+    "lang": "en-US",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "田宅",
+    "lang": "ja-JP",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "전택",
+    "lang": "ko-KR",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "Điền Trạch",
+    "lang": "vi-VN",
+    "key": "propertyPalace",
+    "kot": "propertyPalace"
+  },
+  {
+    "text": "福德",
+    "lang": "zh-CN",
+    "key": "spiritPalace",
+    "kot": "spiritPalace"
+  },
+  {
+    "text": "福德",
+    "lang": "zh-TW",
+    "key": "spiritPalace",
+    "kot": "spiritPalace"
+  },
+  {
+    "text": "spirit",
+    "lang": "en-US",
+    "key": "spiritPalace",
+    "kot": "spiritPalace"
+  },
+  {
+    "text": "福德",
+    "lang": "ja-JP",
+    "key": "spiritPalace",
+    "kot": "spiritPalace"
+  },
+  {
+    "text": "복덕",
+    "lang": "ko-KR",
+    "key": "spiritPalace",
+    "kot": "tiande"
+  },
+  {
+    "text": "Phúc Đức",
+    "lang": "vi-VN",
+    "key": "spiritPalace",
+    "kot": "spiritPalace"
+  },
+  {
+    "text": "父母",
+    "lang": "zh-CN",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "父母",
+    "lang": "zh-TW",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "parents",
+    "lang": "en-US",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "父母",
+    "lang": "ja-JP",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "부모",
+    "lang": "ko-KR",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "Phụ Mẫu",
+    "lang": "vi-VN",
+    "key": "parentsPalace",
+    "kot": "parentsPalace"
+  },
+  {
+    "text": "来因",
+    "lang": "zh-CN",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "来因",
+    "lang": "zh-TW",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "origin",
+    "lang": "en-US",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "来因",
+    "lang": "ja-JP",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "라인",
+    "lang": "ko-KR",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "Lai Nhân",
+    "lang": "vi-VN",
+    "key": "originalPalace",
+    "kot": "originalPalace"
+  },
+  {
+    "text": "男",
+    "lang": "zh-CN",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "男",
+    "lang": "zh-TW",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "male",
+    "lang": "en-US",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "男",
+    "lang": "ja-JP",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "남성",
+    "lang": "ko-KR",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "Nam",
+    "lang": "vi-VN",
+    "key": "male",
+    "kot": "male"
+  },
+  {
+    "text": "女",
+    "lang": "zh-CN",
+    "key": "female",
+    "kot": "female"
+  },
+  {
+    "text": "女",
+    "lang": "zh-TW",
+    "key": "female",
+    "kot": "female"
+  },
+  {
+    "text": "female",
+    "lang": "en-US",
+    "key": "female",
+    "kot": "female"
+  },
+  {
+    "text": "女",
+    "lang": "ja-JP",
+    "key": "female",
+    "kot": "female"
+  },
+  {
+    "text": "여자",
+    "lang": "ko-KR",
+    "key": "female",
+    "kot": "female"
+  },
+  {
+    "text": "Nữ",
+    "lang": "vi-VN",
+    "key": "female",
+    "kot": "female"
+  }
+]

@@ -331,7 +331,7 @@ fn test_astrolabe_palaces() {
 
     for exp in expected_palaces {
         let idx = exp["index"].as_u64().unwrap() as usize;
-        let palace = astrolabe.palace(idx);
+        let palace = astrolabe.palace(idx).unwrap();
 
         // Name
         let expected_name = parse_palace(exp["name"].as_str().unwrap());
@@ -434,7 +434,7 @@ fn test_palace_queries() {
     for i in 0..12 {
         let key = i.to_string();
         let exp = &palace_data[&key];
-        let palace = astrolabe.palace(i);
+        let palace = astrolabe.palace(i).unwrap();
 
         // Verify name and index
         let expected_name = parse_palace(exp["name"].as_str().unwrap());
@@ -534,7 +534,7 @@ fn test_palace_queries() {
         // flies_to(6, 禄)
         let exp_flies_6_lu = exp["flies_to_6_禄"].as_bool().unwrap();
         assert_eq!(
-            palace.flies_to(&astrolabe.palaces[6], Mutagen::Lu),
+            palace.flies_to(6, &[Mutagen::Lu]),
             exp_flies_6_lu,
             "Palace {} flies_to(6, 禄) mismatch",
             i
@@ -543,7 +543,7 @@ fn test_palace_queries() {
         // flies_to(0, 权)
         let exp_flies_0_quan = exp["flies_to_0_权"].as_bool().unwrap();
         assert_eq!(
-            palace.flies_to(&astrolabe.palaces[0], Mutagen::Quan),
+            palace.flies_to(0, &[Mutagen::Quan]),
             exp_flies_0_quan,
             "Palace {} flies_to(0, 权) mismatch",
             i
@@ -552,7 +552,7 @@ fn test_palace_queries() {
         // self_mutaged(禄)
         let exp_self_lu = exp["self_mutaged_禄"].as_bool().unwrap();
         assert_eq!(
-            palace.self_mutaged(Mutagen::Lu),
+            palace.self_mutaged(&[Mutagen::Lu]),
             exp_self_lu,
             "Palace {} self_mutaged(禄) mismatch",
             i
@@ -561,7 +561,7 @@ fn test_palace_queries() {
         // self_mutaged_one_of
         let exp_self_one = exp["self_mutaged_one_of"].as_bool().unwrap();
         assert_eq!(
-            palace.self_mutaged_one_of(),
+            palace.self_mutaged_one_of(&[]),
             exp_self_one,
             "Palace {} self_mutaged_one_of mismatch",
             i
@@ -570,7 +570,7 @@ fn test_palace_queries() {
         // not_self_mutaged
         let exp_not_self = exp["not_self_mutaged"].as_bool().unwrap();
         assert_eq!(
-            palace.not_self_mutaged(),
+            palace.not_self_mutaged(&[]),
             exp_not_self,
             "Palace {} not_self_mutaged mismatch",
             i
@@ -578,7 +578,7 @@ fn test_palace_queries() {
 
         // mutaged_places length
         let exp_mp_len = exp["mutaged_places_length"].as_u64().unwrap() as usize;
-        let mp = palace.mutaged_places(&astrolabe.palaces);
+        let mp = palace.mutaged_places();
         assert_eq!(
             mp.len(),
             exp_mp_len,
@@ -591,7 +591,7 @@ fn test_palace_queries() {
     let by_name = &palace_data["by_name"];
     for (name_str, exp) in by_name.as_object().unwrap() {
         let palace_enum = parse_palace(name_str);
-        let palace = astrolabe.palace_by_name(palace_enum);
+        let palace = astrolabe.palace(palace_enum);
         assert!(
             palace.is_some(),
             "palace_by_name({}) should return Some",
@@ -617,7 +617,7 @@ fn test_surrounded_palaces() {
     for i in 0..12 {
         let key = i.to_string();
         let exp = &surround_data[&key];
-        let sp = astrolabe.surrounded_palaces(i);
+        let sp = astrolabe.surrounded_palaces(i).unwrap();
 
         // Target
         let exp_target_name = parse_palace(exp["target_name"].as_str().unwrap());

@@ -458,6 +458,36 @@ pub fn get_nianjie_index(branch: EarthlyBranch) -> usize {
 /// body_index: 身宫宫位索引
 /// yearly_stem: 年干
 /// yearly_branch: 年支
+/// 天伤、天使的宫位索引（返回 `(天伤, 天使)`）。
+///
+/// 二者夹迁移宫：通行派天伤居仆役位、天使居疾厄位；中州派在阴男阳女
+/// （生年地支阴阳与性别阴阳不同）时二者对调。重排星盘时命宫改变，需要重算。
+pub fn get_tianshang_tianshi_index(
+    gender: Gender,
+    yearly_branch: EarthlyBranch,
+    soul_index: usize,
+    algorithm: Algorithm,
+) -> (usize, usize) {
+    // 天伤 = PALACES[Friends] + soul_index = 5 + soul_index
+    let mut tianshang = fix_index(5 + soul_index as i32, 12);
+    // 天使 = PALACES[Health] + soul_index = 7 + soul_index
+    let mut tianshi = fix_index(7 + soul_index as i32, 12);
+
+    if algorithm == Algorithm::Zhongzhou {
+        let branch_is_yang = yearly_branch.index().is_multiple_of(2);
+        let gender_is_yang = gender == Gender::Male;
+        if gender_is_yang != branch_is_yang {
+            std::mem::swap(&mut tianshang, &mut tianshi);
+        }
+    }
+    (tianshang, tianshi)
+}
+
+/// 天才的宫位索引：自命宫起顺数至生年地支。重排星盘时命宫改变，需要重算。
+pub fn get_tiancai_index(yearly_branch: EarthlyBranch, soul_index: usize) -> usize {
+    fix_index(soul_index as i32 + yearly_branch.index() as i32, 12)
+}
+
 /// gender: 性别
 /// algorithm: 算法
 pub fn get_yearly_star_index(
@@ -474,7 +504,7 @@ pub fn get_yearly_star_index(
     let stem_idx = yearly_stem.index();
 
     // 天才
-    let tiancai = fix_index(soul_index as i32 + branch_idx, 12);
+    let tiancai = get_tiancai_index(yearly_branch, soul_index);
     // 天寿
     let tianshou = fix_index(body_index as i32 + branch_idx, 12);
 
@@ -538,18 +568,8 @@ pub fn get_yearly_star_index(
     // 劫空：地支为偶(阳)用截路，奇(阴)用空亡
     let jiekong = if branch_is_yang { jielu } else { kongwang };
 
-    // 天伤 = PALACES[Friends] + soul_index = 5 + soul_index
-    let mut tianshang = fix_index(5 + soul_index as i32, 12);
-    // 天使 = PALACES[Health] + soul_index = 7 + soul_index
-    let mut tianshi = fix_index(7 + soul_index as i32, 12);
-
-    // 中州派算法：如果性别阴阳与年支阴阳不同，则交换天伤天使
-    if algorithm == Algorithm::Zhongzhou {
-        let gender_is_yang = gender == Gender::Male;
-        if gender_is_yang != branch_is_yang {
-            std::mem::swap(&mut tianshang, &mut tianshi);
-        }
-    }
+    let (tianshang, tianshi) =
+        get_tianshang_tianshi_index(gender, yearly_branch, soul_index, algorithm);
 
     // 华盖、咸池
     let hx = get_huagai_xianchi_index(yearly_branch);

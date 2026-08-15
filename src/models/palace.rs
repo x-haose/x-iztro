@@ -49,6 +49,12 @@ pub struct PalaceData {
     pub decadal: Decadal,
     /// 小限经过的虚岁列表
     pub ages: Vec<u32>,
+    /// 排盘时生效的自定义四化与亮度表。
+    ///
+    /// 飞星族方法要按宫干查四化，而自定义表可能改写了某个天干的四化，
+    /// 因此宫位需要随身携带它。不参与序列化：属于输入配置而非排盘结果。
+    #[serde(skip)]
+    pub overrides: Option<std::sync::Arc<TableOverrides>>,
 }
 
 impl PalaceData {
@@ -101,48 +107,111 @@ impl PalaceData {
 
     /// 判断是否空宫（没有 star_type == Major 的主星）
     pub fn is_empty(&self) -> bool {
-        !self
+        self.is_empty_excluding(&[])
+    }
+
+    /// 判断是否空宫，但把 `exclude_stars` 中任一星耀在场也视为不空。
+    ///
+    /// 用于「借星」判断：某些流派认为宫内虽无主星，但有特定辅星或杂耀时不作空宫论。
+    pub fn is_empty_excluding(&self, exclude_stars: &[StarKey]) -> bool {
+        if self
             .major_stars
             .iter()
             .any(|s| s.star_type == StarType::Major)
+        {
+            return false;
+        }
+        if !exclude_stars.is_empty() && self.has_one_of(exclude_stars) {
+            return false;
+        }
+        true
     }
 
-    /// 飞化到目标宫位
-    /// 根据本宫天干的四化，判断对应四化星是否在目标宫位中
-    pub fn flies_to(&self, target_palace: &PalaceData, mutagen: Mutagen) -> bool {
-        let info = get_heavenly_stem_info(self.heavenly_stem);
-        let mutagen_index = match mutagen {
-            Mutagen::Lu => 0,
-            Mutagen::Quan => 1,
-            Mutagen::Ke => 2,
-            Mutagen::Ji => 3,
-        };
-        let star_key = info.mutagen[mutagen_index];
-        target_palace.has(&[star_key])
-    }
-
-    /// 自化判断：本宫天干四化星是否在本宫内
-    pub fn self_mutaged(&self, mutagen: Mutagen) -> bool {
-        self.flies_to(self, mutagen)
-    }
-
-    /// 是否有任一自化
-    pub fn self_mutaged_one_of(&self) -> bool {
-        [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji]
+    /// 本宫天干在指定四化位上对应的星耀。
+    ///
+    /// 顺序与传入的 `mutagens` 一致；同一四化重复传入会重复出现。
+    pub fn mutagen_stars(&self, mutagens: &[Mutagen]) -> Vec<StarKey> {
+        let table = self
+            .overrides
+            .as_ref()
+            .and_then(|t| t.mutagens_of(self.heavenly_stem))
+            .copied()
+            .unwrap_or_else(|| get_heavenly_stem_info(self.heavenly_stem).mutagen);
+        mutagens
             .iter()
-            .any(|m| self.self_mutaged(*m))
+            .map(|m| {
+                table[match m {
+                    Mutagen::Lu => 0,
+                    Mutagen::Quan => 1,
+                    Mutagen::Ke => 2,
+                    Mutagen::Ji => 3,
+                }]
+            })
+            .collect()
     }
 
-    /// 是否没有自化（检查所有四化，全部没有才返回 true）
-    pub fn not_self_mutaged(&self) -> bool {
-        !self.self_mutaged_one_of()
+    /// 飞化到目标宫：本宫天干的指定四化星是否**全部**落在目标宫内。
+    ///
+    /// 四化列表为空时返回 false。
+    pub fn flies_to(&self, target_palace: &PalaceData, mutagens: &[Mutagen]) -> bool {
+        let stars = self.mutagen_stars(mutagens);
+        if stars.is_empty() {
+            return false;
+        }
+        target_palace.has(&stars)
+    }
+
+    /// 飞化到目标宫：本宫天干的指定四化星是否有**任一颗**落在目标宫内。
+    ///
+    /// 四化列表为空时返回 true。
+    pub fn flies_one_of_to(&self, target_palace: &PalaceData, mutagens: &[Mutagen]) -> bool {
+        let stars = self.mutagen_stars(mutagens);
+        if stars.is_empty() {
+            return true;
+        }
+        target_palace.has_one_of(&stars)
+    }
+
+    /// 未飞化到目标宫：本宫天干的指定四化星是否**一颗都不**落在目标宫内。
+    ///
+    /// 四化列表为空时返回 true。
+    pub fn not_fly_to(&self, target_palace: &PalaceData, mutagens: &[Mutagen]) -> bool {
+        let stars = self.mutagen_stars(mutagens);
+        if stars.is_empty() {
+            return true;
+        }
+        target_palace.not_have(&stars)
+    }
+
+    /// 自化：本宫天干的指定四化星是否**全部**落在本宫内。
+    pub fn self_mutaged(&self, mutagens: &[Mutagen]) -> bool {
+        self.has(&self.mutagen_stars(mutagens))
+    }
+
+    /// 自化：本宫天干的指定四化星是否有**任一颗**落在本宫内。
+    ///
+    /// 传空列表表示检查全部四化。
+    pub fn self_mutaged_one_of(&self, mutagens: &[Mutagen]) -> bool {
+        self.has_one_of(&self.mutagen_stars(Self::or_all(mutagens)))
+    }
+
+    /// 无自化：本宫天干的指定四化星是否**一颗都不**落在本宫内。
+    ///
+    /// 传空列表表示检查全部四化。
+    pub fn not_self_mutaged(&self, mutagens: &[Mutagen]) -> bool {
+        self.not_have(&self.mutagen_stars(Self::or_all(mutagens)))
+    }
+
+    /// 空列表回退为全部四化，顺序为禄、权、科、忌。
+    fn or_all(mutagens: &[Mutagen]) -> &[Mutagen] {
+        const ALL: [Mutagen; 4] = [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji];
+        if mutagens.is_empty() { &ALL } else { mutagens }
     }
 
     /// 获取四化飞入的宫位索引：依次为禄、权、科、忌对应的星所在宫位，
     /// 未找到的项为 None
     pub fn mutaged_places(&self, all_palaces: &[PalaceData]) -> Vec<Option<usize>> {
-        let info = get_heavenly_stem_info(self.heavenly_stem);
-        info.mutagen
+        self.mutagen_stars(Self::or_all(&[]))
             .iter()
             .map(|star_key| {
                 all_palaces.iter().find_map(|p| {
@@ -283,7 +352,7 @@ mod tests {
         // should be found in some palace
         let mut found_target = false;
         for target in &a.palaces {
-            if source.flies_to(target, Mutagen::Lu) {
+            if source.flies_to(target, &[Mutagen::Lu]) {
                 found_target = true;
                 break;
             }
@@ -297,9 +366,9 @@ mod tests {
         // self_mutaged checks if the palace's own heavenly stem's mutagen star is in itself
         // This may or may not be true for any given palace; just verify it doesn't panic
         for p in &a.palaces {
-            let _ = p.self_mutaged(Mutagen::Lu);
-            let _ = p.self_mutaged_one_of();
-            let _ = p.not_self_mutaged();
+            let _ = p.self_mutaged(&[Mutagen::Lu]);
+            let _ = p.self_mutaged_one_of(&[]);
+            let _ = p.not_self_mutaged(&[]);
         }
     }
 

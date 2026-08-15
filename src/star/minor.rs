@@ -2,8 +2,7 @@
 //!
 //! 将14颗辅星安放到12宫中。
 
-use crate::data::heavenly_stems::get_heavenly_stem_info;
-use crate::data::stars::{StarKey, get_brightness_table};
+use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::i18n::translate_star;
 use crate::models::star::Star;
@@ -16,11 +15,12 @@ fn make_star(
     palace_index: usize,
     yearly_stem: Option<HeavenlyStem>,
     lang: Language,
+    config: &Config,
 ) -> Star {
-    let brightness = get_brightness_table(key).and_then(|table| table[palace_index]);
+    let brightness = config.brightness_of(key, palace_index);
     let mutagen = yearly_stem.and_then(|stem| {
-        let info = get_heavenly_stem_info(stem);
-        info.mutagen
+        config
+            .mutagens_of(stem)
             .iter()
             .position(|&k| k == key)
             .map(|i| [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji][i])
@@ -56,6 +56,7 @@ pub fn get_minor_stars(
     ling_index: usize,
     yearly_stem: HeavenlyStem,
     lang: Language,
+    config: &Config,
 ) -> [Vec<Star>; 12] {
     let mut result: [Vec<Star>; 12] = Default::default();
 
@@ -83,7 +84,15 @@ pub fn get_minor_stars(
         } else {
             None
         };
-        result[idx].push(make_star(key, star_type, Scope::Origin, idx, stem, lang));
+        result[idx].push(make_star(
+            key,
+            star_type,
+            Scope::Origin,
+            idx,
+            stem,
+            lang,
+            config,
+        ));
     }
 
     result
@@ -112,6 +121,7 @@ mod tests {
             1,
             HeavenlyStem::Jia,
             Language::ZhCN,
+            &Config::default(),
         );
         let total: usize = result.iter().map(|v| v.len()).sum();
         assert_eq!(total, 14);

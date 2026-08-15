@@ -44,7 +44,7 @@ fn is_error(json: &str) -> bool {
 
 #[test]
 fn valid_input_returns_chart_json() {
-    let json = by_solar("2000-8-16", 2, "female", "zh_cn");
+    let json = by_solar("2000-8-16", 2, "female", "zh-CN");
     assert!(!is_error(&json), "unexpected error: {json}");
     assert!(json.contains(r#""palaces":"#));
 }
@@ -52,7 +52,7 @@ fn valid_input_returns_chart_json() {
 #[test]
 fn null_required_pointer_returns_error() {
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let json = take(unsafe {
         iztro_by_solar(
             ptr::null(),
@@ -68,7 +68,7 @@ fn null_required_pointer_returns_error() {
 
 #[test]
 fn invalid_gender_returns_error() {
-    let json = by_solar("2000-8-16", 2, "unknown", "zh_cn");
+    let json = by_solar("2000-8-16", 2, "unknown", "zh-CN");
     assert!(is_error(&json), "expected error, got: {json}");
     assert!(json.contains("gender"));
 }
@@ -82,13 +82,13 @@ fn invalid_language_returns_error() {
 
 #[test]
 fn garbage_solar_date_returns_error_not_panic() {
-    let json = by_solar("not-a-date", 2, "male", "zh_cn");
+    let json = by_solar("not-a-date", 2, "male", "zh-CN");
     assert!(is_error(&json), "expected error, got: {json}");
 }
 
 #[test]
 fn out_of_range_time_index_returns_error_not_panic() {
-    let json = by_solar("2000-8-16", 13, "male", "zh_cn");
+    let json = by_solar("2000-8-16", 13, "male", "zh-CN");
     assert!(is_error(&json), "expected error, got: {json}");
 }
 
@@ -96,7 +96,7 @@ fn out_of_range_time_index_returns_error_not_panic() {
 fn invalid_config_json_returns_error() {
     let date = c("2000-8-16");
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let config = c(r#"{"algorithm":"nonexistent"}"#);
     let json = take(unsafe {
         iztro_by_solar(
@@ -115,7 +115,7 @@ fn invalid_config_json_returns_error() {
 fn garbage_lunar_date_returns_error_not_panic() {
     let date = c("9999-99-99");
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let json = take(unsafe {
         iztro_by_lunar(
             date.as_ptr(),
@@ -134,7 +134,7 @@ fn garbage_lunar_date_returns_error_not_panic() {
 fn garbage_horoscope_target_returns_error_not_panic() {
     let date = c("2000-8-16");
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let target = c("garbage");
     let json = take(unsafe {
         iztro_get_horoscope(
@@ -155,7 +155,7 @@ fn garbage_horoscope_target_returns_error_not_panic() {
 fn valid_horoscope_returns_json() {
     let date = c("2000-8-16");
     let gender = c("female");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let target = c("2024-6-1");
     let json = take(unsafe {
         iztro_get_horoscope(
@@ -176,10 +176,10 @@ fn valid_horoscope_returns_json() {
 #[test]
 fn error_message_escapes_backslash_and_control_chars() {
     for bad in ["2000\\8", "2000\n8", "2000-\"8\"-16", "2000-8-16\t"] {
-        let json = by_solar(bad, 2, "male", "zh_cn");
+        let json = by_solar(bad, 2, "male", "zh-CN");
         assert!(is_error(&json), "expected error for {bad:?}, got: {json}");
     }
-    let json = by_solar("2000-8-16", 2, "a\"x", "zh_cn");
+    let json = by_solar("2000-8-16", 2, "a\"x", "zh-CN");
     assert!(is_error(&json), "expected error, got: {json}");
 }
 
@@ -187,7 +187,7 @@ fn error_message_escapes_backslash_and_control_chars() {
 fn lunar_out_of_range_time_index_returns_error() {
     let date = c("2000-7-16");
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let json = take(unsafe {
         iztro_by_lunar(
             date.as_ptr(),
@@ -206,7 +206,7 @@ fn lunar_out_of_range_time_index_returns_error() {
 fn horoscope_out_of_range_target_time_index_returns_error() {
     let date = c("2000-8-16");
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let target = c("2024-6-1");
     let json = take(unsafe {
         iztro_get_horoscope(
@@ -227,7 +227,7 @@ fn horoscope_out_of_range_target_time_index_returns_error() {
 fn invalid_utf8_input_returns_error() {
     let bad = CString::new([0xE4u8, 0xB8, 0xAD, 0xFF, 0xFE].to_vec()).unwrap();
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     let json = take(unsafe {
         iztro_by_solar(
             bad.as_ptr(),
@@ -245,7 +245,7 @@ fn invalid_utf8_input_returns_error() {
 #[test]
 fn lunar_leap_month_and_day_bounds() {
     let gender = c("male");
-    let language = c("zh_cn");
+    let language = c("zh-CN");
     // 2000 年无闰七月：is_leap_month 不生效，正常排盘
     let date = c("2000-7-16");
     let json = take(unsafe {
@@ -279,11 +279,11 @@ fn lunar_leap_month_and_day_bounds() {
 #[test]
 fn date_out_of_supported_years_returns_error() {
     for bad in ["1582-10-10", "10000-1-1", "0-1-1", "-100-1-1"] {
-        let json = by_solar(bad, 2, "male", "zh_cn");
+        let json = by_solar(bad, 2, "male", "zh-CN");
         assert!(is_error(&json), "expected error for {bad}, got: {json}");
     }
-    let json = by_solar("1583-1-1", 2, "male", "zh_cn");
+    let json = by_solar("1583-1-1", 2, "male", "zh-CN");
     assert!(!is_error(&json), "1583 should be supported: {json}");
-    let json = by_solar("9999-12-31", 2, "male", "zh_cn");
+    let json = by_solar("9999-12-31", 2, "male", "zh-CN");
     assert!(!is_error(&json), "9999 should be supported: {json}");
 }

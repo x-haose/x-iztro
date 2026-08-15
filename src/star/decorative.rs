@@ -15,6 +15,39 @@ fn same_yinyang(gender: Gender, yearly_branch: EarthlyBranch) -> bool {
     gender_is_yang == branch_is_yang
 }
 
+/// 长生12神的起始宫位索引
+///
+/// 水二局长生在申、木三局在亥、金四局在巳、土五局在申、火六局在寅。
+pub fn get_changsheng12_start_index(five_elements_class: FiveElementsClass) -> usize {
+    use EarthlyBranch::*;
+
+    let start_branch = match five_elements_class {
+        FiveElementsClass::Water2nd => Shen,
+        FiveElementsClass::Wood3rd => Hai,
+        FiveElementsClass::Metal4th => Si,
+        FiveElementsClass::Earth5th => Shen,
+        FiveElementsClass::Fire6th => Yin,
+    };
+
+    eb2pi(start_branch)
+}
+
+/// 将前12神的起始宫位索引（按年支起将星）
+///
+/// 寅午戌年将星在午，申子辰年在子，巳酉丑年在酉，亥卯未年在卯。
+pub fn get_jiangqian12_start_index(yearly_branch: EarthlyBranch) -> usize {
+    use EarthlyBranch::*;
+
+    let start_branch = match yearly_branch {
+        Yin | Wu | Xu => Wu,
+        Shen | Zi | Chen => Zi,
+        Si | You | Chou => You,
+        Hai | Mao | Wei => Mao,
+    };
+
+    eb2pi(start_branch)
+}
+
 /// 长生12神
 ///
 /// 根据五行局确定起始宫位，根据性别阴阳与年支阴阳决定顺逆。
@@ -23,17 +56,7 @@ pub fn get_changsheng12(
     gender: Gender,
     yearly_branch: EarthlyBranch,
 ) -> [StarKey; 12] {
-    use EarthlyBranch::*;
-
-    // 起始宫位（由五行局决定）
-    let start_branch = match five_elements_class {
-        FiveElementsClass::Water2nd => Shen,
-        FiveElementsClass::Wood3rd => Hai,
-        FiveElementsClass::Metal4th => Si,
-        FiveElementsClass::Earth5th => Shen,
-        FiveElementsClass::Fire6th => Yin,
-    };
-    let start = eb2pi(start_branch);
+    let start = get_changsheng12_start_index(five_elements_class);
 
     // 顺逆：同阴阳则顺时针（+i），异阴阳则逆时针（-i）
     let clockwise = same_yinyang(gender, yearly_branch);
@@ -107,8 +130,6 @@ pub fn get_yearly12(
     yearly_branch: EarthlyBranch,
     algorithm: Algorithm,
 ) -> ([StarKey; 12], [StarKey; 12]) {
-    use EarthlyBranch::*;
-
     // ===== 岁前12神 =====
     // 从年支宫位开始顺时针安放
     let start_sui = eb2pi(yearly_branch);
@@ -152,14 +173,7 @@ pub fn get_yearly12(
     }
 
     // ===== 将前12神 =====
-    // 起始地支按年支分组
-    let jiang_start_branch = match yearly_branch {
-        Yin | Wu | Xu => Wu,
-        Shen | Zi | Chen => Zi,
-        Si | You | Chou => You,
-        Hai | Mao | Wei => Mao,
-    };
-    let start_jiang = eb2pi(jiang_start_branch);
+    let start_jiang = get_jiangqian12_start_index(yearly_branch);
 
     let jiangqian_stars = [
         StarKey::Jiangxing,

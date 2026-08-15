@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
 
 /// 单个运限层级（大限/流年/流月/流日/流时）的数据。
@@ -71,4 +72,38 @@ pub struct HoroscopeData {
     pub daily: HoroscopeItem,
     /// 流时
     pub hourly: HoroscopeItem,
+}
+
+/// 一次运限查询的结果连同发起它的星盘。
+///
+/// 由 [`Astrolabe::horoscope`] 返回。解引用即得到 [`HoroscopeData`] 本身，
+/// 而宫位与流耀查询不必再把星盘传进来 —— 运限本来就依附于某一张盘。
+pub struct HoroscopeRef<'a> {
+    pub(crate) data: HoroscopeData,
+    pub(crate) astrolabe: &'a Astrolabe,
+}
+
+impl<'a> std::ops::Deref for HoroscopeRef<'a> {
+    type Target = HoroscopeData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl<'a> HoroscopeRef<'a> {
+    /// 运限数据本身。
+    pub fn data(&self) -> &HoroscopeData {
+        &self.data
+    }
+
+    /// 发起这次运限查询的星盘。
+    pub fn astrolabe(&self) -> &'a Astrolabe {
+        self.astrolabe
+    }
+
+    /// 取出运限数据，脱离星盘。
+    pub fn into_data(self) -> HoroscopeData {
+        self.data
+    }
 }

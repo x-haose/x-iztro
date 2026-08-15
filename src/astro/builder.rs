@@ -3,22 +3,18 @@
 //! 提供 `by_solar` 和 `by_lunar` 两个入口函数，从阳历或阴历日期生成完整的紫微斗数星盘。
 
 use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
+use lunar_rust::lunar_month::LunarMonthRefHelper;
 use lunar_rust::lunar_year::{self, LunarYearRefHelper};
 use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 
-use crate::astro::palace::{
-    get_decadals_and_ages, get_five_elements_class, get_palace_names, get_soul_and_body,
-};
+use crate::astro::context::{self, AstroContext};
+use crate::astro::palace::{get_decadals_and_ages, get_palace_names};
 use crate::data::constants::{TIGER_RULE, TIME_RANGES};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::types::*;
 use crate::error::IztroError;
-use crate::i18n::{
-    translate_earthly_branch, translate_heavenly_stem, translate_sign, translate_time,
-    translate_zodiac,
-};
+use crate::i18n::{translate_sign, translate_time, translate_zodiac};
 use crate::models::astrolabe::{Astrolabe, RawChineseDate, RawDates, RawLunarDate};
 use crate::models::palace::PalaceData;
 use crate::star::adjective::get_adjective_stars;
@@ -30,7 +26,7 @@ use crate::star::location::{
 };
 use crate::star::major::get_major_stars;
 use crate::star::minor::get_minor_stars;
-use crate::utils::fix_index;
+use crate::utils::{fix_index, translate_chinese_date};
 
 // ============================================================
 // 辅助函数
@@ -215,42 +211,11 @@ pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32 {
 }
 
 /// 时辰索引转小时数（用于 lunar_rust 日期创建）
-fn time_index_to_hour(time_index: u8) -> i64 {
+pub(crate) fn time_index_to_hour(time_index: u8) -> i64 {
     match time_index {
         0 => 0,
         12 => 23,
         i => (i as i64) * 2 - 1,
-    }
-}
-
-/// 按语言拼接四柱干支 [年, 月, 日, 时]。
-/// 词条均为单字符时柱内紧凑相连、柱间空格（如「庚辰 甲申 丁未 庚子」）；
-/// 任一词条为多字符时柱内空格、柱间「 - 」（如「geng chen - jia shen - …」）
-fn format_chinese_date(pillars: [(HeavenlyStem, EarthlyBranch); 4], lang: Language) -> String {
-    let translated: Vec<(&str, &str)> = pillars
-        .iter()
-        .map(|(s, b)| {
-            (
-                translate_heavenly_stem(*s, lang),
-                translate_earthly_branch(*b, lang),
-            )
-        })
-        .collect();
-    let compact = translated
-        .iter()
-        .all(|(s, b)| s.chars().count() == 1 && b.chars().count() == 1);
-    if compact {
-        translated
-            .iter()
-            .map(|(s, b)| format!("{s}{b}"))
-            .collect::<Vec<_>>()
-            .join(" ")
-    } else {
-        translated
-            .iter()
-            .map(|(s, b)| format!("{s} {b}"))
-            .collect::<Vec<_>>()
-            .join(" - ")
     }
 }
 
@@ -278,73 +243,35 @@ pub fn by_solar(
     language: Language,
     config: Config,
 ) -> Result<Astrolabe, IztroError> {
-    validate_time_index(time_index)?;
+    // 1. 派生上下文：生效时辰、农历年月日、两套年干支、月索引、命身宫、五行局
+    let AstroContext {
+        effective_time_index: effective_ti,
+        lunar_day,
+        lunar_month,
+        is_leap,
+        month_day_count,
+        yearly_stem,
+        yearly_branch,
+        flow_yearly_stem,
+        flow_yearly_branch,
+        month_index,
+        soul_body,
+        five_elements_class,
+    } = context::derive(solar_date, time_index, fix_leap, &config)?;
+
     let (year, month, day) = parse_solar_date(solar_date)?;
-
-    // 晚子时归当天的配置下，全部推算按当日早子时进行；展示仍用原始时辰
-    let effective_ti = if config.day_divide == DayDivide::Current && time_index >= 12 {
-        0
-    } else {
-        time_index
-    };
-
-    // 2. 创建 lunar_rust 日期对象
     let solar_ref = solar::from_ymd(year, month, day);
+    // 时柱随生效时辰推算，因此日期对象要带上对应小时
+    let lunar_ref = lunar::from_solar(&solar::from_ymdhms(
+        year,
+        month,
+        day,
+        time_index_to_hour(effective_ti),
+        0,
+        0,
+    ));
 
-    // 用时辰对应的小时创建带时间的日期，以获取正确的时柱
-    let hour = time_index_to_hour(effective_ti);
-    let solar_with_time = solar::from_ymdhms(year, month, day, hour, 0, 0);
-    let lunar_ref = lunar::from_solar(&solar_with_time);
-
-    // 3. 提取农历日期信息
-    let lunar_month_raw = lunar_ref.get_month(); // 负值表示闰月
-    let is_leap = lunar_month_raw < 0;
-    let lunar_month = lunar_month_raw.unsigned_abs() as u32;
-    let lunar_day = lunar_ref.get_day() as u32;
-
-    // 4. 获取年干年支
-    //    安星主体（四化、辅星、命主身主、宫位天干、长生/博士12、大限小限）按 year_divide；
-    //    年系杂耀与岁前/将前12（流年神煞）按 horoscope_divide
-    let (yearly_stem_str, yearly_branch_str) = match config.year_divide {
-        YearDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
-        YearDivide::Exact => (
-            lunar_ref.get_year_gan_by_li_chun(),
-            lunar_ref.get_year_zhi_by_li_chun(),
-        ),
-    };
-    let yearly_stem = parse_heavenly_stem(&yearly_stem_str)
-        .unwrap_or_else(|| panic!("Unknown heavenly stem: {yearly_stem_str}"));
-    let yearly_branch = parse_earthly_branch(&yearly_branch_str)
-        .unwrap_or_else(|| panic!("Unknown earthly branch: {yearly_branch_str}"));
-
-    let (flow_stem_str, flow_branch_str) = match config.horoscope_divide {
-        HoroscopeDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
-        HoroscopeDivide::Exact => (
-            lunar_ref.get_year_gan_by_li_chun(),
-            lunar_ref.get_year_zhi_by_li_chun(),
-        ),
-    };
-    let flow_yearly_stem = parse_heavenly_stem(&flow_stem_str)
-        .unwrap_or_else(|| panic!("Unknown heavenly stem: {flow_stem_str}"));
-    let flow_yearly_branch = parse_earthly_branch(&flow_branch_str)
-        .unwrap_or_else(|| panic!("Unknown earthly branch: {flow_branch_str}"));
-
-    // 5. 计算月索引
-    let month_index =
-        fix_lunar_month_index(lunar_month, lunar_day, is_leap, effective_ti, fix_leap);
-
-    // 6. 命宫身宫
-    let soul_body = get_soul_and_body(month_index, effective_ti, yearly_stem);
-
-    // 7. 五行局
-    let five_elements_class = get_five_elements_class(
-        soul_body.heavenly_stem_of_soul,
-        soul_body.earthly_branch_of_soul,
-    );
-
-    // 8. 紫微天府起始宫位（晚子时按次日起，跨月回卷需要当月农历总天数）
-    let month_day_count =
-        lunar_month::from_ym(lunar_ref.get_year(), lunar_month_raw).get_day_count() as u32;
+    // 2. 紫微天府起始宫位（晚子时按次日起，跨月回卷需要当月农历总天数）
     let start_idx = get_start_index(
         lunar_day,
         effective_ti,
@@ -379,7 +306,13 @@ pub fn by_solar(
     let monthly_stars = get_monthly_star_index(month_index);
 
     // 10. 安主星
-    let major_stars = get_major_stars(start_idx.ziwei, start_idx.tianfu, yearly_stem, language);
+    let major_stars = get_major_stars(
+        start_idx.ziwei,
+        start_idx.tianfu,
+        yearly_stem,
+        language,
+        &config,
+    );
 
     // 11. 安辅星
     let minor_stars = get_minor_stars(
@@ -399,6 +332,7 @@ pub fn by_solar(
         huo_ling.ling,
         yearly_stem,
         language,
+        &config,
     );
 
     // 12. 流耀（岁前/将前12 属流年神煞，年支按 horoscope_divide）
@@ -468,6 +402,7 @@ pub fn by_solar(
             suiqian12: suiqian12[i],
             decadal: decadals[i].clone(),
             ages: ages[i].clone(),
+            overrides: config.overrides.clone(),
         });
     }
 
@@ -524,7 +459,7 @@ pub fn by_solar(
     let time_pillar_branch = parse_earthly_branch(&time_zhi_str)
         .unwrap_or_else(|| panic!("Unknown time branch: {time_zhi_str}"));
 
-    let chinese_date = format_chinese_date(
+    let chinese_date = translate_chinese_date(
         [
             (yearly_stem, yearly_branch),
             (month_pillar_stem, month_pillar_branch),
@@ -550,7 +485,7 @@ pub fn by_solar(
         lunar_ref.get_day_in_chinese(),
     );
 
-    Ok(Astrolabe {
+    let chart = Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
         lunar_date: lunar_date_str,
@@ -583,7 +518,24 @@ pub fn by_solar(
         fix_leap,
         language,
         config,
+    };
+
+    // 17. 地盘与人盘以身宫、福德宫的干支重排；天盘即上面排好的结果
+    Ok(match chart.config.astro_type {
+        AstroType::Heaven => chart,
+        AstroType::Earth => rearrange_from_palace(&chart, |p| p.is_body_palace),
+        AstroType::Human => rearrange_from_palace(&chart, |p| p.name == Palace::Spirit),
     })
+}
+
+/// 以满足 `pick` 的那一宫的干支重排星盘；十二宫必有身宫与福德宫，故必然命中。
+fn rearrange_from_palace(chart: &Astrolabe, pick: impl Fn(&PalaceData) -> bool) -> Astrolabe {
+    let from = chart
+        .palaces
+        .iter()
+        .find(|p| pick(p))
+        .expect("十二宫必然包含身宫与福德宫");
+    chart.rearranged(from.heavenly_stem, from.earthly_branch)
 }
 
 /// 通过农历日期排盘

@@ -86,7 +86,7 @@ mod tests {
     #[test]
     fn test_surrounded_palaces_structure() {
         let a = make_astrolabe();
-        let sp = a.surrounded_palaces(0);
+        let sp = a.surrounded_palaces(0).unwrap();
         // target is palace 0
         assert_eq!(sp.target.index, 0);
         // opposite is palace 6
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_surrounded_palaces_wrapping() {
         let a = make_astrolabe();
-        let sp = a.surrounded_palaces(10);
+        let sp = a.surrounded_palaces(10).unwrap();
         assert_eq!(sp.target.index, 10);
         // opposite: (10+6) % 12 = 4
         assert_eq!(sp.opposite.index, 4);
@@ -115,7 +115,7 @@ mod tests {
         let a = make_astrolabe();
         // The surrounded palaces of palace 0 cover 4 palaces,
         // so they should have many stars combined
-        let sp = a.surrounded_palaces(0);
+        let sp = a.surrounded_palaces(0).unwrap();
         // At least one major star should be present across 4 palaces
         assert!(sp.have_one_of(&[
             StarKey::ZiweiMaj,
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn test_surrounded_palaces_not_have() {
         let a = make_astrolabe();
-        let sp = a.surrounded_palaces(0);
+        let sp = a.surrounded_palaces(0).unwrap();
         // Collect all star keys in the surrounded palaces
         // Then pick a star NOT present to test not_have
         let all_majors = [
@@ -161,16 +161,18 @@ mod tests {
     fn test_surrounded_palaces_mutagen() {
         let a = make_astrolabe();
         // Check across all 12 positions — at least one should have Lu mutagen
-        let any_has_lu = (0..12).any(|i| a.surrounded_palaces(i).have_mutagen(Mutagen::Lu));
+        let any_has_lu =
+            (0..12).any(|i| a.surrounded_palaces(i).unwrap().have_mutagen(Mutagen::Lu));
         assert!(any_has_lu);
-        let any_has_ji = (0..12).any(|i| a.surrounded_palaces(i).have_mutagen(Mutagen::Ji));
+        let any_has_ji =
+            (0..12).any(|i| a.surrounded_palaces(i).unwrap().have_mutagen(Mutagen::Ji));
         assert!(any_has_ji);
     }
 
     #[test]
     fn test_surrounded_palaces_not_have_mutagen() {
         let a = make_astrolabe();
-        let sp = a.surrounded_palaces(0);
+        let sp = a.surrounded_palaces(0).unwrap();
         // not_have_mutagen is the inverse of have_mutagen
         for m in &[Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
             assert_eq!(sp.not_have_mutagen(*m), !sp.have_mutagen(*m));

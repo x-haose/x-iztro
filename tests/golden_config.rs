@@ -52,7 +52,7 @@ fn check_hash_csv(file: &str, config: Config) {
             gender,
             true,
             Language::ZhCN,
-            config,
+            config.clone(),
         )
         .unwrap();
         total += 1;
@@ -85,7 +85,7 @@ fn check_horoscope_json(file: &str, config: Config) {
 
     let mut failures: Vec<String> = Vec::new();
     for case in &cases {
-        common::check_horoscope_case(case, config, &mut failures);
+        common::check_horoscope_case(case, config.clone(), &mut failures);
         if failures.len() >= MAX_FAILURES {
             break;
         }

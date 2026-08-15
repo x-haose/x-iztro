@@ -14,6 +14,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
@@ -137,6 +138,7 @@ pub struct RawLunarDateDto {
 
 /// 四柱干支 DTO（每柱为 [天干, 地支] 两元素数组）。
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawChineseDateDto {
     /// 年柱（天干、地支，干支原文）
     pub yearly: [String; 2],
@@ -146,6 +148,14 @@ pub struct RawChineseDateDto {
     pub daily: [String; 2],
     /// 时柱（天干、地支，干支原文）
     pub hourly: [String; 2],
+    /// 年柱的语言无关标识（天干、地支）
+    pub yearly_keys: [String; 2],
+    /// 月柱的语言无关标识
+    pub monthly_keys: [String; 2],
+    /// 日柱的语言无关标识
+    pub daily_keys: [String; 2],
+    /// 时柱的语言无关标识
+    pub hourly_keys: [String; 2],
 }
 
 /// 结构化出生日期 DTO。
@@ -172,6 +182,8 @@ pub struct ConfigDto {
     pub day_divide: String,
     /// "default" | "zhongzhou"
     pub algorithm: String,
+    /// "heaven" | "earth" | "human"
+    pub astro_type: String,
 }
 
 /// 星盘 DTO。
@@ -224,7 +236,7 @@ pub struct AstrolabeDto {
     pub time_index: u8,
     /// x-iztro 扩展：是否修正闰月
     pub fix_leap: bool,
-    /// x-iztro 扩展：排盘语言（"zh_cn" 等）
+    /// x-iztro 扩展：排盘语言（"zh-CN" 等）
     pub language: String,
     /// x-iztro 扩展：排盘配置
     pub config: ConfigDto,
@@ -323,43 +335,6 @@ pub struct HoroscopeDto {
 // ============================================================
 
 /// StarType 的 JS 取值
-fn star_type_str(t: StarType) -> &'static str {
-    match t {
-        StarType::Major => "major",
-        StarType::Soft => "soft",
-        StarType::Tough => "tough",
-        StarType::Adjective => "adjective",
-        StarType::Flower => "flower",
-        StarType::Helper => "helper",
-        StarType::Lucun => "lucun",
-        StarType::Tianma => "tianma",
-    }
-}
-
-/// Scope 的 JS 取值
-fn scope_str(s: Scope) -> &'static str {
-    match s {
-        Scope::Origin => "origin",
-        Scope::Decadal => "decadal",
-        Scope::Yearly => "yearly",
-        Scope::Monthly => "monthly",
-        Scope::Daily => "daily",
-        Scope::Hourly => "hourly",
-    }
-}
-
-/// Language 的绑定层取值
-pub fn language_str(l: Language) -> &'static str {
-    match l {
-        Language::ZhCN => "zh_cn",
-        Language::ZhTW => "zh_tw",
-        Language::EnUS => "en_us",
-        Language::JaJP => "ja_jp",
-        Language::KoKR => "ko_kr",
-        Language::ViVN => "vi_vn",
-    }
-}
-
 /// 从 panic 载荷提取人类可读消息（downcast String/&str，兜底固定文案）。
 /// 供各绑定层把核心计算的 panic 转为对外错误。
 pub(crate) fn panic_message(panic: &(dyn std::any::Any + Send)) -> &str {
@@ -379,6 +354,11 @@ struct ConfigPatch {
     age_divide: Option<String>,
     day_divide: Option<String>,
     algorithm: Option<String>,
+    astro_type: Option<String>,
+    /// 天干标识 → 四化星标识数组（禄权科忌四项）
+    mutagens: Option<std::collections::HashMap<String, Vec<String>>>,
+    /// 星耀标识 → 十二宫亮度标识数组（十二项，空串表示该宫无亮度）
+    brightness: Option<std::collections::HashMap<String, Vec<String>>>,
 }
 
 /// 解析绑定层的 config JSON（如 `{"algorithm":"zhongzhou"}`）。
@@ -448,6 +428,58 @@ pub fn parse_config_json(json: Option<&str>) -> Result<Config, String> {
             }
         };
     }
+
+    if let Some(v) = patch.astro_type {
+        config.astro_type = AstroType::from_key(&v).ok_or_else(|| {
+            format!("Invalid astroType '{v}'. Expected 'heaven', 'earth' or 'human'.")
+        })?;
+    }
+
+    // 自定义四化与亮度表：键与值都是语言无关标识
+    if let Some(map) = patch.mutagens {
+        for (stem_key, star_keys) in map {
+            let stem = HeavenlyStem::from_key(&stem_key).ok_or_else(|| {
+                format!("Invalid mutagens key '{stem_key}': unknown heavenly stem.")
+            })?;
+            if star_keys.len() != 4 {
+                return Err(format!(
+                    "Invalid mutagens for '{stem_key}': expected 4 stars (lu, quan, ke, ji), got {}.",
+                    star_keys.len()
+                ));
+            }
+            let mut stars = [StarKey::ZiweiMaj; 4];
+            for (i, key) in star_keys.iter().enumerate() {
+                stars[i] = StarKey::from_key(key).ok_or_else(|| {
+                    format!("Invalid mutagens for '{stem_key}': unknown star '{key}'.")
+                })?;
+            }
+            config = config.with_mutagens(stem, stars);
+        }
+    }
+    if let Some(map) = patch.brightness {
+        for (star_key, brightness_keys) in map {
+            let star = StarKey::from_key(&star_key)
+                .ok_or_else(|| format!("Invalid brightness key '{star_key}': unknown star."))?;
+            if brightness_keys.len() != 12 {
+                return Err(format!(
+                    "Invalid brightness for '{star_key}': expected 12 entries, got {}.",
+                    brightness_keys.len()
+                ));
+            }
+            let mut table = [None; 12];
+            for (i, key) in brightness_keys.iter().enumerate() {
+                // 空串表示该宫位无亮度
+                if key.is_empty() {
+                    continue;
+                }
+                table[i] = Some(Brightness::from_key(key).ok_or_else(|| {
+                    format!("Invalid brightness for '{star_key}': unknown brightness '{key}'.")
+                })?);
+            }
+            config = config.with_brightness(star, table);
+        }
+    }
+
     Ok(config)
 }
 
@@ -479,6 +511,7 @@ impl From<Config> for ConfigDto {
                 Algorithm::Zhongzhou => "zhongzhou",
             }
             .to_string(),
+            astro_type: c.astro_type.as_key().to_string(),
         }
     }
 }
@@ -520,8 +553,8 @@ fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
     StarDto {
         key: s.key.as_key().to_string(),
         name: s.name.clone(),
-        star_type: star_type_str(s.star_type).to_string(),
-        scope: scope_str(s.scope).to_string(),
+        star_type: StarType::as_key(s.star_type).to_string(),
+        scope: Scope::as_key(s.scope).to_string(),
         brightness: Some(
             s.brightness
                 .map(|b| translate_brightness(b, lang).to_string())
@@ -546,8 +579,8 @@ fn bare_star_dto(s: &Star) -> StarDto {
     StarDto {
         key: s.key.as_key().to_string(),
         name: s.name.clone(),
-        star_type: star_type_str(s.star_type).to_string(),
-        scope: scope_str(s.scope).to_string(),
+        star_type: StarType::as_key(s.star_type).to_string(),
+        scope: Scope::as_key(s.scope).to_string(),
         brightness: None,
         brightness_key: None,
         mutagen: None,
@@ -560,6 +593,11 @@ fn pillar(p: (HeavenlyStem, EarthlyBranch), lang: Language) -> [String; 2] {
         translate_heavenly_stem(p.0, lang).to_string(),
         translate_earthly_branch(p.1, lang).to_string(),
     ]
+}
+
+/// 四柱的语言无关标识，与 `pillar` 一一对应。
+fn pillar_keys(p: (HeavenlyStem, EarthlyBranch)) -> [String; 2] {
+    [p.0.as_key().to_string(), p.1.as_key().to_string()]
 }
 
 fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
@@ -625,6 +663,10 @@ impl Astrolabe {
                     monthly: pillar(self.raw_dates.chinese_date.monthly, Language::ZhCN),
                     daily: pillar(self.raw_dates.chinese_date.daily, Language::ZhCN),
                     hourly: pillar(self.raw_dates.chinese_date.hourly, Language::ZhCN),
+                    yearly_keys: pillar_keys(self.raw_dates.chinese_date.yearly),
+                    monthly_keys: pillar_keys(self.raw_dates.chinese_date.monthly),
+                    daily_keys: pillar_keys(self.raw_dates.chinese_date.daily),
+                    hourly_keys: pillar_keys(self.raw_dates.chinese_date.hourly),
                 },
             },
             time: self.time.clone(),
@@ -664,8 +706,8 @@ impl Astrolabe {
             .to_string(),
             time_index: self.time_index,
             fix_leap: self.fix_leap,
-            language: language_str(lang).to_string(),
-            config: self.config.into(),
+            language: lang.as_code().to_string(),
+            config: self.config.clone().into(),
         }
     }
 }

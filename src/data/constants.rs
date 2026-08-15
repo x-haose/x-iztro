@@ -1,5 +1,47 @@
 use crate::data::types::*;
 
+/// 支持的语言代码，顺序与 iztro `data.LANGUAGES` 一致
+pub const LANGUAGES: [&str; 6] = ["en-US", "ja-JP", "ko-KR", "zh-CN", "zh-TW", "vi-VN"];
+
+/// 星座标识，按黄道顺序（白羊起）
+pub const SIGNS: [&str; 12] = [
+    "aries",
+    "taurus",
+    "gemini",
+    "cancer",
+    "leo",
+    "virgo",
+    "libra",
+    "scorpio",
+    "sagittarius",
+    "capricorn",
+    "aquarius",
+    "pisces",
+];
+
+/// 生肖标识，按地支顺序（子=鼠 … 亥=猪）
+pub const ZODIAC: [&str; 12] = [
+    "rat", "ox", "tiger", "rabbit", "dragon", "snake", "horse", "sheep", "monkey", "rooster",
+    "dog", "pig",
+];
+
+/// 时辰标识，索引 0-12（早子时起，晚子时止）
+pub const CHINESE_TIME: [&str; 13] = [
+    "earlyRatHour",
+    "oxHour",
+    "tigerHour",
+    "rabbitHour",
+    "dragonHour",
+    "snakeHour",
+    "horseHour",
+    "goatHour",
+    "monkeyHour",
+    "roosterHour",
+    "dogHour",
+    "pigHour",
+    "lateRatHour",
+];
+
 /// 天干顺序：甲乙丙丁戊己庚辛壬癸
 pub const HEAVENLY_STEMS: [HeavenlyStem; 10] = [
     HeavenlyStem::Jia,

@@ -2,8 +2,7 @@
 //!
 //! 根据紫微和天府的起始宫位索引，将14颗主星安放到12宫中。
 
-use crate::data::heavenly_stems::get_heavenly_stem_info;
-use crate::data::stars::{StarKey, get_brightness_table};
+use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::i18n::translate_star;
 use crate::models::star::Star;
@@ -17,11 +16,12 @@ fn make_star(
     palace_index: usize,
     yearly_stem: Option<HeavenlyStem>,
     lang: Language,
+    config: &Config,
 ) -> Star {
-    let brightness = get_brightness_table(key).and_then(|table| table[palace_index]);
+    let brightness = config.brightness_of(key, palace_index);
     let mutagen = yearly_stem.and_then(|stem| {
-        let info = get_heavenly_stem_info(stem);
-        info.mutagen
+        config
+            .mutagens_of(stem)
             .iter()
             .position(|&k| k == key)
             .map(|i| [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji][i])
@@ -44,6 +44,7 @@ pub fn get_major_stars(
     tianfu_index: usize,
     yearly_stem: HeavenlyStem,
     lang: Language,
+    config: &Config,
 ) -> [Vec<Star>; 12] {
     let mut result: [Vec<Star>; 12] = Default::default();
 
@@ -68,6 +69,7 @@ pub fn get_major_stars(
             idx,
             Some(yearly_stem),
             lang,
+            config,
         );
         result[idx].push(star);
     }
@@ -95,6 +97,7 @@ pub fn get_major_stars(
             idx,
             Some(yearly_stem),
             lang,
+            config,
         );
         result[idx].push(star);
     }
@@ -108,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_major_stars_count() {
-        let result = get_major_stars(0, 0, HeavenlyStem::Jia, Language::ZhCN);
+        let result = get_major_stars(0, 0, HeavenlyStem::Jia, Language::ZhCN, &Config::default());
         let total: usize = result.iter().map(|v| v.len()).sum();
         // 14 major stars total
         assert_eq!(total, 14);
@@ -116,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_all_major_type() {
-        let result = get_major_stars(3, 9, HeavenlyStem::Yi, Language::ZhCN);
+        let result = get_major_stars(3, 9, HeavenlyStem::Yi, Language::ZhCN, &Config::default());
         for palace in &result {
             for star in palace {
                 assert_eq!(star.star_type, StarType::Major);

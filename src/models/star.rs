@@ -19,3 +19,19 @@ pub struct Star {
     /// 生年四化；非四化星为 None
     pub mutagen: Option<Mutagen>,
 }
+
+impl Star {
+    /// 是否带有列出的任一四化。
+    ///
+    /// 空列表返回 false。
+    pub fn with_mutagen(&self, mutagens: &[Mutagen]) -> bool {
+        self.mutagen.is_some_and(|m| mutagens.contains(&m))
+    }
+
+    /// 是否处于列出的任一亮度。
+    ///
+    /// 空列表返回 false。
+    pub fn with_brightness(&self, brightness: &[Brightness]) -> bool {
+        self.brightness.is_some_and(|b| brightness.contains(&b))
+    }
+}

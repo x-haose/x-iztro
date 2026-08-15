@@ -11,14 +11,14 @@ use crate::astro::builder::{
 use crate::astro::palace::get_palace_names;
 use crate::astro::surpalaces::SurroundedPalaces;
 use crate::data::constants::TIGER_RULE;
-use crate::data::heavenly_stems::get_heavenly_stem_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::IztroError;
 use crate::i18n::{translate_horoscope_name, translate_star};
-use crate::models::astrolabe::Astrolabe;
-use crate::models::horoscope::{AgeItem, HoroscopeData, HoroscopeItem, YearlyDecStar, YearlyItem};
-use crate::models::palace::PalaceData;
+use crate::models::astrolabe::{Astrolabe, PalaceRef};
+use crate::models::horoscope::{
+    AgeItem, HoroscopeData, HoroscopeItem, HoroscopeRef, YearlyDecStar, YearlyItem,
+};
 use crate::models::star::Star;
 use crate::star::decorative::get_yearly12;
 use crate::star::location::{
@@ -133,7 +133,21 @@ pub fn get_horoscope_stars(
             StarKey::Shiluan,
             StarKey::Shixi,
         ),
-        _ => unreachable!("get_horoscope_stars does not support Origin scope"),
+        // 本命层级取本命星名。iztro 此处把红鸾写成了 `hongluanMin`，
+        // 该标识在其 i18n 表中不存在，任何语言下都原样漏成星名；
+        // 本命红鸾的标识是 `hongluan`，此处按正确标识安放。
+        Scope::Origin => (
+            StarKey::TiankuiMin,
+            StarKey::TianyueMin,
+            StarKey::WenchangMin,
+            StarKey::WenquMin,
+            StarKey::LucunMin,
+            StarKey::QingyangMin,
+            StarKey::TuoluoMin,
+            StarKey::TianmaMin,
+            StarKey::Hongluan,
+            StarKey::Tianxi,
+        ),
     };
 
     let mut stars: [Vec<Star>; 12] = std::array::from_fn(|_| Vec::new());
@@ -324,7 +338,7 @@ pub fn get_horoscope(
         let d = &astrolabe.palaces[decadal_palace_idx].decadal;
         (d.heavenly_stem, d.earthly_branch)
     };
-    let decadal_mutagen = get_heavenly_stem_info(decadal_stem).mutagen.to_vec();
+    let decadal_mutagen = astrolabe.config.mutagens_of(decadal_stem).to_vec();
     let decadal_palace_names = get_palace_names(decadal_palace_idx).to_vec();
     let decadal_stars = get_horoscope_stars(decadal_stem, decadal_branch, Scope::Decadal, language);
 
@@ -350,7 +364,7 @@ pub fn get_horoscope(
     let age_palace_idx = find_age_palace(astrolabe, nominal_age);
     let age_stem = astrolabe.palaces[age_palace_idx].heavenly_stem;
     let age_branch = astrolabe.palaces[age_palace_idx].earthly_branch;
-    let age_mutagen = get_heavenly_stem_info(age_stem).mutagen.to_vec();
+    let age_mutagen = astrolabe.config.mutagens_of(age_stem).to_vec();
     let age_palace_names = get_palace_names(age_palace_idx).to_vec();
 
     let age = AgeItem {
@@ -368,7 +382,7 @@ pub fn get_horoscope(
 
     // ---- 7. 流年（含按目标年支起的岁前/将前十二神） ----
     let yearly_index = earthly_branch_to_palace_index(target_year_branch);
-    let yearly_mutagen = get_heavenly_stem_info(target_year_stem).mutagen.to_vec();
+    let yearly_mutagen = astrolabe.config.mutagens_of(target_year_stem).to_vec();
     let yearly_palace_names = get_palace_names(yearly_index).to_vec();
     let yearly_stars = get_horoscope_stars(
         target_year_stem,
@@ -415,7 +429,7 @@ pub fn get_horoscope(
             + (target_lunar_month + date_leap_addition),
         12,
     );
-    let monthly_mutagen = get_heavenly_stem_info(target_month_stem).mutagen.to_vec();
+    let monthly_mutagen = astrolabe.config.mutagens_of(target_month_stem).to_vec();
     let monthly_palace_names = get_palace_names(monthly_index).to_vec();
     let monthly_stars = get_horoscope_stars(
         target_month_stem,
@@ -436,7 +450,7 @@ pub fn get_horoscope(
 
     // ---- 9. 流日 ----
     let daily_index = fix_index(monthly_index as i32 + target_lunar_day as i32 - 1, 12);
-    let daily_mutagen = get_heavenly_stem_info(target_day_stem).mutagen.to_vec();
+    let daily_mutagen = astrolabe.config.mutagens_of(target_day_stem).to_vec();
     let daily_palace_names = get_palace_names(daily_index).to_vec();
     let daily_stars =
         get_horoscope_stars(target_day_stem, target_day_branch, Scope::Daily, language);
@@ -454,7 +468,7 @@ pub fn get_horoscope(
     // ---- 10. 流时 ----
     let target_hour_branch_index = fix_index(time_index as i32, 12) as i32;
     let hourly_index = fix_index(daily_index as i32 + target_hour_branch_index, 12);
-    let hourly_mutagen = get_heavenly_stem_info(target_time_stem).mutagen.to_vec();
+    let hourly_mutagen = astrolabe.config.mutagens_of(target_time_stem).to_vec();
     let hourly_palace_names = get_palace_names(hourly_index).to_vec();
     let hourly_stars = get_horoscope_stars(
         target_time_stem,
@@ -546,8 +560,8 @@ impl HoroscopeItem {
 
 impl HoroscopeData {
     /// 获取小限宫位
-    pub fn age_palace<'a>(&self, astrolabe: &'a Astrolabe) -> &'a PalaceData {
-        &astrolabe.palaces[self.age.base.index]
+    pub fn age_palace<'a>(&self, astrolabe: &'a Astrolabe) -> PalaceRef<'a> {
+        astrolabe.palace_at(self.age.base.index)
     }
 
     /// 根据宫位名称和运限范围获取宫位
@@ -559,13 +573,13 @@ impl HoroscopeData {
         name: Palace,
         scope: Scope,
         astrolabe: &'a Astrolabe,
-    ) -> Option<&'a PalaceData> {
+    ) -> Option<PalaceRef<'a>> {
         if scope == Scope::Origin {
-            astrolabe.palace_by_name(name)
+            astrolabe.palace(name)
         } else {
             let scope_item = self.scope_item(scope)?;
             let idx = scope_item.palace_index_by_name(name)?;
-            Some(&astrolabe.palaces[idx])
+            Some(astrolabe.palace_at(idx))
         }
     }
 
@@ -577,7 +591,7 @@ impl HoroscopeData {
         astrolabe: &'a Astrolabe,
     ) -> Option<SurroundedPalaces<'a>> {
         let palace = self.palace(name, scope, astrolabe)?;
-        Some(astrolabe.surrounded_palaces(palace.index))
+        astrolabe.surrounded_palaces(palace.index)
     }
 
     /// 检查指定运限的四化星是否在指定宫位中
@@ -633,6 +647,22 @@ impl HoroscopeData {
         stars.iter().all(|s| all_keys.contains(s))
     }
 
+    /// 检查大限和流年的流耀是否包含指定星耀中的任意一颗
+    pub fn has_one_of_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+        astrolabe: &Astrolabe,
+    ) -> bool {
+        let palace_idx = match self.palace(name, scope, astrolabe) {
+            Some(p) => p.index,
+            None => return false,
+        };
+        let all_keys = self.collect_horoscope_star_keys(palace_idx);
+        stars.iter().any(|s| all_keys.contains(s))
+    }
+
     /// 检查大限和流年的流耀是否不包含指定星耀
     pub fn not_have_horoscope_stars(
         &self,
@@ -680,6 +710,86 @@ impl HoroscopeData {
     }
 }
 
+impl Astrolabe {
+    /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘。
+    ///
+    /// - `target_date`: 目标阳历日期，"YYYY-M-D"
+    /// - `target_time_index`: 目标时辰索引 0-12
+    ///
+    /// # Errors
+    /// 目标日期非法或目标时辰越界时返回 [`IztroError`]。
+    pub fn horoscope(
+        &self,
+        target_date: &str,
+        target_time_index: u8,
+    ) -> Result<HoroscopeRef<'_>, IztroError> {
+        Ok(HoroscopeRef {
+            data: get_horoscope(self, target_date, target_time_index, self.language)?,
+            astrolabe: self,
+        })
+    }
+}
+
+impl Astrolabe {
+    /// 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
+    ///
+    /// # Errors
+    /// 本地日期落在支持范围（公历 1583-9999）之外时返回 [`IztroError`]。
+    pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError> {
+        let now = chrono::Local::now();
+        let date = now.format("%Y-%-m-%-d").to_string();
+        let time_index =
+            crate::utils::time_to_index(now.format("%H").to_string().parse().unwrap_or(0));
+        self.horoscope(&date, time_index)
+    }
+}
+
+impl<'a> HoroscopeRef<'a> {
+    /// 小限宫位
+    pub fn age_palace(&self) -> PalaceRef<'a> {
+        self.data.age_palace(self.astrolabe)
+    }
+
+    /// 按宫位名称和运限范围取宫位
+    pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>> {
+        self.data.palace(name, scope, self.astrolabe)
+    }
+
+    /// 按宫位名称和运限范围取三方四正
+    pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>> {
+        self.data.surround_palaces(name, scope, self.astrolabe)
+    }
+
+    /// 该运限天干的指定四化星是否落在目标宫位（本命盘范围恒为 false）
+    pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool {
+        self.data
+            .has_horoscope_mutagen(name, scope, mutagen, self.astrolabe)
+    }
+
+    /// 目标宫位的大限与流年流耀是否**全部**包含指定星耀
+    pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
+        self.data
+            .has_horoscope_stars(name, scope, stars, self.astrolabe)
+    }
+
+    /// 目标宫位的大限与流年流耀是否包含指定星耀中的**任一颗**
+    pub fn has_one_of_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+    ) -> bool {
+        self.data
+            .has_one_of_horoscope_stars(name, scope, stars, self.astrolabe)
+    }
+
+    /// 目标宫位的大限与流年流耀是否**一颗都不**包含指定星耀
+    pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
+        self.data
+            .not_have_horoscope_stars(name, scope, stars, self.astrolabe)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -695,6 +805,53 @@ mod tests {
             Config::default(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn test_horoscope_holds_astrolabe() {
+        let astrolabe = make_astrolabe();
+        let h = astrolabe.horoscope("2023-10-15", 4).unwrap();
+
+        // 回引拿到的是同一张盘，输出语言随本盘
+        assert_eq!(h.astrolabe().solar_date, astrolabe.solar_date);
+        // 解引用后即运限数据本身
+        assert_eq!(h.solar_date, "2023-10-15");
+
+        // 免传星盘的查询与显式传盘的结果一致
+        let by_data = h
+            .data()
+            .palace(Palace::Soul, Scope::Decadal, &astrolabe)
+            .unwrap();
+        assert_eq!(
+            h.palace(Palace::Soul, Scope::Decadal).unwrap().index,
+            by_data.index
+        );
+        assert_eq!(h.age_palace().index, h.data().age_palace(&astrolabe).index);
+        assert_eq!(
+            h.surround_palaces(Palace::Soul, Scope::Yearly)
+                .unwrap()
+                .target
+                .index,
+            by_data.astrolabe().palace_at(h.yearly.base.index).index
+        );
+        for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
+            assert_eq!(
+                h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m),
+                h.data()
+                    .has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m, &astrolabe)
+            );
+        }
+        let stars = [StarKey::Yunkui, StarKey::Yunyue];
+        assert_eq!(
+            h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            h.data()
+                .has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars, &astrolabe)
+        );
+        assert_eq!(
+            h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            !h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
+                || h.palace(Palace::Soul, Scope::Decadal).is_none()
+        );
     }
 
     #[test]
