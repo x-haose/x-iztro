@@ -1,0 +1,184 @@
+---
+title: 扩展星盘
+description: 用结构体嵌入给星盘补自定义分析方法。
+---
+
+斗数的分析规则千人千面，库不可能穷举。Go 不允许给其他包的类型加方法，
+因此扩展点是**嵌入**：把 `*Astrolabe` 嵌进自己的结构体，
+新方法与内置方法一样用点号调用，且是编译期检查的。
+
+## 配方
+
+<Steps>
+<Step>定义一个结构体，嵌入 `*iztro.Astrolabe`</Step>
+<Step>给这个结构体加方法</Step>
+<Step>用排出的星盘构造它</Step>
+</Steps>
+
+```go
+package main
+
+import (
+    "strings"
+
+    "github.com/x-haose/x-iztro/go/iztro"
+)
+
+// MyChart 嵌入星盘，补自己的分析方法。
+type MyChart struct {
+    *iztro.Astrolabe
+}
+
+// MajorStar 返回命宫主星名（空宫借对宫），多颗以逗号分隔。
+func (c MyChart) MajorStar() string {
+    soul := c.Palace(iztro.PalaceSoul)
+    source := soul
+    if soul.IsEmpty() {
+        source = soul.OppositePalace()
+    }
+
+    names := make([]string, 0, len(source.MajorStars))
+    for _, s := range source.MajorStars {
+        if s.Type == iztro.StarTypeMajor {
+            names = append(names, s.Name)
+        }
+    }
+    return strings.Join(names, ",")
+}
+
+// FiveElementsValue 返回五行局的局数。
+func (c MyChart) FiveElementsValue() int {
+    return map[string]int{
+        iztro.ClassWater2nd: 2,
+        iztro.ClassWood3rd:  3,
+        iztro.ClassMetal4th: 4,
+        iztro.ClassEarth5th: 5,
+        iztro.ClassFire6th:  6,
+    }[c.FiveElementsClassKey]
+}
+```
+
+**用法**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+my := MyChart{chart}
+
+fmt.Println(my.MajorStar())
+fmt.Println(my.FiveElementsValue())
+
+// 内置字段与方法照常可用
+fmt.Println(my.SolarDate)
+fmt.Println(my.Palace(iztro.PalaceSoul).Name)
+
+// 扩展方法随排盘语言输出
+enChart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+fmt.Println(MyChart{enChart}.MajorStar())
+```
+
+**输出**
+
+```text
+紫微
+3
+2000-8-16
+命宫
+emperor
+```
+
+<Callout type="info" title="嵌入而非包装">
+写 `*iztro.Astrolabe` 而不是 `Astrolabe *iztro.Astrolabe`——
+前者让内置字段与方法直接提升到外层，`my.SolarDate` 就能取到；
+后者每次都得写 `my.Astrolabe.SolarDate`。
+</Callout>
+
+---
+
+## 扩展别的类型
+
+同一套写法适用于宫位与星耀：
+
+```go
+type MyPalace struct {
+    *iztro.Palace
+}
+
+// IsAfflicted 判断本宫是否「煞忌交冲」：坐煞星且带化忌。
+func (p MyPalace) IsAfflicted() bool {
+    return p.HasOneOf(
+        iztro.StarQingyangMin, iztro.StarTuoluoMin,
+        iztro.StarHuoxingMin, iztro.StarLingxingMin,
+        iztro.StarDikongMin, iztro.StarDijieMin,
+    ) && p.HasMutagen(iztro.MutagenJi)
+}
+```
+
+```go
+for i := range chart.Palaces {
+    p := MyPalace{&chart.Palaces[i]}
+    if p.IsAfflicted() {
+        fmt.Println(p.Name, "煞忌交冲")
+    }
+}
+```
+
+**输出**
+
+```text
+疾厄 煞忌交冲
+```
+
+---
+
+## 用接口约束扩展
+
+要求多种星盘类型提供同一组分析能力时，用接口：
+
+```go
+type WealthAnalyzer interface {
+    WealthScore() int
+    HasWealthPattern() bool
+}
+
+func report(a WealthAnalyzer) {
+    fmt.Println(a.WealthScore(), a.HasWealthPattern())
+}
+```
+
+任何实现了这两个方法的类型都能传进去，编译期检查。
+
+---
+
+## 组织建议
+
+<Accordions>
+<Accordion title="按分析主题分类型，不要堆成一个">
+`WealthChart`、`CareerChart`、`HealthChart` 各自嵌入星盘，
+使用方按需构造。堆成一个大类型会让所有调用点都被迫带上全部方法。
+</Accordion>
+<Accordion title="判断一律用 Key，不要用 Name">
+`s.Key == iztro.StarZiweiMaj` 在任何输出语言下都成立；
+`s.Name == "紫微"` 只在中文盘上成立。展示时才用 `Name`。
+</Accordion>
+<Accordion title="值接收器还是指针接收器">
+扩展方法通常只读，用值接收器即可——嵌入的是指针，复制外层结构体不会复制星盘。
+方法要改外层结构体自己的字段时才需要指针接收器。
+</Accordion>
+</Accordions>
+
+---
+
+## 与运行期注入的区别
+
+嵌入在编译期完成，与运行期往对象上挂函数的做法相比：
+
+| | 嵌入 | 运行期注入 |
+| --- | --- | --- |
+| 方法是否存在 | 编译期确定 | 运行期才知道 |
+| 类型检查 | 有 | 无 |
+| 调用开销 | 与内置方法相同 | 多一次动态查找 |
+| 出错时机 | 编译失败 | 运行时报错 |
+| 作用范围 | 只影响自己的类型 | 全局或按实例 |
+
+代价是扩展方法必须在编译期就写好，不能由配置文件或用户输入动态决定。
+需要那种灵活度时，用一张 `map[string]func(*iztro.Astrolabe) bool` 自行分派。

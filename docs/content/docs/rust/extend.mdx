@@ -1,0 +1,142 @@
+---
+title: 扩展星盘
+description: 用扩展 trait 给 Astrolabe、PalaceRef 补自定义分析方法。
+---
+
+斗数的分析规则千人千面，库不可能穷举。x-iztro 的做法是让你把自己的规则
+以方法的形式挂到星盘上——调用语法与内置方法一致，且在编译期完成，类型受检、零运行期开销。
+
+## 配方
+
+<Steps>
+<Step>定义一个 trait，声明你要补的方法</Step>
+<Step>为 `Astrolabe`（或 `PalaceRef`、`StarRef`）实现它</Step>
+<Step>使用处 `use` 这个 trait，方法即可用</Step>
+</Steps>
+
+```rust
+use x_iztro::i18n::translate_star;
+use x_iztro::*;
+
+/// 给星盘补两个自定义分析方法。
+trait MyAnalysis {
+    /// 命宫主星名（空宫借对宫），多颗以逗号分隔
+    fn major_star(&self) -> String;
+    /// 五行局的局数
+    fn five_elements_value(&self) -> usize;
+}
+
+impl MyAnalysis for Astrolabe {
+    fn major_star(&self) -> String {
+        let soul = self.palace(Palace::Soul).expect("命宫必然存在");
+        let source = if soul.is_empty() { soul.opposite_palace() } else { soul };
+
+        source
+            .major_stars
+            .iter()
+            .filter(|s| s.star_type == StarType::Major)
+            .map(|s| translate_star(s.key, self.language))
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    fn five_elements_value(&self) -> usize {
+        self.five_elements_class.value()
+    }
+}
+```
+
+**用法**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+println!("{}", chart.major_star());
+println!("{}", chart.five_elements_value());
+
+// 扩展方法随排盘语言输出
+let en = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+println!("{}", en.major_star());
+```
+
+**输出**
+
+```text
+紫微
+3
+emperor
+```
+
+---
+
+## 扩展别的类型
+
+同一套写法适用于宫位与星耀。为视图类型实现时注意生命周期参数：
+
+```rust
+trait PalaceAnalysis {
+    /// 本宫是否「煞忌交冲」：坐煞星且带化忌
+    fn is_afflicted(&self) -> bool;
+}
+
+impl PalaceAnalysis for PalaceRef<'_> {
+    fn is_afflicted(&self) -> bool {
+        use x_iztro::StarKey::*;
+        self.has_one_of(&[QingyangMin, TuoluoMin, HuoxingMin, LingxingMin, DikongMin, DijieMin])
+            && self.has_mutagen(Mutagen::Ji)
+    }
+}
+```
+
+```rust
+for palace in &chart.palaces {
+    let p = chart.palace(palace.index).unwrap();
+    if p.is_afflicted() {
+        println!("{} 煞忌交冲", translate_palace(p.name, Language::ZhCN));
+    }
+}
+```
+
+**输出**
+
+```text
+疾厄 煞忌交冲
+```
+
+---
+
+## 组织建议
+
+<Accordions>
+<Accordion title="按分析主题分 trait，不要堆成一个">
+`WealthAnalysis`、`CareerAnalysis`、`HealthAnalysis` 各自成 trait，
+使用方按需 `use`。堆成一个大 trait 会让所有调用点都被迫引入全部方法。
+</Accordion>
+<Accordion title="判断一律用 key，不要用译名">
+`s.key == StarKey::ZiweiMaj` 在任何输出语言下都成立；
+`s.name == "紫微"` 只在中文盘上成立。展示时才翻译。
+</Accordion>
+<Accordion title="需要跨语言一致的规则，放到 Rust 侧">
+同一套分析规则要在 Python 与 Go 上都能用时，写成 Rust 扩展没有意义——
+三侧各写一遍才是当前的做法，两侧的扩展方式见各自的「扩展星盘」页。
+判断逻辑基于语言无关标识，三份实现断言同一组取值即可保证一致。
+</Accordion>
+</Accordions>
+
+---
+
+## 与运行期注入的区别
+
+有些库让你在运行期把函数挂到对象上。Rust 的扩展 trait 在编译期完成同一件事，
+差别在于：
+
+| | 扩展 trait | 运行期注入 |
+| --- | --- | --- |
+| 方法是否存在 | 编译期确定 | 运行期才知道 |
+| 类型检查 | 有 | 无 |
+| 调用开销 | 与内置方法相同 | 多一次动态查找 |
+| 出错时机 | 编译失败 | 运行时报错 |
+| 作用范围 | `use` 了才可见 | 全局或按实例 |
+
+代价是扩展方法必须在编译期就写好，不能由配置文件或用户输入动态决定。
+需要那种灵活度时，用一张 `HashMap<String, fn(&Astrolabe) -> bool>` 自行分派。

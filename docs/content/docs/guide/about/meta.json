@@ -1,0 +1,10 @@
+{
+  "title": "关于",
+  "icon": "Info",
+  "pages": [
+    "index",
+    "accuracy",
+    "architecture",
+    "iztro-parity"
+  ]
+}

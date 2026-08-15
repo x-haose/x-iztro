@@ -1,0 +1,131 @@
+---
+title: 多语言输出
+description: 六种输出语言、哪些字段会被翻译、换语言对结果的影响。
+---
+
+## 支持的语言
+
+| 取值 | 语言 | Rust 枚举 |
+| --- | --- | --- |
+| `zh-CN` | 简体中文（默认） | `Language::ZhCN` |
+| `zh-TW` | 繁体中文 | `Language::ZhTW` |
+| `en-US` | 英文 | `Language::EnUS` |
+| `ja-JP` | 日文 | `Language::JaJP` |
+| `ko-KR` | 韩文 | `Language::KoKR` |
+| `vi-VN` | 越南文 | `Language::ViVN` |
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "ja-JP", nil)
+```
+
+```rust
+by_solar("2000-8-16", 2, Gender::Female, true, Language::KoKR, Config::default())?;
+```
+
+## 哪些内容会翻译
+
+会翻译的是所有面向人阅读的文本：
+
+- 星耀名、宫位名、四化名、亮度名
+- 天干、地支、五行局
+- 时辰名与时间段、星座、生肖、性别
+- 农历日期的中文表示、干支纪日展示串
+- 运限层级名（大限 / 流年 / …）
+
+**不翻译**的是所有 key 字段与数值字段：星耀的 `key`、宫位的 `nameKey`、
+宫位索引、大限区间、虚岁等。见 [key 契约](/zh/docs/guide/guides/keys)。
+
+## 换语言不改变排盘结果
+
+语言只影响翻译层。同一个生日在六种语言下：
+
+- 十二宫的位置与宫名顺序完全相同
+- 每个宫里的星耀完全相同
+- 四化、亮度、大限小限、运限干支完全相同
+
+变的只是这些东西被写成什么字。所以下面两张盘除文本外逐字段相等：
+
+```python
+zh = astro.by_solar("2000-8-16", 2, "female", language="zh-CN")
+en = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+assert zh.palace(PalaceName.SOUL).index == en.palace(PalaceName.SOUL).index
+assert zh.soul_key == en.soul_key
+```
+
+六种语言的一致性由变体金标测试覆盖（`variants_languages`），零容忍差异。
+
+## 标识与译名的换算
+
+手上只有标识（或只有某种语言的译名）时，用双向查找函数换算，不必重新排盘：
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+translate_key("ziweiMaj", Language::EnUS);   // Some("emperor")
+key_of("자미");                               // Some("ziweiMaj")
+```
+
+类别已知时用强类型版本更直接，也免去 `Option`：
+
+```rust
+use x_iztro::i18n::{translate_palace, translate_star};
+
+translate_star(StarKey::ZiweiMaj, Language::ViVN);   // Tử Vi
+translate_palace(Palace::Soul, Language::KoKR);      // 명궁
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+i18n.translate("ziweiMaj", "en-US")   # emperor
+i18n.key_of("자미")                    # ziweiMaj
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+iztro.Translate(iztro.StarZiweiMaj, "en-US")   // emperor
+iztro.KeyOf("자미")                             // ziweiMaj
+```
+
+</Tab>
+</Tabs>
+
+覆盖十一类共 260 个标识：星耀、宫位（含身宫来因宫）、天干、地支、亮度、四化、
+五行局、性别、生肖、时辰、星座、运限层级。完整清单与逐条说明见
+[Rust](/zh/docs/rust/i18n)、[Python](/zh/docs/python/i18n)、[Go](/zh/docs/go/i18n) 三页。
+
+## 三种语言的取值形态不同
+
+| | 排盘结果里存什么 | 换语言的代价 |
+| --- | --- | --- |
+| Rust | 枚举（`StarKey`、`Palace`…），只有少数展示字段是 `String` | 调翻译函数，同一张盘可同时输出多种语言 |
+| Python | 译名与标识两组字段都已经是字符串 | 重新排盘 |
+| Go | 同上 | 重新排盘 |
+
+排盘本身是毫秒级，多排几次不是问题。判断逻辑请始终用标识字段，
+这样换语言不需要改任何代码。
+
+## 没有全局语言开关
+
+x-iztro 不设「当前语言」这样的全局状态：排盘时语言随参数传入，
+翻译函数每次调用都显式指定目标语言。
+
+<Callout type="info" title="为什么">
+全局语言开关会让同一段代码在不同调用顺序下产出不同结果，并发环境尤其危险。
+显式传参使每次调用的结果只由入参决定。
+</Callout>
+
+## 新增语言
+
+`src/i18n/` 下每种语言一个词表文件。新增语言只需增加一个词表文件，
+并在 `Language` 枚举与 `LANGUAGES` 常量里各加一项——
+翻译入口按枚举分派，不需要改动其他地方。

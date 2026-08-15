@@ -1,0 +1,170 @@
+---
+title: 错误处理
+description: ValueError 的触发条件、消息格式与排查方式。
+---
+
+所有收外部输入的入口在入参非法时抛 `ValueError`。日期格式、日期存在性、
+年份范围、时辰索引、性别、语言、配置都在核心层前置校验。
+
+<Callout type="info" title="只有一种异常类型">
+Python 侧统一抛 `ValueError`，不区分子类——异常消息里带足够的定位信息。
+库内部缺陷导致的 panic 也会被兜底转成 `ValueError`，
+不会抛出 `except Exception` 捕获不到的 `PanicException`。
+</Callout>
+
+---
+
+## 日期相关
+
+| 情形 | 例 | 消息 |
+| --- | --- | --- |
+| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
+| 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
+| 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
+| 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
+| 农历该年该月不存在 | — | `month does not exist in that lunar year` |
+
+**示例**
+
+```python
+from x_iztro import Astro
+
+for date in ["2000-13-1", "2000-2-30", "1500-1-1"]:
+    try:
+        Astro().by_solar(date, 2, "female")
+    except ValueError as e:
+        print(e)
+```
+
+**输出**
+
+```text
+invalid solar date '2000-13-1': month must be within 1-12
+invalid solar date '2000-2-30': day is out of range for that month
+invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+消息里带上了原始输入，便于在批量处理时定位是哪一条数据出的问题。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="年份下限 1583 的由来">
+1582 年格里历改革当年有一段不存在的日期。底层历法库在这些日期上没有定义，
+因此支持范围从改革完成后的 1583 年起算。上限 9999 是农历数据表的覆盖终点。
+</Accordion>
+<Accordion title="月日不必补零">
+`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符必须是 `-`。
+</Accordion>
+<Accordion title="农历闰月的校验">
+`by_lunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
+`is_leap_month` 传 `True` 但那年那月无闰月时不报错，参数被静默忽略。
+</Accordion>
+</Accordions>
+
+---
+
+## 时辰索引
+
+**触发条件**　时辰索引不在 0–12。
+
+**示例**
+
+```python
+try:
+    Astro().by_solar("2000-8-16", 13, "female")
+except ValueError as e:
+    print(e)
+```
+
+**输出**
+
+```text
+time_index must be 0-12, got 13
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="13 个而不是 12 个">
+子时跨午夜，拆成早子时（索引 0）与晚子时（索引 12），因此合法值有 13 个。
+从小时数换算用 [`utils.time_to_index`](/zh/docs/python/util#time_to_index)，
+它保证结果落在合法范围。
+</Callout>
+
+---
+
+## 性别与语言
+
+| 参数 | 合法值 | 消息 |
+| --- | --- | --- |
+| `gender` | `"male"` / `"female"` | `Invalid gender 'x'. Expected 'male' or 'female'.` |
+| `language` | 六个语言代码 | `Invalid language 'x'. Expected one of: zh-CN, ...` |
+
+语言代码大小写不敏感，`"zh-cn"` 与 `"zh-CN"` 都接受。
+
+---
+
+## 标识相关
+
+工具函数与安星函数收的是语言无关标识，未知标识会报错：
+
+```python
+from x_iztro import utils
+
+try:
+    utils.get_brightness("nosuchstar", 0)
+except ValueError as e:
+    print(e)
+```
+
+**输出**
+
+```text
+Unknown star key 'nosuchstar'.
+```
+
+<Callout type="warn" title="传译名会报错">
+这些函数只认标识不认译名。传 `"紫微"` 会得到
+`Unknown star key '紫微'.`——先用 [`i18n.key_of`](/zh/docs/python/i18n#key_of) 换算。
+</Callout>
+
+---
+
+## 配置相关
+
+`ChartConfig` 的自定义表在排盘时校验：
+
+| 情形 | 消息要点 |
+| --- | --- |
+| 四化表的天干标识未知 | `Unknown heavenly stem key` |
+| 某个天干的四化不足四项 | 四化须为四项 |
+| 某颗星的亮度表不足十二项 | 亮度须为十二项 |
+
+---
+
+## 处理模式
+
+**批量处理时跳过坏数据**
+
+```python
+charts, failed = [], []
+
+for row in rows:
+    try:
+        charts.append(Astro().by_solar(row["date"], row["ti"], row["gender"]))
+    except ValueError as e:
+        failed.append((row, str(e)))
+```
+
+**转成自己的异常类型**
+
+```python
+class ChartError(Exception):
+    pass
+
+try:
+    chart = Astro().by_solar(date, ti, gender)
+except ValueError as e:
+    raise ChartError(f"排盘失败: {e}") from e
+```

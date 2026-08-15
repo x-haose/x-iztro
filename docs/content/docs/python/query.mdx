@@ -1,0 +1,175 @@
+---
+title: 轻量查询
+description: 不排整盘就能拿到的生肖、星座与命宫主星。
+---
+
+有些问题不需要整张星盘。这五个函数各自只跑到必要的那一步就返回，
+结果与完整排盘的对应字段永远一致——它们走的是同一套核心逻辑。
+
+```python
+from x_iztro import query
+```
+
+---
+
+## get_zodiac_by_solar_date
+
+**用途**　由公历日期取生肖。
+
+**斗数含义**　生肖由**年支**决定，而年支的换算时点受 `year_divide` 影响。
+正月初一与立春之间出生的人，两种配置会得到不同的生肖——这不是缺陷，是流派差异。
+
+**签名**
+
+```python
+def get_zodiac_by_solar_date(
+    solar_date: str,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solar_date` | `str` | 是 | — | 公历日期，格式 `YYYY-M-D` |
+| `language` | `str` | 否 | `"zh-CN"` | 输出语言 |
+| `config` | `ChartConfig \| None` | 否 | `None` | 仅 `year_divide` 影响结果 |
+
+**返回值**　`str`——按语言翻译的生肖名。
+
+**示例**
+
+```python
+print(query.get_zodiac_by_solar_date("2000-8-16"))
+```
+
+**输出**
+
+```text
+龙
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="跨年边界会随配置改变">
+默认按正月初一换年。改成 `ChartConfig(year_divide="exact")` 后按立春换年，
+1 月下旬到 2 月上旬出生的人可能拿到不同生肖。
+</Callout>
+
+---
+
+## get_sign_by_solar_date / get_sign_by_lunar_date
+
+**用途**　取星座。
+
+**斗数含义**　星座是西洋占星概念，只由公历日期决定，与斗数算法无关。
+农历版本先把农历转成公历再判定，因此两者对同一天的结果相同。
+
+**签名**
+
+```python
+def get_sign_by_solar_date(solar_date: str, language: LanguageType = "zh-CN") -> str
+def get_sign_by_lunar_date(
+    lunar_date: str,
+    is_leap_month: bool = False,
+    language: LanguageType = "zh-CN",
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solar_date` / `lunar_date` | `str` | 是 | — | 日期，格式 `YYYY-M-D` |
+| `is_leap_month` | `bool` | 否 | `False` | 仅农历版本：该月是否闰月 |
+| `language` | `str` | 否 | `"zh-CN"` | 输出语言 |
+
+无 `config` 参数——星座不受任何配置影响。
+
+**返回值**　`str`。
+
+**示例**
+
+```python
+print(query.get_sign_by_solar_date("2000-8-16"))
+print(query.get_sign_by_lunar_date("2000-7-17"))
+```
+
+**输出**
+
+```text
+狮子座
+狮子座
+```
+
+---
+
+## get_major_star_by_solar_date / get_major_star_by_lunar_date
+
+**用途**　只取命宫主星，不排整盘。
+
+**斗数含义**　命宫主星是斗数最常被单独问起的一项。
+命宫为空宫时按惯例借对宫主星来看，本函数已经处理了这一步。
+
+**签名**
+
+```python
+def get_major_star_by_solar_date(
+    solar_date: str,
+    time_index: TimeIndexType,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+
+def get_major_star_by_lunar_date(
+    lunar_date: str,
+    time_index: TimeIndexType,
+    is_leap_month: bool = False,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solar_date` / `lunar_date` | `str` | 是 | — | 日期 |
+| `time_index` | `int` | 是 | — | 时辰索引 0–12，命宫由月份与时辰共同决定 |
+| `is_leap_month` | `bool` | 否 | `False` | 仅农历版本 |
+| `fix_leap` | `bool` | 否 | `True` | 是否修正闰月 |
+| `language` | `str` | 否 | `"zh-CN"` | 输出语言 |
+| `config` | `ChartConfig \| None` | 否 | `None` | 排盘配置 |
+
+**返回值**　`str`——多颗主星以逗号分隔；空宫时返回对宫主星。
+
+**示例**
+
+```python
+print(query.get_major_star_by_solar_date("2000-8-16", 2))
+print(query.get_major_star_by_solar_date("2000-8-16", 2, language="en-US"))
+```
+
+**输出**
+
+```text
+紫微
+emperor
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="不传时辰拿不到命宫">
+命宫由农历月份与出生时辰共同定位，因此 `time_index` 是必填的。
+只知道日期不知道时辰时，斗数无法给出确定的命宫。
+</Accordion>
+<Accordion title="要判断请用整盘">
+返回值是翻译后的字符串，换语言就会变。要做程序判断请排整盘，
+用 `chart.palace("soulPalace")` 取宫位后比较 `major_stars` 里的 `key`。
+</Accordion>
+</Accordions>

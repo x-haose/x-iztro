@@ -1,0 +1,397 @@
+---
+title: 宫位对象
+description: Palace 的字段，以及星耀判断、空宫判断与飞星族的全部方法。
+---
+
+宫位是斗数分析的主战场。`chart.Palace(...)` 返回 `*Palace`，
+它既持有本宫数据，也能回溯所属星盘、对宫与三方四正。
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+```
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Index` | `int` | 宫位索引 0–11，0 为寅宫 |
+| `Name` / `NameKey` | `string` | 宫名译名 / 标识 |
+| `IsBodyPalace` | `bool` | 是否身宫 |
+| `IsOriginalPalace` | `bool` | 是否来因宫（宫干与年干相同且不在子丑二宫） |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | 宫干，决定本宫飞出的四化 |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | 宫支，由索引固定：0 为寅、11 为丑 |
+| `MajorStars` | `[]Star` | 十四主星中落在本宫的，按安放顺序 |
+| `MinorStars` | `[]Star` | 十四辅星中落在本宫的 |
+| `AdjectiveStars` | `[]Star` | 杂耀 |
+| `Changsheng12` / `Changsheng12Key` | `string` | 长生十二神，每宫恰好一个 |
+| `Boshi12` / `Boshi12Key` | `string` | 博士十二神 |
+| `Jiangqian12` / `Jiangqian12Key` | `string` | 将前十二神 |
+| `Suiqian12` / `Suiqian12Key` | `string` | 岁前十二神 |
+| `Decadal` | `Decadal` | 大限：岁数区间与宫干支 |
+| `Ages` | `[]int` | 小限经过本宫的虚岁列表 |
+
+<Callout type="info" title="四组十二神与三组星耀的区别">
+主星、辅星、杂耀是**切片**，一宫可以有零到多颗。
+长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
+因此是单值字段而不是切片。
+</Callout>
+
+---
+
+## Has / NotHave / HasOneOf
+
+**用途**　判断本宫坐了哪些星。
+
+**斗数含义**　星耀落宫是斗数的基本盘面信息。「命宫坐紫微天相」即
+`Has(StarZiweiMaj, StarTianxiangMaj)`。查找范围覆盖主星、辅星、杂耀三组。
+
+**签名**
+
+```go
+func (p *Palace) Has(stars ...string) bool
+func (p *Palace) NotHave(stars ...string) bool
+func (p *Palace) HasOneOf(stars ...string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `stars` | `...string` | 是 | — | 星耀标识，可变参数 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `Has` | 列出的每一颗都在本宫 |
+| `NotHave` | 列出的一颗都不在本宫 |
+| `HasOneOf` | 列出的至少一颗在本宫 |
+
+**示例**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(soul.HasOneOf(iztro.StarQishaMaj, iztro.StarZiweiMaj))
+fmt.Println(soul.NotHave(iztro.StarHuoxingMin, iztro.StarLingxingMin))
+```
+
+**输出**
+
+```text
+false
+true
+true
+```
+
+这张盘的命宫只坐紫微，天相落在财帛宫，因此要求两颗都在的 `Has` 为假。
+
+**边界与陷阱**
+
+<Callout type="warn">
+不传任何星耀时 `Has` 与 `NotHave` 返回 `true`，`HasOneOf` 返回 `false`。
+</Callout>
+
+---
+
+## HasMutagen / NotHaveMutagen
+
+**用途**　判断本宫有没有某种四化。
+
+**斗数含义**　本命四化由**生年干**决定，标记打在对应的星上。
+一宫「有化禄」意味着这宫里坐着的某颗星被生年干化了禄。
+注意这与飞星不同——飞星看的是宫干，本处看的是星上已有的标记。
+
+**签名**
+
+```go
+func (p *Palace) HasMutagen(mutagenKey string) bool
+func (p *Palace) NotHaveMutagen(mutagenKey string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `mutagenKey` | `string` | 是 | — | `MutagenLu` / `MutagenQuan` / `MutagenKe` / `MutagenJi` |
+
+**返回值**　`bool`。
+
+**示例**
+
+```go
+children := chart.Palace(iztro.PalaceChildren)
+
+fmt.Println("子女宫有化禄:", children.HasMutagen(iztro.MutagenLu))
+fmt.Println("子女宫无化忌:", children.NotHaveMutagen(iztro.MutagenJi))
+```
+
+**输出**
+
+```text
+子女宫有化禄: true
+子女宫无化忌: true
+```
+
+---
+
+## IsEmpty
+
+**用途**　判断本宫是否空宫。
+
+**斗数含义**　「空宫」指没有十四主星坐守的宫。空宫要借对宫主星来看，
+是斗数里一个很常见的判断分支。辅星与杂耀默认不影响空宫的成立。
+
+**签名**
+
+```go
+func (p *Palace) IsEmpty(excludeStars ...string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `excludeStars` | `...string` | 否 | — | 追加计入的星耀：本宫无主星、但坐了其中任一颗时，同样**不算**空宫 |
+
+**返回值**　`bool`。判定顺序是：先看有无主星，有则不空；再看 `excludeStars`，命中则不空；都不满足才是空宫。
+
+**示例**
+
+```go
+parents := chart.Palace(iztro.PalaceParents)
+
+fmt.Println("父母宫空宫:", parents.IsEmpty())
+fmt.Println("仆役宫空宫:", chart.Palace(iztro.PalaceFriends).IsEmpty())
+
+// 父母宫无主星，但坐了陀罗——把陀罗也计入后就不算空宫
+fmt.Println("父母宫计入陀罗:", parents.IsEmpty(iztro.StarTuoluoMin))
+```
+
+**输出**
+
+```text
+父母宫空宫: true
+仆役宫空宫: false
+父母宫计入陀罗: false
+```
+
+这张盘只有父母、田宅两宫无主星。仆役宫坐太阴，因此不算空宫。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="参数名容易读反">
+`excludeStars` 不是「判断时忽略这些星」，而是「这些星也算数」。
+本宫已有主星时它完全不起作用——有主星就直接不是空宫，不再看这个列表。
+</Accordion>
+<Accordion title="只看主星">
+不传 `excludeStars` 时只检查 `MajorStars`。一宫辅星杂耀满座但没有主星，仍然是空宫。
+</Accordion>
+</Accordions>
+
+---
+
+## FliesTo / FliesOneOfTo / NotFlyTo
+
+**用途**　判断本宫宫干的四化是否飞入目标宫。
+
+**斗数含义**　飞星派的核心手法。每个宫位有自己的宫干，宫干按四化表决定
+哪四颗星化禄、权、科、忌。若被化的那颗星恰好坐在目标宫，就叫「本宫化 X 入目标宫」。
+「命宫化禄入财帛」表达的是命宫这件事的顺遂落在财帛上。
+
+**签名**
+
+```go
+func (p *Palace) FliesTo(to *Palace, mutagenKeys ...string) bool
+func (p *Palace) FliesOneOfTo(to *Palace, mutagenKeys ...string) bool
+func (p *Palace) NotFlyTo(to *Palace, mutagenKeys ...string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `to` | `*Palace` | 是 | — | 目标宫对象 |
+| `mutagenKeys` | `...string` | 是 | — | 要检查的四化 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `FliesTo` | 列出的四化**全部**飞入目标宫 |
+| `FliesOneOfTo` | 列出的四化**至少一个**飞入目标宫 |
+| `NotFlyTo` | 列出的四化**一个都不**飞入目标宫 |
+
+**示例**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println("命宫化禄入财帛:",
+    soul.FliesTo(chart.Palace(iztro.PalaceWealth), iztro.MutagenLu))
+fmt.Println("命宫化禄或忌入迁移:",
+    soul.FliesOneOfTo(chart.Palace(iztro.PalaceSurface), iztro.MutagenLu, iztro.MutagenJi))
+fmt.Println("命宫不化权入子女:",
+    soul.NotFlyTo(chart.Palace(iztro.PalaceChildren), iztro.MutagenQuan))
+```
+
+**输出**
+
+```text
+命宫化禄入财帛: false
+命宫化禄或忌入迁移: false
+命宫不化权入子女: true
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="目标宫收的是对象">
+Go 侧目标宫是 `*Palace` 而非字符串——先用 `chart.Palace(...)` 取出来再传。
+传 `nil` 时三个方法都返回 `false`。
+</Accordion>
+<Accordion title="不传四化时的返回值">
+`FliesTo` 与 `NotFlyTo` 返回 `true`，`FliesOneOfTo` 返回 `false`。
+</Accordion>
+<Accordion title="自定义四化表会改变结果">
+`Config.Mutagens` 换掉某个天干的四化表后，宫干落在该天干的宫飞出的星随之改变。
+飞星族方法读的是排盘时生效的表，不是内置默认表。
+</Accordion>
+</Accordions>
+
+---
+
+## SelfMutaged / SelfMutagedOneOf / NotSelfMutaged
+
+**用途**　判断本宫是否自化。
+
+**斗数含义**　自化指本宫宫干化出的星恰好就坐在本宫。
+含义上是「自己把自己的能量释放掉」，与飞入他宫的定向作用不同。
+
+**签名**
+
+```go
+func (p *Palace) SelfMutaged(mutagenKeys ...string) bool
+func (p *Palace) SelfMutagedOneOf(mutagenKeys ...string) bool
+func (p *Palace) NotSelfMutaged(mutagenKeys ...string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `mutagenKeys` | `...string` | 否 | — | 要检查的四化；后两个方法不传时表示「四化全部」 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `SelfMutaged` | 列出的四化全部自化 |
+| `SelfMutagedOneOf` | 列出的四化至少一个自化；不传时检查全部四化 |
+| `NotSelfMutaged` | 列出的四化一个都不自化；不传时检查全部四化 |
+
+**示例**
+
+```go
+career := chart.Palace(iztro.PalaceCareer)
+
+fmt.Println("官禄宫自化禄:", career.SelfMutaged(iztro.MutagenLu))
+fmt.Println("官禄宫自化忌:", career.SelfMutaged(iztro.MutagenJi))
+fmt.Println("官禄宫有任一自化:", career.SelfMutagedOneOf())
+fmt.Println("官禄宫无任何自化:", career.NotSelfMutaged())
+```
+
+**输出**
+
+```text
+官禄宫自化禄: false
+官禄宫自化忌: true
+官禄宫有任一自化: true
+官禄宫无任何自化: false
+```
+
+官禄宫宫干为丙，丙干化忌在廉贞，而廉贞正坐官禄宫，故成自化忌。
+
+---
+
+## MutagedPlaces / MutagenStars
+
+**用途**　取本宫宫干化出的四颗星分别落在哪些宫，或直接取那四颗星本身。
+
+**斗数含义**　飞星分析的全景版本：不问「有没有飞到某宫」，而是一次拿到禄权科忌的落点。
+
+**签名**
+
+```go
+func (p *Palace) MutagedPlaces() []*Palace
+func (p *Palace) MutagenStars(mutagenKeys ...string) []string
+```
+
+**返回值**　`MutagedPlaces` 返回长度为 4 的切片，顺序为**禄、权、科、忌**，
+某颗被化的星不在盘上时对应位置为 `nil`。
+`MutagenStars` 返回星耀标识切片，顺序与传入的四化一致。
+
+**示例**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+for i, m := range []string{"禄", "权", "科", "忌"} {
+    if place := soul.MutagedPlaces()[i]; place != nil {
+        fmt.Printf("化%s → %s\n", m, place.Name)
+    } else {
+        fmt.Printf("化%s → 不在盘上\n", m)
+    }
+}
+
+fmt.Println(soul.MutagenStars(iztro.MutagenLu, iztro.MutagenJi))
+```
+
+**输出**
+
+```text
+化禄 → 子女
+化权 → 命宫
+化科 → 官禄
+化忌 → 财帛
+[tianliangMaj wuquMaj]
+```
+
+命宫宫干为壬，壬干四化为天梁化禄、紫微化权、左辅化科、武曲化忌。
+
+---
+
+## OppositePalace / SurroundedPalaces / Astrolabe
+
+**用途**　从宫位回溯到对宫、三方四正与所属星盘。
+
+**签名**
+
+```go
+func (p *Palace) OppositePalace() *Palace
+func (p *Palace) SurroundedPalaces() *SurroundedPalaces
+func (p *Palace) Astrolabe() *Astrolabe
+```
+
+**返回值**　脱离星盘单独构造的宫位返回 `nil`；由星盘查询得到的宫位必然非空。
+
+**示例**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.Name, "的对宫是", soul.OppositePalace().Name)
+fmt.Println("三方四正见煞:",
+    soul.SurroundedPalaces().HaveOneOf(iztro.StarHuoxingMin, iztro.StarLingxingMin))
+fmt.Println(soul.Astrolabe().FiveElementsClass)
+```
+
+**输出**
+
+```text
+命宫 的对宫是 迁移
+三方四正见煞: true
+木三局
+```

@@ -1,0 +1,204 @@
+---
+title: 错误处理
+description: error 的触发条件、消息格式与排查方式。
+---
+
+需要计算的入口都返回 `(值, error)`。日期格式、日期存在性、年份范围、
+时辰索引、性别、语言、配置、标识都在核心层前置校验。
+
+纯查询方法（`Palace`、`Star`、`Has` 等）不返回错误，查不到时返回 `nil` 或零值。
+
+<Callout type="info" title="错误消息统一带 iztro: 前缀">
+包内产生的错误一律以 `iztro: ` 开头，与调用方自己的错误容易区分。
+消息主体来自核心层，三种语言绑定完全一致。
+</Callout>
+
+---
+
+## 日期相关
+
+| 情形 | 例 | 消息主体 |
+| --- | --- | --- |
+| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
+| 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
+| 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
+| 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
+| 农历该年该月不存在 | — | `month does not exist in that lunar year` |
+
+**示例**
+
+```go
+for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
+    if _, err := iztro.BySolar(date, 2, "female", true, "zh-CN", nil); err != nil {
+        fmt.Println(err)
+    }
+}
+```
+
+**输出**
+
+```text
+iztro: invalid solar date '2000-13-1': month must be within 1-12
+iztro: invalid solar date '2000-2-30': day is out of range for that month
+iztro: invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+消息里带上了原始输入，便于在批量处理时定位是哪一条数据出的问题。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="年份下限 1583 的由来">
+1582 年格里历改革当年有一段不存在的日期。底层历法库在这些日期上没有定义，
+因此支持范围从改革完成后的 1583 年起算。上限 9999 是农历数据表的覆盖终点。
+</Accordion>
+<Accordion title="月日不必补零">
+`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符必须是 `-`。
+</Accordion>
+<Accordion title="农历闰月的校验">
+`ByLunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
+`isLeapMonth` 传 `true` 但那年那月无闰月时不报错，参数被静默忽略。
+</Accordion>
+</Accordions>
+
+---
+
+## 时辰索引
+
+**触发条件**　时辰索引大于 12。
+
+**示例**
+
+```go
+_, err := iztro.BySolar("2000-8-16", 13, "female", true, "zh-CN", nil)
+fmt.Println(err)
+```
+
+**输出**
+
+```text
+iztro: time_index must be 0-12, got 13
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="13 个而不是 12 个">
+子时跨午夜，拆成早子时（索引 0）与晚子时（索引 12），因此合法值有 13 个。
+从小时数换算用 [`TimeToIndex`](/zh/docs/go/util#timetoindex)，它保证结果落在合法范围。
+</Callout>
+
+---
+
+## 性别与语言
+
+| 参数 | 合法值 | 消息 |
+| --- | --- | --- |
+| `gender` | `"male"` / `"female"` | `Invalid gender 'x'. Expected 'male' or 'female'.` |
+| `language` | 六个语言代码 | `Invalid language 'x'. Expected one of: zh-CN, ...` |
+
+语言代码大小写不敏感，`"zh-cn"` 与 `"zh-CN"` 都接受。
+
+**示例**
+
+```go
+_, err := iztro.BySolar("2000-8-16", 2, "x", true, "zh-CN", nil)
+fmt.Println(err)
+```
+
+**输出**
+
+```text
+iztro: Invalid gender 'x'. Expected 'male' or 'female'.
+```
+
+---
+
+## 标识相关
+
+工具函数与安星函数收的是语言无关标识，未知标识会报错：
+
+```go
+_, err := iztro.GetBrightness("nosuch", 0, nil)
+fmt.Println(err)
+```
+
+**输出**
+
+```text
+iztro: Unknown star key 'nosuch'.
+```
+
+<Callout type="warn" title="传译名会报错">
+这些函数只认标识不认译名。传 `"紫微"` 会得到 `Unknown star key '紫微'.`——
+先用 [`KeyOf`](/zh/docs/go/i18n#keyof) 换算。
+
+例外是 `chart.Palace()`、`chart.Star()` 这类**星盘上的查询方法**，
+它们同时接受标识与当前排盘语言的译名。
+</Callout>
+
+---
+
+## 配置相关
+
+`Config` 的自定义表在排盘时校验：
+
+| 情形 | 消息要点 |
+| --- | --- |
+| 四化表的天干标识未知 | `Unknown heavenly stem key` |
+| 某个天干的四化不足四项 | 四化须为四项 |
+| 某颗星的亮度表不足十二项 | 亮度须为十二项 |
+
+---
+
+## 处理模式
+
+**批量处理时跳过坏数据**
+
+```go
+type failure struct {
+    row Row
+    err error
+}
+
+var charts []*iztro.Astrolabe
+var failed []failure
+
+for _, row := range rows {
+    chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, "zh-CN", nil)
+    if err != nil {
+        failed = append(failed, failure{row, err})
+        continue
+    }
+    charts = append(charts, chart)
+}
+```
+
+**包装成自己的错误**
+
+```go
+chart, err := iztro.BySolar(date, ti, gender, true, "zh-CN", nil)
+if err != nil {
+    return nil, fmt.Errorf("排盘失败: %w", err)
+}
+```
+
+`%w` 保留原错误，调用方可以用 `errors.Is` / `errors.As` 继续判断。
+
+---
+
+## 关于 nil
+
+查询方法查不到时返回 `nil` 而非错误——查不到是正常结果，不是异常：
+
+```go
+original := chart.Palace("originalPalace")
+if original == nil {
+    fmt.Println("这张盘没有来因宫")
+}
+```
+
+<Callout type="warn" title="取字段前先判空">
+`chart.Palace(...)`、`chart.Star(...)`、`h.ScopeItem(...)` 都可能返回 `nil`。
+直接取字段会 panic。
+</Callout>

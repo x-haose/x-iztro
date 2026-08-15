@@ -1,0 +1,82 @@
+---
+title: 文档
+description: 紫微斗数排盘引擎，Rust 核心，供 Rust、Python、Go 三种语言调用。
+icon: Star
+---
+
+x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰，它算出一张完整的命盘：
+十二宫的位置与干支、每个宫里落了哪些星、星的亮度与四化，以及从大限到流时的六层运限。
+
+## 从哪开始
+
+<Cards>
+  <Card
+    title="x-iztro 指南"
+    href="/zh/docs/guide"
+    description="安装、第一张盘、紫微斗数概念、配置与数据结构。不分语言的通用内容。"
+  />
+  <Card
+    title="Rust API"
+    href="/zh/docs/rust"
+    description="核心库。Python 与 Go 绑定都调用它。"
+  />
+  <Card
+    title="Python API"
+    href="/zh/docs/python"
+    description="dataclass 与 StrEnum 构成的类型化 API，零外部依赖。"
+  />
+  <Card
+    title="Go API"
+    href="/zh/docs/go"
+    description="内嵌 WebAssembly，纯 Go 运行时，无 cgo。"
+  />
+</Cards>
+
+## 三种语言，同一套结果
+
+三套绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
+判断方法基于语言无关标识，同一条分析规则在三种语言上写出来、结果也一致。
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+let soul = chart.palace(Palace::Soul).unwrap();
+
+println!("{}", soul.has(&[StarKey::ZiweiMaj]));
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("2000-8-16", 2, "female")
+soul = chart.palace("soulPalace")
+
+print(soul.has(["ziweiMaj"]))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj))
+```
+
+</Tab>
+</Tabs>
+
+三段代码的输出都是 `true`。
+
+## 准确性
+
+排盘结果由约 66 万例金标测试守着，零容忍差异。
+覆盖矩阵、生成方式与已知偏离见[准确性](/zh/docs/guide/about/accuracy)。

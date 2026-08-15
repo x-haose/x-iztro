@@ -1,0 +1,146 @@
+---
+title: 错误处理
+description: IztroError 的两种变体、触发条件与排查方式。
+---
+
+所有收外部输入的入口都返回 `Result`。日期格式、日期存在性、年份范围、
+时辰索引这四类都在核心层前置校验，非法输入得到错误值而不是 panic。
+
+```rust
+pub enum IztroError {
+    InvalidDate(String),
+    InvalidTimeIndex(u8),
+}
+```
+
+`IztroError` 实现了 `Display` 与 `std::error::Error`，可直接用 `?` 传播、用 `{}` 打印。
+
+---
+
+## InvalidDate
+
+**触发条件**
+
+| 情形 | 例 | 消息 |
+| --- | --- | --- |
+| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
+| 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
+| 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
+| 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
+| 农历该年该月不存在 | — | `month does not exist in that lunar year` |
+
+**示例**
+
+```rust
+let cfg = Config::default();
+
+for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
+    match by_solar(date, 2, Gender::Female, true, Language::ZhCN, cfg.clone()) {
+        Ok(_) => println!("{date}: ok"),
+        Err(e) => println!("{e}"),
+    }
+}
+```
+
+**输出**
+
+```text
+invalid solar date '2000-13-1': month must be within 1-12
+invalid solar date '2000-2-30': day is out of range for that month
+invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+消息里带上了原始输入，便于在批量处理时定位是哪一条数据出的问题。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="年份下限 1583 的由来">
+1582 年格里历改革当年有一段不存在的日期。底层历法库在这些日期上没有定义，
+因此支持范围从改革完成后的 1583 年起算。上限 9999 是农历数据表的覆盖终点。
+</Accordion>
+<Accordion title="月日不必补零">
+`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符必须是 `-`。
+</Accordion>
+<Accordion title="农历闰月的校验">
+`by_lunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
+`is_leap_month` 传 `true` 但那年那月无闰月时不报错，参数被静默忽略。
+</Accordion>
+</Accordions>
+
+---
+
+## InvalidTimeIndex
+
+**触发条件**　时辰索引大于 12。
+
+**示例**
+
+```rust
+let err = by_solar("2000-8-16", 13, Gender::Female, true, Language::ZhCN, Config::default())
+    .unwrap_err();
+println!("{err}");
+```
+
+**输出**
+
+```text
+time_index must be 0-12, got 13
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="13 个而不是 12 个">
+子时跨午夜，拆成早子时（索引 0）与晚子时（索引 12），因此合法值有 13 个。
+从小时数换算用 [`time_to_index`](/zh/docs/rust/util#time_to_index)，它保证结果落在合法范围。
+</Callout>
+
+---
+
+## 处理方式
+
+**用 `?` 传播**
+
+```rust
+fn analyze(date: &str) -> Result<String, IztroError> {
+    let chart = by_solar(date, 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+    Ok(chart.palace(Palace::Soul).unwrap().major_stars
+        .iter().map(|s| s.name.clone()).collect::<Vec<_>>().join(","))
+}
+```
+
+**分变体处理**
+
+```rust
+match by_solar(date, ti, gender, true, Language::ZhCN, Config::default()) {
+    Ok(chart) => { /* ... */ }
+    Err(IztroError::InvalidDate(msg)) => eprintln!("日期有误: {msg}"),
+    Err(IztroError::InvalidTimeIndex(t)) => eprintln!("时辰索引 {t} 越界"),
+}
+```
+
+**转成自己的错误类型**
+
+`IztroError` 实现了 `std::error::Error`，可直接被 `Box<dyn Error>`、`anyhow::Error`
+或 `thiserror` 的 `#[from]` 接住。
+
+```rust
+#[derive(Debug, thiserror::Error)]
+enum AppError {
+    #[error("排盘失败: {0}")]
+    Chart(#[from] x_iztro::IztroError),
+}
+```
+
+---
+
+## 关于 panic
+
+排盘入口不会因非法**外部输入**而 panic。仍可能 panic 的只有库内部缺陷，
+这类情况应视为 bug 上报。
+
+<Callout type="warn" title="wasm 目标下尤其重要">
+wasm 上 panic 即 trap，而且每次 trap 都会永久损耗模块实例的栈空间。
+因此校验放在核心层而非绑定层——三种语言共用同一道防线。
+</Callout>

@@ -1,0 +1,58 @@
+---
+title: Rust
+description: 安装 x-iztro crate，排出第一张盘，读懂枚举与翻译函数的分工。
+---
+
+## 安装
+
+```bash
+cargo add x-iztro
+```
+
+或写进 `Cargo.toml`：
+
+```toml
+[dependencies]
+x-iztro = "0.1"
+```
+
+crate 名为 `x-iztro`，代码中的库名是 `x_iztro`。无 C 依赖，纯 Rust 构建。
+
+## 排盘
+
+```rust
+use x_iztro::{by_solar, IztroError};
+use x_iztro::data::types::*;
+
+fn main() -> Result<(), IztroError> {
+    let astrolabe = by_solar(
+        "2000-8-16",        // 阳历生日
+        2,                  // 时辰索引：寅时
+        Gender::Female,     // 性别
+        true,               // fix_leap：修正闰月
+        Language::ZhCN,     // 输出语言
+        Config::default(),  // 分界点与流派，默认同 JS iztro
+    )?;
+
+    println!("阳历：{}", astrolabe.solar_date);
+    println!("农历：{}", astrolabe.lunar_date);
+    println!("干支：{}", astrolabe.chinese_date);
+    println!("时辰：{} ({})", astrolabe.time, astrolabe.time_range);
+    Ok(())
+}
+```
+
+农历排盘用 [`by_lunar`](/zh/docs/rust/astro#by_lunar)，比 `by_solar` 多一个 `is_leap_month` 参数。
+
+## 接下来
+
+上面的例子只用到了排盘入口。完整的 API——十二宫定位、星耀判断、飞星、
+运限、安星模块、数据表、翻译——在 **[Rust API 参考](/zh/docs/rust)** 一栏，
+每个函数、类型与方法都有独立条目，附真实运行输出与边界说明。
+
+<Cards>
+  <Card title="排盘入口" href="/zh/docs/rust/astro" description="by_solar、by_lunar、rearranged 与 JSON 版本" />
+  <Card title="星盘对象" href="/zh/docs/rust/astrolabe" description="字段、宫位定位、三方四正判断" />
+  <Card title="宫位对象" href="/zh/docs/rust/palace" description="星耀判断、空宫判断与飞星族" />
+  <Card title="运限对象" href="/zh/docs/rust/horoscope" description="六个层级与宫位查询" />
+</Cards>

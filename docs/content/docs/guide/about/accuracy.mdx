@@ -1,0 +1,102 @@
+---
+title: 准确性保证
+description: 约 66 万例金标测试如何保证 x-iztro 与 JS iztro 零差异。
+---
+
+排盘库最重要的属性是**结果正确**。而「正确」在紫微斗数里没有权威裁判 ——
+不同实现之间的差异往往来自流派取舍，很难说谁对谁错。
+
+x-iztro 因此把目标定得很具体：**与 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8 逐字段一致**。
+iztro 是社区里最完整、使用最广的开源实现，把它当作金标准，
+差异就从「见仁见智」变成了可以自动检测的 bug。
+
+## 覆盖矩阵
+
+全部基准数据由锁定版本的 JS iztro 生成，共约 66 万例：
+
+| 层级 | 用例数 | 覆盖范围 | 数据格式 |
+| --- | --- | --- | --- |
+| Tier 1 | 780 | 60 年 × 13 时辰，**全字段逐一比对**（含展示字段与来因宫） | 完整 JSON |
+| Tier 2 | 37,440 | 60 年 × 每月 1/15 号 × 13 时辰 × 男女 | 压缩 JSON |
+| Tier 3 | 586,430 | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份） | SHA-256 CSV |
+| Horoscope | 5,760 | 360 命盘 × 16 目标日期，六层级运限全字段 | 紧凑 JSON |
+| Variants | 14,268 | by_lunar 闰月逐日、中州派、六语言 | CSV / JSON |
+| Config | 8,544 | 四个配置开关的非默认取值 | CSV / JSON |
+
+另有 Python 端到端 108 例、Go 金标端到端测试（含 500 次非法输入轰炸）、
+C FFI 边界安全 16 例，以及绑定契约的 JSON 逐键对照。
+
+## 每一层在防什么
+
+**Tier 1** 抓字段级差异。它比对包括展示串、来因宫标记在内的每一个字段，
+一旦某个字段的翻译或格式与 iztro 不同，立刻暴露。
+
+**Tier 2 与 Tier 3** 抓边界日期。紫微斗数的错误常常只在特定日期出现 ——
+闰月、月末、年初、节气交接。Tier 3 覆盖 60 年里的每一天，
+用规范化串的哈希比对，一天都不漏。
+
+**Horoscope** 抓运限。16 个目标日期专门选在会出问题的位置：
+12 个流年支各一、童限、高龄、闰月、晚子时。
+
+**Variants** 抓流派与语言。中州派与六种语言各自完整比对，
+确保切换 `algorithm` 或 `language` 不引入偏差。
+
+**Config** 抓分界点。立春窗口逐日、晚子时、生日前后 ——
+每个开关都在它会产生分歧的窗口里逐日验证。
+
+## 哈希比对怎么做的
+
+Tier 3 有 58 万例，存完整 JSON 会有几十 GB。所以这一层比对的是**规范化串的 SHA-256**：
+
+JS 侧的 `tests/golden/canonical.mjs` 与 Rust 侧的 `tests/common/mod.rs`
+实现同一套序列化规则，**逐字节同构**。两边各自把排盘结果压成同一个规范化串，
+比对哈希即可。
+
+哈希不一致时，用生成器的 `--inspect` 系列参数重放该例的 JS 输出，
+与 Rust 的规范化串做 diff，直接定位到出错字段。
+
+## 跑测试
+
+```bash
+# 常规层：单元 + Tier 1/2 + 运限 + 变体 + 配置 + 契约，约 15 秒
+cargo test
+
+# Tier 3 全量：586,430 例，约 20 秒
+cargo test --release --test golden_tier3 -- --ignored
+
+# 绑定端到端
+cd python && pytest tests/     # 需先 maturin develop
+cd go/iztro && go test ./...
+```
+
+## 重新生成基准数据
+
+需要 Node.js 环境：
+
+```bash
+cd tests/golden
+npm install
+node generate_tier1.mjs      # → tier1_data.json（约 6MB）
+node generate_tier2.mjs      # → tier2/year_*.json（60 个文件，约 23MB）
+node generate_tier3.mjs      # → tier3/year_*.csv（60 个文件，约 30MB，约 30 分钟）
+node generate_horoscope.mjs  # → horoscope_data.json（约 9MB）
+node generate_variants.mjs
+node generate_config.mjs
+```
+
+## 跟进 iztro 新版本
+
+流程是固定的：
+
+1. 升级 `tests/golden/package.json` 里锁定的 iztro 版本
+2. 重新生成全部基准数据
+3. 跑 `cargo test`
+
+失败的用例清单就是两个版本之间的行为差异清单 —— 不需要读 changelog，
+测试直接告诉你哪些字段变了。
+
+## 零容忍的含义
+
+任何一例不一致都当作 bug 处理，不接受「差异很小」「这个字段不重要」这类理由。
+凡是 iztro 有的功能与数据，x-iztro 必须给出相同结果；
+在此之上再谈扩展功能（key 契约、Prompt 生成、Config 开关的语义化）。

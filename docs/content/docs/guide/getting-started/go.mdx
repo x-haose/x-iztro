@@ -1,0 +1,66 @@
+---
+title: Go
+description: go get 即用，内嵌 WebAssembly，无 cgo，保留交叉编译能力。
+---
+
+## 安装
+
+```bash
+go get github.com/x-haose/x-iztro/go/iztro
+```
+
+包里内嵌了核心库编译出的 WebAssembly 模块（`wasm32-wasip1`），
+经纯 Go 实现的 [wazero](https://wazero.io) 运行时调用。
+
+这意味着：**不需要 cgo，不需要本机安装 Rust 工具链，交叉编译照常可用**。
+代价是每次调用有一次 JSON 编解码与 wasm 内存拷贝，
+对排盘这种毫秒级计算可以忽略。
+
+<Callout title="并发">
+wasm 模块实例不是并发安全的，包内已用互斥锁串行化所有调用。
+多 goroutine 直接调用是安全的，但不会并行加速。
+</Callout>
+
+## 排盘
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/x-haose/x-iztro/go/iztro"
+)
+
+func main() {
+    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(chart.SolarDate)         // 阳历
+    fmt.Println(chart.LunarDate)         // 农历
+    fmt.Println(chart.ChineseDate)       // 四柱干支
+    fmt.Println(chart.Time, chart.TimeRange)
+    fmt.Println(chart.Sign, chart.Zodiac)
+    fmt.Println(chart.Soul, chart.Body)  // 命主、身主
+    fmt.Println(chart.FiveElementsClass)
+}
+```
+
+最后一个参数是 `*Config`，传 `nil` 即取默认配置。农历排盘用 `ByLunar`，
+比 `BySolar` 多一个 `isLeapMonth bool`。
+
+## 接下来
+
+上面的例子只用到了排盘入口。完整的 API——十二宫定位、星耀判断、飞星、
+运限、安星模块、数据表、翻译——在 **[Go API 参考](/zh/docs/go)** 一栏，
+每个导出函数、类型与方法都有独立条目，附真实运行输出与边界说明。
+
+<Cards>
+  <Card title="排盘入口" href="/zh/docs/go/astro" description="BySolar、ByLunar、Config 与 Rearranged" />
+  <Card title="星盘对象" href="/zh/docs/go/astrolabe" description="字段、宫位定位、三方四正判断" />
+  <Card title="宫位对象" href="/zh/docs/go/palace" description="星耀判断、空宫判断与飞星族" />
+  <Card title="运限对象" href="/zh/docs/go/horoscope" description="六个层级与宫位查询" />
+</Cards>

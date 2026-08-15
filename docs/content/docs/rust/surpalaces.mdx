@@ -1,0 +1,154 @@
+---
+title: 三方四正
+description: SurroundedPalaces 的四个宫位与五个判断方法。
+---
+
+三方四正是斗数最常用的取象范围。看一件事不能只看本宫，
+对宫与两个三合宫的星耀同样作用其上，四宫合看才完整。
+
+## 四个宫位
+
+| 字段 | 相对本宫 | 传统称呼 | 意义 |
+| --- | --- | --- | --- |
+| `target` | +0 | 本宫 | 事情本身 |
+| `opposite` | +6 | 对宫 | 与本宫相对的一面，影响最直接 |
+| `wealth` | +4 | 财帛位 | 三合之一 |
+| `career` | +8 | 官禄位 | 三合之一 |
+
+四个字段都是 `PalaceRef`，[宫位对象](/zh/docs/rust/palace)的全部方法都能用。
+
+<Callout type="info" title="财帛位、官禄位是相对称呼">
+`wealth` 与 `career` 指的是「相对本宫的三合位置」，不是十二宫里那两个固定的宫名。
+以命宫起算时它们恰好落在财帛宫与官禄宫；以别的宫起算则是别的宫。
+</Callout>
+
+## 三种取法
+
+```rust
+// 从星盘取
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+// 从宫位取
+let sp = chart.palace(Palace::Soul).unwrap().surrounded_palaces();
+
+// 从星耀取（该星所在宫的三方四正）
+let sp = chart.star(StarKey::ZiweiMaj).unwrap().surrounded_palaces();
+```
+
+三者结果相同，选哪个取决于手上已有什么。
+
+---
+
+## have / not_have / have_one_of
+
+**用途**　判断四宫合起来有没有指定星耀。
+
+**斗数含义**　「三方四正见紫微」这类说法，问的正是这四宫里出没出现某颗星，
+而不问具体落在其中哪一宫。
+
+**签名**
+
+```rust
+pub fn have(&self, stars: &[StarKey]) -> bool
+pub fn not_have(&self, stars: &[StarKey]) -> bool
+pub fn have_one_of(&self, stars: &[StarKey]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `stars` | `&[StarKey]` | 是 | — | 星耀标识列表 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `have` | 列表中每一颗都出现在这四宫（不要求同宫） |
+| `not_have` | 列表中一颗都没出现 |
+| `have_one_of` | 列表中至少一颗出现 |
+
+**示例**
+
+```rust
+use x_iztro::StarKey::*;
+
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{}", sp.have(&[ZiweiMaj, TianxiangMaj]));
+println!("{}", sp.have_one_of(&[QishaMaj, PojunMaj]));
+println!("{}", sp.not_have(&[HuoxingMin]));
+```
+
+**输出**
+
+```text
+true
+false
+true
+```
+
+紫微在命宫、天相在财帛宫，分处两宫但都在这四宫内，因此 `have` 为 `true`。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="have 不要求同宫">
+`have(&[A, B])` 的语义是「A 和 B 都出现在这四宫里」，
+不要求它们坐在同一宫。要判断同宫，用宫位的 [`has`](/zh/docs/rust/palace#has--not_have--has_one_of)。
+</Accordion>
+<Accordion title="空列表的返回值">
+`have` 与 `not_have` 在空列表下返回 `true`，`have_one_of` 返回 `false`。
+</Accordion>
+</Accordions>
+
+---
+
+## have_mutagen / not_have_mutagen
+
+**用途**　判断四宫里有没有某种生年四化。
+
+**斗数含义**　「三方四正见忌」意味着这组宫位里坐着一颗被生年干化忌的星，
+是判断压力来源的常用条件。
+
+**签名**
+
+```rust
+pub fn have_mutagen(&self, mutagen: Mutagen) -> bool
+pub fn not_have_mutagen(&self, mutagen: Mutagen) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `Mutagen` | 是 | — | `Lu` / `Quan` / `Ke` / `Ji` 之一 |
+
+**返回值**　`bool`。
+
+**示例**
+
+```rust
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("三方四正见禄: {}", sp.have_mutagen(Mutagen::Lu));
+println!("三方四正见忌: {}", sp.have_mutagen(Mutagen::Ji));
+println!("三方四正不见科: {}", sp.not_have_mutagen(Mutagen::Ke));
+```
+
+**输出**
+
+```text
+三方四正见禄: false
+三方四正见忌: false
+三方四正不见科: true
+```
+
+这张盘的生年四化落在子女、迁移、疾厄三宫，都不在命宫的三方四正内。
+
+**边界与陷阱**
+
+<Callout type="info">
+这里看的是**生年四化**打在星上的标记，与宫干飞出的四化无关。
+后者请用宫位的飞星族方法。
+</Callout>

@@ -1,0 +1,121 @@
+---
+title: AI Prompt 生成
+description: 把一张盘或一段运限转成结构化文本，直接交给大模型分析。
+---
+
+要让大模型解读命盘，得先把盘描述给它。手工拼接这段描述既繁琐又容易漏字段，
+所以 x-iztro 内置了两个生成函数。
+
+| 函数 | 内容 |
+| --- | --- |
+| `astrolabe_to_prompt` | 本命盘：基本信息 + 十二宫的干支、大限、三组星耀 |
+| `horoscope_to_prompt` | 运限：大限、小限、流年、流月、流日、流时及各自四化与流耀 |
+
+两者都按**排盘语言**生成，中文盘出中文 prompt，英文盘出英文 prompt。
+
+## 用法
+
+```python
+natal = astro.astrolabe_to_prompt(chart)
+fortune = astro.horoscope_to_prompt(chart, "2024-10-1", 0)
+
+prompt = f"{natal}\n{fortune}"
+```
+
+```rust
+let natal = astrolabe_to_prompt(&astrolabe, lang);
+let fortune = horoscope_to_prompt(&astrolabe, &horoscope, lang);
+```
+
+```go
+natal, _ := chart.AstrolabeToPrompt()
+fortune, _ := chart.HoroscopeToPrompt("2024-10-1", 0)
+```
+
+Rust 侧的 `horoscope_to_prompt` 接受已算好的 `HoroscopeData`；
+Python 与 Go 侧接受目标日期，内部完成运限计算。三者输出逐字一致。
+
+## 输出长什么样
+
+本命盘 prompt 的结构（示例为 2001-7-16 晚子时 男）：
+
+```text
+=== 基本信息 ===
+性别: 男
+阳历: 2001-07-16
+农历: 二〇〇一年五月廿六
+干支: 辛巳 甲午 辛巳 戊子
+时辰: 晚子时 (23:00~00:00)
+星座: 巨蟹座
+生肖: 蛇
+命宫地支: 午
+身宫地支: 午
+命主: 破军
+身主: 天机
+五行局: 金四局
+
+=== 十二宫 ===
+
+--- 财帛  ---
+天干地支: 庚寅
+大限: 44-53
+主星: 天同(利), 天梁(庙)
+辅星: 天钺
+杂耀: 封诰, 天德
+
+--- 命宫 [身宫] ---
+天干地支: 甲午
+大限: 4-13
+主星: 天机(庙)
+辅星: 右弼, 天魁
+```
+
+运限 prompt 的结构：
+
+```text
+--- 流年 ---
+流年: 丁未
+  流年四化: 太阴, 天同, 天机, 巨门
+  命宫 (父母):
+    主星: 紫微(庙), 破军(旺)
+    流耀: 流羊
+  ...
+
+流月: 庚戌
+  流月四化: 太阳, 武曲, 太阴, 天同
+```
+
+## 格式约定
+
+| 记号 | 含义 |
+| --- | --- |
+| `天同(利)` | 括号内是[亮度](/zh/docs/guide/concepts/stars#亮度) |
+| `太阳(旺)[权]` | 方括号内是[四化](/zh/docs/guide/concepts/mutagen) |
+| `命宫 [身宫]` | 方括号标记该宫同时是身宫 |
+| `财帛 (子女)` | 运限段中，括号内是该宫在这一层运限里重排后的宫名 |
+
+一张完整的本命盘 prompt 约 1500–2500 字符，运限段与之相当。
+
+## 接入大模型
+
+生成的文本是纯描述，不含指令。实际使用时在前面加上你的分析要求：
+
+```python
+system = "你是紫微斗数分析师。基于给定命盘作答，不要编造盘上没有的信息。"
+user = f"""{astro.astrolabe_to_prompt(chart)}
+
+{astro.horoscope_to_prompt(chart, "2024-10-1", 0)}
+
+请分析这个人 2024 年的事业运势。"""
+```
+
+<Callout title="换语言就换 prompt 语言">
+用英文排盘（`language="en-US"`）生成的 prompt 是英文的，
+适合给不擅长中文命理术语的模型使用。排盘结果本身不受语言影响。
+</Callout>
+
+## 需要更细的控制
+
+生成函数覆盖的是通用场景。如果要自定义 prompt 结构（比如只描述特定几个宫、
+或者输出 JSON 而非文本），直接遍历星盘数据自己拼即可 ——
+所有字段都是公开的，见 [API 数据结构](/zh/docs/guide/data-model)。

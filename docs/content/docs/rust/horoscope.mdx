@@ -1,0 +1,324 @@
+---
+title: 运限对象
+description: 六个运限层级的数据结构，以及不必再传星盘的宫位查询方法。
+---
+
+运限把本命盘投影到某个时间点上。同一张盘，不同年份看到的宫位分布不同——
+这正是「大限走到哪一宫」的意思。
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+```
+
+`HoroscopeRef` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
+
+## 六个层级
+
+| 字段 | 类型 | 跨度 | 说明 |
+| --- | --- | --- | --- |
+| `decadal` | `HoroscopeItem` | 十年 | 大限。未起运的幼年期为童限 |
+| `age` | `AgeItem` | 一年 | 小限。按虚岁逐年走一宫 |
+| `yearly` | `YearlyItem` | 一年 | 流年。按流年干支定宫 |
+| `monthly` | `HoroscopeItem` | 一月 | 流月 |
+| `daily` | `HoroscopeItem` | 一日 | 流日 |
+| `hourly` | `HoroscopeItem` | 一时辰 | 流时 |
+
+<Callout type="info" title="小限与流年的区别">
+两者都是一年一走，但起法不同：小限从生年地支起、按虚岁顺推，
+流年直接看那一年的干支落在哪一宫。两条线互相独立，斗数里通常并看。
+</Callout>
+
+### HoroscopeItem
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `index` | `usize` | 该层级落在哪一宫（宫位索引） |
+| `name` | `String` | 层级显示名，按输出语言翻译 |
+| `heavenly_stem` | `HeavenlyStem` | 该层级的天干，决定它飞出的四化 |
+| `earthly_branch` | `EarthlyBranch` | 该层级的地支 |
+| `palace_names` | `Vec<Palace>` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
+| `mutagen` | `Vec<StarKey>` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `stars` | `Option<Vec<Vec<Star>>>` | 该层级的流耀分布；无流耀的层级为 `None` |
+
+`age` 在此之外多一个 `nominal_age`（虚岁）；
+`yearly` 多一个 `yearly_dec_star`，含流年的岁前与将前十二神。
+两者的通用字段都在 `base` 里：`h.yearly.base.heavenly_stem`。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+for item in [&h.decadal, &h.monthly, &h.daily, &h.hourly] {
+    println!("{} 落在宫位 {} 干支 {}{}", item.name, item.index,
+        translate_heavenly_stem(item.heavenly_stem, Language::ZhCN),
+        translate_earthly_branch(item.earthly_branch, Language::ZhCN));
+}
+println!("小限虚岁 {}", h.age.nominal_age);
+```
+
+**输出**
+
+```text
+大限 落在宫位 2 干支 庚辰
+流月 落在宫位 3 干支 壬午
+流日 落在宫位 8 干支 辛丑
+流时 落在宫位 8 干支 戊子
+小限虚岁 26
+```
+
+---
+
+## age_palace
+
+**用途**　取小限当年所在的宫。
+
+**斗数含义**　小限是逐年推移的一条线，落在哪一宫就以那宫为该年重点。
+
+**签名**
+
+```rust
+pub fn age_palace(&self) -> PalaceRef<'a>
+```
+
+**返回值**　`PalaceRef`——本命盘上的宫位，必然存在。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+println!("{}", h.age_palace().name);
+```
+
+**输出**
+
+```text
+田宅
+```
+
+---
+
+## palace
+
+**用途**　取某个运限层级下、按该层级重推的十二宫中的某一宫。
+
+**斗数含义**　大限走到某宫后，以那一宫为「大限命宫」重排十二宫。
+「大限的夫妻宫」问的就是这套重排后的宫位，与本命夫妻宫通常不是同一宫。
+
+**签名**
+
+```rust
+pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | 是 | — | 要取的宫名 |
+| `scope` | `Scope` | 是 | — | 在哪个层级的十二宫里找 |
+
+**返回值**　`Option<PalaceRef<'a>>`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
+层级为 `Origin` 时即本命十二宫。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("大限命宫落在本命的 {}", h.palace(Palace::Soul, Scope::Decadal).unwrap().name);
+println!("本命命宫是 {}", h.palace(Palace::Soul, Scope::Origin).unwrap().name);
+```
+
+**输出**
+
+```text
+大限命宫落在本命的 夫妻
+本命命宫是 命宫
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="返回的是本命盘上的那一格">
+`palace(Soul, Decadal)` 返回的宫位对象上，`name` 仍是**本命宫名**（例中的夫妻），
+因为它就是本命盘上的那一格。要看该格在大限层级叫什么，查 `h.decadal.palace_names[index]`。
+</Callout>
+
+---
+
+## surround_palaces
+
+**用途**　取某个运限层级下某宫的三方四正。
+
+**签名**
+
+```rust
+pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>>
+```
+
+**参数**　同 `palace`。
+
+**返回值**　`Option<SurroundedPalaces<'a>>`，判断方法见[三方四正](/zh/docs/rust/surpalaces)。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
+
+println!("流年财帛的三方四正以本命 {} 为本宫", sp.target.name);
+```
+
+**输出**
+
+```text
+流年财帛的三方四正以本命 疾厄 为本宫
+```
+
+---
+
+## has_horoscope_stars / has_one_of_horoscope_stars / not_have_horoscope_stars
+
+**用途**　判断某层级某宫里有没有指定的流耀。
+
+**斗数含义**　流耀是随运限层级产生的一组星：魁钺昌曲禄羊陀马鸾喜。
+它们在不同层级有不同名字——大限层级叫运魁、运钺，流年层级叫流魁、流钺，
+含义相同但作用于各自的时间跨度。
+
+**签名**
+
+```rust
+pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | 是 | — | 该层级下的宫名 |
+| `scope` | `Scope` | 是 | — | 运限层级 |
+| `stars` | `&[StarKey]` | 是 | — | 流耀标识，须用该层级的名字 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `has_horoscope_stars` | 每一颗都在 |
+| `has_one_of_horoscope_stars` | 至少一颗在 |
+| `not_have_horoscope_stars` | 一颗都不在 |
+
+**示例**
+
+```rust
+use x_iztro::StarKey::*;
+
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu]));
+println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang]));
+println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo]));
+```
+
+**输出**
+
+```text
+false
+false
+true
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="流耀标识按层级区分">
+大限层级查 `Yunlu`（运禄），流年层级查 `Liulu`（流禄），层级与标识必须配对。
+拿 `Yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
+各层级的标识对照见[安星模块](/zh/docs/rust/star#get_horoscope_stars)。
+</Callout>
+
+---
+
+## has_horoscope_mutagen
+
+**用途**　判断某层级某宫里有没有该层级天干引发的四化。
+
+**斗数含义**　每个运限层级有自己的天干，会像生年干一样化出四颗星。
+「大限化禄落在大限财帛」这类判断问的就是这个。
+
+**签名**
+
+```rust
+pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | 是 | — | 该层级下的宫名 |
+| `scope` | `Scope` | 是 | — | 运限层级 |
+| `mutagen` | `Mutagen` | 是 | — | 四化之一 |
+
+**返回值**　`bool`。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu));
+
+// 该层级化出的四颗星本身可直接读
+println!("{:?}", h.decadal.mutagen.iter()
+    .map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+false
+["太阳", "武曲", "太阴", "天同"]
+```
+
+大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
+
+---
+
+## astrolabe / data / into_data
+
+**用途**　回到本命盘，或取出运限的纯数据。
+
+**签名**
+
+```rust
+pub fn astrolabe(&self) -> &'a Astrolabe
+pub fn data(&self) -> &HoroscopeData
+pub fn into_data(self) -> HoroscopeData
+```
+
+**返回值**
+
+| 方法 | 用途 |
+| --- | --- |
+| `astrolabe` | 回到发起这次运限的本命盘 |
+| `data` | 借用底层数据；视图已实现 `Deref`，通常直接写 `h.decadal` 即可 |
+| `into_data` | 取走数据、丢掉对星盘的借用，用于需要 `'static` 生命周期的场合 |
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.astrolabe().solar_date);
+
+let data: HoroscopeData = h.into_data();   // 不再借用 chart
+println!("{}", data.solar_date);
+```
+
+**输出**
+
+```text
+2000-8-16
+2025-6-1
+```

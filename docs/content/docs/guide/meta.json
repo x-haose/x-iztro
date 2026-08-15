@@ -1,0 +1,19 @@
+{
+  "title": "x-iztro",
+  "description": "紫微斗数排盘库，Rust 核心 + 三语言绑定",
+  "icon": "Sparkles",
+  "root": true,
+  "pages": [
+    "index",
+    "---上手---",
+    "getting-started",
+    "---紫微斗数---",
+    "concepts",
+    "---使用指南---",
+    "guides",
+    "---数据结构---",
+    "data-model",
+    "---关于---",
+    "about"
+  ]
+}

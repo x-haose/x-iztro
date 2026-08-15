@@ -1,0 +1,26 @@
+{
+  "title": "Python",
+  "description": "Python API 参考",
+  "icon": "Braces",
+  "root": true,
+  "pages": [
+    "index",
+    "---排盘---",
+    "astro",
+    "astrolabe",
+    "---对象方法---",
+    "palace",
+    "star-object",
+    "surpalaces",
+    "horoscope",
+    "---模块函数---",
+    "query",
+    "util",
+    "star",
+    "data",
+    "i18n",
+    "---进阶---",
+    "extend",
+    "errors"
+  ]
+}

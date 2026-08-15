@@ -1,0 +1,110 @@
+---
+title: 三方四正
+description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，以及在三种语言里怎么取。
+---
+
+## 为什么需要它
+
+单看一个宫会漏掉一半信息。紫微斗数的惯例是：解读任何一宫，都要连着它的
+**对宫**与两个**三合宫**一起看。这四个宫合称**三方四正**。
+
+最直观的理由是空宫 —— 一个宫里没有主星时，传统上要「借对宫的星来看」。
+即便不是空宫，三方四正里的煞星与四化同样会影响本宫的判断。
+
+## 由哪四个宫组成
+
+以本宫的盘上索引为基准，另外三宫的位置是固定的：
+
+| 成员 | 位置 | 说明 |
+| --- | --- | --- |
+| `target` 本宫 | `i` | 要看的那个宫 |
+| `opposite` 对宫 | `i + 6` | 正对面，影响最直接 |
+| `career` 官禄位 | `i + 4` | 三合之一 |
+| `wealth` 财帛位 | `i + 8` | 三合之一 |
+
+索引对 12 取模。这四个位置在盘上构成一个三角加一条对角线，
+「三方」指三合的三个宫，「四正」指加上对宫共四个。
+
+```
+        i+4 (官禄位)
+         ／      ＼
+        ／        ＼
+      i ──────── i+6 (对宫)
+        ＼        ／
+         ＼      ／
+        i+8 (财帛位)
+```
+
+<Callout>
+`career` 与 `wealth` 是**相对本宫**的称呼，不是盘上的官禄宫与财帛宫。
+以命宫为本宫时它们才恰好是官禄宫和财帛宫；以其他宫为本宫时只是位置关系相同。
+</Callout>
+
+## 取三方四正
+
+三种语言都既接受宫位索引，也接受宫名：
+
+```rust
+let sp = astrolabe.surrounded_palaces(Palace::Soul).unwrap();
+println!("{:?}", sp.opposite.name);
+```
+
+```python
+sp = chart.surrounded_palaces(PalaceName.SOUL)
+```
+
+```go
+sp := chart.SurroundedPalaces(iztro.PalaceSoul)          // 按宫名
+sp = chart.SurroundedPalacesByIndex(soul.Index)          // 按索引
+```
+
+## 判断方法
+
+
+三方四正的判断方法与单宫同名，但检查范围是四个宫的并集，三种语言一致：
+
+| 方法 | 作用 |
+| --- | --- |
+| `have(stars)` | 四宫合起来是否包含**全部**指定星耀 |
+| `have_one_of(stars)` | 是否包含**任意一颗** |
+| `not_have(stars)` | 是否**一颗都不包含** |
+| `have_mutagen(m)` | 四宫中是否有任一宫带指定四化 |
+| `not_have_mutagen(m)` | 四宫都没有指定四化 |
+
+```go
+sp := chart.SurroundedPalaces(iztro.PalaceSoul)
+
+sp.Have(iztro.StarTianfuMaj)                              // 三方四正有天府
+sp.HaveOneOf(iztro.StarQingyangMin, iztro.StarTuoluoMin)  // 是否见羊陀
+sp.NotHaveMutagen(iztro.MutagenJi)                        // 是否不见化忌
+```
+
+星盘上还有三个直接判断的快捷方法，省去先取三方四正这一步：
+
+```python
+chart.is_surrounded(PalaceName.SOUL, [MajorStar.TIANFU])
+chart.is_surrounded_one_of(PalaceName.SOUL, [MinorStar.QINGYANG, MinorStar.TUOLUO])
+chart.not_surrounded(PalaceName.SOUL, [MinorStar.HUOXING])
+```
+
+<Callout type="warn" title="have 与 have_one_of 别混">
+`have` 要求列表里的星**全部**出现，`have_one_of` 只要求出现一个。
+判断「见煞」这类需求几乎总是用 `have_one_of`。
+</Callout>
+
+## 一个实际例子
+
+判断命宫格局是否「吉星拱照且不见煞」：
+
+```python
+sp = chart.surrounded_palaces(chart.palace(PalaceName.SOUL).index)
+
+lucky = sp.have_one_of([MinorStar.ZUOFU, MinorStar.YOUBI,
+                        MinorStar.WENCHANG, MinorStar.WENQU])
+clean = sp.not_have([MinorStar.QINGYANG, MinorStar.TUOLUO,
+                     MinorStar.HUOXING, MinorStar.LINGXING])
+
+print(lucky and clean)
+```
+
+星耀的分类与 key 见[星耀](/zh/docs/guide/concepts/stars)。

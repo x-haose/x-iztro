@@ -1,0 +1,571 @@
+---
+title: 工具函数
+description: 索引换算、亮度与四化查表、命身宫推算、四柱展示串。
+---
+
+这些函数是排盘算法的零件。自己实现斗数逻辑、或要复核某一步推算时用得上；
+日常排盘不必直接调用。
+
+参数与返回值中的枚举都与语言无关，可直接与星盘上的字段互操作。
+
+---
+
+## fix_index
+
+**用途**　把任意整数约束到 `0..max` 的循环区间。
+
+**斗数含义**　十二宫首尾相接，从丑宫（索引 11）再走一格回到寅宫（索引 0）。
+所有「顺数几格、逆数几格」的推算都靠这个回绕。
+
+**签名**
+
+```rust
+pub fn fix_index(index: i32, max: i32) -> usize
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `index` | `i32` | 是 | — | 待修正的索引，可为负 |
+| `max` | `i32` | 是 | — | 循环长度，宫位用 12、天干用 10 |
+
+**返回值**　`usize`，落在 `0..max`。
+
+**示例**
+
+```rust
+println!("{} {}", utils::fix_index(-1, 12), utils::fix_index(13, 12));
+```
+
+**输出**
+
+```text
+11 1
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+负数按数学取模回绕（-1 → 11），不是截断到 0。
+</Callout>
+
+---
+
+## earthly_branch_to_palace_index
+
+**用途**　地支转宫位索引。
+
+**斗数含义**　十二宫的排列从**寅宫**起，而地支的自然顺序从**子**起，两者差两格。
+这个函数负责这层换算：寅 → 0，卯 → 1，⋯，子 → 10，丑 → 11。
+
+**签名**
+
+```rust
+pub fn earthly_branch_to_palace_index(branch: EarthlyBranch) -> usize
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `branch` | `EarthlyBranch` | 是 | — | 地支 |
+
+**返回值**　`usize`，0–11。
+
+**示例**
+
+```rust
+println!("寅={} 子={}",
+    utils::earthly_branch_to_palace_index(EarthlyBranch::Yin),
+    utils::earthly_branch_to_palace_index(EarthlyBranch::Zi));
+```
+
+**输出**
+
+```text
+寅=0 子=10
+```
+
+---
+
+## time_to_index
+
+**用途**　小时数转时辰索引。
+
+**斗数含义**　一天十二时辰，每时辰两小时，但子时横跨午夜被拆成早子时（0）与晚子时（12），
+因此索引有 13 个值。
+
+**签名**
+
+```rust
+pub fn time_to_index(hour: u8) -> u8
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `hour` | `u8` | 是 | — | 小时数 0–23 |
+
+**返回值**　`u8`，0–12。
+
+**示例**
+
+```rust
+println!("{} {} {}", utils::time_to_index(0), utils::time_to_index(4), utils::time_to_index(23));
+```
+
+**输出**
+
+```text
+0 2 12
+```
+
+0 点为早子时，4 点为寅时，23 点为晚子时。
+
+---
+
+## get_age_index
+
+**用途**　由生年地支取小限起始宫位索引。
+
+**斗数含义**　小限从固定的宫起，按虚岁逐年推移。起宫由生年地支所属的三合组决定：
+寅午戌年起辰宫、申子辰年起戌宫、巳酉丑年起未宫、亥卯未年起丑宫。
+
+**签名**
+
+```rust
+pub fn get_age_index(branch: EarthlyBranch) -> usize
+```
+
+**返回值**　`usize`，0–11。
+
+**示例**
+
+```rust
+println!("{}", utils::get_age_index(EarthlyBranch::Chen));
+```
+
+**输出**
+
+```text
+8
+```
+
+辰年属申子辰组，小限从戌宫起，戌宫的索引是 8。
+
+---
+
+## get_brightness
+
+**用途**　查某颗星落在某宫时的亮度。
+
+**签名**
+
+```rust
+pub fn get_brightness(star: StarKey, palace_index: i32, config: &Config) -> Option<Brightness>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `star` | `StarKey` | 是 | — | 星耀标识 |
+| `palace_index` | `i32` | 是 | — | 宫位索引，越界会对 12 取模 |
+| `config` | `&Config` | 是 | — | 自定义亮度表会改变结果 |
+
+**返回值**　`Option<Brightness>`。该星没有亮度表时为 `None`。
+
+**示例**
+
+```rust
+let cfg = Config::default();
+
+println!("{:?}", utils::get_brightness(StarKey::ZiweiMaj, 4, &cfg));
+println!("{:?}", utils::get_brightness(StarKey::LucunMin, 0, &cfg));
+```
+
+**输出**
+
+```text
+Some(Miao)
+None
+```
+
+紫微在午宫（索引 4）庙；禄存没有亮度表。
+
+---
+
+## get_mutagen / get_mutagens_by_heavenly_stem
+
+**用途**　查天干四化。
+
+**斗数含义**　十天干各自固定指派四颗星化禄、权、科、忌。
+`get_mutagen` 问「这颗星在这个天干下化什么」，
+`get_mutagens_by_heavenly_stem` 问「这个天干化哪四颗星」。
+
+**签名**
+
+```rust
+pub fn get_mutagen(star: StarKey, stem: HeavenlyStem, config: &Config) -> Option<Mutagen>
+pub fn get_mutagens_by_heavenly_stem(stem: HeavenlyStem, config: &Config) -> [StarKey; 4]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `star` | `StarKey` | 是 | — | 星耀标识 |
+| `stem` | `HeavenlyStem` | 是 | — | 天干 |
+| `config` | `&Config` | 是 | — | 自定义四化表会改变结果 |
+
+**返回值**　`get_mutagen` 返回 `Option<Mutagen>`，该星不在此天干的四化表内时为 `None`。
+`get_mutagens_by_heavenly_stem` 返回定长四项数组，顺序为**禄、权、科、忌**。
+
+**示例**
+
+```rust
+let cfg = Config::default();
+
+println!("{:?}", utils::get_mutagen(StarKey::TaiyangMaj, HeavenlyStem::Geng, &cfg));
+println!("{:?}", utils::get_mutagen(StarKey::ZiweiMaj, HeavenlyStem::Geng, &cfg));
+println!("{:?}", utils::get_mutagens_by_heavenly_stem(HeavenlyStem::Geng, &cfg)
+    .iter().map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+Some(Lu)
+None
+["太阳", "武曲", "太阴", "天同"]
+```
+
+---
+
+## get_soul_and_body
+
+**用途**　由农历月索引、时辰与年干推命宫、身宫。
+
+**斗数含义**　命宫是整张盘的起点：从寅宫起正月，顺数到生月，再从生月逆数到生时。
+身宫用同样的起点但顺数生时。命宫的天干由五虎遁从年干推得。
+
+**签名**
+
+```rust
+pub fn get_soul_and_body(month_index: usize, time_index: u8, yearly_stem: HeavenlyStem) -> SoulAndBody
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `month_index` | `usize` | 是 | — | 农历月索引，正月为 0；由 `fix_lunar_month_index` 求得 |
+| `time_index` | `u8` | 是 | — | 时辰索引 0–12 |
+| `yearly_stem` | `HeavenlyStem` | 是 | — | 生年天干 |
+
+**返回值**　`SoulAndBody`，含 `soul_index`、`body_index`、`heavenly_stem_of_soul`、`earthly_branch_of_soul`。
+
+**示例**
+
+```rust
+let sb = get_soul_and_body(6, 2, HeavenlyStem::Geng);
+
+println!("命宫索引 {} 身宫索引 {} 命宫支 {}", sb.soul_index, sb.body_index,
+    translate_earthly_branch(sb.earthly_branch_of_soul, Language::ZhCN));
+```
+
+**输出**
+
+```text
+命宫索引 4 身宫索引 8 命宫支 午
+```
+
+---
+
+## get_five_elements_class
+
+**用途**　由命宫干支推五行局。
+
+**斗数含义**　五行局（水二、木三、金四、土五、火六）决定两件大事：
+紫微星的起宫位置，以及大限的起运岁数。
+
+**签名**
+
+```rust
+pub fn get_five_elements_class(stem: HeavenlyStem, branch: EarthlyBranch) -> FiveElementsClass
+```
+
+**返回值**　`FiveElementsClass`。
+
+**示例**
+
+```rust
+let c = get_five_elements_class(HeavenlyStem::Ren, EarthlyBranch::Wu);
+println!("{}", translate_five_elements_class(c, Language::ZhCN));
+```
+
+**输出**
+
+```text
+木三局
+```
+
+---
+
+## get_palace_names
+
+**用途**　由命宫索引推十二宫名。
+
+**斗数含义**　命宫定下后，其余十一宫按固定顺序逆时针排开：
+命、兄弟、夫妻、子女、财帛、疾厄、迁移、仆役、官禄、田宅、福德、父母。
+
+**签名**
+
+```rust
+pub fn get_palace_names(soul_index: usize) -> [Palace; 12]
+```
+
+**返回值**　定长十二项数组，**按宫位索引排列**——第 `i` 项就是 `chart.palaces[i]` 的宫名。
+
+**示例**
+
+```rust
+let names = get_palace_names(4);
+println!("{:?}", names.iter().take(4).map(|p| translate_palace(*p, Language::ZhCN)).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+["财帛", "子女", "夫妻", "兄弟"]
+```
+
+命宫在索引 4，因此索引 0（寅宫）是财帛。
+
+---
+
+## get_decadals_and_ages
+
+**用途**　由命宫索引与五行局推十二宫的大限与小限。
+
+**斗数含义**　大限从命宫起、每宫十年，起运岁数即五行局的局数
+（水二局 2 岁起、木三局 3 岁起，依此类推），顺逆由性别阴阳与年支阴阳决定；
+小限从年支所属三合组定的宫起，按虚岁逐年走一宫。
+
+**签名**
+
+```rust
+pub fn get_decadals_and_ages(
+    soul_index: usize,
+    five_elements_class: FiveElementsClass,
+    gender: Gender,
+    yearly_stem: HeavenlyStem,
+    yearly_branch: EarthlyBranch,
+) -> ([Decadal; 12], [Vec<u32>; 12])
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `soul_index` | `usize` | 是 | — | 命宫宫位索引 |
+| `five_elements_class` | `FiveElementsClass` | 是 | — | 五行局，决定起运岁数与紫微起宫 |
+| `gender` | `Gender` | 是 | — | 性别，与年支阴阳共同决定大限顺逆 |
+| `yearly_stem` | `HeavenlyStem` | 是 | — | 年干 |
+| `yearly_branch` | `EarthlyBranch` | 是 | — | 年支，决定小限起宫 |
+
+**返回值**　`([Decadal; 12], [Vec<u32>; 12])`——两个定长十二项数组，均按宫位索引排列。
+
+`Decadal` 的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `range` | `(u32, u32)` | 大限起止虚岁，含两端 |
+| `heavenly_stem` | `HeavenlyStem` | 该大限的天干 |
+| `earthly_branch` | `EarthlyBranch` | 该大限的地支 |
+
+第二项是每宫的小限虚岁列表。
+
+**示例**
+
+```rust
+let (decadals, ages) = astro::palace::get_decadals_and_ages(
+    4,
+    FiveElementsClass::Wood3rd,
+    Gender::Female,
+    HeavenlyStem::Geng,
+    EarthlyBranch::Chen,
+);
+
+let d = &decadals[0];
+println!("寅宫 {:?} 岁 {}{}", d.range,
+    translate_heavenly_stem(d.heavenly_stem, Language::ZhCN),
+    translate_earthly_branch(d.earthly_branch, Language::ZhCN));
+println!("{:?}", &ages[0][..3]);
+```
+
+**输出**
+
+```text
+寅宫 (43, 52) 岁 戊寅
+[9, 21, 33]
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+整盘排出的每个宫位上已有 `decadal` 与 `ages` 字段，内容与本函数一致。
+这个函数用于不排整盘、只推大限小限的场合。
+</Callout>
+
+---
+
+## fix_lunar_month_index / fix_lunar_day_index
+
+**用途**　求修正后的农历月索引与日索引。
+
+**斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
+闰月十五日之后按下月算（可关），晚子时属次日。
+
+**签名**
+
+```rust
+pub fn fix_lunar_month_index(
+    lunar_month: u32,
+    lunar_day: u32,
+    is_leap: bool,
+    time_index: u8,
+    fix_leap: bool,
+) -> usize
+
+pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lunar_month` | `u32` | 是 | — | 农历月份 1–12 |
+| `lunar_day` | `u32` | 是 | — | 农历日 |
+| `is_leap` | `bool` | 是 | — | 该月是否闰月 |
+| `time_index` | `u8` | 是 | — | 时辰索引 |
+| `fix_leap` | `bool` | 是 | — | 是否启用闰月修正 |
+
+**返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+**示例**
+
+```rust
+println!("{}", astro::builder::fix_lunar_month_index(7, 17, false, 2, true));
+println!("{} {}", astro::builder::fix_lunar_day_index(17, 2), astro::builder::fix_lunar_day_index(17, 12));
+```
+
+**输出**
+
+```text
+6
+16 17
+```
+
+七月非闰月，索引为 6；十七日在寅时减一得 16，在晚子时属次日故保持 17。
+
+---
+
+## translate_chinese_date
+
+**用途**　把四柱干支拼成展示串。
+
+**签名**
+
+```rust
+pub fn translate_chinese_date(
+    pillars: [(HeavenlyStem, EarthlyBranch); 4],
+    language: Language,
+) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pillars` | `[(HeavenlyStem, EarthlyBranch); 4]` | 是 | — | 四柱，顺序为年、月、日、时 |
+| `language` | `Language` | 是 | — | 输出语言 |
+
+**返回值**　`String`。词条均为单字符时柱内紧凑相连、柱间空格；
+任一词条为多字符时柱内空格、柱间 ` - `。
+
+**示例**
+
+```rust
+let pillars = [
+    (HeavenlyStem::Geng, EarthlyBranch::Chen),
+    (HeavenlyStem::Jia, EarthlyBranch::Shen),
+    (HeavenlyStem::Bing, EarthlyBranch::Wu),
+    (HeavenlyStem::Geng, EarthlyBranch::Yin),
+];
+
+println!("{}", utils::translate_chinese_date(pillars, Language::ZhCN));
+println!("{}", utils::translate_chinese_date(pillars, Language::EnUS));
+```
+
+**输出**
+
+```text
+庚辰 甲申 丙午 庚寅
+geng chen - jia shen - bing woo - geng yin
+```
+
+星盘的 `chinese_date` 字段即由此生成，四柱枚举可从 `chart.raw_dates.chinese_date` 取。
+
+## merge_stars
+
+**用途**　把多组「十二宫星耀」按宫位合并成一组。
+
+**斗数含义**　安星是分批进行的：主星、辅星、杂耀各出一组十二宫列表。
+要把它们并成一张完整盘面时用这个函数。
+
+**签名**
+
+```rust
+pub fn merge_stars(groups: &[[Vec<Star>; 12]]) -> [Vec<Star>; 12]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `groups` | `&[[Vec<Star>; 12]]` | 是 | — | 若干组十二宫星耀列表 |
+
+**返回值**　合并后的十二宫列表，同宫内按传入顺序首尾相接。
+
+**示例**
+
+```rust
+use x_iztro::{star::query::{self, StarParam}, utils, Config, Gender, Language};
+
+let param = StarParam {
+    solar_date: "2000-8-16",
+    time_index: 2,
+    gender: Gender::Female,
+    fix_leap: true,
+    from: None,
+    language: Language::ZhCN,
+    config: &Config::default(),
+};
+
+let major = query::get_major_stars(&param)?;
+let minor = query::get_minor_stars(&param)?;
+let merged = utils::merge_stars(&[major, minor]);
+
+println!("{:?}", merged[0].iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+["武曲", "天相", "天马"]
+```
+
+数组长度由类型系统保证为 12，因此不会出现 Python / Go 侧那种长度校验失败。

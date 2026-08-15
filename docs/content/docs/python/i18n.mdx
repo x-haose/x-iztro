@@ -1,0 +1,205 @@
+---
+title: 翻译
+description: 标识与译名的双向查找。
+---
+
+星盘上每个字段都同时给出译名与 `*_key` 标识，通常不必手工翻译。
+这两个函数用于手上只有标识（或只有某种语言的译名）、需要换算的场合。
+
+```python
+from x_iztro import i18n
+```
+
+支持六种语言：`zh-CN`、`zh-TW`、`en-US`、`ja-JP`、`ko-KR`、`vi-VN`。
+
+---
+
+## translate
+
+**用途**　把任意标识译成指定语言。
+
+**签名**
+
+```python
+def translate(key: str, language: LanguageType = "zh-CN") -> str | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `key` | `str` | 是 | — | 语言无关标识 |
+| `language` | `str` | 否 | `"zh-CN"` | 目标语言 |
+
+覆盖十一类共 260 个标识：
+
+| 类目 | 数量 | 例 |
+| --- | --- | --- |
+| 星耀 | 162 | `ziweiMaj`、`changsheng`、`yunlu` |
+| 宫位 | 12 | `soulPalace`、`wealthPalace` |
+| 身宫与来因宫 | 2 | `bodyPalace`、`originalPalace` |
+| 天干 | 10 | `jiaHeavenly` |
+| 地支 | 12 | `ziEarthly` |
+| 亮度 | 7 | `miao`、`wang` |
+| 四化 | 4 | `sihuaLu` |
+| 五行局 | 5 | `water2nd` |
+| 性别 | 2 | `male`、`female` |
+| 生肖 | 12 | `rat`、`ox` |
+| 时辰 | 13 | `earlyRatHour` |
+| 星座 | 12 | `aries` |
+| 运限层级 | 7 | `decadal`、`turn` |
+
+**返回值**　译名；未知标识返回 `None`。
+
+**示例**
+
+```python
+print(i18n.translate("ziweiMaj", "en-US"))
+print(i18n.translate("soulPalace", "ja-JP"))
+print(i18n.translate("ziweiMaj", "vi-VN"))
+print(i18n.translate("bodyPalace"))
+print(i18n.translate("nosuch"))
+```
+
+**输出**
+
+```text
+emperor
+命宮
+Tử Vi
+身宫
+None
+```
+
+---
+
+## key_of
+
+**用途**　由任意语言的译名反查标识。
+
+**签名**
+
+```python
+def key_of(text: str, key_filter: str | None = None) -> str | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `text` | `str` | 是 | — | 任一支持语言下的译名 |
+| `key_filter` | `str \| None` | 否 | `None` | 限定标识名须含的子串，用于消歧同形译名 |
+
+**返回值**　标识；查不到返回 `None`。
+
+**示例**
+
+```python
+print(i18n.key_of("紫微"))
+print(i18n.key_of("emperor"))
+print(i18n.key_of("자미"))
+print(i18n.key_of("查无此名"))
+```
+
+**输出**
+
+```text
+ziweiMaj
+ziweiMaj
+ziweiMaj
+None
+```
+
+三种语言的译名都落到同一个标识。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="同形译名与 key_filter">
+少数译名在多个类目下同形：en-US 的 `horse` 既是生肖马也是天马，
+`dragon` 既是生肖龙也是青龙，ko-KR 的 `사` 既是地支巳也是长生12神的死。
+
+不限定时逐语言、每种语言内逐标识取先命中者，顺序与 iztro 的 `kot` 完全一致
+（有金标测试逐例守着）。要指定类目就传 `key_filter`——标识名含该子串才纳入比对：
+
+```python
+print(i18n.key_of("horse"))            # horse（生肖马）
+print(i18n.key_of("horse", "Min"))     # tianmaMin（天马）
+print(i18n.key_of("유시"))              # hourly（流时）
+print(i18n.key_of("유시", "Hour"))      # roosterHour（酉时）
+print(i18n.key_of("horse", "Palace"))  # None
+```
+
+常用子串：`Maj` 十四主星、`Min` 辅星、`Heavenly` / `Earthly` 干支、
+`Palace` 宫位、`Hour` 时辰。限定后无匹配返回 `None`，不退回未限定的结果。
+</Accordion>
+<Accordion title="全表扫描">
+`key_of` 会遍历 260 个标识 × 6 种语言。单次调用开销可忽略，
+但不要放在每宫每星的内层循环里——那种场合直接用数据自带的 `*_key` 字段。
+</Accordion>
+</Accordions>
+
+---
+
+## all_keys
+
+**用途**　取全部 260 个可翻译标识。
+
+**签名**
+
+```python
+def all_keys() -> list[str]
+```
+
+**返回值**　标识列表，顺序即 `key_of` 的反查次序：
+运限层级、生肖、时辰、星座、五行局、天干、地支、亮度、四化、星耀、宫位、性别，
+与 iztro 各语言翻译文件的合并次序一致。
+
+**示例**
+
+```python
+keys = i18n.all_keys()
+print(len(keys))
+print(keys[:4])
+print(i18n.translate(keys[0]))
+```
+
+**输出**
+
+```text
+260
+['decadal', 'childhood', 'yearly', 'monthly']
+大限
+```
+
+要遍历某一类目自己的标识时，用 `enums` 里的枚举或 `data.constants()` 更省事。
+
+---
+
+## 没有全局语言开关
+
+x-iztro 不设「当前语言」这样的全局状态：排盘时语言随参数传入，
+翻译函数每次调用都显式指定目标语言。
+
+<Callout type="info" title="为什么">
+全局语言开关会让同一段代码在不同调用顺序下产出不同结果，
+多线程环境尤其危险。显式传参使每次调用的结果只由入参决定。
+</Callout>
+
+要在一个进程里同时输出多种语言，直接排多张盘即可，互不干扰：
+
+```python
+zh = Astro().by_solar("2000-8-16", 2, "female")
+en = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(zh.palace("soulPalace").major_stars[0].name,
+      en.palace("soulPalace").major_stars[0].name)
+```
+
+**输出**
+
+```text
+紫微 emperor
+```
+
+两张盘的 `*_key` 字段完全相同，因此任何基于标识的判断在两张盘上结果一致。

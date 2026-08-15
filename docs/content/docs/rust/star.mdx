@@ -1,0 +1,409 @@
+---
+title: 安星模块
+description: 按出生数据取某一组星耀的落宫，以及排盘流水线的低层构件。
+---
+
+不排整盘、只想知道「禄存落在哪一宫」或「这张盘的杂耀怎么分布」时用这一层。
+
+模块分两层：
+
+| 层 | 收什么 | 用途 |
+| --- | --- | --- |
+| `star::query` | 出生数据 | 对外的安星入口，本页主体 |
+| `star::location` / `decorative` / `major` / `minor` / `adjective` | 已算好的索引 | 排盘流水线的构件，自建流程时复用 |
+
+所有索引都是**宫位索引**：0 为寅宫，11 为丑宫。
+
+## StarParam
+
+`star::query` 的全部入口共用这一个参数结构。
+
+```rust
+pub struct StarParam<'a> {
+    pub solar_date: &'a str,
+    pub time_index: u8,
+    pub gender: Gender,
+    pub fix_leap: bool,
+    pub from: Option<(HeavenlyStem, EarthlyBranch)>,
+    pub language: Language,
+    pub config: &'a Config,
+}
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solar_date` | `&str` | 公历日期，格式 `YYYY-M-D` |
+| `time_index` | `u8` | 时辰索引 0–12 |
+| `gender` | `Gender` | 性别，决定长生与博士十二神的顺逆 |
+| `fix_leap` | `bool` | 是否修正闰月 |
+| `from` | `Option<(HeavenlyStem, EarthlyBranch)>` | 起五行局的干支；`None` 时由命宫干支起 |
+| `language` | `Language` | 星耀名称的输出语言 |
+| `config` | `&Config` | 排盘配置 |
+
+```rust
+let cfg = Config::default();
+let param = StarParam {
+    solar_date: "2000-8-16",
+    time_index: 2,
+    gender: Gender::Female,
+    fix_leap: true,
+    from: None,
+    language: Language::ZhCN,
+    config: &cfg,
+};
+```
+
+<Callout type="info" title="from 只影响起五行局">
+`from` 给出后，五行局改由该干支推算，进而改变紫微天府落点与长生十二神。
+其余各组星的起法不受影响。用它可以取到中州派地盘、人盘的安星结果。
+</Callout>
+
+---
+
+## get_start_index
+
+**用途**　求紫微、天府的起始宫位。
+
+**斗数含义**　紫微是全盘的锚点：由五行局与农历生日按「起紫微星诀」定位，
+其余十三颗主星再依紫微与天府的位置铺开。天府与紫微的位置互为镜像。
+
+**签名**
+
+```rust
+pub fn get_start_index(param: &StarParam) -> Result<StartIndex, IztroError>
+```
+
+**返回值**　`StartIndex { ziwei: usize, tianfu: usize }`。
+
+**示例**
+
+```rust
+let s = star::query::get_start_index(&param)?;
+println!("紫微 {} 天府 {}", s.ziwei, s.tianfu);
+```
+
+**输出**
+
+```text
+紫微 4 天府 8
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+`from` 给出不同干支时结果随之改变——这正是中州派三张盘差异的来源。
+</Callout>
+
+---
+
+## 各组落宫索引
+
+以下六个入口形状一致：收 `&StarParam`，返回一个字段全是宫位索引的结构体。
+
+| 函数 | 返回类型 | 字段 | 起法依据 |
+| --- | --- | --- | --- |
+| `get_lu_yang_tuo_ma_index` | `LuYangTuoMa` | `lu` `yang` `tuo` `ma` | 年干定禄存，禄前羊后陀；天马按年支 |
+| `get_kui_yue_index` | `KuiYue` | `kui` `yue` | 年干 |
+| `get_chang_qu_index` | `ChangQu` | `chang` `qu` | 时支 |
+| `get_kong_jie_index` | `KongJie` | `kong` `jie` | 时支 |
+| `get_timely_star_index` | `TimelyStars` | `taifu` `fenggao` | 时支 |
+| `get_luan_xi_index` | `LuanXi` | `hongluan` `tianxi` | 年支 |
+
+**示例**
+
+```rust
+use x_iztro::star::query as sq;
+
+let l = sq::get_lu_yang_tuo_ma_index(&param)?;
+println!("禄存 {} 擎羊 {} 陀罗 {} 天马 {}", l.lu, l.yang, l.tuo, l.ma);
+
+let c = sq::get_chang_qu_index(&param)?;
+println!("文昌 {} 文曲 {}", c.chang, c.qu);
+
+let lx = sq::get_luan_xi_index(&param)?;
+println!("红鸾 {} 天喜 {}", lx.hongluan, lx.tianxi);
+```
+
+**输出**
+
+```text
+禄存 6 擎羊 7 陀罗 5 天马 0
+文昌 6 文曲 4
+红鸾 9 天喜 3
+```
+
+擎羊在禄存前一格、陀罗在后一格，这是「禄前羊刃当，禄后陀罗府」的直接体现。
+
+---
+
+## get_daily_star_index / get_monthly_star_index / get_yearly_star_index
+
+**用途**　取按日、按月、按年起的杂耀落宫。
+
+**斗数含义**　杂耀按起法分组：日系星从辅星位置起初一顺数到生日；
+月系星按农历月份定位；年系星最多，按年干或年支起。
+
+**签名**
+
+```rust
+pub fn get_daily_star_index(param: &StarParam) -> Result<DailyStar, IztroError>
+pub fn get_monthly_star_index(param: &StarParam) -> Result<MonthlyStar, IztroError>
+pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroError>
+```
+
+**返回值**
+
+| 类型 | 字段 |
+| --- | --- |
+| `DailyStar` | `santai` `bazuo` `enguang` `tiangui` |
+| `MonthlyStar` | `jieshen` `tianyao` `tianxing` `yinsha` `tianyue` `tianwu` |
+| `YearlyStars` | 27 项，含 `xianchi` `huagai` `guchen` `guasu` `tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `tianshang` `tianshi` `jiekong` `jiesha` `nianjie` `dahao` |
+
+**示例**
+
+```rust
+let d = sq::get_daily_star_index(&param)?;
+println!("三台 {} 八座 {} 恩光 {} 天贵 {}", d.santai, d.bazuo, d.enguang, d.tiangui);
+
+let m = sq::get_monthly_star_index(&param)?;
+println!("解神 {} 天姚 {} 天刑 {}", m.jieshen, m.tianyao, m.tianxing);
+
+let y = sq::get_yearly_star_index(&param)?;
+println!("咸池 {} 华盖 {} 天伤 {} 天使 {}", y.xianchi, y.huagai, y.tianshang, y.tianshi);
+```
+
+**输出**
+
+```text
+三台 0 八座 10 恩光 9 天贵 7
+解神 0 天姚 5 天刑 1
+咸池 7 华盖 2 天伤 9 天使 11
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="年系星的年支按 horoscope_divide 取">
+年系杂耀属流年神煞，取年支时用的是 `horoscope_divide` 而非 `year_divide`。
+两个配置不同时，年系星与主星、辅星可能基于不同的年支——这是刻意的流派区分。
+</Callout>
+
+---
+
+## get_major_stars / get_minor_stars / get_adjective_stars
+
+**用途**　取主星、辅星、杂耀在十二宫的完整分布。
+
+**签名**
+
+```rust
+pub fn get_major_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+```
+
+**返回值**　定长十二项数组，按宫位索引排列。每项是该宫的星耀列表（可能为空）。
+
+**示例**
+
+```rust
+let major = sq::get_major_stars(&param)?;
+for (i, stars) in major.iter().take(5).enumerate() {
+    println!("[{i}] {:?}", stars.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+}
+```
+
+**输出**
+
+```text
+[0] ["武曲", "天相"]
+[1] ["太阳", "天梁"]
+[2] ["七杀"]
+[3] ["天机"]
+[4] ["紫微"]
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+返回的 `Star` 带亮度与生年四化标记，与整盘排出的完全一致——
+它们走的是同一段代码。要取整盘的话直接用 `by_solar` 更省事。
+</Callout>
+
+---
+
+## get_changsheng12 / get_boshi12 / get_yearly12
+
+**用途**　取四组十二神在十二宫的排列。
+
+**斗数含义**　这四组各是十二个标记排满十二宫，每宫恰好一个：
+长生十二神按五行局起、随性别与年支阴阳定顺逆；
+博士十二神从禄存起、同样定顺逆；
+岁前十二神从年支起顺行；将前十二神按年支三合组起。
+
+**签名**
+
+```rust
+pub fn get_changsheng12(param: &StarParam) -> Result<[StarKey; 12], IztroError>
+pub fn get_boshi12(param: &StarParam) -> Result<[StarKey; 12], IztroError>
+pub fn get_yearly12(param: &StarParam) -> Result<([StarKey; 12], [StarKey; 12]), IztroError>
+```
+
+**返回值**　定长十二项数组，按宫位索引排列。
+`get_yearly12` 一次返回两组，顺序为 `(岁前十二神, 将前十二神)`。
+
+**示例**
+
+```rust
+let cs = sq::get_changsheng12(&param)?;
+println!("{:?}", cs.iter().take(4).map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+
+let (suiqian, jiangqian) = sq::get_yearly12(&param)?;
+println!("{:?}", suiqian.iter().take(4).map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+println!("{:?}", jiangqian.iter().take(4).map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+["绝", "墓", "死", "病"]
+["吊客", "病符", "岁建", "晦气"]
+["岁驿", "息神", "华盖", "劫煞"]
+```
+
+---
+
+## get_changsheng12_start_index / get_jiangqian12_start_index
+
+**用途**　只取两组十二神的起始宫位，不排整组。
+
+**斗数含义**　长生起点由五行局定：水二局长生在申、木三局在亥、金四局在巳、
+土五局在申、火六局在寅。将星起点由年支三合组定：寅午戌年在午、申子辰年在子、
+巳酉丑年在酉、亥卯未年在卯。
+
+**签名**
+
+```rust
+pub fn get_changsheng12_start_index(five_elements_class: FiveElementsClass) -> usize
+pub fn get_jiangqian12_start_index(yearly_branch: EarthlyBranch) -> usize
+```
+
+**返回值**　`usize`，0–11。这两个函数不需要出生数据，也不会失败。
+
+**示例**
+
+```rust
+use x_iztro::star::decorative::{get_changsheng12_start_index, get_jiangqian12_start_index};
+
+println!("{} {}",
+    get_changsheng12_start_index(FiveElementsClass::Water2nd),
+    get_changsheng12_start_index(FiveElementsClass::Fire6th));
+println!("{} {}",
+    get_jiangqian12_start_index(EarthlyBranch::Zi),
+    get_jiangqian12_start_index(EarthlyBranch::Wu));
+```
+
+**输出**
+
+```text
+6 0
+10 4
+```
+
+水二局长生在申（索引 6），火六局在寅（索引 0）。
+
+---
+
+## get_horoscope_stars
+
+**用途**　取某个运限层级的流耀分布。
+
+**斗数含义**　流耀是随运限产生的十颗星：魁钺昌曲禄羊陀马鸾喜。
+它们的落宫由该层级的干支决定，名字随层级变化。流年层级额外多一颗年解。
+
+**签名**
+
+```rust
+pub fn get_horoscope_stars(
+    stem: HeavenlyStem,
+    branch: EarthlyBranch,
+    scope: Scope,
+    lang: Language,
+) -> [Vec<Star>; 12]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `stem` | `HeavenlyStem` | 是 | — | 该层级的天干 |
+| `branch` | `EarthlyBranch` | 是 | — | 该层级的地支 |
+| `scope` | `Scope` | 是 | — | 运限层级，决定星名 |
+| `lang` | `Language` | 是 | — | 输出语言 |
+
+**返回值**　定长十二项数组，按宫位索引排列。不会失败——入参是枚举，无非法值。
+
+**各层级的星名对照**
+
+| 本命 | 大限 | 流年 | 流月 | 流日 | 流时 |
+| --- | --- | --- | --- | --- | --- |
+| 天魁 | 运魁 | 流魁 | 月魁 | 日魁 | 时魁 |
+| 天钺 | 运钺 | 流钺 | 月钺 | 日钺 | 时钺 |
+| 文昌 | 运昌 | 流昌 | 月昌 | 日昌 | 时昌 |
+| 文曲 | 运曲 | 流曲 | 月曲 | 日曲 | 时曲 |
+| 禄存 | 运禄 | 流禄 | 月禄 | 日禄 | 时禄 |
+| 擎羊 | 运羊 | 流羊 | 月羊 | 日羊 | 时羊 |
+| 陀罗 | 运陀 | 流陀 | 月陀 | 日陀 | 时陀 |
+| 天马 | 运马 | 流马 | 月马 | 日马 | 时马 |
+| 红鸾 | 运鸾 | 流鸾 | 月鸾 | 日鸾 | 时鸾 |
+| 天喜 | 运喜 | 流喜 | 月喜 | 日喜 | 时喜 |
+
+**示例**
+
+```rust
+use x_iztro::astro::horoscope::get_horoscope_stars;
+
+let decadal = get_horoscope_stars(HeavenlyStem::Jia, EarthlyBranch::Zi, Scope::Decadal, Language::ZhCN);
+println!("{:?}", decadal.iter().take(4)
+    .map(|g| g.iter().map(|s| s.name.as_str()).collect::<Vec<_>>()).collect::<Vec<_>>());
+
+let origin = get_horoscope_stars(HeavenlyStem::Jia, EarthlyBranch::Zi, Scope::Origin, Language::ZhCN);
+println!("{:?}", origin.iter().take(2)
+    .map(|g| g.iter().map(|s| s.name.as_str()).collect::<Vec<_>>()).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+[["运禄", "运马"], ["运羊", "运鸾"], [], ["运昌"]]
+[["禄存", "天马"], ["擎羊", "红鸾"]]
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="流年层级多一颗年解">
+`Scope::Yearly` 的结果里额外含年解，按流年地支定位，安放在十颗流耀之前。
+其余层级没有这一颗。
+</Callout>
+
+---
+
+## 低层构件
+
+`star::location` 与 `star::decorative` 下的函数收已算好的索引而非出生数据。
+排盘流水线内部用它们，自建流程时也可复用。
+
+| 模块 | 主要函数 |
+| --- | --- |
+| `star::location` | `get_start_index`、`get_lu_yang_tuo_ma_index`、`get_kui_yue_index`、`get_zuo_you_index`、`get_chang_qu_index`、`get_chang_qu_index_by_stem`、`get_daily_star_index`、`get_timely_star_index`、`get_kong_jie_index`、`get_huo_ling_index`、`get_luan_xi_index`、`get_huagai_xianchi_index`、`get_gu_gua_index`、`get_jiesha_adj_index`、`get_dahao_index`、`get_nianjie_index`、`get_tianshang_tianshi_index`、`get_tiancai_index`、`get_yearly_star_index`、`get_monthly_star_index` |
+| `star::decorative` | `get_changsheng12`、`get_boshi12`、`get_yearly12`、以及上文两个起点函数 |
+| `star::major` / `minor` / `adjective` | `get_major_stars`、`get_minor_stars`、`get_adjective_stars` |
+
+<Callout type="warn" title="名字与 star::query 下的相同">
+两层有若干同名函数（如两个 `get_start_index`），靠模块路径区分：
+`star::query::get_start_index` 收 `&StarParam`，
+`star::location::get_start_index` 收农历日、时辰、当月天数与五行局局数。
+同时 `use` 两个模块时请用限定路径。
+</Callout>
+
+从出生数据到这些构件所需中间量的推算收在 `astro::context::derive`，
+自建流程时先调它拿到上下文，再喂给构件即可，不必自己重推年干支与命宫。

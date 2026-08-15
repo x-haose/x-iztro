@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* fumadocs 组件自身的类名需要被 Tailwind 扫描到才会生成样式 */
+@source '../node_modules/fumadocs-ui/dist/**/*.js';
+
+/*
+ * 视觉基调：东方星象。
+ * 亮色取宣纸暖白与墨黑，暗色取深靛夜空；两者共用紫微紫作强调色，
+ * 暗色下另加星金作次强调，用于数字与点缀。
+ */
+@theme {
+  --font-serif-cjk: 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+
+  --color-ziwei-50: oklch(97% 0.015 300);
+  --color-ziwei-200: oklch(88% 0.06 300);
+  --color-ziwei-500: oklch(58% 0.19 300);
+  --color-ziwei-600: oklch(52% 0.2 300);
+  --color-ziwei-700: oklch(45% 0.18 300);
+  --color-star-gold: oklch(82% 0.13 85);
+}
+
+:root {
+  --color-fd-background: oklch(98.5% 0.006 85);
+  --color-fd-foreground: oklch(22% 0.012 280);
+  --color-fd-muted: oklch(96% 0.008 85);
+  --color-fd-muted-foreground: oklch(48% 0.015 280);
+  --color-fd-border: oklch(89% 0.01 280);
+  --color-fd-card: oklch(99.5% 0.004 85);
+  --color-fd-card-foreground: var(--color-fd-foreground);
+  --color-fd-primary: var(--color-ziwei-600);
+  --color-fd-primary-foreground: oklch(99% 0.005 300);
+  --color-fd-accent: oklch(95% 0.02 300);
+  --color-fd-accent-foreground: var(--color-ziwei-700);
+  --color-fd-secondary: oklch(96% 0.012 300);
+  --color-fd-secondary-foreground: var(--color-fd-foreground);
+  --color-fd-ring: var(--color-ziwei-500);
+
+  /* 强调色的次级用法：首页数字、盘面点缀 */
+  --color-accent-figure: var(--color-ziwei-600);
+}
+
+.dark {
+  --color-fd-background: oklch(16% 0.022 265);
+  --color-fd-foreground: oklch(93% 0.008 265);
+  --color-fd-muted: oklch(21% 0.024 265);
+  --color-fd-muted-foreground: oklch(68% 0.02 265);
+  --color-fd-border: oklch(30% 0.028 265);
+  --color-fd-card: oklch(19% 0.024 265);
+  --color-fd-card-foreground: var(--color-fd-foreground);
+  --color-fd-primary: oklch(72% 0.15 300);
+  --color-fd-primary-foreground: oklch(15% 0.03 300);
+  --color-fd-accent: oklch(26% 0.035 280);
+  --color-fd-accent-foreground: oklch(92% 0.02 300);
+  --color-fd-secondary: oklch(23% 0.028 265);
+  --color-fd-secondary-foreground: var(--color-fd-foreground);
+  --color-fd-ring: oklch(72% 0.15 300);
+
+  --color-accent-figure: var(--color-star-gold);
+}
+
+/* 中文标题用衬线，与无衬线正文形成对比；西文与代码不受影响 */
+h1,
+h2,
+.font-display {
+  font-family: var(--font-serif-cjk);
+  letter-spacing: 0.01em;
+}

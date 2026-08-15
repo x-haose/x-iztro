@@ -1,0 +1,116 @@
+---
+title: 扩展星盘
+description: 把自己的分析规则挂到星盘上——三种语言各自的扩展点。
+---
+
+排盘结果是数据，怎么解读是各家的事。斗数流派众多、判断规则千人千面，
+把它们全塞进核心既不可能也不该做。x-iztro 的做法是让你把自己的规则
+以方法的形式挂到星盘上，调用语法与内置方法一致。
+
+## 三种语言的扩展点
+
+每种语言用它自己最自然的机制，不强行统一成一套：
+
+| 语言 | 机制 | 检查时机 | 作用范围 |
+| --- | --- | --- | --- |
+| [Rust](/zh/docs/rust/extend) | 扩展 trait | 编译期 | `use` 了才可见 |
+| [Python](/zh/docs/python/extend) | 往类上挂方法 | 运行期 | 进程内全局 |
+| [Go](/zh/docs/go/extend) | 结构体嵌入 | 编译期 | 只影响自己的类型 |
+
+三者都做同一件事：`chart.my_method()` 这样调用，且能用上星盘的全部内置能力。
+具体写法与可运行示例见各自的页面。
+
+## 共同的约定
+
+<Accordions>
+<Accordion title="判断一律基于语言无关标识">
+`star.key == "ziweiMaj"` 在任何输出语言下都成立；
+`star.name == "紫微"` 只在中文盘上成立。
+
+扩展方法里做判断请用 `*_key` / `*Key` 字段或内置判断方法，
+展示时才取译名。这样同一条规则在六种语言的盘上结果一致。
+详见[语言无关标识](/zh/docs/guide/guides/keys)。
+</Accordion>
+<Accordion title="按分析主题拆分，不要堆成一个">
+`WealthAnalysis`、`CareerAnalysis`、`HealthAnalysis` 各自成一组，
+使用方按需引入。堆成一个大集合会让所有调用点都被迫带上全部方法。
+</Accordion>
+<Accordion title="跨语言一致靠断言，不靠共享代码">
+同一套规则要在三种语言上都可用时，当前的做法是三侧各写一遍，
+再用一组断言同一张盘上同一组取值的测试守住。
+
+因为判断基于语言无关标识，三份实现只要逻辑相同，结果必然相同——
+测试负责证明「逻辑确实相同」。
+</Accordion>
+</Accordions>
+
+## 一个例子
+
+三种语言实现同一个插件：取命宫主星（空宫借对宫），并读出五行局的局数。
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+trait MyAnalysis {
+    fn major_star(&self) -> String;
+}
+
+impl MyAnalysis for Astrolabe {
+    fn major_star(&self) -> String {
+        let soul = self.palace(Palace::Soul).expect("命宫必然存在");
+        let source = if soul.is_empty() { soul.opposite_palace() } else { soul };
+        source.major_stars.iter()
+            .filter(|s| s.star_type == StarType::Major)
+            .map(|s| translate_star(s.key, self.language))
+            .collect::<Vec<_>>().join(",")
+    }
+}
+
+chart.major_star()   // 紫微
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+def my_analysis(cls: type[Astrolabe]) -> None:
+    def major_star(self) -> str:
+        soul = self.palace(PalaceName.SOUL)
+        source = soul.opposite_palace() if soul.is_empty() else soul
+        return ",".join(s.name for s in source.major_stars)
+
+    cls.major_star = major_star
+
+load_plugin(my_analysis)
+chart.major_star()   # 紫微
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+type MyChart struct{ *iztro.Astrolabe }
+
+func (c MyChart) MajorStar() string {
+    soul := c.Palace(iztro.PalaceSoul)
+    source := soul
+    if soul.IsEmpty() {
+        source = soul.OppositePalace()
+    }
+    names := []string{}
+    for _, s := range source.MajorStars {
+        if s.Type == iztro.StarTypeMajor {
+            names = append(names, s.Name)
+        }
+    }
+    return strings.Join(names, ",")
+}
+
+MyChart{chart}.MajorStar()   // 紫微
+```
+
+</Tab>
+</Tabs>
+
+三段代码在同一张盘上都返回 `紫微`，换成英文排盘则都返回 `emperor`。

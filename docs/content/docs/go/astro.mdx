@@ -1,0 +1,313 @@
+---
+title: 排盘入口
+description: BySolar、ByLunar、Rearranged 与 AI Prompt 生成。
+---
+
+排盘是一切的起点：给出生日期、时辰、性别，得到一个 `*Astrolabe`。
+
+<Callout type="info">
+所有入口都返回 `error`。日期格式与存在性、公历年份范围、时辰索引、性别、
+语言、配置都在核心层前置校验。详见[错误处理](/zh/docs/go/errors)。
+</Callout>
+
+---
+
+## BySolar
+
+**用途**　由公历日期排出本命盘。
+
+**斗数含义**　紫微斗数以农历为算法基础，但绝大多数人只记得公历生日。
+本函数先把公历转农历（含年、月、日、时四柱），再据此安星。
+换年的时点受 `YearDivide` 影响——正月初一与立春之间出生的人，
+两种配置会得到不同的年干支，进而影响四化、命主身主与全部年系星。
+
+**签名**
+
+```go
+func BySolar(
+    solarDate string,
+    timeIndex uint8,
+    gender string,
+    fixLeap bool,
+    language string,
+    config *Config,
+) (*Astrolabe, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solarDate` | `string` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
+| `timeIndex` | `uint8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
+| `gender` | `string` | 是 | — | `"male"` 或 `"female"`。决定大限顺逆与长生、博士十二神的排列方向 |
+| `fixLeap` | `bool` | 是 | — | 是否调整农历闰月。为真时闰月十五日之后按下月算 |
+| `language` | `string` | 是 | — | 输出语言，影响所有译名字段；`*Key` 标识字段不受影响 |
+| `config` | `*Config` | 是 | — | 排盘配置，传 `nil` 取默认 |
+
+**返回值**　`*Astrolabe`——十二宫、四柱、命主身主、五行局俱全的完整星盘。
+
+**示例**
+
+```go
+chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.SolarDate, "|", chart.LunarDate, "|", chart.ChineseDate)
+fmt.Println(chart.Sign, chart.Zodiac, chart.FiveElementsClass)
+fmt.Println("命主", chart.Soul, "身主", chart.Body)
+```
+
+**输出**
+
+```text
+2000-8-16 | 二〇〇〇年七月十七 | 庚辰 甲申 丙午 庚寅
+狮子座 龙 木三局
+命主 破军 身主 文昌
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="时辰索引为什么是 0–12 而不是 0–11">
+子时横跨午夜，分早子时（00:00–01:00，属当日）与晚子时（23:00–24:00，属次日）。
+两者的日柱不同，紫微起宫也可能差一天，因此必须区分，索引才有 13 个。
+不确定时辰索引时用 `TimeToIndex(hour)` 换算。
+</Accordion>
+<Accordion title="fixLeap 只在闰月生效">
+该月不是闰月时 `fixLeap` 无任何作用。只有农历闰月出生、且生日在十五之后的人，
+`true` 与 `false` 会得到不同的月索引，进而影响左辅右弼与全部月系星。
+</Accordion>
+<Accordion title="config 传 nil 而不是零值">
+`&Config{}` 与 `nil` 效果相同——所有字段都有 `omitempty`，空值不会覆盖默认。
+但显式写 `nil` 更清楚表达「用默认配置」。
+</Accordion>
+</Accordions>
+
+---
+
+## ByLunar
+
+**用途**　由农历日期排出本命盘。
+
+**斗数含义**　农历日期是斗数的原生输入，跳过公历转换这一步。
+知道自己农历生日的人直接用它，结果与用对应公历日期调 `BySolar` 完全一致。
+
+**签名**
+
+```go
+func ByLunar(
+    lunarDate string,
+    timeIndex uint8,
+    gender string,
+    isLeapMonth bool,
+    fixLeap bool,
+    language string,
+    config *Config,
+) (*Astrolabe, error)
+```
+
+**参数**　除以下一项外，其余与 `BySolar` 相同。
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lunarDate` | `string` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
+| `isLeapMonth` | `bool` | 是 | — | 该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
+
+**返回值**　同 `BySolar`。
+
+**示例**
+
+```go
+a, _ := iztro.ByLunar("2000-7-17", 2, "female", false, true, "zh-CN", nil)
+b, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+
+fmt.Println(a.SolarDate, a.SolarDate == b.SolarDate)
+```
+
+**输出**
+
+```text
+2000-8-16 true
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="isLeapMonth 的静默失效">
+传 `true` 但那个月并非闰月时，参数被静默忽略，不返回错误。
+如果需要严格校验，调用前先自行确认该年该月确实有闰月。
+</Callout>
+
+---
+
+## Config
+
+排盘配置。所有字段都可省略，省略即取默认。
+
+```go
+type Config struct {
+    YearDivide      string
+    HoroscopeDivide string
+    AgeDivide       string
+    DayDivide       string
+    Algorithm       string
+    AstroType       string
+    Mutagens        map[string][]string
+    Brightness      map[string][]string
+}
+```
+
+| 字段 | 取值 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `YearDivide` | `"normal"` / `"exact"` | `"normal"` | 年干支按正月初一还是立春换年 |
+| `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | 流年神煞按哪个分界取年支 |
+| `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | 虚岁按农历年还是生日增长 |
+| `DayDivide` | `"forward"` / `"current"` | `"forward"` | 晚子时归次日还是当日 |
+| `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | 算法派别 |
+| `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | 排盘视角 |
+| `Mutagens` | 天干标识 → 四星标识 | — | 自定义四化表，按天干整表替换 |
+| `Brightness` | 星耀标识 → 十二项亮度标识 | — | 自定义亮度表，按星耀整表替换 |
+
+**示例**
+
+```go
+cfg := &iztro.Config{
+    Algorithm:  iztro.AlgorithmZhongzhou,
+    YearDivide: iztro.YearDivideExact,
+}
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", cfg)
+
+fmt.Println(chart.FiveElementsClass)
+```
+
+**输出**
+
+```text
+木三局
+```
+
+每组取值都有对应的常量，不必手写字符串：
+`YearDivideNormal` / `YearDivideExact`、`HoroscopeDivideNormal` / `HoroscopeDivideExact`、
+`AgeDivideNormal` / `AgeDivideBirthday`、`DayDivideForward` / `DayDivideCurrent`、
+`AlgorithmDefault` / `AlgorithmZhongzhou`、`AstroHeaven` / `AstroEarth` / `AstroHuman`。
+
+**边界与陷阱**
+
+<Callout type="warn" title="自定义表按整表替换">
+`Mutagens["jiaHeavenly"]` 必须给满四项（禄权科忌），
+`Brightness["ziweiMaj"]` 必须给满十二项，否则排盘报错。
+未列出的天干与星耀仍用默认表。
+</Callout>
+
+---
+
+## Rearranged
+
+**用途**　以指定干支为命宫重排本盘，返回新盘；原盘不变。
+
+**斗数含义**　中州派把同一组出生数据看作三张盘：天盘以命宫干支起五行局，
+地盘以身宫干支起，人盘以福德宫干支起。起局的干支一变，五行局就变，
+紫微天府落点、十二宫名、长生十二神、大限小限随之全部重算。
+本方法把这个能力放开到**任意干支**。
+
+**签名**
+
+```go
+func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astrolabe, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `fromStemKey` | `string` | 是 | — | 新命宫的天干标识 |
+| `fromBranchKey` | `string` | 是 | — | 新命宫的地支标识 |
+
+**返回值**　新的 `*Astrolabe`。重算：命宫身宫、五行局、十四主星、十二宫名、
+长生十二神、大限小限、命主星，以及随命宫挪位的天伤、天使、天才。
+沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神、身主星。
+
+**示例**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+
+// 从原盘身宫的干支起盘，等价于地盘
+var body *iztro.Palace
+for i := range chart.Palaces {
+    if chart.Palaces[i].IsBodyPalace {
+        body = &chart.Palaces[i]
+    }
+}
+earth, _ := chart.Rearranged(body.HeavenlyStemKey, body.EarthlyBranchKey)
+
+fmt.Println("天盘", chart.FiveElementsClass, "→ 地盘", earth.FiveElementsClass)
+```
+
+**输出**
+
+```text
+天盘 木三局 → 地盘 土五局
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="常规三盘不必用这个方法">
+天盘、地盘、人盘用 `&Config{AstroType: iztro.AstroEarth}` 直接排即可，
+两个排盘入口都支持。`Rearranged` 是为「从任意干支起盘」准备的。
+</Callout>
+
+<Accordions>
+<Accordion title="身主星不随重排变化">
+身主星按**出生年支**查表，与命宫位置无关，重排不改变出生年。
+命主星按命宫地支查表，因此会跟着更新。
+</Accordion>
+</Accordions>
+
+---
+
+## AstrolabeToPrompt / HoroscopeToPrompt
+
+**用途**　把星盘或运限渲染成结构化文本，供大模型消费。
+
+**签名**
+
+```go
+func (a *Astrolabe) AstrolabeToPrompt() (string, error)
+func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `targetDate` | `string` | 是 | — | 仅运限版本：目标公历日期 |
+| `targetTimeIndex` | `uint8` | 是 | — | 仅运限版本：目标时辰索引 |
+
+**返回值**　`string`——按星盘的排盘语言输出的结构化文本。
+
+**示例**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+prompt, _ := chart.AstrolabeToPrompt()
+
+fmt.Println(string([]rune(prompt)[:36]))
+```
+
+**输出**
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历:
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+输出语言跟随星盘的排盘语言，不单独设置。要英文 prompt 就用英文排盘。
+</Callout>

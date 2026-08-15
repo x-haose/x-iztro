@@ -1,0 +1,341 @@
+---
+title: 运限对象
+description: 六个运限层级的数据结构，以及不必再传星盘的宫位查询方法。
+---
+
+运限把本命盘投影到某个时间点上。同一张盘，不同年份看到的宫位分布不同——
+这正是「大限走到哪一宫」的意思。
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+```
+
+`Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
+
+## 六个层级
+
+| 字段 | 类型 | 跨度 | 说明 |
+| --- | --- | --- | --- |
+| `decadal` | `HoroscopeItem` | 十年 | 大限。未起运的幼年期为童限 |
+| `age` | `AgeItem` | 一年 | 小限。按虚岁逐年走一宫 |
+| `yearly` | `HoroscopeYearly` | 一年 | 流年。按流年干支定宫 |
+| `monthly` | `HoroscopeItem` | 一月 | 流月 |
+| `daily` | `HoroscopeItem` | 一日 | 流日 |
+| `hourly` | `HoroscopeItem` | 一时辰 | 流时 |
+
+<Callout type="info" title="小限与流年的区别">
+两者都是一年一走，但起法不同：小限从生年地支起、按虚岁顺推，
+流年直接看那一年的干支落在哪一宫。两条线互相独立，斗数里通常并看。
+</Callout>
+
+### HoroscopeItem
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `index` | `int` | 该层级落在哪一宫（宫位索引） |
+| `name` | `str` | 层级显示名，按输出语言翻译 |
+| `heavenly_stem` / `heavenly_stem_key` | `str` | 该层级的天干，决定它飞出的四化 |
+| `earthly_branch` / `earthly_branch_key` | `str` | 该层级的地支 |
+| `palace_names` / `palace_name_keys` | `list[str]` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
+| `mutagen` / `mutagen_keys` | `list[str]` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `stars` | `list[list[Star]] \| None` | 该层级的流耀分布；无流耀的层级为 `None` |
+
+`age` 在此之外多一个 `nominal_age`（虚岁）；
+`yearly` 多一个 `yearly_dec_star`，含流年的岁前与将前十二神。
+两者的通用字段可直接访问：`h.yearly.heavenly_stem`。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+for item in (h.decadal, h.monthly, h.daily, h.hourly):
+    print(f"{item.name} 落在宫位 {item.index} 干支 {item.heavenly_stem}{item.earthly_branch}")
+
+print("小限虚岁", h.age.nominal_age)
+print("大限四化", h.decadal.mutagen)
+```
+
+**输出**
+
+```text
+大限 落在宫位 2 干支 庚辰
+流月 落在宫位 3 干支 壬午
+流日 落在宫位 8 干支 辛丑
+流时 落在宫位 8 干支 戊子
+小限虚岁 26
+大限四化 ['太阳', '武曲', '太阴', '天同']
+```
+
+---
+
+## age_palace
+
+**用途**　取小限当年所在的宫。
+
+**斗数含义**　小限是逐年推移的一条线，落在哪一宫就以那宫为该年重点。
+
+**签名**
+
+```python
+def age_palace(self, astrolabe: Astrolabe | None = None) -> Palace | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传，运限已持有本命盘 |
+
+**返回值**　`Palace | None`——本命盘上的宫位。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+print(h.age_palace().name)
+```
+
+**输出**
+
+```text
+田宅
+```
+
+---
+
+## palace
+
+**用途**　取某个运限层级下、按该层级重推的十二宫中的某一宫。
+
+**斗数含义**　大限走到某宫后，以那一宫为「大限命宫」重排十二宫。
+「大限的夫妻宫」问的就是这套重排后的宫位，与本命夫妻宫通常不是同一宫。
+
+**签名**
+
+```python
+def palace(
+    self,
+    name: PalaceName | str,
+    scope: Scope | ScopeLiteral,
+    astrolabe: Astrolabe | None = None,
+) -> Palace | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `str` | 是 | — | 要取的宫名标识 |
+| `scope` | `str` | 是 | — | 在哪个层级的十二宫里找 |
+| `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
+
+**返回值**　`Palace | None`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
+层级为 `"origin"` 时即本命十二宫。
+
+**示例**
+
+```python
+from x_iztro import PalaceName, Scope
+
+h = chart.horoscope("2025-6-1", 0)
+
+print("大限命宫落在本命的", h.palace(PalaceName.SOUL, Scope.DECADAL).name)
+print("本命命宫是", h.palace(PalaceName.SOUL, Scope.ORIGIN).name)
+```
+
+**输出**
+
+```text
+大限命宫落在本命的 夫妻
+本命命宫是 命宫
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="返回的是本命盘上的那一格">
+`palace("soulPalace", "decadal")` 返回的宫位对象上，`name` 仍是**本命宫名**（例中的夫妻），
+因为它就是本命盘上的那一格。要看该格在大限层级叫什么，查 `h.decadal.palace_names[index]`。
+</Callout>
+
+---
+
+## surround_palaces
+
+**用途**　取某个运限层级下某宫的三方四正。
+
+**签名**
+
+```python
+def surround_palaces(
+    self,
+    name: PalaceName | str,
+    scope: Scope | ScopeLiteral,
+    astrolabe: Astrolabe | None = None,
+) -> SurroundedPalaces | None
+```
+
+**参数**　同 `palace`。
+
+**返回值**　`SurroundedPalaces | None`，判断方法见[三方四正](/zh/docs/python/surpalaces)。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+sp = h.surround_palaces(PalaceName.WEALTH, Scope.YEARLY)
+
+print("流年财帛的三方四正以本命", sp.target.name, "为本宫")
+```
+
+**输出**
+
+```text
+流年财帛的三方四正以本命 疾厄 为本宫
+```
+
+---
+
+## has_horoscope_stars / has_one_of_horoscope_stars / not_have_horoscope_stars
+
+**用途**　判断某层级某宫里有没有指定的流耀。
+
+**斗数含义**　流耀是随运限层级产生的一组星：魁钺昌曲禄羊陀马鸾喜。
+它们在不同层级有不同名字——大限层级叫运魁、运钺，流年层级叫流魁、流钺，
+含义相同但作用于各自的时间跨度。
+
+**签名**
+
+```python
+def has_horoscope_stars(self, name, scope, stars: list[str], astrolabe=None) -> bool
+def has_one_of_horoscope_stars(self, name, scope, stars: list[str], astrolabe=None) -> bool
+def not_have_horoscope_stars(self, name, scope, stars: list[str], astrolabe=None) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `str` | 是 | — | 该层级下的宫名标识 |
+| `scope` | `str` | 是 | — | 运限层级 |
+| `stars` | `list[str]` | 是 | — | 流耀标识，须用该层级的名字 |
+| `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `has_horoscope_stars` | 每一颗都在 |
+| `has_one_of_horoscope_stars` | 至少一颗在 |
+| `not_have_horoscope_stars` | 一颗都不在 |
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+print(h.has_horoscope_stars(PalaceName.SOUL, Scope.DECADAL, ["yunlu"]))
+print(h.has_one_of_horoscope_stars(PalaceName.SOUL, Scope.DECADAL, ["yunlu", "yunyang"]))
+print(h.not_have_horoscope_stars(PalaceName.SOUL, Scope.DECADAL, ["yuntuo"]))
+```
+
+**输出**
+
+```text
+False
+False
+True
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="流耀标识按层级区分">
+大限层级查 `yunlu`（运禄），流年层级查 `liulu`（流禄），层级与标识必须配对。
+拿 `yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
+各层级的标识对照见[安星模块](/zh/docs/python/star#get_horoscope_star)。
+</Callout>
+
+---
+
+## has_horoscope_mutagen
+
+**用途**　判断某层级某宫里有没有该层级天干引发的四化。
+
+**斗数含义**　每个运限层级有自己的天干，会像生年干一样化出四颗星。
+「大限化禄落在大限财帛」这类判断问的就是这个。
+
+**签名**
+
+```python
+def has_horoscope_mutagen(self, name, scope, mutagen: Mutagen, astrolabe=None) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `name` | `str` | 是 | — | 该层级下的宫名标识 |
+| `scope` | `str` | 是 | — | 运限层级 |
+| `mutagen` | `str` | 是 | — | 四化标识 |
+| `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
+
+**返回值**　`bool`。
+
+**示例**
+
+```python
+from x_iztro import Mutagen
+
+h = chart.horoscope("2025-6-1", 0)
+
+print(h.has_horoscope_mutagen(PalaceName.SOUL, Scope.DECADAL, Mutagen.LU))
+print(h.decadal.mutagen)
+```
+
+**输出**
+
+```text
+False
+['太阳', '武曲', '太阴', '天同']
+```
+
+大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
+
+---
+
+## scope_item / astrolabe
+
+**用途**　按层级标识取对应的 `HoroscopeItem`，或回到本命盘。
+
+**签名**
+
+```python
+def scope_item(self, scope: Scope | ScopeLiteral) -> HoroscopeItem | None
+def astrolabe(self) -> Astrolabe | None
+```
+
+**返回值**　`scope_item` 在层级为 `"origin"` 时返回 `None`——本命不是运限层级。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+print(h.scope_item(Scope.DECADAL).name)
+print(h.scope_item(Scope.ORIGIN))
+print(h.astrolabe().solar_date)
+```
+
+**输出**
+
+```text
+大限
+None
+2000-8-16
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+`scope_item` 用于写按层级参数化的通用逻辑，比一串 `if scope == ...` 简洁。
+</Callout>

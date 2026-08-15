@@ -1,0 +1,106 @@
+---
+title: 架构
+description: 核心层与三套绑定的分层、各自的实现取舍，以及不 panic 的设计约束。
+---
+
+x-iztro 是一份 Rust 核心加三套绑定。算法只实现一次，
+Python、Go 与 C 调用方拿到的是同一份计算结果。
+
+## 分层
+
+```
+              ┌──────────────────────────────┐
+              │         Rust 核心库           │
+              │  astro/  排盘、运限、宫位推算  │
+              │  star/   安星                 │
+              │  data/   枚举、常量、数据表    │
+              │  i18n/   六语言词表与双向查找  │
+              └──────────────┬───────────────┘
+                             │
+                    bridge.rs（编组与分派）
+                    dto.rs（序列化契约）
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+   python.rs             wasm.rs               ffi.rs
+   PyO3 扩展         wasm32-wasip1           C ABI
+        │                    │                    │
+   Python 包            Go 包（wazero）       C / C++ / 其他
+```
+
+两个共用层各司其职：
+
+| 层 | 职责 |
+| --- | --- |
+| `bridge.rs` | 入参解析、按名分派、结果编组。Python 与 Go 走同一个函数，行为没有分叉的余地 |
+| `dto.rs` | 序列化契约：camelCase 键、按排盘语言翻译的值，外加 `*Key` 标识与排盘上下文 |
+
+绑定文件因此很薄——只剩语言特有的部分：wasm 的内存协定、PyO3 的异常类型。
+
+## 三套绑定的取舍
+
+### Python：PyO3 原生扩展
+
+Rust 侧用 pythonize 在 Python 对象与 Rust 结构体之间直转，
+Python 侧用 dataclass 包装成类型化 API。
+
+- 编译为 abi3 wheel（`abi3-py310`），一个 wheel 覆盖 Python 3.10 及以上
+- 零运行期依赖，纯 stdlib（dataclasses + StrEnum）
+- 没有 JSON 序列化往返，开销最小
+
+### Go：内嵌 WebAssembly
+
+编译为 `wasm32-wasip1`，用纯 Go 的 wazero 运行时执行。
+
+选它而不是 cgo 的理由是**保留 Go 的交叉编译能力**：cgo 会让 `GOOS`/`GOARCH`
+交叉编译变得极其麻烦，还要求使用者本机有 C 工具链。wasm 方案下 `go get` 即用，
+静态链接与容器构建都不受影响。
+
+代价是每次调用有一次 JSON 编解码与 wasm 内存拷贝，
+且 wasm 实例不能并发（包内已用互斥锁串行化）。对毫秒级的排盘计算，这个代价可以接受。
+
+### C FFI
+
+标准 C ABI，收 C 字符串、返回 JSON 字符串。
+错误以 `{"error":"..."}` 返回，由 serde 生成以保证转义完备。
+外层有 `catch_unwind` 兜底。
+
+## 核心层不 panic
+
+外部输入的全部校验——日期格式与存在性、公历年份范围、时辰索引、性别、语言、配置、
+标识——都在**核心层**完成，入口返回 `Result`。绑定层的 `catch_unwind`
+只负责兜底库内部的缺陷，不承担参数校验职责。
+
+<Callout type="warn" title="这条约束由 wasm 目标决定">
+wasm 上 panic 会变成 trap，而 `catch_unwind` 在 wasm 上无效——兜不住。
+更糟的是每次 trap 都会永久损耗模块实例的栈空间，累积之后连合法调用都会失败。
+校验因此必须在更靠内的一层，三种语言共用同一道防线。
+</Callout>
+
+各语言的错误类型见 [Rust](/zh/docs/rust/errors)、[Python](/zh/docs/python/errors)、[Go](/zh/docs/go/errors) 三页。
+
+## 一致性怎么保证
+
+三种语言的行为一致不靠纪律，靠三层结构约束：
+
+<Steps>
+<Step>**算法只有一份** —— 全部计算在 Rust 核心完成，绑定层不含任何斗数逻辑</Step>
+<Step>**编组只有一份** —— Python 与 Go 调用同一个 `bridge::query`，入参解析与结果形状不可能分叉</Step>
+<Step>**断言成对** —— 每组对外能力在 Python 与 Go 两侧各有一组 parity 测试，断言同一张盘上的同一组取值</Step>
+</Steps>
+
+判断方法一律基于语言无关标识，因此同一条分析规则在三种语言上写出来、结果也相同。
+标识约定见[语言无关标识](/zh/docs/guide/guides/keys)。
+
+## 版本
+
+| 项目 | 版本 |
+| --- | --- |
+| x-iztro | 0.1.1 |
+| Rust edition | 2024 |
+| Python 要求 | 3.10 及以上 |
+| Go 要求 | 1.21 及以上 |
+
+## 许可
+
+MIT。

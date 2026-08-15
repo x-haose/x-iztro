@@ -1,0 +1,326 @@
+---
+title: 星盘对象
+description: Astrolabe 的字段、定位方法与三方四正判断。
+---
+
+`Astrolabe` 是排盘的产物，也是一切查询的入口。它是 `frozen=True` 的 dataclass，
+持有十二宫的全部数据，以及四柱、命主身主、五行局这些盘级信息。
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female")
+```
+
+## 字段
+
+<Accordions>
+<Accordion title="展示字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `gender` | `str` | 性别译名 |
+| `solar_date` | `str` | 公历日期，与入参一致 |
+| `lunar_date` | `str` | 农历日期的中文写法 |
+| `chinese_date` | `str` | 四柱展示串 |
+| `time` | `str` | 时辰名 |
+| `time_range` | `str` | 时辰对应的钟点区间 |
+| `sign` | `str` | 星座 |
+| `zodiac` | `str` | 生肖 |
+| `soul` | `str` | 命主星译名 |
+| `body` | `str` | 身主星译名 |
+| `five_elements_class` | `str` | 五行局译名 |
+
+展示字段随 `language` 翻译。要做判断请用下一组的 `*_key` 字段。
+
+</Accordion>
+<Accordion title="标识字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `gender_key` | `str` | `"male"` / `"female"` |
+| `soul_key` | `str` | 命主星标识 |
+| `body_key` | `str` | 身主星标识 |
+| `five_elements_class_key` | `str` | 五行局标识 |
+| `earthly_branch_of_soul_palace_key` | `str` | 命宫地支标识 |
+| `earthly_branch_of_body_palace_key` | `str` | 身宫地支标识 |
+
+取值与 `x_iztro.enums` 的枚举一一对应，可直接用 `==` 比较。
+
+</Accordion>
+<Accordion title="结构字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `palaces` | `list[Palace]` | 十二宫，索引 0 为寅宫、11 为丑宫 |
+| `raw_dates` | `RawDates` | 结构化的农历生日与四柱干支标识 |
+
+`palaces` 的索引是**宫位索引**而非宫名顺序：`palaces[0]` 永远是寅宫，
+命宫可能落在其中任何一格。取命宫用 `chart.palace("soulPalace")`。
+
+</Accordion>
+<Accordion title="排盘上下文">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `time_index` | `int` | 出生时辰索引 |
+| `fix_leap` | `bool` | 排盘时是否修正闰月 |
+| `language` | `str` | 输出语言 |
+| `config` | `ChartConfig` | 排盘配置 |
+
+运限与 Prompt 从这四项重新发起计算，因此不必再传一遍排盘参数。
+
+</Accordion>
+</Accordions>
+
+---
+
+## palace
+
+**用途**　按索引、宫名、身宫或来因宫取一宫。
+
+**斗数含义**　十二宫是斗数的骨架。命宫定下后，其余十一宫按固定顺序逆时针排开。
+「身宫」是十二宫之一同时被标记的那一宫，代表后天着力处；
+「来因宫」是宫干与生年干相同的那一宫，代表事情的起因。
+
+**签名**
+
+```python
+def palace(self, index_or_name: int | PalaceName | str) -> Palace | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `index_or_name` | `int \| str` | 是 | — | 四种写法见下表 |
+
+| 写法 | 例子 | 含义 |
+| --- | --- | --- |
+| 索引 | `chart.palace(0)` | 宫位索引 0–11，0 为寅宫 |
+| 宫名 | `chart.palace("soulPalace")` | 十二宫名标识之一 |
+| 身宫 | `chart.palace("bodyPalace")` | 带身宫标记的那一宫 |
+| 来因宫 | `chart.palace("originalPalace")` | 宫干与生年干相同的那一宫 |
+
+**返回值**　`Palace | None`。索引越界返回 `None`；来因宫在某些盘上不存在，同样返回 `None`。
+
+**示例**
+
+```python
+soul = chart.palace("soulPalace")
+print(soul.name, soul.heavenly_stem + soul.earthly_branch)
+
+print("身宫落在", chart.palace("bodyPalace").name)
+print("来因宫是", chart.palace("originalPalace").name)
+print("寅宫是", chart.palace(0).name)
+```
+
+**输出**
+
+```text
+命宫 壬午
+身宫落在 官禄
+来因宫是 夫妻
+寅宫是 财帛
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="来因宫可能不存在">
+来因宫要求宫干与生年干相同，且该宫不在子、丑二宫。
+十二宫的天干由五虎遁从寅宫起排，子丑两宫的干支组合决定了某些年干下无解，
+此时返回 `None`。取之前请判空。
+</Accordion>
+<Accordion title="用枚举避免拼写错误">
+`PalaceName.SOUL` 与 `"soulPalace"` 等价，但前者有 IDE 补全，拼错会立刻发现。
+枚举清单见[数据表](/zh/docs/python/data#枚举清单)。
+</Accordion>
+</Accordions>
+
+---
+
+## star / star_in_palace
+
+**用途**　按标识找到一颗星，或同时取回它所在的宫。
+
+**签名**
+
+```python
+def star(self, star: str) -> Star | None
+def star_in_palace(self, star: str) -> tuple[Star, Palace] | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `star` | `str` | 是 | — | 星耀标识，如 `"ziweiMaj"` |
+
+**返回值**　该星不在这张盘上时返回 `None`。
+`star_in_palace` 返回 `(星, 宫)` 二元组，省去再调 `star.palace()`。
+
+**示例**
+
+```python
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.name, "在", ziwei.palace().name)
+print("对宫是", ziwei.opposite_palace().name)
+print("亮度", ziwei.brightness, "四化", ziwei.mutagen)
+
+star, palace = chart.star_in_palace("ziweiMaj")
+print(star.key, palace.name_key)
+```
+
+**输出**
+
+```text
+紫微 在 命宫
+对宫是 迁移
+亮度 庙 四化 None
+ziweiMaj soulPalace
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+只在主星、辅星、杂耀三组里查找。长生十二神、博士十二神、岁前与将前十二神
+是每宫一个的标记而非星耀列表，用 `palace.changsheng12_key` 一类字段直接取。
+</Callout>
+
+---
+
+## surrounded_palaces
+
+**用途**　取目标宫的三方四正。
+
+**斗数含义**　三方四正是斗数最常用的取象范围：本宫、对宫（本宫 +6）、
+财帛位（本宫 +4）、官禄位（本宫 +8）。四个宫合起来看，而不只看本宫，
+是因为对宫与三合宫的星耀同样作用于本宫的事。
+
+**签名**
+
+```python
+def surrounded_palaces(self, index_or_name: int | PalaceName | str) -> SurroundedPalaces | None
+```
+
+**参数**　同 `palace`，四种定位写法都支持。
+
+**返回值**　`SurroundedPalaces | None`，含 `target` / `opposite` / `wealth` / `career` 四个 `Palace`。
+判断方法见[三方四正](/zh/docs/python/surpalaces)。
+
+**示例**
+
+```python
+sp = chart.surrounded_palaces("soulPalace")
+
+print(sp.target.name, sp.opposite.name, sp.wealth.name, sp.career.name)
+print("三方四正见紫微:", sp.have(["ziweiMaj"]))
+```
+
+**输出**
+
+```text
+命宫 迁移 财帛 官禄
+三方四正见紫微: True
+```
+
+---
+
+## is_surrounded / is_surrounded_one_of / not_surrounded
+
+**用途**　直接在星盘上判断某宫的三方四正里有没有指定星耀，省去先取三方四正的一步。
+
+**签名**
+
+```python
+def is_surrounded(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+def is_surrounded_one_of(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+def not_surrounded(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `index_or_name` | `int \| str` | 是 | — | 定位方式同 `palace` |
+| `stars` | `list[str]` | 是 | — | 星耀标识列表 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `is_surrounded` | 列表中**每一颗**都在三方四正里 |
+| `is_surrounded_one_of` | 列表中**至少一颗**在三方四正里 |
+| `not_surrounded` | 列表中**一颗都不在**三方四正里 |
+
+**示例**
+
+```python
+print(chart.is_surrounded("soulPalace", ["ziweiMaj", "tianxiangMaj"]))
+print(chart.is_surrounded_one_of("soulPalace", ["qishaMaj", "pojunMaj"]))
+print(chart.not_surrounded("soulPalace", ["huoxingMin"]))
+```
+
+**输出**
+
+```text
+True
+False
+True
+```
+
+命宫只坐紫微，天相在三方之一的财帛宫，因此第一行为真；
+七杀与破军都不在这四宫内，第二行为假。
+
+**边界与陷阱**
+
+<Callout type="warn" title="空列表的返回值">
+`stars` 传空列表时，`is_surrounded` 与 `not_surrounded` 返回 `True`
+（「所有元素都满足」与「没有元素不满足」对空集都成立），
+`is_surrounded_one_of` 返回 `False`。调用前先确认列表非空。
+</Callout>
+
+---
+
+## horoscope
+
+**用途**　以本盘为起点计算目标日期的运限。
+
+**签名**
+
+```python
+def horoscope(
+    self,
+    target_date: str | None = None,
+    target_time_index: int | None = None,
+) -> Horoscope
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `target_date` | `str \| None` | 否 | `None` | 目标公历日期；不传取今天 |
+| `target_time_index` | `int \| None` | 否 | `None` | 目标时辰索引；不传取此刻所属时辰 |
+
+**返回值**　`Horoscope`——持有本盘的运限对象，六个层级的宫位查询不必再传星盘。
+详见[运限对象](/zh/docs/python/horoscope)。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+print("大限", h.decadal.heavenly_stem + h.decadal.earthly_branch)
+print("流年", h.yearly.heavenly_stem + h.yearly.earthly_branch)
+
+# 两个参数都可省略，取当下
+now = chart.horoscope()
+```
+
+**输出**
+
+```text
+大限 庚辰
+流年 乙巳
+```

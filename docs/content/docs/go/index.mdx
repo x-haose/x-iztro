@@ -1,0 +1,124 @@
+---
+title: 概览
+description: 包结构、类型体系与阅读本参考的方式。
+icon: Boxes
+---
+
+Go 包内嵌一份 WebAssembly 编译的核心，经纯 Go 的 wazero 运行时调用——
+**不需要 cgo**，交叉编译与静态链接都不受影响。
+
+这一栏是 Go 侧的完整 API 参考——每个导出函数、类型与方法都有独立条目。
+
+## 安装
+
+```bash
+go get github.com/x-haose/x-iztro/go/iztro
+```
+
+```go
+import "github.com/x-haose/x-iztro/go/iztro"
+```
+
+## 第一张盘
+
+```go
+chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.SolarDate, chart.LunarDate)
+// 2000-8-16 二〇〇〇年七月十七
+
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.MajorStars[0].Name)
+// 紫微
+```
+
+## 包结构
+
+包是扁平的，全部导出项都在 `iztro` 下。按主题划分：
+
+| 主题 | 主要导出 | 本参考对应页 |
+| --- | --- | --- |
+| 排盘 | `BySolar`、`ByLunar`、`Rearranged` | [排盘入口](/zh/docs/go/astro) |
+| 数据类型 | `Astrolabe`、`Palace`、`Star`、`Horoscope` | [星盘对象](/zh/docs/go/astrolabe) 起的四页 |
+| 标识常量 | `PalaceSoul`、`StarZiweiMaj`、`MutagenLu` 等 | [数据表](/zh/docs/go/data) |
+| 轻量查询 | `GetZodiacBySolarDate` 等 | [轻量查询](/zh/docs/go/query) |
+| 工具函数 | `FixIndex`、`GetBrightness` 等 | [工具函数](/zh/docs/go/util) |
+| 安星 | `GetMajorStar`、`GetHoroscopeStar` 等 | [安星模块](/zh/docs/go/star) |
+| 数据表 | `StarsInfo`、`HeavenlyStems` 等 | [数据表](/zh/docs/go/data) |
+| 翻译 | `Translate`、`KeyOf` | [翻译](/zh/docs/go/i18n) |
+
+## 常量即标识
+
+包里的标识常量取值就是语言无关标识，可直接与数据对象的 `*Key` 字段比较：
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
+// true
+```
+
+它们都是无类型字符串常量，字符串字面量同样有效——
+`chart.Palace("soulPalace")` 与 `chart.Palace(iztro.PalaceSoul)` 等价。
+常量的价值在于 IDE 补全与拼写检查。
+
+<Callout type="warn" title="判断用 Key，不要用 Name">
+`star.Name` 随排盘语言变化（中文盘是「紫微」，英文盘是 `emperor`）；
+`star.Key` 在任何语言下都是 `ziweiMaj`。所有判断都应基于 `*Key` 字段或内置判断方法。
+</Callout>
+
+## 可变参数
+
+需要传星耀列表或四化列表的方法一律用可变参数，调用处不必构造切片：
+
+```go
+soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj)
+soul.FliesTo(target, iztro.MutagenLu, iztro.MutagenJi)
+```
+
+已有切片时用 `...` 展开：
+
+```go
+stars := []string{iztro.StarZiweiMaj, iztro.StarTianxiangMaj}
+soul.Has(stars...)
+```
+
+<Callout type="info" title="运限的流耀查询是例外">
+`HasHoroscopeStars` 一族的星耀参数是 `[]string` 而非可变参数，
+因为它前面已有宫名与层级两个字符串参数，可变参数会让调用处产生歧义。
+</Callout>
+
+## 错误处理
+
+需要计算的入口都返回 `(值, error)`；纯查询方法（`Palace`、`Star`、`Has` 等）不返回错误，
+查不到时返回 `nil` 或零值。
+
+```go
+chart, err := iztro.BySolar("2000-13-1", 2, "female", true, "zh-CN", nil)
+// err: invalid solar date '2000-13-1': month must be within 1-12
+```
+
+## 首次调用的开销
+
+wasm 模块在首次调用时初始化，之后常驻。初始化约几十毫秒，
+后续调用与原生代码同量级。并发安全，可在多个 goroutine 里同时排盘。
+
+## 条目怎么读
+
+每个 API 条目按固定八段组织：
+
+<Steps>
+<Step>**用途** —— 一句话说清它做什么</Step>
+<Step>**斗数含义** —— 它在紫微斗数里对应什么概念（纯工程性的函数省略此段）</Step>
+<Step>**签名** —— 从源码原样摘出</Step>
+<Step>**参数** —— 名、类型、是否必填、默认值、说明</Step>
+<Step>**返回值** —— 类型与结构</Step>
+<Step>**示例** —— 可直接运行的片段</Step>
+<Step>**输出** —— 该示例的真实运行结果</Step>
+<Step>**边界与陷阱** —— 空值、越界、配置影响、与其他 API 的相互作用</Step>
+</Steps>
+
+示例统一用同一张盘：**2000 年 8 月 16 日寅时女命**，
+方便跨页对照。这张盘的完整数据见[数据结构](/zh/docs/guide/data-model)。

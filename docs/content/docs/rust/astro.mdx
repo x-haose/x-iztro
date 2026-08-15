@@ -1,0 +1,396 @@
+---
+title: 排盘入口
+description: by_solar、by_lunar、rearranged 与 JSON 便捷版本。
+---
+
+排盘是一切的起点：给出生日期、时辰、性别，得到一张 `Astrolabe`。
+本页是四个排盘入口的完整参考。
+
+<Callout type="info">
+所有入口都返回 `Result`，外部输入（日期格式与存在性、公历年份范围、时辰索引）
+在核心层前置校验，非法输入返回 `IztroError` 而不是 panic。
+错误类型见[错误处理](/zh/docs/rust/errors)。
+</Callout>
+
+---
+
+## by_solar
+
+**用途**　由公历日期排出本命盘。
+
+**斗数含义**　紫微斗数以农历为算法基础，但绝大多数人只记得公历生日。
+本函数先把公历转农历（含年干支、月干支、日干支、时干支四柱），再据此安星。
+换年的时点受 `year_divide` 影响——正月初一与立春之间出生的人，两种配置会得到不同的年干支，
+进而影响四化、命主身主与全部年系星。
+
+**签名**
+
+```rust
+pub fn by_solar(
+    solar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    fix_leap: bool,
+    language: Language,
+    config: Config,
+) -> Result<Astrolabe, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
+| `time_index` | `u8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
+| `gender` | `Gender` | 是 | — | `Gender::Male` 或 `Gender::Female`。决定大限顺逆与长生、博士十二神的排列方向 |
+| `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十五日之后按下月算 |
+| `language` | `Language` | 是 | — | 输出语言，影响 DTO 中所有译名字段；`*_key` 标识字段不受影响 |
+| `config` | `Config` | 是 | — | 排盘配置，六个开关加自定义表。取默认值用 `Config::default()` |
+
+**返回值**　`Astrolabe`——十二宫、四柱、命主身主、五行局俱全的完整星盘。字段清单见[数据结构](/zh/docs/guide/data-model)。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+println!("{} | {} | {}", chart.solar_date, chart.lunar_date, chart.chinese_date);
+println!("{} {} {}", chart.sign, chart.zodiac,
+    translate_five_elements_class(chart.five_elements_class, Language::ZhCN));
+println!("命主 {} 身主 {}",
+    translate_star(chart.soul, Language::ZhCN),
+    translate_star(chart.body, Language::ZhCN));
+```
+
+<Callout type="info">
+`five_elements_class`、`soul`、`body` 是强类型枚举而非字符串——
+判断时直接比较，要展示则经 `i18n::translate_*` 转成当前语言的文本。
+</Callout>
+
+**输出**
+
+```text
+2000-8-16 | 二〇〇〇年七月十七 | 庚辰 甲申 丙午 庚寅
+狮子座 龙 木三局
+命主 破军 身主 文昌
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="时辰索引为什么是 0–12 而不是 0–11">
+子时横跨午夜，分早子时（00:00–01:00，属当日）与晚子时（23:00–24:00，属次日）。
+两者的日柱不同，紫微起宫也可能差一天，因此必须区分，索引才有 13 个。
+`day_divide` 配置可以把晚子时改判为当日，见 [Config 详解](/zh/docs/guide/guides/config)。
+</Accordion>
+<Accordion title="fix_leap 只在闰月生效">
+该月不是闰月时 `fix_leap` 无任何作用。只有农历闰月出生、且生日在十五之后的人，
+`true` 与 `false` 会得到不同的月索引，进而影响左辅右弼与全部月系星。
+</Accordion>
+<Accordion title="年份下限是 1583">
+1582 年格里历改革留下了不存在的日期空洞，底层历法库在这些日期上会 panic。
+crate 因此把公历支持范围收在 1583–9999，超出范围返回 `IztroError::InvalidDate`。
+</Accordion>
+<Accordion title="language 不影响判断逻辑">
+星盘上所有判断方法（`has`、`flies_to`、`with_mutagen` 等）都基于语言无关标识，
+换语言排盘不会改变任何判断结果，只改变 `name` 一类展示字段。
+</Accordion>
+</Accordions>
+
+---
+
+## by_lunar
+
+**用途**　由农历日期排出本命盘。
+
+**斗数含义**　农历日期是斗数的原生输入，跳过公历转换这一步。
+知道自己农历生日的人直接用它，结果与用对应公历日期调 `by_solar` 完全一致。
+
+**签名**
+
+```rust
+pub fn by_lunar(
+    lunar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    is_leap_month: bool,
+    fix_leap: bool,
+    language: Language,
+    config: Config,
+) -> Result<Astrolabe, IztroError>
+```
+
+**参数**
+
+除以下一项外，其余与 `by_solar` 相同。
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lunar_date` | `&str` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
+| `is_leap_month` | `bool` | 是 | — | 该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
+
+**返回值**　同 `by_solar`。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let a = by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::ZhCN, Config::default())?;
+let b = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+assert_eq!(a.solar_date, b.solar_date);
+println!("{}", a.solar_date);
+```
+
+**输出**
+
+```text
+2000-8-16
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="is_leap_month 的静默失效是刻意的">
+传 `true` 但那个月并非闰月时，参数被静默忽略，不报错。
+如果需要严格校验，调用前先自行确认该年该月确实有闰月。
+</Callout>
+
+---
+
+## rearranged
+
+**用途**　以指定干支为命宫重排本盘，返回新盘；原盘不变。
+
+**斗数含义**　中州派把同一组出生数据看作三张盘：天盘以命宫干支起五行局，
+地盘以身宫干支起，人盘以福德宫干支起。起局的干支一变，五行局就变，
+紫微天府落点、十二宫名、长生十二神、大限小限随之全部重算。
+本方法把这个能力放开到**任意干支**，不限于那三种。
+
+**签名**
+
+```rust
+pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) -> Astrolabe
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `from_stem` | `HeavenlyStem` | 是 | — | 新命宫的天干 |
+| `from_branch` | `EarthlyBranch` | 是 | — | 新命宫的地支 |
+
+**返回值**　新的 `Astrolabe`。重算：命宫身宫、五行局、十四主星、十二宫名、长生十二神、大限小限，
+以及随命宫挪位的天伤、天使、天才。沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+// 从原盘身宫的干支起盘，等价于地盘
+let body = chart.palaces.iter().find(|p| p.is_body_palace).unwrap();
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+
+println!("天盘 {} → 地盘 {}",
+    translate_five_elements_class(chart.five_elements_class, Language::ZhCN),
+    translate_five_elements_class(earth.five_elements_class, Language::ZhCN));
+```
+
+**输出**
+
+```text
+天盘 木三局 → 地盘 土五局
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="常规三盘不必用这个方法">
+天盘、地盘、人盘用 `Config::default().with_astro_type(AstroType::Earth)` 直接排即可，
+两个排盘入口都支持。`rearranged` 是为「从任意干支起盘」准备的。
+</Callout>
+
+<Accordions>
+<Accordion title="哪些字段跟着重排走，哪些不动">
+跟着走：命宫地支、身宫地支、五行局、命主星。命主星按命宫地支查表，
+命宫既已挪位，取值随之更新。
+
+不动：身主星。它按**出生年支**查表，与命宫位置无关，重排不改变出生年。
+
+`algorithm` 设为中州派时命主星也改按年支取，此时它同样不随重排变化。
+</Accordion>
+<Accordion title="原盘不受影响">
+`rearranged` 返回新盘，`&self` 只读。同一张原盘可以连续重排出多个视角，
+互不干扰。
+</Accordion>
+</Accordions>
+
+---
+
+## by_solar_json / by_lunar_json
+
+**用途**　排盘并直接返回 DTO 的 JSON 字符串，省掉调用方自己序列化。
+
+**签名**
+
+```rust
+pub fn by_solar_json(
+    solar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    fix_leap: bool,
+    language: Language,
+    config: Config,
+) -> Result<String, IztroError>
+
+pub fn by_lunar_json(
+    lunar_date: &str,
+    time_index: u8,
+    gender: Gender,
+    is_leap_month: bool,
+    fix_leap: bool,
+    language: Language,
+    config: Config,
+) -> Result<String, IztroError>
+```
+
+**参数**　与对应的排盘函数完全相同。
+
+**返回值**　`String`——[DTO](/zh/docs/guide/data-model) 的 JSON 序列化结果，
+camelCase 键、值按 `language` 翻译，另带 `*Key` 语言无关标识。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let json = by_solar_json("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+let v: serde_json::Value = serde_json::from_str(&json)?;
+
+println!("{} {}", v["solarDate"], v["palaces"][0]["nameKey"]);
+```
+
+**输出**
+
+```text
+"2000-8-16" "wealthPalace"
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+这两个函数只是 `by_solar(...)?.to_dto()` 加序列化的快捷方式。
+Rust 侧要做进一步分析时用 `by_solar` 拿 `Astrolabe`，能用上全部查询方法；
+只是要把结果丢给别的进程或前端时才用 JSON 版本。
+</Callout>
+
+---
+
+## get_horoscope
+
+**用途**　以某张本命盘为起点计算目标日期的运限。
+
+**斗数含义**　运限是把大限、小限、流年、流月、流日、流时六个层级叠在本命盘上，
+每一层各有自己的宫位起点、干支与流耀。
+
+**签名**
+
+```rust
+pub fn get_horoscope(
+    astrolabe: &Astrolabe,
+    solar_date: &str,
+    time_index: u8,
+    language: Language,
+) -> Result<HoroscopeData, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `astrolabe` | `&Astrolabe` | 是 | — | 本命盘 |
+| `solar_date` | `&str` | 是 | — | 目标公历日期，格式 `YYYY-M-D`，支持 1583–9999 年 |
+| `time_index` | `u8` | 是 | — | 目标时辰索引 0–12 |
+| `language` | `Language` | 是 | — | 输出语言 |
+
+**返回值**　`Result<HoroscopeData, IztroError>`。详见[运限对象](/zh/docs/rust/horoscope)。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+let h = get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN)?;
+
+println!("大限宫位索引 {}，流年干支 {:?}{:?}",
+    h.decadal.index, h.yearly.base.heavenly_stem, h.yearly.base.earthly_branch);
+```
+
+**输出**
+
+```text
+大限宫位索引 2，流年干支 JiaChen
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+要连着做运限查询（取某层级的宫位、判断流耀）时，用星盘方法
+`chart.horoscope(...)` 拿 `HoroscopeRef`——它同时持有本命盘，
+查询不必再把星盘传进去。这里的自由函数只返回数据本身。
+</Callout>
+
+---
+
+## astrolabe_to_prompt / horoscope_to_prompt
+
+**用途**　把星盘或运限渲染成适合喂给大模型的纯文本。
+
+**签名**
+
+```rust
+pub fn astrolabe_to_prompt(astrolabe: &Astrolabe, lang: Language) -> String
+pub fn horoscope_to_prompt(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    lang: Language,
+) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `astrolabe` | `&Astrolabe` | 是 | — | 本命盘 |
+| `horoscope` | `&HoroscopeData` | 是 | — | `get_horoscope` 的结果 |
+| `lang` | `Language` | 是 | — | 输出语言，随之切换段落标题与星耀译名 |
+
+**返回值**　`String`，分节的纯文本。
+
+**示例**
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+print!("{}", astrolabe_to_prompt(&chart, Language::ZhCN));
+```
+
+**输出**
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
+干支: 庚辰 甲申 丙午 庚寅
+时辰: 寅时 (03:00~05:00)
+```
+
+这是 x-iztro 在 iztro 之外自加的功能，三语言均可用。
+用法与提示词写法见[喂给大模型](/zh/docs/guide/guides/llm)。

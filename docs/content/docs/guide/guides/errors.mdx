@@ -1,0 +1,113 @@
+---
+title: 错误处理
+description: 校验了什么、在哪一层校验，以及为什么核心层坚持不 panic。
+---
+
+x-iztro 把全部外部输入的校验放在**核心层**，三种语言共用同一道防线。
+各语言只把错误翻译成自己的惯例类型，不重复校验、也不各自解释。
+
+## 校验范围
+
+| 输入 | 校验内容 |
+| --- | --- |
+| 公历日期 | 格式为 `YYYY-M-D`、日期真实存在、年份在 1583–9999 内 |
+| 农历日期 | 同上，另加该农历年该月是否存在、该月有多少天 |
+| 时辰索引 | 0–12 |
+| 性别 | `male` / `female` |
+| 语言 | 六个语言代码之一，大小写不敏感 |
+| 配置 | 各开关取值合法；自定义四化表须四项、亮度表须十二项 |
+| 标识 | 星耀、天干、地支、宫位、四化、运限层级等标识须已知 |
+
+消息里带上原始输入，批量处理时能直接定位是哪一条数据出的问题：
+
+```text
+invalid solar date '2000-2-30': day is out of range for that month
+```
+
+## 各语言的错误类型
+
+同一个错误，三种语言按各自惯例呈现：
+
+| 语言 | 类型 | 消息 |
+| --- | --- | --- |
+| [Rust](/zh/docs/rust/errors) | `IztroError`，两个变体 | 原样 |
+| [Python](/zh/docs/python/errors) | `ValueError` | 原样 |
+| [Go](/zh/docs/go/errors) | `error` | 加 `iztro: ` 前缀 |
+
+消息主体来自核心层，因此三种语言看到的文字相同。
+
+## 查不到不是错误
+
+需要计算的入口返回错误；**查询**方法查不到时返回空值而非错误——
+「这张盘没有来因宫」是正常结果，不是异常。
+
+| 场景 | 返回 |
+| --- | --- |
+| 来因宫在这张盘上不存在 | `None` / `nil` |
+| 某颗星不在这张盘上 | `None` / `nil` |
+| 索引越界 | `None` / `nil` |
+| 该星没有亮度表 | `None` / 空串 |
+
+取字段前先判空。
+
+## 为什么核心层不 panic
+
+这不是风格偏好，是 wasm 目标带来的硬约束。
+
+<Steps>
+<Step>wasm 上 panic 会变成 **trap**，直接中止调用</Step>
+<Step>`catch_unwind` 在 wasm 上**无效**——绑定层兜不住</Step>
+<Step>每次 trap 都会**永久损耗**模块实例的栈空间，累积之后连合法调用都会失败</Step>
+</Steps>
+
+因此防线必须设在更靠内的一层：所有外部输入在进入算法前校验完毕，入口返回 `Result`。
+绑定层的 `catch_unwind` 只负责兜底库内部的缺陷，不承担参数校验职责。
+
+<Callout type="info" title="仍然 panic 意味着什么">
+排盘入口不会因非法**外部输入**而 panic。若真的遇到，那是库内部缺陷，
+应作为 bug 上报——而不是调用方需要防御的情况。
+</Callout>
+
+## 批量处理的写法
+
+坏数据跳过、好数据继续，而不是整批失败：
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let (charts, failed): (Vec<_>, Vec<_>) = rows
+    .iter()
+    .map(|r| by_solar(&r.date, r.ti, r.gender, true, Language::ZhCN, Config::default()))
+    .partition(Result::is_ok);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+charts, failed = [], []
+
+for row in rows:
+    try:
+        charts.append(Astro().by_solar(row["date"], row["ti"], row["gender"]))
+    except ValueError as e:
+        failed.append((row, str(e)))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+for _, row := range rows {
+    chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, "zh-CN", nil)
+    if err != nil {
+        failed = append(failed, failure{row, err})
+        continue
+    }
+    charts = append(charts, chart)
+}
+```
+
+</Tab>
+</Tabs>

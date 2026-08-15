@@ -1,0 +1,534 @@
+---
+title: 工具函数
+description: 索引换算、亮度与四化查表、命身宫推算、大限小限、四柱展示串。
+---
+
+这些函数是排盘算法的零件。自己实现斗数逻辑、或要复核某一步推算时用得上；
+日常排盘不必直接调用。
+
+```python
+from x_iztro import utils
+```
+
+参数与返回值中的标识都与语言无关，可直接与星盘上的 `*_key` 字段互操作。
+
+---
+
+## fix_index
+
+**用途**　把任意整数约束到 `0..max` 的循环区间。
+
+**斗数含义**　十二宫首尾相接，从丑宫（索引 11）再走一格回到寅宫（索引 0）。
+所有「顺数几格、逆数几格」的推算都靠这个回绕。
+
+**签名**
+
+```python
+def fix_index(index: int, max: int = 12) -> int
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `index` | `int` | 是 | — | 待修正的索引，可为负 |
+| `max` | `int` | 否 | `12` | 循环长度，天干用 10 |
+
+**返回值**　`int`，落在 `0..max`。
+
+**示例**
+
+```python
+print(utils.fix_index(-1), utils.fix_index(13))
+```
+
+**输出**
+
+```text
+11 1
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+负数按数学取模回绕（-1 → 11），不是截断到 0。
+</Callout>
+
+---
+
+## earthly_branch_to_palace_index
+
+**用途**　地支转宫位索引。
+
+**斗数含义**　十二宫的排列从**寅宫**起，而地支的自然顺序从**子**起，两者差两格。
+这个函数负责这层换算：寅 → 0，卯 → 1，⋯，子 → 10，丑 → 11。
+
+**签名**
+
+```python
+def earthly_branch_to_palace_index(branch: EarthlyBranch | str) -> int
+```
+
+**返回值**　`int`，0–11。
+
+**示例**
+
+```python
+from x_iztro import EarthlyBranch
+
+print(utils.earthly_branch_to_palace_index(EarthlyBranch.YIN))
+print(utils.earthly_branch_to_palace_index(EarthlyBranch.ZI))
+```
+
+**输出**
+
+```text
+0
+10
+```
+
+---
+
+## time_to_index
+
+**用途**　小时数转时辰索引。
+
+**斗数含义**　一天十二时辰，每时辰两小时，但子时横跨午夜被拆成早子时（0）与晚子时（12），
+因此索引有 13 个值。
+
+**签名**
+
+```python
+def time_to_index(hour: int) -> int
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `hour` | `int` | 是 | — | 小时数 0–23 |
+
+**返回值**　`int`，0–12。
+
+**示例**
+
+```python
+print(utils.time_to_index(0), utils.time_to_index(4), utils.time_to_index(23))
+```
+
+**输出**
+
+```text
+0 2 12
+```
+
+0 点为早子时，4 点为寅时，23 点为晚子时。排盘时不确定时辰索引，用这个函数换算。
+
+---
+
+## get_age_index
+
+**用途**　由生年地支取小限起始宫位索引。
+
+**斗数含义**　小限从固定的宫起，按虚岁逐年推移。起宫由生年地支所属的三合组决定：
+寅午戌年起辰宫、申子辰年起戌宫、巳酉丑年起未宫、亥卯未年起丑宫。
+
+**签名**
+
+```python
+def get_age_index(branch: EarthlyBranch | str) -> int
+```
+
+**返回值**　`int`，0–11。
+
+**示例**
+
+```python
+print(utils.get_age_index("chenEarthly"))
+```
+
+**输出**
+
+```text
+8
+```
+
+辰年属申子辰组，小限从戌宫起，戌宫的索引是 8。
+
+---
+
+## get_brightness
+
+**用途**　查某颗星落在某宫时的亮度。
+
+**签名**
+
+```python
+def get_brightness(
+    star: str,
+    palace_index: int,
+    config: ChartConfig | None = None,
+) -> Brightness | None
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `star` | `str` | 是 | — | 星耀标识 |
+| `palace_index` | `int` | 是 | — | 宫位索引，越界会对 12 取模 |
+| `config` | `ChartConfig \| None` | 否 | `None` | 自定义亮度表会改变结果 |
+
+**返回值**　亮度标识；该星没有亮度表时返回 `None`。
+
+**示例**
+
+```python
+print(utils.get_brightness("ziweiMaj", 4))
+print(utils.get_brightness("lucunMin", 0))
+```
+
+**输出**
+
+```text
+miao
+None
+```
+
+紫微在午宫（索引 4）庙；禄存没有亮度表。
+
+---
+
+## get_mutagen / get_mutagens_by_heavenly_stem
+
+**用途**　查天干四化。
+
+**斗数含义**　十天干各自固定指派四颗星化禄、权、科、忌。
+`get_mutagen` 问「这颗星在这个天干下化什么」，
+`get_mutagens_by_heavenly_stem` 问「这个天干化哪四颗星」。
+
+**签名**
+
+```python
+def get_mutagen(star: str, stem: HeavenlyStem | str, config: ChartConfig | None = None) -> Mutagen | None
+def get_mutagens_by_heavenly_stem(stem: HeavenlyStem | str, config: ChartConfig | None = None) -> list[str]
+```
+
+**返回值**　`get_mutagen` 返回四化标识，该星不在此天干的四化表内时为 `None`。
+`get_mutagens_by_heavenly_stem` 返回四项列表，顺序为**禄、权、科、忌**。
+
+**示例**
+
+```python
+print(utils.get_mutagen("taiyangMaj", "gengHeavenly"))
+print(utils.get_mutagen("ziweiMaj", "gengHeavenly"))
+print(utils.get_mutagens_by_heavenly_stem("gengHeavenly"))
+```
+
+**输出**
+
+```text
+sihuaLu
+None
+['taiyangMaj', 'wuquMaj', 'taiyinMaj', 'tiantongMaj']
+```
+
+---
+
+## get_soul_and_body
+
+**用途**　由农历月索引、时辰与年干推命宫、身宫。
+
+**斗数含义**　命宫是整张盘的起点：从寅宫起正月，顺数到生月，再从生月逆数到生时。
+身宫用同样的起点但顺数生时。命宫的天干由五虎遁从年干推得。
+
+**签名**
+
+```python
+def get_soul_and_body(
+    month_index: int,
+    time_index: int,
+    yearly_stem: HeavenlyStem | str,
+) -> dict
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `month_index` | `int` | 是 | — | 农历月索引，正月为 0；由 `fix_lunar_month_index` 求得 |
+| `time_index` | `int` | 是 | — | 时辰索引 0–12 |
+| `yearly_stem` | `str` | 是 | — | 生年天干标识 |
+
+**返回值**　含 `soulIndex`、`bodyIndex`、`heavenlyStemOfSoul`、`earthlyBranchOfSoul` 的 dict，
+后两项为语言无关标识。
+
+**示例**
+
+```python
+print(utils.get_soul_and_body(6, 2, "gengHeavenly"))
+```
+
+**输出**
+
+```text
+{'bodyIndex': 8, 'earthlyBranchOfSoul': 'wuEarthly', 'heavenlyStemOfSoul': 'renHeavenly', 'soulIndex': 4}
+```
+
+---
+
+## get_five_elements_class
+
+**用途**　由命宫干支推五行局。
+
+**斗数含义**　五行局（水二、木三、金四、土五、火六）决定两件大事：
+紫微星的起宫位置，以及大限的起运岁数。
+
+**签名**
+
+```python
+def get_five_elements_class(stem: HeavenlyStem | str, branch: EarthlyBranch | str) -> str
+```
+
+**返回值**　五行局标识。
+
+**示例**
+
+```python
+print(utils.get_five_elements_class("renHeavenly", "wuEarthly"))
+```
+
+**输出**
+
+```text
+wood3rd
+```
+
+---
+
+## get_palace_names
+
+**用途**　由命宫索引推十二宫名。
+
+**斗数含义**　命宫定下后，其余十一宫按固定顺序逆时针排开：
+命、兄弟、夫妻、子女、财帛、疾厄、迁移、仆役、官禄、田宅、福德、父母。
+
+**签名**
+
+```python
+def get_palace_names(soul_index: int) -> list[PalaceName]
+```
+
+**返回值**　十二项列表，**按宫位索引排列**——第 `i` 项就是 `chart.palaces[i]` 的宫名标识。
+
+**示例**
+
+```python
+print(utils.get_palace_names(4)[:4])
+```
+
+**输出**
+
+```text
+['wealthPalace', 'childrenPalace', 'spousePalace', 'siblingsPalace']
+```
+
+命宫在索引 4，因此索引 0（寅宫）是财帛。
+
+---
+
+## get_decadals_and_ages
+
+**用途**　由命宫索引与五行局推十二宫的大限与小限。
+
+**斗数含义**　大限起运岁数由五行局决定（水二局 2 岁起、木三局 3 岁起，依此类推），
+顺逆由性别阴阳与年支阴阳决定；小限起宫由年支决定，按虚岁逐年推移。
+
+**签名**
+
+```python
+def get_decadals_and_ages(
+    soul_index: int,
+    five_elements_class: str,
+    gender: str,
+    yearly_stem: HeavenlyStem | str,
+    yearly_branch: EarthlyBranch | str,
+) -> dict
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `soul_index` | `int` | 是 | — | 命宫宫位索引 |
+| `five_elements_class` | `str` | 是 | — | 五行局标识 |
+| `gender` | `str` | 是 | — | `"male"` 或 `"female"` |
+| `yearly_stem` | `str` | 是 | — | 年干标识 |
+| `yearly_branch` | `str` | 是 | — | 年支标识 |
+
+**返回值**　含 `decadals` 与 `ages` 两项的 dict，均按宫位索引排列。
+`decadals[i]` 含 `range` 岁数区间与该宫干支标识；`ages[i]` 是小限经过该宫的虚岁列表。
+
+**示例**
+
+```python
+d = utils.get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
+
+print(d["decadals"][0])
+print(d["ages"][0][:3])
+```
+
+**输出**
+
+```text
+{'earthlyBranch': 'yinEarthly', 'heavenlyStem': 'wuHeavenly', 'range': [43, 52]}
+[9, 21, 33]
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+整盘排出的每个宫位上已有 `decadal` 与 `ages` 字段，内容与本函数一致。
+这个函数用于不排整盘、只推大限小限的场合。
+</Callout>
+
+---
+
+## fix_lunar_month_index / fix_lunar_day_index
+
+**用途**　求修正后的农历月索引与日索引。
+
+**斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
+闰月十五日之后按下月算（可关），晚子时属次日。
+
+**签名**
+
+```python
+def fix_lunar_month_index(
+    lunar_month: int,
+    lunar_day: int,
+    is_leap: bool,
+    time_index: int,
+    fix_leap: bool,
+) -> int
+
+def fix_lunar_day_index(lunar_day: int, time_index: int) -> int
+```
+
+**返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+**示例**
+
+```python
+print(utils.fix_lunar_month_index(7, 17, False, 2, True))
+print(utils.fix_lunar_day_index(17, 2), utils.fix_lunar_day_index(17, 12))
+```
+
+**输出**
+
+```text
+6
+16 17
+```
+
+七月非闰月，索引为 6；十七日在寅时减一得 16，在晚子时属次日故保持 17。
+
+---
+
+## translate_chinese_date
+
+**用途**　把四柱干支拼成展示串。
+
+**签名**
+
+```python
+def translate_chinese_date(
+    pillars: list[tuple[str, str]],
+    language: str = "zh-CN",
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pillars` | `list[tuple[str, str]]` | 是 | — | 四柱标识 [年, 月, 日, 时]，每柱为 (天干, 地支) |
+| `language` | `str` | 否 | `"zh-CN"` | 输出语言 |
+
+**返回值**　`str`。词条均为单字符时柱内紧凑相连、柱间空格；
+任一词条为多字符时柱内空格、柱间 ` - `。
+
+**示例**
+
+```python
+pillars = [
+    ("gengHeavenly", "chenEarthly"),
+    ("jiaHeavenly", "shenEarthly"),
+    ("bingHeavenly", "wuEarthly"),
+    ("gengHeavenly", "yinEarthly"),
+]
+print(utils.translate_chinese_date(pillars))
+
+# 星盘上的四柱标识可直接取
+print(utils.translate_chinese_date(chart.raw_dates.chinese_date.pillar_keys()))
+```
+
+**输出**
+
+```text
+庚辰 甲申 丙午 庚寅
+庚辰 甲申 丙午 庚寅
+```
+
+**边界与陷阱**
+
+<Callout type="warn">
+柱数不为四、某柱不是两项，或干支标识非法时抛 `ValueError`。
+</Callout>
+
+---
+
+## merge_stars
+
+**用途**　把多组「十二宫星耀」按宫位合并成一组。
+
+**斗数含义**　安星是分批进行的：主星、辅星、杂耀各出一组十二宫列表。
+要把它们并成一张完整盘面时用这个函数。
+
+**签名**
+
+```python
+def merge_stars(*groups: list[list[Star]]) -> list[list[Star]]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `groups` | `list[list[Star]]` | 是 | — | 若干组十二宫星耀列表，每组长度须为 12 |
+
+**返回值**　合并后的十二宫列表，同宫内按传入顺序首尾相接。
+
+**示例**
+
+```python
+from x_iztro import star
+
+major = star.get_major_star("2000-8-16", 2, "female")
+minor = star.get_minor_star("2000-8-16", 2, "female")
+
+merged = utils.merge_stars(major, minor)
+print([s.name for s in merged[0]])
+```
+
+**输出**
+
+```text
+['武曲', '天相', '天马']
+```
+
+**边界与陷阱**
+
+<Callout type="warn">
+某一组的长度不是 12 时抛 `ValueError`。这是纯本地实现，不经绑定层。
+</Callout>

@@ -1,0 +1,14 @@
+{
+  "title": "使用指南",
+  "icon": "Settings",
+  "pages": [
+    "index",
+    "config",
+    "keys",
+    "i18n",
+    "plugins",
+    "errors",
+    "ai-prompt",
+    "llm"
+  ]
+}

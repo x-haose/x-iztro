@@ -1,0 +1,141 @@
+---
+title: 四化与飞星
+description: 禄权科忌从哪来、十天干四化全表、自化与飞化怎么判断。
+---
+
+四化是紫微斗数里最重要的动态信息。同一张盘，四化把静态的星耀连成有方向的关系网。
+
+## 四种化
+
+| 四化 | key | 常见理解 |
+| --- | --- | --- |
+| 化禄 | `sihuaLu` | 顺遂、收获、缘起 |
+| 化权 | `sihuaQuan` | 掌控、扩张、力度 |
+| 化科 | `sihuaKe` | 名声、贵人、缓和 |
+| 化忌 | `sihuaJi` | 阻滞、执着、变数 |
+
+## 四化从天干来
+
+每个天干固定指派四颗星，分别化禄、化权、化科、化忌。这是一张查表：
+
+| 天干 | 化禄 | 化权 | 化科 | 化忌 |
+| --- | --- | --- | --- | --- |
+| 甲 | 廉贞 | 破军 | 武曲 | 太阳 |
+| 乙 | 天机 | 天梁 | 紫微 | 太阴 |
+| 丙 | 天同 | 天机 | 文昌 | 廉贞 |
+| 丁 | 太阴 | 天同 | 天机 | 巨门 |
+| 戊 | 贪狼 | 太阴 | 右弼 | 天机 |
+| 己 | 武曲 | 贪狼 | 天梁 | 文曲 |
+| 庚 | 太阳 | 武曲 | 太阴 | 天同 |
+| 辛 | 巨门 | 太阳 | 文曲 | 文昌 |
+| 壬 | 天梁 | 紫微 | 左辅 | 武曲 |
+| 癸 | 破军 | 巨门 | 太阴 | 贪狼 |
+
+<Callout title="庚干的分歧">
+庚干化科历来有太阴、天府、天同等不同说法。x-iztro 的默认表与 JS iztro 一致（太阴化科）。
+若需其他流派的取法，用 `algorithm` 开关切换，见 [Config 详解](/zh/docs/guide/guides/config#算法派别-algorithm)。
+</Callout>
+
+## 本命四化
+
+排盘时用**出生年干**查上表，把四化标记打在对应的星上：
+
+```python
+for p in chart.palaces:
+    for s in p.major_stars + p.minor_stars:
+        if s.mutagen:
+            print(f"{p.name} 的 {s.name} 化{s.mutagen}")
+```
+
+一张盘上的本命四化恰好四个 —— 除非某颗被化的星在这张盘上不存在
+（文昌、文曲、左辅、右弼都是辅星，一定在盘上，所以实际总是四个）。
+
+判断某宫有没有某个四化：
+
+```python
+soul.has_mutagen(Mutagen.LU)     # 命宫是否有化禄
+soul.not_have_mutagen(Mutagen.JI)
+```
+
+<Callout type="warn">
+`has_mutagen()` 只看主星与辅星，不看杂耀 —— 与 iztro 行为一致。
+</Callout>
+
+## 运限四化
+
+除了本命，每个运限层级还有自己的四化：大限用大限宫干、流年用流年干，
+依次类推。它们叠加在同一张盘上，是运限解读的主要抓手。
+
+```python
+h = chart.horoscope("2024-10-1", 0)
+print(h.decadal.mutagen)   # 大限四化的四颗星
+print(h.yearly.mutagen)    # 流年四化的四颗星
+```
+
+返回的是四颗星的名字，顺序固定为**禄、权、科、忌**。
+
+## 飞星
+
+宫位也有天干（宫干）。用宫干查四化表，就得到这个宫「飞出去」的四颗星，
+再看这四颗星落在哪个宫 —— 这就是**飞星**，用来描述宫与宫之间的作用关系。
+
+判断某宫是否向目标宫飞出某化：
+
+```rust
+let wealth = astrolabe.palace(Palace::Wealth).unwrap();
+
+// 财帛宫的宫干化忌，是否落在命宫
+wealth.flies_to(Palace::Soul, &[Mutagen::Ji]);
+```
+
+四化参数可以传多个，语义是「这几颗化星是否**都**落在目标宫」。
+另有两个变体：`flies_one_of_to` 只要求任一颗命中，`not_fly_to` 要求一颗都不在。
+
+```python
+soul.flies_one_of_to(PalaceName.WEALTH, [Mutagen.LU, Mutagen.QUAN])
+soul.not_fly_to(0, Mutagen.JI)
+```
+
+取四化各自飞入了哪个宫：
+
+```python
+# 返回长度为 4 的列表，依次是禄、权、科、忌所在的宫
+places = soul.mutaged_places()
+```
+
+## 自化
+
+如果一个宫的宫干飞出的化星，正好就落在这个宫自己里面，称为**自化**。
+
+```rust
+soul.self_mutaged(&[Mutagen::Lu]);   // 命宫是否自化禄
+soul.self_mutaged_one_of(&[]);       // 是否有任意一种自化
+soul.not_self_mutaged(&[]);          // 四种自化都没有
+```
+
+`self_mutaged_one_of` 与 `not_self_mutaged` 传空即检查全部四化，
+也可以只检查其中几种。
+
+自化在解读上意味着力量在本宫内部消耗或外泄，与飞入他宫的性质不同。
+
+## 完整方法一览
+
+| 方法 | 作用 |
+| --- | --- |
+| `has_mutagen(m)` | 本宫是否有指定四化 |
+| `not_have_mutagen(m)` | 本宫是否没有指定四化 |
+| `mutagen_stars(ms)` | 本宫宫干在指定四化位上对应的星 |
+| `flies_to(target, ms)` | 指定化星是否**全部**落在目标宫 |
+| `flies_one_of_to(target, ms)` | 是否有**任一颗**落在目标宫 |
+| `not_fly_to(target, ms)` | 是否**一颗都不**落在目标宫 |
+| `self_mutaged(ms)` | 本宫是否自化指定四化 |
+| `self_mutaged_one_of(ms?)` | 本宫是否有任一自化 |
+| `not_self_mutaged(ms?)` | 本宫指定自化全无 |
+| `mutaged_places()` | 禄权科忌四星各自所在的宫 |
+
+<Callout type="warn" title="空四化列表的语义不对称">
+这是复刻 iztro 的行为，三种语言一致：`flies_to` 在四化列表为空时返回 `false`，
+而 `flies_one_of_to` 与 `not_fly_to` 在同样情况下返回 `true`。
+</Callout>
+
+三方四正范围内的四化判断见[三方四正](/zh/docs/guide/concepts/surrounded)。

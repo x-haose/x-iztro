@@ -1,0 +1,320 @@
+---
+title: 星盘对象
+description: Astrolabe 的字段、定位方法与三方四正判断。
+---
+
+`Astrolabe` 是排盘的产物，也是一切查询的入口。它持有十二宫的全部数据，
+以及四柱、命主身主、五行局这些盘级信息。
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+```
+
+## 字段
+
+<Accordions>
+<Accordion title="展示字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `gender` | `Gender` | 性别 |
+| `solar_date` | `String` | 公历日期，与入参一致 |
+| `lunar_date` | `String` | 农历日期的中文写法，如「二〇〇〇年七月十七」 |
+| `chinese_date` | `String` | 四柱展示串，如「庚辰 甲申 丙午 庚寅」 |
+| `time` | `String` | 时辰名，如「寅时」 |
+| `time_range` | `String` | 时辰对应的钟点区间，如「03:00~05:00」 |
+| `sign` | `String` | 星座，按公历日期 |
+| `zodiac` | `String` | 生肖，按年支 |
+
+展示字段随 `language` 翻译。要做判断请用下一组的标识字段。
+
+</Accordion>
+<Accordion title="盘级标识字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `earthly_branch_of_soul_palace` | `EarthlyBranch` | 命宫地支 |
+| `earthly_branch_of_body_palace` | `EarthlyBranch` | 身宫地支 |
+| `soul` | `StarKey` | 命主星 |
+| `body` | `StarKey` | 身主星 |
+| `five_elements_class` | `FiveElementsClass` | 五行局，决定大限起运岁数与紫微起宫 |
+
+这些是强类型枚举，与语言无关，可直接比较。
+
+</Accordion>
+<Accordion title="结构字段">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `palaces` | `Vec<PalaceData>` | 十二宫，索引 0 为寅宫、11 为丑宫 |
+| `raw_dates` | `RawDates` | 结构化的农历生日与四柱干支枚举 |
+
+`palaces` 的索引是**宫位索引**而非宫名顺序：`palaces[0]` 永远是寅宫，
+命宫可能落在其中任何一格。取命宫用 `chart.palace(Palace::Soul)`。
+
+</Accordion>
+<Accordion title="排盘上下文">
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `time_index` | `u8` | 出生时辰索引，即使 `day_divide` 把晚子时改判当日也保留原值 |
+| `fix_leap` | `bool` | 排盘时是否修正闰月 |
+| `language` | `Language` | 输出语言 |
+| `config` | `Config` | 排盘配置 |
+
+运限与 Prompt 从这四项重新发起计算，因此不必再传一遍排盘参数。
+
+</Accordion>
+</Accordions>
+
+---
+
+## palace
+
+**用途**　按索引、宫名、身宫或来因宫取一宫。
+
+**斗数含义**　十二宫是斗数的骨架。命宫定下后，其余十一宫按固定顺序逆时针排开。
+「身宫」是十二宫之一同时被标记的那一宫，代表后天着力处；
+「来因宫」是宫干与生年干相同的那一宫，代表事情的起因。
+
+**签名**
+
+```rust
+pub fn palace(&self, target: impl Into<PalaceTarget>) -> Option<PalaceRef<'_>>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<PalaceTarget>` | 是 | — | 四种写法见下表 |
+
+`PalaceTarget` 的四个变体都有 `From` 实现，调用时直接写值即可：
+
+| 写法 | 例子 | 含义 |
+| --- | --- | --- |
+| 索引 | `chart.palace(0)` | 宫位索引 0–11，0 为寅宫 |
+| 宫名 | `chart.palace(Palace::Soul)` | 十二宫名之一 |
+| 身宫 | `chart.palace(PalaceTarget::Body)` | 带身宫标记的那一宫 |
+| 来因宫 | `chart.palace(PalaceTarget::Original)` | 宫干与生年干相同的那一宫 |
+
+**返回值**　`Option<PalaceRef<'_>>`。索引越界返回 `None`；来因宫在某些盘上不存在，同样返回 `None`。
+
+**示例**
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+println!("{} {}{}", soul.name, soul.heavenly_stem, soul.earthly_branch);
+
+let body = chart.palace(PalaceTarget::Body).unwrap();
+println!("身宫落在 {}", body.name);
+
+let original = chart.palace(PalaceTarget::Original).unwrap();
+println!("来因宫是 {}", original.name);
+
+println!("寅宫是 {}", chart.palace(0).unwrap().name);
+```
+
+**输出**
+
+```text
+命宫 壬午
+身宫落在 官禄
+来因宫是 夫妻
+寅宫是 财帛
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="来因宫可能不存在">
+来因宫要求宫干与生年干相同，且该宫不在子、丑二宫。
+十二宫的天干由五虎遁从寅宫起排，子丑两宫的干支组合决定了某些年干下无解，
+此时 `chart.palace(PalaceTarget::Original)` 返回 `None`。
+</Accordion>
+<Accordion title="宫名查找是唯一的">
+十二宫名在一张盘上各出现一次，因此按宫名查找必然唯一。
+身宫是**标记**不是宫名——身宫同时也是十二宫中的某一宫（如例中的夫妻宫）。
+</Accordion>
+</Accordions>
+
+---
+
+## star
+
+**用途**　按标识找到一颗星，得到能回溯所在宫的视图。
+
+**签名**
+
+```rust
+pub fn star(&self, key: StarKey) -> Option<StarRef<'_>>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `key` | `StarKey` | 是 | — | 星耀标识，如 `StarKey::ZiweiMaj` |
+
+**返回值**　`Option<StarRef<'_>>`。该星不在这张盘上时返回 `None`。
+
+**示例**
+
+```rust
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{} 在 {}", ziwei.name, ziwei.palace().name);
+println!("对宫是 {}", ziwei.opposite_palace().name);
+println!("亮度 {:?} 四化 {:?}", ziwei.brightness, ziwei.mutagen);
+```
+
+**输出**
+
+```text
+紫微 在 命宫
+对宫是 迁移
+亮度 Some(Miao) 四化 None
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+只在主星、辅星、杂耀三组里查找。长生十二神、博士十二神、岁前与将前十二神
+是每宫一个的标记而非星耀列表，用 `palace.changsheng12` 一类字段直接取。
+</Callout>
+
+---
+
+## surrounded_palaces
+
+**用途**　取目标宫的三方四正。
+
+**斗数含义**　三方四正是斗数最常用的取象范围：本宫、对宫（本宫 +6）、
+财帛位（本宫 +4）、官禄位（本宫 +8）。四个宫合起来看，而不只看本宫，
+是因为对宫与三合宫的星耀同样作用于本宫的事。
+
+**签名**
+
+```rust
+pub fn surrounded_palaces(&self, target: impl Into<PalaceTarget>) -> Option<SurroundedPalaces<'_>>
+```
+
+**参数**　同 `palace`，四种定位写法都支持。
+
+**返回值**　`Option<SurroundedPalaces<'_>>`，含 `target` / `opposite` / `wealth` / `career` 四个 `PalaceRef`。
+判断方法见[三方四正](/zh/docs/rust/surpalaces)。
+
+**示例**
+
+```rust
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{} / {} / {} / {}", sp.target.name, sp.opposite.name, sp.wealth.name, sp.career.name);
+println!("三方四正见紫微: {}", sp.have(&[StarKey::ZiweiMaj]));
+```
+
+**输出**
+
+```text
+命宫 / 迁移 / 财帛 / 官禄
+三方四正见紫微: true
+```
+
+---
+
+## is_surrounded / is_surrounded_one_of / not_surrounded
+
+**用途**　直接在星盘上判断某宫的三方四正里有没有指定星耀，省去先取三方四正的一步。
+
+**签名**
+
+```rust
+pub fn is_surrounded(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+pub fn is_surrounded_one_of(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+pub fn not_surrounded(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<PalaceTarget>` | 是 | — | 定位方式同 `palace` |
+| `stars` | `&[StarKey]` | 是 | — | 星耀标识列表 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `is_surrounded` | 列表中**每一颗**都在三方四正里 |
+| `is_surrounded_one_of` | 列表中**至少一颗**在三方四正里 |
+| `not_surrounded` | 列表中**一颗都不在**三方四正里 |
+
+**示例**
+
+```rust
+use x_iztro::StarKey::*;
+
+println!("{}", chart.is_surrounded(Palace::Soul, &[ZiweiMaj, TianxiangMaj]));
+println!("{}", chart.is_surrounded_one_of(Palace::Soul, &[QishaMaj, PojunMaj]));
+println!("{}", chart.not_surrounded(Palace::Soul, &[HuoxingMin]));
+```
+
+**输出**
+
+```text
+true
+false
+true
+```
+
+命宫只坐紫微，天相在三方之一的财帛宫，因此第一行为 `true`；
+七杀与破军都不在这四宫内，第二行为 `false`。
+
+**边界与陷阱**
+
+<Callout type="warn" title="空列表的返回值">
+`stars` 传空切片时，`is_surrounded` 与 `not_surrounded` 返回 `true`
+（「所有元素都满足」与「没有元素不满足」对空集都成立），
+`is_surrounded_one_of` 返回 `false`。调用前先确认列表非空。
+</Callout>
+
+---
+
+## horoscope / horoscope_now
+
+**用途**　以本盘为起点计算目标日期的运限。
+
+**签名**
+
+```rust
+pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `target_date` | `&str` | 是 | — | 目标公历日期，格式 `YYYY-M-D` |
+| `target_time_index` | `u8` | 是 | — | 目标时辰索引 0–12，决定流时 |
+
+`horoscope_now` 取本地时钟的当前日期与当前时辰，无参数。
+
+**返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘。
+详见[运限对象](/zh/docs/rust/horoscope)。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("大限 {}{}", h.decadal.heavenly_stem, h.decadal.earthly_branch);
+println!("流年 {}{}", h.yearly.heavenly_stem, h.yearly.earthly_branch);
+```
+
+**输出**
+
+```text
+大限 庚辰
+流年 乙巳
+```

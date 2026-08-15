@@ -1,0 +1,234 @@
+---
+title: 数据表
+description: 星耀基础信息、天干地支信息、顺序常量与全部标识常量。
+---
+
+排盘算法的输入表与语言无关标识常量。
+
+---
+
+## StarsInfo
+
+**用途**　取星耀基础信息表。
+
+**签名**
+
+```go
+func StarsInfo() (map[string]StarInfo, error)
+```
+
+**返回值**　星耀标识 → `StarInfo`。只有二十颗星有记录：
+**十四主星**加文昌、文曲、火星、铃星、擎羊、陀罗。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Brightness` | `[]string` | 十二宫亮度标识，索引 0 为寅宫；该宫无亮度则为空串 |
+| `FiveElements` | `string` | 五行；原表未填时为空串 |
+| `YinYang` | `string` | 阴阳；原表未填时为空串 |
+
+**示例**
+
+```go
+info, _ := iztro.StarsInfo()
+
+fmt.Println(len(info))
+fmt.Printf("%+v\n", info[iztro.StarZiweiMaj])
+fmt.Printf("%q\n", info[iztro.StarTaiyangMaj].FiveElements)
+```
+
+**输出**
+
+```text
+20
+{Brightness:[wang wang de wang miao miao wang wang de wang ping miao] FiveElements:土 YinYang:阴}
+""
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="五行与阴阳有空缺">
+表中部分星耀的五行或阴阳未填：太阳与七杀两项皆为空串，
+贪狼、天相、天梁、破军的阴阳为空串，六颗辅星两项皆为空串。
+</Callout>
+
+---
+
+## HeavenlyStems
+
+**用途**　取天干信息表。
+
+**斗数含义**　天干的四化表是四化系统的根：生年干决定生年四化，
+宫干决定该宫飞出的四化，运限干决定该层级的四化。
+
+**签名**
+
+```go
+func HeavenlyStems() (map[string]HeavenlyStemInfo, error)
+```
+
+**返回值**　天干标识 → `HeavenlyStemInfo`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `YinYang` | `string` | 阴阳 |
+| `FiveElements` | `string` | 五行 |
+| `Crash` | `string` | 对冲天干标识；戊、己无对冲，为空串 |
+| `Mutagen` | `[]string` | 四化四星标识，顺序为禄、权、科、忌 |
+
+**示例**
+
+```go
+stems, _ := iztro.HeavenlyStems()
+
+fmt.Printf("%+v\n", stems[iztro.StemJia])
+fmt.Printf("戊干对冲: %q\n", stems[iztro.StemWu].Crash)
+```
+
+**输出**
+
+```text
+{YinYang:阳 FiveElements:木 Crash:gengHeavenly Mutagen:[lianzhenMaj pojunMaj wuquMaj taiyangMaj]}
+戊干对冲: ""
+```
+
+---
+
+## EarthlyBranches
+
+**用途**　取地支信息表。
+
+**签名**
+
+```go
+func EarthlyBranches() (map[string]EarthlyBranchInfo, error)
+```
+
+**返回值**　地支标识 → `EarthlyBranchInfo`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `YinYang` | `string` | 阴阳，决定大限与长生十二神的顺逆 |
+| `FiveElements` | `string` | 五行 |
+| `Crash` | `string` | 对冲地支标识 |
+| `Soul` | `string` | 命主星标识（按命宫地支查） |
+| `Body` | `string` | 身主星标识（按生年地支查） |
+| `Inside` | `string` | 对应脏腑 |
+| `Outside` | `string` | 对应身体部位 |
+| `HealthTip` | `string` | 健康提示 |
+
+<Callout type="info">
+`Inside` / `Outside` / `HealthTip` 三项只有中文一种写法，不参与国际化。
+</Callout>
+
+**示例**
+
+```go
+branches, _ := iztro.EarthlyBranches()
+fmt.Printf("%+v\n", branches[iztro.BranchZi])
+```
+
+**输出**
+
+```text
+{YinYang:阳 FiveElements:水 Crash:wuEarthly Soul:tanlangMaj Body:huoxingMin Inside:胆 Outside:下体 HealthTip:生殖系统、膀胱、尿道之疾病，听觉障碍}
+```
+
+---
+
+## GetConstants
+
+**用途**　取顺序常量与推算规则表。
+
+**签名**
+
+```go
+func GetConstants() (Constants, error)
+```
+
+**返回值**　`Constants`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Languages` | `[]string` | 支持的语言代码 |
+| `HeavenlyStems` | `[]string` | 天干顺序 |
+| `EarthlyBranches` | `[]string` | 地支顺序 |
+| `Zodiac` | `[]string` | 生肖标识，按地支顺序 |
+| `Signs` | `[]string` | 星座标识，按黄道顺序 |
+| `Palaces` | `[]string` | 十二宫名，从命宫起的排列顺序 |
+| `Gender` | `map[string]string` | 男女各自的阴阳 |
+| `ChineseTime` | `[]string` | 时辰标识，早子时起、晚子时止 |
+| `TimeRange` | `[]string` | 时辰对应的钟点区间 |
+| `TigerRule` | `map[string]string` | 五虎遁：年干推正月天干 |
+| `RatRule` | `map[string]string` | 五鼠遁：日干推子时天干 |
+| `Mutagen` | `[]string` | 四化顺序 |
+
+**示例**
+
+```go
+c, _ := iztro.GetConstants()
+
+fmt.Println(c.Languages)
+fmt.Println(c.Zodiac[:3], c.ChineseTime[12], c.TimeRange[2])
+fmt.Println(c.Gender)
+fmt.Println("甲年正月干:", c.TigerRule[iztro.StemJia])
+```
+
+**输出**
+
+```text
+[en-US ja-JP ko-KR zh-CN zh-TW vi-VN]
+[rat ox tiger] lateRatHour 03:00~05:00
+map[female:阴 male:阳]
+甲年正月干: bingHeavenly
+```
+
+---
+
+## 标识常量
+
+包里的标识常量取值就是语言无关标识，可直接与数据对象的 `*Key` 字段比较。
+
+| 前缀 | 数量 | 例 |
+| --- | --- | --- |
+| `Palace*` | 12 + 2 | `PalaceSoul`、`PalaceWealth`、`PalaceBody`、`PalaceOriginal` |
+| `Star*` | 162 | `StarZiweiMaj`、`StarLucunMin`、`StarYunlu` |
+| `Stem*` | 10 | `StemJia`、`StemGeng` |
+| `Branch*` | 12 | `BranchZi`、`BranchWu` |
+| `Mutagen*` | 4 | `MutagenLu`、`MutagenJi` |
+| `Brightness*` | 7 | `BrightnessMiao`、`BrightnessWang` |
+| `FiveElements*` | 5 | `FiveElementsWater2nd` |
+| `Scope*` | 6 | `ScopeOrigin`、`ScopeDecadal` |
+| `StarType*` | 8 | `StarTypeMajor`、`StarTypeTough` |
+
+配置类另有六组：
+
+| 前缀 | 取值 |
+| --- | --- |
+| `YearDivide*` | `YearDivideNormal` / `YearDivideExact` |
+| `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` |
+| `AgeDivide*` | `AgeDivideNormal` / `AgeDivideBirthday` |
+| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
+| `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
+| `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
+
+**示例**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
+fmt.Println(iztro.StarZiweiMaj, iztro.MutagenLu, iztro.PalaceWealth)
+```
+
+**输出**
+
+```text
+true
+ziweiMaj sihuaLu wealthPalace
+```
+
+<Callout type="info" title="常量与字符串等价">
+它们都是无类型字符串常量，`chart.Palace("soulPalace")` 与
+`chart.Palace(iztro.PalaceSoul)` 完全等价。
+常量的价值在于 IDE 补全与拼写检查，而非类型约束。
+</Callout>

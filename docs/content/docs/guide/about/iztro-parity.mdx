@@ -1,0 +1,111 @@
+---
+title: 与 iztro 的对应
+description: iztro 每个公开 API 在 x-iztro 三侧的落点，换了形状的几处及其原因，以及不提供的那些。
+---
+
+x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.5.8 的移植。
+iztro 的每个公开 API 在 Rust、Python、Go 三侧都有等价物，
+三侧能力完全一致，形式各随语言习惯。
+
+这一页写给从 iztro 迁移过来的人：名字对不上时来这里查。
+逐个 API 的用法见各语言的 API 参考。
+
+## 名字直接对得上的
+
+| iztro | Rust | Python | Go |
+| --- | --- | --- | --- |
+| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` |
+| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` |
+| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
+| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
+| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
+| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
+| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
+| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
+| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` |
+| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` |
+
+其余同理：JS 的 camelCase 在 Rust / Python 下是 snake_case，在 Go 下是 PascalCase。
+
+## 换了形状的
+
+这几处不是照抄，因为照抄会把 JS 的限制一起搬过来。
+
+### 排盘视角（天盘 / 地盘 / 人盘）
+
+iztro 把 `astroType` 放在 `astro.withOptions` 的选项对象上，
+是因为它的 `astro.config()` 是全局单例、装不下按盘变化的值。
+
+x-iztro 的配置本来就随每次排盘传入，因此 `astroType` 直接收进 `Config`，
+两个排盘入口都能用，不必再记一个入口：
+
+```python
+from x_iztro import Astro, ChartConfig
+
+chart = Astro().by_solar("2000-8-16", 2, "female",
+                         config=ChartConfig(astro_type="earth"))
+```
+
+从任意干支起盘对应 `rearrangeAstrolable`，三侧都是星盘方法 `rearranged(干, 支)`。
+
+### 没有全局配置与全局语言
+
+iztro 的 `astro.config()`、`i18n.setLanguage()` 改的是模块级单例，
+因此还需要 `astro.getConfig()` 把值读回来。
+
+x-iztro 没有全局状态：配置与语言都随每次调用传入，由调用方自己持有。
+所以不提供 `getConfig` 与 `setLanguage` —— 想读回来，读你自己那份就是。
+
+### 大限小限
+
+`astro/palace` 的 `getHoroscope(param)` 收一份 `AstrolabeParam`。
+x-iztro 的 `get_decadals_and_ages` 直接收命宫索引与五行局，
+不必先凑出一份出生数据，能力是 iztro 那个的超集。
+
+### 插件
+
+iztro 的 `loadPlugin` / `use(plugin)` 是运行期往星盘对象上挂函数 ——
+这是 JS 缺少其他扩展手段的产物。三侧各按语言给出的答案实现同一能力，
+都是编译期或加载期完成，不牺牲类型检查：
+
+| | 做法 |
+| --- | --- |
+| Rust | 扩展 trait |
+| Python | `x_iztro.plugin` 的 `load_plugin` / `load_plugins`，往 `Astrolabe` 类挂方法 |
+| Go | 嵌入 `*Astrolabe`（Go 不允许给外部包的类型加方法，嵌入是语言给出的答案） |
+
+写法见[扩展星盘](/zh/docs/guide/guides/plugins)。
+
+### 反查译名时的消歧
+
+`kot(value, k)` 的第二个参数在三侧是独立入口：
+`key_of_in`（Rust）、`key_of(text, key_filter)`（Python）、`KeyOfIn`（Go）。
+取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시` 这类同形译名落到哪个标识。
+
+## 不提供的
+
+| iztro | 为什么不做 |
+| --- | --- |
+| `astro.astrolabeBySolarDate` / `astrolabeByLunarDate` | iztro v2.0.5 起废弃的别名，与 `bySolar` / `byLunar` 同参同行为 |
+| `star.initStars` | JS 里是返回 12 个空数组的工厂；三侧的类型系统本身就给出定长 12 的数组 |
+| `util.fixEarthlyBranchIndex` | 与 `earthlyBranchIndexToPalaceIndex` 同义 |
+| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | 建立对象间引用是内部行为，三侧在解析后自动完成 |
+| `astro/analyzer` 模块 | 里面 11 个函数是宫位与三方四正方法的自由函数版（`hasStars` 即 `palace.has`），能力已由对象方法覆盖 |
+| `calendar` 模块 | 在 iztro v2.5.8 里已是死代码：活的代码路径全部改走 `lunar-lite` 依赖，该模块也不在包的根导出里 |
+| `i18n` 默认导出的 i18next 实例 | 不转手第三方库实例；翻译与反查由 `translate` / `key_of` 覆盖 |
+| `Astrolabe.copyright` | iztro 自身的版权声明字符串 |
+
+## 比 iztro 多的
+
+- **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，
+  取值是 iztro 的 i18n key。判断逻辑因此不受输出语言影响，
+  不必再反查译名。详见[标识体系](/zh/docs/guide/guides/keys)
+- **Prompt 生成**：`astrolabe_to_prompt` / `horoscope_to_prompt`
+  把星盘或运限渲染成适合喂给大模型的纯文本，见[喂给大模型](/zh/docs/guide/guides/llm)
+- **入口前置校验**：非法日期、越界时辰等在入口返回错误而非 panic，见[错误处理](/zh/docs/guide/guides/errors)
+- **`all_keys`**：一次取全部 260 个可翻译标识
+
+## 数值一致性
+
+功能对齐之外，排盘结果与 iztro **逐字段零差异**，由约 65 万例金标数据守着。
+覆盖矩阵与验证方式见[准确性保证](/zh/docs/guide/about/accuracy)。

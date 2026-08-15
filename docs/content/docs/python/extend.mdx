@@ -1,0 +1,173 @@
+---
+title: 扩展星盘
+description: 用插件给 Astrolabe 类挂自定义分析方法。
+---
+
+斗数的分析规则千人千面，库不可能穷举。x-iztro 让你把自己的规则
+以方法的形式挂到星盘类上——调用语法与内置方法一致，所有星盘实例都能用。
+
+## 配方
+
+一个插件就是一个函数，接受 `Astrolabe` 类并往上挂方法。
+
+<Steps>
+<Step>写一个接受 `type[Astrolabe]` 的函数</Step>
+<Step>在函数体里定义方法，赋值到类上</Step>
+<Step>调 `load_plugin` 加载</Step>
+</Steps>
+
+```python
+from x_iztro import Astro, Astrolabe, PalaceName
+from x_iztro.plugin import load_plugin
+
+
+def my_analysis(cls: type[Astrolabe]) -> None:
+    """给星盘补两个自定义分析方法。"""
+
+    def major_star(self) -> str:
+        """命宫主星名（空宫借对宫），多颗以逗号分隔"""
+        soul = self.palace(PalaceName.SOUL)
+        source = soul.opposite_palace() if soul.is_empty() else soul
+        return ",".join(s.name for s in source.major_stars)
+
+    def five_elements_value(self) -> int:
+        """五行局的局数"""
+        return int(self.five_elements_class_key[-3])
+
+    cls.major_star = major_star
+    cls.five_elements_value = five_elements_value
+
+
+load_plugin(my_analysis)
+```
+
+**用法**
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+print(chart.major_star())
+
+# 扩展方法随排盘语言输出
+en = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+print(en.major_star())
+```
+
+**输出**
+
+```text
+紫微
+emperor
+```
+
+---
+
+## load_plugin / load_plugins
+
+**签名**
+
+```python
+def load_plugin(plugin: Plugin) -> None
+def load_plugins(plugins: Iterable[Plugin]) -> None
+```
+
+`Plugin` 的类型是 `Callable[[type[Astrolabe]], None]`。
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `plugin` | `Plugin` | 是 | — | 接受 `Astrolabe` 类的函数 |
+| `plugins` | `Iterable[Plugin]` | 是 | — | 按顺序加载的多个插件 |
+
+**返回值**　`None`。方法直接挂到类上。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="加载前排好的盘同样拿得到新方法">
+方法挂在**类**上而非实例上，因此加载时机不影响已有实例——
+先排的盘在插件加载后一样能调用新方法。
+</Accordion>
+<Accordion title="不可调用的插件会报错">
+`load_plugin` 传入非可调用对象时抛 `TypeError`。
+`load_plugins` 逐个加载，遇到第一个不可调用的即报错，后续插件不会加载。
+</Accordion>
+<Accordion title="全局生效">
+插件改的是 `Astrolabe` 类本身，进程内所有星盘都受影响。
+同名方法会被后加载的插件覆盖。
+</Accordion>
+</Accordions>
+
+---
+
+## 为什么能挂上去
+
+`Astrolabe` 是 `slots=True` 的 frozen dataclass，实例上挂不了属性：
+
+```python
+chart.foo = 1
+# dataclasses.FrozenInstanceError: cannot assign to field 'foo'
+```
+
+但**类**上挂方法不受影响。这正是插件需要的粒度：
+插件改的是「所有星盘都有这个方法」，不是「这一张盘多了个字段」。
+
+---
+
+## 扩展别的类型
+
+同一套写法适用于宫位与星耀，直接给对应的类挂方法即可：
+
+```python
+from x_iztro.models import Palace
+
+
+def palace_analysis(cls: type[Palace]) -> None:
+    def is_afflicted(self) -> bool:
+        """本宫是否「煞忌交冲」：坐煞星且带化忌"""
+        sha = ["qingyangMin", "tuoluoMin", "huoxingMin",
+               "lingxingMin", "dikongMin", "dijieMin"]
+        return self.has_one_of(sha) and self.has_mutagen("sihuaJi")
+
+    cls.is_afflicted = is_afflicted
+
+
+palace_analysis(Palace)
+```
+
+```python
+for p in chart.palaces:
+    if p.is_afflicted():
+        print(p.name, "煞忌交冲")
+```
+
+**输出**
+
+```text
+疾厄 煞忌交冲
+```
+
+<Callout type="info">
+`load_plugin` 只接受作用于 `Astrolabe` 的插件。要挂到别的类上，
+像上例那样直接调用函数即可——插件机制本身没有魔法。
+</Callout>
+
+---
+
+## 组织建议
+
+<Accordions>
+<Accordion title="按分析主题分插件，不要堆成一个">
+`wealth_analysis`、`career_analysis`、`health_analysis` 各自成插件，
+按需 `load_plugin`。堆成一个大插件会让所有使用方都被迫加载全部方法。
+</Accordion>
+<Accordion title="判断一律用 key，不要用译名">
+`s.key == MajorStar.ZIWEI` 在任何输出语言下都成立；
+`s.name == "紫微"` 只在中文盘上成立。展示时才用 `name`。
+</Accordion>
+<Accordion title="类型标注">
+挂上去的方法对静态类型检查器不可见，调用处会被标为「未知属性」。
+需要类型友好时，为扩展后的星盘声明一个 Protocol 或直接用 `cast`。
+</Accordion>
+</Accordions>

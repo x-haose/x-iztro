@@ -1,0 +1,61 @@
+---
+title: Python
+description: pip 安装，dataclass 类型化 API，用枚举做与语言无关的判断。
+---
+
+## 安装
+
+```bash
+pip install x-iztro
+```
+
+要求 Python 3.10 及以上。包内是 PyO3 编译的原生扩展（abi3），
+安装后零运行期依赖 —— 不需要 pydantic，也不需要本机的 Rust 工具链。
+
+<Callout title="从源码构建">
+只有在改动 Rust 侧代码时才需要：
+
+```bash
+pip install maturin
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
+```
+</Callout>
+
+## 排盘
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+print(chart.solar_date)          # 阳历
+print(chart.lunar_date)          # 农历
+print(chart.chinese_date)        # 四柱干支
+print(chart.time, chart.time_range)
+print(chart.sign, chart.zodiac)  # 星座、生肖
+print(chart.soul, chart.body)    # 命主、身主
+print(chart.five_elements_class) # 五行局
+```
+
+农历排盘：
+
+```python
+chart = astro.by_lunar("2000-7-17", 2, "female", is_leap_month=False)
+```
+
+返回的 `Astrolabe` 是 dataclass，字段有类型标注，IDE 能自动补全。
+所有文本字段已按排盘语言翻译好。
+
+## 接下来
+
+上面的例子只用到了排盘入口。完整的 API——十二宫定位、星耀判断、飞星、
+运限、安星模块、数据表、翻译——在 **[Python API 参考](/zh/docs/python)** 一栏，
+每个函数、类与方法都有独立条目，附真实运行输出与边界说明。
+
+<Cards>
+  <Card title="排盘入口" href="/zh/docs/python/astro" description="Astro 类的排盘方法与 Prompt 生成" />
+  <Card title="星盘对象" href="/zh/docs/python/astrolabe" description="字段、宫位定位、三方四正判断" />
+  <Card title="宫位对象" href="/zh/docs/python/palace" description="星耀判断、空宫判断与飞星族" />
+  <Card title="运限对象" href="/zh/docs/python/horoscope" description="六个层级与宫位查询" />
+</Cards>

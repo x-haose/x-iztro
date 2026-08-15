@@ -1,0 +1,222 @@
+---
+title: 数据表
+description: 星耀基础信息、天干地支信息与顺序常量。
+---
+
+排盘算法的输入表。分析程序要复核某一步推算、或要展示星耀与干支的属性时用得上。
+
+这些表与输出语言无关——它们是算法的输入而非结果。
+
+---
+
+## get_star_info
+
+**用途**　取一颗星的亮度表、五行与阴阳。
+
+**签名**
+
+```rust
+pub fn get_star_info(key: StarKey) -> Option<StarInfo>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `key` | `StarKey` | 是 | — | 星耀标识 |
+
+**返回值**　`Option<StarInfo>`。只有二十颗星有记录，其余返回 `None`。
+
+`StarInfo` 的字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `brightness` | `[Option<Brightness>; 12]` | 十二宫亮度，索引 0 为寅宫；该宫无亮度则为 `None` |
+| `five_elements` | `Option<FiveElements>` | 五行 |
+| `yin_yang` | `Option<YinYang>` | 阴阳 |
+
+有记录的二十颗是**十四主星**加文昌、文曲、火星、铃星、擎羊、陀罗，
+即 `STARS_WITH_INFO` 常量列出的那些。
+
+**示例**
+
+```rust
+let info = data::stars::get_star_info(StarKey::ZiweiMaj).unwrap();
+
+println!("五行 {:?} 阴阳 {:?}", info.five_elements, info.yin_yang);
+println!("寅宫亮度 {:?}", info.brightness[0]);
+println!("禄存有记录: {}", data::stars::get_star_info(StarKey::LucunMin).is_some());
+```
+
+**输出**
+
+```text
+五行 Some(Earth) 阴阳 Some(Yin)
+寅宫亮度 Some(Wang)
+禄存有记录: false
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="五行与阴阳有空缺">
+表中部分星耀的五行或阴阳未填：太阳与七杀两项皆空，
+贪狼、天相、天梁、破军的阴阳空，六颗辅星两项皆空。
+读到 `None` 表示表里没有这项数据，不是算法产生的中间态。
+</Callout>
+
+---
+
+## get_heavenly_stem_info
+
+**用途**　取天干的阴阳、五行、对冲天干与四化四星。
+
+**斗数含义**　天干的四化表是四化系统的根：生年干决定生年四化，
+宫干决定该宫飞出的四化，运限干决定该层级的四化。
+
+**签名**
+
+```rust
+pub fn get_heavenly_stem_info(stem: HeavenlyStem) -> HeavenlyStemInfo
+```
+
+**返回值**　`HeavenlyStemInfo`，字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `yin_yang` | `YinYang` | 阴阳 |
+| `five_elements` | `FiveElements` | 五行 |
+| `crash` | `Option<HeavenlyStem>` | 对冲天干；戊、己无对冲，为 `None` |
+| `mutagen` | `[StarKey; 4]` | 四化四星，顺序为禄、权、科、忌 |
+
+**示例**
+
+```rust
+let jia = data::heavenly_stems::get_heavenly_stem_info(HeavenlyStem::Jia);
+
+println!("{:?} {:?} 对冲 {:?}", jia.yin_yang, jia.five_elements, jia.crash);
+println!("{:?}", jia.mutagen.iter().map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+
+println!("戊干对冲 {:?}", data::heavenly_stems::get_heavenly_stem_info(HeavenlyStem::Wu).crash);
+```
+
+**输出**
+
+```text
+Yang Wood 对冲 Some(Geng)
+["廉贞", "破军", "武曲", "太阳"]
+戊干对冲 None
+```
+
+---
+
+## get_earthly_branch_info
+
+**用途**　取地支的阴阳、五行、对冲地支、命主身主与身体对应。
+
+**签名**
+
+```rust
+pub fn get_earthly_branch_info(branch: EarthlyBranch) -> EarthlyBranchInfo
+```
+
+**返回值**　`EarthlyBranchInfo`，字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `yin_yang` | `YinYang` | 阴阳，决定大限与长生十二神的顺逆 |
+| `five_elements` | `FiveElements` | 五行 |
+| `crash` | `EarthlyBranch` | 对冲地支 |
+| `soul` | `StarKey` | 命主星（按命宫地支查） |
+| `body` | `StarKey` | 身主星（按生年地支查） |
+| `inside` | `&'static str` | 对应脏腑 |
+| `outside` | `&'static str` | 对应身体部位 |
+| `health_tip` | `&'static str` | 健康提示 |
+
+<Callout type="info">
+`inside` / `outside` / `health_tip` 三项只有中文一种写法，不参与国际化。
+</Callout>
+
+**示例**
+
+```rust
+let zi = data::earthly_branches::get_earthly_branch_info(EarthlyBranch::Zi);
+
+println!("{:?} {:?} 对冲 {:?}", zi.yin_yang, zi.five_elements, zi.crash);
+println!("命主 {} 身主 {}", translate_star(zi.soul, Language::ZhCN), translate_star(zi.body, Language::ZhCN));
+println!("{} / {}", zi.inside, zi.outside);
+```
+
+**输出**
+
+```text
+Yang Water 对冲 Wu
+命主 贪狼 身主 火星
+胆 / 下体
+```
+
+---
+
+## 顺序常量
+
+| 常量 | 类型 | 内容 |
+| --- | --- | --- |
+| `HEAVENLY_STEMS` | `[HeavenlyStem; 10]` | 天干顺序：甲乙丙丁戊己庚辛壬癸 |
+| `EARTHLY_BRANCHES` | `[EarthlyBranch; 12]` | 地支顺序：子丑寅卯辰巳午未申酉戌亥 |
+| `PALACES` | `[Palace; 12]` | 十二宫名，从命宫起的排列顺序 |
+| `LANGUAGES` | `[&str; 6]` | 支持的语言代码 |
+| `ZODIAC` | `[&str; 12]` | 生肖标识，按地支顺序 |
+| `SIGNS` | `[&str; 12]` | 星座标识，按黄道顺序 |
+| `CHINESE_TIME` | `[&str; 13]` | 时辰标识，早子时起、晚子时止 |
+| `TIME_RANGES` | `[&str; 13]` | 时辰对应的钟点区间 |
+| `TIGER_RULE` | `[HeavenlyStem; 10]` | 五虎遁：年干推正月天干 |
+| `RAT_RULE` | `[HeavenlyStem; 10]` | 五鼠遁：日干推子时天干 |
+| `MUTAGEN` | `[Mutagen; 4]` | 四化顺序：禄、权、科、忌（在 `data::stars` 下） |
+
+`TIGER_RULE` 与 `RAT_RULE` 按天干序号索引：`TIGER_RULE[0]` 是甲年的正月天干。
+
+**示例**
+
+```rust
+use x_iztro::data::constants::*;
+
+println!("{} {} {}", LANGUAGES[0], ZODIAC[0], CHINESE_TIME[12]);
+println!("{}", TIME_RANGES[2]);
+println!("甲年正月干 {}", translate_heavenly_stem(TIGER_RULE[0], Language::ZhCN));
+println!("甲日子时干 {}", translate_heavenly_stem(RAT_RULE[0], Language::ZhCN));
+```
+
+**输出**
+
+```text
+en-US rat lateRatHour
+03:00~05:00
+甲年正月干 丙
+甲日子时干 甲
+```
+
+---
+
+## 星耀枚举清单
+
+| 常量 | 长度 | 内容 |
+| --- | --- | --- |
+| `ALL_STARS` | 162 | 全部星耀标识，顺序与 `StarKey` 声明一致 |
+| `STARS_WITH_INFO` | 20 | 有 `StarInfo` 记录的那二十颗 |
+
+**示例**
+
+```rust
+println!("{} {}", data::stars::ALL_STARS.len(), data::stars::STARS_WITH_INFO.len());
+
+// 列出所有有亮度表的星
+for star in data::stars::STARS_WITH_INFO {
+    print!("{} ", translate_star(star, Language::ZhCN));
+}
+```
+
+**输出**
+
+```text
+162 20
+紫微 天机 太阳 武曲 天同 廉贞 天府 太阴 贪狼 巨门 天相 天梁 七杀 破军 文昌 文曲 火星 铃星 擎羊 陀罗
+```

@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "x-iztro-docs",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-01",
+  // nodejs_compat 提供 OpenNext 适配层所需的 Node.js API；
+  // global_fetch_strictly_public 让 Worker 内的 fetch 走公网语义，与 Next 的预期一致。
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,142 @@
+---
+title: 十二宫
+description: 十二个宫名各自代表什么，身宫与来因宫的判定，宫干的用途，以及大限小限如何挂在宫上。
+---
+
+## 十二宫名
+
+十二宫覆盖人生的十二个领域。它们从**命宫**起，按固定顺序**逆时针**安放在盘上：
+
+| 顺序 | 宫名 | key | 大致含义 |
+| --- | --- | --- | --- |
+| 1 | 命宫 | `soulPalace` | 本性、总纲，整张盘的核心 |
+| 2 | 父母宫 | `parentsPalace` | 父母、长辈、上级、庇荫 |
+| 3 | 福德宫 | `spiritPalace` | 精神生活、兴趣、福分 |
+| 4 | 田宅宫 | `propertyPalace` | 不动产、家庭环境 |
+| 5 | 官禄宫 | `careerPalace` | 事业、职业、学业 |
+| 6 | 交友宫 | `friendsPalace` | 朋友、同事、下属 |
+| 7 | 迁移宫 | `surfacePalace` | 外出、变动、外界际遇 |
+| 8 | 疾厄宫 | `healthPalace` | 身体、疾病 |
+| 9 | 财帛宫 | `wealthPalace` | 财务、收入 |
+| 10 | 子女宫 | `childrenPalace` | 子女、晚辈、创造力 |
+| 11 | 夫妻宫 | `spousePalace` | 配偶、亲密关系 |
+| 12 | 兄弟宫 | `siblingsPalace` | 兄弟姐妹、平辈 |
+
+`key` 列是[语言无关标识](/zh/docs/guide/guides/keys)，Python 的 `PalaceName` 枚举与
+Go 的 `Palace*` 常量取值就是它，在任何输出语言的盘上都成立。
+
+<Callout>
+「宫名的顺序」与「宫在盘上的位置」是两回事。宫名顺序永远是上表这个循环，
+但命宫落在哪个地支格由排盘算出，其余十一宫跟着排。
+所以 `palaces` 数组的索引对应地支位置，不对应宫名顺序。
+</Callout>
+
+## 命宫怎么定
+
+命宫由**农历生月**与**生时**共同定位：从寅宫起正月顺数到生月，再从该宫起子时逆数到生时。
+这个位置决定了整张盘的格局，也是五行局与大限的推算起点。
+
+x-iztro 把结果放在 `earthly_branch_of_soul_palace`（命宫地支），
+对应的宫在 `palaces` 里 `name` 为命宫的那一项。
+
+## 身宫
+
+身宫用同样的月时数据但顺数生时得到，落点必定是十二宫中的某一宫。
+它不是独立的第十三宫，而是给某个宫加上一个标记：
+
+```python
+for p in chart.palaces:
+    if p.is_body_palace:
+        print(f"身宫落在{p.name}")
+```
+
+传统上命宫看先天本质，身宫看后天着力与中年后的走向。
+
+## 来因宫
+
+`is_original_palace` 标记的是**来因宫**：宫干与出生年干相同，且不在子、丑二宫的那一宫。
+
+子丑二宫被排除是因为在紫微斗数的宫干安法（五虎遁）下，
+这两宫的天干与年干的关系不构成来因关系。
+
+一张盘至多只有一个来因宫，也可能一个都没有。
+
+## 宫干与宫支
+
+每个宫都有自己的一组干支：
+
+- **宫支**：由宫在盘上的位置固定决定（索引 0 是寅，见[总览](/zh/docs/guide/concepts#盘面的排列)），一生不变。
+- **宫干**：由出生年干按五虎遁推出，同一张盘上十二宫的宫干各不相同。
+
+宫干的用途是**四化飞星**：一个宫的宫干决定它「飞出」哪四颗化星，
+由此判断宫与宫之间的关系。见[四化与飞星](/zh/docs/guide/concepts/mutagen#飞星)。
+
+## 大限
+
+大限是十年一步的运程，每个宫掌管一段。起始虚岁由[五行局](/zh/docs/guide/concepts#五行局)决定：
+
+| 五行局 | key | 起运虚岁 | 首个大限区间 |
+| --- | --- | --- | --- |
+| 水二局 | `water2nd` | 2 | 2–11 |
+| 木三局 | `wood3rd` | 3 | 3–12 |
+| 金四局 | `metal4th` | 4 | 4–13 |
+| 土五局 | `earth5th` | 5 | 5–14 |
+| 火六局 | `fire6th` | 6 | 6–15 |
+
+行进方向由**性别与年干阴阳**共同决定（阳男阴女顺行，阴男阳女逆行）。
+
+每个宫的 `decadal` 字段就是它掌管的那一段：
+
+```python
+soul = chart.palace("soulPalace")
+print(soul.decadal.range)           # 例如 [6, 15]
+print(soul.decadal.heavenly_stem)   # 大限天干
+print(soul.decadal.earthly_branch)  # 大限地支
+```
+
+<Callout title="起运前的岁数">
+出生到起运虚岁之间的年份不属于任何大限，这段时间用**童限**推算，
+由运限接口返回。见[运限](/zh/docs/guide/concepts/horoscope#童限)。
+</Callout>
+
+## 小限
+
+小限是一年一步的运程，与大限并行。每个宫的 `ages` 字段列出经过该宫的所有虚岁：
+
+```python
+print(soul.ages)   # 例如 [2, 14, 26, 38, 50, 62, 74, 86, 98, 110]
+```
+
+同一个宫每十二年轮到一次，所以 `ages` 是一个等差为 12 的序列。
+
+小限的起点与行进方向由**生年地支与性别**决定，与大限的规则不同。
+
+## 常用操作
+
+按宫名取宫：
+
+```python
+soul = chart.palace(PalaceName.SOUL)
+```
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+```
+
+```rust
+let soul = astrolabe.palace(Palace::Soul).unwrap();
+```
+
+判断宫里有什么：
+
+```python
+soul.has([MajorStar.ZIWEI])                          # 是否同时有这些星
+soul.has_one_of([MajorStar.ZIWEI, MajorStar.TIANFU]) # 是否有任意一颗
+soul.has_mutagen(Mutagen.LU)                         # 是否有化禄
+soul.is_empty()                                      # 是否空宫（无十四主星）
+```
+
+<Callout>
+「空宫」指的是没有十四主星，不代表宫里没有任何星 —— 辅星与杂耀通常还在。
+空宫在解读上要借对宫的星来看，这也是[三方四正](/zh/docs/guide/concepts/surrounded)存在的原因之一。
+</Callout>

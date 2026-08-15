@@ -1,0 +1,385 @@
+---
+title: 安星模块
+description: 按出生数据取某一组星耀的落宫。
+---
+
+不排整盘、只想知道「禄存落在哪一宫」或「这张盘的杂耀怎么分布」时用这一层。
+
+```python
+from x_iztro import star
+```
+
+所有索引都是**宫位索引**：0 为寅宫，11 为丑宫。
+
+## 共用参数
+
+按出生数据安星的入口共用同一组参数：
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solar_date` | `str` | 是 | — | 公历日期，格式 `YYYY-M-D` |
+| `time_index` | `int` | 是 | — | 时辰索引 0–12 |
+| `gender` | `str` | 否 | `"male"` | 性别，决定长生与博士十二神的顺逆 |
+| `fix_leap` | `bool` | 否 | `True` | 是否修正闰月 |
+| `language` | `str` | 否 | `"zh-CN"` | 星耀名称的输出语言 |
+| `config` | `ChartConfig \| None` | 否 | `None` | 排盘配置 |
+| `from_stem` / `from_branch` | `str \| None` | 否 | `None` | 起五行局的干支；两者须同时给出 |
+
+```python
+birth = dict(solar_date="2000-8-16", time_index=2, gender="female")
+```
+
+<Callout type="info" title="from_stem / from_branch 只影响起五行局">
+两者同时给出后，五行局改由该干支推算，进而改变紫微天府落点与长生十二神。
+其余各组星的起法不受影响。用它可以取到中州派地盘、人盘的安星结果。
+支持这两个参数的只有 `get_start_index`、`get_major_star`、`get_changsheng12`。
+</Callout>
+
+---
+
+## get_start_index
+
+**用途**　求紫微、天府的起始宫位。
+
+**斗数含义**　紫微是全盘的锚点：由五行局与农历生日按「起紫微星诀」定位，
+其余十三颗主星再依紫微与天府的位置铺开。天府与紫微的位置互为镜像。
+
+**签名**
+
+```python
+def get_start_index(solar_date, time_index, gender="male", fix_leap=True,
+                    language="zh-CN", config=None, from_stem=None, from_branch=None) -> dict[str, int]
+```
+
+**返回值**　含 `ziweiIndex`、`tianfuIndex` 的 dict。
+
+**示例**
+
+```python
+print(star.get_start_index(**birth))
+```
+
+**输出**
+
+```text
+{'tianfuIndex': 8, 'ziweiIndex': 4}
+```
+
+---
+
+## 各组落宫索引
+
+以下六个入口形状一致：收出生数据，返回一个值全是宫位索引的 dict。
+
+| 函数 | 键 | 起法依据 |
+| --- | --- | --- |
+| `get_lu_yang_tuo_ma_index` | `luIndex` `yangIndex` `tuoIndex` `maIndex` | 年干定禄存，禄前羊后陀；天马按年支 |
+| `get_kui_yue_index` | `kuiIndex` `yueIndex` | 年干 |
+| `get_chang_qu_index` | `changIndex` `quIndex` | 时支 |
+| `get_kong_jie_index` | `kongIndex` `jieIndex` | 时支 |
+| `get_timely_star_index` | `taifuIndex` `fenggaoIndex` | 时支 |
+| `get_luan_xi_index` | `hongluanIndex` `tianxiIndex` | 年支 |
+
+**示例**
+
+```python
+print(star.get_lu_yang_tuo_ma_index(**birth))
+print(star.get_chang_qu_index(**birth))
+print(star.get_luan_xi_index(**birth))
+```
+
+**输出**
+
+```text
+{'luIndex': 6, 'maIndex': 0, 'tuoIndex': 5, 'yangIndex': 7}
+{'changIndex': 6, 'quIndex': 4}
+{'hongluanIndex': 9, 'tianxiIndex': 3}
+```
+
+擎羊在禄存前一格、陀罗在后一格，这是「禄前羊刃当，禄后陀罗府」的直接体现。
+
+---
+
+## get_daily_star_index / get_monthly_star_index / get_yearly_star_index
+
+**用途**　取按日、按月、按年起的杂耀落宫。
+
+**斗数含义**　杂耀按起法分组：日系星从辅星位置起初一顺数到生日；
+月系星按农历月份定位；年系星最多，按年干或年支起。
+
+**返回值**
+
+| 函数 | 键 |
+| --- | --- |
+| `get_daily_star_index` | `santaiIndex` `bazuoIndex` `enguangIndex` `tianguiIndex` |
+| `get_monthly_star_index` | `yuejieIndex` `tianyaoIndex` `tianxingIndex` `yinshaIndex` `tianyueIndex` `tianwuIndex` |
+| `get_yearly_star_index` | 27 项，含 `xianchiIndex` `huagaiIndex` `guchenIndex` `guasuIndex` `tiancaiIndex` `tianshouIndex` `tianchuIndex` `posuiIndex` `feilianIndex` `longchiIndex` `fenggeIndex` `tiankuIndex` `tianxuIndex` `tianguanIndex` `tianfuIndex` `tiandeIndex` `yuedeIndex` `tiankongIndex` `jieluIndex` `kongwangIndex` `xunkongIndex` `tianshangIndex` `tianshiIndex` `jiekongIndex` `jieshaAdjIndex` `nianjieIndex` `dahaoAdjIndex` |
+
+**示例**
+
+```python
+print(star.get_daily_star_index(**birth))
+print(star.get_monthly_star_index(**birth))
+```
+
+**输出**
+
+```text
+{'bazuoIndex': 10, 'enguangIndex': 9, 'santaiIndex': 0, 'tianguiIndex': 7}
+{'tianwuIndex': 0, 'tianxingIndex': 1, 'tianyaoIndex': 5, 'tianyueIndex': 9, 'yinshaIndex': 0, 'yuejieIndex': 0}
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="年系星的年支按 horoscope_divide 取">
+年系杂耀属流年神煞，取年支时用的是 `horoscope_divide` 而非 `year_divide`。
+两个配置不同时，年系星与主星、辅星可能基于不同的年支——这是刻意的流派区分。
+</Callout>
+
+---
+
+## get_major_star / get_minor_star / get_adjective_star
+
+**用途**　取主星、辅星、杂耀在十二宫的完整分布。
+
+**签名**
+
+```python
+def get_major_star(...) -> list[list[Star]]
+def get_minor_star(...) -> list[list[Star]]
+def get_adjective_star(...) -> list[list[Star]]
+```
+
+**返回值**　十二项列表，按宫位索引排列。每项是该宫的 `Star` 列表（可能为空）。
+
+**示例**
+
+```python
+major = star.get_major_star(**birth)
+
+for i, stars in enumerate(major[:5]):
+    print(i, [s.name for s in stars])
+```
+
+**输出**
+
+```text
+0 ['武曲', '天相']
+1 ['太阳', '天梁']
+2 ['七杀']
+3 ['天机']
+4 ['紫微']
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+返回的 `Star` 带亮度与生年四化标记，与整盘排出的完全一致——
+它们走的是同一段代码。要取整盘的话直接用 `Astro().by_solar(...)` 更省事。
+</Callout>
+
+---
+
+## get_changsheng12 / get_boshi12 / get_yearly12
+
+**用途**　取四组十二神在十二宫的排列。
+
+**斗数含义**　这四组各是十二个标记排满十二宫，每宫恰好一个：
+长生十二神按五行局起、随性别与年支阴阳定顺逆；
+博士十二神从禄存起、同样定顺逆；
+岁前十二神从年支起顺行；将前十二神按年支三合组起。
+
+**签名**
+
+```python
+def get_changsheng12(...) -> list[str]
+def get_boshi12(...) -> list[str]
+def get_yearly12(...) -> dict[str, list[str]]
+```
+
+**返回值**　十二项标识列表，按宫位索引排列。
+`get_yearly12` 返回含 `suiqian12` 与 `jiangqian12` 两项的 dict。
+
+**示例**
+
+```python
+print(star.get_changsheng12(**birth)[:4])
+print(star.get_boshi12(**birth)[:4])
+
+y = star.get_yearly12(**birth)
+print(y["suiqian12"][:4])
+print(y["jiangqian12"][:4])
+```
+
+**输出**
+
+```text
+['jue', 'mu', 'si', 'bing']
+['faylian', 'zhoushu', 'jiangjun', 'xiaohao']
+['diaoke', 'bingfu', 'suijian', 'huiqi']
+['suiyi', 'xiishen', 'huagai', 'jiesha']
+```
+
+返回的是标识而非译名，要展示用 `i18n.translate(key)`。
+
+---
+
+## get_changsheng12_start_index / get_jiangqian12_start_index
+
+**用途**　只取两组十二神的起始宫位，不排整组。
+
+**斗数含义**　长生起点由五行局定：水二局长生在申、木三局在亥、金四局在巳、
+土五局在申、火六局在寅。将星起点由年支三合组定：寅午戌年在午、申子辰年在子、
+巳酉丑年在酉、亥卯未年在卯。
+
+**签名**
+
+```python
+def get_changsheng12_start_index(five_elements_class: FiveElementsClass | str) -> int
+def get_jiangqian12_start_index(branch: EarthlyBranch | str) -> int
+```
+
+**返回值**　`int`，0–11。这两个函数不需要出生数据。
+
+**示例**
+
+```python
+print(star.get_changsheng12_start_index("water2nd"), star.get_changsheng12_start_index("fire6th"))
+print(star.get_jiangqian12_start_index("ziEarthly"), star.get_jiangqian12_start_index("wuEarthly"))
+```
+
+**输出**
+
+```text
+6 0
+10 4
+```
+
+水二局长生在申（索引 6），火六局在寅（索引 0）。
+
+---
+
+## get_horoscope_star
+
+**用途**　取某个运限层级的流耀分布。
+
+**斗数含义**　流耀是随运限产生的十颗星：魁钺昌曲禄羊陀马鸾喜。
+它们的落宫由该层级的干支决定，名字随层级变化。流年层级额外多一颗年解。
+
+**签名**
+
+```python
+def get_horoscope_star(
+    stem: HeavenlyStem | str,
+    branch: EarthlyBranch | str,
+    scope: Scope | str,
+    language: str = "zh-CN",
+) -> list[list[Star]]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `stem` | `str` | 是 | — | 该层级的天干标识 |
+| `branch` | `str` | 是 | — | 该层级的地支标识 |
+| `scope` | `str` | 是 | — | 运限层级，决定星名 |
+| `language` | `str` | 否 | `"zh-CN"` | 输出语言 |
+
+**返回值**　十二项列表，按宫位索引排列。
+
+**各层级的星名对照**
+
+| 本命 | 大限 | 流年 | 流月 | 流日 | 流时 |
+| --- | --- | --- | --- | --- | --- |
+| 天魁 | 运魁 | 流魁 | 月魁 | 日魁 | 时魁 |
+| 天钺 | 运钺 | 流钺 | 月钺 | 日钺 | 时钺 |
+| 文昌 | 运昌 | 流昌 | 月昌 | 日昌 | 时昌 |
+| 文曲 | 运曲 | 流曲 | 月曲 | 日曲 | 时曲 |
+| 禄存 | 运禄 | 流禄 | 月禄 | 日禄 | 时禄 |
+| 擎羊 | 运羊 | 流羊 | 月羊 | 日羊 | 时羊 |
+| 陀罗 | 运陀 | 流陀 | 月陀 | 日陀 | 时陀 |
+| 天马 | 运马 | 流马 | 月马 | 日马 | 时马 |
+| 红鸾 | 运鸾 | 流鸾 | 月鸾 | 日鸾 | 时鸾 |
+| 天喜 | 运喜 | 流喜 | 月喜 | 日喜 | 时喜 |
+
+标识形如 `yunlu`（运禄）、`liulu`（流禄）、`yuelu`（月禄）、`rilu`（日禄）、`shilu`（时禄）。
+
+**示例**
+
+```python
+decadal = star.get_horoscope_star("jiaHeavenly", "ziEarthly", "decadal")
+print([[s.name for s in p] for p in decadal[:4]])
+
+origin = star.get_horoscope_star("jiaHeavenly", "ziEarthly", "origin")
+print([[s.name for s in p] for p in origin[:2]])
+```
+
+**输出**
+
+```text
+[['运禄', '运马'], ['运羊', '运鸾'], [], ['运昌']]
+[['禄存', '天马'], ['擎羊', '红鸾']]
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="流年层级多一颗年解">
+`"yearly"` 的结果里额外含年解，按流年地支定位，安放在十颗流耀之前。
+其余层级没有这一颗。
+</Callout>
+
+---
+
+## 低层落宫
+
+上面的函数都从出生数据起算，内部先推出年干支、命宫、修正后的农历月，再落宫。
+这一组则直接收那些中间量，自建流程时可以复用。
+
+| 函数 | 收 | 出 |
+| --- | --- | --- |
+| `get_zuo_you_index(lunar_month)` | 修正后的农历月 1–12 | `zuoIndex`、`youIndex` |
+| `get_huo_ling_index(branch, time_index)` | 年支、时辰 | `huoIndex`、`lingIndex` |
+| `get_huagai_xianchi_index(branch)` | 年支 | `huagaiIndex`、`xianchiIndex` |
+| `get_gu_gua_index(branch)` | 年支 | `guchenIndex`、`guasuIndex` |
+| `get_jiesha_adj_index(branch)` | 年支 | 劫煞宫位索引 |
+| `get_dahao_index(branch)` | 年支 | 大耗宫位索引 |
+| `get_nianjie_index(branch)` | 年支 | 年解宫位索引 |
+| `get_tianshi_tianshang_index(gender, branch, soul_index, config)` | 性别、年支、命宫索引 | `tianshangIndex`、`tianshiIndex` |
+| `get_chang_qu_index_by_heavenly_stem(stem)` | 天干 | `changIndex`、`quIndex` |
+
+**示例**
+
+```python
+from x_iztro import star
+
+chart = Astro().by_solar("2000-8-16", 2, "female")
+year_branch = chart.raw_dates.chinese_date.yearly_keys[1]
+
+print(star.get_huo_ling_index(year_branch, 2))
+print(star.get_gu_gua_index(year_branch))
+print(star.get_chang_qu_index_by_heavenly_stem("jiaHeavenly"))
+```
+
+**输出**
+
+```text
+{'huoIndex': 1, 'lingIndex': 3}
+{'guchenIndex': 3, 'guasuIndex': 11}
+{'changIndex': 3, 'quIndex': 7}
+```
+
+**边界与陷阱**
+
+<Callout type="warn" title="农历月要先修正">
+`get_zuo_you_index` 收的是修正闰月之后的月份，即 `fix_lunar_month_index(...) + 1`，
+不是农历原始月份。闰月盘直接传原始月份会落错宫。
+</Callout>
+
+<Callout type="info" title="天伤天使分派别">
+`get_tianshi_tianshang_index` 的结果随 `config.algorithm` 变：中州派在阴男阳女
+（生年地支阴阳与性别阴阳不同）时天伤天使对调，通行派不对调。
+
+`get_chang_qu_index_by_heavenly_stem` 按天干起昌曲，用于运限层级的流昌流曲；
+本命盘的文昌文曲按时支走 `get_chang_qu_index`。
+</Callout>

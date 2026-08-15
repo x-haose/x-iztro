@@ -1,0 +1,101 @@
+---
+title: 介绍
+description: x-iztro 是紫微斗数排盘的 Rust 核心库，一次实现，供 Rust、Python、Go 三种语言调用，排盘结果与 JS iztro 逐字段一致。
+icon: Star
+---
+
+x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰，它算出一张完整的命盘：
+十二宫的位置与干支、每个宫里落了哪些星、星的亮度与四化，以及从大限到流时的六层运限。
+
+核心用 Rust 实现，通过三套绑定暴露给上层语言：
+
+<Cards>
+  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="原生 crate，零拷贝的强类型结构体" />
+  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="PyO3 原生扩展，dataclass 类型化 API" />
+  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="内嵌 WebAssembly，纯 Go 运行时，无 cgo" />
+</Cards>
+
+## 它解决什么问题
+
+紫微斗数排盘看似只是查表，实际上牵扯一连串容易出错的历法与流派细节：农历闰月的处理、
+晚子时算今天还是明天、年干支按正月初一还是立春换年、虚岁怎么进位、不同流派的四化表差异。
+任何一处取舍不同，排出的盘就不是同一张。
+
+社区里最完整的开源实现是 JavaScript 的 [iztro](https://github.com/SylarLong/iztro)，
+但它只能在 JS 运行时里用。x-iztro 把这套逻辑完整移植到 Rust，
+让服务端、数据分析脚本、命令行工具、移动端也能用上同一套排盘结果。
+
+<Callout title="与 iztro 的关系">
+x-iztro 是 iztro v2.5.8 的移植，不是重新发明。凡是 iztro 有的功能与数据，
+两者结果必须逐字段一致 —— 这条由约 66 万例金标测试守着，
+详见[准确性保证](/zh/docs/guide/about/accuracy)。
+</Callout>
+
+## 特性
+
+### 排盘与运限完整
+
+本命盘、大限、小限、童限、流年、流月、流日、流时，六个层级的宫位、星耀、四化与
+三方四正全部可取。年系杂耀、岁前十二神、将前十二神、博士十二神、长生十二神一应俱全。
+
+### 流派与分界点可配置
+
+`Config` 的五个开关覆盖了实践中会分歧的每一处：年分界点、运限分界点、虚岁分界点、
+晚子时归属、算法派别（默认 / 中州派）。默认值与 JS iztro 一致，
+细节见 [Config 详解](/zh/docs/guide/guides/config)。
+
+### 六种输出语言
+
+简体中文、繁体中文、英文、日文、韩文、越南文。同一张盘换语言只是换一次翻译，
+排盘结果不受影响。
+
+### 语言无关的判断标识
+
+星名宫名在不同语言下文本不同，但每个实体都额外带一个稳定的 key。
+Python 的枚举与 Go 的常量就建立在这些 key 上，
+所以「命宫有没有紫微星」这类判断，在任何输出语言的盘上写法与结果都一样。
+见 [key 契约](/zh/docs/guide/guides/keys)。
+
+### 面向 AI 的结构化输出
+
+内置 Prompt 生成：把一张盘或一段运限转成结构化文本，直接交给大模型分析，
+不必自己拼接命盘描述。见 [AI Prompt](/zh/docs/guide/guides/ai-prompt)。
+
+## 一分钟上手
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+print(chart.soul)                    # 命主
+print(chart.palace("soulPalace"))    # 命宫详情
+```
+
+三种语言的完整安装与示例见[快速开始](/zh/docs/guide/getting-started)。
+
+## 从哪读起
+
+<Cards>
+  <Card
+    title="快速开始"
+    href="/zh/docs/guide/getting-started"
+    description="装上它，跑出第一张盘"
+  />
+  <Card
+    title="紫微斗数概念"
+    href="/zh/docs/guide/concepts"
+    description="不懂命理也能看懂：一张盘由什么构成，字段各自是什么意思"
+  />
+  <Card
+    title="API 参考"
+    href="/zh/docs/guide"
+    description="三种语言的函数签名与完整数据结构字典"
+  />
+  <Card
+    title="准确性保证"
+    href="/zh/docs/guide/about/accuracy"
+    description="66 万例金标测试如何保证与 iztro 零差异"
+  />
+</Cards>

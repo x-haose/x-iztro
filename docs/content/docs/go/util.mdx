@@ -1,0 +1,525 @@
+---
+title: 工具函数
+description: 索引换算、亮度与四化查表、命身宫推算、大限小限、四柱展示串。
+---
+
+这些函数是排盘算法的零件。自己实现斗数逻辑、或要复核某一步推算时用得上；
+日常排盘不必直接调用。
+
+参数与返回值中的标识都与语言无关，可直接与星盘上的 `*Key` 字段互操作。
+
+---
+
+## FixIndex
+
+**用途**　把任意整数约束到 `0..max` 的循环区间。
+
+**斗数含义**　十二宫首尾相接，从丑宫（索引 11）再走一格回到寅宫（索引 0）。
+所有「顺数几格、逆数几格」的推算都靠这个回绕。
+
+**签名**
+
+```go
+func FixIndex(index int, max int) (int, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `index` | `int` | 是 | — | 待修正的索引，可为负 |
+| `max` | `int` | 是 | — | 循环长度；传 `0` 取默认值 12，天干用 10 |
+
+**返回值**　落在 `0..max` 的索引。
+
+**示例**
+
+```go
+a, _ := iztro.FixIndex(-1, 0)
+b, _ := iztro.FixIndex(13, 0)
+
+fmt.Println(a, b)
+```
+
+**输出**
+
+```text
+11 1
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+负数按数学取模回绕（-1 → 11），不是截断到 0。
+`max` 传 0 表示「用默认值」而非「模 0」。
+</Callout>
+
+---
+
+## EarthlyBranchToPalaceIndex
+
+**用途**　地支转宫位索引。
+
+**斗数含义**　十二宫的排列从**寅宫**起，而地支的自然顺序从**子**起，两者差两格。
+这个函数负责这层换算：寅 → 0，卯 → 1，⋯，子 → 10，丑 → 11。
+
+**签名**
+
+```go
+func EarthlyBranchToPalaceIndex(branchKey string) (int, error)
+```
+
+**返回值**　`int`，0–11。
+
+**示例**
+
+```go
+yin, _ := iztro.EarthlyBranchToPalaceIndex(iztro.BranchYin)
+zi, _ := iztro.EarthlyBranchToPalaceIndex(iztro.BranchZi)
+
+fmt.Println(yin, zi)
+```
+
+**输出**
+
+```text
+0 10
+```
+
+---
+
+## TimeToIndex
+
+**用途**　小时数转时辰索引。
+
+**斗数含义**　一天十二时辰，每时辰两小时，但子时横跨午夜被拆成早子时（0）与晚子时（12），
+因此索引有 13 个值。
+
+**签名**
+
+```go
+func TimeToIndex(hour uint8) (int, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `hour` | `uint8` | 是 | — | 小时数 0–23，越界返回错误 |
+
+**返回值**　`int`，0–12。
+
+**示例**
+
+```go
+a, _ := iztro.TimeToIndex(0)
+b, _ := iztro.TimeToIndex(4)
+c, _ := iztro.TimeToIndex(23)
+
+fmt.Println(a, b, c)
+```
+
+**输出**
+
+```text
+0 2 12
+```
+
+0 点为早子时，4 点为寅时，23 点为晚子时。排盘时不确定时辰索引，用这个函数换算。
+
+---
+
+## GetAgeIndex
+
+**用途**　由生年地支取小限起始宫位索引。
+
+**斗数含义**　小限从固定的宫起，按虚岁逐年推移。起宫由生年地支所属的三合组决定：
+寅午戌年起辰宫、申子辰年起戌宫、巳酉丑年起未宫、亥卯未年起丑宫。
+
+**签名**
+
+```go
+func GetAgeIndex(branchKey string) (int, error)
+```
+
+**返回值**　`int`，0–11。
+
+**示例**
+
+```go
+idx, _ := iztro.GetAgeIndex(iztro.BranchChen)
+fmt.Println(idx)
+```
+
+**输出**
+
+```text
+8
+```
+
+辰年属申子辰组，小限从戌宫起，戌宫的索引是 8。
+
+---
+
+## GetBrightness
+
+**用途**　查某颗星落在某宫时的亮度。
+
+**签名**
+
+```go
+func GetBrightness(starKey string, palaceIndex int, config *Config) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `starKey` | `string` | 是 | — | 星耀标识 |
+| `palaceIndex` | `int` | 是 | — | 宫位索引，越界会对 12 取模 |
+| `config` | `*Config` | 是 | — | 自定义亮度表会改变结果 |
+
+**返回值**　亮度标识；该星没有亮度表时返回空串。
+
+**示例**
+
+```go
+a, _ := iztro.GetBrightness(iztro.StarZiweiMaj, 4, nil)
+b, _ := iztro.GetBrightness(iztro.StarLucunMin, 0, nil)
+
+fmt.Printf("%q %q\n", a, b)
+```
+
+**输出**
+
+```text
+"miao" ""
+```
+
+紫微在午宫（索引 4）庙；禄存没有亮度表。
+
+---
+
+## GetMutagen / GetMutagensByHeavenlyStem
+
+**用途**　查天干四化。
+
+**斗数含义**　十天干各自固定指派四颗星化禄、权、科、忌。
+`GetMutagen` 问「这颗星在这个天干下化什么」，
+`GetMutagensByHeavenlyStem` 问「这个天干化哪四颗星」。
+
+**签名**
+
+```go
+func GetMutagen(starKey string, stemKey string, config *Config) (string, error)
+func GetMutagensByHeavenlyStem(stemKey string, config *Config) ([]string, error)
+```
+
+**返回值**　`GetMutagen` 返回四化标识，该星不在此天干的四化表内时返回空串。
+`GetMutagensByHeavenlyStem` 返回四项切片，顺序为**禄、权、科、忌**。
+
+**示例**
+
+```go
+a, _ := iztro.GetMutagen(iztro.StarTaiyangMaj, iztro.StemGeng, nil)
+b, _ := iztro.GetMutagen(iztro.StarZiweiMaj, iztro.StemGeng, nil)
+c, _ := iztro.GetMutagensByHeavenlyStem(iztro.StemGeng, nil)
+
+fmt.Printf("%q %q\n%v\n", a, b, c)
+```
+
+**输出**
+
+```text
+"sihuaLu" ""
+[taiyangMaj wuquMaj taiyinMaj tiantongMaj]
+```
+
+---
+
+## GetSoulAndBody
+
+**用途**　由农历月索引、时辰与年干推命宫、身宫。
+
+**斗数含义**　命宫是整张盘的起点：从寅宫起正月，顺数到生月，再从生月逆数到生时。
+身宫用同样的起点但顺数生时。命宫的天干由五虎遁从年干推得。
+
+**签名**
+
+```go
+func GetSoulAndBody(monthIndex int, timeIndex uint8, yearlyStemKey string) (*SoulAndBody, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `monthIndex` | `int` | 是 | — | 农历月索引，正月为 0；由 `FixLunarMonthIndex` 求得 |
+| `timeIndex` | `uint8` | 是 | — | 时辰索引 0–12 |
+| `yearlyStemKey` | `string` | 是 | — | 生年天干标识 |
+
+**返回值**　`*SoulAndBody`，含 `SoulIndex`、`BodyIndex`、`HeavenlyStemOfSoul`、`EarthlyBranchOfSoul`。
+
+**示例**
+
+```go
+sb, _ := iztro.GetSoulAndBody(6, 2, iztro.StemGeng)
+fmt.Printf("%+v\n", *sb)
+```
+
+**输出**
+
+```text
+{SoulIndex:4 BodyIndex:8 HeavenlyStemOfSoul:renHeavenly EarthlyBranchOfSoul:wuEarthly}
+```
+
+---
+
+## GetFiveElementsClass
+
+**用途**　由命宫干支推五行局。
+
+**斗数含义**　五行局（水二、木三、金四、土五、火六）决定两件大事：
+紫微星的起宫位置，以及大限的起运岁数。
+
+**签名**
+
+```go
+func GetFiveElementsClass(stemKey string, branchKey string) (string, error)
+```
+
+**返回值**　五行局标识。
+
+**示例**
+
+```go
+fe, _ := iztro.GetFiveElementsClass(iztro.StemRen, iztro.BranchWu)
+fmt.Println(fe)
+```
+
+**输出**
+
+```text
+wood3rd
+```
+
+---
+
+## GetPalaceNames
+
+**用途**　由命宫索引推十二宫名。
+
+**斗数含义**　命宫定下后，其余十一宫按固定顺序逆时针排开：
+命、兄弟、夫妻、子女、财帛、疾厄、迁移、仆役、官禄、田宅、福德、父母。
+
+**签名**
+
+```go
+func GetPalaceNames(soulIndex int) ([]string, error)
+```
+
+**返回值**　十二项切片，**按宫位索引排列**——第 `i` 项就是 `chart.Palaces[i]` 的宫名标识。
+
+**示例**
+
+```go
+names, _ := iztro.GetPalaceNames(4)
+fmt.Println(names[:4])
+```
+
+**输出**
+
+```text
+[wealthPalace childrenPalace spousePalace siblingsPalace]
+```
+
+命宫在索引 4，因此索引 0（寅宫）是财帛。
+
+---
+
+## GetDecadalsAndAges
+
+**用途**　由命宫索引与五行局推十二宫的大限与小限。
+
+**斗数含义**　大限起运岁数由五行局决定（水二局 2 岁起、木三局 3 岁起，依此类推），
+顺逆由性别阴阳与年支阴阳决定；小限起宫由年支决定，按虚岁逐年推移。
+
+**签名**
+
+```go
+func GetDecadalsAndAges(
+    soulIndex int, fiveElementsClass, gender, yearlyStemKey, yearlyBranchKey string,
+) (DecadalsAndAges, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `soulIndex` | `int` | 是 | — | 命宫宫位索引 |
+| `fiveElementsClass` | `string` | 是 | — | 五行局标识 |
+| `gender` | `string` | 是 | — | `"male"` 或 `"female"` |
+| `yearlyStemKey` | `string` | 是 | — | 年干标识 |
+| `yearlyBranchKey` | `string` | 是 | — | 年支标识 |
+
+**返回值**　`DecadalsAndAges`，含 `Decadals []Decadal` 与 `Ages [][]int`，均按宫位索引排列。
+
+**示例**
+
+```go
+da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", "female", iztro.StemGeng, iztro.BranchChen)
+
+fmt.Printf("%+v\n", da.Decadals[0])
+fmt.Println(da.Ages[0][:3])
+```
+
+**输出**
+
+```text
+{Range:[43 52] HeavenlyStem:戊 HeavenlyStemKey:wuHeavenly EarthlyBranch:寅 EarthlyBranchKey:yinEarthly}
+[9 21 33]
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+整盘排出的每个宫位上已有 `Decadal` 与 `Ages` 字段，内容与本函数一致，
+连译名与标识两组字段的含义都相同。这个函数用于不排整盘、只推大限小限的场合。
+</Callout>
+
+---
+
+## FixLunarMonthIndex / FixLunarDayIndex
+
+**用途**　求修正后的农历月索引与日索引。
+
+**斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
+闰月十五日之后按下月算（可关），晚子时属次日。
+
+**签名**
+
+```go
+func FixLunarMonthIndex(lunarMonth int, lunarDay int, isLeap bool, timeIndex uint8, fixLeap bool) (int, error)
+func FixLunarDayIndex(lunarDay int, timeIndex uint8) (int, error)
+```
+
+**返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+**示例**
+
+```go
+m, _ := iztro.FixLunarMonthIndex(7, 17, false, 2, true)
+d1, _ := iztro.FixLunarDayIndex(17, 2)
+d2, _ := iztro.FixLunarDayIndex(17, 12)
+
+fmt.Println(m, d1, d2)
+```
+
+**输出**
+
+```text
+6 16 17
+```
+
+七月非闰月，索引为 6；十七日在寅时减一得 16，在晚子时属次日故保持 17。
+
+---
+
+## TranslateChineseDate
+
+**用途**　把四柱干支拼成展示串。
+
+**签名**
+
+```go
+func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pillars` | `[4][2]string` | 是 | — | 四柱标识 [年, 月, 日, 时]，每柱为 [天干, 地支] |
+| `language` | `string` | 是 | — | 输出语言 |
+
+**返回值**　词条均为单字符时柱内紧凑相连、柱间空格；
+任一词条为多字符时柱内空格、柱间 ` - `。
+
+**示例**
+
+```go
+s, _ := iztro.TranslateChineseDate([4][2]string{
+    {iztro.StemGeng, iztro.BranchChen},
+    {iztro.StemJia, iztro.BranchShen},
+    {iztro.StemBing, iztro.BranchWu},
+    {iztro.StemGeng, iztro.BranchYin},
+}, "zh-CN")
+fmt.Println(s)
+
+// 星盘上的四柱标识可直接取
+s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), "zh-CN")
+fmt.Println(s2)
+```
+
+**输出**
+
+```text
+庚辰 甲申 丙午 庚寅
+庚辰 甲申 丙午 庚寅
+```
+
+**边界与陷阱**
+
+<Callout type="warn">
+干支标识非法时返回错误。定长数组保证了柱数必为四，不必再校验长度。
+</Callout>
+
+---
+
+## MergeStars
+
+**用途**　把多组「十二宫星耀」按宫位合并成一组。
+
+**斗数含义**　安星是分批进行的：主星、辅星、杂耀各出一组十二宫列表。
+要把它们并成一张完整盘面时用这个函数。
+
+**签名**
+
+```go
+func MergeStars(groups ...[][]Star) ([][]Star, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `groups` | `...[][]Star` | 是 | — | 若干组十二宫星耀，每组长度须为 12 |
+
+**返回值**　合并后的十二宫切片，同宫内按传入顺序首尾相接。
+
+**示例**
+
+```go
+birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: "female", FixLeap: true}
+major, _ := iztro.GetMajorStar(birth)
+minor, _ := iztro.GetMinorStar(birth)
+
+merged, _ := iztro.MergeStars(major, minor)
+names := []string{}
+for _, s := range merged[0] {
+    names = append(names, s.Name)
+}
+fmt.Println(names)
+```
+
+**输出**
+
+```text
+[武曲 天相 天马]
+```
+
+**边界与陷阱**
+
+<Callout type="warn">
+某一组的长度不是 12 时返回错误。这是纯本地实现，不经 wasm。
+</Callout>

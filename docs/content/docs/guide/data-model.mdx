@@ -1,0 +1,207 @@
+---
+title: 数据结构字典
+description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与含义。
+---
+
+这一页以序列化后的 JSON 字段名（camelCase）为准，它是三种语言绑定共用的契约。
+各语言的命名换算：
+
+| 层 | 命名 | 示例 |
+| --- | --- | --- |
+| JSON / 绑定契约 | camelCase | `isBodyPalace` |
+| Python | snake_case | `is_body_palace` |
+| Go | PascalCase | `IsBodyPalace` |
+| Rust | snake_case，值为枚举 | `is_body_palace` |
+
+## Astrolabe 星盘
+
+排盘入口的返回值。
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `gender` | string | 性别，翻译文本 |
+| `genderKey` | string | `"male"` / `"female"` |
+| `solarDate` | string | 阳历生日，与入参一致 |
+| `lunarDate` | string | 农历生日的文字表示 |
+| `chineseDate` | string | 四柱干支展示串 |
+| `rawDates` | [RawDates](#rawdates-结构化日期) | 结构化的农历生日与四柱 |
+| `time` | string | 时辰名，如「寅时」 |
+| `timeRange` | string | 时辰时间段，如「03:00~05:00」 |
+| `sign` | string | 星座 |
+| `zodiac` | string | 生肖，按年支 |
+| `earthlyBranchOfSoulPalace` | string | 命宫地支 |
+| `earthlyBranchOfSoulPalaceKey` | string | 命宫地支 key |
+| `earthlyBranchOfBodyPalace` | string | 身宫地支 |
+| `earthlyBranchOfBodyPalaceKey` | string | 身宫地支 key |
+| `soul` | string | 命主星 |
+| `soulKey` | string | 命主星 key |
+| `body` | string | 身主星 |
+| `bodyKey` | string | 身主星 key |
+| `fiveElementsClass` | string | 五行局 |
+| `fiveElementsClassKey` | string | 五行局 key，如 `water2nd` |
+| `palaces` | [Palace](#palace-宫位)[12] | 十二宫，索引 0 是寅宫 |
+| `timeIndex` | int | 出生时辰索引 0–12，保留原始传入值 |
+| `fixLeap` | bool | 是否修正闰月 |
+| `language` | string | 排盘语言 |
+| `config` | [Config](#config-配置) | 排盘配置 |
+
+## Palace 宫位
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `index` | int | 宫位在盘上的位置，0–11，0 是寅宫 |
+| `name` | string | 宫名 |
+| `nameKey` | string | 宫名 key，如 `soulPalace` |
+| `isBodyPalace` | bool | 是否身宫 |
+| `isOriginalPalace` | bool | 是否来因宫 |
+| `heavenlyStem` | string | 宫干 |
+| `heavenlyStemKey` | string | 宫干 key |
+| `earthlyBranch` | string | 宫支 |
+| `earthlyBranchKey` | string | 宫支 key |
+| `majorStars` | [Star](#star-星耀)[] | 主星 |
+| `minorStars` | [Star](#star-星耀)[] | 辅星 |
+| `adjectiveStars` | [Star](#star-星耀)[] | 杂耀 |
+| `changsheng12` / `changsheng12Key` | string | 长生十二神 |
+| `boshi12` / `boshi12Key` | string | 博士十二神 |
+| `jiangqian12` / `jiangqian12Key` | string | 将前十二神 |
+| `suiqian12` / `suiqian12Key` | string | 岁前十二神 |
+| `decadal` | [Decadal](#decadal-大限) | 该宫掌管的大限 |
+| `ages` | int[] | 小限经过该宫的虚岁列表 |
+
+## Star 星耀
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `key` | string | 星耀 key，如 `ziweiMaj` |
+| `name` | string | 星名 |
+| `type` | string | `major` / `soft` / `tough` / `adjective` / `flower` / `helper` / `lucun` / `tianma` |
+| `scope` | string | `origin` / `decadal` / `yearly` / `monthly` / `daily` / `hourly` |
+| `brightness` | string? | 亮度，无则缺省 |
+| `brightnessKey` | string? | 亮度 key |
+| `mutagen` | string? | 四化，无则缺省 |
+| `mutagenKey` | string? | 四化 key |
+
+## Decadal 大限
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `range` | [int, int] | 起止虚岁，含两端 |
+| `heavenlyStem` / `heavenlyStemKey` | string | 大限天干 |
+| `earthlyBranch` / `earthlyBranchKey` | string | 大限地支 |
+
+## RawDates 结构化日期
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `lunarDate.lunarYear` | int | 农历年 |
+| `lunarDate.lunarMonth` | int | 农历月 1–12 |
+| `lunarDate.lunarDay` | int | 农历日 1–30 |
+| `lunarDate.isLeap` | bool | 是否闰月 |
+| `chineseDate.yearly` | [string, string] | 年柱 [天干, 地支] |
+| `chineseDate.monthly` | [string, string] | 月柱 |
+| `chineseDate.daily` | [string, string] | 日柱 |
+| `chineseDate.hourly` | [string, string] | 时柱 |
+| `chineseDate.yearlyKeys` | [string, string] | 年柱的[语言无关 key](/zh/docs/guide/guides/keys) |
+| `chineseDate.monthlyKeys` | [string, string] | 月柱的语言无关 key |
+| `chineseDate.dailyKeys` | [string, string] | 日柱的语言无关 key |
+| `chineseDate.hourlyKeys` | [string, string] | 时柱的语言无关 key |
+
+四柱里的干支是未本地化的原文（任何输出语言下都是中文），做判断请用 `*Keys`。
+把 `*Keys` 交给 `translate_chinese_date` 即可得到按语言翻译的展示串，
+与顶层 `chineseDate` 字段逐字一致。
+
+## Config 配置
+
+| 字段 | 取值 | 默认 |
+| --- | --- | --- |
+| `yearDivide` | `normal` / `exact` | `normal` |
+| `horoscopeDivide` | `normal` / `exact` | `normal` |
+| `ageDivide` | `normal` / `birthday` | `normal` |
+| `dayDivide` | `forward` / `current` | `forward` |
+| `algorithm` | `default` / `zhongzhou` | `default` |
+
+含义见 [Config 详解](/zh/docs/guide/guides/config)。
+
+## Horoscope 运限
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `solarDate` | string | 目标阳历日期 |
+| `lunarDate` | string | 目标农历日期 |
+| `decadal` | [HoroscopeScope](#horoscopescope-运限层级) | 大限，未起运时为童限 |
+| `age` | HoroscopeScope | 小限，带 `nominalAge` |
+| `yearly` | HoroscopeScope | 流年，带 `yearlyDecStar` |
+| `monthly` | HoroscopeScope | 流月 |
+| `daily` | HoroscopeScope | 流日 |
+| `hourly` | HoroscopeScope | 流时 |
+
+### HoroscopeScope 运限层级
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `index` | int | 该运限所在盘上位置 0–11 |
+| `name` | string | 层级名，翻译文本 |
+| `heavenlyStem` / `heavenlyStemKey` | string | 该运限天干 |
+| `earthlyBranch` / `earthlyBranchKey` | string | 该运限地支 |
+| `palaceNames` | string[12] | 以该运限位置为命宫重排的宫名，按盘上位置排列 |
+| `palaceNameKeys` | string[12] | 同上的 key 形式 |
+| `mutagen` | string[4] | 四化星名，顺序为禄、权、科、忌 |
+| `mutagenKeys` | string[4] | 同上的 key 形式 |
+| `stars` | Star[12][]? | 流耀在十二宫的分布，无流耀的层级缺省 |
+| `nominalAge` | int? | 虚岁，仅小限有 |
+| `yearlyDecStar` | [YearlyDecStar](#yearlydecstar-流年十二神)? | 仅流年有 |
+
+### YearlyDecStar 流年十二神
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `suiqian12` / `suiqian12Keys` | string[12] | 按流年支起的岁前十二神，索引即宫位索引 |
+| `jiangqian12` / `jiangqian12Keys` | string[12] | 按流年支起的将前十二神 |
+
+<Callout title="Rust 侧的 base 层">
+Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base, nominal_age }`），
+序列化时用 `#[serde(flatten)]` 展平，所以 JSON 与 Python / Go 侧看到的是平铺结构。
+</Callout>
+
+## 完整 JSON 样例
+
+`by_solar("2000-8-16", 2, female)` 的真实输出（顶层，省略 `palaces` 的十二项）：
+
+```json
+{
+  "gender": "女",
+  "genderKey": "female",
+  "solarDate": "2000-8-16",
+  "lunarDate": "二〇〇〇年七月十七",
+  "chineseDate": "庚辰 甲申 丙午 庚寅",
+  "rawDates": {
+    "lunarDate": { "lunarYear": 2000, "lunarMonth": 7, "lunarDay": 17, "isLeap": false },
+    "chineseDate": {
+      "yearly": ["庚", "辰"], "monthly": ["甲", "申"],
+      "daily": ["丙", "午"], "hourly": ["庚", "寅"]
+    }
+  },
+  "time": "寅时",
+  "timeRange": "03:00~05:00",
+  "sign": "狮子座",
+  "zodiac": "龙",
+  "earthlyBranchOfSoulPalace": "午", "earthlyBranchOfSoulPalaceKey": "wuEarthly",
+  "earthlyBranchOfBodyPalace": "戌", "earthlyBranchOfBodyPalaceKey": "xuEarthly",
+  "soul": "破军", "soulKey": "pojunMaj",
+  "body": "文昌", "bodyKey": "wenchangMin",
+  "fiveElementsClass": "木三局", "fiveElementsClassKey": "wood3rd",
+  "palaces": [ /* 12 项 */ ],
+  "timeIndex": 2,
+  "fixLeap": true,
+  "language": "zh-CN",
+  "config": {
+    "yearDivide": "normal", "horoscopeDivide": "normal",
+    "ageDivide": "normal", "dayDivide": "forward", "algorithm": "default"
+  }
+}
+```
+
+<Callout>
+`*Key` 字段是 x-iztro 相对 JS iztro 的扩展，用于跨语言判断；
+其余字段与 iztro 的 `JSON.stringify` 输出逐键逐值一致。
+</Callout>

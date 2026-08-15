@@ -1,0 +1,334 @@
+---
+title: 运限对象
+description: 六个运限层级的数据结构，以及不必再传星盘的宫位查询方法。
+---
+
+运限把本命盘投影到某个时间点上。同一张盘，不同年份看到的宫位分布不同——
+这正是「大限走到哪一宫」的意思。
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+```
+
+`Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
+
+## 字段
+
+| 字段 | 类型 | 跨度 | 说明 |
+| --- | --- | --- | --- |
+| `SolarDate` / `LunarDate` | `string` | — | 目标日期 |
+| `Decadal` | `HoroscopeScope` | 十年 | 大限。未起运的幼年期为童限 |
+| `Age` | `HoroscopeScope` | 一年 | 小限。按虚岁逐年走一宫 |
+| `Yearly` | `HoroscopeScope` | 一年 | 流年。按流年干支定宫 |
+| `Monthly` | `HoroscopeScope` | 一月 | 流月 |
+| `Daily` | `HoroscopeScope` | 一日 | 流日 |
+| `Hourly` | `HoroscopeScope` | 一时辰 | 流时 |
+
+<Callout type="info" title="小限与流年的区别">
+两者都是一年一走，但起法不同：小限从生年地支起、按虚岁顺推，
+流年直接看那一年的干支落在哪一宫。两条线互相独立，斗数里通常并看。
+</Callout>
+
+### HoroscopeScope
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Index` | `int` | 该层级落在哪一宫（宫位索引） |
+| `Name` | `string` | 层级显示名，按输出语言翻译 |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | 该层级的天干，决定它飞出的四化 |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | 该层级的地支 |
+| `PalaceNames` / `PalaceNameKeys` | `[]string` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
+| `Mutagen` / `MutagenKeys` | `[]string` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `Stars` | `[][]Star` | 该层级的流耀分布；无流耀的层级为 `nil` |
+| `NominalAge` | `int` | 仅小限：虚岁 |
+| `YearlyDecStar` | `YearlyDecStar` | 仅流年：岁前与将前十二神 |
+
+<Callout type="info" title="六个层级共用一个类型">
+Go 侧不为小限与流年各开一个类型，而是把 `NominalAge` 与 `YearlyDecStar`
+放进共用的 `HoroscopeScope`——其余层级上这两项为零值。
+调用处因此可以写按层级参数化的通用逻辑。
+</Callout>
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+for _, item := range []iztro.HoroscopeScope{h.Decadal, h.Monthly, h.Daily, h.Hourly} {
+    fmt.Printf("%s 落在宫位 %d 干支 %s%s\n",
+        item.Name, item.Index, item.HeavenlyStem, item.EarthlyBranch)
+}
+
+fmt.Println("小限虚岁", h.Age.NominalAge)
+fmt.Println("大限四化", h.Decadal.Mutagen)
+fmt.Println("流年岁前十二神", h.Yearly.YearlyDecStar.Suiqian12[:3])
+```
+
+**输出**
+
+```text
+大限 落在宫位 2 干支 庚辰
+流月 落在宫位 3 干支 壬午
+流日 落在宫位 8 干支 辛丑
+流时 落在宫位 8 干支 戊子
+小限虚岁 26
+大限四化 [太阳 武曲 太阴 天同]
+流年岁前十二神 [天德 吊客 病符]
+```
+
+---
+
+## AgePalace
+
+**用途**　取小限当年所在的宫。
+
+**斗数含义**　小限是逐年推移的一条线，落在哪一宫就以那宫为该年重点。
+
+**签名**
+
+```go
+func (h *Horoscope) AgePalace() *Palace
+```
+
+**返回值**　`*Palace`——本命盘上的宫位。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+fmt.Println(h.AgePalace().Name)
+```
+
+**输出**
+
+```text
+田宅
+```
+
+---
+
+## Palace
+
+**用途**　取某个运限层级下、按该层级重推的十二宫中的某一宫。
+
+**斗数含义**　大限走到某宫后，以那一宫为「大限命宫」重排十二宫。
+「大限的夫妻宫」问的就是这套重排后的宫位，与本命夫妻宫通常不是同一宫。
+
+**签名**
+
+```go
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | 是 | — | 要取的宫名标识或译名 |
+| `scope` | `string` | 是 | — | 在哪个层级的十二宫里找 |
+
+**返回值**　`*Palace`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
+层级为 `ScopeOrigin` 时即本命十二宫。查不到返回 `nil`。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println("大限命宫落在本命的", h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal).Name)
+fmt.Println("本命命宫是", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Name)
+```
+
+**输出**
+
+```text
+大限命宫落在本命的 夫妻
+本命命宫是 命宫
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="返回的是本命盘上的那一格">
+返回的宫位对象上，`Name` 仍是**本命宫名**（例中的夫妻），因为它就是本命盘上的那一格。
+要看该格在大限层级叫什么，查 `h.Decadal.PalaceNames[index]`。
+</Callout>
+
+---
+
+## SurroundPalaces
+
+**用途**　取某个运限层级下某宫的三方四正。
+
+**签名**
+
+```go
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces
+```
+
+**参数**　同 `Palace`。
+
+**返回值**　`*SurroundedPalaces`，判断方法见[三方四正](/zh/docs/go/surpalaces)。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+sp := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
+
+fmt.Println("流年财帛的三方四正以本命", sp.Target.Name, "为本宫")
+```
+
+**输出**
+
+```text
+流年财帛的三方四正以本命 疾厄 为本宫
+```
+
+---
+
+## HasHoroscopeStars / HasOneOfHoroscopeStars / NotHaveHoroscopeStars
+
+**用途**　判断某层级某宫里有没有指定的流耀。
+
+**斗数含义**　流耀是随运限层级产生的一组星：魁钺昌曲禄羊陀马鸾喜。
+它们在不同层级有不同名字——大限层级叫运魁、运钺，流年层级叫流魁、流钺，
+含义相同但作用于各自的时间跨度。
+
+**签名**
+
+```go
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | 是 | — | 该层级下的宫名 |
+| `scope` | `string` | 是 | — | 运限层级 |
+| `stars` | `[]string` | 是 | — | 流耀标识切片，须用该层级的名字 |
+
+**返回值**
+
+| 方法 | 语义 |
+| --- | --- |
+| `HasHoroscopeStars` | 每一颗都在 |
+| `HasOneOfHoroscopeStars` | 至少一颗在 |
+| `NotHaveHoroscopeStars` | 一颗都不在 |
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"}))
+fmt.Println(h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"}))
+fmt.Println(h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"}))
+```
+
+**输出**
+
+```text
+false
+false
+true
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="星耀参数是切片不是可变参数">
+这三个方法前面已有宫名与层级两个字符串参数，再用可变参数会让调用处产生歧义，
+因此星耀参数取 `[]string`。包里其余带星耀列表的方法都是可变参数。
+</Accordion>
+<Accordion title="流耀标识按层级区分">
+大限层级查 `yunlu`（运禄），流年层级查 `liulu`（流禄），层级与标识必须配对。
+拿 `yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
+各层级的标识对照见[安星模块](/zh/docs/go/star#gethoroscopestar)。
+</Accordion>
+</Accordions>
+
+---
+
+## HasHoroscopeMutagen
+
+**用途**　判断某层级某宫里有没有该层级天干引发的四化。
+
+**斗数含义**　每个运限层级有自己的天干，会像生年干一样化出四颗星。
+「大限化禄落在大限财帛」这类判断问的就是这个。
+
+**签名**
+
+```go
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | 是 | — | 该层级下的宫名 |
+| `scope` | `string` | 是 | — | 运限层级 |
+| `mutagenKey` | `string` | 是 | — | 四化标识 |
+
+**返回值**　`bool`。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu))
+fmt.Println(h.Decadal.Mutagen)
+```
+
+**输出**
+
+```text
+false
+[太阳 武曲 太阴 天同]
+```
+
+大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
+
+---
+
+## ScopeItem / Astrolabe
+
+**用途**　按层级标识取对应的 `HoroscopeScope`，或回到本命盘。
+
+**签名**
+
+```go
+func (h *Horoscope) ScopeItem(scope string) *HoroscopeScope
+func (h *Horoscope) Astrolabe() *Astrolabe
+```
+
+**返回值**　`ScopeItem` 在层级为 `ScopeOrigin` 或未知层级时返回 `nil`——本命不是运限层级。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.ScopeItem(iztro.ScopeDecadal).Name)
+fmt.Println(h.ScopeItem(iztro.ScopeOrigin))
+fmt.Println(h.Astrolabe().SolarDate)
+```
+
+**输出**
+
+```text
+大限
+<nil>
+2000-8-16
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+`ScopeItem` 用于写按层级参数化的通用逻辑，比一串 `switch scope` 简洁。
+返回 `nil` 时记得判空。
+</Callout>

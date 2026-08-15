@@ -1,0 +1,181 @@
+---
+title: 星耀对象
+description: Star 的字段与亮度、四化判断，以及回溯所在宫的能力。
+---
+
+`Star` 是一颗落在某宫的星，带着它的类型、亮度与四化标记，并能回溯所在宫。
+
+```python
+ziwei = chart.star("ziweiMaj")
+```
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `str` | 星耀标识，与语言无关，判断时用它 |
+| `name` | `str` | 星名，按排盘语言翻译 |
+| `type` | `str` | 星耀类型，见下表 |
+| `scope` | `str` | 作用范围：本命星为 `"origin"`，流耀为对应运限层级 |
+| `brightness` | `str \| None` | 亮度译名；没有亮度表的星耀为 `None` |
+| `brightness_key` | `str \| None` | 亮度标识 |
+| `mutagen` | `str \| None` | 生年四化译名；未被生年干化的星为 `None` |
+| `mutagen_key` | `str \| None` | 四化标识 |
+
+### 星耀类型的八个取值
+
+| 取值 | 含义 | 典型成员 |
+| --- | --- | --- |
+| `major` | 十四主星 | 紫微、天府、七杀、破军 |
+| `soft` | 吉星 | 左辅、右弼、文昌、文曲、天魁、天钺 |
+| `tough` | 煞星 | 擎羊、陀罗、火星、铃星、地空、地劫 |
+| `adjective` | 杂耀 | 三台、八座、天刑、天姚 |
+| `flower` | 桃花星 | 红鸾、天喜、咸池 |
+| `helper` | 解神 | 解神 |
+| `lucun` | 禄存 | 禄存 |
+| `tianma` | 天马 | 天马 |
+
+禄存与天马各自独占一类，因为它们在传统分法里既非纯吉也非纯煞，判断时常单独拎出来。
+
+<Callout type="info" title="亮度为 None 不代表星弱">
+只有十四主星与文昌、文曲、火星、铃星、擎羊、陀罗这二十颗有亮度表，
+其余星耀本就没有亮度概念，`brightness` 为 `None`。
+</Callout>
+
+---
+
+## with_brightness
+
+**用途**　判断这颗星是否处于给定亮度之一。
+
+**斗数含义**　亮度（庙旺得利平不陷）描述星耀在该宫位的强弱。
+同一颗星在十二宫各有定值，庙旺则力量充分发挥，落陷则受制。
+
+**签名**
+
+```python
+def with_brightness(self, brightness: Brightness | list[Brightness]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `brightness` | `str \| list[str]` | 是 | — | 亮度标识，单个或列表；列表时命中任一即为真 |
+
+**返回值**　`bool`。该星无亮度时恒为假。
+
+**示例**
+
+```python
+from x_iztro import Brightness
+
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.with_brightness(Brightness.MIAO))
+print(ziwei.with_brightness([Brightness.WANG, Brightness.DE]))
+```
+
+**输出**
+
+```text
+True
+False
+```
+
+**边界与陷阱**
+
+<Callout type="warn">
+列表的语义是「命中任一」而非「全部命中」——一颗星只有一个亮度，
+要求全部命中在列表多于一项时永假。
+</Callout>
+
+---
+
+## with_mutagen
+
+**用途**　判断这颗星是否带指定的生年四化。
+
+**斗数含义**　生年四化由出生年干决定，一年固定四颗星分别化禄、权、科、忌。
+这个标记跟着星走，无论那颗星落在哪一宫。
+
+**签名**
+
+```python
+def with_mutagen(self, mutagen: Mutagen | list[Mutagen]) -> bool
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `str \| list[str]` | 是 | — | 四化标识，单个或列表；列表时命中任一即为真 |
+
+**返回值**　`bool`。该星未被生年干化时恒为假。
+
+**示例**
+
+```python
+from x_iztro import Mutagen
+
+print("紫微化禄:", chart.star("ziweiMaj").with_mutagen(Mutagen.LU))
+print("太阳化禄:", chart.star("taiyangMaj").with_mutagen(Mutagen.LU))
+```
+
+**输出**
+
+```text
+紫微化禄: False
+太阳化禄: True
+```
+
+这张盘生年干为庚，庚干太阳化禄，因此标记落在太阳而非紫微。
+
+**边界与陷阱**
+
+<Callout type="info" title="生年四化与飞星四化不是一回事">
+`with_mutagen` 看的是**生年干**给这颗星打的标记，一张盘上只有四颗星带标记。
+宫干飞出的四化不在这里体现，用宫位的 [`flies_to`](/zh/docs/python/palace#flies_to--flies_one_of_to--not_fly_to) 一族。
+</Callout>
+
+---
+
+## palace / opposite_palace / surrounded_palaces
+
+**用途**　从星回溯到它所在的宫、该宫的对宫与三方四正。
+
+**签名**
+
+```python
+def palace(self) -> Palace | None
+def opposite_palace(self) -> Palace | None
+def surrounded_palaces(self) -> SurroundedPalaces | None
+```
+
+**返回值**　脱离星盘单独构造的星耀返回 `None`；由星盘查询得到的星耀必然非空。
+
+**示例**
+
+```python
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.palace().name)
+print(ziwei.opposite_palace().name)
+print("同宫或三方见天相:", ziwei.surrounded_palaces().have(["tianxiangMaj"]))
+```
+
+**输出**
+
+```text
+命宫
+迁移
+同宫或三方见天相: True
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+一颗星在一张盘上只出现一次，因此 `chart.star(key)` 的结果唯一。
+运限流耀不在本命盘的星耀列表里，要取它们用运限对象的
+[`palace`](/zh/docs/python/horoscope#palace) 配合层级参数。
+</Callout>

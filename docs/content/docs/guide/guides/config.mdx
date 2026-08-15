@@ -1,0 +1,204 @@
+---
+title: Config 详解
+description: 五个开关分别改变什么、什么时候会看出差别、三种语言怎么传。
+---
+
+排盘中真正有分歧的地方都收在 `Config` 的六个开关里。
+默认值与 JS iztro 完全一致，所以**不传配置就能得到与 iztro 相同的盘**。
+
+| 开关 | 取值 | 默认 | 管什么 |
+| --- | --- | --- | --- |
+| `year_divide` | `normal` / `exact` | `normal` | 排盘年干支按哪天换年 |
+| `horoscope_divide` | `normal` / `exact` | `normal` | 运限干支与月柱按哪天分界 |
+| `age_divide` | `normal` / `birthday` | `normal` | 虚岁什么时候加一 |
+| `day_divide` | `forward` / `current` | `forward` | 晚子时算今天还是明天 |
+| `algorithm` | `default` / `zhongzhou` | `default` | 算法派别 |
+| `astro_type` | `heaven` / `earth` / `human` | `heaven` | 排盘视角（天盘/地盘/人盘） |
+
+## 怎么传
+
+```rust
+use x_iztro::data::types::*;
+
+let config = Config {
+    algorithm: Algorithm::Zhongzhou,
+    year_divide: YearDivide::Exact,
+    ..Config::default()
+};
+by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, config)?;
+```
+
+```python
+from x_iztro import ChartConfig
+from x_iztro.enums import Algorithm, YearDivide
+
+config = ChartConfig(
+    algorithm=Algorithm.ZHONGZHOU,
+    year_divide=YearDivide.EXACT,
+)
+astro.by_solar("2000-8-16", 2, "female", config=config)
+```
+
+```go
+cfg := &iztro.Config{
+    Algorithm:  "zhongzhou",
+    YearDivide: "exact",
+}
+iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", cfg)
+```
+
+Python 与 Go 都只需填要改的键，其余取默认；Rust 用 `..Config::default()` 达到同样效果。
+
+---
+
+## 年分界点 `year_divide`
+
+决定**排盘用的年干支**在哪一天换年。
+
+| 取值 | 换年时点 |
+| --- | --- |
+| `normal`（默认） | 农历正月初一 |
+| `exact` | 立春 |
+
+年干支是一连串东西的源头：本命四化、命主与身主、部分年系杂耀。
+所以这个开关一旦改变，整张盘可能大幅不同。
+
+**什么时候会看出差别**：出生在农历正月初一与立春之间的人。
+这两个日期通常相差几天到半个月，落在这个窗口里的生日，两种配置排出的年干支相差一位。
+
+<Callout type="warn" title="年支的两套用法">
+x-iztro 复刻了 iztro 内部的一处细节：并非所有依赖年支的星都用同一个开关。
+年系杂耀与本命的岁前十二神、将前十二神按 `horoscope_divide` 的年支起，
+而红鸾、天喜按 `year_divide` 的年支起。
+这看起来不对称，但它就是 iztro 的实际行为，为保证零差异必须原样保留。
+</Callout>
+
+## 运限分界点 `horoscope_divide`
+
+决定**运限干支**与**干支纪日的月柱**在哪一天分界。
+
+| 取值 | 年分界 | 月分界 |
+| --- | --- | --- |
+| `normal`（默认） | 正月初一 | 初一，以五虎遁推月干 |
+| `exact` | 立春 | 节气 |
+
+**什么时候会看出差别**：查询日期落在年初（正月初一到立春之间）或每个节气交接的前后。
+此时 `yearly` 与 `monthly` 的干支会差一位，进而改变运限四化。
+
+## 虚岁分界点 `age_divide`
+
+决定**虚岁**什么时候加一，直接影响小限落在哪个宫。
+
+| 取值 | 加岁时点 |
+| --- | --- |
+| `normal`（默认） | 跨农历年即加一岁 |
+| `birthday` | 过了农历生日才加一岁 |
+
+**什么时候会看出差别**：查询日期落在农历新年与本人农历生日之间。
+这段时间两种配置的虚岁相差一岁，小限也就落在相邻的两个宫。
+
+## 晚子时归属 `day_divide`
+
+决定 23:00–24:00 出生（时辰索引 `12`）的人，日柱按哪一天算。
+
+| 取值 | 行为 |
+| --- | --- |
+| `forward`（默认） | 晚子时归**次日**，按次日的日柱排盘 |
+| `current` | 晚子时归**当天**，按当日早子时排盘 |
+
+**什么时候会看出差别**：只影响 `time_index == 12` 的盘。其余时辰完全无差异。
+
+<Callout>
+无论选哪种，`time_index` 字段都保留原始传入值 `12`，
+不会因为归到次日就变成 `0` —— 这样调用方始终能知道出生的真实时辰。
+</Callout>
+
+## 算法派别 `algorithm`
+
+| 取值 | 说明 |
+| --- | --- |
+| `default`（默认） | 通行的安星与四化规则，与 JS iztro 默认一致 |
+| `zhongzhou` | 中州派 |
+
+中州派在部分星耀的安法与四化取法上与通行做法不同。切换后同一个生日会得到不同的盘，
+这是流派差异而非计算错误。
+
+```python
+astro.by_solar("1990-11-5", 4, "male", config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
+```
+
+## 配置会跟着星盘走
+
+排盘用的配置存在星盘上，运限从那里取，
+所以**运限一定与排盘用同一套配置**，不会出现本命盘用中州派、运限用默认派的错配。
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", config=ChartConfig(age_divide="birthday"))
+h = chart.horoscope("2024-10-1", 0)   # 自动沿用 age_divide=birthday
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN",
+    &iztro.Config{AgeDivide: "birthday"})
+h, _ := chart.Horoscope("2024-10-1", 0)   // 同上
+```
+
+## astro_type：天盘、地盘、人盘
+
+中州派把同一组出生数据看作三张盘，差别只在**用哪一宫的干支起五行局**：
+
+| 视角 | 起五行局的宫 | 新盘的命宫 |
+| --- | --- | --- |
+| `heaven` 天盘 | 命宫 | 命宫（即常规排盘结果） |
+| `earth` 地盘 | 身宫 | 身宫 |
+| `human` 人盘 | 福德宫 | 福德宫 |
+
+五行局一变，紫微天府的落点、十二宫名、长生十二神、大限小限全部跟着变；
+辅星、杂耀（天伤天使天才随命宫走，会重新落位）、博士十二神、
+岁前将前十二神沿用天盘。
+
+```python
+earth = astro.by_solar("2000-8-16", 2, "female",
+                       config=ChartConfig(astro_type=AstroType.EARTH))
+```
+
+```go
+earth, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN",
+    &iztro.Config{AstroType: iztro.AstroEarth})
+```
+
+```rust
+let earth = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN,
+    Config::default().with_astro_type(AstroType::Earth))?;
+```
+
+<Callout>
+JS iztro 把 `astroType` 放在 `withOptions` 的选项对象上，因为它的 `config()`
+是全局单例、装不下按盘变化的值。x-iztro 的配置本来就随盘传入，
+所以直接收进 `Config`，`by_solar` 与 `by_lunar` 都能用。
+</Callout>
+
+### 从任意干支起盘
+
+天盘、地盘、人盘之外，也可以指定任意干支为命宫重排：
+
+```python
+body = chart.palace(PalaceName.BODY)
+earth = chart.rearranged(body.heavenly_stem_key, body.earthly_branch_key)
+```
+
+```go
+earth, _ := chart.Rearranged(body.HeavenlyStemKey, body.EarthlyBranchKey)
+```
+
+```rust
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+```
+
+以身宫干支重排，结果与 `astro_type = earth` 一致。
+
+## 测试覆盖
+
+四个开关的非默认取值各有专门的金标测试，共 8,544 例，
+覆盖立春窗口逐日、晚子时、生日前后等所有会产生分歧的边界。
+见[准确性保证](/zh/docs/guide/about/accuracy)。

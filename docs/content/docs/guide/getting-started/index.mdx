@@ -1,0 +1,70 @@
+---
+title: 概览
+description: 三种语言的安装方式、排盘入口参数的共同含义，以及第一张命盘。
+---
+
+三套绑定共用同一个 Rust 核心，因此参数含义与排盘结果完全一致，只是写法不同。
+先看清楚参数，再挑你的语言。
+
+## 选择语言
+
+<Cards>
+  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro" />
+  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="pip install x-iztro" />
+  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro" />
+</Cards>
+
+## 排盘入口的参数
+
+无论哪种语言，排盘都从这几个参数开始。
+
+| 参数 | 含义 | 取值 |
+| --- | --- | --- |
+| `solar_date` / `lunar_date` | 出生日期 | `"YYYY-M-D"`，如 `"2000-8-16"`。公历范围 1583–9999 年 |
+| `time_index` | 出生时辰 | 整数 0–12，见下表 |
+| `gender` | 性别 | `"male"` / `"female"`（Rust 为 `Gender` 枚举） |
+| `fix_leap` | 是否修正闰月 | 布尔值，默认 `true` |
+| `language` | 输出语言 | `"zh-CN"` `"zh-TW"` `"en-US"` `"ja-JP"` `"ko-KR"` `"vi-VN"` |
+| `config` | 分界点与流派 | 见 [Config 详解](/zh/docs/guide/guides/config)，缺省即 iztro 默认 |
+
+### 时辰索引
+
+紫微斗数按十二时辰计时，且把子时拆成首尾两段，所以索引是 0–12 共 13 个值。
+
+| 索引 | 时辰 | 时间 | 索引 | 时辰 | 时间 |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 早子时 | 00:00–01:00 | 7 | 未时 | 13:00–15:00 |
+| 1 | 丑时 | 01:00–03:00 | 8 | 申时 | 15:00–17:00 |
+| 2 | 寅时 | 03:00–05:00 | 9 | 酉时 | 17:00–19:00 |
+| 3 | 卯时 | 05:00–07:00 | 10 | 戌时 | 19:00–21:00 |
+| 4 | 辰时 | 07:00–09:00 | 11 | 亥时 | 21:00–23:00 |
+| 5 | 巳时 | 09:00–11:00 | 12 | 晚子时 | 23:00–24:00 |
+| 6 | 午时 | 11:00–13:00 | | | |
+
+<Callout type="warn" title="晚子时不是笔误">
+23:00–24:00 出生的人用索引 `12` 而不是 `0`。这两个索引排出的盘不同：
+默认配置下晚子时按**次日**推算日柱，早子时按当日。
+这个行为由 `day_divide` 开关控制，见 [Config 详解](/zh/docs/guide/guides/config#晚子时归属-day_divide)。
+</Callout>
+
+### 关于 `fix_leap`
+
+农历闰月没有独立的月建，排盘时要决定闰月的日子算上个月还是下个月。
+`fix_leap = true`（默认）时按 iztro 的规则修正：闰月前半月算本月，后半月算下月。
+设为 `false` 则整个闰月都算本月。
+
+只有出生在闰月的人会受影响，其余情况该参数无作用。
+
+## 输入校验
+
+所有外部输入在核心层前置校验，非法输入不会 panic，而是按语言的惯例报错：
+
+| 语言 | 表现 |
+| --- | --- |
+| Rust | 返回 `Err(IztroError)` |
+| Python | 抛 `ValueError` |
+| Go | 返回 `error` |
+| C FFI | 返回 `{"error":"..."}` JSON |
+
+校验覆盖日期格式与真实存在性、公历 1583–9999 范围、时辰索引 0–12、性别与语言取值。
+详见[错误处理](/zh/docs/guide/guides/errors)。

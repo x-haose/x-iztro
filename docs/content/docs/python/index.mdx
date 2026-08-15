@@ -1,0 +1,101 @@
+---
+title: 概览
+description: 包结构、类型体系与阅读本参考的方式。
+icon: Braces
+---
+
+Python 包是 Rust 核心的类型化封装：计算在 Rust 里完成，
+Python 侧提供 dataclass 与 StrEnum 构成的强类型 API，零外部依赖。
+
+这一栏是 Python 侧的完整 API 参考——每个函数、类与方法都有独立条目。
+
+## 安装
+
+```bash
+pip install x-iztro
+```
+
+要求 Python 3.10 及以上。发行版内含预编译的原生扩展，安装时不需要 Rust 工具链。
+
+## 第一张盘
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+print(chart.solar_date, chart.lunar_date)
+# 2000-8-16 二〇〇〇年七月十七
+
+soul = chart.palace("soulPalace")
+print(" ".join(s.name for s in soul.major_stars))
+# 紫微
+```
+
+## 包结构
+
+| 模块 | 内容 | 本参考对应页 |
+| --- | --- | --- |
+| `x_iztro.Astro` | 排盘主类 | [排盘入口](/zh/docs/python/astro) |
+| `x_iztro.models` | `Astrolabe`、`Palace`、`Star`、`Horoscope` 等 dataclass | [星盘对象](/zh/docs/python/astrolabe) 起的四页 |
+| `x_iztro.enums` | 全部语言无关标识的 StrEnum | [数据表](/zh/docs/python/data) |
+| `x_iztro.query` | 生肖、星座、命宫主星的轻量查询 | [轻量查询](/zh/docs/python/query) |
+| `x_iztro.utils` | 索引换算、亮度与四化查表 | [工具函数](/zh/docs/python/util) |
+| `x_iztro.star` | 按出生数据安星 | [安星模块](/zh/docs/python/star) |
+| `x_iztro.data` | 星耀与干支数据表、顺序常量 | [数据表](/zh/docs/python/data) |
+| `x_iztro.i18n` | 标识与译名的双向查找 | [翻译](/zh/docs/python/i18n) |
+| `x_iztro.plugin` | 给星盘类挂自定义方法 | [扩展星盘](/zh/docs/python/extend) |
+
+## 枚举即标识
+
+`x_iztro.enums` 里的每个枚举都是 `StrEnum`，其**取值就是语言无关标识**，
+可以直接与数据对象上的 `*_key` 字段比较：
+
+```python
+from x_iztro import MajorStar, PalaceName
+
+soul = chart.palace(PalaceName.SOUL)
+print(soul.major_stars[0].key == MajorStar.ZIWEI)
+# True
+```
+
+因为是 `StrEnum`，字符串字面量同样有效——`chart.palace("soulPalace")` 与
+`chart.palace(PalaceName.SOUL)` 等价。枚举的价值在于 IDE 补全与拼写检查。
+
+<Callout type="warn" title="判断用 key，不要用 name">
+`star.name` 随排盘语言变化（中文盘是「紫微」，英文盘是 `emperor`）；
+`star.key` 在任何语言下都是 `ziweiMaj`。所有判断都应基于 `*_key` 字段或内置判断方法。
+</Callout>
+
+## 数据对象是不可变的
+
+星盘、宫位、星耀都是 `frozen=True` 的 dataclass，构造后不能修改字段。
+需要变体时用返回新对象的方法，如 `chart.rearranged(...)`。
+
+```python
+chart.solar_date = "2001-1-1"
+# dataclasses.FrozenInstanceError: cannot assign to field 'solar_date'
+```
+
+<Callout type="info">
+不可变让星盘可以安全地在多个分析函数之间传递、放进缓存、跨线程共享，
+不必担心某一处的修改影响到别处。
+</Callout>
+
+## 条目怎么读
+
+每个 API 条目按固定八段组织：
+
+<Steps>
+<Step>**用途** —— 一句话说清它做什么</Step>
+<Step>**斗数含义** —— 它在紫微斗数里对应什么概念（纯工程性的函数省略此段）</Step>
+<Step>**签名** —— 从源码原样摘出</Step>
+<Step>**参数** —— 名、类型、是否必填、默认值、说明</Step>
+<Step>**返回值** —— 类型与结构</Step>
+<Step>**示例** —— 可直接运行的片段</Step>
+<Step>**输出** —— 该示例的真实运行结果</Step>
+<Step>**边界与陷阱** —— 空值、越界、配置影响、与其他 API 的相互作用</Step>
+</Steps>
+
+示例统一用同一张盘：**2000 年 8 月 16 日寅时女命**（`by_solar("2000-8-16", 2, "female")`），
+方便跨页对照。这张盘的完整数据见[数据结构](/zh/docs/guide/data-model)。

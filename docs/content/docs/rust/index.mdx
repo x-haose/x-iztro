@@ -1,0 +1,110 @@
+---
+title: 概览
+description: crate 结构、类型体系与阅读本参考的方式。
+icon: Cog
+---
+
+x-iztro 的 Rust crate 是整个项目的核心，Python 与 Go 绑定都调用它。
+这一栏是 Rust 侧的完整 API 参考——每个公开函数、类型与方法都有独立条目。
+
+## 安装
+
+```toml title="Cargo.toml"
+[dependencies]
+x-iztro = "0.1"
+```
+
+crate 无默认 feature，直接可用。`python` feature 仅供构建 PyO3 扩展时启用，普通依赖方不需要。
+
+## 第一张盘
+
+```rust
+use x_iztro::*;
+
+fn main() -> Result<(), IztroError> {
+    let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+    println!("{} {}", chart.solar_date, chart.lunar_date);
+    // 2000-8-16 二〇〇〇年七月十七
+
+    let soul = chart.palace(Palace::Soul).unwrap();
+    println!("{}", soul.data().major_stars.iter().map(|s| s.name.as_str()).collect::<Vec<_>>().join(" "));
+    // 紫微
+
+    Ok(())
+}
+```
+
+## crate 结构
+
+| 模块 | 内容 | 本参考对应页 |
+| --- | --- | --- |
+| `x_iztro::astro` | 排盘、运限、宫位推算、轻量查询 | [排盘入口](/zh/docs/rust/astro)、[运限对象](/zh/docs/rust/horoscope)、[轻量查询](/zh/docs/rust/query) |
+| `x_iztro::models` | `Astrolabe`、`PalaceData`、`Star`、`HoroscopeData` 与三个视图类型 | [星盘对象](/zh/docs/rust/astrolabe) 起的四页 |
+| `x_iztro::star` | 安星：低层构件与按出生数据的入口 | [安星模块](/zh/docs/rust/star) |
+| `x_iztro::data` | 枚举、常量、星耀与干支数据表 | [数据表](/zh/docs/rust/data) |
+| `x_iztro::utils` | 索引换算、亮度与四化查表等工具函数 | [工具函数](/zh/docs/rust/util) |
+| `x_iztro::i18n` | 六语言词表、`translate_*` 与双向查找 | [翻译](/zh/docs/rust/i18n) |
+| `x_iztro::error` | `IztroError` | [错误处理](/zh/docs/rust/errors) |
+| `x_iztro::bridge` | 绑定层共用的编组与分派 | 内部使用，Rust 调用方不需要 |
+| `x_iztro::dto` | 跨语言绑定共用的序列化 DTO | [数据结构](/zh/docs/guide/data-model) |
+
+常用项在 crate 根重导出，`use x_iztro::*;` 即可拿到全部入口函数与类型。
+
+## 两层 API
+
+同一件事在 crate 里往往有两个层次，选哪个取决于你手上有什么。
+
+<Cards>
+  <Card title="收出生数据" description="solar_date + time_index + gender，内部自己推年干支、命宫、五行局。日常排盘用这层。">
+    `by_solar` · `star::query::*` · `astro::query::*`
+  </Card>
+  <Card title="收已算好的索引" description="lu_index、soul_index、month_day_count 等中间量。排盘流水线的构件，也供自建流程复用。">
+    `star::location::*` · `star::decorative::*` · `astro::palace::*`
+  </Card>
+</Cards>
+
+<Callout type="info" title="两层共用同一段推算">
+从出生数据到安星中间量（生效时辰、农历年月日、两套年干支、月索引、命身宫、五行局）
+的推算收在 `astro::context`，收出生数据的那层调它一次，把结果喂给低层构件。
+因此两层的结果永远一致，自己拼安星流程时也不必从日期重推一遍。
+</Callout>
+
+## 视图类型
+
+Rust 的数据结构本身不持有星盘，因此 `PalaceData` 无法直接回答「我的对宫是谁」。
+crate 用三个视图类型在查询入口处把数据与星盘绑在一起：
+
+| 视图 | 由谁返回 | 解引用得到 | 额外能力 |
+| --- | --- | --- | --- |
+| `PalaceRef<'a>` | `chart.palace(...)` | `&PalaceData` | 对宫、三方四正、飞星、四化宫位 |
+| `StarRef<'a>` | `chart.star(...)` | `&Star` | 所在宫、对宫、三方四正 |
+| `HoroscopeRef<'a>` | `chart.horoscope(...)` | `&HoroscopeData` | 运限宫位查询不必再传星盘 |
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+
+soul.data().name;              // 通过 data() 取底层字段
+soul.opposite_palace();        // 视图独有：对宫
+soul.flies_to(Palace::Wealth, &[Mutagen::Lu]);
+```
+
+三个视图都实现了 `Deref`，`soul.name` 与 `soul.data().name` 等价。
+
+## 条目怎么读
+
+每个 API 条目按固定八段组织：
+
+<Steps>
+<Step>**用途** —— 一句话说清它做什么</Step>
+<Step>**斗数含义** —— 它在紫微斗数里对应什么概念（纯工程性的函数省略此段）</Step>
+<Step>**签名** —— 从源码原样摘出</Step>
+<Step>**参数** —— 名、类型、是否必填、默认值、说明</Step>
+<Step>**返回值** —— 类型与结构</Step>
+<Step>**示例** —— 可直接运行的片段</Step>
+<Step>**输出** —— 该示例的真实运行结果</Step>
+<Step>**边界与陷阱** —— 空值、越界、配置影响、与其他 API 的相互作用</Step>
+</Steps>
+
+示例统一用同一张盘：**2000 年 8 月 16 日寅时女命**（`("2000-8-16", 2, Gender::Female)`），
+方便跨页对照。这张盘的完整数据见[数据结构](/zh/docs/guide/data-model)。
