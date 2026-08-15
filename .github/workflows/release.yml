@@ -7,7 +7,8 @@
 # 不用 GitHub 自动生成的 PR 标题罗列——那个不成文案。
 #
 # 打出的 v* 标签会触发 wheels.yml，构建多平台 wheel 并发布到 PyPI。
-# crates.io 目前仍需手动 cargo publish（仓库未配 token）。
+# crates.io 走可信发布（OIDC 换 30 分钟短期令牌，无需长期 token），
+# 前提是在 crates.io 的 crate 设置里登记本仓库与 release.yml，登记前该步会失败。
 name: Release
 
 on:
@@ -17,6 +18,8 @@ on:
 
 permissions:
   contents: write
+  # crates.io 可信发布要用 GitHub 签发的 OIDC JWT 去换短期令牌
+  id-token: write
 
 jobs:
   release:
@@ -68,3 +71,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.ver.outputs.version }}
         run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
+
+      # 标签已推出，PyPI 由 wheels.yml 接手；这里补上 crates.io。
+      # 令牌由 OIDC 现换现用，作业结束自动吊销，仓库里不存任何长期凭据。
+      - name: 换取 crates.io 短期令牌
+        if: steps.ver.outputs.release == 'true'
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: 发布到 crates.io
+        if: steps.ver.outputs.release == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish

@@ -8,8 +8,10 @@ repository = "https://github.com/x-haose/x-iztro"
 readme = "README.md"
 keywords = ["ziwei", "iztro", "astrology", "horoscope", "chinese"]
 categories = ["date-and-time", "science"]
-# crates.io 发布只含核心库（金标数据与各语言绑定包不随 crate 分发）
-include = ["src/**", "Cargo.toml", "README.md", "LICENSE", "include/*.h"]
+# crates.io 发布只含核心库（金标数据与各语言绑定包不随 crate 分发）。
+# 路径一律加前导斜杠锚到仓库根：include 用的是 gitignore 语义，
+# 不带斜杠的 README.md 会匹配任意层级，把 docs/node_modules 下的同名文件一并吸进来。
+include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE", "/include/*.h"]
 
 [lib]
 name = "x_iztro"
