@@ -5,6 +5,8 @@ __pycache__/
 *.pyc
 *.so
 .venv/
+# 本包零 Python 依赖，锁文件只锁自己，提交它没有可复现性收益
+uv.lock
 
 # Golden test data
 tests/golden/node_modules/

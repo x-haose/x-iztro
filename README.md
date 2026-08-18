@@ -1,192 +1,296 @@
 # x-iztro
 
-紫微斗数 Rust 核心库，移植自 [iztro](https://github.com/SylarLong/iztro) v2.5.8。
+[![crates.io](https://img.shields.io/crates/v/x-iztro.svg)](https://crates.io/crates/x-iztro)
+[![PyPI](https://img.shields.io/pypi/v/x-iztro.svg)](https://pypi.org/project/x-iztro/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/x-haose/x-iztro/go/iztro.svg)](https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-提供排盘、运限、三方四正、四化飞星等完整功能，支持 Rust / Python / Go 三种语言调用。
+**中文文档：[README.zh-CN.md](https://github.com/x-haose/x-iztro/blob/main/README.zh-CN.md)**
 
-## 安装
+Give it a birth date and hour; get back a complete Zi Wei Dou Shu (紫微斗数, Purple
+Star Astrology) chart — twelve palaces, every star with its brightness and
+transformation, decadal and annual horoscopes — as typed objects in Rust, Python,
+or Go, plus a single call that renders the whole chart as text you can hand
+straight to an LLM.
 
-### Rust
+## What the LLM-ready output looks like
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female")
+print(astro.astrolabe_to_prompt(chart))
+```
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
+干支: 庚辰 甲申 丙午 庚寅
+时辰: 寅时 (03:00~05:00)
+星座: 狮子座
+生肖: 龙
+命宫地支: 午
+身宫地支: 戌
+命主: 破军
+身主: 文昌
+五行局: 木三局
+生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+
+=== 十二宫 ===
+
+--- 财帛 ---
+天干地支: 戊寅
+大限: 43-52
+小限虚岁: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+十二神: 绝, 飞廉, 吊客, 岁驿
+主星: 武曲(得)[权], 天相(庙)
+辅星: 天马
+杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
+
+--- 夫妻 [来因] ---
+天干地支: 庚辰
+大限: 23-32
+小限虚岁: 7, 19, 31, 43, 55, 67, 79, 91, 103, 115
+十二神: 死, 将军, 岁建, 华盖
+主星: 七杀(庙)
+辅星: 右弼, 火星(陷)
+杂耀: 封诰, 华盖
+
+... (all twelve palaces)
+```
+
+The same text is available in six languages — pass `language="en-US"` and the
+stars, palaces and brightness levels come out as `general([+1])[B]`,
+`wealth`, `Tiger hour`, `Twelve Gods: dissipated, gossip, …` and so on.
+`horoscope_to_prompt` does the same for a horoscope at a given date.
+
+## Why not just ask the LLM to cast the chart?
+
+Casting a chart is arithmetic, not interpretation: lunar/solar conversion, leap
+month handling, sexagenary cycle, the placement rules for ~100 stars, and the
+四化 transformation table. A language model gets some of it right and quietly
+gets the rest wrong, and you cannot tell which from the output. This library does
+the arithmetic deterministically and verifiably, then hands the LLM the part it is
+actually good at — reading the chart.
+
+## Install
+
+**Rust**
 
 ```toml
-# Cargo.toml
 [dependencies]
-x-iztro = { git = "https://github.com/x-haose/x-iztro" }
+x-iztro = "0.1"
 ```
 
-### Python
+**Python** — requires 3.10+, ships as an abi3 wheel with zero runtime dependencies.
 
 ```bash
-pip install maturin
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
+pip install x-iztro
 ```
 
-### Go
-
-Go 包内嵌 wasm、经纯 Go 的 wazero 运行时调用，无 cgo、无需本机 Rust 工具链：
+**Go** — the core library is embedded as WebAssembly and driven by the pure-Go
+[wazero](https://wazero.io) runtime: no cgo, no Rust toolchain, cross-compilation
+works as usual.
 
 ```bash
 go get github.com/x-haose/x-iztro/go/iztro
 ```
 
-开发者更新内嵌 wasm：
+## Quick start
+
+**Rust**
+
+```rust
+use x_iztro::{by_solar, IztroError};
+use x_iztro::data::types::*;
+
+fn main() -> Result<(), IztroError> {
+    let chart = by_solar(
+        "2000-8-16",        // solar birth date
+        2,                  // hour index: 0 = early Rat hour … 12 = late Rat hour
+        Gender::Female,
+        true,               // fix_leap: split leap months at the midpoint
+        Language::ZhCN,
+        Config::default(),  // boundaries and school; defaults match JS iztro
+    )?;
+
+    // Translated strings; `soul` and `five_elements_class` are language-independent
+    // keys (`StarKey::PojunMaj`, `FiveElementsClass::Wood3rd`).
+    println!("{} / {}", chart.lunar_date, chart.chinese_date);
+    println!("{:?} {:?}", chart.soul, chart.five_elements_class);
+
+    // `horoscope` derefs to the data, so the six levels are plain fields.
+    let horoscope = chart.horoscope("2024-1-1", 0)?;
+    println!("{:?}", horoscope.yearly.base.mutagen);
+
+    // Bad input is an error, never a panic.
+    assert!(by_solar("2000-13-1", 2, Gender::Male, true, Language::ZhCN, Config::default()).is_err());
+    Ok(())
+}
+```
+
+**Python**
+
+```python
+from x_iztro import Astro, IztroError
+from x_iztro.enums import MajorStar, Mutagen, PalaceName
+
+chart = Astro().by_solar("2000-8-16", 2, "female")
+print(chart.chinese_date, chart.soul, chart.five_elements_class)
+
+# Enums are language-independent keys, so these checks give the same answer
+# no matter which language the chart was rendered in.
+soul = chart.palace(PalaceName.SOUL)
+print(soul.has([MajorStar.ZIWEI]), soul.has_mutagen(Mutagen.LU))
+
+horoscope = chart.horoscope("2024-1-1", 0)
+print(horoscope.yearly.heavenly_stem, horoscope.yearly.earthly_branch)
+
+# IztroError subclasses ValueError; .code is a machine-readable category.
+try:
+    Astro().by_solar("2000-13-1", 2, "male")
+except IztroError as e:
+    print(e.code)  # invalid_date
+```
+
+**Go**
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+    "log"
+
+    "github.com/x-haose/x-iztro/go/iztro"
+)
+
+func main() {
+    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(chart.ChineseDate, chart.Soul, chart.FiveElementsClass)
+
+    soul := chart.Palace(iztro.PalaceSoul)
+    fmt.Println(soul.Has(iztro.StarZiweiMaj), soul.HasMutagen(iztro.MutagenLu))
+
+    horoscope, err := chart.Horoscope("2024-1-1", 0)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(horoscope.Yearly.HeavenlyStem, horoscope.Yearly.EarthlyBranch)
+
+    // Errors carry a category you can match with errors.Is.
+    _, err = iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+    fmt.Println(errors.Is(err, iztro.ErrInvalidDate)) // true
+}
+```
+
+## Features
+
+- **Full chart** — twelve palaces, body palace, soul/body stars, five elements
+  class, major/minor/adjective stars with brightness and 四化 transformations.
+- **Six horoscope levels** — decadal, yearly, monthly, daily, hourly and the
+  childhood limit, each with its own palaces and transformations.
+- **Chart queries** — locate a palace by name, branch or index; test stars,
+  transformations and empty palaces; the 三方四正 surrounded-palace group; and the
+  flying-star (飞星) family.
+- **Two schools** — the default school and 中州派 (Zhongzhou), selected per chart.
+- **Six languages** — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN, with
+  language-independent key constants so your logic never depends on the display
+  language.
+- **LLM output** — `astrolabe_to_prompt` / `horoscope_to_prompt` render a whole
+  chart as structured text.
+- **Validated input** — date format and existence, solar years 1583–9999, hour
+  index 0–12. Invalid input returns `Err(IztroError)` in Rust, raises
+  `x_iztro.IztroError` (a `ValueError`) in Python, returns an `error` matchable
+  with `errors.Is` in Go, and yields `{"error":"..."}` JSON over the C FFI.
+  Every failure carries a machine-readable category. Nothing panics.
+
+## Accuracy
+
+Every number is checked field-by-field against the JavaScript
+[iztro v2.5.8](https://github.com/SylarLong/iztro) (version-pinned), with zero
+tolerance for differences. Roughly 710,000 golden cases in eight layers:
+
+| Layer      | Cases   | Coverage                                                                |
+|------------|---------|--------------------------------------------------------------------------|
+| Tier 1     | 1,560   | 60 years × 13 hours × both genders, every field compared individually     |
+| Tier 2     | 37,440  | 60 years × the 1st and 15th of each month × 13 hours × both genders       |
+| Tier 3     | 586,430 | **every day** of 60 years × 13 hours × both genders × `fix_leap`, hashed  |
+| Edge years | 46,228  | the far ends of the supported range, where leap months and tables strain  |
+| Horoscope  | 5,760   | 360 charts × 16 target dates, all six horoscope levels, every field       |
+| Variants   | 14,268  | lunar-date charts across leap months, Zhongzhou school, all six languages |
+| Config     | 9,696   | each boundary switch at its non-default value                             |
+| Astro type | 12,488  | the heaven / earth / human chart perspectives                             |
+
+On top of that: the serialization contract is compared key-by-key against JS
+`JSON.stringify`, and the three bindings are cross-checked so that the same birth
+data yields the same answers in Rust, Python and Go.
 
 ```bash
+cargo test                                               # regular layers, ~15s
+cargo test --release --test golden_tier3 -- --ignored    # Tier 3 in full, ~20s
+```
+
+## Configuration
+
+Six switches, passed explicitly per chart — there is no global state.
+
+| Switch             | Values                  | Default    | Effect                                                |
+|--------------------|-------------------------|------------|-------------------------------------------------------|
+| `year_divide`      | `normal` / `exact`      | `normal`   | Year boundary: lunar new year, or 立春                 |
+| `horoscope_divide` | `normal` / `exact`      | `normal`   | Horoscope boundary: 1st of the month, or solar term    |
+| `age_divide`       | `normal` / `birthday`   | `normal`   | Nominal age: increments at new year, or on the birthday |
+| `day_divide`       | `forward` / `current`   | `forward`  | Late Rat hour belongs to the next day, or the current one |
+| `algorithm`        | `default` / `zhongzhou` | `default`  | School of placement rules                              |
+| `astro_type`       | `heaven` / `earth` / `human` | `heaven` | Chart perspective (Zhongzhou)                       |
+
+Custom 四化 and brightness tables can be supplied alongside them.
+
+## Documentation
+
+Per-language API references — every function, type and method with real output
+and edge-case notes — live in `docs/`, a Fumadocs site in Chinese and English:
+
+```bash
+cd docs && npm ci && npm run dev
+```
+
+Rust API docs are also published at [docs.rs/x-iztro](https://docs.rs/x-iztro).
+Runnable projects for all three languages are under `examples/`.
+
+## Building from source
+
+Only needed when changing the Rust core.
+
+```bash
+cargo build --release
+
+# Python bindings
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
+
+# Go bindings: rebuild and refresh the embedded wasm
 cargo build --release --target wasm32-wasip1
 cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
 ```
 
-## 快速开始
-
-### Rust
-
-```rust
-use x_iztro::{IztroError, by_solar, get_horoscope};
-use x_iztro::data::types::*;
-
-// Config 控制分界点与派别：year_divide / horoscope_divide / age_divide /
-// day_divide / algorithm，默认值与 JS iztro 一致；
-// 入参非法（日期格式/范围、时辰索引）时返回 Err(IztroError)
-let astrolabe = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
-println!("命主：{:?}", astrolabe.soul);
-
-// 中州派：Config { algorithm: Algorithm::Zhongzhou, ..Config::default() }
-
-let horoscope = get_horoscope(&astrolabe, "2024-1-1", 0, Language::ZhCN)?;
-println!("流年四化：{:?}", horoscope.yearly.base.mutagen);
-```
-
-### Python
-
-```python
-from x_iztro import Astro, ChartConfig
-from x_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
-
-astro = Astro()
-result = astro.by_solar("2000-8-16", 2, "female")
-# 配置：astro.by_solar(..., config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
-
-# 枚举基于语言无关 key，在任何输出语言的星盘上判断结果一致
-soul = result.palace(PalaceName.SOUL)
-print(f"命主：{result.soul}")
-print(f"命宫有紫微：{soul.has([MajorStar.ZIWEI])}")
-print(f"命宫化禄：{soul.has_mutagen(Mutagen.LU)}")
-
-horoscope = astro.get_horoscope(result, "2024-1-1", 0)
-print(f"流年：{horoscope.yearly.heavenly_stem}{horoscope.yearly.earthly_branch}")
-print(f"岁前十二神：{horoscope.yearly.yearly_dec_star.suiqian12}")
-```
-
-### Go
-
-```go
-import "github.com/x-haose/x-iztro/go/iztro"
-
-// 返回类型化结构体；key 常量在任何输出语言下都有效
-result, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh_cn", nil)
-fmt.Println(result.Soul)
-
-soul := result.Palace(iztro.PalaceSoul)
-fmt.Println(soul.Has(iztro.StarZiweiMaj), soul.HasMutagen(iztro.MutagenLu))
-
-// 中州派：iztro.BySolar(..., &iztro.Config{Algorithm: "zhongzhou"})
-h, _ := iztro.GetHoroscope("2000-8-16", 2, "female", true, "zh_cn", nil, "2024-1-1", 0)
-fmt.Println(h.Yearly.HeavenlyStem, h.Yearly.Mutagen)
-```
-
-## 错误处理
-
-全部外部输入在核心层前置校验：日期格式与存在性、公历 1583-9999 年（下限为
-格里历改革次年、上限为农历表终点）、时辰索引 0-12。非法输入的表现按语言：
-
-- **Rust** — 排盘入口返回 `Result<_, IztroError>`
-- **Python** — 抛 `ValueError`（消息含具体原因）
-- **Go** — 返回 `error`
-- **C FFI** — 返回 `{"error":"..."}` JSON（serde 生成，转义完备）
-
-## 示例项目
-
-`examples/` 下有三个独立可运行的完整项目：
-
-```
-examples/rust/     # cargo run
-examples/python/   # python main.py
-examples/go/       # go run .
-```
-
-## 测试
-
-### 运行测试
+Golden test data is generated from the JS iztro package:
 
 ```bash
-# 常规测试（单元 + tier1/tier2/运限/变体/配置/契约金标，~15 秒）
-cargo test
-
-# Tier 3 全参数空间（586,430 例，~20 秒）
-cargo test --release --test golden_tier3 -- --ignored
-
-# Python / Go 端到端金标
-cd python && pytest tests/          # 先 maturin develop
-cd go/iztro && go test ./...
+cd tests/golden && npm install && node generate_tier1.mjs   # …and the other generators
 ```
 
-### 金标覆盖矩阵
+## Credits
 
-全部数据对照 JS [iztro v2.5.8](https://github.com/SylarLong/iztro)（版本锁定）生成，零容忍差异：
-
-| 层级        | 用例数      | 覆盖范围                                            | 数据格式        |
-|-----------|----------|-------------------------------------------------|-------------|
-| Tier 1    | 780      | 60 年 × 13 时辰，全字段逐一比对（含展示字段与来因宫）                 | 完整 JSON     |
-| Tier 2    | 37,440   | 60 年 × 每月 1/15 号 × 13 时辰 × 男女，紧凑比对              | 压缩 JSON     |
-| Tier 3    | 586,430  | 60 年**每一天** × 13 时辰 × 男女 × fix_leap（闰月双份），全字段哈希 | SHA-256 CSV |
-| Horoscope | 5,760    | 360 命盘 × 16 目标日期（12 流年支/童限/高龄/闰月/晚子时），六层级运限全字段  | 紧凑 JSON     |
-| Variants  | 14,268   | by_lunar 闰月逐日（含 is_leap/fix_leap 组合）、中州派、六语言    | CSV/JSON    |
-| Config    | 8,544    | yearDivide=exact（立春窗口逐日）、dayDivide=current、ageDivide=birthday、horoscopeDivide=exact | CSV/JSON    |
-
-合计约 66 万对照用例，覆盖排盘与运限的全部参数空间；另有 Python 108 例、Go 金标端到端测试（含 500 次非法输入轰炸）、C FFI 边界安全 16 例与绑定契约 JSON 逐键对照。
-
-### 生成测试基准数据
-
-```bash
-cd tests/golden
-npm install
-node generate_tier1.mjs      # → tier1_data.json (~6MB)
-node generate_tier2.mjs      # → tier2/year_*.json (60 files, ~23MB)
-node generate_tier3.mjs      # → tier3/year_*.csv (60 files, ~30MB, 约 30 分钟)
-node generate_horoscope.mjs  # → horoscope_data.json (~9MB)
-node generate_variants.mjs   # → variants_*.csv / variants_languages.json
-node generate_config.mjs     # → config_*.csv / config_*.json
-```
-
-哈希不一致时用生成器的 `--inspect` 系列参数重放 JS 单例，与 Rust 失败输出中的规范化串 diff 定位字段（格式定义见 `tests/golden/canonical.mjs` 与 `tests/common/mod.rs`）。
-
-## 项目结构
-
-```
-src/
-  lib.rs              # 公共 API
-  error.rs            # IztroError 错误类型
-  data/               # 枚举、常量、天干地支、星耀数据
-  models/             # Astrolabe、Palace、Star、Horoscope 结构体
-  astro/              # 排盘、运限、三方四正算法
-  i18n/               # 多语言翻译（zh-CN/zh-TW/en-US/ja-JP/ko-KR/vi-VN）
-  dto.rs              # JS 兼容序列化 DTO（三语言绑定共用）
-  ffi.rs              # C FFI 导出
-  wasm.rs             # wasm32 导出（Go 经 wazero 调用）
-  python.rs           # PyO3 原生模块
-  prompt.rs           # AI Prompt 生成
-
-python/x_iztro/      # Python 包（dataclass 类型 + 枚举常量）
-go/iztro/             # Go FFI 绑定包
-examples/             # Rust / Python / Go 示例项目
-tests/golden/         # JS 生成的测试基准数据
-```
-
-## 移植说明
-
-- 移植自 iztro v2.5.8，核心排盘逻辑 1:1 对照
-- 支持默认算法和中州派算法
-- 排盘结果与 JS iztro 完全一致：金标测试覆盖全部时辰（含晚子时）与全部星耀，零容忍差异
+Ported from [iztro](https://github.com/SylarLong/iztro) by SylarLong. New to Zi
+Wei Dou Shu? Its author maintains an introduction at
+[iztro.com](https://iztro.com/learn/basis.html).
 
 ## License
 

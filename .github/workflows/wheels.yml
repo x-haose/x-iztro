@@ -1,7 +1,15 @@
 # Python wheel 多平台构建与发布。
-# 触发：推 v* 标签（如 v0.1.0）自动构建并发布到 PyPI；手动触发仅构建不发布。
+#
+# 触发有两条：
+# - workflow_dispatch —— release.yml 发版时用 `--ref v<版本>` 派发到刚打的标签上，
+#   此时 github.ref 是该标签，publish 作业成立；从分支手动触发则只构建不发布。
+# - push tags v* —— 人工推标签时的直达路径（GITHUB_TOKEN 推的标签不会触发它，
+#   所以自动发版走上面那条）。
+#
 # 发布采用 PyPI Trusted Publishing（OIDC，无需 API token）：
-# 在 PyPI 项目设置 → Publishing 里登记本仓库的 wheels.yml 即可。
+# 在 PyPI 项目设置 → Publishing 里登记本仓库的 wheels.yml 与 pypi 环境即可。
+# 本工作流不能改成 reusable workflow 供 release.yml 直接 uses——
+# PyPI 的可信发布匹配不到被复用的工作流（pypi/warehouse#11096 未关）。
 name: Wheels
 
 on:
@@ -70,10 +78,9 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # 不设 skip-existing：同一版本重复上传应当报错。
+      # 静默跳过会让「版本号忘了改」这类事故看起来像发布成功。
       - name: 发布到 PyPI（Trusted Publishing）
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
-          # 该版本已在 PyPI 上就跳过而非报错：标签被重打或工作流重跑时，
-          # 不该因为「版本已存在」把整条流水线判成失败
-          skip-existing: true

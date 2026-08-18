@@ -2,13 +2,13 @@
 #
 # 版本号的唯一来源是 Cargo.toml：PR 里改了它才发版，没改就跳过，
 # 因此「合并一个普通 PR」与「发一个版本」用同一条路径，不必记两套流程。
+# pyproject.toml 的 version 必须与之相等，本作业开头断言，不等即失败——
+# 两个文件各写一遍版本号，写漏一个会让 PyPI 与 crates.io 发出不同版本。
 #
 # Release 描述取自 PR 正文的「## 发布说明」一节（见 pull_request_template.md），
 # 不用 GitHub 自动生成的 PR 标题罗列——那个不成文案。
 #
-# 打出的 v* 标签会触发 wheels.yml，构建多平台 wheel 并发布到 PyPI。
-# crates.io 走可信发布（OIDC 换 30 分钟短期令牌，无需长期 token），
-# 前提是在 crates.io 的 crate 设置里登记本仓库与 release.yml，登记前该步会失败。
+# crates.io 与 PyPI 都走可信发布（OIDC 换短期令牌），仓库里不存任何长期凭据。
 name: Release
 
 on:
@@ -20,6 +20,8 @@ permissions:
   contents: write
   # crates.io 可信发布要用 GitHub 签发的 OIDC JWT 去换短期令牌
   id-token: write
+  # 末尾 gh workflow run 派发 wheels.yml 要写 Actions
+  actions: write
 
 jobs:
   release:
@@ -34,10 +36,18 @@ jobs:
       - name: 取版本号，判断本次是否发版
         id: ver
         run: |
-          version=$(sed -n '/^\[package\]/,/^\[/p' Cargo.toml \
-            | sed -n 's/^version = "\(.*\)"/\1/p' | head -1)
+          toml_version() {
+            sed -n "/^\[$2\]/,/^\[/p" "$1" \
+              | sed -n 's/^version = "\(.*\)"/\1/p' | head -1
+          }
+          version=$(toml_version Cargo.toml package)
+          py_version=$(toml_version pyproject.toml project)
           if [ -z "$version" ]; then
             echo "::error::Cargo.toml 里读不到 [package] 的 version"
+            exit 1
+          fi
+          if [ "$version" != "$py_version" ]; then
+            echo "::error::版本号不一致：Cargo.toml=$version，pyproject.toml=${py_version:-空}"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -49,31 +59,18 @@ jobs:
             echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 从 PR 正文提取发布说明
+      # 发版门禁：金标测试不过就不该有这个版本。
+      # tier3 全量（586K 例）留在本地，常规层已覆盖排盘、运限、契约与 i18n。
+      - name: 装 Rust 工具链
         if: steps.ver.outputs.release == 'true'
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: printf '%s' "$PR_BODY" | python3 .github/scripts/release_notes.py > RELEASE_NOTES.md
-
-      - name: 打标签
+        uses: dtolnay/rust-toolchain@stable
+      - name: 常规层金标测试
         if: steps.ver.outputs.release == 'true'
-        env:
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v$VERSION" -m "v$VERSION"
-          git push origin "v$VERSION"
+        run: cargo test --locked
 
-      - name: 建 Release
-        if: steps.ver.outputs.release == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
-
-      # 标签已推出，PyPI 由 wheels.yml 接手；这里补上 crates.io。
-      # 令牌由 OIDC 现换现用，作业结束自动吊销，仓库里不存任何长期凭据。
+      # 发布顺序：先 crates.io，后打标签。
+      # 反过来的话，publish 失败会留下标签，重跑时版本判定认为「已发过」直接跳过，
+      # 于是永远发不出去；而 publish 成功、打标签失败只需人工补一条 git tag。
       - name: 换取 crates.io 短期令牌
         if: steps.ver.outputs.release == 'true'
         id: auth
@@ -83,4 +80,43 @@ jobs:
         if: steps.ver.outputs.release == 'true'
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo publish
+        run: cargo publish --locked
+
+      # 两个标签：v* 是仓库版本，go/iztro/v* 是 Go 子模块版本。
+      # Go 的模块路径带子目录（.../x-iztro/go/iztro），go get 只认前缀相同的标签，
+      # 少了它 go get 拿不到这个版本。
+      - name: 打标签
+        if: steps.ver.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git tag -a "go/iztro/v$VERSION" -m "go/iztro v$VERSION"
+          git push origin "v$VERSION" "go/iztro/v$VERSION"
+
+      - name: 从 PR 正文提取发布说明
+        if: steps.ver.outputs.release == 'true'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" | python3 .github/scripts/release_notes.py > RELEASE_NOTES.md
+
+      - name: 建 Release
+        if: steps.ver.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
+
+      # PyPI 由 wheels.yml 接手，用 workflow_dispatch 显式派发到刚打的标签上。
+      # 不能直接让推标签去触发：GITHUB_TOKEN 推出的 push 事件不会启动新的工作流运行，
+      # workflow_dispatch 是该规则的明文例外。
+      # 也不能把 wheels.yml 写成 reusable workflow 由本作业 uses 调用：
+      # PyPI 可信发布匹配不到被复用工作流（pypi/warehouse#11096 未关），一调即拒。
+      - name: 派发 wheels.yml 构建并发布 PyPI
+        if: steps.ver.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: gh workflow run wheels.yml --ref "v$VERSION"
