@@ -122,6 +122,7 @@ def by_solar(
     solar_date: str,
     time_index: TimeIndexType,
     gender: GenderType,
+    *,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
     config: ChartConfig | None = None,
@@ -135,7 +136,7 @@ def by_solar(
 | `solar_date` | `str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
 | `time_index` | `int` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
 | `gender` | `str` | 是 | — | `"male"` 或 `"female"`。决定大限顺逆与长生、博士十二神的排列方向 |
-| `fix_leap` | `bool` | 否 | `True` | 是否调整农历闰月。为真时闰月十六日起按下月算（晚子时除外，见下） |
+| `fix_leap` | `bool` | 否 | `True` | 仅限关键字。是否调整农历闰月。为真时闰月十六日起按下月算（晚子时除外，见下） |
 | `language` | `str` | 否 | `"zh-CN"` | 输出语言，影响所有译名字段；`*_key` 标识字段不受影响 |
 | `config` | `ChartConfig \| None` | 否 | `None` | 排盘配置，`None` 取默认 |
 
@@ -198,6 +199,7 @@ def by_lunar(
     lunar_date: str,
     time_index: TimeIndexType,
     gender: GenderType,
+    *,
     is_leap_month: bool = False,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
@@ -205,12 +207,13 @@ def by_lunar(
 ) -> Astrolabe
 ```
 
-**参数**　除以下一项外，其余与 `by_solar` 相同。
+**参数**　除以下一项外，其余与 `by_solar` 相同。`gender` 之后的参数只能按关键字传入——
+`is_leap_month` 与 `fix_leap` 相邻，位置传参写反了不报错、盘会静默错一个月。
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `lunar_date` | `str` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
-| `is_leap_month` | `bool` | 否 | `False` | 该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
+| `is_leap_month` | `bool` | 否 | `False` | 仅限关键字。该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
 
 **返回值**　同 `by_solar`。
 

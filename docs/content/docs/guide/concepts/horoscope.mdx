@@ -128,8 +128,8 @@ for palace_index, stars in enumerate(h.yearly.stars or []):
         print(palace_index, s.name, s.scope)
 ```
 
-<Callout title="Rust 侧的 base 层">
-Rust 里小限与流年的通用字段收在 `.base` 下（`h.yearly.base.heavenly_stem`），
-因为它们各自还有专属字段。序列化到 Python / Go 时这一层被展平，
-直接写 `h.yearly.heavenly_stem` 即可。
+<Callout title="三侧读法一致">
+小限与流年各自多带一项专属数据（虚岁、流年十二神），Rust 里通用字段收在 `.base` 下，
+但两个类型都实现了 `Deref`，`h.yearly.heavenly_stem` 直接可读；序列化到 Python / Go 时
+这一层被展平，同样写 `h.yearly.heavenly_stem`。
 </Callout>

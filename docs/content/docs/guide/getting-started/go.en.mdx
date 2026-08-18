@@ -45,7 +45,7 @@ import (
 func main() {
     // the fifth argument is the chart language; "zh-CN" is what the other
     // pages default to, "en-US" gives an English chart
-    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+    chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -76,12 +76,14 @@ with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 
 `ChineseDate` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
 </Callout>
 
-The last argument is a `*Config`; pass `nil` for the defaults. Chart from a lunar date with
-`ByLunar`, which takes one extra argument, `isLeapMonth bool`, positioned after `gender` and before
-`fixLeap`:
+The last argument is a `*Config`; pass `nil` for the defaults. `gender` and `language` are the named
+types `iztro.Gender` / `iztro.Language` (`iztro.GenderFemale`, `iztro.LanguageEnUS`; string literals
+still work). Chart from a lunar date with `ByLunar`: where `BySolar` takes `fixLeap`, this takes a
+three-way `iztro.LeapMonth` (`NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`), so one argument
+says how the leap month is handled:
 
 ```go
-iztro.ByLunar("2000-7-17", 2, "female", false, true, "en-US", nil)
+iztro.ByLunar("2000-7-17", 2, iztro.GenderFemale, iztro.NotLeapMonth, iztro.LanguageEnUS, nil)
 ```
 
 Every entry point has a `*Context` variant (`BySolarContext`, `ByLunarContext` and so on), where
@@ -93,7 +95,7 @@ Failures always come back as `*iztro.Error` carrying a machine-readable `Code`; 
 category with `errors.Is`:
 
 ```go
-_, err := iztro.BySolar("2000-13-1", 2, "male", true, "en-US", nil)
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
 if errors.Is(err, iztro.ErrInvalidDate) {
     var e *iztro.Error
     errors.As(err, &e)

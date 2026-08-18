@@ -63,7 +63,7 @@ func (c MyChart) FiveElementsValue() int {
 **Usage**
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 my := MyChart{chart}
 
 fmt.Println(my.MajorStar())
@@ -74,7 +74,7 @@ fmt.Println(my.SolarDate)
 fmt.Println(my.Palace(iztro.PalaceSoul).Name)
 
 // the extension method follows the charting language
-zhChart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+zhChart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 fmt.Println(MyChart{zhChart}.MajorStar())
 ```
 

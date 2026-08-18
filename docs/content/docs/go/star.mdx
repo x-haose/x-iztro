@@ -38,7 +38,7 @@ type StarBirth struct {
 birth := iztro.StarBirth{
     SolarDate: "2000-8-16",
     TimeIndex: 2,
-    Gender:    "female",
+    Gender:    iztro.GenderFemale,
     FixLeap:   true,
 }
 ```
@@ -308,7 +308,7 @@ fmt.Println(a, b, c, d)
 **签名**
 
 ```go
-func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, error)
+func GetHoroscopeStar(stemKey, branchKey, scope string, language Language) ([][]Star, error)
 ```
 
 **参数**
@@ -318,7 +318,7 @@ func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, err
 | `stemKey` | `string` | 是 | — | 该层级的天干标识 |
 | `branchKey` | `string` | 是 | — | 该层级的地支标识 |
 | `scope` | `string` | 是 | — | 运限层级，决定星名 |
-| `language` | `string` | 是 | — | 输出语言 |
+| `language` | `Language` | 是 | — | 盘面语言 |
 
 **返回值**　十二项切片，按宫位索引排列。
 
@@ -342,7 +342,7 @@ func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, err
 **示例**
 
 ```go
-decadal, _ := iztro.GetHoroscopeStar(iztro.StemJia, iztro.BranchZi, iztro.ScopeDecadal, "zh-CN")
+decadal, _ := iztro.GetHoroscopeStar(iztro.StemJia, iztro.BranchZi, iztro.ScopeDecadal, iztro.LanguageZhCN)
 
 for i := 0; i < 4; i++ {
     names := []string{}
@@ -391,7 +391,7 @@ for i := 0; i < 4; i++ {
 **示例**
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 yearBranch := chart.RawDates.ChineseDate.YearlyKeys[1]
 
 hl, _ := iztro.GetHuoLingIndex(yearBranch, 2)

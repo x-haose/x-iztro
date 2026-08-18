@@ -22,7 +22,7 @@ import "github.com/x-haose/x-iztro/go/iztro"
 ## 第一张盘
 
 ```go
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -126,7 +126,7 @@ false
 查不到时返回 `nil` 或零值。
 
 ```go
-_, err := iztro.BySolar("2000-13-1", 2, "female", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 
 fmt.Println(err)
 fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
@@ -200,7 +200,7 @@ if err != nil {
 }
 fmt.Println(dir != "")
 
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -233,7 +233,7 @@ true
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
-chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 if err != nil {
     log.Fatal(err)
 }

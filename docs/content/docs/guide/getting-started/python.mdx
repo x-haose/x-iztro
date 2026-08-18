@@ -53,8 +53,9 @@ print(chart.five_elements_class) # 五行局
 `solar_date` 原样回显入参字符串，不补零 —— 传 `"2000-08-16"` 就回 `"2000-08-16"`。
 要结构化的日期用 `chart.raw_dates`。
 
-农历排盘用 `by_lunar`，比 `by_solar` 多一个 `is_leap_month`，
-位置在 `gender` 之后、`fix_leap` 之前：
+农历排盘用 `by_lunar`，比 `by_solar` 多一个 `is_leap_month`。`gender` 之后的参数
+（`is_leap_month`、`fix_leap`、`language`、`config`）只能按关键字传入——两个布尔相邻，
+位置传参写反了不报错：
 
 ```python
 chart = astro.by_lunar("2000-7-17", 2, "female", is_leap_month=False)

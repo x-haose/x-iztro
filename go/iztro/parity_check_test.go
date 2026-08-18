@@ -177,7 +177,7 @@ func TestQueryParity(t *testing.T) {
 	if major != "紫微" {
 		t.Fatalf("命宫主星 %s，期望 紫微", major)
 	}
-	lunarMajor, err := GetMajorStarByLunarDate("2000-7-17", 2, false, true, "zh-CN", nil)
+	lunarMajor, err := GetMajorStarByLunarDate("2000-7-17", 2, NotLeapMonth, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -553,7 +553,7 @@ func promptSnapshot(t *testing.T, name string) string {
 // 运限目标 2025-1-1 时辰 0。措辞、字段顺序、段落增删任一处漂移都会暴露；
 // 有意改动 prompt 时按 Rust 侧的流程重建快照，两侧一起更新。
 func TestPromptParity(t *testing.T) {
-	for _, lang := range []string{LanguageZhCN, LanguageEnUS} {
+	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
 		chart, err := BySolar("2000-8-16", 2, GenderFemale, true, lang, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -563,7 +563,7 @@ func TestPromptParity(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := promptSnapshot(t, "astrolabe_"+lang); natal != want {
+		if want := promptSnapshot(t, "astrolabe_"+string(lang)); natal != want {
 			t.Errorf("%s 本命 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, natal, want)
 		}
 
@@ -571,7 +571,7 @@ func TestPromptParity(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := promptSnapshot(t, "horoscope_"+lang); horo != want {
+		if want := promptSnapshot(t, "horoscope_"+string(lang)); horo != want {
 			t.Errorf("%s 运限 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, horo, want)
 		}
 	}
@@ -709,11 +709,14 @@ func TestDataModuleParity(t *testing.T) {
 
 // TestI18nParity 校验标识与译名的双向查找。
 func TestI18nParity(t *testing.T) {
-	cases := []struct{ lang, want string }{
-		{"zh-CN", "紫微"},
-		{"en-US", "emperor"},
-		{"ja-JP", "紫微"},
-		{"ko-KR", "자미"},
+	cases := []struct {
+		lang Language
+		want string
+	}{
+		{LanguageZhCN, "紫微"},
+		{LanguageEnUS, "emperor"},
+		{LanguageJaJP, "紫微"},
+		{LanguageKoKR, "자미"},
 	}
 	for _, c := range cases {
 		got, err := Translate(StarZiweiMaj, c.lang)

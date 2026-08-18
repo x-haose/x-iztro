@@ -23,7 +23,7 @@ import "github.com/x-haose/x-iztro/go/iztro"
 ## Your first chart
 
 ```go
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -134,7 +134,7 @@ Entry points that compute something return `(value, error)`; pure query methods 
 `Has` and so on) return no error and give `nil` or a zero value when nothing is found.
 
 ```go
-_, err := iztro.BySolar("2000-13-1", 2, "female", true, "en-US", nil)
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 fmt.Println(err)
 fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
@@ -214,7 +214,7 @@ if err != nil {
 }
 fmt.Println(dir != "")
 
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -248,7 +248,7 @@ The entry points that cross into wasm — charting, horoscope, rearranging, prom
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
-chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, "female", true, "en-US", nil)
+chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 if err != nil {
     log.Fatal(err)
 }

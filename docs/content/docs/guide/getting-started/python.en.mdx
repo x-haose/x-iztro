@@ -60,8 +60,9 @@ with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 
 `solar_date` echoes the input string verbatim, without zero padding — pass `"2000-08-16"` and you
 get `"2000-08-16"` back. For a structured date use `chart.raw_dates`.
 
-Chart from a lunar date with `by_lunar`, which takes one extra argument, `is_leap_month`,
-positioned after `gender` and before `fix_leap`:
+Chart from a lunar date with `by_lunar`, which takes one extra argument, `is_leap_month`.
+Everything after `gender` (`is_leap_month`, `fix_leap`, `language`, `config`) is keyword-only —
+two adjacent booleans passed positionally can be swapped without an error:
 
 ```python
 chart = astro.by_lunar("2000-7-17", 2, "female", is_leap_month=False, language="en-US")

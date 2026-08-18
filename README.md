@@ -82,7 +82,7 @@ actually good at — reading the chart.
 
 ```toml
 [dependencies]
-x-iztro = "0.1"
+x-iztro = "0.2"
 ```
 
 **Python** — requires 3.10+, ships as an abi3 wheel with zero runtime dependencies.
@@ -170,7 +170,7 @@ import (
 )
 
 func main() {
-    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+    chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -186,7 +186,7 @@ func main() {
     fmt.Println(horoscope.Yearly.HeavenlyStem, horoscope.Yearly.EarthlyBranch)
 
     // Errors carry a category you can match with errors.Is.
-    _, err = iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+    _, err = iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
     fmt.Println(errors.Is(err, iztro.ErrInvalidDate)) // true
 }
 ```

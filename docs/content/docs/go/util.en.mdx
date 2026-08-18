@@ -142,7 +142,7 @@ _, err := iztro.TimeToIndex(24)
 fmt.Println(err)
 
 // the result feeds a charting entry point directly
-chart, err := iztro.BySolar("2000-8-16", b, "female", true, "en-US", nil)
+chart, err := iztro.BySolar("2000-8-16", b, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -393,7 +393,7 @@ the age scope's starting palace comes from the year branch and it steps forward 
 
 ```go
 func GetDecadalsAndAges(
-    soulIndex int, fiveElementsClass, gender, yearlyStemKey, yearlyBranchKey string,
+    soulIndex int, fiveElementsClass string, gender Gender, yearlyStemKey, yearlyBranchKey string,
 ) (DecadalsAndAges, error)
 ```
 
@@ -403,7 +403,7 @@ func GetDecadalsAndAges(
 | --- | --- | --- | --- | --- |
 | `soulIndex` | `int` | Yes | — | Palace index of the Soul palace |
 | `fiveElementsClass` | `string` | Yes | — | Five elements class key |
-| `gender` | `string` | Yes | — | `"male"` or `"female"` |
+| `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` |
 | `yearlyStemKey` | `string` | Yes | — | Year stem key |
 | `yearlyBranchKey` | `string` | Yes | — | Year branch key |
 
@@ -421,7 +421,7 @@ palace index.
 **Example**
 
 ```go
-da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", "female", iztro.StemGeng, iztro.BranchChen)
+da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", iztro.GenderFemale, iztro.StemGeng, iztro.BranchChen)
 
 fmt.Printf("%+v\n", da.Decadals[0])
 fmt.Println(da.Ages[0][:3])
@@ -496,7 +496,7 @@ hour, but stays 17 in the late Zi hour because that belongs to the next day.
 **Signature**
 
 ```go
-func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
+func TranslateChineseDate(pillars [4][2]string, language Language) (string, error)
 ```
 
 **Parameters**
@@ -504,7 +504,7 @@ func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `pillars` | `[4][2]string` | Yes | — | The four pillar keys [year, month, day, hour], each a [stem, branch] pair |
-| `language` | `string` | Yes | — | Output language |
+| `language` | `Language` | Yes | — | Chart language |
 
 **Return value** When every term is a single character, the pillar's parts run together and the
 pillars are separated by spaces; when any term is multi-character, the parts within a pillar are
@@ -522,7 +522,7 @@ s, _ := iztro.TranslateChineseDate([4][2]string{
 fmt.Println(s)
 
 // the four-pillar keys can be taken straight from the chart
-s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), "en-US")
+s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), iztro.LanguageEnUS)
 fmt.Println(s2)
 ```
 
@@ -568,7 +568,7 @@ the groups were passed.
 **Example**
 
 ```go
-birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: "female",
+birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: iztro.GenderFemale,
     FixLeap: true, Language: "en-US"}
 major, _ := iztro.GetMajorStar(birth)
 minor, _ := iztro.GetMinorStar(birth)

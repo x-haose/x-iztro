@@ -136,13 +136,13 @@ fn main() -> Result<(), IztroError> {
     );
     println!(
         "小限：{} (虚岁 {})",
-        translate_palace(astrolabe.palace(horoscope.age.base.index).unwrap().name, lang),
+        translate_palace(astrolabe.palace(horoscope.age.index).unwrap().name, lang),
         horoscope.age.nominal_age,
     );
     println!(
         "流年：{}{}",
-        translate_heavenly_stem(horoscope.yearly.base.heavenly_stem, lang),
-        translate_earthly_branch(horoscope.yearly.base.earthly_branch, lang),
+        translate_heavenly_stem(horoscope.yearly.heavenly_stem, lang),
+        translate_earthly_branch(horoscope.yearly.earthly_branch, lang),
     );
     println!(
         "流月：{}{}",

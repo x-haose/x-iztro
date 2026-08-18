@@ -69,16 +69,16 @@ func decodeAstrolabe(raw []byte, config *Config) (*Astrolabe, error) {
 // BySolar 以阳历日期排盘，返回类型化星盘。
 //   - solarDate: "YYYY-M-D"，如 "2000-8-16"
 //   - timeIndex: 时辰索引 0-12（0=早子时，12=晚子时）
-//   - gender: "male" 或 "female"（GenderMale / GenderFemale 常量）
-//   - fixLeap: 是否修正闰月
-//   - language: "zh-CN"/"zh-TW"/"en-US"/"ja-JP"/"ko-KR"/"vi-VN"（Language* 常量）
+//   - gender: GenderMale / GenderFemale
+//   - fixLeap: 阳历日期落在闰月十五之后时是否视作次月
+//   - language: 盘面语言（Language* 常量）
 //   - config: 排盘配置，nil 取默认
-func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
+func BySolar(solarDate string, timeIndex uint8, gender Gender, fixLeap bool, language Language, config *Config) (*Astrolabe, error) {
 	return BySolarContext(context.Background(), solarDate, timeIndex, gender, fixLeap, language, config)
 }
 
 // BySolarContext 为 BySolar 的 Context 变体；ctx 用于取消等待 wasm 实例。
-func BySolarContext(ctx context.Context, solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
+func BySolarContext(ctx context.Context, solarDate string, timeIndex uint8, gender Gender, fixLeap bool, language Language, config *Config) (*Astrolabe, error) {
 	raw, err := callWasm(ctx, fnBySolar, map[string]any{
 		"solarDate": solarDate,
 		"timeIndex": timeIndex,
@@ -93,13 +93,21 @@ func BySolarContext(ctx context.Context, solarDate string, timeIndex uint8, gend
 	return decodeAstrolabe(raw, config)
 }
 
-// ByLunar 以农历日期排盘，返回类型化星盘；isLeapMonth 在该月没有闰月时不生效。
-func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
-	return ByLunarContext(context.Background(), lunarDate, timeIndex, gender, isLeapMonth, fixLeap, language, config)
+// ByLunar 以农历日期排盘，返回类型化星盘。
+//   - lunarDate: "YYYY-M-D"，如 "2000-7-17"
+//   - leap: 输入月是否闰月及闰月处理方式（NotLeapMonth / LeapMonthKeep / LeapMonthFixed）；
+//     标为闰月但该月没有闰月时按普通月处理
+//   - 其余参数同 BySolar
+func ByLunar(lunarDate string, timeIndex uint8, gender Gender, leap LeapMonth, language Language, config *Config) (*Astrolabe, error) {
+	return ByLunarContext(context.Background(), lunarDate, timeIndex, gender, leap, language, config)
 }
 
 // ByLunarContext 为 ByLunar 的 Context 变体；ctx 用于取消等待 wasm 实例。
-func ByLunarContext(ctx context.Context, lunarDate string, timeIndex uint8, gender string, isLeapMonth bool, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
+func ByLunarContext(ctx context.Context, lunarDate string, timeIndex uint8, gender Gender, leap LeapMonth, language Language, config *Config) (*Astrolabe, error) {
+	isLeapMonth, fixLeap, err := leap.flags()
+	if err != nil {
+		return nil, err
+	}
 	raw, err := callWasm(ctx, fnByLunar, map[string]any{
 		"lunarDate":   lunarDate,
 		"timeIndex":   timeIndex,

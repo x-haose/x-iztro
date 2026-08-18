@@ -220,8 +220,13 @@ map[female:阴 male:阳]
 | `Class*` | 5 | `ClassWater2nd`、`ClassWood3rd`、`ClassMetal4th`、`ClassEarth5th`、`ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`、`ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`、`StarTypeTough` |
-| `Gender*` | 2 | `GenderMale`、`GenderFemale` |
-| `Language*` | 6 | `LanguageZhCN`、`LanguageZhTW`、`LanguageEnUS`、`LanguageJaJP`、`LanguageKoKR`、`LanguageViVN` |
+| `Gender*` | 2 | `GenderMale`、`GenderFemale`（类型 `Gender`） |
+| `Language*` | 6 | `LanguageZhCN`、`LanguageZhTW`、`LanguageEnUS`、`LanguageJaJP`、`LanguageKoKR`、`LanguageViVN`（类型 `Language`） |
+| `*LeapMonth*` | 3 | `NotLeapMonth`、`LeapMonthKeep`、`LeapMonthFixed`（类型 `LeapMonth`，`ByLunar` 的闰月处理方式） |
+
+`Gender`、`Language`、`LeapMonth` 是具名字符串类型：作为入口参数时编译器会挡住把别的字符串误传进来的错误，
+字面量（`"male"`、`"zh-CN"`）仍可直接写；`Astrolabe.GenderKey` 与 `Astrolabe.Language` 字段也是这两个类型。
+其余常量是无类型的字符串常量，与 `*Key` 字段直接比较。
 
 配置类另有六组：
 

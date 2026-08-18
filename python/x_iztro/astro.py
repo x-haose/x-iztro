@@ -32,12 +32,15 @@ class Astro:
         solar_date: str,
         time_index: TimeIndexType,
         gender: GenderType,
+        *,
         fix_leap: bool = True,
         language: LanguageType = "zh-CN",
         config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
         阳历排盘
+
+        `gender` 之后的参数只能按关键字传入：布尔与语言码相邻，位置传参极易写反且不报错。
 
         Args:
             solar_date: 阳历日期，如 "2000-8-16"
@@ -69,6 +72,7 @@ class Astro:
         lunar_date: str,
         time_index: TimeIndexType,
         gender: GenderType,
+        *,
         is_leap_month: bool = False,
         fix_leap: bool = True,
         language: LanguageType = "zh-CN",
@@ -76,6 +80,9 @@ class Astro:
     ) -> Astrolabe:
         """
         农历排盘
+
+        `gender` 之后的参数只能按关键字传入：`is_leap_month` 与 `fix_leap` 两个布尔相邻，
+        位置传参写反了不报错、盘会静默错一个月。
 
         Args:
             lunar_date: 农历日期，如 "2000-7-17"

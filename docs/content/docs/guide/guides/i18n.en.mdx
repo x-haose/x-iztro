@@ -24,7 +24,7 @@ chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
 ```
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "ja-JP", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageJaJP, nil)
 ```
 
 ```rust
@@ -117,7 +117,7 @@ i18n.key_of("자미")                    # ziweiMaj
 
 ```go
 key, _ := iztro.KeyOf("emperor")                          // ziweiMaj
-name, _ := iztro.Translate(iztro.StarZiweiMaj, "en-US")   // emperor
+name, _ := iztro.Translate(iztro.StarZiweiMaj, iztro.LanguageEnUS)   // emperor
 key, _ = iztro.KeyOf("자미")                               // ziweiMaj
 ```
 

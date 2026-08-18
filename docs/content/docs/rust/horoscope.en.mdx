@@ -87,8 +87,9 @@ pub struct YearlyDecStar {
 }
 ```
 
-The shared fields therefore go through `base`: write `h.yearly.base.heavenly_stem`, not
-`h.yearly.heavenly_stem`. All four types are re-exported at the crate root.
+`AgeItem` and `YearlyItem` both implement `Deref<Target = HoroscopeItem>`, so the shared fields
+read directly: `h.yearly.heavenly_stem`, `h.age.index`; take `.base` when you need the whole
+`HoroscopeItem`. All four types are re-exported at the crate root.
 
 **Example**
 

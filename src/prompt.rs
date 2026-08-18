@@ -416,7 +416,7 @@ pub fn horoscope_to_prompt(
     ));
 
     // ---- 小限：落宫、虚岁与该宫星耀 ----
-    let age_palace = &astrolabe.palaces[horoscope.age.base.index];
+    let age_palace = &astrolabe.palaces[horoscope.age.index];
     out.push_str(&format!(
         "\n{}: {}{}{} ({} {})\n",
         l.compound(l.age_fortune, l.soul_palace),
@@ -440,7 +440,7 @@ pub fn horoscope_to_prompt(
     out.push_str(&format_mutagen_line(
         l.yearly,
         &l,
-        &horoscope.yearly.base.mutagen,
+        &horoscope.yearly.mutagen,
         lang,
     ));
     out.push_str(&format_scope_palaces(

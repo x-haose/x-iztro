@@ -5,7 +5,7 @@
 
 use std::ffi::{CStr, CString, c_char};
 
-use crate::data::types::{Gender, Language};
+use crate::data::types::{Gender, Language, LeapMonth};
 use crate::dto::{error_json as build_error_json, parse_config_json};
 use crate::error::BridgeError;
 
@@ -183,8 +183,7 @@ pub unsafe extern "C" fn iztro_by_lunar(
                 lunar_date,
                 time_index,
                 gender,
-                is_leap_month,
-                fix_leap,
+                LeapMonth::from_flags(is_leap_month, fix_leap),
                 language,
                 config,
             )?)

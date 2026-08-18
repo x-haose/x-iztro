@@ -551,7 +551,7 @@ impl HoroscopeItem {
 impl HoroscopeData {
     /// 获取小限宫位
     pub fn age_palace<'a>(&self, astrolabe: &'a Astrolabe) -> PalaceRef<'a> {
-        astrolabe.palace_at(self.age.base.index)
+        astrolabe.palace_at(self.age.index)
     }
 
     /// 根据宫位名称和运限范围获取宫位
@@ -822,7 +822,7 @@ mod tests {
                 .unwrap()
                 .target
                 .index,
-            by_data.astrolabe().palace_at(h.yearly.base.index).index
+            by_data.astrolabe().palace_at(h.yearly.index).index
         );
         for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
             assert_eq!(
@@ -860,8 +860,8 @@ mod tests {
         assert_eq!(dec_stars.len(), 12);
 
         // Yearly should have stars including nianjie
-        assert!(horoscope.yearly.base.stars.is_some());
-        let yr_stars = horoscope.yearly.base.stars.as_ref().unwrap();
+        assert!(horoscope.yearly.stars.is_some());
+        let yr_stars = horoscope.yearly.stars.as_ref().unwrap();
         assert_eq!(yr_stars.len(), 12);
 
         // Monthly, daily, hourly should have stars
@@ -874,7 +874,7 @@ mod tests {
 
         // Mutagen should have 4 entries
         assert_eq!(horoscope.decadal.mutagen.len(), 4);
-        assert_eq!(horoscope.yearly.base.mutagen.len(), 4);
+        assert_eq!(horoscope.yearly.mutagen.len(), 4);
         assert_eq!(horoscope.monthly.mutagen.len(), 4);
         assert_eq!(horoscope.daily.mutagen.len(), 4);
         assert_eq!(horoscope.hourly.mutagen.len(), 4);

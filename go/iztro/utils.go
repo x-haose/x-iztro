@@ -217,7 +217,7 @@ type DecadalsAndAges struct {
 // GetDecadalsAndAges 由命宫索引与五行局推十二宫的大限与小限。
 //
 // 大限起运岁数由五行局决定，顺逆由性别阴阳与年支阴阳决定；小限起宫由年支决定。
-func GetDecadalsAndAges(soulIndex int, fiveElementsClass, gender, yearlyStemKey, yearlyBranchKey string) (DecadalsAndAges, error) {
+func GetDecadalsAndAges(soulIndex int, fiveElementsClass string, gender Gender, yearlyStemKey, yearlyBranchKey string) (DecadalsAndAges, error) {
 	var out DecadalsAndAges
 	return out, utilQuery(map[string]any{
 		"kind":              "getHoroscope",
@@ -258,7 +258,7 @@ func FixLunarDayIndex(lunarDay int, timeIndex uint8) (int, error) {
 // pillars 为四柱标识 [年, 月, 日, 时]，每柱为 [天干, 地支]。
 // 词条均为单字符时柱内紧凑相连、柱间空格（如「庚辰 甲申 丁未 庚子」）；
 // 任一词条为多字符时柱内空格、柱间「 - 」。
-func TranslateChineseDate(pillars [4][2]string, language string) (string, error) {
+func TranslateChineseDate(pillars [4][2]string, language Language) (string, error) {
 	payload := make([][]string, 4)
 	for i, p := range pillars {
 		payload[i] = []string{p[0], p[1]}

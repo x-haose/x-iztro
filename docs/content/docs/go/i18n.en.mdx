@@ -18,7 +18,7 @@ Six languages are supported: `zh-CN`, `zh-TW`, `en-US`, `ja-JP`, `ko-KR`, `vi-VN
 **Signature**
 
 ```go
-func Translate(key, language string) (string, error)
+func Translate(key string, language Language) (string, error)
 ```
 
 **Parameters**
@@ -26,7 +26,7 @@ func Translate(key, language string) (string, error)
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `key` | `string` | Yes | — | A language-independent key |
-| `language` | `string` | Yes | — | Target language |
+| `language` | `Language` | Yes | — | Target language |
 
 Covering 260 keys across twelve categories:
 
@@ -50,9 +50,9 @@ Covering 260 keys across twelve categories:
 **Example**
 
 ```go
-a, _ := iztro.Translate(iztro.StarZiweiMaj, "en-US")
-b, _ := iztro.Translate(iztro.PalaceSoul, "ja-JP")
-c, _ := iztro.Translate("nosuch", "zh-CN")
+a, _ := iztro.Translate(iztro.StarZiweiMaj, iztro.LanguageEnUS)
+b, _ := iztro.Translate(iztro.PalaceSoul, iztro.LanguageJaJP)
+c, _ := iztro.Translate("nosuch", iztro.LanguageZhCN)
 
 fmt.Printf("%q %q %q\n", a, b, c)
 ```
@@ -163,7 +163,7 @@ stars, palaces, gender — matching the merge order of iztro's per-language tran
 
 ```go
 keys, _ := iztro.AllKeys()
-first, _ := iztro.Translate(keys[0], "en-US")
+first, _ := iztro.Translate(keys[0], iztro.LanguageEnUS)
 
 fmt.Println(len(keys), keys[:4], first)
 ```
@@ -192,8 +192,8 @@ its arguments.
 To emit several languages within one process, just chart several times; they do not interfere:
 
 ```go
-zh, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
-en, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+zh, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+en, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 fmt.Println(zh.Palace(iztro.PalaceSoul).MajorStars[0].Name,
     en.Palace(iztro.PalaceSoul).MajorStars[0].Name)

@@ -475,29 +475,72 @@ func FiveElementsClassNumber(fiveElementsClassKey string) int {
 	return fiveElementsClassNumbers[fiveElementsClassKey]
 }
 
-// 性别标识（Astrolabe.GenderKey，以及排盘入口的 gender 参数）。
+// Gender 是性别标识（排盘入口的 gender 参数与 Astrolabe.GenderKey 的取值类型）。
+//
+// 具名类型让编译器挡住把语言码、宫位 key 等别的字符串误传成性别的错误；
+// 字面量 "male" / "female" 仍可直接传入。
+type Gender string
+
+// 性别标识的全部取值。
 const (
 	// GenderMale 为男
-	GenderMale = "male"
+	GenderMale Gender = "male"
 	// GenderFemale 为女
-	GenderFemale = "female"
+	GenderFemale Gender = "female"
 )
 
-// 语言标识（Astrolabe.Language，以及各入口的 language 参数）。
+// Language 是盘面语言标识（各入口的 language 参数与 Astrolabe.Language 的取值类型）。
+//
+// 取值与 iztro 一致（"zh-CN" 等，大小写不敏感，下划线写法 "zh_cn" 也接受）。
+type Language string
+
+// 盘面语言的全部取值。
 const (
 	// LanguageZhCN 为简体中文
-	LanguageZhCN = "zh-CN"
+	LanguageZhCN Language = "zh-CN"
 	// LanguageZhTW 为繁体中文
-	LanguageZhTW = "zh-TW"
+	LanguageZhTW Language = "zh-TW"
 	// LanguageEnUS 为英文
-	LanguageEnUS = "en-US"
+	LanguageEnUS Language = "en-US"
 	// LanguageJaJP 为日文
-	LanguageJaJP = "ja-JP"
+	LanguageJaJP Language = "ja-JP"
 	// LanguageKoKR 为韩文
-	LanguageKoKR = "ko-KR"
+	LanguageKoKR Language = "ko-KR"
 	// LanguageViVN 为越南文
-	LanguageViVN = "vi-VN"
+	LanguageViVN Language = "vi-VN"
 )
+
+// LeapMonth 是农历输入的闰月处理方式（ByLunar 等农历入口的 leap 参数）。
+//
+// 它把 iztro byLunar 的 isLeapMonth 与 fixLeap 两个布尔合成一个三态值：
+// 两个布尔相邻传参极易写反且不报错，而 fixLeap 只在输入是闰月时才有意义。
+// 阳历入口的 fixLeap 仍是单个布尔。
+type LeapMonth string
+
+// 闰月处理方式的全部取值。
+const (
+	// NotLeapMonth 表示输入的农历月不是闰月
+	NotLeapMonth LeapMonth = "notLeap"
+	// LeapMonthKeep 表示输入的农历月是闰月，按闰月本身排盘
+	LeapMonthKeep LeapMonth = "leap"
+	// LeapMonthFixed 表示输入的农历月是闰月，且十五之后视作次月（iztro fixLeap）
+	LeapMonthFixed LeapMonth = "leapFixed"
+)
+
+// flags 把闰月处理方式拆回 wasm 线协议使用的 isLeapMonth / fixLeap 两个布尔；
+// 未知取值返回错误。
+func (m LeapMonth) flags() (isLeapMonth bool, fixLeap bool, err error) {
+	switch m {
+	case NotLeapMonth:
+		return false, false, nil
+	case LeapMonthKeep:
+		return true, false, nil
+	case LeapMonthFixed:
+		return true, true, nil
+	default:
+		return false, false, invalidArgument("invalid leap month '" + string(m) + "': expected 'notLeap', 'leap' or 'leapFixed'")
+	}
+}
 
 // 宫位定位的特殊标识：不是十二宫之一，而是定位「被标记为该角色的那一宫」，
 // 可传给 Astrolabe.Palace 与 Astrolabe.SurroundedPalaces。

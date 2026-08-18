@@ -30,9 +30,9 @@ mutagens, the soul and body stars, and every year-based star.
 func BySolar(
     solarDate string,
     timeIndex uint8,
-    gender string,
+    gender Gender,
     fixLeap bool,
-    language string,
+    language Language,
     config *Config,
 ) (*Astrolabe, error)
 ```
@@ -43,9 +43,9 @@ func BySolar(
 | --- | --- | --- | --- | --- |
 | `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
 | `timeIndex` | `uint8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
-| `gender` | `string` | Yes | — | `"male"` or `"female"`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
+| `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` (the literals `"male"`/`"female"` also work). Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fixLeap` | `bool` | Yes | — | Whether to correct for lunar leap months. When true, the sixteenth of a leap month onward counts as the next month (the late Zi hour excepted, see below) |
-| `language` | `string` | Yes | — | Output language; affects every translated field. The `*Key` fields are unaffected |
+| `language` | `Language` | Yes | — | Chart language (`LanguageZhCN` and friends); affects every translated field. The `*Key` fields are unaffected |
 | `config` | `*Config` | Yes | — | Charting configuration; pass `nil` for the defaults |
 
 **Return value** `*Astrolabe` — a complete chart with the twelve palaces, the four pillars, the soul
@@ -54,7 +54,7 @@ and body stars and the five elements class.
 **Example**
 
 ```go
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -113,28 +113,27 @@ calling `BySolar` with the corresponding solar date.
 func ByLunar(
     lunarDate string,
     timeIndex uint8,
-    gender string,
-    isLeapMonth bool,
-    fixLeap bool,
-    language string,
+    gender Gender,
+    leap LeapMonth,
+    language Language,
     config *Config,
 ) (*Astrolabe, error)
 ```
 
-**Parameters** Identical to `BySolar` apart from the following.
+**Parameters** Identical to `BySolar` apart from the following two; `BySolar`'s `fixLeap` is folded into `leap` here.
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `lunarDate` | `string` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
-| `isLeapMonth` | `bool` | Yes | — | Whether that lunar month is a leap month. Has no effect if that month in that year has no leap month to begin with |
+| `leap` | `LeapMonth` | Yes | — | `NotLeapMonth` — not a leap month; `LeapMonthKeep` — leap month, charted as itself; `LeapMonthFixed` — leap month, and days after the 15th are treated as the next month (iztro `fixLeap`). Flagging a leap month that does not exist in that year falls back to the ordinary month; any other value returns `ErrInvalidArgument` |
 
 **Return value** Same as `BySolar`.
 
 **Example**
 
 ```go
-a, _ := iztro.ByLunar("2000-7-17", 2, "female", false, true, "en-US", nil)
-b, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+a, _ := iztro.ByLunar("2000-7-17", 2, iztro.GenderFemale, iztro.NotLeapMonth, iztro.LanguageEnUS, nil)
+b, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 fmt.Println(a.SolarDate, a.SolarDate == b.SolarDate)
 ```
@@ -147,10 +146,10 @@ fmt.Println(a.SolarDate, a.SolarDate == b.SolarDate)
 
 **Edge cases and pitfalls**
 
-<Callout type="warn" title="The silent no-op of isLeapMonth">
-Pass `true` when that month is not a leap month and the parameter is silently ignored rather than
-returning an error. If you need strict validation, confirm the leap month exists for that year and
-month before calling.
+<Callout type="warn" title="The silent fallback for a wrongly flagged leap month">
+Flag `leap` as a leap month when that month is not one and the chart is cast for the ordinary month
+without an error (as in iztro). If you need strict validation, confirm the leap month exists for that
+year and month before calling.
 </Callout>
 
 ---
@@ -190,7 +189,7 @@ cfg := &iztro.Config{
     Algorithm:  iztro.AlgorithmZhongzhou,
     YearDivide: iztro.YearDivideExact,
 }
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", cfg)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
 
 fmt.Println(chart.FiveElementsClass)
 ```
@@ -233,7 +232,7 @@ cfg := &iztro.Config{
     },
 }
 
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", cfg)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
 if err != nil {
     log.Fatal(err)
 }
@@ -293,7 +292,7 @@ Sui-qian and Jiang-qian gods, and the body star.
 **Example**
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 // anchor on the original chart's Body palace pillar — equivalent to the earth chart
 var body *iztro.Palace
@@ -353,7 +352,7 @@ func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) 
 **Example**
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 prompt, _ := chart.AstrolabeToPrompt()
 
 fmt.Println(string([]rune(prompt)[:68]))

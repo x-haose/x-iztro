@@ -39,7 +39,7 @@ The four values of `Code` are the same set as Rust's `IztroError::code()` and Py
 ### Two ways to test
 
 ```go
-_, err := iztro.BySolar("2000-2-30", 2, "female", true, "en-US", nil)
+_, err := iztro.BySolar("2000-2-30", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 // branch by category: errors.Is against the sentinels
 fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
@@ -97,7 +97,7 @@ Lunar messages are prefixed `invalid lunar date '<input>': ` and solar ones
 
 ```go
 for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
-    if _, err := iztro.BySolar(date, 2, "female", true, "en-US", nil); err != nil {
+    if _, err := iztro.BySolar(date, 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil); err != nil {
         fmt.Println(err)
     }
 }
@@ -126,8 +126,9 @@ Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
 </Accordion>
 <Accordion title="Validation of lunar leap months">
 `ByLunar` checks whether that month really exists in that lunar year and how many days it has (30 in a
-long month, 29 in a short one). Passing `true` for `isLeapMonth` when that year and month have no leap
-month is not an error; the parameter is silently ignored.
+long month, 29 in a short one). Flagging `leap` as a leap month when that year and month have none is
+not an error — the ordinary month is used; a `leap` value outside the three `LeapMonth` constants
+returns `ErrInvalidArgument`.
 </Accordion>
 </Accordions>
 
@@ -140,7 +141,7 @@ month is not an error; the parameter is silently ignored.
 **Example**
 
 ```go
-_, err := iztro.BySolar("2000-8-16", 13, "female", true, "en-US", nil)
+_, err := iztro.BySolar("2000-8-16", 13, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 fmt.Println(err)
 ```
 
@@ -170,14 +171,15 @@ land in the legal range.
 | `gender` | `"male"` / `"female"` (the `GenderMale` / `GenderFemale` constants) | `invalid gender 'x': expected 'male' or 'female'` |
 | `language` | The six language codes (the `Language*` constants) | `invalid language 'xx': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
 
-Language codes are case-insensitive; both `"zh-cn"` and `"zh-CN"` are accepted.
-Passing the `GenderMale` and `LanguageZhCN` constants lets the compiler and the IDE stop a typo where
-it is written.
+Language codes are case-insensitive, and hyphen and underscore are interchangeable (`"zh-cn"` and
+`"zh_cn"` are both accepted). `gender` and `language` are the named types `Gender` / `Language`, so
+passing some other string variable by mistake is rejected at compile time; a misspelled literal
+lands in this error class at run time.
 
 **Example**
 
 ```go
-_, err := iztro.BySolar("2000-8-16", 2, "x", true, "en-US", nil)
+_, err := iztro.BySolar("2000-8-16", 2, "x", true, iztro.LanguageEnUS, nil)
 
 fmt.Println(err)
 fmt.Println(errors.Is(err, iztro.ErrInvalidArgument))
@@ -245,7 +247,7 @@ too many or too few being an error alike. The custom tables take keys only, neve
 rows := []struct {
     Date      string
     TimeIndex uint8
-    Gender    string
+    Gender    iztro.Gender
 }{
     {"2000-8-16", 2, "female"},
     {"2000-2-30", 2, "female"},
@@ -256,7 +258,7 @@ var charts []*iztro.Astrolabe
 var failed []string
 
 for _, r := range rows {
-    chart, err := iztro.BySolar(r.Date, r.TimeIndex, r.Gender, true, "en-US", nil)
+    chart, err := iztro.BySolar(r.Date, r.TimeIndex, r.Gender, true, iztro.LanguageEnUS, nil)
     if err != nil {
         var e *iztro.Error
         errors.As(err, &e)
@@ -278,8 +280,8 @@ fmt.Println(len(charts), failed)
 **Wrap into your own error**
 
 ```go
-build := func(date string, ti uint8, gender string) (*iztro.Astrolabe, error) {
-    chart, err := iztro.BySolar(date, ti, gender, true, "en-US", nil)
+build := func(date string, ti uint8, gender iztro.Gender) (*iztro.Astrolabe, error) {
+    chart, err := iztro.BySolar(date, ti, gender, true, iztro.LanguageEnUS, nil)
     if err != nil {
         return nil, fmt.Errorf("charting failed: %w", err)
     }

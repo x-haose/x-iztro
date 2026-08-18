@@ -81,12 +81,15 @@ def get_sign_by_lunar_date(
 def get_major_star_by_solar_date(
     solar_date: str,
     time_index: TimeIndexType,
+    *,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
     config: ChartConfig | None = None,
 ) -> str:
     """
     通过阳历日期取命宫主星，多颗以逗号分隔。
+
+    `time_index` 之后的参数只能按关键字传入。
 
     命宫为空宫时借对宫主星，与 iztro 行为一致。
 
@@ -106,6 +109,7 @@ def get_major_star_by_solar_date(
 def get_major_star_by_lunar_date(
     lunar_date: str,
     time_index: TimeIndexType,
+    *,
     is_leap_month: bool = False,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
@@ -113,6 +117,8 @@ def get_major_star_by_lunar_date(
 ) -> str:
     """
     通过农历日期取命宫主星，多颗以逗号分隔。
+
+    `time_index` 之后的参数只能按关键字传入（两个相邻布尔位置传参易写反）。
 
     命宫为空宫时借对宫主星；`is_leap_month` 在该月没有闰月时不生效。
 

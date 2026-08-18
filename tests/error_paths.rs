@@ -26,8 +26,7 @@ fn lunar(date: &str, time_index: u8, is_leap: bool) -> Result<x_iztro::Astrolabe
         date,
         time_index,
         Gender::Female,
-        is_leap,
-        true,
+        LeapMonth::from_flags(is_leap, true),
         LANG,
         Config::default(),
     )

@@ -51,7 +51,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `palaces` | `Vec<PalaceData>` | 十二宫，索引 0 为寅宫、11 为丑宫 |
+| `palaces` | `[PalaceData; 12]` | 十二宫，定长数组，索引 0 为寅宫、11 为丑宫 |
 | `raw_dates` | `RawDates` | 结构化的农历生日与四柱干支枚举 |
 
 `palaces` 的索引是**宫位索引**而非宫名顺序：`palaces[0]` 永远是寅宫，
@@ -364,14 +364,14 @@ println!("大限 {}{}",
     translate_heavenly_stem(h.decadal.heavenly_stem, zh),
     translate_earthly_branch(h.decadal.earthly_branch, zh));
 println!("流年 {}{}",
-    translate_heavenly_stem(h.yearly.base.heavenly_stem, zh),
-    translate_earthly_branch(h.yearly.base.earthly_branch, zh));
+    translate_heavenly_stem(h.yearly.heavenly_stem, zh),
+    translate_earthly_branch(h.yearly.earthly_branch, zh));
 ```
 
 <Callout type="info">
 `decadal` / `monthly` / `daily` / `hourly` 是 `HoroscopeItem`，干支直接读；
-`yearly` 与 `age` 各自多带一项自己的数据，通用字段收在 `base` 里，
-因此写 `h.yearly.base.heavenly_stem` 而不是 `h.yearly.heavenly_stem`。
+`yearly` 与 `age` 各自多带一项自己的数据（通用字段收在 `base` 里），
+但两者都实现了 `Deref`，`h.yearly.heavenly_stem` 同样直接可读。
 </Callout>
 
 **输出**

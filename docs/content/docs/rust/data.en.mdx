@@ -40,6 +40,7 @@ agree.
 | `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+| `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` always returns an `Option`, giving `None` for an unknown key — which is how the bindings
 reject invalid input.
@@ -71,7 +72,7 @@ Some(Current)
 | `Palace` | `index() -> usize` / `from_index(usize)` | The name's ordinal within `PALACES`: Soul = 0, Parents = 1, …, Siblings = 11. **Not a position on the chart**; `from_index` takes the value modulo 12 and returns no `Option` |
 | `FiveElementsClass` | `value() -> usize` | The class number: water 2nd 2, wood 3rd 3, metal 4th 4, earth 5th 5, fire 6th 6 |
 | `Gender` | `yin_yang() -> YinYang` | Male is yang, female yin; it sets the direction of the decadal scope and the Changsheng gods |
-| `Language` | `as_code() -> &'static str` / `from_code(&str)` | Language codes such as `zh-CN`; `from_code` is case-insensitive |
+| `Language` | `as_code() -> &'static str` / `from_code(&str)` | Language codes such as `zh-CN`; `from_code` is case-insensitive and treats hyphen and underscore alike (`zh_cn` is accepted too) |
 | `YinYang` | `as_str() -> &'static str` | `阳` / `阴`, not internationalized |
 | `FiveElements` | `as_str() -> &'static str` | `木` `金` `水` `火` `土`, not internationalized |
 
@@ -110,6 +111,7 @@ stars correspond one-to-one with their keys.
 | `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
 | `Gender` | `Male` `Female` |
 | `Language` | `ZhCN` `ZhTW` `EnUS` `JaJP` `KoKR` `ViVN` |
+| `LeapMonth` | `NotLeap` `Leap` `LeapFixed` — how `by_lunar` treats the leap month; also `from_flags(is_leap_month, fix_leap)`, `is_leap_month()`, `fix_leap()` to convert to and from the iztro-style pair of booleans |
 | `Palace` | In `index()` order: `Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 

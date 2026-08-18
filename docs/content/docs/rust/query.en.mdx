@@ -134,8 +134,7 @@ pub fn get_major_star_by_solar_date(
 pub fn get_major_star_by_lunar_date(
     lunar_date: &str,
     time_index: u8,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError>
@@ -147,8 +146,8 @@ pub fn get_major_star_by_lunar_date(
 | --- | --- | --- | --- | --- |
 | `solar_date` / `lunar_date` | `&str` | Yes | — | The date |
 | `time_index` | `u8` | Yes | — | Hour index 0–12; the Soul palace is fixed jointly by month and hour |
-| `is_leap_month` | `bool` | Yes | — | Lunar version only |
-| `fix_leap` | `bool` | Yes | — | Whether to correct for leap months |
+| `fix_leap` | `bool` | Yes | — | Solar version only: whether a solar date falling after the 15th of a leap month is treated as the next month |
+| `leap` | `LeapMonth` | Yes | — | Lunar version only: `NotLeap` / `Leap` / `LeapFixed`, see [`by_lunar`](/en/docs/rust/astro#by_lunar) |
 | `language` | `Language` | Yes | — | Output language |
 | `config` | `Config` | Yes | — | Charting configuration |
 

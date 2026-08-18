@@ -40,7 +40,7 @@ import (
 )
 
 func main() {
-    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+    chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -65,11 +65,13 @@ func main() {
 木三局
 ```
 
-最后一个参数是 `*Config`，传 `nil` 即取默认配置。农历排盘用 `ByLunar`，
-比 `BySolar` 多一个 `isLeapMonth bool`，插在 `gender` 之后、`fixLeap` 之前：
+最后一个参数是 `*Config`，传 `nil` 即取默认配置。`gender` 与 `language` 是具名类型
+`iztro.Gender` / `iztro.Language`（`iztro.GenderFemale`、`iztro.LanguageZhCN`，字面量也能直接传）。
+农历排盘用 `ByLunar`：`BySolar` 的 `fixLeap` 换成三态的 `iztro.LeapMonth`
+（`NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`），一个参数说清闰月怎么处理：
 
 ```go
-iztro.ByLunar("2000-7-17", 2, "female", false, true, "zh-CN", nil)
+iztro.ByLunar("2000-7-17", 2, iztro.GenderFemale, iztro.NotLeapMonth, iztro.LanguageZhCN, nil)
 ```
 
 每个入口都有 `*Context` 变体（`BySolarContext`、`ByLunarContext` 等），
@@ -80,7 +82,7 @@ iztro.ByLunar("2000-7-17", 2, "female", false, true, "zh-CN", nil)
 失败一律返回 `*iztro.Error`，带机器可读的 `Code`；用 `errors.Is` 按类别匹配：
 
 ```go
-_, err := iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
 if errors.Is(err, iztro.ErrInvalidDate) {
     var e *iztro.Error
     errors.As(err, &e)

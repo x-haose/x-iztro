@@ -145,8 +145,9 @@ for palace_index, stars in enumerate(h.yearly.stars or []):
         print(palace_index, s.name, s.scope)
 ```
 
-<Callout title="The base layer on the Rust side">
-In Rust the common fields of age fortune and the yearly scope live under `.base`
-(`h.yearly.base.heavenly_stem`), because each of those two also has fields of its own. The layer is
-flattened when serialized to Python and Go, where you write `h.yearly.heavenly_stem` directly.
+<Callout title="Same access path on all three sides">
+Age fortune and the yearly scope each carry one extra datum of their own (nominal age, the yearly
+gods), so in Rust their shared fields live under `.base` — but both types implement `Deref`, so
+`h.yearly.heavenly_stem` reads directly. The layer is flattened when serialized to Python and Go,
+where you write `h.yearly.heavenly_stem` as well.
 </Callout>

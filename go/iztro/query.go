@@ -30,7 +30,7 @@ func query(payload map[string]any) (string, error) {
 //
 // 生肖由年支决定，换年时点受 Config.YearDivide 影响 ——
 // 正月初一与立春之间的生日会随配置得到不同结果。
-func GetZodiacBySolarDate(solarDate string, language string, config *Config) (string, error) {
+func GetZodiacBySolarDate(solarDate string, language Language, config *Config) (string, error) {
 	return query(map[string]any{
 		"kind":      "zodiacBySolar",
 		"solarDate": solarDate,
@@ -40,7 +40,7 @@ func GetZodiacBySolarDate(solarDate string, language string, config *Config) (st
 }
 
 // GetSignBySolarDate 通过阳历日期取星座。星座只由公历日期决定。
-func GetSignBySolarDate(solarDate string, language string) (string, error) {
+func GetSignBySolarDate(solarDate string, language Language) (string, error) {
 	return query(map[string]any{
 		"kind":      "signBySolar",
 		"solarDate": solarDate,
@@ -49,7 +49,7 @@ func GetSignBySolarDate(solarDate string, language string) (string, error) {
 }
 
 // GetSignByLunarDate 通过农历日期取星座；isLeapMonth 在该月没有闰月时不生效。
-func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (string, error) {
+func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language Language) (string, error) {
 	return query(map[string]any{
 		"kind":        "signByLunar",
 		"lunarDate":   lunarDate,
@@ -60,7 +60,7 @@ func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (st
 
 // GetMajorStarBySolarDate 通过阳历日期取命宫主星，多颗以逗号分隔。
 // 命宫为空宫时借对宫主星。
-func GetMajorStarBySolarDate(solarDate string, timeIndex uint8, fixLeap bool, language string, config *Config) (string, error) {
+func GetMajorStarBySolarDate(solarDate string, timeIndex uint8, fixLeap bool, language Language, config *Config) (string, error) {
 	return query(map[string]any{
 		"kind":      "majorStarBySolar",
 		"solarDate": solarDate,
@@ -72,8 +72,12 @@ func GetMajorStarBySolarDate(solarDate string, timeIndex uint8, fixLeap bool, la
 }
 
 // GetMajorStarByLunarDate 通过农历日期取命宫主星，多颗以逗号分隔。
-// 命宫为空宫时借对宫主星；isLeapMonth 在该月没有闰月时不生效。
-func GetMajorStarByLunarDate(lunarDate string, timeIndex uint8, isLeapMonth bool, fixLeap bool, language string, config *Config) (string, error) {
+// 命宫为空宫时借对宫主星；leap 标为闰月但该月没有闰月时按普通月处理。
+func GetMajorStarByLunarDate(lunarDate string, timeIndex uint8, leap LeapMonth, language Language, config *Config) (string, error) {
+	isLeapMonth, fixLeap, err := leap.flags()
+	if err != nil {
+		return "", err
+	}
 	return query(map[string]any{
 		"kind":        "majorStarByLunar",
 		"lunarDate":   lunarDate,

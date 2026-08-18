@@ -53,7 +53,7 @@ These are strongly typed enums, independent of language, and can be compared dir
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `palaces` | `Vec<PalaceData>` | The twelve palaces; index 0 is the Yin palace, 11 the Chou palace |
+| `palaces` | `[PalaceData; 12]` | The twelve palaces as a fixed-size array; index 0 is the Yin palace, 11 the Chou palace |
 | `raw_dates` | `RawDates` | The structured lunar birth date and the four pillars as enums |
 
 Indices into `palaces` are **palace indices**, not the palace-name order: `palaces[0]` is always the
@@ -380,14 +380,14 @@ println!("decadal {} {}",
     translate_heavenly_stem(h.decadal.heavenly_stem, en),
     translate_earthly_branch(h.decadal.earthly_branch, en));
 println!("yearly  {} {}",
-    translate_heavenly_stem(h.yearly.base.heavenly_stem, en),
-    translate_earthly_branch(h.yearly.base.earthly_branch, en));
+    translate_heavenly_stem(h.yearly.heavenly_stem, en),
+    translate_earthly_branch(h.yearly.earthly_branch, en));
 ```
 
 <Callout type="info">
 `decadal` / `monthly` / `daily` / `hourly` are `HoroscopeItem`s whose pillars read directly, while
-`yearly` and `age` each carry one extra datum of their own and keep the shared fields under `base` —
-hence `h.yearly.base.heavenly_stem` rather than `h.yearly.heavenly_stem`.
+`yearly` and `age` each carry one extra datum of their own (the shared fields sit under `base`),
+but both implement `Deref`, so `h.yearly.heavenly_stem` reads directly as well.
 </Callout>
 
 **Output**

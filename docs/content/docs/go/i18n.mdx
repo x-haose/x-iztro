@@ -17,7 +17,7 @@ description: 标识与译名的双向查找。
 **签名**
 
 ```go
-func Translate(key, language string) (string, error)
+func Translate(key string, language Language) (string, error)
 ```
 
 **参数**
@@ -25,7 +25,7 @@ func Translate(key, language string) (string, error)
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `key` | `string` | 是 | — | 语言无关标识 |
-| `language` | `string` | 是 | — | 目标语言 |
+| `language` | `Language` | 是 | — | 目标语言 |
 
 覆盖十二类共 260 个标识：
 
@@ -49,9 +49,9 @@ func Translate(key, language string) (string, error)
 **示例**
 
 ```go
-a, _ := iztro.Translate(iztro.StarZiweiMaj, "en-US")
-b, _ := iztro.Translate(iztro.PalaceSoul, "ja-JP")
-c, _ := iztro.Translate("nosuch", "zh-CN")
+a, _ := iztro.Translate(iztro.StarZiweiMaj, iztro.LanguageEnUS)
+b, _ := iztro.Translate(iztro.PalaceSoul, iztro.LanguageJaJP)
+c, _ := iztro.Translate("nosuch", iztro.LanguageZhCN)
 
 fmt.Printf("%q %q %q\n", a, b, c)
 ```
@@ -157,7 +157,7 @@ func AllKeys() ([]string, error)
 
 ```go
 keys, _ := iztro.AllKeys()
-first, _ := iztro.Translate(keys[0], "zh-CN")
+first, _ := iztro.Translate(keys[0], iztro.LanguageZhCN)
 
 fmt.Println(len(keys), keys[:4], first)
 ```
@@ -185,8 +185,8 @@ x-iztro 不设「当前语言」这样的全局状态：排盘时语言随参数
 要在一个进程里同时输出多种语言，直接排多张盘即可，互不干扰：
 
 ```go
-zh, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
-en, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+zh, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+en, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
 fmt.Println(zh.Palace(iztro.PalaceSoul).MajorStars[0].Name,
     en.Palace(iztro.PalaceSoul).MajorStars[0].Name)

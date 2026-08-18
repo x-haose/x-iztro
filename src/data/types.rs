@@ -373,6 +373,44 @@ pub enum AstroType {
     Human,
 }
 
+/// 农历输入的闰月处理方式（`by_lunar` 专用）。
+///
+/// 把 iztro `byLunar` 的 `isLeapMonth` 与 `fixLeap` 两个布尔合成一个三态值：
+/// 两个布尔相邻传参极易写反且不报错，而 `fixLeap` 只在输入是闰月时才有意义，
+/// 三态恰好覆盖全部有效组合。阳历排盘的 `fix_leap` 仍是单个布尔（见 [`by_solar`]）。
+///
+/// [`by_solar`]: crate::by_solar
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LeapMonth {
+    /// 输入的农历月不是闰月
+    NotLeap,
+    /// 输入的农历月是闰月，按闰月本身排盘
+    Leap,
+    /// 输入的农历月是闰月，且十五之后视作次月（iztro `fixLeap`）
+    LeapFixed,
+}
+
+impl LeapMonth {
+    /// 由 iztro 风格的两个布尔（`isLeapMonth`、`fixLeap`）合成；非闰月时 `fix_leap` 被忽略
+    pub fn from_flags(is_leap_month: bool, fix_leap: bool) -> Self {
+        match (is_leap_month, fix_leap) {
+            (false, _) => LeapMonth::NotLeap,
+            (true, false) => LeapMonth::Leap,
+            (true, true) => LeapMonth::LeapFixed,
+        }
+    }
+
+    /// 输入月是否闰月
+    pub fn is_leap_month(self) -> bool {
+        !matches!(self, LeapMonth::NotLeap)
+    }
+
+    /// 是否按 iztro `fixLeap` 规则把闰月十五之后视作次月
+    pub fn fix_leap(self) -> bool {
+        matches!(self, LeapMonth::LeapFixed)
+    }
+}
+
 /// 年分界点：排盘年干支（及其驱动的四化、命主身主等）按哪一天换年
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum YearDivide {
@@ -440,6 +478,7 @@ config_switch_keys!(AgeDivide { Normal => "normal", Birthday => "birthday" });
 config_switch_keys!(DayDivide { Forward => "forward", Current => "current" });
 config_switch_keys!(Algorithm { Default => "default", Zhongzhou => "zhongzhou" });
 config_switch_keys!(AstroType { Heaven => "heaven", Earth => "earth", Human => "human" });
+config_switch_keys!(LeapMonth { NotLeap => "notLeap", Leap => "leap", LeapFixed => "leapFixed" });
 
 /// 自定义四化与亮度表。
 ///
@@ -919,6 +958,15 @@ mod key_roundtrip_tests {
         for v in [AstroType::Heaven, AstroType::Earth, AstroType::Human] {
             assert_eq!(AstroType::from_key(v.as_key()), Some(v), "{v:?}");
         }
+        for v in [LeapMonth::NotLeap, LeapMonth::Leap, LeapMonth::LeapFixed] {
+            assert_eq!(LeapMonth::from_key(v.as_key()), Some(v), "{v:?}");
+            assert_eq!(
+                LeapMonth::from_flags(v.is_leap_month(), v.fix_leap()),
+                v,
+                "{v:?}"
+            );
+        }
+        assert_eq!(LeapMonth::from_flags(false, true), LeapMonth::NotLeap);
 
         assert_eq!(Palace::from_key("bodyPalace"), None);
         assert_eq!(StarKey::from_key("nope"), None);

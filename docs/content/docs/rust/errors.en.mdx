@@ -119,8 +119,8 @@ Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
 </Accordion>
 <Accordion title="Validation of lunar leap months">
 `by_lunar` checks whether that month really exists in that lunar year and how many days it has (30 in
-a long month, 29 in a short one). Passing `true` for `is_leap_month` when that year and month have no
-leap month is not an error; the parameter is silently ignored.
+a long month, 29 in a short one). Flagging `leap` as a leap month when that year and month have none is
+not an error — the ordinary month is used.
 </Accordion>
 </Accordions>
 

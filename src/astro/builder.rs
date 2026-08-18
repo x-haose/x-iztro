@@ -388,7 +388,7 @@ fn build_palaces(
     stars: &PlacedStars,
     gender: Gender,
     config: &Config,
-) -> Vec<PalaceData> {
+) -> [PalaceData; 12] {
     let (decadals, ages) = get_decadals_and_ages(
         ctx.soul_body.soul_index,
         ctx.five_elements_class,
@@ -399,34 +399,32 @@ fn build_palaces(
     let palace_names = get_palace_names(ctx.soul_body.soul_index);
     let start_stem = TIGER_RULE[ctx.yearly_stem.index()];
 
-    (0..12usize)
-        .map(|i| {
-            let palace_stem =
-                HeavenlyStem::from_index(fix_index(start_stem.index() as i32 + i as i32, 10));
-            let palace_branch = EarthlyBranch::from_index(fix_index(2 + i as i32, 12));
+    std::array::from_fn(|i| {
+        let palace_stem =
+            HeavenlyStem::from_index(fix_index(start_stem.index() as i32 + i as i32, 10));
+        let palace_branch = EarthlyBranch::from_index(fix_index(2 + i as i32, 12));
 
-            PalaceData {
-                index: i,
-                name: palace_names[i],
-                is_body_palace: ctx.soul_body.body_index == i,
-                is_original_palace: palace_branch != EarthlyBranch::Zi
-                    && palace_branch != EarthlyBranch::Chou
-                    && palace_stem == ctx.yearly_stem,
-                heavenly_stem: palace_stem,
-                earthly_branch: palace_branch,
-                major_stars: stars.major[i].clone(),
-                minor_stars: stars.minor[i].clone(),
-                adjective_stars: stars.adjective[i].clone(),
-                changsheng12: stars.changsheng12[i],
-                boshi12: stars.boshi12[i],
-                jiangqian12: stars.jiangqian12[i],
-                suiqian12: stars.suiqian12[i],
-                decadal: decadals[i].clone(),
-                ages: ages[i].clone(),
-                overrides: config.overrides.clone(),
-            }
-        })
-        .collect()
+        PalaceData {
+            index: i,
+            name: palace_names[i],
+            is_body_palace: ctx.soul_body.body_index == i,
+            is_original_palace: palace_branch != EarthlyBranch::Zi
+                && palace_branch != EarthlyBranch::Chou
+                && palace_stem == ctx.yearly_stem,
+            heavenly_stem: palace_stem,
+            earthly_branch: palace_branch,
+            major_stars: stars.major[i].clone(),
+            minor_stars: stars.minor[i].clone(),
+            adjective_stars: stars.adjective[i].clone(),
+            changsheng12: stars.changsheng12[i],
+            boshi12: stars.boshi12[i],
+            jiangqian12: stars.jiangqian12[i],
+            suiqian12: stars.suiqian12[i],
+            decadal: decadals[i].clone(),
+            ages: ages[i].clone(),
+            overrides: config.overrides.clone(),
+        }
+    })
 }
 
 /// 推算八字四柱中的月、日、时三柱
@@ -608,23 +606,21 @@ fn rearrange_from_palace(chart: &Astrolabe, pick: impl Fn(&PalaceData) -> bool) 
 /// - `lunar_date`: 农历日期字符串，格式 "YYYY-M-D"
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
-/// - `is_leap_month`: 是否为闰月
-/// - `fix_leap`: 是否修正闰月
+/// - `leap`: 输入月是否闰月及闰月处理方式（见 [`LeapMonth`]）
 /// - `language`: 语言
 /// - `config`: 排盘配置（分界点与算法派别）
 pub fn by_lunar(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<Astrolabe, IztroError> {
     validate_time_index(time_index)?;
 
     // 1. 解析并校验农历日期（闰月在 lunar_rust 中用负数月号表示）
-    let (year, lunar_month, day) = parse_lunar_date(lunar_date, is_leap_month)?;
+    let (year, lunar_month, day) = parse_lunar_date(lunar_date, leap.is_leap_month())?;
     let lunar_ref = lunar::from_ymd(year, lunar_month, day);
 
     // 3. 转换为阳历（日期串不带前导零）
@@ -637,7 +633,14 @@ pub fn by_lunar(
     );
 
     // 4. 用阳历日期排盘
-    by_solar(&solar_date, time_index, gender, fix_leap, language, config)
+    by_solar(
+        &solar_date,
+        time_index,
+        gender,
+        leap.fix_leap(),
+        language,
+        config,
+    )
 }
 
 #[cfg(test)]
@@ -738,8 +741,7 @@ mod tests {
             "2000-7-17",
             0,
             Gender::Male,
-            false,
-            true,
+            LeapMonth::NotLeap,
             Language::ZhCN,
             Config::default(),
         )

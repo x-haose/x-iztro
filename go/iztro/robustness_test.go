@@ -86,7 +86,7 @@ func TestErrorClassification(t *testing.T) {
 		{
 			name: "农历日越界",
 			call: func() error {
-				_, err := ByLunar("2000-7-31", 2, GenderMale, false, true, LanguageZhCN, nil)
+				_, err := ByLunar("2000-7-31", 2, GenderMale, NotLeapMonth, LanguageZhCN, nil)
 				return err
 			},
 			sentinel: ErrInvalidDate,

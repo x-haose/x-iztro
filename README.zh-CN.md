@@ -76,7 +76,7 @@ print(astro.astrolabe_to_prompt(chart))
 
 ```toml
 [dependencies]
-x-iztro = "0.1"
+x-iztro = "0.2"
 ```
 
 **Python** — 要求 3.10+，abi3 轮子，装完零运行期依赖。
@@ -163,7 +163,7 @@ import (
 )
 
 func main() {
-    chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+    chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -179,7 +179,7 @@ func main() {
     fmt.Println(horoscope.Yearly.HeavenlyStem, horoscope.Yearly.EarthlyBranch)
 
     // 错误带类别，用 errors.Is 判断
-    _, err = iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+    _, err = iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
     fmt.Println(errors.Is(err, iztro.ErrInvalidDate)) // true
 }
 ```

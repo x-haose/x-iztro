@@ -51,7 +51,7 @@ func mixedCallRound(g int) error {
 			return errors.New("并发排盘结果不正确")
 		}
 	case 1:
-		chart, err := ByLunar("2000-7-17", 2, GenderFemale, false, true, LanguageEnUS, nil)
+		chart, err := ByLunar("2000-7-17", 2, GenderFemale, NotLeapMonth, LanguageEnUS, nil)
 		if err != nil {
 			return err
 		}

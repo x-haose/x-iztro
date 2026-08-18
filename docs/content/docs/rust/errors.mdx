@@ -114,7 +114,7 @@ invalid solar date '1500-1-1': year must be within 1583-9999
 </Accordion>
 <Accordion title="农历闰月的校验">
 `by_lunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
-`is_leap_month` 传 `true` 但那年那月无闰月时不报错，参数被静默忽略。
+`leap` 标为闰月但那年那月无闰月时不报错，按普通月处理。
 </Accordion>
 </Accordions>
 

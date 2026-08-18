@@ -227,8 +227,14 @@ directly against the `*Key` fields on the data objects.
 | `Class*` | 5 | `ClassWater2nd`, `ClassWood3rd`, `ClassMetal4th`, `ClassEarth5th`, `ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`, `ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`, `StarTypeTough` |
-| `Gender*` | 2 | `GenderMale`, `GenderFemale` |
-| `Language*` | 6 | `LanguageZhCN`, `LanguageZhTW`, `LanguageEnUS`, `LanguageJaJP`, `LanguageKoKR`, `LanguageViVN` |
+| `Gender*` | 2 | `GenderMale`, `GenderFemale` (type `Gender`) |
+| `Language*` | 6 | `LanguageZhCN`, `LanguageZhTW`, `LanguageEnUS`, `LanguageJaJP`, `LanguageKoKR`, `LanguageViVN` (type `Language`) |
+| `*LeapMonth*` | 3 | `NotLeapMonth`, `LeapMonthKeep`, `LeapMonthFixed` (type `LeapMonth`, how `ByLunar` treats the leap month) |
+
+`Gender`, `Language` and `LeapMonth` are named string types: as entry-point parameters the compiler
+rejects any other string passed by mistake, while literals (`"male"`, `"zh-CN"`) still work;
+`Astrolabe.GenderKey` and `Astrolabe.Language` are of these types too. The remaining constants are
+untyped string constants that compare directly with the `*Key` fields.
 
 The configuration values add six more groups:
 

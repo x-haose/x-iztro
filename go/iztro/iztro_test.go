@@ -70,11 +70,11 @@ func TestBySolarMatchesGolden(t *testing.T) {
 	}
 
 	for _, c := range sampled {
-		gender := "male"
+		gender := GenderMale
 		if c.Params.Gender == "女" {
-			gender = "female"
+			gender = GenderFemale
 		}
-		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, "zh-CN", nil)
+		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, LanguageZhCN, nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s t%d): %v", c.Params.SolarDate, c.Params.TimeIndex, err)
 		}
@@ -100,8 +100,8 @@ func TestBySolarMatchesGolden(t *testing.T) {
 
 // TestTypedQueries 验证类型化查询方法在任意输出语言下基于 key 正确工作。
 func TestTypedQueries(t *testing.T) {
-	for _, lang := range []string{"zh-CN", "en-US"} {
-		a, err := BySolar("2000-8-16", 2, "female", true, lang, nil)
+	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
+		a, err := BySolar("2000-8-16", 2, GenderFemale, true, lang, nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s): %v", lang, err)
 		}
@@ -195,7 +195,7 @@ func TestInvalidInputBombardment(t *testing.T) {
 	if _, err := chartForHoroscope(t).Horoscope("garbage", 13); err == nil {
 		t.Error("invalid horoscope target should return an error")
 	}
-	if _, err := ByLunar("2000-7-31", 2, "male", false, true, "zh-CN", nil); err == nil {
+	if _, err := ByLunar("2000-7-31", 2, GenderMale, NotLeapMonth, LanguageZhCN, nil); err == nil {
 		t.Error("out-of-range lunar day should return an error")
 	}
 }

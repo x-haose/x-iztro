@@ -136,6 +136,7 @@ def by_solar(
     solar_date: str,
     time_index: TimeIndexType,
     gender: GenderType,
+    *,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
     config: ChartConfig | None = None,
@@ -149,7 +150,7 @@ def by_solar(
 | `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
 | `time_index` | `int` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `str` | Yes | — | `"male"` or `"female"`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
-| `fix_leap` | `bool` | No | `True` | Whether to correct for lunar leap months. When true, days from the sixteenth of a leap month onward count as the next month (the late Zi hour excepted, see below) |
+| `fix_leap` | `bool` | No | `True` | Keyword-only. Whether to correct for lunar leap months. When true, days from the sixteenth of a leap month onward count as the next month (the late Zi hour excepted, see below) |
 | `language` | `str` | No | `"zh-CN"` | Output language; affects every translated field. The `*_key` fields are unaffected |
 | `config` | `ChartConfig \| None` | No | `None` | Charting configuration; `None` takes the defaults |
 
@@ -217,6 +218,7 @@ def by_lunar(
     lunar_date: str,
     time_index: TimeIndexType,
     gender: GenderType,
+    *,
     is_leap_month: bool = False,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
@@ -224,12 +226,14 @@ def by_lunar(
 ) -> Astrolabe
 ```
 
-**Parameters** Identical to `by_solar` apart from the following.
+**Parameters** Identical to `by_solar` apart from the following. Everything after `gender` is
+keyword-only — `is_leap_month` and `fix_leap` sit next to each other, and swapping them positionally
+would raise no error while silently shifting the chart by a month.
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `lunar_date` | `str` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
-| `is_leap_month` | `bool` | No | `False` | Whether that lunar month is a leap month. Has no effect if that month in that year has no leap month to begin with |
+| `is_leap_month` | `bool` | No | `False` | Keyword-only. Whether that lunar month is a leap month. Has no effect if that month in that year has no leap month to begin with |
 
 **Return value** Same as `by_solar`.
 

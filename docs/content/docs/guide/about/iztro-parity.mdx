@@ -64,6 +64,18 @@ x-iztro 没有全局状态：配置与语言都随每次调用传入，由调用
 x-iztro 的 `get_decadals_and_ages` 直接收命宫索引与五行局，
 不必先凑出一份出生数据，能力是 iztro 那个的超集。
 
+### 农历入口的闰月参数
+
+`byLunar(lunarDateStr, timeIndex, gender, isLeapMonth?, fixLeap?, language?)` 用两个相邻的布尔
+描述闰月：写反了不报错，盘会静默错一个月，而 `fixLeap` 又只在输入是闰月时才有意义。
+x-iztro 把两者合成一个三态值：Rust `LeapMonth::{NotLeap, Leap, LeapFixed}`、
+Go `NotLeapMonth / LeapMonthKeep / LeapMonthFixed`；Python 保留两个布尔但改为只能按关键字传入
+（`is_leap_month=`、`fix_leap=`）。绑定层的 JSON 线协议仍是 `isLeapMonth`/`fixLeap` 两个键，
+与 iztro 一致。阳历入口的 `fixLeap` 单独一个布尔，没有写反的余地，保持不变。
+
+Go 侧同理把 `gender`、`language` 做成具名字符串类型 `Gender` / `Language`
+（`GenderFemale`、`LanguageZhCN`），字面量仍可直接传，但别的字符串变量传错位置会在编译期被挡下。
+
 ### 插件
 
 iztro 的 `loadPlugin` / `use(plugin)` 是运行期往星盘对象上挂函数 ——

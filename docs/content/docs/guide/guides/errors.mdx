@@ -66,7 +66,7 @@ invalid_date invalid solar date '2000-2-30': day is out of range for that month
 `*iztro.Error`，带 `Code` 与 `Message`；四个哨兵变量配合 `errors.Is` 按类别匹配：
 
 ```go
-_, err := iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
 
 if errors.Is(err, iztro.ErrInvalidDate) {
     var e *iztro.Error
@@ -187,7 +187,7 @@ for row in rows:
 
 ```go
 for _, row := range rows {
-    chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, "zh-CN", nil)
+    chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, iztro.LanguageZhCN, nil)
     if err != nil {
         var e *iztro.Error
         errors.As(err, &e)

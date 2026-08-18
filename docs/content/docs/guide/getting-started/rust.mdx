@@ -15,7 +15,7 @@ cargo add x-iztro
 
 ```toml
 [dependencies]
-x-iztro = "0.1"
+x-iztro = "0.2"
 ```
 
 crate 名为 `x-iztro`，代码中的库名是 `x_iztro`。无 C 依赖，纯 Rust 构建。
@@ -51,11 +51,12 @@ fn main() -> Result<(), IztroError> {
 时辰：寅时 (03:00~05:00)
 ```
 
-农历排盘用 [`by_lunar`](/zh/docs/rust/astro#by_lunar)，比 `by_solar` 多一个
-`is_leap_month`，插在 `gender` 之后、`fix_leap` 之前：
+农历排盘用 [`by_lunar`](/zh/docs/rust/astro#by_lunar)：`by_solar` 的 `fix_leap` 在这里换成
+三态的 `LeapMonth`（`NotLeap` 非闰月 / `Leap` 闰月 / `LeapFixed` 闰月且十五之后视作次月），
+一个参数说清闰月怎么处理，不会把两个布尔写反：
 
 ```rust
-by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::ZhCN, Config::default())?;
+by_lunar("2000-7-17", 2, Gender::Female, LeapMonth::NotLeap, Language::ZhCN, Config::default())?;
 ```
 
 ## 接下来

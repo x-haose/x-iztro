@@ -328,8 +328,7 @@ pub fn by_lunar(input: &LunarChartInput) -> Result<Value, BridgeError> {
         &input.lunar_date,
         input.time_index,
         parse_gender(&input.gender)?,
-        input.is_leap_month,
-        input.fix_leap,
+        LeapMonth::from_flags(input.is_leap_month, input.fix_leap),
         parse_language(&input.language)?,
         parse_config(&input.config)?,
     )?;
@@ -470,8 +469,7 @@ fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
         "majorStarByLunar" => crate::get_major_star_by_lunar_date(
             &input.lunar_date,
             input.time_index,
-            input.is_leap_month,
-            input.fix_leap,
+            LeapMonth::from_flags(input.is_leap_month, input.fix_leap),
             language,
             config,
         ),

@@ -39,7 +39,7 @@ type StarBirth struct {
 birth := iztro.StarBirth{
     SolarDate: "2000-8-16",
     TimeIndex: 2,
-    Gender:    "female",
+    Gender:    iztro.GenderFemale,
     FixLeap:   true,
     Language:  "en-US",
 }
@@ -330,7 +330,7 @@ yearly layer carries one extra star, Nianjie.
 **Signature**
 
 ```go
-func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, error)
+func GetHoroscopeStar(stemKey, branchKey, scope string, language Language) ([][]Star, error)
 ```
 
 **Parameters**
@@ -340,7 +340,7 @@ func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, err
 | `stemKey` | `string` | Yes | — | Stem key of that layer |
 | `branchKey` | `string` | Yes | — | Branch key of that layer |
 | `scope` | `string` | Yes | — | The horoscope layer, which fixes the star names |
-| `language` | `string` | Yes | — | Output language |
+| `language` | `Language` | Yes | — | Chart language |
 
 **Return value** A slice of twelve, indexed by palace index.
 
@@ -365,7 +365,7 @@ The keys take the form `yunlu` (decadal Lucun), `liulu` (yearly), `yuelu` (month
 **Example**
 
 ```go
-decadal, _ := iztro.GetHoroscopeStar(iztro.StemJia, iztro.BranchZi, iztro.ScopeDecadal, "en-US")
+decadal, _ := iztro.GetHoroscopeStar(iztro.StemJia, iztro.BranchZi, iztro.ScopeDecadal, iztro.LanguageEnUS)
 
 for i := 0; i < 4; i++ {
     names := []string{}
@@ -415,7 +415,7 @@ directly and is reusable in a pipeline of your own.
 **Example**
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 yearBranch := chart.RawDates.ChineseDate.YearlyKeys[1]
 
 hl, _ := iztro.GetHuoLingIndex(yearBranch, 2)

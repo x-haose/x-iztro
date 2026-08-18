@@ -110,7 +110,7 @@ print(soul.has(["ziweiMaj"]))
 <Tab value="Go">
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 soul := chart.Palace(iztro.PalaceSoul)
 
 fmt.Println(soul.Has(iztro.StarZiweiMaj))

@@ -25,6 +25,9 @@ pub struct HoroscopeItem {
 }
 
 /// 小限数据。
+///
+/// 通用运限字段经 `Deref` 直接可读（`age.index`、`age.heavenly_stem`），
+/// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgeItem {
     /// 通用运限字段
@@ -32,6 +35,14 @@ pub struct AgeItem {
     pub base: HoroscopeItem,
     /// 虚岁
     pub nominal_age: u32,
+}
+
+impl std::ops::Deref for AgeItem {
+    type Target = HoroscopeItem;
+
+    fn deref(&self) -> &HoroscopeItem {
+        &self.base
+    }
 }
 
 /// 流年十二神：按目标年支起的岁前十二神与将前十二神。
@@ -44,6 +55,9 @@ pub struct YearlyDecStar {
 }
 
 /// 流年数据（含流年十二神）。
+///
+/// 通用运限字段经 `Deref` 直接可读（`yearly.mutagen`、`yearly.palace_names`），
+/// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YearlyItem {
     /// 通用运限字段
@@ -51,6 +65,14 @@ pub struct YearlyItem {
     pub base: HoroscopeItem,
     /// 流年十二神
     pub yearly_dec_star: YearlyDecStar,
+}
+
+impl std::ops::Deref for YearlyItem {
+    type Target = HoroscopeItem;
+
+    fn deref(&self) -> &HoroscopeItem {
+        &self.base
+    }
 }
 
 /// 一次运限查询的完整结果。

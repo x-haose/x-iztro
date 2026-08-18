@@ -82,7 +82,8 @@ pub struct YearlyDecStar {
 }
 ```
 
-因此通用字段要经 `base` 取：写 `h.yearly.base.heavenly_stem`，不是 `h.yearly.heavenly_stem`。
+`AgeItem` 与 `YearlyItem` 都实现 `Deref<Target = HoroscopeItem>`，通用字段直接读：
+`h.yearly.heavenly_stem`、`h.age.index`；需要整个 `HoroscopeItem` 时取 `.base`。
 四个类型都在 crate 根重导出。
 
 **示例**

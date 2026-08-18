@@ -408,8 +408,8 @@ type RawDates struct {
 type Astrolabe struct {
 	// Gender 为性别（翻译文本）
 	Gender string `json:"gender"`
-	// GenderKey 为机器可读性别（"male"/"female"）
-	GenderKey string `json:"genderKey"`
+	// GenderKey 为机器可读性别（GenderMale / GenderFemale）
+	GenderKey Gender `json:"genderKey"`
 	// SolarDate 为阳历日期
 	SolarDate string `json:"solarDate"`
 	// LunarDate 为农历日期
@@ -452,8 +452,8 @@ type Astrolabe struct {
 	TimeIndex uint8 `json:"timeIndex"`
 	// FixLeap 表示是否修正闰月
 	FixLeap bool `json:"fixLeap"`
-	// Language 为排盘语言（"zh-CN" 等）
-	Language string `json:"language"`
+	// Language 为盘面语言（Language* 常量）
+	Language Language `json:"language"`
 	// Config 为排盘配置
 	Config Config `json:"config"`
 

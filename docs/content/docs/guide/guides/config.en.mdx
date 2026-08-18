@@ -56,7 +56,7 @@ cfg := &iztro.Config{
     Algorithm:  "zhongzhou",
     YearDivide: "exact",
 }
-iztro.BySolar("2000-8-16", 2, "female", true, "en-US", cfg)
+iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
 ```
 
 Python and Go take only the keys you want to change and default the rest; Rust achieves the same
@@ -215,7 +215,7 @@ earth = astro.by_solar("2000-8-16", 2, "female", language="en-US",
 ```
 
 ```go
-earth, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US",
+earth, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS,
     &iztro.Config{AstroType: iztro.AstroEarth})
 ```
 
@@ -331,7 +331,7 @@ h = chart.horoscope("2024-10-1", 0)   # inherits age_divide=birthday
 ```
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US",
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS,
     &iztro.Config{AgeDivide: "birthday"})
 h, _ := chart.Horoscope("2024-10-1", 0)   // as above
 ```

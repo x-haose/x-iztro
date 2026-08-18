@@ -8,7 +8,7 @@ the twelve palaces along with chart-level information such as the four pillars, 
 stars and the five elements class.
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 ```
 
 <Callout type="info">
@@ -45,7 +45,7 @@ Display fields follow the charting language. For predicates use the `*Key` field
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `GenderKey` | `string` | `"male"` / `"female"` |
+| `GenderKey` | `Gender` | `GenderMale` / `GenderFemale` |
 | `SoulKey` | `string` | Soul star key |
 | `BodyKey` | `string` | Body star key |
 | `FiveElementsClassKey` | `string` | Five elements class key |
@@ -125,7 +125,7 @@ fmt.Println(rd.ChineseDate.PillarKeys())
 | --- | --- | --- |
 | `TimeIndex` | `uint8` | Birth hour index |
 | `FixLeap` | `bool` | Whether leap-month correction was applied when charting |
-| `Language` | `string` | Output language |
+| `Language` | `Language` | Chart language (`LanguageZhCN` and friends) |
 | `Config` | `Config` | Charting configuration — the six switches reconstructed from the DTO |
 
 Horoscopes, re-anchoring and prompts restart their computation from these four, so the charting

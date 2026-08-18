@@ -15,7 +15,7 @@ Or in `Cargo.toml`:
 
 ```toml
 [dependencies]
-x-iztro = "0.1"
+x-iztro = "0.2"
 ```
 
 The crate is named `x-iztro`; in code the library is `x_iztro`. No C dependencies, pure Rust build.
@@ -58,11 +58,13 @@ with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 
 Pass `Language::ZhCN` instead and both come out in Chinese.
 </Callout>
 
-Chart from a lunar date with [`by_lunar`](/en/docs/rust/astro#by_lunar), which takes one extra
-argument, `is_leap_month`, positioned after `gender` and before `fix_leap`:
+Chart from a lunar date with [`by_lunar`](/en/docs/rust/astro#by_lunar): where `by_solar` takes
+`fix_leap`, this takes a three-way `LeapMonth` (`NotLeap` / `Leap` / `LeapFixed` — leap month with
+days after the 15th treated as the next month), so one argument says how the leap month is handled
+and there is no pair of booleans to swap:
 
 ```rust
-by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::EnUS, Config::default())?;
+by_lunar("2000-7-17", 2, Gender::Female, LeapMonth::NotLeap, Language::EnUS, Config::default())?;
 ```
 
 ## Next

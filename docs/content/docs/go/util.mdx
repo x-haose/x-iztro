@@ -137,7 +137,7 @@ _, err := iztro.TimeToIndex(24)
 fmt.Println(err)
 
 // 结果可直接喂给排盘入口
-chart, err := iztro.BySolar("2000-8-16", b, "female", true, "zh-CN", nil)
+chart, err := iztro.BySolar("2000-8-16", b, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -377,7 +377,7 @@ fmt.Println(names[:4])
 
 ```go
 func GetDecadalsAndAges(
-    soulIndex int, fiveElementsClass, gender, yearlyStemKey, yearlyBranchKey string,
+    soulIndex int, fiveElementsClass string, gender Gender, yearlyStemKey, yearlyBranchKey string,
 ) (DecadalsAndAges, error)
 ```
 
@@ -387,7 +387,7 @@ func GetDecadalsAndAges(
 | --- | --- | --- | --- | --- |
 | `soulIndex` | `int` | 是 | — | 命宫宫位索引 |
 | `fiveElementsClass` | `string` | 是 | — | 五行局标识 |
-| `gender` | `string` | 是 | — | `"male"` 或 `"female"` |
+| `gender` | `Gender` | 是 | — | `GenderMale` 或 `GenderFemale` |
 | `yearlyStemKey` | `string` | 是 | — | 年干标识 |
 | `yearlyBranchKey` | `string` | 是 | — | 年支标识 |
 
@@ -404,7 +404,7 @@ func GetDecadalsAndAges(
 **示例**
 
 ```go
-da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", "female", iztro.StemGeng, iztro.BranchChen)
+da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", iztro.GenderFemale, iztro.StemGeng, iztro.BranchChen)
 
 fmt.Printf("%+v\n", da.Decadals[0])
 fmt.Println(da.Ages[0][:3])
@@ -477,7 +477,7 @@ fmt.Println(m, d1, d2)
 **签名**
 
 ```go
-func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
+func TranslateChineseDate(pillars [4][2]string, language Language) (string, error)
 ```
 
 **参数**
@@ -485,7 +485,7 @@ func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `pillars` | `[4][2]string` | 是 | — | 四柱标识 [年, 月, 日, 时]，每柱为 [天干, 地支] |
-| `language` | `string` | 是 | — | 输出语言 |
+| `language` | `Language` | 是 | — | 盘面语言 |
 
 **返回值**　词条均为单字符时柱内紧凑相连、柱间空格；
 任一词条为多字符时柱内空格、柱间 ` - `。
@@ -502,7 +502,7 @@ s, _ := iztro.TranslateChineseDate([4][2]string{
 fmt.Println(s)
 
 // 星盘上的四柱标识可直接取
-s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), "zh-CN")
+s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), iztro.LanguageZhCN)
 fmt.Println(s2)
 ```
 
@@ -545,7 +545,7 @@ func MergeStars(groups ...[][]Star) ([][]Star, error)
 **示例**
 
 ```go
-birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: "female", FixLeap: true}
+birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: iztro.GenderFemale, FixLeap: true}
 major, _ := iztro.GetMajorStar(birth)
 minor, _ := iztro.GetMinorStar(birth)
 

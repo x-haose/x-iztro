@@ -68,6 +68,21 @@ own copy.
 `get_decadals_and_ages` takes a Soul palace index and a Five Elements class directly, so you do not
 have to assemble a full set of birth data first; its capability is a superset of iztro's.
 
+### The leap-month arguments of the lunar entry point
+
+`byLunar(lunarDateStr, timeIndex, gender, isLeapMonth?, fixLeap?, language?)` describes the leap
+month with two adjacent booleans: swap them and nothing complains while the chart silently shifts by a
+month — and `fixLeap` only means anything when the input is a leap month in the first place. x-iztro
+folds the pair into one three-way value: Rust `LeapMonth::{NotLeap, Leap, LeapFixed}`, Go
+`NotLeapMonth / LeapMonthKeep / LeapMonthFixed`; Python keeps the two booleans but makes them
+keyword-only (`is_leap_month=`, `fix_leap=`). The JSON wire protocol of the bindings still carries the
+`isLeapMonth`/`fixLeap` keys, as in iztro. The solar entry point's `fixLeap` is a single boolean with
+nothing to swap against, so it stays as it is.
+
+Likewise, Go makes `gender` and `language` the named string types `Gender` / `Language`
+(`GenderFemale`, `LanguageZhCN`): literals still work, but a stray string variable in the wrong
+position is rejected at compile time.
+
 ### Plugins
 
 iztro's `loadPlugin` / `use(plugin)` attaches functions to the astrolabe object at run time — a

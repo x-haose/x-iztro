@@ -6,12 +6,12 @@ package iztro
 // 这两个函数用于手上只有标识（或只有某种语言的译名）、需要换算的场合。
 //
 // 覆盖星耀、宫位（含身宫、来因宫）、天干、地支、亮度、四化、五行局、性别、
-// 生肖、时辰、星座、运限层级共十一类，合计 260 个标识。
+// 生肖、时辰、星座、运限层级共十二类，合计 260 个标识。
 
 // Translate 把标识译成指定语言的文本；未知标识返回空串。
 //
 // key 为语言无关标识（keys.go 常量），如 StarZiweiMaj、PalaceSoul、StemJia。
-func Translate(key, language string) (string, error) {
+func Translate(key string, language Language) (string, error) {
 	var out string
 	return out, utilQuery(map[string]any{
 		"kind":     "translate",

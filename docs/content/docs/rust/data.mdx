@@ -38,6 +38,7 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+| `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
 
@@ -68,7 +69,7 @@ Some(Current)
 | `Palace` | `index() -> usize` / `from_index(usize)` | 宫名在 `PALACES` 里的序号，命宫 = 0、父母 = 1 …… 兄弟 = 11。**不是盘上位置**；`from_index` 对 12 取模、不返回 `Option` |
 | `FiveElementsClass` | `value() -> usize` | 局数：水二局 2、木三局 3、金四局 4、土五局 5、火六局 6 |
 | `Gender` | `yin_yang() -> YinYang` | 男为阳、女为阴，决定大限与长生十二神的顺逆 |
-| `Language` | `as_code() -> &'static str` / `from_code(&str)` | 语言代码 `zh-CN` 等；`from_code` 大小写不敏感 |
+| `Language` | `as_code() -> &'static str` / `from_code(&str)` | 语言代码 `zh-CN` 等；`from_code` 大小写不敏感，连字符与下划线等价（`zh_cn` 也接受） |
 | `YinYang` | `as_str() -> &'static str` | 「阳」/「阴」，不参与国际化 |
 | `FiveElements` | `as_str() -> &'static str` | 「木」「金」「水」「火」「土」，不参与国际化 |
 
@@ -106,6 +107,7 @@ ja-JP Some(ZhCN)
 | `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
 | `Gender` | `Male` `Female` |
 | `Language` | `ZhCN` `ZhTW` `EnUS` `JaJP` `KoKR` `ViVN` |
+| `LeapMonth` | `NotLeap` `Leap` `LeapFixed`——`by_lunar` 的闰月处理方式；另有 `from_flags(is_leap_month, fix_leap)`、`is_leap_month()`、`fix_leap()` 与 iztro 风格的两个布尔互换 |
 | `Palace` | 按 `index()` 序：`Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 

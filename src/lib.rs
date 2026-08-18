@@ -96,20 +96,11 @@ pub fn by_lunar_json(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError> {
-    let astrolabe = by_lunar(
-        lunar_date,
-        time_index,
-        gender,
-        is_leap_month,
-        fix_leap,
-        language,
-        config,
-    )?;
+    let astrolabe = by_lunar(lunar_date, time_index, gender, leap, language, config)?;
     Ok(serde_json::to_string(&astrolabe.to_dto())
         .expect("DTO 只含字符串、数值与容器，序列化不会失败"))
 }

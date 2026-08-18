@@ -15,8 +15,8 @@ type StarBirth struct {
 	SolarDate string
 	// TimeIndex 为时辰索引 0-12（0 为早子时，12 为晚子时）
 	TimeIndex uint8
-	// Gender 为性别，"male" 或 "female"
-	Gender string
+	// Gender 为性别（GenderMale / GenderFemale）
+	Gender Gender
 	// FixLeap 表示是否调整农历闰月（该月非闰月则不生效）
 	FixLeap bool
 	// Language 为星耀名称的输出语言，留空取 zh-CN
@@ -300,7 +300,7 @@ func GetYearly12(birth StarBirth) (Yearly12, error) {
 
 // GetHoroscopeStar 取流耀在十二宫的分布：魁钺昌曲禄羊陀马鸾喜，
 // 流年层级另加年解。scope 决定星名，如大限为运魁、流年为流魁。
-func GetHoroscopeStar(stemKey, branchKey, scope, language string) ([][]Star, error) {
+func GetHoroscopeStar(stemKey, branchKey, scope string, language Language) ([][]Star, error) {
 	var out [][]Star
 	return out, utilQuery(map[string]any{
 		"kind":      "getHoroscopeStar",
@@ -442,7 +442,7 @@ func GetNianjieIndex(branchKey string) (int, error) {
 // 二者夹迁移宫：通行派天伤居仆役位、天使居疾厄位；中州派在阴男阳女
 // （生年地支阴阳与性别阴阳不同）时二者对调，由 config.Algorithm 决定走哪一派。
 // config 为 nil 时取默认配置。
-func GetTianshiTianshangIndex(gender, branchKey string, soulIndex int, config *Config) (TianshiTianshangIndex, error) {
+func GetTianshiTianshangIndex(gender Gender, branchKey string, soulIndex int, config *Config) (TianshiTianshangIndex, error) {
 	var out TianshiTianshangIndex
 	return out, utilQuery(map[string]any{
 		"kind":      "getTianshiTianshangIndex",

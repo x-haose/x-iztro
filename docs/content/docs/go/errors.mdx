@@ -37,7 +37,7 @@ func (e *Error) Unwrap() error   // 返回本类别的哨兵，供 errors.Is 匹
 ### 两种判断姿势
 
 ```go
-_, err := iztro.BySolar("2000-2-30", 2, "female", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-2-30", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 
 // 按类别分支：errors.Is 对哨兵匹配
 fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
@@ -93,7 +93,7 @@ iztro: invalid solar date '2000-2-30': day is out of range for that month
 
 ```go
 for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
-    if _, err := iztro.BySolar(date, 2, "female", true, "zh-CN", nil); err != nil {
+    if _, err := iztro.BySolar(date, 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil); err != nil {
         fmt.Println(err)
     }
 }
@@ -121,7 +121,7 @@ iztro: invalid solar date '1500-1-1': year must be within 1583-9999
 </Accordion>
 <Accordion title="农历闰月的校验">
 `ByLunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
-`isLeapMonth` 传 `true` 但那年那月无闰月时不报错，参数被静默忽略。
+`leap` 标为闰月但那年那月无闰月时不报错，按普通月处理；`leap` 不是三个 `LeapMonth` 取值之一时返回 `ErrInvalidArgument`。
 </Accordion>
 </Accordions>
 
@@ -134,7 +134,7 @@ iztro: invalid solar date '1500-1-1': year must be within 1583-9999
 **示例**
 
 ```go
-_, err := iztro.BySolar("2000-8-16", 13, "female", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-8-16", 13, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 fmt.Println(err)
 ```
 
@@ -162,13 +162,14 @@ iztro: time_index must be 0-12, got 13
 | `gender` | `"male"` / `"female"`（`GenderMale` / `GenderFemale` 常量） | `invalid gender 'x': expected 'male' or 'female'` |
 | `language` | 六个语言代码（`Language*` 常量） | `invalid language 'xx': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
 
-语言代码大小写不敏感，`"zh-cn"` 与 `"zh-CN"` 都接受。
-用 `GenderMale`、`LanguageZhCN` 这些常量传参可以在写错的当场被编译器与 IDE 挡下。
+语言代码大小写不敏感，连字符与下划线等价（`"zh-cn"`、`"zh_cn"` 都接受）。
+`gender` 与 `language` 是具名类型 `Gender` / `Language`，把别的字符串变量误传进来会在编译期被挡下；
+字面量拼错则在运行期落到这一类错误。
 
 **示例**
 
 ```go
-_, err := iztro.BySolar("2000-8-16", 2, "x", true, "zh-CN", nil)
+_, err := iztro.BySolar("2000-8-16", 2, "x", true, iztro.LanguageZhCN, nil)
 
 fmt.Println(err)
 fmt.Println(errors.Is(err, iztro.ErrInvalidArgument))
@@ -234,7 +235,7 @@ iztro: unknown star key 'nosuch'
 rows := []struct {
     Date      string
     TimeIndex uint8
-    Gender    string
+    Gender    iztro.Gender
 }{
     {"2000-8-16", 2, "female"},
     {"2000-2-30", 2, "female"},
@@ -245,7 +246,7 @@ var charts []*iztro.Astrolabe
 var failed []string
 
 for _, r := range rows {
-    chart, err := iztro.BySolar(r.Date, r.TimeIndex, r.Gender, true, "zh-CN", nil)
+    chart, err := iztro.BySolar(r.Date, r.TimeIndex, r.Gender, true, iztro.LanguageZhCN, nil)
     if err != nil {
         var e *iztro.Error
         errors.As(err, &e)
@@ -267,8 +268,8 @@ fmt.Println(len(charts), failed)
 **包装成自己的错误**
 
 ```go
-build := func(date string, ti uint8, gender string) (*iztro.Astrolabe, error) {
-    chart, err := iztro.BySolar(date, ti, gender, true, "zh-CN", nil)
+build := func(date string, ti uint8, gender iztro.Gender) (*iztro.Astrolabe, error) {
+    chart, err := iztro.BySolar(date, ti, gender, true, iztro.LanguageZhCN, nil)
     if err != nil {
         return nil, fmt.Errorf("排盘失败: %w", err)
     }

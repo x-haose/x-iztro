@@ -25,7 +25,7 @@ animals — not a defect, a difference of school.
 **Signature**
 
 ```go
-func GetZodiacBySolarDate(solarDate string, language string, config *Config) (string, error)
+func GetZodiacBySolarDate(solarDate string, language Language, config *Config) (string, error)
 ```
 
 **Parameters**
@@ -33,7 +33,7 @@ func GetZodiacBySolarDate(solarDate string, language string, config *Config) (st
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D` |
-| `language` | `string` | Yes | — | Output language |
+| `language` | `Language` | Yes | — | Chart language |
 | `config` | `*Config` | Yes | — | Pass `nil` for the defaults; only `YearDivide` affects the result |
 
 **Return value** The animal name translated into the language.
@@ -41,7 +41,7 @@ func GetZodiacBySolarDate(solarDate string, language string, config *Config) (st
 **Example**
 
 ```go
-zodiac, _ := iztro.GetZodiacBySolarDate("2000-8-16", "en-US", nil)
+zodiac, _ := iztro.GetZodiacBySolarDate("2000-8-16", iztro.LanguageEnUS, nil)
 fmt.Println(zodiac)
 ```
 
@@ -72,8 +72,8 @@ same result for the same day.
 **Signature**
 
 ```go
-func GetSignBySolarDate(solarDate string, language string) (string, error)
-func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (string, error)
+func GetSignBySolarDate(solarDate string, language Language) (string, error)
+func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language Language) (string, error)
 ```
 
 **Parameters**
@@ -82,7 +82,7 @@ func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (st
 | --- | --- | --- | --- | --- |
 | `solarDate` / `lunarDate` | `string` | Yes | — | The date in `YYYY-M-D` |
 | `isLeapMonth` | `bool` | Yes | — | Lunar version only: whether that month is a leap month |
-| `language` | `string` | Yes | — | Output language |
+| `language` | `Language` | Yes | — | Chart language |
 
 There is no `config` parameter — zodiac signs are unaffected by any setting.
 
@@ -91,8 +91,8 @@ There is no `config` parameter — zodiac signs are unaffected by any setting.
 **Example**
 
 ```go
-s1, _ := iztro.GetSignBySolarDate("2000-8-16", "en-US")
-s2, _ := iztro.GetSignByLunarDate("2000-7-17", false, "en-US")
+s1, _ := iztro.GetSignBySolarDate("2000-8-16", iztro.LanguageEnUS)
+s2, _ := iztro.GetSignByLunarDate("2000-7-17", false, iztro.LanguageEnUS)
 
 fmt.Println(s1, s2)
 ```
@@ -117,11 +117,11 @@ and this function already handles that step.
 
 ```go
 func GetMajorStarBySolarDate(
-    solarDate string, timeIndex uint8, fixLeap bool, language string, config *Config,
+    solarDate string, timeIndex uint8, fixLeap bool, language Language, config *Config,
 ) (string, error)
 
 func GetMajorStarByLunarDate(
-    lunarDate string, timeIndex uint8, isLeapMonth bool, fixLeap bool, language string, config *Config,
+    lunarDate string, timeIndex uint8, leap LeapMonth, language Language, config *Config,
 ) (string, error)
 ```
 
@@ -131,9 +131,9 @@ func GetMajorStarByLunarDate(
 | --- | --- | --- | --- | --- |
 | `solarDate` / `lunarDate` | `string` | Yes | — | The date |
 | `timeIndex` | `uint8` | Yes | — | Hour index 0–12; the Soul palace is fixed jointly by month and hour |
-| `isLeapMonth` | `bool` | Yes | — | Lunar version only |
-| `fixLeap` | `bool` | Yes | — | Whether to correct for leap months |
-| `language` | `string` | Yes | — | Output language |
+| `fixLeap` | `bool` | Yes | — | Solar version only: whether a solar date falling after the 15th of a leap month is treated as the next month |
+| `leap` | `LeapMonth` | Yes | — | Lunar version only: `NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`, see [`ByLunar`](/en/docs/go/astro#bylunar) |
+| `language` | `Language` | Yes | — | Chart language |
 | `config` | `*Config` | Yes | — | Pass `nil` for the defaults |
 
 **Return value** Several major stars separated by commas; the opposite palace's major stars when the
@@ -142,8 +142,8 @@ Soul palace is empty.
 **Example**
 
 ```go
-en, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, "en-US", nil)
-zh, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, "zh-CN", nil)
+en, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageEnUS, nil)
+zh, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageZhCN, nil)
 
 fmt.Println(en, zh)
 ```

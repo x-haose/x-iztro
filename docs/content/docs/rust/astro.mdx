@@ -118,8 +118,7 @@ pub fn by_lunar(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<Astrolabe, IztroError>
@@ -127,12 +126,12 @@ pub fn by_lunar(
 
 **参数**
 
-除以下一项外，其余与 `by_solar` 相同。
+除以下两项外，其余与 `by_solar` 相同；`by_solar` 的 `fix_leap` 在这里并入 `leap`。
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `lunar_date` | `&str` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
-| `is_leap_month` | `bool` | 是 | — | 该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
+| `leap` | `LeapMonth` | 是 | — | `NotLeap` 非闰月；`Leap` 闰月、按闰月本身排；`LeapFixed` 闰月且十五之后视作次月（iztro `fixLeap`）。标为闰月但那年那月没有闰月时按普通月处理 |
 
 **返回值**　同 `by_solar`。
 
@@ -141,7 +140,7 @@ pub fn by_lunar(
 ```rust
 use x_iztro::*;
 
-let a = by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::ZhCN, Config::default())?;
+let a = by_lunar("2000-7-17", 2, Gender::Female, LeapMonth::NotLeap, Language::ZhCN, Config::default())?;
 let b = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
 
 assert_eq!(a.solar_date, b.solar_date);
@@ -156,9 +155,10 @@ println!("{}", a.solar_date);
 
 **边界与陷阱**
 
-<Callout type="warn" title="is_leap_month 的静默失效是刻意的">
-传 `true` 但那个月并非闰月时，参数被静默忽略，不报错。
+<Callout type="warn" title="标错闰月的静默失效是刻意的">
+`leap` 标为闰月但那个月并非闰月时，按普通月排盘，不报错（与 iztro 一致）。
 如果需要严格校验，调用前先自行确认该年该月确实有闰月。
+`LeapMonth::from_flags(is_leap_month, fix_leap)` 可从 iztro 风格的两个布尔换算。
 </Callout>
 
 ---
@@ -254,8 +254,7 @@ pub fn by_lunar_json(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError>
@@ -331,7 +330,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 let h = get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN)?;
 
 println!("大限宫位索引 {}，流年干支 {:?}{:?}",
-    h.decadal.index, h.yearly.base.heavenly_stem, h.yearly.base.earthly_branch);
+    h.decadal.index, h.yearly.heavenly_stem, h.yearly.earthly_branch);
 ```
 
 **输出**

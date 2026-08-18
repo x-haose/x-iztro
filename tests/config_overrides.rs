@@ -172,7 +172,7 @@ fn test_custom_mutagens_apply_to_horoscope() {
     let horoscope = get_horoscope(&chart, "2030-6-1", 0, Language::ZhCN).unwrap();
 
     assert_eq!(
-        horoscope.yearly.base.mutagen,
+        horoscope.yearly.mutagen,
         vec![
             StarKey::TaiyangMaj,
             StarKey::WuquMaj,
