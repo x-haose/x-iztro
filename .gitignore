@@ -17,3 +17,8 @@ docs/plan/
 
 # Go 示例编译产物
 examples/go/x-iztro-example
+
+# AI 代理工具的自动生成配置（ECC/Codex 等），项目约定只维护 CLAUDE.md
+.claude/
+.codex/
+.agents/
