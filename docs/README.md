@@ -1,7 +1,7 @@
 # x-iztro 文档站
 
 基于 [Fumadocs](https://fumadocs.dev)（Next.js App Router）构建，中英双语，
-部署到 Cloudflare Workers。
+部署在 Vercel：<https://ziwei.x-hoase.com>。
 
 ## 安装
 
@@ -21,15 +21,11 @@ npm run types:check  # 类型检查
 npm run build        # 生产构建
 ```
 
-## 部署到 Cloudflare
+## 部署
 
-```bash
-npx wrangler login   # 首次
-npm run preview      # 本地跑一次 Workers 运行时
-npm run deploy       # 部署
-```
-
-`wrangler.jsonc` 里的 `name` 决定 `*.workers.dev` 子域，自定义域在 Cloudflare 控制台绑定。
+Vercel 项目连着本仓库，Root Directory 为 `docs`：推到 `main` 即发布正式站，
+其它分支与 PR 各得一个预览地址。站点绝对地址默认取 `lib/site.ts` 里的正式域名，
+预览环境可用 `NEXT_PUBLIC_SITE_URL` 覆盖。
 
 ## 目录
 

@@ -28,11 +28,8 @@ const toMarkdown = [
  * 直接改写会把后缀带进 slug 而查不到页面，故先剥掉再改写。
  *
  * 其余请求交给语言协商中间件。
- *
- * 以 `middleware.ts` 而非 `proxy.ts` 提供：Cloudflare 上的 OpenNext 只支持 Edge Middleware，
- * `proxy.ts` 会被编译成 Node.js 中间件而无法部署。
  */
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (isMarkdownPreferred(request)) {
     const path = request.nextUrl.pathname.replace(/\.mdx?$/, '');
     for (const rule of toMarkdown) {

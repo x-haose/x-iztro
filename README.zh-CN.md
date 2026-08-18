@@ -239,13 +239,12 @@ cargo test --release --test golden_tier3 -- --ignored    # Tier 3 全量，约 2
 
 ## 文档
 
-三种语言各自的 API 参考——每个函数、类型、方法都有独立条目，附真实运行输出与
-边界说明——在 `docs/` 下，是一个中英双语的 Fumadocs 站点：
+**<https://ziwei.x-hoase.com>** —— 中英双语文档站：从零开始的指南、数据模型背后的斗数概念、
+三种语言各自的 API 参考（每个函数、类型、方法都有独立条目，附真实运行输出与边界说明）。
+给 AI 读的端点：[`/llms.txt`](https://ziwei.x-hoase.com/llms.txt)、
+[`/llms-full.txt`](https://ziwei.x-hoase.com/llms-full.txt)，以及任意页面追加 `.md`。
 
-```bash
-cd docs && npm ci && npm run dev
-```
-
+站点源码在 `docs/` 下（`cd docs && npm ci && npm run dev` 本地运行）。
 Rust 的 API 文档同时发布在 [docs.rs/x-iztro](https://docs.rs/x-iztro)。
 三种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。
 

@@ -1,14 +1,19 @@
 import { i18n, type Language } from '@/lib/i18n';
 
+/** 正式站域名。 */
+const PRODUCTION_URL = 'https://ziwei.x-hoase.com';
+
 /**
  * 站点绝对地址。
  *
  * `robots.txt`、`sitemap.xml` 与页面 `<link rel="alternate">` 都要绝对 URL，
  * 而这些内容在构建期生成，拿不到运行期的请求主机名。
- * 部署时用 `NEXT_PUBLIC_SITE_URL` 指定；本地开发回落到 dev server 地址。
+ * 生产构建取正式域名，本地开发回落到 dev server 地址；
+ * 预览部署等场合可用 `NEXT_PUBLIC_SITE_URL` 覆盖。
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : PRODUCTION_URL)
 ).replace(/\/$/, '');
 
 /**

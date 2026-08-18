@@ -255,13 +255,13 @@ Custom 四化 and brightness tables can be supplied alongside them.
 
 ## Documentation
 
-Per-language API references — every function, type and method with real output
-and edge-case notes — live in `docs/`, a Fumadocs site in Chinese and English:
+**<https://ziwei.x-hoase.com>** — the documentation site, in Chinese and English: a guide
+that starts from zero, the Zi Wei concepts behind the data model, and per-language API
+references where every function, type and method has its own entry with real output and
+edge-case notes. LLM-friendly endpoints: [`/llms.txt`](https://ziwei.x-hoase.com/llms.txt),
+[`/llms-full.txt`](https://ziwei.x-hoase.com/llms-full.txt), and any page with `.md` appended.
 
-```bash
-cd docs && npm ci && npm run dev
-```
-
+The site lives in `docs/` (`cd docs && npm ci && npm run dev` to run it locally).
 Rust API docs are also published at [docs.rs/x-iztro](https://docs.rs/x-iztro).
 Runnable projects for all three languages are under `examples/`.
 
