@@ -4,6 +4,8 @@
 #![allow(dead_code)]
 
 use serde_json::Value;
+use sha2::{Digest, Sha256};
+use std::fs;
 use x_iztro::data::types::*;
 use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
@@ -16,11 +18,16 @@ use x_iztro::{by_solar, get_horoscope};
 
 const LANG: Language = Language::ZhCN;
 
-/// 星耀条目：`名:亮度:四化`，亮度/四化无则为空串。
+/// 哈希型金标取规范化串 SHA-256 的前 32 个 hex 字符（与各 JS 生成器一致）。
+const HASH_LEN: usize = 32;
+
+/// 星耀条目：`名:类型:范围:亮度:四化`，亮度/四化无则为空串。
 fn star_entry(s: &Star) -> String {
     format!(
-        "{}:{}:{}",
+        "{}:{}:{}:{}:{}",
         s.name,
+        s.star_type.as_key(),
+        s.scope.as_key(),
         s.brightness
             .map(|b| translate_brightness(b, LANG))
             .unwrap_or(""),
@@ -34,7 +41,12 @@ fn star_entry(s: &Star) -> String {
 /// 逐字节一致的字符串经 SHA-256 后即为 tier3 金标哈希。
 ///
 /// 格式：顶层字段 '|' 连接，之后每宫一段，段间 '#' 连接；
+/// 星耀条目为 `名:类型:范围:亮度:四化`，主星、辅星、杂耀同格式；
 /// 辅星与杂耀条目按字符串排序，主星保持安放顺序。
+///
+/// 排序等价前提：JS 的 Array.sort() 按 UTF-16 码元序，此处 sort() 按 UTF-8
+/// 字节序，两者仅在基本多文种平面（BMP）内等价；条目涉及的星名、类型键、
+/// 范围键、亮度、四化全部落在 BMP 内，故双边排序结果一致。
 pub fn canonical_astrolabe(a: &Astrolabe) -> String {
     let top = [
         translate_gender(a.gender, LANG).to_string(),
@@ -60,7 +72,7 @@ pub fn canonical_astrolabe(a: &Astrolabe) -> String {
             let majors: Vec<String> = p.major_stars.iter().map(star_entry).collect();
             let mut minors: Vec<String> = p.minor_stars.iter().map(star_entry).collect();
             minors.sort();
-            let mut adjs: Vec<String> = p.adjective_stars.iter().map(|s| s.name.clone()).collect();
+            let mut adjs: Vec<String> = p.adjective_stars.iter().map(star_entry).collect();
             adjs.sort();
             let ages: Vec<String> = p.ages.iter().map(|x| x.to_string()).collect();
             [
@@ -86,7 +98,7 @@ pub fn canonical_astrolabe(a: &Astrolabe) -> String {
     format!("{}#{}", top, palaces.join("#"))
 }
 
-/// 对照单个运限层级的通用字段（index/name/干支/四化/流耀分布）。
+/// 对照单个运限层级的通用字段（index/name/干支/宫位名序列/四化/流耀分布）。
 fn check_scope(
     label: &str,
     exp: &Value,
@@ -122,6 +134,23 @@ fn check_scope(
     let act_eb = translate_earthly_branch(item.earthly_branch, LANG);
     if act_eb != exp_eb {
         failures.push(format!("{l}: branch expected={exp_eb} actual={act_eb}"));
+    }
+
+    let exp_pn: Vec<&str> = exp["pn"]
+        .as_array()
+        .expect("scope palaceNames missing in golden data")
+        .iter()
+        .map(|v| v.as_str().unwrap())
+        .collect();
+    let act_pn: Vec<&str> = item
+        .palace_names
+        .iter()
+        .map(|p| translate_palace(*p, LANG))
+        .collect();
+    if act_pn != exp_pn {
+        failures.push(format!(
+            "{l}: palace_names expected={exp_pn:?} actual={act_pn:?}"
+        ));
     }
 
     let exp_mutagen: Vec<&str> = exp["m"]
@@ -242,4 +271,87 @@ pub fn check_horoscope_case(case: &Value, config: Config, failures: &mut Vec<Str
             "{case_label}: jiangqian12 expected={exp_jq:?} actual={act_jq:?}"
         ));
     }
+}
+
+/// 规范化串的 SHA-256 前 32 个 hex 字符，即哈希型金标（tier3 / 边界年代 /
+/// Config 开关）CSV 中记录的值。
+pub fn hash_astrolabe(a: &Astrolabe) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(canonical_astrolabe(a).as_bytes());
+    hex::encode(hasher.finalize())[..HASH_LEN].to_string()
+}
+
+/// 对照一个按年切分的哈希 CSV 目录（行格式 `date,ti,g,fl,hash`）。
+///
+/// `dir` 下所有 `year_*.csv` 按文件名排序逐行重算排盘哈希；`run_hint` 是
+/// 数据缺失时提示重新生成的命令，`max_failures` 到达后提前收敛并 panic，
+/// 失败信息带 Rust 侧规范化串以便与生成器 `--inspect` 输出 diff。
+pub fn check_hash_year_csvs(dir: &str, run_hint: &str, max_failures: usize) {
+    let mut entries: Vec<_> = fs::read_dir(dir)
+        .unwrap_or_else(|_| panic!("{dir} missing — run `{run_hint}`"))
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            let name = e.file_name();
+            let name = name.to_string_lossy();
+            name.starts_with("year_") && name.ends_with(".csv")
+        })
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+    assert!(!entries.is_empty(), "No year_*.csv found in {dir}");
+
+    let mut total = 0usize;
+    let mut failures: Vec<String> = Vec::new();
+
+    'outer: for entry in &entries {
+        let path = entry.path();
+        let content = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("Failed to read {}: {}", path.display(), e));
+
+        for line in content.lines() {
+            let f: Vec<&str> = line.split(',').collect();
+            assert!(f.len() == 5, "Bad line in {}: {line}", path.display());
+            let (date, ti, g, fl, expected) = (f[0], f[1], f[2], f[3], f[4]);
+            let gender = if g == "0" {
+                Gender::Male
+            } else {
+                Gender::Female
+            };
+
+            let astrolabe = by_solar(
+                date,
+                ti.parse().unwrap(),
+                gender,
+                fl == "1",
+                LANG,
+                Config::default(),
+            )
+            .unwrap();
+            total += 1;
+
+            if hash_astrolabe(&astrolabe) != expected {
+                failures.push(format!(
+                    "{date} ti={ti} g={g} fl={fl}: hash mismatch\n  rust canonical: {}",
+                    canonical_astrolabe(&astrolabe),
+                ));
+                if failures.len() >= max_failures {
+                    break 'outer;
+                }
+            }
+        }
+        eprint!(
+            "\r  {} checked ({} total)",
+            path.file_name().unwrap().to_string_lossy(),
+            total
+        );
+    }
+    eprintln!();
+
+    assert!(
+        failures.is_empty(),
+        "\n\n{dir} FAILED: {} mismatch(es) (showing up to {}):\n\n{}\n",
+        failures.len(),
+        max_failures,
+        failures.join("\n\n"),
+    );
+    eprintln!("{dir}: all {total} cases match JS hashes!");
 }

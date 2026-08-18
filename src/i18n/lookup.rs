@@ -1,11 +1,15 @@
 //! 标识与译名的双向查找
 //!
-//! 同层的 `translate_*` 按类目分开收强类型枚举；本模块把十一类标识合成一张表，
+//! 同层的 `translate_*` 按类目分开收强类型枚举；本模块把十二类标识合成一张表，
 //! 收字符串标识出译名（对应 iztro 的 `t`），或收任意语言的译名反查标识
 //! （对应 iztro 的 `kot`）。绑定层与不知道标识属于哪一类的调用方走这里。
 
-use crate::data::constants::{CHINESE_TIME, EARTHLY_BRANCHES, HEAVENLY_STEMS, SIGNS, ZODIAC};
-use crate::data::stars::{ALL_STARS, StarKey};
+use std::sync::LazyLock;
+
+use crate::data::constants::{
+    CHINESE_TIME, EARTHLY_BRANCHES, FIVE_ELEMENTS_CLASSES, HEAVENLY_STEMS, SIGNS, ZODIAC,
+};
+use crate::data::stars::{ALL_STARS, MUTAGEN, StarKey};
 use crate::data::types::*;
 
 use super::{
@@ -93,22 +97,10 @@ const BRIGHTNESSES: [Brightness; 7] = [
     Brightness::Xian,
 ];
 
-/// 四化标识
-const MUTAGENS: [Mutagen; 4] = [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji];
-
-/// 五行局标识
-const FIVE_ELEMENTS_CLASSES: [FiveElementsClass; 5] = [
-    FiveElementsClass::Water2nd,
-    FiveElementsClass::Wood3rd,
-    FiveElementsClass::Metal4th,
-    FiveElementsClass::Earth5th,
-    FiveElementsClass::Fire6th,
-];
-
 /// 标识译成指定语言的文本
 ///
 /// 覆盖星耀、宫位（含身宫来因宫）、天干、地支、亮度、四化、五行局、性别、
-/// 生肖、时辰、星座、运限层级十一类。未知标识返回 `None`。
+/// 生肖、时辰、星座、运限层级十二类。未知标识返回 `None`。
 pub fn translate_key(key: &str, lang: Language) -> Option<&'static str> {
     if let Some(star) = StarKey::from_key(key) {
         return Some(translate_star(star, lang));
@@ -157,6 +149,15 @@ pub fn translate_key(key: &str, lang: Language) -> Option<&'static str> {
 /// 顺序复刻 iztro 各语言翻译文件的合并次序（`common.json`、五行局、天干、地支、
 /// 亮度、四化、星耀、宫位、性别），[`key_of`] 据此决定同形译名取哪一个标识。
 pub fn all_keys() -> Vec<&'static str> {
+    ALL_KEYS.clone()
+}
+
+/// [`all_keys`] 的结果，首次反查时构建一次。
+///
+/// 反查要对六种语言各扫一遍整表，每次现算会把这张两百多项的表重复分配。
+static ALL_KEYS: LazyLock<Vec<&'static str>> = LazyLock::new(build_all_keys);
+
+fn build_all_keys() -> Vec<&'static str> {
     let mut keys: Vec<&'static str> = Vec::with_capacity(260);
 
     // common.json：运限层级、生肖、时辰、星座
@@ -169,7 +170,7 @@ pub fn all_keys() -> Vec<&'static str> {
     keys.extend(HEAVENLY_STEMS.iter().map(|s| s.as_key()));
     keys.extend(EARTHLY_BRANCHES.iter().map(|b| b.as_key()));
     keys.extend(BRIGHTNESSES.iter().map(|b| b.as_key()));
-    keys.extend(MUTAGENS.iter().map(|m| m.as_key()));
+    keys.extend(MUTAGEN.iter().map(|m| m.as_key()));
     keys.extend(ALL_STARS.iter().map(|s| s.as_key()));
     keys.extend(LOOKUP_PALACE_KEYS);
     keys.extend(GENDERS.iter().map(|(k, _)| *k));
@@ -192,8 +193,9 @@ const LOOKUP_LANGS: [Language; 6] = [
 
 /// 由任意语言的译名反查标识
 ///
-/// 逐语言、每种语言内逐标识比对，取先命中者；顺序见 [`LOOKUP_LANGS`] 与
-/// [`all_keys`]，与 iztro 的 `kot` 逐例一致。找不到返回 `None`。
+/// 逐语言、每种语言内逐标识比对，取先命中者：语言按 en-US、ja-JP、ko-KR、
+/// zh-CN、zh-TW、vi-VN 扫描，语言内的标识顺序见 [`all_keys`]，与 iztro 的
+/// `kot` 逐例一致。找不到返回 `None`。
 ///
 /// 同一文本在不同类目下同形时（如 en-US 的 `horse` 既是生肖马也是天马），
 /// 用 [`key_of_in`] 按标识名限定类目。
@@ -211,9 +213,9 @@ pub fn key_of_in(text: &str, key_filter: &str) -> Option<&'static str> {
 }
 
 fn key_of_matching(text: &str, accept: impl Fn(&str) -> bool + Copy) -> Option<&'static str> {
-    let keys = all_keys();
     LOOKUP_LANGS.iter().find_map(|lang| {
-        keys.iter()
+        ALL_KEYS
+            .iter()
             .copied()
             .find(|key| accept(key) && translate_key(key, *lang) == Some(text))
     })

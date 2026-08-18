@@ -23,8 +23,9 @@ type StarBirth struct {
 	Language string
 	// Config 为排盘配置，nil 取默认
 	Config *Config
-	// FromStem 与 FromBranch 同时给出时改用该干支起五行局（中州派地盘、人盘）
-	FromStem   string
+	// FromStem 为起五行局的天干；与 FromBranch 同时给出时改用该干支起局（中州派地盘、人盘）
+	FromStem string
+	// FromBranch 为起五行局的地支；与 FromStem 同时给出时才生效
 	FromBranch string
 }
 

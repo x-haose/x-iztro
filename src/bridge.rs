@@ -14,7 +14,8 @@ use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::heavenly_stems::get_heavenly_stem_info;
 use crate::data::stars::{STARS_WITH_INFO, StarKey, get_star_info};
 use crate::data::types::*;
-use crate::dto::parse_config_json;
+use crate::dto::parse_config_value;
+use crate::error::BridgeError;
 use crate::i18n::lookup::{key_of, key_of_in, translate_key};
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
@@ -181,26 +182,32 @@ fn default_max() -> i32 {
 // 解析
 // ============================================================
 
-fn parse_gender(s: &str) -> Result<Gender, String> {
+/// DTO 序列化失败只可能源于库内部缺陷（DTO 全是可序列化的普通结构），
+/// 归为 `internal`。
+fn serialize_failed(e: serde_json::Error) -> BridgeError {
+    BridgeError::internal(format!("failed to serialize result: {e}"))
+}
+
+fn parse_gender(s: &str) -> Result<Gender, BridgeError> {
     match s.to_ascii_lowercase().as_str() {
         "male" => Ok(Gender::Male),
         "female" => Ok(Gender::Female),
-        _ => Err(format!(
-            "Invalid gender '{s}'. Expected 'male' or 'female'."
-        )),
+        _ => Err(BridgeError::invalid_argument(format!(
+            "invalid gender '{s}': expected 'male' or 'female'"
+        ))),
     }
 }
 
-fn parse_language(s: &str) -> Result<Language, String> {
+fn parse_language(s: &str) -> Result<Language, BridgeError> {
     Language::from_code(s).ok_or_else(|| {
-        format!(
-            "Invalid language '{s}'. Expected one of: zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN."
-        )
+        BridgeError::invalid_argument(format!(
+            "invalid language '{s}': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN"
+        ))
     })
 }
 
 /// 纯计算的查询与输出语言无关，允许省略 language
-fn parse_language_or_default(s: &str) -> Result<Language, String> {
+fn parse_language_or_default(s: &str) -> Result<Language, BridgeError> {
     if s.is_empty() {
         Ok(Language::ZhCN)
     } else {
@@ -208,45 +215,51 @@ fn parse_language_or_default(s: &str) -> Result<Language, String> {
     }
 }
 
-fn parse_config(v: &Option<Value>) -> Result<Config, String> {
+fn parse_config(v: &Option<Value>) -> Result<Config, BridgeError> {
     match v {
         None => Ok(Config::default()),
         Some(Value::Null) => Ok(Config::default()),
-        Some(value) => parse_config_json(Some(&value.to_string())),
+        Some(value) => parse_config_value(value),
     }
 }
 
-fn parse_star_key(key: &str) -> Result<StarKey, String> {
-    StarKey::from_key(key).ok_or_else(|| format!("Unknown star key '{key}'."))
+fn parse_star_key(key: &str) -> Result<StarKey, BridgeError> {
+    StarKey::from_key(key)
+        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown star key '{key}'")))
 }
 
-fn parse_stem_key(key: &str) -> Result<HeavenlyStem, String> {
-    HeavenlyStem::from_key(key).ok_or_else(|| format!("Unknown heavenly stem key '{key}'."))
+fn parse_stem_key(key: &str) -> Result<HeavenlyStem, BridgeError> {
+    HeavenlyStem::from_key(key)
+        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown heavenly stem key '{key}'")))
 }
 
-fn parse_branch_key(key: &str) -> Result<EarthlyBranch, String> {
-    EarthlyBranch::from_key(key).ok_or_else(|| format!("Unknown earthly branch key '{key}'."))
+fn parse_branch_key(key: &str) -> Result<EarthlyBranch, BridgeError> {
+    EarthlyBranch::from_key(key)
+        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown earthly branch key '{key}'")))
 }
 
-fn parse_scope_key(key: &str) -> Result<Scope, String> {
-    Scope::from_key(key).ok_or_else(|| format!("Unknown scope '{key}'."))
+fn parse_scope_key(key: &str) -> Result<Scope, BridgeError> {
+    Scope::from_key(key)
+        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown scope '{key}'")))
 }
 
 /// 解析四柱干支标识：四柱各两项，顺序为年、月、日、时
-fn parse_pillars(pillars: &[Vec<String>]) -> Result<[(HeavenlyStem, EarthlyBranch); 4], String> {
+fn parse_pillars(
+    pillars: &[Vec<String>],
+) -> Result<[(HeavenlyStem, EarthlyBranch); 4], BridgeError> {
     if pillars.len() != 4 {
-        return Err(format!(
-            "pillars must have 4 entries (yearly, monthly, daily, hourly), got {}.",
+        return Err(BridgeError::invalid_argument(format!(
+            "invalid pillars: expected 4 entries (yearly, monthly, daily, hourly), got {}",
             pillars.len()
-        ));
+        )));
     }
     let mut out = [(HeavenlyStem::Jia, EarthlyBranch::Zi); 4];
     for (i, pillar) in pillars.iter().enumerate() {
         if pillar.len() != 2 {
-            return Err(format!(
-                "pillars[{i}] must have 2 entries (stem, branch), got {}.",
+            return Err(BridgeError::invalid_argument(format!(
+                "invalid pillars[{i}]: expected 2 entries (stem, branch), got {}",
                 pillar.len()
-            ));
+            )));
         }
         out[i] = (parse_stem_key(&pillar[0])?, parse_branch_key(&pillar[1])?);
     }
@@ -257,14 +270,24 @@ fn parse_pillars(pillars: &[Vec<String>]) -> Result<[(HeavenlyStem, EarthlyBranc
 fn parse_from(
     stem: &Option<String>,
     branch: &Option<String>,
-) -> Result<Option<(HeavenlyStem, EarthlyBranch)>, String> {
+) -> Result<Option<(HeavenlyStem, EarthlyBranch)>, BridgeError> {
     match (stem, branch) {
         (None, None) => Ok(None),
         (Some(s), Some(b)) => Ok(Some((
-            HeavenlyStem::from_key(s).ok_or_else(|| format!("Invalid fromStem '{s}'."))?,
-            EarthlyBranch::from_key(b).ok_or_else(|| format!("Invalid fromBranch '{b}'."))?,
+            HeavenlyStem::from_key(s).ok_or_else(|| {
+                BridgeError::invalid_argument(format!(
+                    "invalid fromStem '{s}': unknown heavenly stem"
+                ))
+            })?,
+            EarthlyBranch::from_key(b).ok_or_else(|| {
+                BridgeError::invalid_argument(format!(
+                    "invalid fromBranch '{b}': unknown earthly branch"
+                ))
+            })?,
         ))),
-        _ => Err("fromStem and fromBranch must be given together.".to_string()),
+        _ => Err(BridgeError::invalid_argument(
+            "invalid rearrange target: fromStem and fromBranch must be given together",
+        )),
     }
 }
 
@@ -273,7 +296,7 @@ fn apply_rearrange(
     astrolabe: Astrolabe,
     stem: &Option<String>,
     branch: &Option<String>,
-) -> Result<Astrolabe, String> {
+) -> Result<Astrolabe, BridgeError> {
     match parse_from(stem, branch)? {
         None => Ok(astrolabe),
         Some((s, b)) => Ok(astrolabe.rearranged(s, b)),
@@ -285,7 +308,7 @@ fn apply_rearrange(
 // ============================================================
 
 /// 阳历排盘，返回星盘 DTO
-pub fn by_solar(input: &SolarChartInput) -> Result<Value, String> {
+pub fn by_solar(input: &SolarChartInput) -> Result<Value, BridgeError> {
     let astrolabe = crate::by_solar(
         &input.solar_date,
         input.time_index,
@@ -293,15 +316,14 @@ pub fn by_solar(input: &SolarChartInput) -> Result<Value, String> {
         input.fix_leap,
         parse_language(&input.language)?,
         parse_config(&input.config)?,
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
 
-    serde_json::to_value(astrolabe.to_dto()).map_err(|e| e.to_string())
+    serde_json::to_value(astrolabe.to_dto()).map_err(serialize_failed)
 }
 
 /// 农历排盘，返回星盘 DTO
-pub fn by_lunar(input: &LunarChartInput) -> Result<Value, String> {
+pub fn by_lunar(input: &LunarChartInput) -> Result<Value, BridgeError> {
     let astrolabe = crate::by_lunar(
         &input.lunar_date,
         input.time_index,
@@ -310,15 +332,14 @@ pub fn by_lunar(input: &LunarChartInput) -> Result<Value, String> {
         input.fix_leap,
         parse_language(&input.language)?,
         parse_config(&input.config)?,
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
 
-    serde_json::to_value(astrolabe.to_dto()).map_err(|e| e.to_string())
+    serde_json::to_value(astrolabe.to_dto()).map_err(serialize_failed)
 }
 
 /// 运限，返回运限 DTO
-pub fn horoscope(input: &HoroscopeInput) -> Result<Value, String> {
+pub fn horoscope(input: &HoroscopeInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let astrolabe = crate::by_solar(
         &input.solar_date,
@@ -327,17 +348,15 @@ pub fn horoscope(input: &HoroscopeInput) -> Result<Value, String> {
         input.fix_leap,
         language,
         parse_config(&input.config)?,
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
     let horoscope = crate::get_horoscope(
         &astrolabe,
         &input.target_date,
         input.target_time_index,
         language,
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
 
-    serde_json::to_value(horoscope.to_dto(language)).map_err(|e| e.to_string())
+    serde_json::to_value(horoscope.to_dto(language)).map_err(serialize_failed)
 }
 
 // ============================================================
@@ -348,7 +367,7 @@ pub fn horoscope(input: &HoroscopeInput) -> Result<Value, String> {
 ///
 /// 覆盖 iztro 的 `astro` 轻量查询、`astro/palace`、`util`、`star`、`data`、
 /// `i18n` 六组对外函数，以及 x-iztro 自己的 Prompt 生成。
-pub fn query(input: &QueryInput) -> Result<Value, String> {
+pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
     match input.kind.as_str() {
         // ---- 轻量查询：结果按语言翻译 ----
         "zodiacBySolar" | "signBySolar" | "signByLunar" | "majorStarBySolar"
@@ -390,7 +409,9 @@ pub fn query(input: &QueryInput) -> Result<Value, String> {
             key_of_in(&input.text, &input.key_filter)
         })),
 
-        other => Err(format!("Unknown query kind '{other}'.")),
+        other => Err(BridgeError::invalid_argument(format!(
+            "unknown query kind '{other}'"
+        ))),
     }
 }
 
@@ -429,7 +450,7 @@ fn is_star_kind(kind: &str) -> bool {
 }
 
 /// 需要排盘的查询：结果都是按语言翻译的字符串
-fn translated(input: &QueryInput) -> Result<Value, String> {
+fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
 
@@ -475,20 +496,27 @@ fn translated(input: &QueryInput) -> Result<Value, String> {
             crate::get_horoscope(&a, &input.target_date, input.target_time_index, language)
                 .map(|h| crate::horoscope_to_prompt(&a, &h, language))
         }),
-        other => return Err(format!("Unknown query kind '{other}'.")),
+        other => {
+            return Err(BridgeError::invalid_argument(format!(
+                "unknown query kind '{other}'"
+            )));
+        }
     };
 
-    Ok(json!(text.map_err(|e| e.to_string())?))
+    Ok(json!(text?))
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key
-fn util(input: &QueryInput) -> Result<Value, String> {
+fn util(input: &QueryInput) -> Result<Value, BridgeError> {
     let config = parse_config(&input.config)?;
 
     let value = match input.kind.as_str() {
         "fixIndex" => {
             if input.max <= 0 {
-                return Err("max must be positive.".to_string());
+                return Err(BridgeError::invalid_argument(format!(
+                    "invalid max '{}': expected a positive integer",
+                    input.max
+                )));
             }
             json!(crate::utils::fix_index(input.index, input.max))
         }
@@ -497,7 +525,10 @@ fn util(input: &QueryInput) -> Result<Value, String> {
         )),
         "timeToIndex" => {
             if input.hour > 23 {
-                return Err("hour must be 0-23.".to_string());
+                return Err(BridgeError::invalid_argument(format!(
+                    "invalid hour '{}': expected 0-23",
+                    input.hour
+                )));
             }
             json!(crate::utils::time_to_index(input.hour))
         }
@@ -524,7 +555,10 @@ fn util(input: &QueryInput) -> Result<Value, String> {
         ),
         "getSoulAndBody" => {
             if input.time_index > 12 {
-                return Err("timeIndex must be 0-12.".to_string());
+                return Err(BridgeError::invalid_argument(format!(
+                    "invalid timeIndex '{}': expected 0-12",
+                    input.time_index
+                )));
             }
             let r = crate::get_soul_and_body(
                 input.month_index,
@@ -588,14 +622,20 @@ fn util(input: &QueryInput) -> Result<Value, String> {
             parse_pillars(&input.pillars)?,
             parse_language(&input.language)?
         )),
-        other => return Err(format!("Unknown query kind '{other}'.")),
+        other => {
+            return Err(BridgeError::invalid_argument(format!(
+                "unknown query kind '{other}'"
+            )));
+        }
     };
 
     Ok(value)
 }
 
-fn parse_five_elements_class(key: &str) -> Result<FiveElementsClass, String> {
-    FiveElementsClass::from_key(key).ok_or_else(|| format!("Unknown five elements class '{key}'."))
+fn parse_five_elements_class(key: &str) -> Result<FiveElementsClass, BridgeError> {
+    FiveElementsClass::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!("unknown five elements class '{key}'"))
+    })
 }
 
 /// 十二宫星耀 → 每宫的标识与译名
@@ -621,7 +661,7 @@ fn shen_keys(shen: &[StarKey; 12]) -> Value {
 }
 
 /// 安星查询分派
-fn star(input: &QueryInput) -> Result<Value, String> {
+fn star(input: &QueryInput) -> Result<Value, BridgeError> {
     let config = parse_config(&input.config)?;
     let language = parse_language_or_default(&input.language)?;
 
@@ -708,39 +748,37 @@ fn star(input: &QueryInput) -> Result<Value, String> {
         language,
         config: &config,
     };
-    let err = |e: crate::error::IztroError| e.to_string();
-
     let value = match input.kind.as_str() {
         "getStartIndex" => {
-            let r = star_query::get_start_index(&param).map_err(err)?;
+            let r = star_query::get_start_index(&param)?;
             json!({ "ziweiIndex": r.ziwei, "tianfuIndex": r.tianfu })
         }
         "getLuYangTuoMaIndex" => {
-            let r = star_query::get_lu_yang_tuo_ma_index(&param).map_err(err)?;
+            let r = star_query::get_lu_yang_tuo_ma_index(&param)?;
             json!({ "luIndex": r.lu, "yangIndex": r.yang, "tuoIndex": r.tuo, "maIndex": r.ma })
         }
         "getKuiYueIndex" => {
-            let r = star_query::get_kui_yue_index(&param).map_err(err)?;
+            let r = star_query::get_kui_yue_index(&param)?;
             json!({ "kuiIndex": r.kui, "yueIndex": r.yue })
         }
         "getChangQuIndex" => {
-            let r = star_query::get_chang_qu_index(&param).map_err(err)?;
+            let r = star_query::get_chang_qu_index(&param)?;
             json!({ "changIndex": r.chang, "quIndex": r.qu })
         }
         "getKongJieIndex" => {
-            let r = star_query::get_kong_jie_index(&param).map_err(err)?;
+            let r = star_query::get_kong_jie_index(&param)?;
             json!({ "kongIndex": r.kong, "jieIndex": r.jie })
         }
         "getTimelyStarIndex" => {
-            let r = star_query::get_timely_star_index(&param).map_err(err)?;
+            let r = star_query::get_timely_star_index(&param)?;
             json!({ "taifuIndex": r.taifu, "fenggaoIndex": r.fenggao })
         }
         "getLuanXiIndex" => {
-            let r = star_query::get_luan_xi_index(&param).map_err(err)?;
+            let r = star_query::get_luan_xi_index(&param)?;
             json!({ "hongluanIndex": r.hongluan, "tianxiIndex": r.tianxi })
         }
         "getDailyStarIndex" => {
-            let r = star_query::get_daily_star_index(&param).map_err(err)?;
+            let r = star_query::get_daily_star_index(&param)?;
             json!({
                 "santaiIndex": r.santai,
                 "bazuoIndex": r.bazuo,
@@ -749,7 +787,7 @@ fn star(input: &QueryInput) -> Result<Value, String> {
             })
         }
         "getMonthlyStarIndex" => {
-            let r = star_query::get_monthly_star_index(&param).map_err(err)?;
+            let r = star_query::get_monthly_star_index(&param)?;
             json!({
                 "yuejieIndex": r.jieshen,
                 "tianyaoIndex": r.tianyao,
@@ -760,7 +798,7 @@ fn star(input: &QueryInput) -> Result<Value, String> {
             })
         }
         "getYearlyStarIndex" => {
-            let r = star_query::get_yearly_star_index(&param).map_err(err)?;
+            let r = star_query::get_yearly_star_index(&param)?;
             json!({
                 "xianchiIndex": r.xianchi,
                 "huagaiIndex": r.huagai,
@@ -791,16 +829,20 @@ fn star(input: &QueryInput) -> Result<Value, String> {
                 "dahaoAdjIndex": r.dahao,
             })
         }
-        "getMajorStar" => star_groups(&star_query::get_major_stars(&param).map_err(err)?),
-        "getMinorStar" => star_groups(&star_query::get_minor_stars(&param).map_err(err)?),
-        "getAdjectiveStar" => star_groups(&star_query::get_adjective_stars(&param).map_err(err)?),
-        "getChangsheng12" => shen_keys(&star_query::get_changsheng12(&param).map_err(err)?),
-        "getBoShi12" => shen_keys(&star_query::get_boshi12(&param).map_err(err)?),
+        "getMajorStar" => star_groups(&star_query::get_major_stars(&param)?),
+        "getMinorStar" => star_groups(&star_query::get_minor_stars(&param)?),
+        "getAdjectiveStar" => star_groups(&star_query::get_adjective_stars(&param)?),
+        "getChangsheng12" => shen_keys(&star_query::get_changsheng12(&param)?),
+        "getBoShi12" => shen_keys(&star_query::get_boshi12(&param)?),
         "getYearly12" => {
-            let (suiqian12, jiangqian12) = star_query::get_yearly12(&param).map_err(err)?;
+            let (suiqian12, jiangqian12) = star_query::get_yearly12(&param)?;
             json!({ "suiqian12": shen_keys(&suiqian12), "jiangqian12": shen_keys(&jiangqian12) })
         }
-        other => return Err(format!("Unknown query kind '{other}'.")),
+        other => {
+            return Err(BridgeError::invalid_argument(format!(
+                "unknown query kind '{other}'"
+            )));
+        }
     };
 
     Ok(value)
@@ -885,6 +927,11 @@ fn data(kind: &str) -> Value {
             "TIGER_RULE": rule_map(&TIGER_RULE),
             "RAT_RULE": rule_map(&RAT_RULE),
             "MUTAGEN": crate::data::stars::MUTAGEN.iter().map(|m| m.as_key()).collect::<Vec<_>>(),
+            // 五行局标识 → 局数：局数即大限每步的年数，也是紫微星起盘的除数
+            "FIVE_ELEMENTS_CLASS": FIVE_ELEMENTS_CLASSES
+                .iter()
+                .map(|c| (c.as_key().to_string(), json!(*c as u8)))
+                .collect::<serde_json::Map<_, _>>(),
         }),
     }
 }

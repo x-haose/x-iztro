@@ -1,7 +1,7 @@
 //! 不需要完整星盘的轻量查询。
 //!
 //! 对齐 iztro `astro` 模块中那几个「只取一个结果」的函数：生肖、星座、命宫主星。
-//! 实现上复用排盘主流程再取字段，以保证与 [`by_solar`] / [`by_lunar`] 的结果永远一致。
+//! 实现上复用排盘主流程再取字段，以保证与 [`crate::by_solar`] / [`crate::by_lunar`] 的结果永远一致。
 
 use crate::astro::builder::{by_lunar, by_solar};
 use crate::data::types::*;

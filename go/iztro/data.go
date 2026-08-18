@@ -73,6 +73,9 @@ type Constants struct {
 	RatRule map[string]string `json:"RAT_RULE"`
 	// Mutagen 为四化顺序：禄、权、科、忌
 	Mutagen []string `json:"MUTAGEN"`
+	// FiveElementsClass 为五行局标识到局数的映射；
+	// 局数即大限每步的年数，也是紫微星起盘的除数
+	FiveElementsClass map[string]int `json:"FIVE_ELEMENTS_CLASS"`
 }
 
 // StarsInfo 取星耀基础信息表：十四主星与文昌、文曲、火星、铃星、擎羊、陀罗共二十颗。

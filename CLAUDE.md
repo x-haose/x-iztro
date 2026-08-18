@@ -24,8 +24,8 @@ x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/
 
 ```bash
 cargo build --release                    # 构建（含 cdylib + rlib）
-cargo test                               # 常规测试（~8s，含 Tier 1/2 金标测试）
-cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586K 例，~20s）
+cargo test                               # 常规测试（~1min，含除 Tier 3 外的全部金标）
+cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586,430 例，~70s）
 
 # Python 绑定
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
@@ -34,7 +34,9 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 cargo build --release --target wasm32-wasip1
 
 # 金标测试数据生成（需要 Node.js + iztro）
-cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2.mjs && node generate_tier3.mjs
+cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.json 的 gen:* 脚本
+# tier3 / tier_edge 按年跳过已存在的文件（便于断点续跑），重新生成前先删掉对应目录；
+# tier3 支持 `node generate_tier3.mjs --range <起> <止>` 分段，多进程并行可跑满 CPU
 ```
 
 ## 项目结构
@@ -112,12 +114,29 @@ cd tests/golden && npm install && node generate_tier1.mjs && node generate_tier2
 
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 覆盖矩阵（约 65 万例）：tier1 全字段 780（含 rawDates）/ tier2 紧凑 37K / tier3 全日期×性别×fix_leap 哈希 586K / 运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14K / Config 四开关非默认值 8.5K
-- tier3 与变体哈希基于规范化串（`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构）；不一致时用生成器 `--inspect*` 重放 JS 单例与 Rust 输出 diff
-- `cargo test` 跑常规层（~15s）；tier3 全量用 `cargo test --release --test golden_tier3 -- --ignored`（~20s）
+- 覆盖矩阵（八层合计 713,870 例，约 71 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
+  tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
+  边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
+  运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
+  Config 开关（四个非默认取值 + 排盘层与运限层的组合）9,696 / 中州派盘型 12,488
+- tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
+  （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；
+  条目含星名/类型/范围/亮度/四化，排序等价性只在 BMP 内成立，注释里写了这个前提）；
+  不一致时用生成器 `--inspect*` 重放 JS 单例与 Rust 输出 diff
+- `cargo test` 跑除 tier3 外的全部层（~1min）；tier3 全量用
+  `cargo test --release --test golden_tier3 -- --ignored`（~70s）
 - 哪条结论由哪个测试守着：
-  - 排盘数值 → `golden_tier1/2/3`、`golden_variants`、`golden_horoscope`
-  - 序列化契约 → `golden_contract`（对 JS 的 `JSON.stringify` 逐键逐值）
+  - 排盘数值 → `golden_tier1/2/3`、`golden_edge`（1583-1983 / 2044-2100 抽样）、
+    `golden_variants`、`golden_horoscope`
+  - 序列化契约 → `golden_contract`（对 JS 的 `JSON.stringify` 逐键逐值；
+    扩展键白名单按 DTO 路径限定，多在别处的键即判为契约偏离）
+  - 单盘全接口面 → `regression`（工具函数、十二宫、三方四正、运限查询方法，
+    金标由 `generate_regression.mjs` 生成，可复现）
+  - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
+  - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
+    要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
+  - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
+    快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
   - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`

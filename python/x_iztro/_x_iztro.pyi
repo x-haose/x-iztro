@@ -10,6 +10,16 @@ from typing import Any
 
 __version__: str
 
+class IztroError(ValueError):
+    """排盘出错。
+
+    `args[0]` 为面向人的描述；继承 `ValueError`，既有的 `except ValueError`
+    依然能捕获。
+    """
+
+    code: str
+    """机器可读的错误分类：invalid_date / invalid_time_index / invalid_argument / internal"""
+
 def by_solar(input: dict[str, Any]) -> dict[str, Any]:
     """阳历排盘，返回星盘 DTO。"""
 

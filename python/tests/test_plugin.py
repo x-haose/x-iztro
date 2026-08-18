@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from x_iztro import Astro, Astrolabe
-from x_iztro.enums import PalaceName
+from x_iztro.enums import FiveElementsClass, PalaceName
 from x_iztro.plugin import load_plugin, load_plugins
 
 
@@ -26,10 +26,9 @@ def my_analysis(cls: type[Astrolabe]) -> None:
 
 def five_elements(cls: type[Astrolabe]) -> None:
     """插件：五行局的局数。"""
-    table = {"water2nd": 2, "wood3rd": 3, "metal4th": 4, "earth5th": 5, "fire6th": 6}
 
     def five_elements_value(self: Astrolabe) -> int:
-        return table[self.five_elements_class_key]
+        return FiveElementsClass(self.five_elements_class_key).number
 
     cls.five_elements_value = five_elements_value
 

@@ -12,5 +12,7 @@ pub mod query;
 
 /// 按指定干支重排星盘（中州派地盘、人盘）
 pub mod rearrange;
-/// 三方四正
-pub mod surpalaces;
+/// 三方四正（结构定义在 [`crate::models::surpalaces`]，此处转发以保持路径稳定）
+pub mod surpalaces {
+    pub use crate::models::surpalaces::*;
+}

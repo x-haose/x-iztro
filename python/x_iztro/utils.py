@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from x_iztro.enums import (
     Brightness,
     EarthlyBranch,
@@ -14,9 +16,9 @@ from x_iztro.enums import (
     Mutagen,
     PalaceName,
 )
-from x_iztro.models import ChartConfig, Star
+from x_iztro.models import ChartConfig, Decadal, Star
 
-from x_iztro._bridge import query
+from x_iztro._bridge import query, typed
 
 
 def _config(config: ChartConfig | None) -> dict | None:
@@ -56,7 +58,8 @@ def get_brightness(
         star: 星耀标识（`MajorStar` / `MinorStar` 等枚举值域）
         palace_index: 宫位索引，越界会对 12 取模
     """
-    return query("getBrightness", star_key=star, index=palace_index, config=_config(config))
+    value = query("getBrightness", star_key=star, index=palace_index, config=_config(config))
+    return Brightness(value) if value is not None else None
 
 
 def get_mutagen(
@@ -65,7 +68,8 @@ def get_mutagen(
     config: ChartConfig | None = None,
 ) -> Mutagen | None:
     """指定天干下某颗星化什么；不在该天干四化表内时返回 None。"""
-    return query("getMutagen", star_key=star, stem_key=stem, config=_config(config))
+    value = query("getMutagen", star_key=star, stem_key=stem, config=_config(config))
+    return Mutagen(value) if value is not None else None
 
 
 def get_mutagens_by_heavenly_stem(
@@ -76,11 +80,39 @@ def get_mutagens_by_heavenly_stem(
     return query("getMutagensByHeavenlyStem", stem_key=stem, config=_config(config))
 
 
+@dataclass(frozen=True, slots=True)
+class SoulAndBody:
+    """命宫与身宫的落点。"""
+
+    soul_index: int
+    """命宫的宫位索引"""
+
+    body_index: int
+    """身宫的宫位索引"""
+
+    heavenly_stem_of_soul: str
+    """命宫天干标识（`HeavenlyStem` 枚举值域）"""
+
+    earthly_branch_of_soul: str
+    """命宫地支标识（`EarthlyBranch` 枚举值域）"""
+
+
+@dataclass(frozen=True, slots=True)
+class DecadalsAndAges:
+    """十二宫的大限与小限，两组都按宫位索引排列。"""
+
+    decadals: list[Decadal]
+    """每宫的大限：岁数区间与该宫干支"""
+
+    ages: list[list[int]]
+    """每宫的小限岁数列表"""
+
+
 def get_soul_and_body(
     month_index: int,
     time_index: int,
     yearly_stem: HeavenlyStem | str,
-) -> dict:
+) -> SoulAndBody:
     """
     由农历月索引、时辰索引与年干推命宫与身宫。
 
@@ -90,14 +122,16 @@ def get_soul_and_body(
         yearly_stem: 年干标识
 
     Returns:
-        含 soulIndex、bodyIndex、heavenlyStemOfSoul、earthlyBranchOfSoul 的 dict，
-        后两项为语言无关 key。
+        SoulAndBody：两宫的宫位索引与命宫干支标识
     """
-    return query(
-        "getSoulAndBody",
-        month_index=month_index,
-        time_index=time_index,
-        stem_key=yearly_stem,
+    return typed(
+        SoulAndBody,
+        query(
+            "getSoulAndBody",
+            month_index=month_index,
+            time_index=time_index,
+            stem_key=yearly_stem,
+        ),
     )
 
 
@@ -115,7 +149,7 @@ def get_palace_names(soul_index: int) -> list[PalaceName]:
 
     返回值的第 i 项即 `astrolabe.palaces[i]` 的宫名。
     """
-    return query("getPalaceNames", soul_index=soul_index)
+    return [PalaceName(name) for name in query("getPalaceNames", soul_index=soul_index)]
 
 
 def get_decadals_and_ages(
@@ -124,7 +158,7 @@ def get_decadals_and_ages(
     gender: str,
     yearly_stem: HeavenlyStem | str,
     yearly_branch: EarthlyBranch | str,
-) -> dict:
+) -> DecadalsAndAges:
     """
     由命宫索引与五行局推十二宫的大限与小限。
 
@@ -139,16 +173,19 @@ def get_decadals_and_ages(
         yearly_branch: 年支标识
 
     Returns:
-        含 decadals（每宫的 range 岁数区间与宫干支标识）与 ages
-        （每宫的小限岁数列表）的 dict，均按宫位索引排列。
+        DecadalsAndAges：每宫的大限与小限，均按宫位索引排列
     """
-    return query(
+    result = query(
         "getHoroscope",
         soul_index=soul_index,
         five_elements_class=five_elements_class,
         gender=gender,
         stem_key=yearly_stem,
         branch_key=yearly_branch,
+    )
+    return DecadalsAndAges(
+        decadals=[Decadal._from_dict(d) for d in result["decadals"]],
+        ages=[list(ages) for ages in result["ages"]],
     )
 
 
@@ -195,7 +232,7 @@ def translate_chinese_date(
         任一词条为多字符时柱内空格、柱间「 - 」。
 
     Raises:
-        ValueError: 柱数不为四、某柱不是两项，或干支标识非法
+        IztroError: 柱数不为四、某柱不是两项，或干支标识非法
     """
     return query(
         "translateChineseDate",

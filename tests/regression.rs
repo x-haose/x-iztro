@@ -1,4 +1,8 @@
-//! Regression tests that compare x-iztro output against JS-generated expected results.
+//! 单张固定命盘的全接口面回归测试：对照 JS iztro 的同参数输出。
+//!
+//! 数据由 tests/golden/generate_regression.mjs 生成（命盘 2000-8-16 时辰 2
+//! 女命，运限目标 2025-1-1 时辰 0），覆盖工具函数、命盘顶层字段与十二宫、
+//! 宫位与三方四正查询方法、运限六层级与运限查询方法。
 
 use serde_json::Value;
 use x_iztro::data::heavenly_stems::get_heavenly_stem_info;
@@ -8,10 +12,10 @@ use x_iztro::i18n::{translate_five_elements_class, translate_star};
 use x_iztro::utils::{fix_index, get_age_index, time_to_index};
 use x_iztro::{by_solar, get_horoscope};
 
-static EXPECTED: &str = include_str!("expected_results.json");
+static EXPECTED: &str = include_str!("golden/regression_data.json");
 
 fn load_json() -> Value {
-    serde_json::from_str(EXPECTED).expect("Failed to parse expected_results.json")
+    serde_json::from_str(EXPECTED).expect("Failed to parse regression_data.json")
 }
 
 // ============================================================
@@ -67,66 +71,6 @@ fn parse_earthly_branch(s: &str) -> EarthlyBranch {
         "戌" => EarthlyBranch::Xu,
         "亥" => EarthlyBranch::Hai,
         _ => panic!("Unknown earthly branch: {}", s),
-    }
-}
-
-#[allow(dead_code)]
-fn parse_mutagen(s: &str) -> Mutagen {
-    match s {
-        "禄" => Mutagen::Lu,
-        "权" => Mutagen::Quan,
-        "科" => Mutagen::Ke,
-        "忌" => Mutagen::Ji,
-        _ => panic!("Unknown mutagen: {}", s),
-    }
-}
-
-#[allow(dead_code)]
-fn parse_star_key(s: &str) -> Option<StarKey> {
-    match s {
-        "紫微" => Some(StarKey::ZiweiMaj),
-        "天机" => Some(StarKey::TianjiMaj),
-        "太阳" => Some(StarKey::TaiyangMaj),
-        "武曲" => Some(StarKey::WuquMaj),
-        "天同" => Some(StarKey::TiantongMaj),
-        "廉贞" => Some(StarKey::LianzhenMaj),
-        "天府" => Some(StarKey::TianfuMaj),
-        "太阴" => Some(StarKey::TaiyinMaj),
-        "贪狼" => Some(StarKey::TanlangMaj),
-        "巨门" => Some(StarKey::JumenMaj),
-        "天相" => Some(StarKey::TianxiangMaj),
-        "天梁" => Some(StarKey::TianliangMaj),
-        "七杀" => Some(StarKey::QishaMaj),
-        "破军" => Some(StarKey::PojunMaj),
-        "文昌" => Some(StarKey::WenchangMin),
-        "文曲" => Some(StarKey::WenquMin),
-        "左辅" => Some(StarKey::ZuofuMin),
-        "右弼" => Some(StarKey::YoubiMin),
-        "禄存" => Some(StarKey::LucunMin),
-        "天马" => Some(StarKey::TianmaMin),
-        "擎羊" => Some(StarKey::QingyangMin),
-        "陀罗" => Some(StarKey::TuoluoMin),
-        "火星" => Some(StarKey::HuoxingMin),
-        "铃星" => Some(StarKey::LingxingMin),
-        "天魁" => Some(StarKey::TiankuiMin),
-        "天钺" => Some(StarKey::TianyueMin),
-        "地空" => Some(StarKey::DikongMin),
-        "地劫" => Some(StarKey::DijieMin),
-        "不存在" => None, // Non-existent star
-        _ => None,
-    }
-}
-
-#[allow(dead_code)]
-fn parse_scope(s: &str) -> Scope {
-    match s {
-        "origin" => Scope::Origin,
-        "decadal" => Scope::Decadal,
-        "yearly" => Scope::Yearly,
-        "monthly" => Scope::Monthly,
-        "daily" => Scope::Daily,
-        "hourly" => Scope::Hourly,
-        _ => panic!("Unknown scope: {}", s),
     }
 }
 
@@ -250,35 +194,16 @@ fn test_astrolabe_basic() {
         astrolabe.lunar_date,
         expected["lunar_date"].as_str().unwrap()
     );
-    // chinese_date may have suffixes like "年/月/日/时" — compare the stem-branch parts
-    let expected_cd = expected["chinese_date"].as_str().unwrap();
-    let actual_parts: Vec<&str> = astrolabe
-        .chinese_date
-        .split_whitespace()
-        .map(|s| s.trim_end_matches(['年', '月', '日', '时']))
-        .collect();
-    let expected_parts: Vec<&str> = expected_cd.split_whitespace().collect();
-    assert_eq!(actual_parts, expected_parts, "chinese_date mismatch");
-    // time field may differ in suffix ("寅" vs "寅时")
-    let expected_time = expected["time"].as_str().unwrap();
-    assert!(
-        expected_time.starts_with(&astrolabe.time) || astrolabe.time == expected_time,
-        "Time mismatch: actual={}, expected={}",
-        astrolabe.time,
-        expected_time
+    assert_eq!(
+        astrolabe.chinese_date,
+        expected["chinese_date"].as_str().unwrap()
     );
+    assert_eq!(astrolabe.time, expected["time"].as_str().unwrap());
     assert_eq!(
         astrolabe.time_range,
         expected["time_range"].as_str().unwrap()
     );
-    // sign may differ in suffix ("狮子" vs "狮子座")
-    let expected_sign = expected["sign"].as_str().unwrap();
-    assert!(
-        expected_sign.starts_with(&astrolabe.sign) || astrolabe.sign == expected_sign,
-        "Sign mismatch: actual={}, expected={}",
-        astrolabe.sign,
-        expected_sign
-    );
+    assert_eq!(astrolabe.sign, expected["sign"].as_str().unwrap());
     assert_eq!(astrolabe.zodiac, expected["zodiac"].as_str().unwrap());
 
     // Soul and body star names
@@ -371,25 +296,34 @@ fn test_astrolabe_palaces() {
 
         // Minor stars count
         let expected_minor = exp["minor_stars_count"].as_u64().unwrap() as usize;
-        let actual_minor = palace
-            .minor_stars
-            .iter()
-            .filter(|s| {
-                matches!(
-                    s.star_type,
-                    StarType::Soft
-                        | StarType::Tough
-                        | StarType::Lucun
-                        | StarType::Tianma
-                        | StarType::Flower
-                        | StarType::Helper
-                )
-            })
-            .count();
         assert_eq!(
-            actual_minor, expected_minor,
-            "Palace {} minor_stars_count: expected {}, got {}",
-            idx, expected_minor, actual_minor
+            palace.minor_stars.len(),
+            expected_minor,
+            "Palace {} minor_stars_count mismatch",
+            idx
+        );
+
+        // Adjective stars count
+        let expected_adj = exp["adjective_stars_count"].as_u64().unwrap() as usize;
+        assert_eq!(
+            palace.adjective_stars.len(),
+            expected_adj,
+            "Palace {} adjective_stars_count mismatch",
+            idx
+        );
+
+        // Body / original palace flags
+        assert_eq!(
+            palace.is_body_palace,
+            exp["is_body_palace"].as_bool().unwrap(),
+            "Palace {} is_body_palace mismatch",
+            idx
+        );
+        assert_eq!(
+            palace.is_original_palace,
+            exp["is_original_palace"].as_bool().unwrap(),
+            "Palace {} is_original_palace mismatch",
+            idx
         );
 
         // Decadal range
@@ -459,24 +393,21 @@ fn test_palace_queries() {
             i
         );
 
-        // not_have(不存在) - non-existent star should always return true for not_have
-        // Since "不存在" doesn't map to a StarKey, we test with an empty slice
-        // The JSON says not_have_不存在 = true, which means the palace doesn't have a non-existent star.
-        // We simulate this: since parse_star_key("不存在") returns None, we skip passing it.
-        // But the semantic is: the palace should not have a star that doesn't exist.
-        // We'll verify the expected value is true (it always should be).
-        let exp_not_have = exp["not_have_不存在"].as_bool().unwrap();
-        assert!(
+        // not_have(紫微)
+        let exp_not_have = exp["not_have_紫微"].as_bool().unwrap();
+        assert_eq!(
+            palace.not_have(&[StarKey::ZiweiMaj]),
             exp_not_have,
-            "not_have for non-existent star should always be true"
+            "Palace {} not_have(紫微) mismatch",
+            i
         );
 
-        // has_one_of(武曲, 不存在) - only 武曲 matters since 不存在 is None
-        let exp_has_one_of = exp["has_one_of_武曲_不存在"].as_bool().unwrap();
+        // has_one_of(武曲, 紫微)
+        let exp_has_one_of = exp["has_one_of_武曲_紫微"].as_bool().unwrap();
         assert_eq!(
-            palace.has_one_of(&[StarKey::WuquMaj]),
+            palace.has_one_of(&[StarKey::WuquMaj, StarKey::ZiweiMaj]),
             exp_has_one_of,
-            "Palace {} has_one_of(武曲) mismatch",
+            "Palace {} has_one_of(武曲, 紫微) mismatch",
             i
         );
 
@@ -558,21 +489,35 @@ fn test_palace_queries() {
             i
         );
 
-        // self_mutaged_one_of
-        let exp_self_one = exp["self_mutaged_one_of"].as_bool().unwrap();
+        // self_mutaged_one_of：空列表与实列表两种语义
+        let exp_self_one_empty = exp["self_mutaged_one_of_empty"].as_bool().unwrap();
         assert_eq!(
             palace.self_mutaged_one_of(&[]),
+            exp_self_one_empty,
+            "Palace {} self_mutaged_one_of([]) mismatch",
+            i
+        );
+        let exp_self_one = exp["self_mutaged_one_of_禄权"].as_bool().unwrap();
+        assert_eq!(
+            palace.self_mutaged_one_of(&[Mutagen::Lu, Mutagen::Quan]),
             exp_self_one,
-            "Palace {} self_mutaged_one_of mismatch",
+            "Palace {} self_mutaged_one_of(禄, 权) mismatch",
             i
         );
 
-        // not_self_mutaged
-        let exp_not_self = exp["not_self_mutaged"].as_bool().unwrap();
+        // not_self_mutaged：空列表与实列表两种语义
+        let exp_not_self_empty = exp["not_self_mutaged_empty"].as_bool().unwrap();
         assert_eq!(
             palace.not_self_mutaged(&[]),
+            exp_not_self_empty,
+            "Palace {} not_self_mutaged([]) mismatch",
+            i
+        );
+        let exp_not_self = exp["not_self_mutaged_禄权"].as_bool().unwrap();
+        assert_eq!(
+            palace.not_self_mutaged(&[Mutagen::Lu, Mutagen::Quan]),
             exp_not_self,
-            "Palace {} not_self_mutaged mismatch",
+            "Palace {} not_self_mutaged(禄, 权) mismatch",
             i
         );
 
@@ -675,20 +620,30 @@ fn test_surrounded_palaces() {
             i
         );
 
-        // have(不存在) - non-existent star
-        let exp_have_none = exp["have_不存在"].as_bool().unwrap();
-        assert!(!exp_have_none, "have(不存在) should be false");
-
-        // not_have(不存在)
-        let exp_not_have_none = exp["not_have_不存在"].as_bool().unwrap();
-        assert!(exp_not_have_none, "not_have(不存在) should be true");
-
-        // have_one_of(武曲, 不存在) - only 武曲 matters
-        let exp_have_one_of = exp["have_one_of_武曲_不存在"].as_bool().unwrap();
+        // have(紫微)
+        let exp_have = exp["have_紫微"].as_bool().unwrap();
         assert_eq!(
-            sp.have_one_of(&[StarKey::WuquMaj]),
+            sp.have(&[StarKey::ZiweiMaj]),
+            exp_have,
+            "Surround {} have(紫微) mismatch",
+            i
+        );
+
+        // not_have(紫微)
+        let exp_not_have = exp["not_have_紫微"].as_bool().unwrap();
+        assert_eq!(
+            sp.not_have(&[StarKey::ZiweiMaj]),
+            exp_not_have,
+            "Surround {} not_have(紫微) mismatch",
+            i
+        );
+
+        // have_one_of(武曲, 紫微)
+        let exp_have_one_of = exp["have_one_of_武曲_紫微"].as_bool().unwrap();
+        assert_eq!(
+            sp.have_one_of(&[StarKey::WuquMaj, StarKey::ZiweiMaj]),
             exp_have_one_of,
-            "Surround {} have_one_of(武曲) mismatch",
+            "Surround {} have_one_of(武曲, 紫微) mismatch",
             i
         );
 

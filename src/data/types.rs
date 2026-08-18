@@ -187,6 +187,7 @@ pub enum Brightness {
 
 /// 星曜类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum StarType {
     /// 主星
     Major,
@@ -224,6 +225,7 @@ impl StarType {
 
 /// 运限范围
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum Scope {
     /// 本命
     Origin,
@@ -334,9 +336,10 @@ impl Language {
         }
     }
 
-    /// 由语言代码还原，大小写不敏感；未知代码返回 `None`
+    /// 由语言代码还原，大小写不敏感，连字符与下划线等价（`zh-CN` / `zh_cn` 都可）；
+    /// 未知代码返回 `None`
     pub fn from_code(code: &str) -> Option<Self> {
-        match code.to_ascii_lowercase().as_str() {
+        match code.to_ascii_lowercase().replace('_', "-").as_str() {
             "zh-cn" => Some(Language::ZhCN),
             "zh-tw" => Some(Language::ZhTW),
             "en-us" => Some(Language::EnUS),
@@ -350,6 +353,7 @@ impl Language {
 
 /// 算法
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum Algorithm {
     /// 默认
     Default,
@@ -359,6 +363,7 @@ pub enum Algorithm {
 
 /// 排盘视角：中州派把同一组出生数据看作三张盘，差别在于用哪一宫的干支起五行局。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum AstroType {
     /// 天盘：以命宫干支起五行局，即常规排盘结果
     Heaven,
@@ -366,27 +371,6 @@ pub enum AstroType {
     Earth,
     /// 人盘：以福德宫干支起五行局，福德宫即为新盘的命宫
     Human,
-}
-
-impl AstroType {
-    /// 语言无关标识（与 JS iztro 的 `astroType` 取值一致）
-    pub fn as_key(self) -> &'static str {
-        match self {
-            AstroType::Heaven => "heaven",
-            AstroType::Earth => "earth",
-            AstroType::Human => "human",
-        }
-    }
-
-    /// 由语言无关标识还原；未知标识返回 `None`
-    pub fn from_key(key: &str) -> Option<Self> {
-        match key {
-            "heaven" => Some(AstroType::Heaven),
-            "earth" => Some(AstroType::Earth),
-            "human" => Some(AstroType::Human),
-            _ => None,
-        }
-    }
 }
 
 /// 年分界点：排盘年干支（及其驱动的四化、命主身主等）按哪一天换年
@@ -424,6 +408,38 @@ pub enum DayDivide {
     /// 晚子时归当天（按当日早子时排盘）
     Current,
 }
+
+/// 为配置开关枚举生成语言无关标识的双向映射。
+///
+/// 绑定层 config JSON 的取值与这里一一对应，是该映射的唯一来源——
+/// 解析入参与回写 `ConfigDto` 都走它，两处不会各抄一份而走样。
+macro_rules! config_switch_keys {
+    ($ty:ident { $($variant:ident => $key:literal),+ $(,)? }) => {
+        impl $ty {
+            /// 语言无关标识（与 JS iztro 同名配置项的取值一致）
+            pub fn as_key(self) -> &'static str {
+                match self {
+                    $($ty::$variant => $key),+
+                }
+            }
+
+            /// 由语言无关标识还原；未知标识返回 `None`
+            pub fn from_key(key: &str) -> Option<Self> {
+                match key {
+                    $($key => Some($ty::$variant),)+
+                    _ => None,
+                }
+            }
+        }
+    };
+}
+
+config_switch_keys!(YearDivide { Normal => "normal", Exact => "exact" });
+config_switch_keys!(HoroscopeDivide { Normal => "normal", Exact => "exact" });
+config_switch_keys!(AgeDivide { Normal => "normal", Birthday => "birthday" });
+config_switch_keys!(DayDivide { Forward => "forward", Current => "current" });
+config_switch_keys!(Algorithm { Default => "default", Zhongzhou => "zhongzhou" });
+config_switch_keys!(AstroType { Heaven => "heaven", Earth => "earth", Human => "human" });
 
 /// 自定义四化与亮度表。
 ///
@@ -829,6 +845,26 @@ mod key_roundtrip_tests {
     use crate::data::constants::{EARTHLY_BRANCHES, HEAVENLY_STEMS, PALACES};
     use crate::data::stars::StarKey;
 
+    /// 语言代码大小写与连字符/下划线写法都能还原，`as_code` 与 `from_code` 互逆。
+    #[test]
+    fn test_language_code_aliases() {
+        for lang in [
+            Language::ZhCN,
+            Language::ZhTW,
+            Language::EnUS,
+            Language::JaJP,
+            Language::KoKR,
+            Language::ViVN,
+        ] {
+            let code = lang.as_code();
+            assert_eq!(Language::from_code(code), Some(lang));
+            assert_eq!(Language::from_code(&code.to_lowercase()), Some(lang));
+            assert_eq!(Language::from_code(&code.replace('-', "_")), Some(lang));
+        }
+        assert_eq!(Language::from_code("zh_cn"), Some(Language::ZhCN));
+        assert_eq!(Language::from_code("klingon"), None);
+    }
+
     /// `as_key` 与 `from_key` 必须互为逆运算，否则绑定层的 key 往返会失真。
     #[test]
     fn test_enum_key_roundtrip() {
@@ -865,8 +901,28 @@ mod key_roundtrip_tests {
             assert_eq!(FiveElementsClass::from_key(c.as_key()), Some(c), "{c:?}");
         }
 
+        for v in [YearDivide::Normal, YearDivide::Exact] {
+            assert_eq!(YearDivide::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+        for v in [HoroscopeDivide::Normal, HoroscopeDivide::Exact] {
+            assert_eq!(HoroscopeDivide::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+        for v in [AgeDivide::Normal, AgeDivide::Birthday] {
+            assert_eq!(AgeDivide::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+        for v in [DayDivide::Forward, DayDivide::Current] {
+            assert_eq!(DayDivide::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+        for v in [Algorithm::Default, Algorithm::Zhongzhou] {
+            assert_eq!(Algorithm::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+        for v in [AstroType::Heaven, AstroType::Earth, AstroType::Human] {
+            assert_eq!(AstroType::from_key(v.as_key()), Some(v), "{v:?}");
+        }
+
         assert_eq!(Palace::from_key("bodyPalace"), None);
         assert_eq!(StarKey::from_key("nope"), None);
+        assert_eq!(Algorithm::from_key("normal"), None);
     }
 
     /// 盘上出现的每一颗星（含运限流耀）都要能由 key 还原。

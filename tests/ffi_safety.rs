@@ -4,7 +4,9 @@
 use std::ffi::{CStr, CString, c_char};
 use std::ptr;
 
-use x_iztro::ffi::{iztro_by_lunar, iztro_by_solar, iztro_free_string, iztro_get_horoscope};
+use x_iztro::ffi::{
+    iztro_by_lunar, iztro_by_solar, iztro_free_string, iztro_get_horoscope, iztro_query,
+};
 
 /// 调用返回后取出内容并释放缓冲，同时断言内容是合法 JSON
 /// （错误消息含引号、反斜杠、控制字符时转义必须完备）。
@@ -40,6 +42,14 @@ fn by_solar(date: &str, time_index: u8, gender: &str, language: &str) -> String 
 
 fn is_error(json: &str) -> bool {
     json.starts_with(r#"{"error":"#)
+}
+
+/// 错误 JSON 的 `code` 取值，供断言错误分类
+fn error_code(json: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(json).unwrap()["code"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string()
 }
 
 #[test]
@@ -286,4 +296,43 @@ fn date_out_of_supported_years_returns_error() {
     assert!(!is_error(&json), "1583 should be supported: {json}");
     let json = by_solar("9999-12-31", 2, "male", "zh-CN");
     assert!(!is_error(&json), "9999 should be supported: {json}");
+}
+
+#[test]
+fn error_json_carries_machine_readable_code() {
+    assert_eq!(
+        error_code(&by_solar("not-a-date", 2, "male", "zh-CN")),
+        "invalid_date"
+    );
+    assert_eq!(
+        error_code(&by_solar("2000-8-16", 13, "male", "zh-CN")),
+        "invalid_time_index"
+    );
+    assert_eq!(
+        error_code(&by_solar("2000-8-16", 2, "unknown", "zh-CN")),
+        "invalid_argument"
+    );
+}
+
+#[test]
+fn query_returns_value_envelope() {
+    let input = c(r#"{"kind":"getPalaceNames","soulIndex":0}"#);
+    let json = take(unsafe { iztro_query(input.as_ptr()) });
+    assert!(!is_error(&json), "unexpected error: {json}");
+    assert!(json.starts_with(r#"{"value":"#), "unexpected shape: {json}");
+    assert!(json.contains("soulPalace"));
+}
+
+#[test]
+fn query_rejects_unknown_kind_and_bad_json() {
+    let input = c(r#"{"kind":"nope"}"#);
+    let json = take(unsafe { iztro_query(input.as_ptr()) });
+    assert_eq!(error_code(&json), "invalid_argument");
+
+    let input = c("{not json");
+    let json = take(unsafe { iztro_query(input.as_ptr()) });
+    assert_eq!(error_code(&json), "invalid_argument");
+
+    let json = take(unsafe { iztro_query(ptr::null()) });
+    assert_eq!(error_code(&json), "invalid_argument");
 }

@@ -6,13 +6,18 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from x_iztro import Astro, Astrolabe, ChartConfig
 from x_iztro.enums import (
     AstroType,
     EarthlyBranch,
+    FiveElementsClass,
     HeavenlyStem,
+    HoroscopeStar,
     MajorStar,
     Mutagen,
     PalaceName,
@@ -234,7 +239,11 @@ def test_palace_names_match_chart(chart):
     from x_iztro.utils import get_palace_names
 
     soul = chart.palace(PalaceName.SOUL)
-    assert get_palace_names(soul.index) == [p.name_key for p in chart.palaces]
+    names = get_palace_names(soul.index)
+
+    assert names == [p.name_key for p in chart.palaces]
+    # 返回的是枚举成员本身，不只是等值的字符串
+    assert all(isinstance(name, PalaceName) for name in names)
 
 
 def test_soul_and_body_matches_chart(chart):
@@ -249,20 +258,28 @@ def test_soul_and_body_matches_chart(chart):
     )
     result = get_soul_and_body(month_index, chart.time_index, YEAR_STEM)
 
-    assert result["soulIndex"] == chart.palace(PalaceName.SOUL).index
-    assert result["bodyIndex"] == chart.palace(PalaceName.BODY).index
-    assert result["earthlyBranchOfSoul"] == chart.earthly_branch_of_soul_palace_key
+    assert result.soul_index == chart.palace(PalaceName.SOUL).index
+    assert result.body_index == chart.palace(PalaceName.BODY).index
+    assert result.earthly_branch_of_soul == chart.earthly_branch_of_soul_palace_key
 
 
 def test_brightness_and_mutagen_lookup_match_chart(chart):
     """查表结果必须与排盘写入每颗星的字段一致。"""
     from x_iztro.utils import get_brightness, get_mutagen
 
+    from x_iztro.enums import Brightness
+
     checked = 0
     for palace in chart.palaces:
         for star in palace.major_stars + palace.minor_stars:
-            assert get_brightness(star.key, palace.index) == star.brightness_key
-            assert get_mutagen(star.key, YEAR_STEM) == star.mutagen_key
+            brightness = get_brightness(star.key, palace.index)
+            mutagen = get_mutagen(star.key, YEAR_STEM)
+
+            assert brightness == star.brightness_key
+            assert mutagen == star.mutagen_key
+            # 有值时返回枚举成员，无值时返回 None
+            assert brightness is None or isinstance(brightness, Brightness)
+            assert mutagen is None or isinstance(mutagen, Mutagen)
             checked += 1
     assert checked >= 20
 
@@ -492,8 +509,8 @@ def test_star_module_matches_chart():
     birth = dict(solar_date="2000-8-16", time_index=2, gender="female", fix_leap=True)
 
     start = star.get_start_index(**birth)
-    assert start["ziweiIndex"] == 4
-    assert start["tianfuIndex"] == 8
+    assert start.ziwei_index == 4
+    assert start.tianfu_index == 8
 
     chart = Astro().by_solar("2000-8-16", 2, "female")
 
@@ -512,8 +529,8 @@ def test_star_module_matches_chart():
     assert [p.boshi12_key for p in chart.palaces] == boshi12
 
     yearly12 = star.get_yearly12(**birth)
-    assert [p.suiqian12_key for p in chart.palaces] == yearly12["suiqian12"]
-    assert [p.jiangqian12_key for p in chart.palaces] == yearly12["jiangqian12"]
+    assert [p.suiqian12_key for p in chart.palaces] == yearly12.suiqian12
+    assert [p.jiangqian12_key for p in chart.palaces] == yearly12.jiangqian12
 
 
 def test_horoscope_star_uses_correct_hongluan_key():
@@ -545,21 +562,24 @@ def test_location_indices_match_yearly_composite():
 
     yearly = star.get_yearly_star_index(**birth)
 
-    assert star.get_huagai_xianchi_index(year_branch) == {
-        "huagaiIndex": yearly["huagaiIndex"],
-        "xianchiIndex": yearly["xianchiIndex"],
-    }
-    assert star.get_gu_gua_index(year_branch) == {
-        "guchenIndex": yearly["guchenIndex"],
-        "guasuIndex": yearly["guasuIndex"],
-    }
-    assert star.get_jiesha_adj_index(year_branch) == yearly["jieshaAdjIndex"]
-    assert star.get_dahao_index(year_branch) == yearly["dahaoAdjIndex"]
-    assert star.get_nianjie_index(year_branch) == yearly["nianjieIndex"]
-    assert star.get_tianshi_tianshang_index("female", year_branch, soul_index) == {
-        "tianshangIndex": yearly["tianshangIndex"],
-        "tianshiIndex": yearly["tianshiIndex"],
-    }
+    huagai = star.get_huagai_xianchi_index(year_branch)
+    assert (huagai.huagai_index, huagai.xianchi_index) == (
+        yearly.huagai_index,
+        yearly.xianchi_index,
+    )
+    gu_gua = star.get_gu_gua_index(year_branch)
+    assert (gu_gua.guchen_index, gu_gua.guasu_index) == (
+        yearly.guchen_index,
+        yearly.guasu_index,
+    )
+    assert star.get_jiesha_adj_index(year_branch) == yearly.jiesha_adj_index
+    assert star.get_dahao_index(year_branch) == yearly.dahao_adj_index
+    assert star.get_nianjie_index(year_branch) == yearly.nianjie_index
+    tianshi = star.get_tianshi_tianshang_index("female", year_branch, soul_index)
+    assert (tianshi.tianshang_index, tianshi.tianshi_index) == (
+        yearly.tianshang_index,
+        yearly.tianshi_index,
+    )
 
 
 def test_location_indices_match_chart_star_positions():
@@ -583,18 +603,18 @@ def test_location_indices_match_chart_star_positions():
         fix_lunar_month_index(lunar.lunar_month, lunar.lunar_day, lunar.is_leap, 2, True) + 1
     )
     zuo_you = star.get_zuo_you_index(lunar_month)
-    assert zuo_you["zuoIndex"] == palace_of("zuofuMin")
-    assert zuo_you["youIndex"] == palace_of("youbiMin")
+    assert zuo_you.zuo_index == palace_of("zuofuMin")
+    assert zuo_you.you_index == palace_of("youbiMin")
 
     huo_ling = star.get_huo_ling_index(year_branch, 2)
-    assert huo_ling["huoIndex"] == palace_of("huoxingMin")
-    assert huo_ling["lingIndex"] == palace_of("lingxingMin")
+    assert huo_ling.huo_index == palace_of("huoxingMin")
+    assert huo_ling.ling_index == palace_of("lingxingMin")
 
     # 按天干的昌曲用于运限层级：与流耀分布里的流昌流曲同宫
     decadal = star.get_horoscope_star("jiaHeavenly", "ziEarthly", "decadal")
     chang_qu = star.get_chang_qu_index_by_heavenly_stem("jiaHeavenly")
-    assert any(s.key == "yunchang" for s in decadal[chang_qu["changIndex"]])
-    assert any(s.key == "yunqu" for s in decadal[chang_qu["quIndex"]])
+    assert any(s.key == HoroscopeStar.YUN_CHANG for s in decadal[chang_qu.chang_index])
+    assert any(s.key == HoroscopeStar.YUN_QU for s in decadal[chang_qu.qu_index])
 
 
 def test_key_of_filter_disambiguates_homonyms():
@@ -627,33 +647,35 @@ def test_data_tables():
 
     info = data.stars_info()
     assert len(info) == 20
-    assert info["ziweiMaj"]["fiveElements"] == "土"
-    assert info["ziweiMaj"]["yinYang"] == "阴"
-    assert info["ziweiMaj"]["brightness"][0] == "wang"
+    assert info["ziweiMaj"].five_elements == "土"
+    assert info["ziweiMaj"].yin_yang == "阴"
+    assert info["ziweiMaj"].brightness[0] == "wang"
     # 太阳的五行与阴阳在原表中未填
-    assert info["taiyangMaj"]["fiveElements"] is None
-    assert info["taiyangMaj"]["yinYang"] is None
+    assert info["taiyangMaj"].five_elements is None
+    assert info["taiyangMaj"].yin_yang is None
 
     stems = data.heavenly_stems()
     jia = stems["jiaHeavenly"]
-    assert (jia["yinYang"], jia["fiveElements"], jia["crash"]) == ("阳", "木", "gengHeavenly")
-    assert jia["mutagen"] == ["lianzhenMaj", "pojunMaj", "wuquMaj", "taiyangMaj"]
+    assert (jia.yin_yang, jia.five_elements, jia.crash) == ("阳", "木", "gengHeavenly")
+    assert jia.mutagen == ["lianzhenMaj", "pojunMaj", "wuquMaj", "taiyangMaj"]
     # 戊己无对冲天干
-    assert stems["wuHeavenly"]["crash"] is None
+    assert stems["wuHeavenly"].crash is None
 
     branches = data.earthly_branches()
     zi = branches["ziEarthly"]
-    assert zi["crash"] == "wuEarthly"
-    assert zi["soul"] == "tanlangMaj"
-    assert zi["inside"] == "胆"
+    assert zi.crash == "wuEarthly"
+    assert zi.soul == "tanlangMaj"
+    assert zi.inside == "胆"
 
     c = data.constants()
-    assert c["LANGUAGES"] == ["en-US", "ja-JP", "ko-KR", "zh-CN", "zh-TW", "vi-VN"]
-    assert len(c["CHINESE_TIME"]) == 13
-    assert c["CHINESE_TIME"][12] == "lateRatHour"
-    assert c["GENDER"] == {"male": "阳", "female": "阴"}
-    assert c["TIGER_RULE"]["jiaHeavenly"] == "bingHeavenly"
-    assert c["RAT_RULE"]["jiaHeavenly"] == "jiaHeavenly"
+    assert c.languages == ["en-US", "ja-JP", "ko-KR", "zh-CN", "zh-TW", "vi-VN"]
+    assert len(c.chinese_time) == 13
+    assert c.chinese_time[12] == "lateRatHour"
+    assert c.gender == {"male": "阳", "female": "阴"}
+    assert c.tiger_rule["jiaHeavenly"] == "bingHeavenly"
+    assert c.rat_rule["jiaHeavenly"] == "jiaHeavenly"
+    # 五行局局数与枚举成员的 number 属性同源
+    assert c.five_elements_class == {m.value: m.number for m in FiveElementsClass}
 
 
 def test_i18n_round_trip():
@@ -684,13 +706,9 @@ def test_decadals_and_ages_match_chart():
         chart.raw_dates.chinese_date.yearly_keys[1],
     )
     for i, palace in enumerate(chart.palaces):
-        assert list(palace.decadal.range) == got["decadals"][i]["range"]
-        assert palace.ages == got["ages"][i]
+        assert palace.ages == got.ages[i]
         # 译名与标识两组字段的含义在整盘与单取之间必须一致
-        assert palace.decadal.heavenly_stem == got["decadals"][i]["heavenlyStem"]
-        assert palace.decadal.heavenly_stem_key == got["decadals"][i]["heavenlyStemKey"]
-        assert palace.decadal.earthly_branch == got["decadals"][i]["earthlyBranch"]
-        assert palace.decadal.earthly_branch_key == got["decadals"][i]["earthlyBranchKey"]
+        assert palace.decadal == got.decadals[i]
 
 
 def test_palace_back_references_to_opposite_and_surrounded():
@@ -710,6 +728,30 @@ def test_palace_back_references_to_opposite_and_surrounded():
     # 十二宫的对宫互为对方
     for p in chart.palaces:
         assert p.opposite_palace().opposite_palace().index == p.index
+
+
+def test_config_to_dict_is_plain_strings():
+    """传枚举成员时 to_dict 也只出字符串值，不留下枚举对象。"""
+    from x_iztro import AgeDivide, Algorithm, DayDivide, HoroscopeDivide, YearDivide
+
+    payload = ChartConfig(
+        year_divide=YearDivide.EXACT,
+        horoscope_divide=HoroscopeDivide.EXACT,
+        age_divide=AgeDivide.BIRTHDAY,
+        day_divide=DayDivide.CURRENT,
+        algorithm=Algorithm.ZHONGZHOU,
+        astro_type=AstroType.EARTH,
+        mutagens=CUSTOM_GENG,
+        brightness={MajorStar.TANLANG: ["wang"] * 12},
+    ).to_dict()
+
+    def plain(value) -> bool:
+        return type(value) is str
+
+    assert all(plain(v) for k, v in payload.items() if k not in ("mutagens", "brightness"))
+    assert all(plain(k) and all(plain(v) for v in vs) for k, vs in payload["mutagens"].items())
+    assert all(plain(k) and all(plain(v) for v in vs) for k, vs in payload["brightness"].items())
+    assert payload["astroType"] == "earth" and payload["algorithm"] == "zhongzhou"
 
 
 def test_config_enums_cover_all_switches():
@@ -740,3 +782,148 @@ def test_config_enums_cover_all_switches():
         "2000-8-16", 12, "female", config=ChartConfig(day_divide=DayDivide.CURRENT)
     )
     assert late.time
+
+
+# ============================================================
+# 自定义四化表贯穿全链路
+# ============================================================
+
+
+def _custom_chart() -> Astrolabe:
+    """庚干四化换成另一派（太阳、武曲、天同、天相）的 2000-8-16 寅时女命。"""
+    return Astro().by_solar(
+        "2000-8-16", 2, "female", config=ChartConfig(mutagens=CUSTOM_GENG)
+    )
+
+
+def test_custom_mutagens_survive_into_palace_mutagen_stars():
+    """宫位四化星取自排盘时生效的表；该盘只有夫妻宫是庚干。"""
+    chart = _custom_chart()
+    geng = [p for p in chart.palaces if p.heavenly_stem_key == HeavenlyStem.GENG]
+
+    assert [p.name_key for p in geng] == [PalaceName.SPOUSE]
+    assert geng[0].mutagen_stars(list(Mutagen)) == [
+        MajorStar.TAIYANG,
+        MajorStar.WUQU,
+        MajorStar.TIANTONG,
+        MajorStar.TIANXIANG,
+    ]
+    # 默认表下同一宫化忌为天同
+    assert Astro().by_solar("2000-8-16", 2, "female").palaces[
+        geng[0].index
+    ].mutagen_stars(Mutagen.JI) == [MajorStar.TIANTONG]
+
+
+def test_custom_mutagens_survive_into_flying_stars():
+    """飞星判断走覆盖后的四化星：庚宫化忌为天相，天相坐财帛。"""
+    chart = _custom_chart()
+    geng = next(p for p in chart.palaces if p.heavenly_stem_key == HeavenlyStem.GENG)
+
+    assert geng.flies_to(PalaceName.WEALTH, Mutagen.JI) is True
+    assert geng.not_fly_to(PalaceName.WEALTH, Mutagen.JI) is False
+    assert [p.name_key for p in geng.mutaged_places()] == [
+        PalaceName.CHILDREN,
+        PalaceName.WEALTH,
+        PalaceName.HEALTH,
+        PalaceName.WEALTH,
+    ]
+
+
+def test_custom_mutagens_survive_into_horoscope():
+    """运限从星盘无状态再发起，覆盖表不能在这一跳丢失。2030 年为庚戌年。"""
+    horoscope = _custom_chart().horoscope("2030-6-1", 0)
+
+    assert horoscope.yearly.mutagen_keys == [
+        MajorStar.TAIYANG,
+        MajorStar.WUQU,
+        MajorStar.TIANTONG,
+        MajorStar.TIANXIANG,
+    ]
+
+
+def test_custom_mutagens_survive_into_prompt():
+    """Prompt 同样是无状态再发起：生年四化行反映覆盖表。"""
+    astro = Astro()
+    chart = _custom_chart()
+
+    assert _prompt_line(astro.astrolabe_to_prompt(chart), "生年四化") == (
+        "生年四化: 太阳禄, 武曲权, 天同科, 天相忌"
+    )
+    assert _prompt_line(
+        astro.astrolabe_to_prompt(Astro().by_solar("2000-8-16", 2, "female")), "生年四化"
+    ) == "生年四化: 太阳禄, 武曲权, 太阴科, 天同忌"
+
+
+def test_custom_brightness_survives_into_rearranged_chart():
+    """重排也是无状态再发起，亮度覆盖表须一同带过去。"""
+    from x_iztro.enums import Brightness
+
+    config = ChartConfig(brightness={MajorStar.TANLANG: [Brightness.WANG] * 12})
+    chart = Astro().by_solar("2000-8-16", 2, "female", config=config)
+    body = chart.palace(PalaceName.BODY)
+
+    rearranged = chart.rearranged(body.heavenly_stem_key, body.earthly_branch_key)
+
+    assert rearranged.star(MajorStar.TANLANG).brightness_key == Brightness.WANG
+
+
+def _prompt_line(prompt: str, prefix: str) -> str:
+    """取 prompt 中以 prefix 开头的第一行。"""
+    return next(line for line in prompt.splitlines() if line.startswith(prefix))
+
+
+# ============================================================
+# Prompt 与 Rust 快照逐字节一致
+# ============================================================
+
+SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "prompt_snapshots"
+
+
+@pytest.mark.parametrize("language", ["zh-CN", "en-US"])
+def test_prompts_match_rust_snapshots(language: str):
+    """
+    与 `tests/prompt_snapshot.rs` 同一张盘、同一目标日期，输出须逐字节相同。
+
+    `in` 断言察觉不到措辞、字段顺序与整段缺失的漂移，因此这里比整份文本；
+    快照由 Rust 侧生成，Python 只做消费方。
+    """
+    astro = Astro()
+    chart = astro.by_solar("2000-8-16", 2, "female", language=language)
+
+    assert astro.astrolabe_to_prompt(chart) == (
+        SNAPSHOTS / f"astrolabe_{language}.txt"
+    ).read_text()
+    assert astro.horoscope_to_prompt(chart, "2025-1-1", 0) == (
+        SNAPSHOTS / f"horoscope_{language}.txt"
+    ).read_text()
+
+
+# ============================================================
+# JSON 导出
+# ============================================================
+
+
+def test_astrolabe_to_dict_is_the_js_compatible_dto(chart):
+    """to_dict 即 iztro 的 JSON.stringify 内容：camelCase 键、按语言翻译的值。"""
+    raw = chart.to_dict()
+
+    assert raw["solarDate"] == chart.solar_date
+    assert raw["fiveElementsClassKey"] == chart.five_elements_class_key
+    assert [p["name"] for p in raw["palaces"]] == [p.name for p in chart.palaces]
+    assert raw["palaces"][0]["mutagenStarKeys"] == chart.palaces[0].mutagen_star_keys
+
+    # 深拷贝：改动导出结果不影响星盘
+    raw["solarDate"] = "changed"
+    assert chart.to_dict()["solarDate"] == chart.solar_date
+
+
+def test_to_json_round_trips(chart):
+    """to_json 默认不转义非 ASCII，且能原样解析回 to_dict 的内容。"""
+    text = chart.to_json()
+
+    assert "紫微" in text
+    assert json.loads(text) == chart.to_dict()
+
+    horoscope = chart.horoscope("2024-10-1", 0)
+    assert json.loads(horoscope.to_json()) == horoscope.to_dict()
+    assert horoscope.to_dict()["yearly"]["mutagenKeys"] == horoscope.yearly.mutagen_keys

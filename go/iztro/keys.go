@@ -390,7 +390,7 @@ const (
 )
 
 // 天干标识（Palace.HeavenlyStemKey、Decadal.HeavenlyStemKey、
-// HoroscopeScope.HeavenlyStemKey，也是 mutagenTable 的键）。
+// HoroscopeScope.HeavenlyStemKey，也是 Config.Mutagens 的键）。
 const (
 	// StemJia 为甲
 	StemJia = "jiaHeavenly"
@@ -455,6 +455,48 @@ const (
 	ClassEarth5th = "earth5th"
 	// ClassFire6th 为火六局
 	ClassFire6th = "fire6th"
+)
+
+// fiveElementsClassNumbers 为五行局标识到局数的映射，
+// 与 constants 查询的 FIVE_ELEMENTS_CLASS 一致。
+var fiveElementsClassNumbers = map[string]int{
+	ClassWater2nd: 2,
+	ClassWood3rd:  3,
+	ClassMetal4th: 4,
+	ClassEarth5th: 5,
+	ClassFire6th:  6,
+}
+
+// FiveElementsClassNumber 取五行局的局数（水二局为 2，火六局为 6）；
+// 不是五行局标识时返回 0。
+//
+// 局数即大限每步的年数，也是紫微星起盘的除数。
+func FiveElementsClassNumber(fiveElementsClassKey string) int {
+	return fiveElementsClassNumbers[fiveElementsClassKey]
+}
+
+// 性别标识（Astrolabe.GenderKey，以及排盘入口的 gender 参数）。
+const (
+	// GenderMale 为男
+	GenderMale = "male"
+	// GenderFemale 为女
+	GenderFemale = "female"
+)
+
+// 语言标识（Astrolabe.Language，以及各入口的 language 参数）。
+const (
+	// LanguageZhCN 为简体中文
+	LanguageZhCN = "zh-CN"
+	// LanguageZhTW 为繁体中文
+	LanguageZhTW = "zh-TW"
+	// LanguageEnUS 为英文
+	LanguageEnUS = "en-US"
+	// LanguageJaJP 为日文
+	LanguageJaJP = "ja-JP"
+	// LanguageKoKR 为韩文
+	LanguageKoKR = "ko-KR"
+	// LanguageViVN 为越南文
+	LanguageViVN = "vi-VN"
 )
 
 // 宫位定位的特殊标识：不是十二宫之一，而是定位「被标记为该角色的那一宫」，

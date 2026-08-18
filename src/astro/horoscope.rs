@@ -5,11 +5,8 @@
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
-use crate::astro::builder::{
-    parse_earthly_branch, parse_heavenly_stem, parse_solar_date, validate_time_index,
-};
+use crate::astro::builder::{branch_of, parse_solar_date, stem_of, validate_time_index};
 use crate::astro::palace::get_palace_names;
-use crate::astro::surpalaces::SurroundedPalaces;
 use crate::data::constants::TIGER_RULE;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
@@ -20,6 +17,7 @@ use crate::models::horoscope::{
     AgeItem, HoroscopeData, HoroscopeItem, HoroscopeRef, YearlyDecStar, YearlyItem,
 };
 use crate::models::star::Star;
+use crate::models::surpalaces::SurroundedPalaces;
 use crate::star::decorative::get_yearly12;
 use crate::star::location::{
     get_chang_qu_index_by_stem, get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index,
@@ -282,10 +280,8 @@ pub fn get_horoscope(
     let target_time_gan_str = target_lunar.get_time_gan();
     let target_time_zhi_str = target_lunar.get_time_zhi();
 
-    let target_year_stem =
-        parse_heavenly_stem(&target_year_gan_str).expect("Unknown target year stem");
-    let target_year_branch =
-        parse_earthly_branch(&target_year_zhi_str).expect("Unknown target year branch");
+    let target_year_stem = stem_of(&target_year_gan_str, "target year")?;
+    let target_year_branch = branch_of(&target_year_zhi_str, "target year")?;
 
     let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
         HoroscopeDivide::Normal => {
@@ -310,22 +306,16 @@ pub fn get_horoscope(
             let gan = target_lunar.get_month_gan_exact();
             let zhi = target_lunar.get_month_zhi_exact();
             (
-                parse_heavenly_stem(&gan)
-                    .unwrap_or_else(|| panic!("Unknown target month stem: {gan}")),
-                parse_earthly_branch(&zhi)
-                    .unwrap_or_else(|| panic!("Unknown target month branch: {zhi}")),
+                stem_of(&gan, "target month")?,
+                branch_of(&zhi, "target month")?,
             )
         }
     };
 
-    let target_day_stem =
-        parse_heavenly_stem(&target_day_gan_str).expect("Unknown target day stem");
-    let target_day_branch =
-        parse_earthly_branch(&target_day_zhi_str).expect("Unknown target day branch");
-    let target_time_stem =
-        parse_heavenly_stem(&target_time_gan_str).expect("Unknown target time stem");
-    let target_time_branch =
-        parse_earthly_branch(&target_time_zhi_str).expect("Unknown target time branch");
+    let target_day_stem = stem_of(&target_day_gan_str, "target day")?;
+    let target_day_branch = branch_of(&target_day_zhi_str, "target day")?;
+    let target_time_stem = stem_of(&target_time_gan_str, "target time")?;
+    let target_time_branch = branch_of(&target_time_zhi_str, "target time")?;
 
     // ---- 5. 大限 ----
     //     虚岁落在某宫大限区间内取该宫；尚未起运时为童限，

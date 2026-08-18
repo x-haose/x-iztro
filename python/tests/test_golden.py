@@ -21,14 +21,33 @@ GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "golden"
 astro = Astro()
 
 
+# 抽样步长：金标用例按「年 × 时辰 × 性别」等嵌套循环平铺，等距切片的步长一旦
+# 与某一层的周期同余就会把该层锁死在单一取值（如只抽到 time_index=0）。
+# 改用与用例总数互素的模步进，保证抽样在每一层都遍历。
+_SAMPLE_STRIDE = 101
+
+
+def _sample(data: list[dict], limit: int) -> list[dict]:
+    from math import gcd
+
+    assert gcd(_SAMPLE_STRIDE, len(data)) == 1, (
+        f"抽样步长 {_SAMPLE_STRIDE} 与用例数 {len(data)} 不互素，会重复抽到同一批用例"
+    )
+    return [data[(i * _SAMPLE_STRIDE) % len(data)] for i in range(min(limit, len(data)))]
+
+
 def _tier1_cases(limit: int) -> list[dict]:
-    data = json.loads((GOLDEN / "tier1_data.json").read_text())
-    # 均匀抽样，覆盖不同年份与时辰
-    step = max(1, len(data) // limit)
-    return data[::step][:limit]
+    return _sample(json.loads((GOLDEN / "tier1_data.json").read_text()), limit)
 
 
-@pytest.mark.parametrize("case", _tier1_cases(60), ids=lambda c: f"{c['params']['solar_date']}-t{c['params']['time_index']}")
+def test_tier1_sampling_spans_time_indices() -> None:
+    """抽样必须跨越时辰维度，否则 time_index 相关的回归测不出来。"""
+    cases = _tier1_cases(60)
+    assert len({c["params"]["time_index"] for c in cases}) >= 10
+    assert len({c["params"]["gender"] for c in cases}) == 2
+
+
+@pytest.mark.parametrize("case", _tier1_cases(60), ids=lambda c: f"{c['params']['solar_date']}-t{c['params']['time_index']}-{c['params']['gender']}")
 def test_astrolabe_matches_tier1(case: dict) -> None:
     p = case["params"]
     gender = "male" if p["gender"] == "男" else "female"
@@ -58,9 +77,7 @@ def test_astrolabe_matches_tier1(case: dict) -> None:
 
 
 def _horoscope_cases(limit: int) -> list[dict]:
-    data = json.loads((GOLDEN / "horoscope_data.json").read_text())
-    step = max(1, len(data) // limit)
-    return data[::step][:limit]
+    return _sample(json.loads((GOLDEN / "horoscope_data.json").read_text()), limit)
 
 
 @pytest.mark.parametrize("case", _horoscope_cases(40), ids=lambda c: f"{c['p']['d']}-{c['td']}")
@@ -182,8 +199,11 @@ def test_chart_config_typed() -> None:
 
 
 def test_invalid_input_raises_value_error() -> None:
-    """任何非法输入抛 ValueError（而非 except Exception 捕不到的 PanicException）。"""
-    import pytest
+    """任何非法输入抛 IztroError（而非 except Exception 捕不到的 PanicException）。"""
+    from x_iztro import IztroError
+
+    # IztroError 继承 ValueError，既有的 except ValueError 仍能捕获
+    assert issubclass(IztroError, ValueError)
 
     with pytest.raises(ValueError):
         astro.by_solar("not-a-date", 2, "female")
@@ -193,3 +213,23 @@ def test_invalid_input_raises_value_error() -> None:
         astro.by_solar("2000-8-16", 2, "unknown")  # pyright: ignore[reportArgumentType]
     with pytest.raises(ValueError):
         astro.get_horoscope(astro.by_solar("2000-8-16", 2, "female"), "garbage", 0)
+
+
+def test_error_code_classifies_the_failure() -> None:
+    """错误的 code 属性是机器可读分类，文案是面向人的小写冒号式描述。"""
+    from x_iztro import IztroError
+
+    cases = [
+        (lambda: astro.by_solar("not-a-date", 2, "female"), "invalid_date"),
+        (lambda: astro.by_solar("2000-2-30", 2, "female"), "invalid_date"),
+        (lambda: astro.by_solar("2000-8-16", 13, "female"), "invalid_time_index"),
+        (lambda: astro.by_solar("2000-8-16", 2, "unknown"), "invalid_argument"),
+    ]
+    for call, code in cases:
+        try:
+            call()
+        except IztroError as e:
+            assert e.code == code, (code, e)
+            assert str(e)[0].islower(), str(e)
+        else:
+            raise AssertionError(f"应抛 IztroError（{code}）")

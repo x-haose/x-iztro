@@ -52,7 +52,7 @@ class Astro:
             Astrolabe 星盘对象
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = bridge.by_solar(
             solar_date=solar_date,
@@ -62,7 +62,7 @@ class Astro:
             language=language,
             config=_config(config),
         )
-        return Astrolabe._from_dict(data)
+        return Astrolabe._from_dict(data, config)
 
     def by_lunar(
         self,
@@ -90,7 +90,7 @@ class Astro:
             Astrolabe 星盘对象
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = bridge.by_lunar(
             lunar_date=lunar_date,
@@ -101,7 +101,7 @@ class Astro:
             language=language,
             config=_config(config),
         )
-        return Astrolabe._from_dict(data)
+        return Astrolabe._from_dict(data, config)
 
     def get_horoscope(
         self,
@@ -121,7 +121,7 @@ class Astro:
             Horoscope 运限对象，持有传入的星盘
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return astrolabe.horoscope(target_date, target_time_index)
 
@@ -136,7 +136,7 @@ class Astro:
             结构化文本 prompt
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return bridge.query(
             "astrolabeToPrompt",
@@ -145,7 +145,7 @@ class Astro:
             gender=astrolabe.gender_key,
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
-            config=astrolabe.config.to_dict(),
+            config=astrolabe._config_payload(),
         )
 
     def horoscope_to_prompt(
@@ -166,7 +166,7 @@ class Astro:
             结构化文本 prompt
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return bridge.query(
             "horoscopeToPrompt",
@@ -175,7 +175,7 @@ class Astro:
             gender=astrolabe.gender_key,
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
-            config=astrolabe.config.to_dict(),
+            config=astrolabe._config_payload(),
             target_date=target_date,
             target_time_index=target_time_index,
         )

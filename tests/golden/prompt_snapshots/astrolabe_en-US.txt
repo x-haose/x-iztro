@@ -1,0 +1,119 @@
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+Chinese Date: geng chen - jia shen - bing woo - geng yin
+Time: Tiger hour (03:00~05:00)
+Zodiac Sign: leo
+Zodiac Animal: dragon
+Soul Palace Branch: woo
+Body Palace Branch: xu
+Soul Star: rebel
+Body Star: scholar
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+=== Palaces ===
+
+--- wealth ---
+Stem-Branch: wuyin
+Decadal: 43-52
+Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+
+--- children ---
+Stem-Branch: jimao
+Decadal: 33-42
+Age Fortune Years: 8, 20, 32, 44, 56, 68, 80, 92, 104, 116
+Twelve Gods: buried, book, illness, listless
+Major Stars: sun([+3])[A], sage([+3])
+Adjective Stars: serious
+
+--- spouse [Original Palace] ---
+Stem-Branch: gengchen
+Decadal: 23-32
+Age Fortune Years: 7, 19, 31, 43, 55, 67, 79, 91, 103, 115
+Twelve Gods: dead, general, initial, religious
+Major Stars: marshal([+3])
+Minor Stars: helper, impulsive([-3])
+Adjective Stars: awarded, religious
+
+--- siblings ---
+Stem-Branch: xinsi
+Decadal: 13-22
+Age Fortune Years: 6, 18, 30, 42, 54, 66, 78, 90, 102, 114
+Twelve Gods: sick, consumer, unlucky, robbed
+Major Stars: advisor([-1])
+Adjective Stars: cheerful, utopian, alone
+
+--- soul ---
+Stem-Branch: renwoo
+Decadal: 3-12
+Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+Twelve Gods: weak, dragon, downcast, disastery
+Major Stars: emperor([+3])
+Minor Stars: artist([-3])
+Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+
+--- parents ---
+Stem-Branch: guiwei
+Decadal: 113-122
+Age Fortune Years: 4, 16, 28, 40, 52, 64, 76, 88, 100, 112
+Twelve Gods: prime, sumo, tied, condemned
+Minor Stars: aide, tangled([+3])
+Adjective Stars: social, bottomless
+
+--- spirit ---
+Stem-Branch: jiashen
+Decadal: 103-112
+Age Fortune Years: 3, 15, 27, 39, 51, 63, 75, 87, 99, 111
+Twelve Gods: adulthood, doctor, official, insidious
+Major Stars: rebel([+1])
+Minor Stars: scholar([+1]), money
+Adjective Stars: talented, honorable, fancied
+
+--- property ---
+Stem-Branch: yiyou
+Decadal: 93-102
+Age Fortune Years: 2, 14, 26, 38, 50, 62, 74, 86, 98, 110
+Twelve Gods: adolescence, government, consumer, passionate
+Minor Stars: ideologue, driven([-3])
+Adjective Stars: passionate, noble, peaceful
+
+--- career [Body Palace] ---
+Stem-Branch: bingxu
+Decadal: 83-92
+Age Fortune Years: 1, 13, 25, 37, 49, 61, 73, 85, 97, 109
+Twelve Gods: infancy, ambush, wastrel, hapless
+Major Stars: judge([0]), empress([+3])
+Minor Stars: officer
+Adjective Stars: gifted, frail
+
+--- friends ---
+Stem-Branch: dinghai
+Decadal: 73-82
+Age Fortune Years: 12, 24, 36, 48, 60, 72, 84, 96, 108, 120
+Twelve Gods: born, wastrel, virtuous, perished
+Major Stars: moon([+3])[C]
+Adjective Stars: attractive, grateful, solemn, sickly, wounded
+
+--- surface ---
+Stem-Branch: wuzi
+Decadal: 63-72
+Age Fortune Years: 11, 23, 35, 47, 59, 71, 83, 95, 107, 119
+Twelve Gods: molding, illness, sinister, capable
+Major Stars: wolf([+2])
+Minor Stars: spark([-3])
+Adjective Stars: dignified
+
+--- health ---
+Stem-Branch: jichou
+Decadal: 53-62
+Age Fortune Years: 10, 22, 34, 46, 58, 70, 82, 94, 106, 118
+Twelve Gods: embryo, happiness, blessed, admired
+Major Stars: fortunate([-2])[D], advocator([-2])
+Minor Stars: assistant, fickle
+Adjective Stars: blessed, lonely, broken, heaven

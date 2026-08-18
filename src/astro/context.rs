@@ -8,7 +8,7 @@ use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
 use lunar_rust::{lunar, solar};
 
-use crate::astro::builder::{fix_lunar_month_index, parse_earthly_branch, parse_heavenly_stem};
+use crate::astro::builder::{branch_of, fix_lunar_month_index, stem_of};
 use crate::astro::palace::{SoulAndBody, get_five_elements_class, get_soul_and_body};
 use crate::data::types::*;
 use crate::error::IztroError;
@@ -75,10 +75,8 @@ pub fn derive(
             lunar_ref.get_year_zhi_by_li_chun(),
         ),
     };
-    let yearly_stem = parse_heavenly_stem(&yearly_stem_str)
-        .unwrap_or_else(|| panic!("Unknown heavenly stem: {yearly_stem_str}"));
-    let yearly_branch = parse_earthly_branch(&yearly_branch_str)
-        .unwrap_or_else(|| panic!("Unknown earthly branch: {yearly_branch_str}"));
+    let yearly_stem = stem_of(&yearly_stem_str, "birth year")?;
+    let yearly_branch = branch_of(&yearly_branch_str, "birth year")?;
 
     let (flow_stem_str, flow_branch_str) = match config.horoscope_divide {
         HoroscopeDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
@@ -87,10 +85,8 @@ pub fn derive(
             lunar_ref.get_year_zhi_by_li_chun(),
         ),
     };
-    let flow_yearly_stem = parse_heavenly_stem(&flow_stem_str)
-        .unwrap_or_else(|| panic!("Unknown heavenly stem: {flow_stem_str}"));
-    let flow_yearly_branch = parse_earthly_branch(&flow_branch_str)
-        .unwrap_or_else(|| panic!("Unknown earthly branch: {flow_branch_str}"));
+    let flow_yearly_stem = stem_of(&flow_stem_str, "flow year")?;
+    let flow_yearly_branch = branch_of(&flow_branch_str, "flow year")?;
 
     let month_index = fix_lunar_month_index(
         lunar_month,

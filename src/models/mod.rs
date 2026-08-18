@@ -6,3 +6,5 @@ pub mod horoscope;
 pub mod palace;
 /// 星耀结构
 pub mod star;
+/// 三方四正
+pub mod surpalaces;

@@ -88,6 +88,15 @@ pub const PALACES: [Palace; 12] = [
     Palace::Siblings,
 ];
 
+/// 五行局顺序，按局数由小到大
+pub const FIVE_ELEMENTS_CLASSES: [FiveElementsClass; 5] = [
+    FiveElementsClass::Water2nd,
+    FiveElementsClass::Wood3rd,
+    FiveElementsClass::Metal4th,
+    FiveElementsClass::Earth5th,
+    FiveElementsClass::Fire6th,
+];
+
 /// 时辰对应的时间范围
 pub const TIME_RANGES: [&str; 13] = [
     "00:00~01:00",

@@ -4,37 +4,8 @@
 
 use crate::data::stars::StarKey;
 use crate::data::types::*;
-use crate::i18n::translate_star;
 use crate::models::star::Star;
 use crate::utils::fix_index;
-
-/// 创建一颗星耀
-fn make_star(
-    key: StarKey,
-    star_type: StarType,
-    scope: Scope,
-    palace_index: usize,
-    yearly_stem: Option<HeavenlyStem>,
-    lang: Language,
-    config: &Config,
-) -> Star {
-    let brightness = config.brightness_of(key, palace_index);
-    let mutagen = yearly_stem.and_then(|stem| {
-        config
-            .mutagens_of(stem)
-            .iter()
-            .position(|&k| k == key)
-            .map(|i| [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji][i])
-    });
-    Star {
-        key,
-        name: translate_star(key, lang).to_string(),
-        star_type,
-        scope,
-        brightness,
-        mutagen,
-    }
-}
 
 /// 获取14颗主星的安放结果
 ///
@@ -62,7 +33,7 @@ pub fn get_major_stars(
 
     for (offset, key) in ziwei_group {
         let idx = fix_index(ziwei_index as i32 - offset as i32, 12);
-        let star = make_star(
+        let star = crate::star::make_star(
             key,
             StarType::Major,
             Scope::Origin,
@@ -90,7 +61,7 @@ pub fn get_major_stars(
 
     for (offset, key) in tianfu_group {
         let idx = fix_index(tianfu_index as i32 + offset as i32, 12);
-        let star = make_star(
+        let star = crate::star::make_star(
             key,
             StarType::Major,
             Scope::Origin,

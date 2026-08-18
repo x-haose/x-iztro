@@ -4,11 +4,30 @@ x-iztro 枚举与常量。
 全部枚举取语言无关的标识值（iztro i18n key），与数据对象上的
 `key`/`*_key` 字段直接比较——因此在任何输出语言的星盘上都能正确判断。
 展示文本请读取数据对象上对应的翻译字段（如 `Star.name`、`Palace.name`）。
+
+排盘入参的类型别名与四化位次也在这里：它们同样是「合法取值」这一件事的表达，
+别名让 IDE 直接提示可选值，四化位次是「禄权科忌」固定顺序在各处的唯一来源。
 """
 
 from __future__ import annotations
 
-from enum import StrEnum
+from typing import Literal
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python 3.10 没有 StrEnum
+    from enum import Enum
+
+    class StrEnum(str, Enum):  # type: ignore[no-redef]
+        """`enum.StrEnum` 在 Python 3.10 上的等价实现。
+
+        成员即其字符串值：`str(member)`、`f"{member}"` 与直接同字面量比较的
+        结果都与 3.11+ 的 `StrEnum` 一致，因此枚举可以直接同星盘的
+        `*_key` 字段比较。
+        """
+
+        __str__ = str.__str__  # type: ignore[assignment]
+        __format__ = str.__format__  # type: ignore[assignment]
 
 
 class Gender(StrEnum):
@@ -144,17 +163,32 @@ class PalaceName(StrEnum):
 
 
 class FiveElementsClass(StrEnum):
-    """五行局（对应 `Astrolabe.five_elements_class_key`）"""
+    """五行局（对应 `Astrolabe.five_elements_class_key`）。
 
-    WATER_2 = "water2nd"
+    成员的 `number` 属性即局数（水二局为 2，火六局为 6），
+    取值与数据表 `x_iztro.data.constants().five_elements_class` 一致；
+    局数决定紫微起宫与大限起运岁数。
+    """
+
+    def __new__(cls, value: str, number: int) -> FiveElementsClass:
+        """成员值仍是标识字符串，局数作为附加属性挂在成员上。"""
+        member = str.__new__(cls, value)
+        member._value_ = value
+        member.number = number
+        return member
+
+    number: int
+    """局数 2-6"""
+
+    WATER_2 = ("water2nd", 2)
     """水二局"""
-    WOOD_3 = "wood3rd"
+    WOOD_3 = ("wood3rd", 3)
     """木三局"""
-    METAL_4 = "metal4th"
+    METAL_4 = ("metal4th", 4)
     """金四局"""
-    EARTH_5 = "earth5th"
+    EARTH_5 = ("earth5th", 5)
     """土五局"""
-    FIRE_6 = "fire6th"
+    FIRE_6 = ("fire6th", 6)
     """火六局"""
 
 
@@ -357,6 +391,8 @@ class AdjectiveStar(StrEnum):
     """截空（中州派）"""
     XUNKONG = "xunkong"
     """旬空"""
+    XUNZHONG = "xunzhong"
+    """旬中"""
     KONGWANG = "kongwang"
     """空亡"""
     JIELU = "jielu"
@@ -499,3 +535,156 @@ class Jiangqian12(StrEnum):
     """月煞"""
     WANGSHEN = "wangshen"
     """亡神"""
+
+
+class HoroscopeStar(StrEnum):
+    """流耀（对应运限对象 `stars` 里的 `Star.key`）。
+
+    同一颗星在每个运限层级各有一个标识与名称，前缀标出层级：
+    `yun*` 大限、`liu*` 流年、`yue*` 流月、`ri*` 流日、`shi*` 流时。
+    本命层级的对应星耀在 `MinorStar` 与 `AdjectiveStar` 里。
+    """
+
+    # 大限
+    YUN_KUI = "yunkui"
+    """运魁（大限层级的天魁）"""
+    YUN_YUE = "yunyue"
+    """运钺（大限层级的天钺）"""
+    YUN_CHANG = "yunchang"
+    """运昌（大限层级的文昌）"""
+    YUN_QU = "yunqu"
+    """运曲（大限层级的文曲）"""
+    YUN_LUAN = "yunluan"
+    """运鸾（大限层级的红鸾）"""
+    YUN_XI = "yunxi"
+    """运喜（大限层级的天喜）"""
+    YUN_LU = "yunlu"
+    """运禄（大限层级的禄存）"""
+    YUN_YANG = "yunyang"
+    """运羊（大限层级的擎羊）"""
+    YUN_TUO = "yuntuo"
+    """运陀（大限层级的陀罗）"""
+    YUN_MA = "yunma"
+    """运马（大限层级的天马）"""
+    # 流年
+    LIU_KUI = "liukui"
+    """流魁（流年层级的天魁）"""
+    LIU_YUE = "liuyue"
+    """流钺（流年层级的天钺）"""
+    LIU_CHANG = "liuchang"
+    """流昌（流年层级的文昌）"""
+    LIU_QU = "liuqu"
+    """流曲（流年层级的文曲）"""
+    LIU_LUAN = "liuluan"
+    """流鸾（流年层级的红鸾）"""
+    LIU_XI = "liuxi"
+    """流喜（流年层级的天喜）"""
+    LIU_LU = "liulu"
+    """流禄（流年层级的禄存）"""
+    LIU_YANG = "liuyang"
+    """流羊（流年层级的擎羊）"""
+    LIU_TUO = "liutuo"
+    """流陀（流年层级的陀罗）"""
+    LIU_MA = "liuma"
+    """流马（流年层级的天马）"""
+    # 流月
+    YUE_KUI = "yuekui"
+    """月魁（流月层级的天魁）"""
+    YUE_YUE = "yueyue"
+    """月钺（流月层级的天钺）"""
+    YUE_CHANG = "yuechang"
+    """月昌（流月层级的文昌）"""
+    YUE_QU = "yuequ"
+    """月曲（流月层级的文曲）"""
+    YUE_LUAN = "yueluan"
+    """月鸾（流月层级的红鸾）"""
+    YUE_XI = "yuexi"
+    """月喜（流月层级的天喜）"""
+    YUE_LU = "yuelu"
+    """月禄（流月层级的禄存）"""
+    YUE_YANG = "yueyang"
+    """月羊（流月层级的擎羊）"""
+    YUE_TUO = "yuetuo"
+    """月陀（流月层级的陀罗）"""
+    YUE_MA = "yuema"
+    """月马（流月层级的天马）"""
+    # 流日
+    RI_KUI = "rikui"
+    """日魁（流日层级的天魁）"""
+    RI_YUE = "riyue"
+    """日钺（流日层级的天钺）"""
+    RI_CHANG = "richang"
+    """日昌（流日层级的文昌）"""
+    RI_QU = "riqu"
+    """日曲（流日层级的文曲）"""
+    RI_LUAN = "riluan"
+    """日鸾（流日层级的红鸾）"""
+    RI_XI = "rixi"
+    """日喜（流日层级的天喜）"""
+    RI_LU = "rilu"
+    """日禄（流日层级的禄存）"""
+    RI_YANG = "riyang"
+    """日羊（流日层级的擎羊）"""
+    RI_TUO = "rituo"
+    """日陀（流日层级的陀罗）"""
+    RI_MA = "rima"
+    """日马（流日层级的天马）"""
+    # 流时
+    SHI_KUI = "shikui"
+    """时魁（流时层级的天魁）"""
+    SHI_YUE = "shiyue"
+    """时钺（流时层级的天钺）"""
+    SHI_CHANG = "shichang"
+    """时昌（流时层级的文昌）"""
+    SHI_QU = "shiqu"
+    """时曲（流时层级的文曲）"""
+    SHI_LUAN = "shiluan"
+    """时鸾（流时层级的红鸾）"""
+    SHI_XI = "shixi"
+    """时喜（流时层级的天喜）"""
+    SHI_LU = "shilu"
+    """时禄（流时层级的禄存）"""
+    SHI_YANG = "shiyang"
+    """时羊（流时层级的擎羊）"""
+    SHI_TUO = "shituo"
+    """时陀（流时层级的陀罗）"""
+    SHI_MA = "shima"
+    """时马（流时层级的天马）"""
+
+
+TimeIndexType = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+GenderType = Literal["male", "female"]
+LanguageType = Literal["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]
+StarTypeLiteral = Literal[
+    "major", "soft", "tough", "adjective", "flower", "helper", "lucun", "tianma"
+]
+ScopeLiteral = Literal["origin", "decadal", "yearly", "monthly", "daily", "hourly"]
+
+
+# ============================================================
+# 四化位次（四化标识 → 在 [禄, 权, 科, 忌] 中的下标）
+# ============================================================
+
+_MUTAGEN_INDEX: dict[str, int] = {
+    Mutagen.LU: 0,
+    Mutagen.QUAN: 1,
+    Mutagen.KE: 2,
+    Mutagen.JI: 3,
+}
+
+
+def _as_mutagen_list(mutagens: Mutagen | list[Mutagen]) -> list[Mutagen]:
+    """把单个四化或四化列表统一成列表。"""
+    if isinstance(mutagens, list):
+        return mutagens
+    return [mutagens]
+
+
+def _or_all_mutagens(
+    mutagens: Mutagen | list[Mutagen] | None,
+) -> list[Mutagen]:
+    """空值回退为全部四化，顺序为禄、权、科、忌。"""
+    if mutagens is None:
+        return list(Mutagen)
+    out = _as_mutagen_list(mutagens)
+    return out if out else list(Mutagen)

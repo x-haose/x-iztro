@@ -1,7 +1,7 @@
 /**
  * Tier 2 golden test generator
  * Coverage: 60 years (1984-2043) × 12 months × {day 1, day 15} × 13 time indices × 2 genders
- * ~18,720 cases stored as 60 files (one per year)
+ * ~37,440 cases stored as 60 files (one per year)
  */
 import { astro } from 'iztro';
 import { writeFileSync, mkdirSync } from 'node:fs';

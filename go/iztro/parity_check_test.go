@@ -1,8 +1,10 @@
 package iztro
 
 import (
+	"errors"
 	"fmt"
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -535,45 +537,52 @@ func TestHoroscopeNowParity(t *testing.T) {
 	}
 }
 
-// TestPromptParity 断言 Go 侧 Prompt 与 Rust / Python 生成同一段文本。
+// promptSnapshot 读取 Rust 侧写下的 prompt 快照。
+func promptSnapshot(t *testing.T, name string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("..", "..", "tests", "golden", "prompt_snapshots", name+".txt"))
+	if err != nil {
+		t.Fatalf("prompt 快照不可用: %v", err)
+	}
+	return string(raw)
+}
+
+// TestPromptParity 断言 Go 侧 Prompt 与 Rust 侧快照逐字节相同。
+//
+// 快照由 tests/prompt_snapshot.rs 生成，固定盘 2000-8-16 时辰 2 女命、
+// 运限目标 2025-1-1 时辰 0。措辞、字段顺序、段落增删任一处漂移都会暴露；
+// 有意改动 prompt 时按 Rust 侧的流程重建快照，两侧一起更新。
 func TestPromptParity(t *testing.T) {
-	chart, err := BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, lang := range []string{LanguageZhCN, LanguageEnUS} {
+		chart, err := BySolar("2000-8-16", 2, GenderFemale, true, lang, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	natal, err := chart.AstrolabeToPrompt()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(natal, "紫微") || !strings.Contains(natal, "木三局") {
-		t.Fatalf("本命 prompt 缺少关键内容:\n%s", natal)
-	}
+		natal, err := chart.AstrolabeToPrompt()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := promptSnapshot(t, "astrolabe_"+lang); natal != want {
+			t.Errorf("%s 本命 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, natal, want)
+		}
 
-	horo, err := chart.HoroscopeToPrompt("2024-10-1", 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(horo, "甲辰") {
-		t.Fatalf("运限 prompt 缺少流年干支:\n%s", horo)
-	}
-
-	// 输出跟随排盘语言
-	en, err := BySolar("2000-8-16", 2, "female", true, "en-US", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	enPrompt, err := en.AstrolabeToPrompt()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(enPrompt, "emperor") {
-		t.Fatalf("英文 prompt 缺少 emperor:\n%s", enPrompt)
+		horo, err := chart.HoroscopeToPrompt("2025-1-1", 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := promptSnapshot(t, "horoscope_"+lang); horo != want {
+			t.Errorf("%s 运限 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, horo, want)
+		}
 	}
 
 	// 非法运限目标应返回 error
-	if _, err := chart.HoroscopeToPrompt("garbage", 0); err == nil {
-		t.Fatal("非法目标日期应报错")
+	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chart.HoroscopeToPrompt("garbage", 0); !errors.Is(err, ErrInvalidDate) {
+		t.Fatalf("非法目标日期应报 ErrInvalidDate，实际 %v", err)
 	}
 }
 

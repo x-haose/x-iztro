@@ -1,8 +1,8 @@
 package iztro
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 )
 
 // 轻量查询：不需要完整星盘就能拿到的单个结果。
@@ -15,17 +15,13 @@ type queryResult struct {
 
 // query 调用 wasm 的查询入口并取出结果字符串。
 func query(payload map[string]any) (string, error) {
-	r, err := getRuntime()
-	if err != nil {
-		return "", err
-	}
-	raw, err := r.call(r.query, payload)
+	raw, err := callWasm(context.Background(), fnQuery, payload)
 	if err != nil {
 		return "", err
 	}
 	var out queryResult
 	if err := json.Unmarshal(raw, &out); err != nil {
-		return "", fmt.Errorf("iztro: decode query result: %w", err)
+		return "", internalError("decode query result: " + err.Error())
 	}
 	return out.Value, nil
 }

@@ -1,6 +1,7 @@
 package iztro
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -12,11 +13,12 @@ import (
 
 // utilQuery 调用 wasm 查询入口，把 value 解到 out 指向的值。
 func utilQuery(payload map[string]any, out any) error {
-	r, err := getRuntime()
-	if err != nil {
-		return err
-	}
-	raw, err := r.call(r.query, payload)
+	return utilQueryContext(context.Background(), payload, out)
+}
+
+// utilQueryContext 为 utilQuery 的 Context 变体。
+func utilQueryContext(ctx context.Context, payload map[string]any, out any) error {
+	raw, err := callWasm(ctx, fnQuery, payload)
 	if err != nil {
 		return err
 	}
@@ -24,38 +26,81 @@ func utilQuery(payload map[string]any, out any) error {
 		Value json.RawMessage `json:"value"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {
-		return fmt.Errorf("iztro: decode query result: %w", err)
+		return internalError("decode query result: " + err.Error())
 	}
 	if err := json.Unmarshal(envelope.Value, out); err != nil {
-		return fmt.Errorf("iztro: decode query value: %w", err)
+		return internalError("decode query value: " + err.Error())
 	}
 	return nil
 }
 
 // FixIndex 把索引约束到 0..max 的循环区间；负数也能正确回绕。
-// max 传 0 时取默认值 12。
+//
+// max 传 0 时取默认值 12——这是 iztro fixIndex 默认参数的等价写法，
+// 与 Go 零值直觉相反，十二宫回绕请直接用 FixIndex12。max 为负数时返回错误。
+//
+// 语义同 wasm 查询 "fixIndex"；只是取模，故在 Go 侧直接算，不往返 wasm。
 func FixIndex(index int, max int) (int, error) {
-	payload := map[string]any{"kind": "fixIndex", "index": index}
-	if max != 0 {
-		payload["max"] = max
+	if max < 0 {
+		return 0, invalidArgument(fmt.Sprintf("invalid max '%d': expected a positive integer", max))
 	}
-	var out int
-	return out, utilQuery(payload, &out)
+	if max == 0 {
+		max = 12
+	}
+	return ((index % max) + max) % max, nil
+}
+
+// FixIndex12 把索引约束到 0..11 的循环区间，即十二宫的回绕；负数也能正确回绕。
+func FixIndex12(index int) int {
+	return ((index % 12) + 12) % 12
 }
 
 // EarthlyBranchToPalaceIndex 地支标识转宫位索引（寅宫为 0）。
+// branchKey 不是合法地支标识时返回错误。
+//
+// 语义同 wasm 查询 "earthlyBranchToPalaceIndex"；只是查序号加取模，
+// 故在 Go 侧直接算，不往返 wasm。
 func EarthlyBranchToPalaceIndex(branchKey string) (int, error) {
-	var out int
-	return out, utilQuery(map[string]any{
-		"kind":      "earthlyBranchToPalaceIndex",
-		"branchKey": branchKey,
-	}, &out)
+	index, ok := branchOrder[branchKey]
+	if !ok {
+		return 0, invalidArgument(fmt.Sprintf("unknown earthly branch key '%s'", branchKey))
+	}
+	// 宫位自寅起，减去寅的地支序号 2
+	return FixIndex12(index - 2), nil
+}
+
+// branchOrder 为地支标识到地支序号的映射，子为 0、亥为 11。
+var branchOrder = map[string]int{
+	BranchZi:   0,
+	BranchChou: 1,
+	BranchYin:  2,
+	BranchMao:  3,
+	BranchChen: 4,
+	BranchSi:   5,
+	BranchWu:   6,
+	BranchWei:  7,
+	BranchShen: 8,
+	BranchYou:  9,
+	BranchXu:   10,
+	BranchHai:  11,
 }
 
 // TimeToIndex 小时（0-23）转时辰索引：0 为早子时，12 为晚子时。
+// hour 超出 0-23 时返回错误。
+//
+// 语义同 wasm 查询 "timeToIndex"；只是整数除法，故在 Go 侧直接算，不往返 wasm。
 func TimeToIndex(hour uint8) (uint8, error) {
-	var out uint8
-	return out, utilQuery(map[string]any{"kind": "timeToIndex", "hour": hour}, &out)
+	switch {
+	case hour > 23:
+		return 0, invalidArgument(fmt.Sprintf("invalid hour '%d': expected 0-23", hour))
+	case hour == 0:
+		return 0, nil
+	case hour == 23:
+		return 12, nil
+	default:
+		// 每两小时一个时辰，奇数小时进位到下一个时辰
+		return (hour + 1) / 2, nil
+	}
 }
 
 // GetAgeIndex 由生年地支取小限起始宫位索引。
@@ -238,7 +283,7 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 	}
 	for gi, group := range groups {
 		if len(group) != 12 {
-			return nil, fmt.Errorf("iztro: 第 %d 组星耀须为十二宫，实际 %d 项", gi, len(group))
+			return nil, invalidArgument(fmt.Sprintf("star group %d must cover 12 palaces, got %d", gi, len(group)))
 		}
 		for i, stars := range group {
 			merged[i] = append(merged[i], stars...)
@@ -250,29 +295,47 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 // AstrolabeToPrompt 生成本命盘的 AI 分析 prompt：一段结构化文本，
 // 按星盘的排盘语言输出，可直接喂给大模型。
 func (a *Astrolabe) AstrolabeToPrompt() (string, error) {
+	return a.AstrolabeToPromptContext(context.Background())
+}
+
+// AstrolabeToPromptContext 为 AstrolabeToPrompt 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) AstrolabeToPromptContext(ctx context.Context) (string, error) {
+	if a == nil {
+		return "", invalidArgument("astrolabeToPrompt: nil astrolabe")
+	}
 	var out string
-	return out, utilQuery(map[string]any{
+	return out, utilQueryContext(ctx, map[string]any{
 		"kind":      "astrolabeToPrompt",
 		"solarDate": a.SolarDate,
 		"timeIndex": a.TimeIndex,
 		"gender":    a.GenderKey,
 		"fixLeap":   a.FixLeap,
 		"language":  a.Language,
-		"config":    &a.Config,
+		"config":    a.requestConfig(),
 	}, &out)
 }
 
 // HoroscopeToPrompt 生成运限的 AI 分析 prompt；本命信息与运限一并写入。
 func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error) {
+	return a.HoroscopeToPromptContext(context.Background(), targetDate, targetTimeIndex)
+}
+
+// HoroscopeToPromptContext 为 HoroscopeToPrompt 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeToPromptContext(ctx context.Context, targetDate string, targetTimeIndex uint8) (string, error) {
+	if a == nil {
+		return "", invalidArgument("horoscopeToPrompt: nil astrolabe")
+	}
 	var out string
-	return out, utilQuery(map[string]any{
+	return out, utilQueryContext(ctx, map[string]any{
 		"kind":            "horoscopeToPrompt",
 		"solarDate":       a.SolarDate,
 		"timeIndex":       a.TimeIndex,
 		"gender":          a.GenderKey,
 		"fixLeap":         a.FixLeap,
 		"language":        a.Language,
-		"config":          &a.Config,
+		"config":          a.requestConfig(),
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
 	}, &out)

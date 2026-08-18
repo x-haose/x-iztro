@@ -4,36 +4,7 @@
 
 use crate::data::stars::StarKey;
 use crate::data::types::*;
-use crate::i18n::translate_star;
 use crate::models::star::Star;
-
-/// 创建一颗辅星
-fn make_star(
-    key: StarKey,
-    star_type: StarType,
-    scope: Scope,
-    palace_index: usize,
-    yearly_stem: Option<HeavenlyStem>,
-    lang: Language,
-    config: &Config,
-) -> Star {
-    let brightness = config.brightness_of(key, palace_index);
-    let mutagen = yearly_stem.and_then(|stem| {
-        config
-            .mutagens_of(stem)
-            .iter()
-            .position(|&k| k == key)
-            .map(|i| [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji][i])
-    });
-    Star {
-        key,
-        name: translate_star(key, lang).to_string(),
-        star_type,
-        scope,
-        brightness,
-        mutagen,
-    }
-}
 
 /// 获取14颗辅星的安放结果。
 /// 安放顺序（决定宫内星耀排列）：左辅、右弼、文昌、文曲、天魁、天钺、
@@ -84,7 +55,7 @@ pub fn get_minor_stars(
         } else {
             None
         };
-        result[idx].push(make_star(
+        result[idx].push(crate::star::make_star(
             key,
             star_type,
             Scope::Origin,
