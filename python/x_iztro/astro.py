@@ -32,12 +32,15 @@ class Astro:
         solar_date: str,
         time_index: TimeIndexType,
         gender: GenderType,
+        *,
         fix_leap: bool = True,
         language: LanguageType = "zh-CN",
         config: ChartConfig | None = None,
     ) -> Astrolabe:
         """
         阳历排盘
+
+        `gender` 之后的参数只能按关键字传入：布尔与语言码相邻，位置传参极易写反且不报错。
 
         Args:
             solar_date: 阳历日期，如 "2000-8-16"
@@ -52,7 +55,7 @@ class Astro:
             Astrolabe 星盘对象
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = bridge.by_solar(
             solar_date=solar_date,
@@ -62,13 +65,14 @@ class Astro:
             language=language,
             config=_config(config),
         )
-        return Astrolabe._from_dict(data)
+        return Astrolabe._from_dict(data, config)
 
     def by_lunar(
         self,
         lunar_date: str,
         time_index: TimeIndexType,
         gender: GenderType,
+        *,
         is_leap_month: bool = False,
         fix_leap: bool = True,
         language: LanguageType = "zh-CN",
@@ -76,6 +80,9 @@ class Astro:
     ) -> Astrolabe:
         """
         农历排盘
+
+        `gender` 之后的参数只能按关键字传入：`is_leap_month` 与 `fix_leap` 两个布尔相邻，
+        位置传参写反了不报错、盘会静默错一个月。
 
         Args:
             lunar_date: 农历日期，如 "2000-7-17"
@@ -90,7 +97,7 @@ class Astro:
             Astrolabe 星盘对象
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         data = bridge.by_lunar(
             lunar_date=lunar_date,
@@ -101,7 +108,7 @@ class Astro:
             language=language,
             config=_config(config),
         )
-        return Astrolabe._from_dict(data)
+        return Astrolabe._from_dict(data, config)
 
     def get_horoscope(
         self,
@@ -121,7 +128,7 @@ class Astro:
             Horoscope 运限对象，持有传入的星盘
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return astrolabe.horoscope(target_date, target_time_index)
 
@@ -136,7 +143,7 @@ class Astro:
             结构化文本 prompt
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return bridge.query(
             "astrolabeToPrompt",
@@ -145,7 +152,7 @@ class Astro:
             gender=astrolabe.gender_key,
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
-            config=astrolabe.config.to_dict(),
+            config=astrolabe._config_payload(),
         )
 
     def horoscope_to_prompt(
@@ -166,7 +173,7 @@ class Astro:
             结构化文本 prompt
 
         Raises:
-            ValueError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
+            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return bridge.query(
             "horoscopeToPrompt",
@@ -175,7 +182,7 @@ class Astro:
             gender=astrolabe.gender_key,
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
-            config=astrolabe.config.to_dict(),
+            config=astrolabe._config_payload(),
             target_date=target_date,
             target_time_index=target_time_index,
         )

@@ -10,7 +10,9 @@ Go 绑定走的是同一个 Rust 分派函数，因此两侧的行为不会分�
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeVar
+
+T = TypeVar("T")
 
 
 def _native():
@@ -24,6 +26,27 @@ def _camel(name: str) -> str:
     """snake_case 转 camelCase。"""
     head, *rest = name.split("_")
     return head + "".join(part.title() for part in rest)
+
+
+def _snake(name: str) -> str:
+    """camelCase 转 snake_case。"""
+    out = []
+    for ch in name:
+        if ch.isupper():
+            out.append("_")
+            out.append(ch.lower())
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def typed(cls: type[T], payload: dict[str, Any]) -> T:
+    """把 camelCase 键的绑定层结果落成具名 dataclass。
+
+    dataclass 的字段名一律是绑定层键名的 snake_case 形式，多一个键或少一个键
+    都会在构造时立即报错，因此契约漂移不会被静默吞掉。
+    """
+    return cls(**{_snake(k): v for k, v in payload.items()})
 
 
 def _payload(params: dict[str, Any]) -> dict[str, Any]:

@@ -1,0 +1,449 @@
+---
+title: Star placement
+description: Where a group of stars lands given birth data.
+---
+
+Use this layer when you do not want a whole chart and only need "which palace does Lucun land in?" or
+"how are the adjective stars distributed on this chart?".
+
+Every index is a **palace index**: 0 is the Yin palace, 11 the Chou palace.
+
+## StarBirth
+
+The entry points that take birth data all share this one parameter struct.
+
+```go
+type StarBirth struct {
+    SolarDate  string
+    TimeIndex  uint8
+    Gender     string
+    FixLeap    bool
+    Language   string
+    Config     *Config
+    FromStem   string
+    FromBranch string
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `SolarDate` | `string` | Solar date in `YYYY-M-D` |
+| `TimeIndex` | `uint8` | Hour index 0–12 |
+| `Gender` | `string` | Gender, which sets the direction of the Changsheng and Boshi gods |
+| `FixLeap` | `bool` | Whether to correct for leap months |
+| `Language` | `string` | Output language for star names; empty takes `zh-CN` |
+| `Config` | `*Config` | Charting configuration; `nil` takes the defaults |
+| `FromStem` / `FromBranch` | `string` | The pillar anchoring the five elements class; both must be given together |
+
+```go
+birth := iztro.StarBirth{
+    SolarDate: "2000-8-16",
+    TimeIndex: 2,
+    Gender:    iztro.GenderFemale,
+    FixLeap:   true,
+    Language:  "en-US",
+}
+```
+
+<Callout type="info">
+The examples on this page set `Language` to `"en-US"`, so the star names in the output are English.
+Leaving the field empty would take the default of `zh-CN`.
+</Callout>
+
+<Callout type="info" title="FromStem / FromBranch only affect the five elements class">
+Once both are given, the class is derived from that pillar instead, which in turn moves Ziwei and
+Tianfu and the Changsheng gods. How the other star groups are placed is unaffected. Use it to obtain
+the placements of the Zhongzhou school's earth and human charts.
+</Callout>
+
+---
+
+## GetStartIndex
+
+**Purpose** Find the starting palaces of Ziwei and Tianfu.
+
+**Zi Wei meaning** Ziwei is the anchor of the whole chart, located from the five elements class and
+the lunar day by the Ziwei placement rule; the other thirteen major stars then spread out from Ziwei
+and Tianfu. Tianfu's position mirrors Ziwei's.
+
+**Signature**
+
+```go
+func GetStartIndex(birth StarBirth) (StartIndex, error)
+```
+
+**Return value** `StartIndex{ ZiweiIndex, TianfuIndex int }`.
+
+**Example**
+
+```go
+s, _ := iztro.GetStartIndex(birth)
+fmt.Printf("%+v\n", s)
+```
+
+**Output**
+
+```text
+{ZiweiIndex:4 TianfuIndex:8}
+```
+
+---
+
+## Landing indices per group
+
+The following six entry points share a shape: they take a `StarBirth` and return a struct whose fields
+are all palace indices.
+
+| Function | Return type | Fields | Placement rule |
+| --- | --- | --- | --- |
+| `GetLuYangTuoMaIndex` | `LuYangTuoMaIndex` | `LuIndex` `YangIndex` `TuoIndex` `MaIndex` | The year stem places Lucun, with Qingyang ahead and Tuoluo behind; Tianma from the year branch |
+| `GetKuiYueIndex` | `KuiYueIndex` | `KuiIndex` `YueIndex` | Year stem |
+| `GetChangQuIndex` | `ChangQuIndex` | `ChangIndex` `QuIndex` | Hour branch |
+| `GetKongJieIndex` | `KongJieIndex` | `KongIndex` `JieIndex` | Hour branch |
+| `GetTimelyStarIndex` | `TimelyStarIndex` | `TaifuIndex` `FenggaoIndex` | Hour branch |
+| `GetLuanXiIndex` | `LuanXiIndex` | `HongluanIndex` `TianxiIndex` | Year branch |
+
+**Example**
+
+```go
+l, _ := iztro.GetLuYangTuoMaIndex(birth)
+c, _ := iztro.GetChangQuIndex(birth)
+lx, _ := iztro.GetLuanXiIndex(birth)
+
+fmt.Printf("%+v\n%+v %+v\n", l, c, lx)
+```
+
+**Output**
+
+```text
+{LuIndex:6 YangIndex:7 TuoIndex:5 MaIndex:0}
+{ChangIndex:6 QuIndex:4} {HongluanIndex:9 TianxiIndex:3}
+```
+
+Qingyang sits one palace ahead of Lucun and Tuoluo one behind — the direct expression of the mnemonic
+"Qingyang before Lucun, Tuoluo after".
+
+---
+
+## GetDailyStarIndex / GetMonthlyStarIndex / GetYearlyStarIndex
+
+**Purpose** Get the landing palaces of the adjective stars placed by day, month and year.
+
+**Zi Wei meaning** Adjective stars are grouped by how they are placed: day-based stars count forward
+from a minor star's position, starting at day one, to the birth day; month-based stars are located
+from the lunar month; year-based stars are the largest group and start from the year stem or year
+branch.
+
+**Return value**
+
+| Function | Return type | Fields |
+| --- | --- | --- |
+| `GetDailyStarIndex` | `DailyStarIndex` | `SantaiIndex` `BazuoIndex` `EnguangIndex` `TianguiIndex` |
+| `GetMonthlyStarIndex` | `MonthlyStarIndex` | `YuejieIndex` `TianyaoIndex` `TianxingIndex` `YinshaIndex` `TianyueIndex` `TianwuIndex` |
+| `GetYearlyStarIndex` | `YearlyStarIndex` | 27 fields: `XianchiIndex` `HuagaiIndex` `GuchenIndex` `GuasuIndex` `TiancaiIndex` `TianshouIndex` `TianchuIndex` `PosuiIndex` `FeilianIndex` `LongchiIndex` `FenggeIndex` `TiankuIndex` `TianxuIndex` `TianguanIndex` `TianfuIndex` `TiandeIndex` `YuedeIndex` `TiankongIndex` `JieluIndex` `KongwangIndex` `XunkongIndex` `TianshangIndex` `TianshiIndex` `JiekongIndex` `JieshaAdjIndex` `NianjieIndex` `DahaoAdjIndex` |
+
+**Example**
+
+```go
+d, _ := iztro.GetDailyStarIndex(birth)
+m, _ := iztro.GetMonthlyStarIndex(birth)
+
+fmt.Printf("%+v\n%+v\n", d, m)
+```
+
+**Output**
+
+```text
+{SantaiIndex:0 BazuoIndex:10 EnguangIndex:9 TianguiIndex:7}
+{YuejieIndex:0 TianyaoIndex:5 TianxingIndex:1 YinshaIndex:0 TianyueIndex:9 TianwuIndex:0}
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Year-based stars take their year branch from HoroscopeDivide">
+Year-based adjective stars belong to the yearly spirits, so their year branch comes from
+`HoroscopeDivide` rather than `YearDivide`.
+When the two settings differ, year-based stars and the major and minor stars can rest on different
+year branches — a deliberate distinction of school.
+</Accordion>
+<Accordion title="Hongluan and Tianxi are not in YearlyStarIndex">
+They are year-based too, but `GetLuanXiIndex` gives them separately.
+</Accordion>
+<Accordion title="JiekongIndex / JieshaAdjIndex / DahaoAdjIndex belong to the Zhongzhou school">
+These three only enter the chart when `Algorithm` is the Zhongzhou school, replacing the default
+placement of Jielu, Kongwang and Dahao; under the default school they are still computed, just never
+placed in a palace.
+</Accordion>
+</Accordions>
+
+---
+
+## GetMajorStar / GetMinorStar / GetAdjectiveStar
+
+**Purpose** Get the complete distribution of major, minor and adjective stars across the twelve
+palaces.
+
+**Signature**
+
+```go
+func GetMajorStar(birth StarBirth) ([][]Star, error)
+func GetMinorStar(birth StarBirth) ([][]Star, error)
+func GetAdjectiveStar(birth StarBirth) ([][]Star, error)
+```
+
+**Return value** A slice of twelve, indexed by palace index. Each item is that palace's slice of
+`Star`s, possibly empty.
+
+**Example**
+
+```go
+major, _ := iztro.GetMajorStar(birth)
+
+for i := 0; i < 5; i++ {
+    names := []string{}
+    for _, s := range major[i] {
+        names = append(names, s.Name)
+    }
+    fmt.Println(i, names)
+}
+```
+
+**Output**
+
+```text
+0 [general minister]
+1 [sun sage]
+2 [marshal]
+3 [advisor]
+4 [emperor]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The returned `Star`s carry brightness and natal mutagen marks and are identical to those from a full
+chart — they go through the same code. If you want the whole chart, `BySolar` is simpler.
+
+Note the naming across languages: Go and Python use the singular (`GetMajorStar`,
+`get_major_star`) where Rust uses the plural (`get_major_stars`); the behaviour is the same.
+</Callout>
+
+---
+
+## GetChangsheng12 / GetBoShi12 / GetYearly12
+
+**Purpose** Get how the four groups of twelve gods are arranged across the twelve palaces.
+
+**Zi Wei meaning** Each group is twelve marks filling the twelve palaces, exactly one per palace:
+the Changsheng gods start from the five elements class with direction from gender and year-branch
+polarity; the Boshi gods start from Lucun with the same direction rule;
+the Sui-qian gods run forward from the year branch, and the Jiang-qian gods start from the trine group
+of the year branch.
+
+**Signature**
+
+```go
+func GetChangsheng12(birth StarBirth) ([]string, error)
+func GetBoShi12(birth StarBirth) ([]string, error)
+func GetYearly12(birth StarBirth) (Yearly12, error)
+```
+
+**Return value** A slice of twelve keys, indexed by palace index.
+`GetYearly12` returns `Yearly12{ Suiqian12, Jiangqian12 []string }`.
+
+**Example**
+
+```go
+cs, _ := iztro.GetChangsheng12(birth)
+bs, _ := iztro.GetBoShi12(birth)
+y, _ := iztro.GetYearly12(birth)
+
+fmt.Println(cs[:4])
+fmt.Println(bs[:4])
+fmt.Println(y.Suiqian12[:4])
+fmt.Println(y.Jiangqian12[:4])
+```
+
+**Output**
+
+```text
+[jue mu si bing]
+[faylian zhoushu jiangjun xiaohao]
+[diaoke bingfu suijian huiqi]
+[suiyi xiishen huagai jiesha]
+```
+
+These are keys rather than translated names; use `Translate(key, language)` to display them.
+
+---
+
+## GetChangsheng12StartIndex / GetJiangqian12StartIndex
+
+**Purpose** Get just the starting palace of two of the god groups, without laying out the whole
+cycle.
+
+**Zi Wei meaning** The Changsheng starting point is set by the five elements class: water 2nd starts
+at Shen, wood 3rd at Hai, metal 4th at Si, earth 5th at Shen, fire 6th at Yin. The Jiangxing starting
+point is set by the trine group of the year branch: yin/woo/xu years at Woo, shen/zi/chen years at Zi,
+si/you/chou years at You, hai/mao/wei years at Mao.
+
+**Signature**
+
+```go
+func GetChangsheng12StartIndex(fiveElementsClass string) (int, error)
+func GetJiangqian12StartIndex(branchKey string) (int, error)
+```
+
+**Return value** `int`, 0–11. Neither function needs birth data.
+
+**Example**
+
+```go
+a, _ := iztro.GetChangsheng12StartIndex(iztro.ClassWater2nd)
+b, _ := iztro.GetChangsheng12StartIndex(iztro.ClassFire6th)
+c, _ := iztro.GetJiangqian12StartIndex(iztro.BranchZi)
+d, _ := iztro.GetJiangqian12StartIndex(iztro.BranchWu)
+
+fmt.Println(a, b, c, d)
+```
+
+**Output**
+
+```text
+6 0 10 4
+```
+
+Water 2nd puts Changsheng in Shen (index 6), fire 6th in Yin (index 0).
+
+---
+
+## GetHoroscopeStar
+
+**Purpose** Get the scope-star distribution of a horoscope layer.
+
+**Zi Wei meaning** Scope stars are the ten stars a horoscope produces: Tiankui, Tianyue, Wenchang,
+Wenqu, Lucun, Qingyang, Tuoluo, Tianma, Hongluan and Tianxi.
+Where they land is fixed by that layer's stem and branch, and their names change with the layer. The
+yearly layer carries one extra star, Nianjie.
+
+**Signature**
+
+```go
+func GetHoroscopeStar(stemKey, branchKey, scope string, language Language) ([][]Star, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stemKey` | `string` | Yes | — | Stem key of that layer |
+| `branchKey` | `string` | Yes | — | Branch key of that layer |
+| `scope` | `string` | Yes | — | The horoscope layer, which fixes the star names |
+| `language` | `Language` | Yes | — | Chart language |
+
+**Return value** A slice of twelve, indexed by palace index.
+
+**Star names per layer**
+
+| Natal | Decadal | Yearly | Monthly | Daily | Hourly |
+| --- | --- | --- | --- | --- | --- |
+| Tiankui | Yunkui | Liukui | Yuekui | Rikui | Shikui |
+| Tianyue | Yunyue | Liuyue | Yueyue | Riyue | Shiyue |
+| Wenchang | Yunchang | Liuchang | Yuechang | Richang | Shichang |
+| Wenqu | Yunqu | Liuqu | Yuequ | Riqu | Shiqu |
+| Lucun | Yunlu | Liulu | Yuelu | Rilu | Shilu |
+| Qingyang | Yunyang | Liuyang | Yueyang | Riyang | Shiyang |
+| Tuoluo | Yuntuo | Liutuo | Yuetuo | Rituo | Shituo |
+| Tianma | Yunma | Liuma | Yuema | Rima | Shima |
+| Hongluan | Yunluan | Liuluan | Yueluan | Riluan | Shiluan |
+| Tianxi | Yunxi | Liuxi | Yuexi | Rixi | Shixi |
+
+The keys take the form `yunlu` (decadal Lucun), `liulu` (yearly), `yuelu` (monthly), `rilu` (daily),
+`shilu` (hourly).
+
+**Example**
+
+```go
+decadal, _ := iztro.GetHoroscopeStar(iztro.StemJia, iztro.BranchZi, iztro.ScopeDecadal, iztro.LanguageEnUS)
+
+for i := 0; i < 4; i++ {
+    names := []string{}
+    for _, s := range decadal[i] {
+        names = append(names, s.Name)
+    }
+    fmt.Println(i, names)
+}
+```
+
+**Output**
+
+```text
+0 [money(D) horse(D)]
+1 [driven(D) attractive(D)]
+2 []
+3 [scholar(D)]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="The yearly layer has one extra star">
+The result for `ScopeYearly` additionally contains Nianjie, located from the yearly branch and placed
+ahead of the ten scope stars. No other layer has it.
+</Callout>
+
+---
+
+## Low-level placement
+
+The functions above all start from birth data, deriving the year pillar, the Soul palace and the
+corrected lunar month internally before placing anything. This group takes those intermediates
+directly and is reusable in a pipeline of your own.
+
+| Function | Takes | Returns (every field a palace index `int`) |
+| --- | --- | --- |
+| `GetZuoYouIndex(lunarMonth)` | The corrected lunar month, 1–12 | `ZuoYouIndex{ZuoIndex, YouIndex}` |
+| `GetHuoLingIndex(branchKey, timeIndex)` | Year branch, hour | `HuoLingIndex{HuoIndex, LingIndex}` |
+| `GetHuagaiXianchiIndex(branchKey)` | Year branch | `HuagaiXianchiIndex{HuagaiIndex, XianchiIndex}` |
+| `GetGuGuaIndex(branchKey)` | Year branch | `GuGuaIndex{GuchenIndex, GuasuIndex}` |
+| `GetJieshaAdjIndex(branchKey)` | Year branch | `int`, the palace index of Jiesha |
+| `GetDahaoIndex(branchKey)` | Year branch | `int`, the palace index of Dahao |
+| `GetNianjieIndex(branchKey)` | Year branch | `int`, the palace index of Nianjie |
+| `GetTianshiTianshangIndex(gender, branchKey, soulIndex, config)` | Gender, year branch, Soul palace index | `TianshiTianshangIndex{TianshangIndex, TianshiIndex}` |
+| `GetChangQuIndexByHeavenlyStem(stemKey)` | Heavenly stem | `ChangQuIndex{ChangIndex, QuIndex}` |
+
+**Example**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+yearBranch := chart.RawDates.ChineseDate.YearlyKeys[1]
+
+hl, _ := iztro.GetHuoLingIndex(yearBranch, 2)
+gg, _ := iztro.GetGuGuaIndex(yearBranch)
+cq, _ := iztro.GetChangQuIndexByHeavenlyStem(iztro.StemJia)
+
+fmt.Println(hl, gg, cq)
+```
+
+**Output**
+
+```text
+{2 10} {3 11} {3 7}
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The lunar month must be corrected first">
+`GetZuoYouIndex` takes the month after leap-month correction, i.e. `FixLunarMonthIndex(...) + 1` —
+not the raw lunar month. Passing the raw month on a leap-month chart lands in the wrong palace.
+</Callout>
+
+<Callout type="info" title="Tianshang and Tianshi differ by school">
+The result of `GetTianshiTianshangIndex` follows `config.Algorithm`: the Zhongzhou school swaps
+Tianshang and Tianshi for yin men and yang women (where the birth-year branch polarity and the gender
+polarity differ), while the common school does not. Pass `nil` for `config` to take the defaults.
+
+`GetChangQuIndexByHeavenlyStem` places Wenchang and Wenqu from a heavenly stem and is used for the
+scope Wenchang and Wenqu of horoscope layers; the natal Wenchang and Wenqu go through
+`GetChangQuIndex` from the hour branch.
+</Callout>

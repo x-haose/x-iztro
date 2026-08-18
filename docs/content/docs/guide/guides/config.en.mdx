@@ -1,0 +1,345 @@
+---
+title: Config in depth
+description: What each of the six switches changes, how to pass custom mutagen and brightness tables, and when you would actually notice a difference.
+---
+
+*For: developers · Zi Wei enthusiasts (the school differences in the first half need no code)*
+
+Everything charting genuinely disagrees about is gathered into `Config`: six switches, plus two data
+tables that can be replaced wholesale. The defaults match JS iztro exactly, so **passing no config
+at all gives you the same chart iztro gives**.
+
+| Switch | Accepts | Default | Governs |
+| --- | --- | --- | --- |
+| `year_divide` | `normal` / `exact` | `normal` | Which day the charting year's stem and branch turn over |
+| `horoscope_divide` | `normal` / `exact` | `normal` | Which day horoscope stems/branches and the month pillar divide on |
+| `age_divide` | `normal` / `birthday` | `normal` | When nominal age increments |
+| `day_divide` | `forward` / `current` | `forward` | Whether the late Zi hour counts as today or tomorrow |
+| `algorithm` | `default` / `zhongzhou` | `default` | Algorithm school |
+| `astro_type` | `heaven` / `earth` / `human` | `heaven` | Charting perspective (heaven / earth / human plate) |
+
+There are two override tables besides: `mutagens` (a custom mutagen table) and `brightness` (a
+custom brightness table) — see
+[Custom mutagen and brightness tables](#custom-mutagen-and-brightness-tables).
+
+<Callout title="Nominal age">
+**Nominal age** (虚岁) is East Asian age reckoning: you are 1 at birth and gain a year at the turn of
+the year rather than on your birthday.
+</Callout>
+
+## How to pass it
+
+```rust
+use x_iztro::data::types::*;
+
+let config = Config {
+    algorithm: Algorithm::Zhongzhou,
+    year_divide: YearDivide::Exact,
+    ..Config::default()
+};
+by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, config)?;
+```
+
+```python
+from x_iztro import ChartConfig
+from x_iztro.enums import Algorithm, YearDivide
+
+config = ChartConfig(
+    algorithm=Algorithm.ZHONGZHOU,
+    year_divide=YearDivide.EXACT,
+)
+astro.by_solar("2000-8-16", 2, "female", language="en-US", config=config)
+```
+
+```go
+cfg := &iztro.Config{
+    Algorithm:  "zhongzhou",
+    YearDivide: "exact",
+}
+iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
+```
+
+Python and Go take only the keys you want to change and default the rest; Rust achieves the same
+with `..Config::default()`.
+
+---
+
+## Year boundary: `year_divide`
+
+Decides which day **the year stem and branch used for charting** turn over on.
+
+| Value | Turnover point |
+| --- | --- |
+| `normal` (default) | The first day of the first lunar month (lunar New Year) |
+| `exact` | The Beginning of Spring (立春, the solar term around 4 February) |
+
+The year's stem and branch are the source of a whole chain: the natal mutagens, the soul and body
+stars, the stems of the twelve palaces. So changing this switch can move a great deal of the chart.
+
+**When you would notice**: for someone born between lunar New Year and the Beginning of Spring.
+Those two dates are usually a few days to a couple of weeks apart, and a birthday inside that window
+gets year stem-branch pairs one step apart under the two settings.
+
+<Callout title="When to choose exact">
+The Bazi (Four Pillars) system turns the year over at the Beginning of Spring without exception, so
+choose `exact` when you need to line up with a Bazi chart. Standard Zi Wei practice turns the year
+over at lunar New Year, and `normal` is also iztro's default. If in doubt, leave it alone — changing
+it means no longer matching iztro's default output.
+</Callout>
+
+<Callout type="warn" title="The year branch is used in three separate ways">
+x-iztro reproduces a detail internal to iztro: not everything that depends on the year branch goes
+through the same switch. The split is a fixed three:
+
+1. **Follows `year_divide`'s year stem and branch**: the birth-year mutagens, the soul and body
+   stars, the stems of the twelve palaces, Lucun, Qingyang, Tuoluo, Tiankui, Tianyue, Tianma,
+   Hongluan, Tianxi, the twelve Changsheng gods and the twelve Boshi gods.
+2. **Follows `horoscope_divide`'s year stem and branch**: every other year-derived adjective star,
+   plus the twelve Sui-qian gods and twelve Jiang-qian gods on the natal chart.
+3. **Follows `horoscope_divide`'s month boundary**: the **month pillar** among the natal four
+   pillars.
+
+The two switches can be set independently, so "major stars on one year branch and some adjective
+stars on another" is a state that really occurs. It looks asymmetric, but it is iztro's actual
+behaviour and has to be kept verbatim to hold zero divergence.
+</Callout>
+
+## Horoscope boundary: `horoscope_divide`
+
+Decides which day **horoscope stems and branches**, the **natal month pillar** and stem-branch month
+numbering divide on.
+
+| Value | Year boundary | Month boundary |
+| --- | --- | --- |
+| `normal` (default) | Lunar New Year | The first of the lunar month, month stem by the Five Tigers rule |
+| `exact` | The Beginning of Spring | Solar terms |
+
+**When you would notice**: when the query date lands early in the year (between lunar New Year and
+the Beginning of Spring) or around any solar-term changeover, the yearly and monthly stem-branch
+pairs shift by one step, which in turn changes the horoscope mutagens.
+
+<Callout>
+This switch also changes **the natal chart's month pillar**, not just horoscopes. Take 2000-8-5 in
+the Yin hour: under `normal` the four pillars are `geng chen - jia shen - yi wei - wu yin`, and
+under `exact` they are `geng chen - gui wei - yi wei - wu yin` — the month pillar moves from jia
+shen (甲申) to gui wei (癸未).
+</Callout>
+
+## Nominal-age boundary: `age_divide`
+
+Decides when **nominal age** increments, which directly moves which palace age fortune lands on.
+
+| Value | Increment point |
+| --- | --- |
+| `normal` (default) | A year is added at the turn of the lunar year |
+| `birthday` | A year is added only after the lunar birthday |
+
+**When you would notice**: when the query date falls between lunar New Year and the person's lunar
+birthday. In that stretch the two settings differ by one nominal year, which puts age fortune on
+adjacent palaces.
+
+## Late Zi hour attribution: `day_divide`
+
+Decides which day the day pillar is taken from for someone born between 23:00 and 24:00 (hour index
+`12`).
+
+| Value | Behaviour |
+| --- | --- |
+| `forward` (default) | The late Zi hour belongs to the **following** day, and charting uses that day's day pillar |
+| `current` | The late Zi hour belongs to the **current** day, charted as the early Zi hour of that day |
+
+**When you would notice**: only on charts with hour index `12`; every other hour is unaffected.
+
+<Callout type="warn" title="Under forward the lunar day advances too, but the display string does not">
+`forward` pushes both the day pillar **and the lunar day used for placing Ziwei** to the following
+day, while the lunar date string shown on the chart still reads the **day of birth**.
+
+Take 2000-8-16 in the late Zi hour: the lunar date still displays `二〇〇〇年七月十七` (the 17th day of
+the 7th lunar month), yet the four pillars come out as
+`geng chen - jia shen - ding wei - geng zi` — the day pillar ding wei (丁未) already belongs to
+17 August. Do not try to reason backwards from the lunar display string to the day pillar.
+</Callout>
+
+<Callout>
+Whichever value you pick, the hour index field keeps the original input `12`; being attributed to
+the following day does not turn it into `0` — so callers can always recover the true hour of birth.
+</Callout>
+
+## Algorithm school: `algorithm`
+
+| Value | Notes |
+| --- | --- |
+| `default` (default) | The mainstream star-placement rules, matching JS iztro's default |
+| `zhongzhou` | The Zhongzhou school |
+
+Zhongzhou differs from the default school in four places, and **the mutagen table is not one of
+them**:
+
+| Change | `default` | `zhongzhou` |
+| --- | --- | --- |
+| How the soul star is looked up | From the **Soul palace branch** | From the **birth-year branch** (so rearranging onto another Soul palace no longer moves it) |
+| The twelve Sui-qian gods | Dahao `dahao` | Suipo `suipo` |
+| Adjective stars | Jielu `jielu`, Kongwang `kongwang` | Jiekong `jiekong`, Jiesha `jieshaAdj`, Dahao `dahao`, Longde `longde` |
+| Tianshang and Tianshi | Tianshang in Friends, Tianshi in Health | Swapped for the other gender polarity, the two stars trading positions |
+
+<Callout type="warn" title="algorithm does not change the mutagen table">
+Geng's Hua Ke is Taiyin under both schools. To adopt a different mutagen reading use the custom
+mutagen table below; do not expect `algorithm` to do it.
+</Callout>
+
+```python
+astro.by_solar("1990-11-5", 4, "male", language="en-US",
+               config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
+```
+
+## Charting perspective: `astro_type`
+
+The Zhongzhou school reads one set of birth data as three charts, differing only in **which palace's
+stem and branch the Five Elements class is taken from**:
+
+| Perspective | Palace the class comes from | Soul palace of the new chart |
+| --- | --- | --- |
+| `heaven` (heaven plate) | Soul palace | Soul palace (i.e. the ordinary chart) |
+| `earth` (earth plate) | Body palace | Body palace |
+| `human` (human plate) | Spirit palace | Spirit palace |
+
+Change the Five Elements class and the placement of Ziwei and Tianfu, the twelve palace names, the
+Body palace branch, the twelve Changsheng gods, the decadals and the age fortune all move with it.
+The minor stars, the adjective stars (Tianshang, Tianshi and Tiancai follow the Soul palace and are
+re-placed), the twelve Boshi gods and the twelve Sui-qian and Jiang-qian gods carry over from the
+heaven plate.
+
+```python
+earth = astro.by_solar("2000-8-16", 2, "female", language="en-US",
+                       config=ChartConfig(astro_type=AstroType.EARTH))
+```
+
+```go
+earth, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS,
+    &iztro.Config{AstroType: iztro.AstroEarth})
+```
+
+```rust
+let earth = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS,
+    Config::default().with_astro_type(AstroType::Earth))?;
+```
+
+<Callout>
+JS iztro puts `astroType` on the options object of `withOptions`, because its `config()` is a global
+singleton that cannot hold a value that varies per chart. x-iztro's configuration is passed per call
+in the first place, so it goes straight into `Config` and works from both charting entry points.
+</Callout>
+
+### Rearranging onto an arbitrary stem and branch
+
+Beyond the heaven, earth and human plates, you can rearrange onto any stem and branch as the Soul
+palace:
+
+```python
+body = chart.palace(PalaceName.BODY)
+earth = chart.rearranged(body.heavenly_stem_key, body.earthly_branch_key)
+```
+
+```go
+earth, _ := chart.Rearranged(body.HeavenlyStemKey, body.EarthlyBranchKey)
+```
+
+```rust
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+```
+
+Rearranging onto the Body palace's stem and branch gives the same result as
+`astro_type = earth`.
+
+## Custom mutagen and brightness tables
+
+Mutagens and brightness are where school disagreement is most concentrated. `Config` lets you
+**replace tables wholesale, by key**: supply the four mutagens for one heavenly stem and only that
+stem changes, with every other stem still on the default table. Brightness works the same way.
+
+### The mutagen table
+
+One heavenly stem takes four stars, always in the order **Lu, Quan, Ke, Ji**, and all four must be
+given.
+
+```rust
+let config = Config::default().with_mutagens(
+    HeavenlyStem::Geng,
+    [StarKey::TaiyangMaj, StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::TianfuMaj],
+);
+by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, config)?;
+```
+
+```python
+cfg = ChartConfig(mutagens={
+    "gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "tianfuMaj"],
+})
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US", config=cfg)
+```
+
+```go
+cfg := &iztro.Config{Mutagens: map[string][]string{
+    "gengHeavenly": {"taiyangMaj", "wuquMaj", "tiantongMaj", "tianfuMaj"},
+}}
+```
+
+With geng switched to "Tiantong takes Ke, Tianfu takes Ji", the mutagens on this geng-year chart
+become:
+
+```text
+wealth general B
+children sun A
+career empress D
+health fortunate C
+```
+
+A custom mutagen table also changes **every flying-star predicate** — which four stars a palace stem
+flies out comes from the same table.
+
+### The brightness table
+
+One star takes twelve brightness values, ordered by slot on the chart (slot 0 is the Yin palace),
+and all twelve must be given; use an empty value (an empty string in Python and Go) where a slot has
+no brightness.
+
+```python
+cfg = ChartConfig(brightness={
+    "ziweiMaj": ["miao", "wang", "de", "li", "ping", "bu",
+                 "xian", "miao", "wang", "de", "li", "ping"],
+})
+```
+
+<Callout type="warn" title="Three hard rules">
+1. **Keys only, never translated names**: `"ziweiMaj"` works, `"emperor"` and `"紫微"` do not.
+2. **Lengths are validated strictly**: a mutagen entry must have 4 items and a brightness entry 12;
+   one too many or too few is an error.
+3. **They are not echoed in the output**: the override tables are charting *input*, not part of the
+   chart, so the `config` echoed on the astrolabe holds only the six switches and both tables read
+   back empty. If you need a record of them, keep your own copy of the config you passed.
+</Callout>
+
+## The config travels with the chart
+
+The config used for charting is stored on the astrolabe and horoscopes read it from there, so
+**a horoscope always uses the same config as the chart it came from** — you cannot end up with a
+Zhongzhou natal chart and a default-school horoscope.
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US",
+                       config=ChartConfig(age_divide="birthday"))
+h = chart.horoscope("2024-10-1", 0)   # inherits age_divide=birthday
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS,
+    &iztro.Config{AgeDivide: "birthday"})
+h, _ := chart.Horoscope("2024-10-1", 0)   // as above
+```
+
+## Test coverage
+
+The non-default values of the four boundary switches have 9,696 dedicated golden cases (covering
+combinations at both the charting and horoscope layers), and the Zhongzhou chart types have another
+12,488, spanning the Beginning-of-Spring window day by day, the late Zi hour, and the days around a
+birthday — every boundary that produces a divergence. The custom mutagen and brightness tables have
+a dedicated set of tests of their own. See [Accuracy](/en/docs/guide/about/accuracy).

@@ -1,0 +1,117 @@
+=== Horoscope ===
+Target Date: 2025-1-1 / 二〇二四年腊月初二
+
+--- Decadal Fortune ---
+Decadal Fortune Soul Palace: Natal spouse (gengchen)
+  Decadal Fortune Mutagen: sun, general, moon, fortunate
+  spouse (wealth):
+    Major Stars: general([+1])[B], minister([+3])
+    Minor Stars: horse
+    Scope Stars: horse(D)
+  siblings (children):
+    Major Stars: sun([+3])[A], sage([+3])
+    Scope Stars: artist(D)
+  soul (spouse):
+    Major Stars: marshal([+3])
+    Minor Stars: helper, impulsive([-3])
+  parents (siblings):
+    Major Stars: advisor([-1])
+    Scope Stars: cheerful(D)
+  spirit (soul):
+    Major Stars: emperor([+3])
+    Minor Stars: artist([-3])
+  property (parents):
+    Minor Stars: aide, tangled([+3])
+    Scope Stars: aide(D), tangled(D)
+  career (spirit):
+    Major Stars: rebel([+1])
+    Minor Stars: scholar([+1]), money
+    Scope Stars: money(D)
+  friends (property):
+    Minor Stars: ideologue, driven([-3])
+    Scope Stars: driven(D)
+  surface (career):
+    Major Stars: judge([0]), empress([+3])
+    Minor Stars: officer
+  health (friends):
+    Major Stars: moon([+3])[C]
+    Scope Stars: scholar(D), attractive(D)
+  wealth (surface):
+    Major Stars: wolf([+2])
+    Minor Stars: spark([-3])
+  children (health):
+    Major Stars: fortunate([-2])[D], advocator([-2])
+    Minor Stars: assistant, fickle
+    Scope Stars: assistant(D)
+
+Age Fortune Soul Palace: Natal career (Nominal Age 25)
+  Major Stars: judge([0]), empress([+3])
+  Minor Stars: officer
+  Adjective Stars: gifted, frail
+
+--- Yearly ---
+Yearly Soul Palace: Natal spouse (jiachen)
+  Yearly Mutagen: judge, rebel, general, sun
+  spouse (wealth):
+    Major Stars: general([+1])[B], minister([+3])
+    Minor Stars: horse
+    Scope Stars: money(Y), horse(Y)
+    Twelve Gods: sorrowing, varied
+  siblings (children):
+    Major Stars: sun([+3])[A], sage([+3])
+    Scope Stars: driven(Y)
+    Twelve Gods: illness, listless
+  soul (spouse):
+    Major Stars: marshal([+3])
+    Minor Stars: helper, impulsive([-3])
+    Twelve Gods: initial, religious
+  parents (siblings):
+    Major Stars: advisor([-1])
+    Scope Stars: scholar(Y), cheerful(Y)
+    Twelve Gods: unlucky, robbed
+  spirit (soul):
+    Major Stars: emperor([+3])
+    Minor Stars: artist([-3])
+    Scope Stars: considery(Y)
+    Twelve Gods: downcast, disastery
+  property (parents):
+    Minor Stars: aide, tangled([+3])
+    Scope Stars: aide(Y)
+    Twelve Gods: tied, condemned
+  career (spirit):
+    Major Stars: rebel([+1])
+    Minor Stars: scholar([+1]), money
+    Twelve Gods: official, insidious
+  friends (property):
+    Minor Stars: ideologue, driven([-3])
+    Scope Stars: artist(Y)
+    Twelve Gods: consumer, passionate
+  surface (career):
+    Major Stars: judge([0]), empress([+3])
+    Minor Stars: officer
+    Twelve Gods: wastrel, hapless
+  health (friends):
+    Major Stars: moon([+3])[C]
+    Scope Stars: attractive(Y)
+    Twelve Gods: virtuous, perished
+  wealth (surface):
+    Major Stars: wolf([+2])
+    Minor Stars: spark([-3])
+    Twelve Gods: sinister, capable
+  children (health):
+    Major Stars: fortunate([-2])[D], advocator([-2])
+    Minor Stars: assistant, fickle
+    Scope Stars: assistant(Y), tangled(Y)
+    Twelve Gods: blessed, admired
+
+Monthly Soul Palace: Natal friends (dingchou)
+  Monthly Palace Names: property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents, spirit
+  Monthly Mutagen: moon, fortunate, advisor, advocator
+
+Daily Soul Palace: Natal surface (gengwoo)
+  Daily Palace Names: spirit, property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents
+  Daily Mutagen: sun, general, moon, fortunate
+
+Hourly Soul Palace: Natal surface (bingzi)
+  Hourly Palace Names: spirit, property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents
+  Hourly Mutagen: fortunate, advisor, scholar, judge

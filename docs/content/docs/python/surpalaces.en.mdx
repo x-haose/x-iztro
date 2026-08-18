@@ -1,0 +1,169 @@
+---
+title: Surrounded palaces
+description: The four palaces of SurroundedPalaces and its five predicates.
+---
+
+The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu. A matter cannot be read
+from its own palace alone: the stars of the opposite palace and the two trine palaces bear on it just
+as much, and only all four together give the full picture.
+
+<Callout type="info">
+The examples on this page all chart in `en-US`, so the display values in the output are the English
+translations.
+</Callout>
+
+## The four palaces
+
+| Field | Offset | Traditional name | Meaning |
+| --- | --- | --- | --- |
+| `target` | +0 | The palace itself | The matter itself |
+| `opposite` | +6 | Opposite palace | The facing side; the most immediate influence |
+| `career` | +4 | Career position | One of the trine |
+| `wealth` | +8 | Wealth position | One of the trine |
+
+All four fields are `Palace` objects, so every method of the [palace object](/en/docs/python/palace)
+is available on them.
+
+<Callout type="info" title="Wealth and career positions are relative names">
+`wealth` and `career` mean "the trine positions relative to this palace", not the two fixed palace
+names among the twelve. Anchored on the Soul palace they happen to land on the Wealth and Career
+palaces (+8 and +4) — that is where the names come from; anchored elsewhere they are other palaces.
+</Callout>
+
+## Three ways to get one
+
+```python
+# from the chart
+sp = chart.surrounded_palaces("soulPalace")
+
+# from a palace
+sp = chart.palace("soulPalace").surrounded_palaces()
+
+# from a star (the surrounded set of the palace it sits in)
+sp = chart.star("ziweiMaj").surrounded_palaces()
+```
+
+All three give the same result; pick whichever matches what you already have.
+
+---
+
+## have / not_have / have_one_of
+
+**Purpose** Test whether the four palaces together hold the given stars.
+
+**Zi Wei meaning** A phrase like "Ziwei is in the surrounded set" asks exactly whether a star appears
+anywhere among these four palaces, without asking which one.
+
+**Signature**
+
+```python
+def have(self, stars: list[str]) -> bool
+def not_have(self, stars: list[str]) -> bool
+def have_one_of(self, stars: list[str]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stars` | `list[str]` | Yes | — | A list of star keys; star names **in the chart's charting language** are accepted too |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `have` | Every star in the list appears among the four palaces (not necessarily the same one) |
+| `not_have` | No star in the list appears |
+| `have_one_of` | At least one star in the list appears |
+
+**Example**
+
+```python
+from x_iztro import MajorStar, MinorStar
+
+sp = chart.surrounded_palaces("soulPalace")
+
+print(sp.have([MajorStar.ZIWEI, MajorStar.TIANXIANG]))
+print(sp.have_one_of([MajorStar.QISHA, MajorStar.POJUN]))
+print(sp.not_have([MinorStar.HUOXING]))
+```
+
+**Output**
+
+```text
+True
+False
+True
+```
+
+Ziwei is in the Soul palace and Tianxiang in the Wealth palace — different palaces, but both within
+the four, so `have` is true.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="have does not require the same palace">
+`have([A, B])` means "A and B both appear among these four palaces", not that they sit together.
+For same-palace tests use the palace's
+[`has`](/en/docs/python/palace#has--not_have--has_one_of).
+</Accordion>
+<Accordion title="What an empty list returns">
+`have` and `not_have` return `True` for an empty list; `have_one_of` returns `False`.
+</Accordion>
+</Accordions>
+
+---
+
+## have_mutagen / not_have_mutagen
+
+**Purpose** Test whether the four palaces carry a given natal mutagen.
+
+**Zi Wei meaning** "Ji is in the surrounded set" means one of these palaces holds a star the
+birth-year stem sent ji to — a common condition when locating a source of pressure.
+
+**Signature**
+
+```python
+def have_mutagen(self, mutagen: Mutagen) -> bool
+def not_have_mutagen(self, mutagen: Mutagen) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `str` | Yes | — | One of the mutagen keys |
+
+**Return value** `bool`.
+
+**Example**
+
+```python
+from x_iztro import Mutagen
+
+sp = chart.surrounded_palaces("soulPalace")
+
+print("lu in the surrounded set:", sp.have_mutagen(Mutagen.LU))
+print("ji in the surrounded set:", sp.have_mutagen(Mutagen.JI))
+print("no ke in the surrounded set:", sp.not_have_mutagen(Mutagen.KE))
+```
+
+**Output**
+
+```text
+lu in the surrounded set: False
+ji in the surrounded set: False
+no ke in the surrounded set: True
+```
+
+This chart's natal mutagens land in four palaces: Taiyang with lu in Children, Wuqu with quan in
+Wealth, Taiyin with ke in Friends, Tiantong with ji in Health. The Soul palace's surrounded set is
+Soul, Surface, Wealth and Career — only the quan falls inside it, so both the lu and the ji test
+`False` while a quan test would be `True`.
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
+For those, use the palace's flying-star methods.
+</Callout>

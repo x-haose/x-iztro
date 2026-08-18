@@ -1,0 +1,167 @@
+---
+title: "Migrating from iztro: API mapping"
+description: Where each public iztro API lands in the three x-iztro bindings, the few that changed shape and why, and the ones not provided.
+---
+
+*For: developers, especially anyone migrating from JS iztro*
+
+x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.5.8. Every public iztro API has
+an equivalent in all three bindings — Rust, Python and Go — with identical capability and a form
+that suits each language.
+
+This page is for people coming from iztro: when a name does not line up, look it up here. For how to
+use each API, see that language's API reference.
+
+## Names that map directly
+
+| iztro | Rust | Python | Go |
+| --- | --- | --- | --- |
+| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` |
+| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` |
+| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
+| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
+| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
+| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
+| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
+| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
+| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` |
+| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` |
+
+The rest follow the same pattern: JS camelCase becomes snake_case in Rust and Python, and
+PascalCase in Go.
+
+## The ones that changed shape
+
+These few are not transcribed, because transcribing them would have carried JS's limitations across
+too.
+
+### Charting perspective (heaven / earth / human plate)
+
+iztro puts `astroType` on the options object of `astro.withOptions`, because its `astro.config()` is
+a global singleton that cannot hold a value varying per chart.
+
+x-iztro's configuration is passed per call in the first place, so `astroType` goes straight into
+`Config` and works from both charting entry points, with no extra entry point to remember:
+
+```python
+from x_iztro import Astro, ChartConfig
+
+chart = Astro().by_solar("2000-8-16", 2, "female",
+                         config=ChartConfig(astro_type="earth"))
+```
+
+Charting from an arbitrary stem and branch corresponds to `rearrangeAstrolable`, and is an astrolabe
+method `rearranged(stem, branch)` in all three bindings.
+
+### No global config and no global language
+
+iztro's `astro.config()` and `i18n.setLanguage()` mutate module-level singletons, which is why
+`astro.getConfig()` also has to exist to read the value back.
+
+x-iztro has no global state: both the config and the language are passed on every call and held by
+the caller. So `getConfig` and `setLanguage` are not provided — to read the value back, read your
+own copy.
+
+### Decadals and age fortune
+
+`getHoroscope(param)` in `astro/palace` takes an `AstrolabeParam`. x-iztro's
+`get_decadals_and_ages` takes a Soul palace index and a Five Elements class directly, so you do not
+have to assemble a full set of birth data first; its capability is a superset of iztro's.
+
+### The leap-month arguments of the lunar entry point
+
+`byLunar(lunarDateStr, timeIndex, gender, isLeapMonth?, fixLeap?, language?)` describes the leap
+month with two adjacent booleans: swap them and nothing complains while the chart silently shifts by a
+month — and `fixLeap` only means anything when the input is a leap month in the first place. x-iztro
+folds the pair into one three-way value: Rust `LeapMonth::{NotLeap, Leap, LeapFixed}`, Go
+`NotLeapMonth / LeapMonthKeep / LeapMonthFixed`; Python keeps the two booleans but makes them
+keyword-only (`is_leap_month=`, `fix_leap=`). The JSON wire protocol of the bindings still carries the
+`isLeapMonth`/`fixLeap` keys, as in iztro. The solar entry point's `fixLeap` is a single boolean with
+nothing to swap against, so it stays as it is.
+
+Likewise, Go makes `gender` and `language` the named string types `Gender` / `Language`
+(`GenderFemale`, `LanguageZhCN`): literals still work, but a stray string variable in the wrong
+position is rejected at compile time.
+
+### Plugins
+
+iztro's `loadPlugin` / `use(plugin)` attaches functions to the astrolabe object at run time — a
+product of JS having no other extension mechanism. All three bindings implement the same capability
+using the answer their own language gives, at compile time or load time, without sacrificing type
+checking:
+
+| | Approach |
+| --- | --- |
+| Rust | Extension trait |
+| Python | `load_plugin` / `load_plugins` from `x_iztro.plugin`, attaching methods to the `Astrolabe` class |
+| Go | Embedding `*Astrolabe` (Go does not allow adding methods to another package's type; embedding is the language's answer) |
+
+For the syntax, see [Extending the astrolabe](/en/docs/guide/guides/plugins).
+
+### Disambiguating a reverse lookup
+
+The second parameter of `kot(value, k)` is a separate entry point in each binding: `key_of_in`
+(Rust), `key_of(text, key_filter)` (Python), `KeyOfIn` (Go). The values match iztro case for case,
+including which key homographic names such as `horse`, `dragon` and `유시` resolve to.
+
+<Callout type="warn" title="A miss returns empty, not the input">
+iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust and Python) or an
+empty string (Go). If you were relying on "treat a miss as the original value and carry on", that
+has to change when migrating.
+</Callout>
+
+## The ones not provided
+
+| iztro | Why not |
+| --- | --- |
+| `astro.astrolabeBySolarDate` / `astrolabeByLunarDate` | Aliases deprecated since iztro v2.0.5, with the same parameters and behaviour as `bySolar` / `byLunar` |
+| `star.initStars` | In JS it is a factory returning 12 empty arrays; all three type systems already give a fixed-length array of 12 |
+| `util.fixEarthlyBranchIndex` | Synonymous with `earthlyBranchIndexToPalaceIndex` |
+| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | Wiring references between objects is internal behaviour, done automatically after parsing in all three bindings |
+| The `astro/analyzer` module | Its 11 functions are free-function versions of palace and surrounded-palace methods (`hasStars` is `palace.has`); the capability is already covered by the object methods |
+| The `calendar` module | Dead code in iztro v2.5.8: every live code path goes through the `lunar-lite` dependency instead, and the module is not in the package's root exports |
+| The i18next instance in `i18n`'s default export | Third-party library instances are not passed through; translation and reverse lookup are covered by `translate` / `key_of` |
+| `Astrolabe.copyright` | iztro's own copyright notice string |
+
+## Behavioural points worth noting
+
+### Custom mutagen and brightness tables take keys only
+
+The `mutagens` / `brightness` override tables on `Config` **accept language-independent keys only**:
+`"ziweiMaj"` works, `"emperor"` and `"紫微"` do not — taking translated names would tie a config to
+one chart language.
+
+### Override table lengths are validated strictly
+
+A mutagen entry must have all 4 items (Lu, Quan, Ke, Ji) and a brightness entry all 12 (the first is
+the Yin palace). One too many or too few raises `invalid_argument` outright; nothing is padded and
+nothing is truncated. See
+[Config in depth](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables).
+
+### Override tables are not echoed in the output config
+
+The `config` echoed on the astrolabe holds only the six switches. The override tables are charting
+input, and putting them into the DTO would break the field contract with iztro, so they read back
+empty — keep your own copy if you need a record.
+
+## What x-iztro adds
+
+- **Language-independent keys**: every field on the astrolabe carries a `*key` / `*Key` alongside
+  its translated name, valued with iztro's i18n keys. Predicate logic is therefore unaffected by the
+  chart language and never has to reverse-look-up a translation. See
+  [The key contract](/en/docs/guide/guides/keys).
+- **Prompt generation**: `astrolabe_to_prompt` / `horoscope_to_prompt` render an astrolabe or a
+  horoscope as plain text suited to feeding a language model. See
+  [AI prompt generation](/en/docs/guide/guides/ai-prompt).
+- **Up-front validation at the entry points**: invalid dates, out-of-range hours and the like return
+  an error rather than panicking, with a machine-readable category code. See
+  [Error handling](/en/docs/guide/guides/errors).
+- **Custom mutagen and brightness tables**: replace the built-in data wholesale, by key. See
+  [Config in depth](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables).
+- **`all_keys`**: fetch all 260 translatable keys at once.
+
+## Numeric consistency
+
+Beyond API parity, chart output has **zero field-level divergence** from iztro, held by roughly
+710,000 golden cases. The coverage matrix and how it is verified are on
+[Accuracy](/en/docs/guide/about/accuracy).

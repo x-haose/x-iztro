@@ -1,0 +1,131 @@
+---
+title: Documentation
+description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python and Go.
+icon: Star
+---
+
+Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can
+read in one call — **let the library get the chart right, let the AI do the reading**.
+
+One call produces the text below. Paste it into any language model and start asking questions:
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+Chinese Date: geng chen - jia shen - bing woo - geng yin
+Time: Tiger hour (03:00~05:00)
+Zodiac Sign: leo
+Zodiac Animal: dragon
+Soul Palace Branch: woo
+Body Palace Branch: xu
+Soul Star: rebel
+Body Star: scholar
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+=== Palaces ===
+
+--- wealth ---
+Stem-Branch: wuyin
+Decadal: 43-52
+Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+
+(the other eleven palaces omitted)
+```
+
+<Callout title="Reading the sample">
+`Lunar Date` is the only field that stays in Chinese in an English chart — the lunar date is
+rendered with Chinese numerals (`二〇〇〇年七月十七` = the 17th day of the 7th lunar month, 2000).
+`Chinese Date` is the four pillars romanized in pinyin. Bracket notation: `([+3])` is brightness on
+a −2…+3 scale, `[A]`/`[B]`/`[C]`/`[D]` are the four mutagens.
+</Callout>
+
+Whether a chart is *correct* has one hard standard here: **zero field-level divergence from JS
+[iztro](https://github.com/SylarLong/iztro) v2.5.8**, held by roughly 710,000 golden test cases.
+See [Accuracy](/en/docs/guide/about/accuracy).
+
+## Where to start
+
+<Cards>
+  <Card
+    title="x-iztro Guide"
+    href="/en/docs/guide"
+    description="Installation, your first chart, Zi Wei concepts, configuration and data model. Language-neutral material."
+  />
+  <Card
+    title="Using it without writing code"
+    href="/en/docs/guide/guides/for-non-developers"
+    description="What it can do, where it fits, and what to hand your engineers."
+  />
+  <Card
+    title="Rust API"
+    href="/en/docs/rust"
+    description="The core library. Both the Python and Go bindings call into it."
+  />
+  <Card
+    title="Python API"
+    href="/en/docs/python"
+    description="A typed API built from dataclasses and StrEnums, with no external dependencies."
+  />
+  <Card
+    title="Go API"
+    href="/en/docs/go"
+    description="Embedded WebAssembly on a pure Go runtime, no cgo."
+  />
+  <Card
+    title="AI prompt generation"
+    href="/en/docs/guide/guides/ai-prompt"
+    description="How the text above is produced, its format, and how to wire it into a model."
+  />
+</Cards>
+
+## Three programming languages, one result
+
+All three bindings call the same Rust core, so charts come out identical field for field.
+The predicate methods are built on language-independent keys, so a single analysis rule written in
+any of the three languages yields the same answer.
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+let soul = chart.palace(Palace::Soul).unwrap();
+
+println!("{}", soul.has(&[StarKey::ZiweiMaj]));
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+soul = chart.palace("soulPalace")
+
+print(soul.has(["ziweiMaj"]))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj))
+```
+
+</Tab>
+</Tabs>
+
+All three print `true`: the Soul palace of this chart holds Ziwei, the Emperor star.

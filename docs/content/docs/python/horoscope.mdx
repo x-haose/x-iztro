@@ -11,6 +11,22 @@ h = chart.horoscope("2025-6-1", 0)
 ```
 
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
+每个查询方法末尾那个 `astrolabe=None` 参数是为「手里只有运限数据、星盘另存」的场合留的，
+日常用不着传。
+
+<Callout type="info">
+本页示例统一用默认的 `zh-CN` 本命盘，因此输出里的展示值都是中文。
+</Callout>
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solar_date` | `str` | **目标**公历日期，与入参一致 |
+| `lunar_date` | `str` | 目标日期的农历中文写法 |
+| `decadal` `age` `yearly` `monthly` `daily` `hourly` | 见下 | 六个运限层级 |
+
+`solar_date` 是目标日期不是出生日期；出生日期在本命盘上，用 `h.astrolabe().solar_date` 取。
 
 ## 六个层级
 
@@ -40,9 +56,39 @@ h = chart.horoscope("2025-6-1", 0)
 | `mutagen` / `mutagen_keys` | `list[str]` | 该层级天干引发的四化星，顺序为禄权科忌 |
 | `stars` | `list[list[Star]] \| None` | 该层级的流耀分布；无流耀的层级为 `None` |
 
-`age` 在此之外多一个 `nominal_age`（虚岁）；
-`yearly` 多一个 `yearly_dec_star`，含流年的岁前与将前十二神。
-两者的通用字段可直接访问：`h.yearly.heavenly_stem`。
+`AgeItem` 与 `HoroscopeYearly` 继承 `HoroscopeItem`，各自多一个字段：
+
+| 类型 | 多出的字段 | 说明 |
+| --- | --- | --- |
+| `AgeItem` | `nominal_age: int` | 该日期对应的虚岁 |
+| `HoroscopeYearly` | `yearly_dec_star: YearlyDecStar` | 流年的岁前与将前十二神 |
+
+```python
+class YearlyDecStar:
+    jiangqian12: list[str]        # 流年将前十二神译名，按宫位索引排列
+    jiangqian12_keys: list[str]   # 对应标识
+    suiqian12: list[str]          # 流年岁前十二神译名
+    suiqian12_keys: list[str]     # 对应标识
+```
+
+因为是继承而不是包装，通用字段直接访问就行：写 `h.yearly.heavenly_stem`，
+没有 Rust 侧那层 `.base`。
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+print(h.yearly.heavenly_stem, h.yearly.earthly_branch, h.age.nominal_age)
+print(h.yearly.yearly_dec_star.suiqian12[:3])
+print(h.yearly.yearly_dec_star.jiangqian12_keys[:3])
+```
+
+**输出**
+
+```text
+乙 巳 26
+['天德', '吊客', '病符']
+['jiesha', 'zhaisha', 'tiansha']
+```
 
 **示例**
 
@@ -88,6 +134,8 @@ def age_palace(self, astrolabe: Astrolabe | None = None) -> Palace | None
 | `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传，运限已持有本命盘 |
 
 **返回值**　`Palace | None`——本命盘上的宫位。
+运限已持有本命盘，因此实际不会是 `None`；只有手工构造、既没绑星盘也没传
+`astrolabe` 的运限对象才拿不到。
 
 **示例**
 
@@ -131,7 +179,7 @@ def palace(
 | `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
 
 **返回值**　`Palace | None`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
-层级为 `"origin"` 时即本命十二宫。
+层级为 `"origin"` 时即本命十二宫。宫名或层级标识拼错时返回 `None`，不报错。
 
 **示例**
 
@@ -249,11 +297,24 @@ True
 
 **边界与陷阱**
 
-<Callout type="warn" title="流耀标识按层级区分">
-大限层级查 `yunlu`（运禄），流年层级查 `liulu`（流禄），层级与标识必须配对。
-拿 `yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
-各层级的标识对照见[安星模块](/zh/docs/python/star#get_horoscope_star)。
-</Callout>
+<Accordions>
+<Accordion title="scope 只决定查哪一宫，不决定查哪些星">
+三个方法用 `scope` + `name` 定位到本命盘上的某一格，
+但要比对的星耀集合恒为**大限流耀与流年流耀的并集**，与 `scope` 无关。
+
+因此 `scope` 传 `"monthly"` 时，查的是「流月某宫这一格里有没有大限或流年的流耀」，
+而不是流月自己的流耀——流月、流日、流时三层的流耀不参与这里的比对。
+要按层级取流耀分布，用 `h.monthly.stars` 一类字段，或
+[`star.get_horoscope_star`](/zh/docs/python/star#get_horoscope_star)。
+</Accordion>
+<Accordion title="流耀标识按层级区分">
+大限流耀叫 `yunlu`（运禄）、`yunyang`（运羊）……，流年流耀叫 `liulu`（流禄）、
+`liuyang`（流羊）……，两组标识不同名。由于比对集合恒是这两组的并集，
+`yunlu` 与 `liulu` 在任何 `scope` 下都查得到，只是落宫不同。
+各层级的标识对照见[安星模块](/zh/docs/python/star#get_horoscope_star)，
+枚举形式见 `HoroscopeStar`。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -301,6 +362,19 @@ False
 
 大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
 
+**边界与陷阱**
+
+<Callout type="warn" title="scope 为 origin 时恒为 False">
+本命层级没有「层级天干」这回事——生年四化已经打在星耀自身的 `mutagen_key` 上。
+`has_horoscope_mutagen(name, "origin", m)` 因此直接返回 `False`，
+不代表本命盘上没有这个四化。要查本命四化，用宫位的
+[`has_mutagen`](/zh/docs/python/palace#has_mutagen--not_have_mutagen)。
+</Callout>
+
+<Callout type="info">
+只检查目标宫的**主星与辅星**，不看杂耀。
+</Callout>
+
 ---
 
 ## scope_item / astrolabe
@@ -338,4 +412,57 @@ None
 
 <Callout type="info">
 `scope_item` 用于写按层级参数化的通用逻辑，比一串 `if scope == ...` 简洁。
+`HoroscopeItem` 上另有 `palace_index_by_name(name)`，
+把宫名在该层级的十二宫里换成宫位索引，查不到返回 `None`：
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+item = h.scope_item(Scope.DECADAL)
+
+print(item.palace_index_by_name(PalaceName.SOUL))
+print(item.palace_index_by_name(PalaceName.WEALTH))
+print(item.palace_index_by_name("nosuch"))
+```
+
+**输出**
+
+```text
+2
+10
+None
+```
 </Callout>
+
+---
+
+## to_dict / to_json
+
+**用途**　把运限导出成与 JS iztro 字段契约一致的 JSON。
+
+**签名**
+
+```python
+def to_dict(self) -> dict[str, Any]
+def to_json(self, **kwargs: Any) -> str
+```
+
+形状与用法同[星盘的同名方法](/zh/docs/python/astrolabe#to_dict--to_json)：
+`to_dict` 给底层 DTO 的深拷贝，`to_json` 给 JSON 字符串且默认 `ensure_ascii=False`。
+同样不要用 `dataclasses.asdict`——运限持有本命盘的引用，会无限递归。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+d = h.to_dict()
+
+print(d["solarDate"], d["decadal"]["heavenlyStem"], d["age"]["nominalAge"])
+print(sorted(d.keys()))
+```
+
+**输出**
+
+```text
+2025-6-1 庚 26
+['age', 'daily', 'decadal', 'hourly', 'lunarDate', 'monthly', 'solarDate', 'yearly']
+```

@@ -9,6 +9,11 @@ description: 星耀基础信息、天干地支信息、顺序常量与全部枚�
 from x_iztro import data
 ```
 
+<Callout type="info">
+四个入口返回的都是**具名 dataclass**（外层容器仍是 `dict` / `list`），
+字段用属性访问而不是下标。字段名是 snake_case，与底层 JSON 的 camelCase 键不同。
+</Callout>
+
 ---
 
 ## stars_info
@@ -18,17 +23,17 @@ from x_iztro import data
 **签名**
 
 ```python
-def stars_info() -> dict[str, dict]
+def stars_info() -> dict[str, StarInfo]
 ```
 
-**返回值**　星耀标识 → `{brightness, fiveElements, yinYang}`。
+**返回值**　星耀标识 → `StarInfo`。
 只有二十颗星有记录：**十四主星**加文昌、文曲、火星、铃星、擎羊、陀罗。
 
-| 键 | 类型 | 说明 |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `brightness` | `list[str]` | 十二宫亮度标识，索引 0 为寅宫；该宫无亮度则为空串 |
-| `fiveElements` | `str \| None` | 五行 |
-| `yinYang` | `str \| None` | 阴阳 |
+| `five_elements` | `str \| None` | 五行 |
+| `yin_yang` | `str \| None` | 阴阳 |
 
 **示例**
 
@@ -37,14 +42,14 @@ info = data.stars_info()
 
 print(len(info))
 print(info["ziweiMaj"])
-print(info["taiyangMaj"]["fiveElements"])
+print(info["taiyangMaj"].five_elements)
 ```
 
 **输出**
 
 ```text
 20
-{'brightness': ['wang', 'wang', 'de', 'wang', 'miao', 'miao', 'wang', 'wang', 'de', 'wang', 'ping', 'miao'], 'fiveElements': '土', 'yinYang': '阴'}
+StarInfo(brightness=['wang', 'wang', 'de', 'wang', 'miao', 'miao', 'wang', 'wang', 'de', 'wang', 'ping', 'miao'], five_elements='土', yin_yang='阴')
 None
 ```
 
@@ -67,15 +72,15 @@ None
 **签名**
 
 ```python
-def heavenly_stems() -> dict[str, dict]
+def heavenly_stems() -> dict[str, HeavenlyStemInfo]
 ```
 
-**返回值**　天干标识 → 信息 dict：
+**返回值**　天干标识 → `HeavenlyStemInfo`：
 
-| 键 | 类型 | 说明 |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `yinYang` | `str` | 阴阳 |
-| `fiveElements` | `str` | 五行 |
+| `yin_yang` | `str` | 阴阳 |
+| `five_elements` | `str` | 五行 |
 | `crash` | `str \| None` | 对冲天干标识；戊、己无对冲 |
 | `mutagen` | `list[str]` | 四化四星标识，顺序为禄、权、科、忌 |
 
@@ -85,15 +90,22 @@ def heavenly_stems() -> dict[str, dict]
 stems = data.heavenly_stems()
 
 print(stems["jiaHeavenly"])
-print(stems["wuHeavenly"]["crash"])
+print(stems["wuHeavenly"].crash)
 ```
 
 **输出**
 
 ```text
-{'crash': 'gengHeavenly', 'fiveElements': '木', 'mutagen': ['lianzhenMaj', 'pojunMaj', 'wuquMaj', 'taiyangMaj'], 'yinYang': '阳'}
+HeavenlyStemInfo(yin_yang='阳', five_elements='木', crash='gengHeavenly', mutagen=['lianzhenMaj', 'pojunMaj', 'wuquMaj', 'taiyangMaj'])
 None
 ```
+
+<Callout type="info">
+这是**内置默认表**。自定义四化表（`ChartConfig(mutagens=...)`）不会反映在这里；
+要看某张盘上实际生效的四化，用
+[`utils.get_mutagens_by_heavenly_stem(stem, config)`](/zh/docs/python/util#get_mutagen--get_mutagens_by_heavenly_stem)
+或宫位的 `mutagen_star_keys`。
+</Callout>
 
 ---
 
@@ -104,36 +116,40 @@ None
 **签名**
 
 ```python
-def earthly_branches() -> dict[str, dict]
+def earthly_branches() -> dict[str, EarthlyBranchInfo]
 ```
 
-**返回值**　地支标识 → 信息 dict：
+**返回值**　地支标识 → `EarthlyBranchInfo`：
 
-| 键 | 类型 | 说明 |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `yinYang` | `str` | 阴阳，决定大限与长生十二神的顺逆 |
-| `fiveElements` | `str` | 五行 |
+| `yin_yang` | `str` | 阴阳，决定大限与长生十二神的顺逆 |
+| `five_elements` | `str` | 五行 |
 | `crash` | `str` | 对冲地支标识 |
 | `soul` | `str` | 命主星标识（按命宫地支查） |
 | `body` | `str` | 身主星标识（按生年地支查） |
 | `inside` | `str` | 对应脏腑 |
 | `outside` | `str` | 对应身体部位 |
-| `healthTip` | `str` | 健康提示 |
+| `health_tip` | `str` | 健康提示 |
 
 <Callout type="info">
-`inside` / `outside` / `healthTip` 三项只有中文一种写法，不参与国际化。
+`inside` / `outside` / `health_tip` 三项只有中文一种写法，不参与国际化。
 </Callout>
 
 **示例**
 
 ```python
-print(data.earthly_branches()["ziEarthly"])
+zi = data.earthly_branches()["ziEarthly"]
+
+print(zi)
+print(zi.soul, zi.body, zi.crash)
 ```
 
 **输出**
 
 ```text
-{'body': 'huoxingMin', 'crash': 'wuEarthly', 'fiveElements': '水', 'healthTip': '生殖系统、膀胱、尿道之疾病，听觉障碍', 'inside': '胆', 'outside': '下体', 'soul': 'tanlangMaj', 'yinYang': '阳'}
+EarthlyBranchInfo(yin_yang='阳', five_elements='水', crash='wuEarthly', soul='tanlangMaj', body='huoxingMin', inside='胆', outside='下体', health_tip='生殖系统、膀胱、尿道之疾病，听觉障碍')
+tanlangMaj huoxingMin wuEarthly
 ```
 
 ---
@@ -145,35 +161,38 @@ print(data.earthly_branches()["ziEarthly"])
 **签名**
 
 ```python
-def constants() -> dict
+def constants() -> Constants
 ```
 
-**返回值**
+**返回值**　`Constants`：
 
-| 键 | 类型 | 说明 |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `LANGUAGES` | `list[str]` | 支持的语言代码 |
-| `HEAVENLY_STEMS` | `list[str]` | 天干顺序 |
-| `EARTHLY_BRANCHES` | `list[str]` | 地支顺序 |
-| `ZODIAC` | `list[str]` | 生肖标识，按地支顺序 |
-| `SIGNS` | `list[str]` | 星座标识，按黄道顺序 |
-| `PALACES` | `list[str]` | 十二宫名，从命宫起的排列顺序 |
-| `GENDER` | `dict[str, str]` | 男女各自的阴阳 |
-| `CHINESE_TIME` | `list[str]` | 时辰标识，早子时起、晚子时止 |
-| `TIME_RANGE` | `list[str]` | 时辰对应的钟点区间 |
-| `TIGER_RULE` | `dict[str, str]` | 五虎遁：年干推正月天干 |
-| `RAT_RULE` | `dict[str, str]` | 五鼠遁：日干推子时天干 |
-| `MUTAGEN` | `list[str]` | 四化顺序 |
+| `languages` | `list[str]` | 支持的语言代码 |
+| `heavenly_stems` | `list[str]` | 天干顺序 |
+| `earthly_branches` | `list[str]` | 地支顺序 |
+| `zodiac` | `list[str]` | 生肖标识，按地支顺序 |
+| `signs` | `list[str]` | 星座标识，按黄道顺序 |
+| `palaces` | `list[str]` | 十二宫名，从命宫起**逆时针**排 |
+| `gender` | `dict[str, str]` | 男女各自的阴阳 |
+| `chinese_time` | `list[str]` | 时辰标识，早子时起、晚子时止 |
+| `time_range` | `list[str]` | 时辰对应的钟点区间 |
+| `tiger_rule` | `dict[str, str]` | 五虎遁：年干推正月天干 |
+| `rat_rule` | `dict[str, str]` | 五鼠遁：日干推子时天干 |
+| `mutagen` | `list[str]` | 四化顺序 |
+| `five_elements_class` | `dict[str, int]` | 五行局标识 → 局数（水二局 2 …… 火六局 6） |
 
 **示例**
 
 ```python
 c = data.constants()
 
-print(c["LANGUAGES"])
-print(c["ZODIAC"][:3], c["CHINESE_TIME"][12], c["TIME_RANGE"][2])
-print(c["GENDER"])
-print("甲年正月干:", c["TIGER_RULE"]["jiaHeavenly"])
+print(c.languages)
+print(c.zodiac[:3], c.chinese_time[12], c.time_range[2])
+print(c.gender)
+print("甲年正月干:", c.tiger_rule["jiaHeavenly"])
+print(c.palaces)
+print(c.five_elements_class)
 ```
 
 **输出**
@@ -183,7 +202,29 @@ print("甲年正月干:", c["TIGER_RULE"]["jiaHeavenly"])
 ['rat', 'ox', 'tiger'] lateRatHour 03:00~05:00
 {'female': '阴', 'male': '阳'}
 甲年正月干: bingHeavenly
+['soulPalace', 'parentsPalace', 'spiritPalace', 'propertyPalace', 'careerPalace', 'friendsPalace', 'surfacePalace', 'healthPalace', 'wealthPalace', 'childrenPalace', 'spousePalace', 'siblingsPalace']
+{'earth5th': 5, 'fire6th': 6, 'metal4th': 4, 'water2nd': 2, 'wood3rd': 3}
 ```
+
+**边界与陷阱**
+
+<Callout type="info" title="palaces 是逆时针序，不是盘上位置">
+`palaces` 给的是宫名的**排列顺序**：命、父母、福德、田宅、官禄、仆役、迁移、
+疾厄、财帛、子女、夫妻、兄弟。这是十二宫从命宫起逆时针铺开的次序，
+不是某张盘上第 `i` 格叫什么。要那个用
+[`utils.get_palace_names(soul_index)`](/zh/docs/python/util#get_palace_names)。
+</Callout>
+
+<Callout type="info">
+`languages` 的顺序是 iztro 词表的合并次序（en-US 起），不是 `Language` 枚举的声明次序。
+[`i18n.key_of`](/zh/docs/python/i18n#key_of) 的逐语言扫描顺序与它一致。
+</Callout>
+
+<Callout type="info">
+`five_elements_class`、`gender`、`tiger_rule`、`rat_rule` 四项是 `dict` 而非 `list`，
+键的次序是字典序（原生扩展转过来时排过序），不代表五行局或天干的排列顺序。
+局数也可以直接从枚举取：`FiveElementsClass.WOOD_3.number`。
+</Callout>
 
 ---
 
@@ -192,26 +233,57 @@ print("甲年正月干:", c["TIGER_RULE"]["jiaHeavenly"])
 `x_iztro.enums` 里的每个枚举都是 `StrEnum`，取值就是语言无关标识。
 从包根直接导入：`from x_iztro import MajorStar, PalaceName`。
 
-| 枚举 | 成员数 | 内容 |
+| 枚举 | 成员数 | 成员 |
 | --- | --- | --- |
-| `Gender` | 2 | 性别 |
-| `Language` | 6 | 语言代码 |
-| `HeavenlyStem` | 10 | 天干 |
-| `EarthlyBranch` | 12 | 地支 |
-| `PalaceName` | 12 | 十二宫名 |
-| `FiveElementsClass` | 5 | 五行局 |
-| `Mutagen` | 4 | 四化 |
-| `Brightness` | 7 | 亮度 |
-| `StarType` | 8 | 星耀类型 |
-| `Scope` | 6 | 运限层级 |
-| `MajorStar` | 14 | 十四主星 |
-| `MinorStar` | 14 | 十四辅星 |
-| `AdjectiveStar` | 42 | 杂耀 |
-| `Changsheng12` | 12 | 长生十二神 |
-| `Boshi12` | 12 | 博士十二神 |
-| `Suiqian12` | 13 | 岁前十二神（含中州派的岁破） |
-| `Jiangqian12` | 12 | 将前十二神 |
-| `Algorithm` / `AstroType` / `YearDivide` / `HoroscopeDivide` / `AgeDivide` / `DayDivide` | — | 配置开关取值 |
+| `Gender` | 2 | `MALE` `FEMALE` |
+| `Language` | 6 | `ZH_CN` `ZH_TW` `EN_US` `JA_JP` `KO_KR` `VI_VN` |
+| `HeavenlyStem` | 10 | `JIA` `YI` `BING` `DING` `WU` `JI` `GENG` `XIN` `REN` `GUI` |
+| `EarthlyBranch` | 12 | `ZI` `CHOU` `YIN` `MAO` `CHEN` `SI` `WU` `WEI` `SHEN` `YOU` `XU` `HAI` |
+| `PalaceName` | **14** | 十二宫 `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`，外加两个定位标记 `BODY`（身宫）`ORIGINAL`（来因宫） |
+| `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
+| `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
+| `Brightness` | 7 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN` |
+| `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
+| `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
+| `MajorStar` | 14 | 十四主星，`ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
+| `MinorStar` | 14 | 十四辅星，`ZUOFU` `YOUBI` `WENCHANG` `WENQU` `LUCUN` `TIANMA` `QINGYANG` `TUOLUO` `HUOXING` `LINGXING` `TIANKUI` `TIANYUE` `DIKONG` `DIJIE` |
+| `AdjectiveStar` | 43 | 杂耀，含中州派的 `XUNZHONG`（旬中）；成员对照见[星耀](/zh/docs/guide/concepts/stars) |
+| `HoroscopeStar` | 50 | 五个运限层级各十颗流耀，`YUNLU` `LIULU` `YUELU` `RILU` `SHILU` 等 |
+| `Changsheng12` | 12 | `CHANGSHENG` `MUYU` `GUANDAI` `LINGUAN` `DIWANG` `SHUAI` `BING` `SI` `MU` `JUE` `TAI` `YANG` |
+| `Boshi12` | 12 | `BOSHI` `LISHI` `QINGLONG` `XIAOHAO` `JIANGJUN` `ZHOUSHU` `FEILIAN` `XISHEN` `BINGFU` `DAHAO` `FUBING` `GUANFU` |
+| `Suiqian12` | 13 | `SUIJIAN` `HUIQI` `SANGMEN` `GUANSUO` `GWANFU` `XIAOHAO` `DAHAO` `SUIPO` `LONGDE` `BAIHU` `TIANDE` `DIAOKE` `BINGFU`（`SUIPO` 为中州派的岁破） |
+| `Jiangqian12` | 12 | `JIANGXING` `PANAN` `SUIYI` `XISHEN` `HUAGAI` `JIESHA` `ZHAISHA` `TIANSHA` `ZHIBEI` `XIANCHI` `YUESHA` `WANGSHEN` |
+| `Algorithm` | 2 | `DEFAULT` `ZHONGZHOU` |
+| `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
+| `YearDivide` / `HoroscopeDivide` | 各 2 | `NORMAL` `EXACT` |
+| `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
+| `DayDivide` | 2 | `FORWARD` `CURRENT` |
+
+成员名与它的取值不总是拼音对应——`Boshi12.FEILIAN` 的值是 `faylian`，
+`Jiangqian12.XISHEN` 的值是 `xiishen`，`Suiqian12.GWANFU` 的值是 `gwanfu`。
+这些拼写沿用 iztro 的词表，**判断一律用枚举成员**，不要手写字符串。
+全部标识与译名的对照见[标识总表](/zh/docs/guide/guides/keys)。
+
+### FiveElementsClass.number
+
+五行局枚举多一个属性 `number`，给出局数——大限起运岁数与起紫微都用它：
+
+```python
+from x_iztro import FiveElementsClass
+
+for c in FiveElementsClass:
+    print(c, c.number)
+```
+
+**输出**
+
+```text
+water2nd 2
+wood3rd 3
+metal4th 4
+earth5th 5
+fire6th 6
+```
 
 **示例**
 
@@ -234,4 +306,8 @@ ziweiMaj sihuaLu wealthPalace
 <Callout type="info" title="StrEnum 与字符串等价">
 `chart.palace(PalaceName.SOUL)` 与 `chart.palace("soulPalace")` 完全等价。
 枚举的价值在于 IDE 补全与拼写检查，而非类型约束。
+
+名字来自外部输入时，用构造函数当校验器：`PalaceName("soulPalce")` 抛
+`ValueError: 'soulPalce' is not a valid PalaceName`，
+比让查询方法静默返回 `None` 早一步暴露问题。
 </Callout>

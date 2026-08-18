@@ -6,7 +6,11 @@
 //
 // 返回类型化的 Astrolabe/Horoscope 结构体（见 types.go），字段同时携带
 // 翻译文本与语言无关标识（keys.go 常量），判断方法在任何输出语言下可用。
-// 计算失败时返回 error。
+// 计算失败时返回 *Error，可用 errors.Is 按类别判断（见 errors.go）。
+//
+// 跨 wasm 的入口都有 Context 变体（BySolarContext 等），用于取消等待与超时；
+// 无 Context 的形式等价于传 context.Background()。首次调用会编译 wasm 模块，
+// 想把这份开销提前完成时调用 Warmup。
 //
 // 更新内嵌 wasm：在仓库根目录执行
 //
@@ -16,30 +20,27 @@ package iztro
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"sync"
 	"time"
-
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
-//go:embed x_iztro.wasm
-var wasmBytes []byte
-
 // Config 为排盘配置；nil 或缺省键取默认值（与 JS iztro 默认一致）。
-// 键：YearDivide/HoroscopeDivide "normal"|"exact"、AgeDivide "normal"|"birthday"、
-// DayDivide "forward"|"current"、Algorithm "default"|"zhongzhou"。
 type Config struct {
-	YearDivide      string `json:"yearDivide,omitempty"`
+	// YearDivide 为年干支的换年时点："normal" 正月初一（默认）、"exact" 立春。
+	YearDivide string `json:"yearDivide,omitempty"`
+
+	// HoroscopeDivide 为流年神煞取年支的换年时点："normal" 正月初一（默认）、"exact" 立春。
 	HoroscopeDivide string `json:"horoscopeDivide,omitempty"`
-	AgeDivide       string `json:"ageDivide,omitempty"`
-	DayDivide       string `json:"dayDivide,omitempty"`
-	Algorithm       string `json:"algorithm,omitempty"`
+
+	// AgeDivide 为小限虚岁的进位时点："normal" 农历生日（默认）、"birthday" 阳历生日。
+	AgeDivide string `json:"ageDivide,omitempty"`
+
+	// DayDivide 为晚子时的归日方式："forward" 归次日（默认）、"current" 归当日。
+	DayDivide string `json:"dayDivide,omitempty"`
+
+	// Algorithm 为算法派别："default" 通行派（默认）、"zhongzhou" 中州派。
+	Algorithm string `json:"algorithm,omitempty"`
 
 	// AstroType 为排盘视角："heaven" 天盘（默认）、"earth" 地盘、"human" 人盘。
 	// 地盘以身宫干支、人盘以福德宫干支起五行局重排。
@@ -54,113 +55,31 @@ type Config struct {
 	Brightness map[string][]string `json:"brightness,omitempty"`
 }
 
-// runtime 持有一次性初始化的 wazero 实例；wasm 模块实例非并发安全，
-// 所有调用经互斥锁串行化。
-type runtime struct {
-	mu      sync.Mutex
-	mod     api.Module
-	alloc   api.Function
-	free    api.Function
-	bySolar api.Function
-	byLunar api.Function
-	horo    api.Function
-	query   api.Function
-}
-
-var (
-	rtOnce sync.Once
-	rt     *runtime
-	rtErr  error
-)
-
-func getRuntime() (*runtime, error) {
-	rtOnce.Do(func() {
-		ctx := context.Background()
-		r := wazero.NewRuntime(ctx)
-		wasi_snapshot_preview1.MustInstantiate(ctx, r)
-		mod, err := r.Instantiate(ctx, wasmBytes)
-		if err != nil {
-			rtErr = fmt.Errorf("iztro: instantiate wasm: %w", err)
-			return
-		}
-		rt = &runtime{
-			mod:     mod,
-			alloc:   mod.ExportedFunction("iztro_wasm_alloc"),
-			free:    mod.ExportedFunction("iztro_wasm_free"),
-			bySolar: mod.ExportedFunction("iztro_wasm_by_solar"),
-			byLunar: mod.ExportedFunction("iztro_wasm_by_lunar"),
-			horo:    mod.ExportedFunction("iztro_wasm_horoscope"),
-			query:   mod.ExportedFunction("iztro_wasm_query"),
-		}
-	})
-	return rt, rtErr
-}
-
-// call 将入参 JSON 写入 wasm 内存、调用函数并取回结果 JSON 原文。
-func (r *runtime) call(fn api.Function, input any) ([]byte, error) {
-	payload, err := json.Marshal(input)
-	if err != nil {
-		return nil, fmt.Errorf("iztro: marshal input: %w", err)
+// decodeAstrolabe 把排盘结果 JSON 解成星盘，回填反向引用与原始配置。
+func decodeAstrolabe(raw []byte, config *Config) (*Astrolabe, error) {
+	var out Astrolabe
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, internalError("decode astrolabe: " + err.Error())
 	}
-
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	ctx := context.Background()
-
-	allocRes, err := r.alloc.Call(ctx, uint64(len(payload)))
-	if err != nil {
-		return nil, fmt.Errorf("iztro: alloc: %w", err)
-	}
-	inPtr := allocRes[0]
-	if !r.mod.Memory().Write(uint32(inPtr), payload) {
-		return nil, errors.New("iztro: write input to wasm memory failed")
-	}
-
-	callRes, err := fn.Call(ctx, inPtr, uint64(len(payload)))
-	if _, ferr := r.free.Call(ctx, inPtr, uint64(len(payload))); ferr != nil && err == nil {
-		err = ferr
-	}
-	if err != nil {
-		return nil, fmt.Errorf("iztro: call: %w", err)
-	}
-
-	outPtr := uint32(callRes[0] >> 32)
-	outLen := uint32(callRes[0] & 0xFFFFFFFF)
-	out, ok := r.mod.Memory().Read(outPtr, outLen)
-	if !ok {
-		return nil, errors.New("iztro: read result from wasm memory failed")
-	}
-	result := make([]byte, len(out))
-	copy(result, out)
-	if _, err := r.free.Call(ctx, uint64(outPtr), uint64(outLen)); err != nil {
-		return nil, fmt.Errorf("iztro: free result: %w", err)
-	}
-
-	var probe struct {
-		Error string `json:"error"`
-	}
-	if err := json.Unmarshal(result, &probe); err != nil {
-		return nil, fmt.Errorf("iztro: decode result: %w", err)
-	}
-	if probe.Error != "" {
-		return nil, fmt.Errorf("iztro: %s", probe.Error)
-	}
-	return result, nil
+	out.reqConfig = config
+	out.link()
+	return &out, nil
 }
 
 // BySolar 以阳历日期排盘，返回类型化星盘。
 //   - solarDate: "YYYY-M-D"，如 "2000-8-16"
 //   - timeIndex: 时辰索引 0-12（0=早子时，12=晚子时）
-//   - gender: "male" 或 "female"
-//   - fixLeap: 是否修正闰月
-//   - language: "zh-CN"/"zh-TW"/"en-US"/"ja-JP"/"ko-KR"/"vi-VN"
+//   - gender: GenderMale / GenderFemale
+//   - fixLeap: 阳历日期落在闰月十五之后时是否视作次月
+//   - language: 盘面语言（Language* 常量）
 //   - config: 排盘配置，nil 取默认
-func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
-	r, err := getRuntime()
-	if err != nil {
-		return nil, err
-	}
-	raw, err := r.call(r.bySolar, map[string]any{
+func BySolar(solarDate string, timeIndex uint8, gender Gender, fixLeap bool, language Language, config *Config) (*Astrolabe, error) {
+	return BySolarContext(context.Background(), solarDate, timeIndex, gender, fixLeap, language, config)
+}
+
+// BySolarContext 为 BySolar 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func BySolarContext(ctx context.Context, solarDate string, timeIndex uint8, gender Gender, fixLeap bool, language Language, config *Config) (*Astrolabe, error) {
+	raw, err := callWasm(ctx, fnBySolar, map[string]any{
 		"solarDate": solarDate,
 		"timeIndex": timeIndex,
 		"gender":    gender,
@@ -171,54 +90,25 @@ func BySolar(solarDate string, timeIndex uint8, gender string, fixLeap bool, lan
 	if err != nil {
 		return nil, err
 	}
-	var out Astrolabe
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
-	}
-	out.link()
-	return &out, nil
+	return decodeAstrolabe(raw, config)
 }
 
-// Rearranged 以指定干支为命宫重排本盘，返回新盘；本盘不变。
-//
-// 传入的干支决定五行局，进而决定紫微天府落点、十二宫名、长生十二神与大限小限；
-// 辅星、杂耀（天伤天使天才除外）、博士十二神、岁前将前十二神沿用原盘。
-//
-// 常规的天盘、地盘、人盘用 Config.AstroType 指定即可，本方法用于从任意干支起盘。
-// fromStemKey / fromBranchKey 取 Stem* / Branch* 常量。
-func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astrolabe, error) {
-	r, err := getRuntime()
-	if err != nil {
-		return nil, err
-	}
-	raw, err := r.call(r.bySolar, map[string]any{
-		"solarDate":  a.SolarDate,
-		"timeIndex":  a.TimeIndex,
-		"gender":     a.GenderKey,
-		"fixLeap":    a.FixLeap,
-		"language":   a.Language,
-		"config":     &a.Config,
-		"fromStem":   fromStemKey,
-		"fromBranch": fromBranchKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-	var out Astrolabe
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
-	}
-	out.link()
-	return &out, nil
+// ByLunar 以农历日期排盘，返回类型化星盘。
+//   - lunarDate: "YYYY-M-D"，如 "2000-7-17"
+//   - leap: 输入月是否闰月及闰月处理方式（NotLeapMonth / LeapMonthKeep / LeapMonthFixed）；
+//     标为闰月但该月没有闰月时按普通月处理
+//   - 其余参数同 BySolar
+func ByLunar(lunarDate string, timeIndex uint8, gender Gender, leap LeapMonth, language Language, config *Config) (*Astrolabe, error) {
+	return ByLunarContext(context.Background(), lunarDate, timeIndex, gender, leap, language, config)
 }
 
-// ByLunar 以农历日期排盘，返回类型化星盘；isLeapMonth 在该月没有闰月时不生效。
-func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool, fixLeap bool, language string, config *Config) (*Astrolabe, error) {
-	r, err := getRuntime()
+// ByLunarContext 为 ByLunar 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func ByLunarContext(ctx context.Context, lunarDate string, timeIndex uint8, gender Gender, leap LeapMonth, language Language, config *Config) (*Astrolabe, error) {
+	isLeapMonth, fixLeap, err := leap.flags()
 	if err != nil {
 		return nil, err
 	}
-	raw, err := r.call(r.byLunar, map[string]any{
+	raw, err := callWasm(ctx, fnByLunar, map[string]any{
 		"lunarDate":   lunarDate,
 		"timeIndex":   timeIndex,
 		"gender":      gender,
@@ -230,12 +120,40 @@ func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool,
 	if err != nil {
 		return nil, err
 	}
-	var out Astrolabe
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("iztro: decode astrolabe: %w", err)
+	return decodeAstrolabe(raw, config)
+}
+
+// Rearranged 以指定干支为命宫重排本盘，返回新盘；本盘不变。
+//
+// 传入的干支决定五行局，进而决定紫微天府落点、十二宫名、长生十二神与大限小限；
+// 辅星、杂耀（天伤天使天才除外）、博士十二神、岁前将前十二神沿用原盘。
+//
+// 常规的天盘、地盘、人盘用 Config.AstroType 指定即可，本方法用于从任意干支起盘。
+// fromStemKey / fromBranchKey 取 Stem* / Branch* 常量。
+func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astrolabe, error) {
+	return a.RearrangedContext(context.Background(), fromStemKey, fromBranchKey)
+}
+
+// RearrangedContext 为 Rearranged 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) RearrangedContext(ctx context.Context, fromStemKey string, fromBranchKey string) (*Astrolabe, error) {
+	if a == nil {
+		return nil, invalidArgument("rearranged: nil astrolabe")
 	}
-	out.link()
-	return &out, nil
+	config := a.requestConfig()
+	raw, err := callWasm(ctx, fnBySolar, map[string]any{
+		"solarDate":  a.SolarDate,
+		"timeIndex":  a.TimeIndex,
+		"gender":     a.GenderKey,
+		"fixLeap":    a.FixLeap,
+		"language":   a.Language,
+		"config":     config,
+		"fromStem":   fromStemKey,
+		"fromBranch": fromBranchKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return decodeAstrolabe(raw, config)
 }
 
 // Horoscope 以本命盘为起点计算目标日期的运限，返回的运限持有本盘。
@@ -246,17 +164,21 @@ func ByLunar(lunarDate string, timeIndex uint8, gender string, isLeapMonth bool,
 // 排盘上下文（出生日期、时辰、性别、闰月修正、语言、配置）取自本盘，
 // 与 wasm 侧的无状态调用协定一致。
 func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
-	r, err := getRuntime()
-	if err != nil {
-		return nil, err
+	return a.HoroscopeContext(context.Background(), targetDate, targetTimeIndex)
+}
+
+// HoroscopeContext 为 Horoscope 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
+	if a == nil {
+		return nil, invalidArgument("horoscope: nil astrolabe")
 	}
-	raw, err := r.call(r.horo, map[string]any{
+	raw, err := callWasm(ctx, fnHoroscope, map[string]any{
 		"solarDate":       a.SolarDate,
 		"timeIndex":       a.TimeIndex,
 		"gender":          a.GenderKey,
 		"fixLeap":         a.FixLeap,
 		"language":        a.Language,
-		"config":          &a.Config,
+		"config":          a.requestConfig(),
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
 	})
@@ -265,7 +187,7 @@ func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horosc
 	}
 	var out Horoscope
 	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("iztro: decode horoscope: %w", err)
+		return nil, internalError("decode horoscope: " + err.Error())
 	}
 	out.astrolabe = a
 	return &out, nil
@@ -273,11 +195,16 @@ func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horosc
 
 // HoroscopeNow 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
 func (a *Astrolabe) HoroscopeNow() (*Horoscope, error) {
+	return a.HoroscopeNowContext(context.Background())
+}
+
+// HoroscopeNowContext 为 HoroscopeNow 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeNowContext(ctx context.Context) (*Horoscope, error) {
 	now := time.Now()
 	date := fmt.Sprintf("%d-%d-%d", now.Year(), int(now.Month()), now.Day())
 	timeIndex, err := TimeToIndex(uint8(now.Hour()))
 	if err != nil {
 		return nil, err
 	}
-	return a.Horoscope(date, timeIndex)
+	return a.HoroscopeContext(ctx, date, timeIndex)
 }

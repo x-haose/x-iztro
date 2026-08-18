@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::astro::surpalaces::SurroundedPalaces;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
+use crate::models::surpalaces::SurroundedPalaces;
 use crate::utils::fix_index;
 
 /// 数字化农历日期
@@ -71,8 +71,8 @@ pub struct Astrolabe {
     pub body: StarKey,
     /// 五行局
     pub five_elements_class: FiveElementsClass,
-    /// 十二宫数据（索引 0 为寅宫）
-    pub palaces: Vec<PalaceData>,
+    /// 十二宫数据，定长 12（索引 0 为寅宫，顺时针至索引 11 丑宫）
+    pub palaces: [PalaceData; 12],
     /// 结构化的农历生日与四柱干支
     pub raw_dates: RawDates,
     /// 出生时辰索引 (0=早子, 1=丑, ..., 12=晚子)，晚子归当天的配置下仍保留原始值

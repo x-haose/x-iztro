@@ -1,12 +1,14 @@
 ---
 title: 语言无关的 key 契约
-description: 为什么星名不能拿来做判断，key 字段是什么，三种语言各自怎么用。
+description: 为什么星名不能拿来做判断，key 字段是什么，三种编程语言各自怎么用。
 ---
+
+*适合：开发者*
 
 ## 问题
 
-排盘结果的文本会跟着语言变。同一颗星，中文盘上是「紫微」，英文盘上是 `ziwei`，
-日文盘上又不一样。如果判断逻辑写成：
+排盘结果的文本会跟着盘面语言变。同一颗星，中文盘上是「紫微」，英文盘上是 `emperor`，
+韩文盘上是 `자미`。如果判断逻辑写成：
 
 ```python
 # 反面例子
@@ -14,13 +16,13 @@ if any(s.name == "紫微" for s in soul.major_stars):
     ...
 ```
 
-那么这段代码只在 `language="zh-CN"` 时正确。换成任何其他语言就静默失效 ——
+那么这段代码只在 `language="zh-CN"` 时正确。换成任何其他盘面语言就静默失效 ——
 不会报错，只是永远返回 `False`。这类 bug 很难发现。
 
 ## 解法
 
 每个会被翻译的字段，x-iztro 都额外提供一个**语言无关标识**（key）。
-key 的取值是 iztro 的 i18n 键名，与输出语言无关，永远不变。
+key 的取值是 iztro 的 i18n 键名，与盘面语言无关，永远不变。
 
 ```json
 {
@@ -52,8 +54,9 @@ key 的取值是 iztro 的 i18n 键名，与输出语言无关，永远不变。
 | 博士十二神 | `boshi12` | `boshi12Key` | `boshi` |
 | 将前十二神 | `jiangqian12` | `jiangqian12Key` | `jiangxing` |
 | 岁前十二神 | `suiqian12` | `suiqian12Key` | `suijian` |
+| 宫干四化星 | — | `mutagenStarKeys` | `["taiyangMaj", …]` |
 
-## 三种语言的用法
+## 三种编程语言的用法
 
 ### Python：枚举
 
@@ -116,10 +119,10 @@ Brightness::Miao.as_key();    // "miao"
 
 ## 验证方式
 
-同一个生日分别用六种语言排盘，所有 key 字段必须逐一相等 ——
+同一个生日分别用六种盘面语言排盘，所有 key 字段必须逐一相等 ——
 这条由绑定契约测试（`golden_contract`）与 Go / Python 的端到端金标测试守着。
 
-所以下面这段代码在任何语言下结果都相同：
+所以下面这段代码在任何盘面语言下结果都相同：
 
 ```python
 for lang in ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]:

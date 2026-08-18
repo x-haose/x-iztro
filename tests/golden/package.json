@@ -7,7 +7,17 @@
     "gen:tier1": "node generate_tier1.mjs",
     "gen:tier2": "node generate_tier2.mjs",
     "gen:tier3": "node generate_tier3.mjs",
-    "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3"
+    "gen:tier_edge": "node generate_tier_edge.mjs",
+    "gen:horoscope": "node generate_horoscope.mjs",
+    "gen:variants": "node generate_variants.mjs",
+    "gen:config": "node generate_config.mjs",
+    "gen:astrotype": "node generate_astrotype.mjs",
+    "gen:contract": "node generate_contract.mjs",
+    "gen:star": "node generate_star.mjs",
+    "gen:data": "node generate_data.mjs",
+    "gen:i18n": "node generate_i18n.mjs",
+    "gen:regression": "node generate_regression.mjs",
+    "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3 && npm run gen:tier_edge && npm run gen:horoscope && npm run gen:variants && npm run gen:config && npm run gen:astrotype && npm run gen:contract && npm run gen:star && npm run gen:data && npm run gen:i18n && npm run gen:regression"
   },
   "dependencies": {
     "iztro": "2.5.8"

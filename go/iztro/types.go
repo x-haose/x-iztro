@@ -33,7 +33,7 @@ type Star struct {
 
 // WithMutagen 判断星耀是否具有列出的任一四化（传 MutagenLu 等常量）。
 func (s *Star) WithMutagen(mutagenKeys ...string) bool {
-	if s.MutagenKey == "" {
+	if s == nil || s.MutagenKey == "" {
 		return false
 	}
 	for _, k := range mutagenKeys {
@@ -46,7 +46,7 @@ func (s *Star) WithMutagen(mutagenKeys ...string) bool {
 
 // WithBrightness 判断星耀是否处于列出的任一亮度（传 BrightnessMiao 等常量）。
 func (s *Star) WithBrightness(brightnessKeys ...string) bool {
-	if s.BrightnessKey == "" {
+	if s == nil || s.BrightnessKey == "" {
 		return false
 	}
 	for _, k := range brightnessKeys {
@@ -59,20 +59,23 @@ func (s *Star) WithBrightness(brightnessKeys ...string) bool {
 
 // Palace 返回星耀所在的宫位；脱离星盘单独构造的星耀返回 nil。
 func (s *Star) Palace() *Palace {
+	if s == nil {
+		return nil
+	}
 	return s.palace
 }
 
 // OppositePalace 返回星耀所在宫位的对宫。
 func (s *Star) OppositePalace() *Palace {
-	if s.palace == nil || s.astrolabe == nil {
+	if s == nil || s.palace == nil || s.astrolabe == nil {
 		return nil
 	}
-	return &s.astrolabe.Palaces[(s.palace.Index+6)%12]
+	return s.astrolabe.PalaceByIndex((s.palace.Index + 6) % 12)
 }
 
 // SurroundedPalaces 返回星耀所在宫位的三方四正。
 func (s *Star) SurroundedPalaces() *SurroundedPalaces {
-	if s.palace == nil || s.astrolabe == nil {
+	if s == nil || s.palace == nil || s.astrolabe == nil {
 		return nil
 	}
 	return s.astrolabe.SurroundedPalacesByIndex(s.palace.Index)
@@ -138,13 +141,30 @@ type Palace struct {
 	Decadal Decadal `json:"decadal"`
 	// Ages 为小限经过年龄
 	Ages []int `json:"ages"`
+	// MutagenStarKeys 为本宫天干化出的四颗星标识，顺序为禄、权、科、忌。
+	// 取值随排盘配置的自定义四化表变化，飞星判断以它为准。
+	MutagenStarKeys [4]string `json:"mutagenStarKeys"`
 
 	// astrolabe 为反向引用，由星盘解析后回填，不参与序列化。
 	astrolabe *Astrolabe
+	// starIDs 为宫内星耀的 key 与译名集合，由 link 预计算，供包含判断复用。
+	starIDs map[string]struct{}
 }
 
-// allStarIdentifiers 汇集宫内所有星耀的 key 与翻译名，供查询词匹配。
-func (p *Palace) allStarIdentifiers() map[string]struct{} {
+// starIdentifiers 取宫内所有星耀的 key 与翻译名，供查询词匹配。
+// 挂在星盘上的宫位用 link 预计算好的集合；单独构造的宫位现算，不写回缓存。
+func (p *Palace) starIdentifiers() map[string]struct{} {
+	if p == nil {
+		return nil
+	}
+	if p.starIDs != nil {
+		return p.starIDs
+	}
+	return buildStarIdentifiers(p)
+}
+
+// buildStarIdentifiers 汇集宫内所有星耀的 key 与翻译名。
+func buildStarIdentifiers(p *Palace) map[string]struct{} {
 	out := make(map[string]struct{})
 	for _, group := range [][]Star{p.MajorStars, p.MinorStars, p.AdjectiveStars} {
 		for _, s := range group {
@@ -157,7 +177,7 @@ func (p *Palace) allStarIdentifiers() map[string]struct{} {
 
 // Has 判断宫位是否包含指定的所有星耀（接受 keys.go 常量或当前语言的星名）。
 func (p *Palace) Has(stars ...string) bool {
-	ids := p.allStarIdentifiers()
+	ids := p.starIdentifiers()
 	for _, s := range stars {
 		if _, ok := ids[s]; !ok {
 			return false
@@ -168,7 +188,7 @@ func (p *Palace) Has(stars ...string) bool {
 
 // HasOneOf 判断宫位是否包含指定星耀中的至少一颗。
 func (p *Palace) HasOneOf(stars ...string) bool {
-	ids := p.allStarIdentifiers()
+	ids := p.starIdentifiers()
 	for _, s := range stars {
 		if _, ok := ids[s]; ok {
 			return true
@@ -179,7 +199,7 @@ func (p *Palace) HasOneOf(stars ...string) bool {
 
 // NotHave 判断宫位是否不包含指定的所有星耀。
 func (p *Palace) NotHave(stars ...string) bool {
-	ids := p.allStarIdentifiers()
+	ids := p.starIdentifiers()
 	for _, s := range stars {
 		if _, ok := ids[s]; ok {
 			return false
@@ -190,6 +210,9 @@ func (p *Palace) NotHave(stars ...string) bool {
 
 // HasMutagen 判断宫位是否有指定四化（只检查主星和辅星；传 MutagenLu 等常量）。
 func (p *Palace) HasMutagen(mutagenKey string) bool {
+	if p == nil {
+		return false
+	}
 	for _, group := range [][]Star{p.MajorStars, p.MinorStars} {
 		for _, s := range group {
 			if s.MutagenKey == mutagenKey {
@@ -209,6 +232,9 @@ func (p *Palace) NotHaveMutagen(mutagenKey string) bool {
 //
 // excludeStars 中任一星耀在宫内时不作空宫论，用于「借星」判断。
 func (p *Palace) IsEmpty(excludeStars ...string) bool {
+	if p == nil {
+		return true
+	}
 	if len(p.MajorStars) > 0 {
 		return false
 	}
@@ -220,6 +246,9 @@ func (p *Palace) IsEmpty(excludeStars ...string) bool {
 
 // Astrolabe 返回宫位所属星盘；脱离星盘单独构造的宫位返回 nil。
 func (p *Palace) Astrolabe() *Astrolabe {
+	if p == nil {
+		return nil
+	}
 	return p.astrolabe
 }
 
@@ -228,15 +257,15 @@ func (p *Palace) Astrolabe() *Astrolabe {
 //
 // 对宫与本宫永远相对而看：命宫对迁移、财帛对福德，依此类推。
 func (p *Palace) OppositePalace() *Palace {
-	if p.astrolabe == nil {
+	if p == nil || p.astrolabe == nil {
 		return nil
 	}
-	return &p.astrolabe.Palaces[(p.Index+6)%12]
+	return p.astrolabe.PalaceByIndex((p.Index + 6) % 12)
 }
 
 // SurroundedPalaces 返回本宫的三方四正；脱离星盘单独构造的宫位返回 nil。
 func (p *Palace) SurroundedPalaces() *SurroundedPalaces {
-	if p.astrolabe == nil {
+	if p == nil || p.astrolabe == nil {
 		return nil
 	}
 	return p.astrolabe.SurroundedPalacesByIndex(p.Index)
@@ -244,17 +273,16 @@ func (p *Palace) SurroundedPalaces() *SurroundedPalaces {
 
 // MutagenStars 返回本宫天干在指定四化位上对应的星耀标识，顺序与传入一致。
 func (p *Palace) MutagenStars(mutagenKeys ...string) []string {
-	table, ok := mutagenTable[p.HeavenlyStemKey]
-	if !ok {
+	if p == nil {
 		return nil
 	}
 	out := make([]string, 0, len(mutagenKeys))
 	for _, k := range mutagenKeys {
 		idx, ok := mutagenIndex[k]
-		if !ok {
+		if !ok || p.MutagenStarKeys[idx] == "" {
 			continue
 		}
-		out = append(out, table[idx])
+		out = append(out, p.MutagenStarKeys[idx])
 	}
 	return out
 }
@@ -313,7 +341,7 @@ func (p *Palace) NotSelfMutaged(mutagenKeys ...string) bool {
 // MutagedPlaces 返回本宫四化分别飞入的宫位，顺序为禄、权、科、忌；
 // 未找到的项为 nil。脱离星盘的宫位返回 nil。
 func (p *Palace) MutagedPlaces() []*Palace {
-	if p.astrolabe == nil {
+	if p == nil || p.astrolabe == nil {
 		return nil
 	}
 	stars := p.MutagenStars(allMutagens[:]...)
@@ -380,8 +408,8 @@ type RawDates struct {
 type Astrolabe struct {
 	// Gender 为性别（翻译文本）
 	Gender string `json:"gender"`
-	// GenderKey 为机器可读性别（"male"/"female"）
-	GenderKey string `json:"genderKey"`
+	// GenderKey 为机器可读性别（GenderMale / GenderFemale）
+	GenderKey Gender `json:"genderKey"`
 	// SolarDate 为阳历日期
 	SolarDate string `json:"solarDate"`
 	// LunarDate 为农历日期
@@ -424,16 +452,35 @@ type Astrolabe struct {
 	TimeIndex uint8 `json:"timeIndex"`
 	// FixLeap 表示是否修正闰月
 	FixLeap bool `json:"fixLeap"`
-	// Language 为排盘语言（"zh-CN" 等）
-	Language string `json:"language"`
+	// Language 为盘面语言（Language* 常量）
+	Language Language `json:"language"`
 	// Config 为排盘配置
 	Config Config `json:"config"`
+
+	// reqConfig 为发起排盘时传入的原始配置，不参与序列化。
+	reqConfig *Config
+}
+
+// requestConfig 返回发起排盘时传入的原始配置，供运限、重排与 prompt 等
+// 后续调用复用。序列化回来的 Config 只含六个标量键，自定义四化表与亮度表
+// 不在其中，拿它当入参会静默丢掉覆盖表。
+func (a *Astrolabe) requestConfig() *Config {
+	if a == nil {
+		return nil
+	}
+	if a.reqConfig != nil {
+		return a.reqConfig
+	}
+	return &a.Config
 }
 
 // Palace 通过宫位标识（PalaceSoul 等常量）或当前语言宫名获取宫位；未找到返回 nil。
 //
 // 另外接受两个特殊标识：PalaceBody 定位身宫，PalaceOriginal 定位来因宫。
 func (a *Astrolabe) Palace(nameKeyOrName string) *Palace {
+	if a == nil {
+		return nil
+	}
 	switch nameKeyOrName {
 	case PalaceBody:
 		for i := range a.Palaces {
@@ -462,7 +509,7 @@ func (a *Astrolabe) Palace(nameKeyOrName string) *Palace {
 
 // PalaceByIndex 通过宫位索引（0-11）获取宫位；越界返回 nil。
 func (a *Astrolabe) PalaceByIndex(index int) *Palace {
-	if index < 0 || index >= len(a.Palaces) {
+	if a == nil || index < 0 || index >= len(a.Palaces) {
 		return nil
 	}
 	return &a.Palaces[index]
@@ -471,6 +518,9 @@ func (a *Astrolabe) PalaceByIndex(index int) *Palace {
 // Star 通过星耀标识（StarZiwei 等常量）或当前语言星名查找星耀及其所在宫位；
 // 未找到返回 (nil, nil)。
 func (a *Astrolabe) Star(keyOrName string) (*Star, *Palace) {
+	if a == nil {
+		return nil, nil
+	}
 	for i := range a.Palaces {
 		p := &a.Palaces[i]
 		for _, group := range [][]Star{p.MajorStars, p.MinorStars, p.AdjectiveStars} {
@@ -496,8 +546,12 @@ type SurroundedPalaces struct {
 	Career *Palace
 }
 
-// SurroundedPalacesByIndex 获取指定宫位索引的三方四正；索引对 12 取模。
+// SurroundedPalacesByIndex 获取指定宫位索引的三方四正；索引对 12 取模，
+// 因此负数索引也能正确回绕。星盘不足十二宫（零值星盘）时返回 nil。
 func (a *Astrolabe) SurroundedPalacesByIndex(index int) *SurroundedPalaces {
+	if a == nil || len(a.Palaces) < 12 {
+		return nil
+	}
 	i := ((index % 12) + 12) % 12
 	return &SurroundedPalaces{
 		Target:   &a.Palaces[i],
@@ -541,6 +595,7 @@ func (a *Astrolabe) link() {
 	for i := range a.Palaces {
 		p := &a.Palaces[i]
 		p.astrolabe = a
+		p.starIDs = buildStarIdentifiers(p)
 		for _, group := range [][]Star{p.MajorStars, p.MinorStars, p.AdjectiveStars} {
 			for j := range group {
 				group[j].palace = p
@@ -552,12 +607,7 @@ func (a *Astrolabe) link() {
 
 // Have 判断三方四正是否包含指定的所有星耀。
 func (sp *SurroundedPalaces) Have(stars ...string) bool {
-	ids := make(map[string]struct{})
-	for _, p := range []*Palace{sp.Target, sp.Opposite, sp.Wealth, sp.Career} {
-		for k := range p.allStarIdentifiers() {
-			ids[k] = struct{}{}
-		}
-	}
+	ids := sp.allStarIdentifiers()
 	for _, s := range stars {
 		if _, ok := ids[s]; !ok {
 			return false
@@ -591,8 +641,11 @@ func (sp *SurroundedPalaces) NotHave(stars ...string) bool {
 // allStarIdentifiers 汇集四宫内所有星耀的 key 与翻译名。
 func (sp *SurroundedPalaces) allStarIdentifiers() map[string]struct{} {
 	ids := make(map[string]struct{})
+	if sp == nil {
+		return ids
+	}
 	for _, p := range []*Palace{sp.Target, sp.Opposite, sp.Wealth, sp.Career} {
-		for k := range p.allStarIdentifiers() {
+		for k := range p.starIdentifiers() {
 			ids[k] = struct{}{}
 		}
 	}
@@ -601,6 +654,9 @@ func (sp *SurroundedPalaces) allStarIdentifiers() map[string]struct{} {
 
 // HaveMutagen 判断三方四正中是否有指定四化。
 func (sp *SurroundedPalaces) HaveMutagen(mutagenKey string) bool {
+	if sp == nil {
+		return false
+	}
 	for _, p := range []*Palace{sp.Target, sp.Opposite, sp.Wealth, sp.Career} {
 		if p.HasMutagen(mutagenKey) {
 			return true
@@ -644,6 +700,27 @@ type HoroscopeScope struct {
 	YearlyDecStar *YearlyDecStar `json:"yearlyDecStar,omitempty"`
 }
 
+// PalaceIndexByName 在该运限层级下按宫位标识（PalaceSoul 等常量）或当前语言
+// 宫名查宫位索引；找不到返回 -1。
+//
+// 运限层级会把宫名重排（该层级所在位置视为命宫），因此同一格在不同层级下宫名不同。
+func (item *HoroscopeScope) PalaceIndexByName(nameKeyOrName string) int {
+	if item == nil {
+		return -1
+	}
+	for i, key := range item.PalaceNameKeys {
+		if key == nameKeyOrName {
+			return i
+		}
+	}
+	for i, name := range item.PalaceNames {
+		if name == nameKeyOrName {
+			return i
+		}
+	}
+	return -1
+}
+
 // YearlyDecStar 为流年十二神（按目标年支排布，索引即宫位索引）。
 type YearlyDecStar struct {
 	// Suiqian12 为岁前十二神（翻译文本）
@@ -682,12 +759,18 @@ type Horoscope struct {
 
 // Astrolabe 返回发起这次运限查询的本命盘。
 func (h *Horoscope) Astrolabe() *Astrolabe {
+	if h == nil {
+		return nil
+	}
 	return h.astrolabe
 }
 
 // ScopeItem 按层级取运限项；scope 传 ScopeDecadal 等常量，取不到返回 nil。
 // ScopeOrigin 不属于运限层级，返回 nil。
 func (h *Horoscope) ScopeItem(scope string) *HoroscopeScope {
+	if h == nil {
+		return nil
+	}
 	switch scope {
 	case ScopeDecadal:
 		return &h.Decadal
@@ -705,7 +788,7 @@ func (h *Horoscope) ScopeItem(scope string) *HoroscopeScope {
 
 // AgePalace 返回小限所在的宫位。
 func (h *Horoscope) AgePalace() *Palace {
-	if h.astrolabe == nil {
+	if h == nil || h.astrolabe == nil {
 		return nil
 	}
 	return h.astrolabe.PalaceByIndex(h.Age.Index)
@@ -716,6 +799,9 @@ func (h *Horoscope) AgePalace() *Palace {
 // 运限层级会把宫名重排（该层级所在位置视为命宫），因此同一格在不同层级下宫名不同。
 // scope 传 ScopeOrigin 时直接按本命盘宫名查找。
 func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace {
+	if h == nil {
+		return nil
+	}
 	a := h.astrolabe
 	if a == nil {
 		return nil
@@ -723,21 +809,11 @@ func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace {
 	if scope == ScopeOrigin {
 		return a.Palace(nameKeyOrName)
 	}
-	item := h.ScopeItem(scope)
-	if item == nil {
+	idx := h.ScopeItem(scope).PalaceIndexByName(nameKeyOrName)
+	if idx < 0 {
 		return nil
 	}
-	for i, key := range item.PalaceNameKeys {
-		if key == nameKeyOrName {
-			return a.PalaceByIndex(i)
-		}
-	}
-	for i, name := range item.PalaceNames {
-		if name == nameKeyOrName {
-			return a.PalaceByIndex(i)
-		}
-	}
-	return nil
+	return a.PalaceByIndex(idx)
 }
 
 // SurroundPalaces 取指定运限层级下某宫的三方四正。
@@ -781,6 +857,9 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 // horoscopeStarIdentifiers 汇集指定宫位上大限与流年两层流耀的 key 与翻译名。
 func (h *Horoscope) horoscopeStarIdentifiers(palaceIndex int) map[string]struct{} {
 	ids := make(map[string]struct{})
+	if h == nil {
+		return ids
+	}
 	for _, layer := range []*HoroscopeScope{&h.Decadal, &h.Yearly} {
 		if palaceIndex < len(layer.Stars) {
 			for _, s := range layer.Stars[palaceIndex] {

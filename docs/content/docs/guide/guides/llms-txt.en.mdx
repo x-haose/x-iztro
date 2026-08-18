@@ -1,0 +1,77 @@
+---
+title: Documentation endpoints for AI
+description: The llms.txt, llms-full.txt, per-page Markdown and Accept-header negotiation this site provides.
+---
+
+*For: developers · operations*
+
+This page is about **making this documentation readable by an AI** — not about using the library.
+To wire x-iztro into an AI application, see
+[Letting an AI read the chart](/en/docs/guide/guides/llm).
+
+## `/llms.txt`
+
+A structural index of the site, listing the title, description and link of every page in that
+language. Good for letting a model locate a page before fetching it.
+
+<Endpoint path="/en/llms.txt" />
+
+## `/llms-full.txt`
+
+The full Markdown text of the whole documentation set in that language — one fetch gives a model
+complete context.
+
+<Endpoint path="/en/llms-full.txt" />
+
+## Both endpoints are per-language
+
+Index and full text exist once per language and are never mixed. The full text is meant to be
+dropped into a context window wholesale, and mixing in a language you cannot use only crowds the
+window.
+
+| Endpoint | Contents |
+| --- | --- |
+| `/en/llms.txt` · `/zh/llms.txt` | The structural index for that language, listing the other languages and the full-text endpoints at the end |
+| `/en/llms-full.txt` · `/zh/llms-full.txt` | The full text for that language |
+| `/llms.txt` · `/llms-full.txt` | The root paths that the llms.txt convention specifies; contents identical to the `/zh/` pair |
+
+## Per-page Markdown
+
+Append `.md` to any documentation page URL to get that page's Markdown source:
+
+<Endpoint path="/en/docs/guide/guides/config.md" />
+
+Both `.md` and `.mdx` work and return the same content. The "Copy Markdown" button under a page
+title fetches exactly this endpoint, and the "Open" dropdown next to it can send the page straight
+into ChatGPT or Claude.
+
+## It also works without knowing the suffix convention
+
+When an AI agent requests any documentation page, declaring a preference for Markdown in the
+`Accept` header returns the Markdown source instead of the full HTML page:
+
+```bash
+curl -H "Accept: text/markdown" <site>/en/docs/rust/palace
+```
+
+For that one page, the HTML is around 400 KB and the Markdown around 14 KB.
+
+<Callout>
+All three routes return plain text with no navigation, styling or scripts — cheaper in tokens than
+having a model scrape HTML, and more accurate.
+</Callout>
+
+## Suggested usage
+
+When asking an AI about x-iztro, hand it `/en/llms-full.txt` as context. The full text for a single
+language is around 500 KB, comfortably inside the context window of any common model.
+
+If you only care about one topic, fetching the relevant single-page `.md` is cheaper:
+
+| Topic | Page |
+| --- | --- |
+| Parameters and installation | `/en/docs/guide/getting-started.md` |
+| Domain concepts | `/en/docs/guide/concepts.md` and its subpages |
+| Boundaries and schools | `/en/docs/guide/guides/config.md` |
+| Field dictionary | `/en/docs/guide/data-model.md` |
+| Prompt format | `/en/docs/guide/guides/ai-prompt.md` |

@@ -1,0 +1,176 @@
+---
+title: Mutagens and flying stars
+description: Where the four mutagens come from, the full ten-stem mutagen table, and how self-mutagens and flying predicates work.
+---
+
+*For: everyone. Code and the full method table are at the end of the page*
+
+Mutagens carry the most important dynamic information in Zi Wei Dou Shu. On a single chart they wire
+the static stars into a directed web of relationships.
+
+## The four mutagens
+
+| Mutagen | Key | en-US mark | Usually read as |
+| --- | --- | --- | --- |
+| Hua Lu 化禄 | `sihuaLu` | `A` | Flow, gain, the origin of an affinity |
+| Hua Quan 化权 | `sihuaQuan` | `B` | Control, expansion, force |
+| Hua Ke 化科 | `sihuaKe` | `C` | Reputation, benefactors, mitigation |
+| Hua Ji 化忌 | `sihuaJi` | `D` | Obstruction, fixation, volatility |
+
+<Callout title="Mutagens print as letters in an English chart">
+The en-US vocabulary has no words for the four mutagens, so `mutagen` comes back as `A`, `B`, `C`,
+`D` in the order Lu, Quan, Ke, Ji. Predicate on `mutagenKey`, never on the letter.
+</Callout>
+
+## Mutagens come from the heavenly stem
+
+Each heavenly stem assigns four fixed stars to Lu, Quan, Ke and Ji respectively. It is a lookup
+table:
+
+| Stem | Hua Lu | Hua Quan | Hua Ke | Hua Ji |
+| --- | --- | --- | --- | --- |
+| jia 甲 | Lianzhen | Pojun | Wuqu | Taiyang |
+| yi 乙 | Tianji | Tianliang | Ziwei | Taiyin |
+| bing 丙 | Tiantong | Tianji | Wenchang | Lianzhen |
+| ding 丁 | Taiyin | Tiantong | Tianji | Jumen |
+| wu 戊 | Tanlang | Taiyin | Youbi | Tianji |
+| ji 己 | Wuqu | Tanlang | Tianliang | Wenqu |
+| geng 庚 | Taiyang | Wuqu | Taiyin | Tiantong |
+| xin 辛 | Jumen | Taiyang | Wenqu | Wenchang |
+| ren 壬 | Tianliang | Ziwei | Zuofu | Wuqu |
+| gui 癸 | Pojun | Jumen | Taiyin | Tanlang |
+
+<Callout title="The disagreement over geng's Hua Ke">
+Traditions differ on which star takes Hua Ke under the geng stem — Taiyin, Tianfu and Tiantong have
+all been argued for. x-iztro uses **Taiyin**, matching JS iztro.
+
+The `algorithm` switch **does not change the mutagen table**: the Zhongzhou school and the default
+school use the same one. To adopt a different reading, replace the table through Config's custom
+mutagen tables, which swap a stem's four assignments wholesale — see
+[Config in depth](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables).
+</Callout>
+
+## Natal mutagens
+
+When charting, the **birth-year stem** is looked up in the table above and the mutagen marks are
+stamped onto the corresponding stars. A chart carries exactly four natal mutagens — the mutable
+stars include Wenchang, Wenqu, Zuofu and Youbi alongside the fourteen major stars, and all four of
+those minor stars are always present, so the count never falls short.
+
+## Horoscope mutagens
+
+Beyond the natal set, every horoscope level has mutagens of its own: the decadal uses its decadal
+palace stem, the yearly level uses the year's stem, and so on. They stack onto the same chart and
+are the main handle for reading a horoscope.
+
+The four returned stars are always in the order **Lu, Quan, Ke, Ji**.
+
+## Flying stars
+
+Palaces have heavenly stems too. Look a palace stem up in the mutagen table and you get the four
+stars that palace **flies out**; then see which palaces those four stars sit in. That is a **flying
+star**, and it is how the working relationships between palaces are described.
+
+## Self-mutagens
+
+When a mutagen star flown out by a palace's own stem lands inside that same palace, it is a
+**self-mutagen**.
+
+In a reading, a self-mutagen means force being spent or leaking inside the palace itself — a
+different character from flying into another palace.
+
+## In code
+
+### Reading the natal mutagens
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+for p in chart.palaces:
+    for s in p.major_stars + p.minor_stars:
+        if s.mutagen:
+            print(f"{p.name} — {s.name} takes {s.mutagen}")
+```
+
+```text
+wealth — general takes B
+children — sun takes A
+friends — moon takes C
+health — fortunate takes D
+```
+
+### Reading horoscope mutagens
+
+```python
+h = chart.horoscope("2024-10-1", 0)
+print(h.decadal.mutagen)   # the four stars of the decadal mutagens
+print(h.yearly.mutagen)    # the four stars of the yearly mutagens
+```
+
+```text
+['sun', 'general', 'moon', 'fortunate']
+['judge', 'rebel', 'general', 'sun']
+```
+
+These also have `*_keys` variants (`h.yearly.mutagen_keys`); predicate on those.
+
+### Asking whether a palace holds a mutagen
+
+```python
+soul.has_mutagen(Mutagen.LU)
+soul.not_have_mutagen(Mutagen.JI)
+```
+
+### Flying-star predicates
+
+```rust
+let wealth = astrolabe.palace(Palace::Wealth).unwrap();
+
+// does the Ji flown out by the Wealth palace's stem land in the Soul palace?
+wealth.flies_to(Palace::Soul, &[Mutagen::Ji]);
+```
+
+```python
+soul.flies_one_of_to(PalaceName.WEALTH, [Mutagen.LU, Mutagen.QUAN])
+soul.not_fly_to(0, Mutagen.JI)
+
+places = soul.mutaged_places()   # which palace each of Lu/Quan/Ke/Ji flew into; length 4
+```
+
+### Self-mutagen predicates
+
+```rust
+soul.self_mutaged(&[Mutagen::Lu]);   // does the Soul palace self-mutate Lu
+soul.self_mutaged_one_of(&[]);       // any self-mutagen at all
+soul.not_self_mutaged(&[]);          // none of the four
+```
+
+Passing an empty list to `self_mutaged_one_of` or `not_self_mutaged` checks all four mutagens; pass
+a subset to check only those.
+
+### The full method list
+
+| Method | Does |
+| --- | --- |
+| `has_mutagen(m)` | Does this palace hold the given mutagen |
+| `not_have_mutagen(m)` | Does this palace lack the given mutagen |
+| `mutagen_stars(ms)` | The stars this palace's stem puts on the given mutagen positions |
+| `flies_to(target, ms)` | Do **all** the given mutagen stars land in the target palace |
+| `flies_one_of_to(target, ms)` | Does **any one** of them land there |
+| `not_fly_to(target, ms)` | Does **none** of them land there |
+| `self_mutaged(ms)` | Does this palace self-mutate the given mutagens |
+| `self_mutaged_one_of(ms?)` | Does it have any self-mutagen |
+| `not_self_mutaged(ms?)` | Does it lack all the given self-mutagens |
+| `mutaged_places()` | The palaces the four mutagen stars sit in |
+
+A palace also carries a `mutagen_star_keys` field, giving directly the keys of the four stars its
+stem mutates, in the order Lu, Quan, Ke, Ji; it follows a custom mutagen table when one is set.
+
+<Callout type="warn" title="The empty-list semantics are asymmetric">
+This reproduces iztro's behaviour and is consistent across all three programming languages: with an
+empty mutagen list, `flies_to` returns `false` while `flies_one_of_to` and `not_fly_to` return
+`true`.
+</Callout>
+
+For mutagen predicates across the surrounded palaces, see
+[Surrounded palaces](/en/docs/guide/concepts/surrounded).

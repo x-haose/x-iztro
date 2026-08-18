@@ -10,7 +10,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
 import { REPO_URL } from '@/lib/layout.shared';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL, languageAlternates } from '@/lib/site';
 import type { Metadata } from 'next';
 
 export default async function Page(props: PageProps<'/[lang]/docs/[[...slug]]'>) {
@@ -56,10 +56,14 @@ export async function generateMetadata(
   return {
     title: page.data.title,
     description: page.data.description,
-    // 声明本页的 Markdown 形态。AI 代理据此发现纯文本版本，
-    // 不必知道「URL 追加 .md」这个站内约定。
     alternates: {
       canonical: `${SITE_URL}${page.url}`,
+      // 本页在各语言下的地址，与 sitemap 的 hreflang 同源。
+      languages: languageAlternates(
+        (l) => `${SITE_URL}/${l}${page.url.slice(params.lang.length + 1)}`,
+      ),
+      // 声明本页的 Markdown 形态。AI 代理据此发现纯文本版本，
+      // 不必知道「URL 追加 .md」这个站内约定。
       types: { 'text/markdown': `${SITE_URL}${page.url}.md` },
     },
   };

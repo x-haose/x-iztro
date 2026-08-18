@@ -1,13 +1,50 @@
 ---
 title: 介绍
-description: x-iztro 是紫微斗数排盘的 Rust 核心库，一次实现，供 Rust、Python、Go 三种语言调用，排盘结果与 JS iztro 逐字段一致。
+description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go 调用，结果与 JS iztro 逐字段一致。
 icon: Star
 ---
 
-x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰，它算出一张完整的命盘：
-十二宫的位置与干支、每个宫里落了哪些星、星的亮度与四化，以及从大限到流时的六层运限。
+*适合：开发者 · 命理爱好者 · 产品与决策者*
 
-核心用 Rust 实现，通过三套绑定暴露给上层语言：
+把出生时间算成一张完整的紫微斗数命盘，并能一键转成大模型读得懂的文字 ——
+**排盘交给它算准，解读交给 AI**。
+
+一行调用得到的就是这段文字，直接贴进任何大模型就能开始问：
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
+干支: 庚辰 甲申 丙午 庚寅
+时辰: 寅时 (03:00~05:00)
+星座: 狮子座
+生肖: 龙
+命宫地支: 午
+身宫地支: 戌
+命主: 破军
+身主: 文昌
+五行局: 木三局
+生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+
+=== 十二宫 ===
+
+--- 财帛 ---
+天干地支: 戊寅
+大限: 43-52
+小限虚岁: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+十二神: 绝, 飞廉, 吊客, 岁驿
+主星: 武曲(得)[权], 天相(庙)
+辅星: 天马
+杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
+
+（其余十一宫略）
+```
+
+排出来的盘准不准，有一条硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8 逐字段零差异**，
+由约 71 万例金标测试守着。
+
+核心用 Rust 实现，通过三套绑定暴露给上层编程语言：
 
 <Cards>
   <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="原生 crate，零拷贝的强类型结构体" />
@@ -27,11 +64,16 @@ x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰�
 
 <Callout title="与 iztro 的关系">
 x-iztro 是 iztro v2.5.8 的移植，不是重新发明。凡是 iztro 有的功能与数据，
-两者结果必须逐字段一致 —— 这条由约 66 万例金标测试守着，
+两者结果必须逐字段一致 —— 这条由约 71 万例金标测试守着，
 详见[准确性保证](/zh/docs/guide/about/accuracy)。
 </Callout>
 
 ## 特性
+
+### 一键转成 AI 能读的文字
+
+内置 Prompt 生成：把一张盘或一段运限转成上面那种结构化文本，直接交给大模型分析，
+不必自己拼接命盘描述。见 [AI Prompt 生成](/zh/docs/guide/guides/ai-prompt)。
 
 ### 排盘与运限完整
 
@@ -40,26 +82,24 @@ x-iztro 是 iztro v2.5.8 的移植，不是重新发明。凡是 iztro 有的功
 
 ### 流派与分界点可配置
 
-`Config` 的五个开关覆盖了实践中会分歧的每一处：年分界点、运限分界点、虚岁分界点、
-晚子时归属、算法派别（默认 / 中州派）。默认值与 JS iztro 一致，
+`Config` 的六个开关覆盖了实践中会分歧的每一处：年分界点、运限分界点、虚岁分界点、
+晚子时归属、算法派别（默认 / 中州派）、排盘视角（天盘 / 地盘 / 人盘），
+另可整表替换四化表与亮度表。默认值与 JS iztro 一致，
 细节见 [Config 详解](/zh/docs/guide/guides/config)。
 
-### 六种输出语言
+### 六种盘面语言
 
-简体中文、繁体中文、英文、日文、韩文、越南文。同一张盘换语言只是换一次翻译，
+简体中文、繁体中文、英文、日文、韩文、越南文。同一张盘换盘面语言只是换一次翻译，
 排盘结果不受影响。
 
-### 语言无关的判断标识
+### 中文盘、英文盘，判断结果一样
 
-星名宫名在不同语言下文本不同，但每个实体都额外带一个稳定的 key。
-Python 的枚举与 Go 的常量就建立在这些 key 上，
-所以「命宫有没有紫微星」这类判断，在任何输出语言的盘上写法与结果都一样。
+<small>给开发者</small>
+
+星名宫名在不同盘面语言下文本不同，但每个实体都额外带一个稳定的标识（key）。
+Python 的枚举与 Go 的常量就建立在这些标识上，
+所以「命宫有没有紫微星」这类判断，在任何盘面语言的盘上写法与结果都一样。
 见 [key 契约](/zh/docs/guide/guides/keys)。
-
-### 面向 AI 的结构化输出
-
-内置 Prompt 生成：把一张盘或一段运限转成结构化文本，直接交给大模型分析，
-不必自己拼接命盘描述。见 [AI Prompt](/zh/docs/guide/guides/ai-prompt)。
 
 ## 一分钟上手
 
@@ -67,17 +107,30 @@ Python 的枚举与 Go 的常量就建立在这些 key 上，
 from x_iztro import Astro
 
 astro = Astro()
-chart = astro.by_solar("2000-8-16", 2, "female")
+chart = astro.by_solar("2000-8-16", 2, "female")   # 2 = 时辰索引，寅时 03:00-05:00
 
-print(chart.soul)                    # 命主
-print(chart.palace("soulPalace"))    # 命宫详情
+soul = chart.palace("soulPalace")                  # 命宫
+print(chart.five_elements_class, chart.soul, chart.body)
+print(soul.name, soul.heavenly_stem + soul.earthly_branch)
+print([s.name for s in soul.major_stars])
 ```
 
-三种语言的完整安装与示例见[快速开始](/zh/docs/guide/getting-started)。
+```text
+木三局 破军 文昌
+命宫 壬午
+['紫微']
+```
+
+三种编程语言的完整安装与示例见[快速开始](/zh/docs/guide/getting-started)。
 
 ## 从哪读起
 
 <Cards>
+  <Card
+    title="不写代码怎么用它"
+    href="/zh/docs/guide/guides/for-non-developers"
+    description="能做什么、典型场景、要跟工程师交代哪几件事"
+  />
   <Card
     title="快速开始"
     href="/zh/docs/guide/getting-started"
@@ -89,13 +142,28 @@ print(chart.palace("soulPalace"))    # 命宫详情
     description="不懂命理也能看懂：一张盘由什么构成，字段各自是什么意思"
   />
   <Card
-    title="API 参考"
-    href="/zh/docs/guide"
-    description="三种语言的函数签名与完整数据结构字典"
+    title="Rust API 参考"
+    href="/zh/docs/rust"
+    description="核心库的函数签名、类型与方法"
+  />
+  <Card
+    title="Python API 参考"
+    href="/zh/docs/python"
+    description="dataclass 类型化 API 的完整条目"
+  />
+  <Card
+    title="Go API 参考"
+    href="/zh/docs/go"
+    description="导出函数、类型与方法的完整条目"
+  />
+  <Card
+    title="数据结构字典"
+    href="/zh/docs/guide/data-model"
+    description="每个字段的类型与含义，三种编程语言共用的契约"
   />
   <Card
     title="准确性保证"
     href="/zh/docs/guide/about/accuracy"
-    description="66 万例金标测试如何保证与 iztro 零差异"
+    description="约 71 万例金标测试如何保证与 iztro 零差异"
   />
 </Cards>

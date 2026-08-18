@@ -1,22 +1,16 @@
 ---
 title: 概览
-description: 三种语言的安装方式、排盘入口参数的共同含义，以及第一张命盘。
+description: 排盘要准备哪些输入、每个参数取什么值，以及三种编程语言的安装方式。
 ---
 
+*适合：所有人。参数表不需要会写代码也能看懂*
+
 三套绑定共用同一个 Rust 核心，因此参数含义与排盘结果完全一致，只是写法不同。
-先看清楚参数，再挑你的语言。
+先看清楚要准备什么，再挑你的编程语言。
 
-## 选择语言
+## 你需要准备的输入
 
-<Cards>
-  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro" />
-  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="pip install x-iztro" />
-  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro" />
-</Cards>
-
-## 排盘入口的参数
-
-无论哪种语言，排盘都从这几个参数开始。
+无论哪种编程语言，排盘都从这几个参数开始。前三个是必须的，后三个都有默认值。
 
 | 参数 | 含义 | 取值 |
 | --- | --- | --- |
@@ -24,8 +18,14 @@ description: 三种语言的安装方式、排盘入口参数的共同含义，�
 | `time_index` | 出生时辰 | 整数 0–12，见下表 |
 | `gender` | 性别 | `"male"` / `"female"`（Rust 为 `Gender` 枚举） |
 | `fix_leap` | 是否修正闰月 | 布尔值，默认 `true` |
-| `language` | 输出语言 | `"zh-CN"` `"zh-TW"` `"en-US"` `"ja-JP"` `"ko-KR"` `"vi-VN"` |
+| `language` | 盘面语言 | `"zh-CN"`（默认） `"zh-TW"` `"en-US"` `"ja-JP"` `"ko-KR"` `"vi-VN"` |
 | `config` | 分界点与流派 | 见 [Config 详解](/zh/docs/guide/guides/config)，缺省即 iztro 默认 |
+
+<Callout title="不写代码？这张表就是你要交给工程师的东西">
+排盘只需要出生日期、时辰、性别三样。把它们按上面的格式写清楚交出去，
+工程师那边一行调用就能出盘。想知道这个库能做什么、典型怎么用，
+看[不写代码怎么用它](/zh/docs/guide/guides/for-non-developers)。
+</Callout>
 
 ### 时辰索引
 
@@ -55,16 +55,30 @@ description: 三种语言的安装方式、排盘入口参数的共同含义，�
 
 只有出生在闰月的人会受影响，其余情况该参数无作用。
 
+## 选择编程语言
+
+<Cards>
+  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro" />
+  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="pip install x-iztro" />
+  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro" />
+</Cards>
+
 ## 输入校验
 
-所有外部输入在核心层前置校验，非法输入不会 panic，而是按语言的惯例报错：
+<small>给开发者</small>
 
-| 语言 | 表现 |
+日期与时辰在**核心层**前置校验，三种编程语言共用同一道防线；非法输入不会 panic，
+而是按各自的惯例报错：
+
+| 编程语言 | 表现 |
 | --- | --- |
-| Rust | 返回 `Err(IztroError)` |
-| Python | 抛 `ValueError` |
-| Go | 返回 `error` |
-| C FFI | 返回 `{"error":"..."}` JSON |
+| Rust | 返回 `Err(IztroError)`，`.code()` 给出机器可读分类 |
+| Python | 抛 `IztroError`（继承 `ValueError`），`.code` 同上 |
+| Go | 返回 `*iztro.Error`，可用 `errors.Is` 匹配哨兵 |
+| C FFI | 返回 `{"error":"...","code":"..."}` JSON |
 
-校验覆盖日期格式与真实存在性、公历 1583–9999 范围、时辰索引 0–12、性别与语言取值。
+核心层校验的是日期格式与真实存在性、公历 1583–9999 范围、时辰索引 0–12。
+性别、盘面语言、配置开关这些以字符串传入的参数，在**绑定层**解析时校验 ——
+Rust 侧它们本来就是枚举，不存在非法取值。
+
 详见[错误处理](/zh/docs/guide/guides/errors)。

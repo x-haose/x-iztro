@@ -11,7 +11,7 @@ use crate::utils::{earthly_branch_to_palace_index as eb2pi, fix_index};
 /// Male=Yang, Female=Yin; 偶数地支索引=Yang, 奇数=Yin
 fn same_yinyang(gender: Gender, yearly_branch: EarthlyBranch) -> bool {
     let gender_is_yang = gender == Gender::Male;
-    let branch_is_yang = yearly_branch.index().is_multiple_of(2);
+    let branch_is_yang = yearly_branch.index() % 2 == 0;
     gender_is_yang == branch_is_yang
 }
 

@@ -1,0 +1,176 @@
+---
+title: Surrounded palaces
+description: The four palaces of SurroundedPalaces and its five predicates.
+---
+
+The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu. A matter cannot be read
+from its own palace alone: the stars of the opposite palace and the two trine palaces bear on it just
+as much, and only all four together give the full picture.
+
+<Callout type="info">
+The examples on this page all chart with `Language::EnUS`, so the display values in the output are
+iztro's en-US vocabulary.
+</Callout>
+
+## The four palaces
+
+| Field | Offset | Traditional name | Meaning |
+| --- | --- | --- | --- |
+| `target` | +0 | The palace itself | The matter itself |
+| `opposite` | +6 | Opposite palace | The facing side; the most immediate influence |
+| `career` | +4 | Career position | One of the trine |
+| `wealth` | +8 | Wealth position | One of the trine |
+
+All four fields have the type `&'a PalaceData` (not `PalaceRef`): their fields read directly, and the
+methods of the [palace object](/en/docs/rust/palace) that need no astrolabe context (`has`,
+`is_empty`, `has_mutagen`, `mutagen_stars`) are all callable on them.
+For methods that do trace back to the astrolabe, such as `opposite_palace` or `surrounded_palaces`,
+take `sp.target.index` and go through `chart.palace(...)` to get a `PalaceRef`.
+
+<Callout type="info" title="Do not read the offsets off the field order in the struct">
+`SurroundedPalaces` declares `wealth` before `career`, but the offsets are `career = +4` and
+`wealth = +8`. Anchored on the Soul palace, +4 lands on the Career palace and +8 on the Wealth
+palace — that is how the names and the offsets line up.
+</Callout>
+
+<Callout type="info" title="Wealth and career positions are relative names">
+`wealth` and `career` mean "the trine positions relative to this palace", not the two fixed palace
+names among the twelve. Anchored on the Soul palace they happen to land on the Wealth and Career
+palaces; anchored elsewhere they are other palaces.
+</Callout>
+
+## Three ways to get one
+
+```rust
+// from the astrolabe
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+// from a palace
+let sp = chart.palace(Palace::Soul).unwrap().surrounded_palaces();
+
+// from a star (the surrounded set of the palace it sits in)
+let sp = chart.star(StarKey::ZiweiMaj).unwrap().surrounded_palaces();
+```
+
+All three give the same result; pick whichever matches what you already have.
+
+---
+
+## have / not_have / have_one_of
+
+**Purpose** Test whether the four palaces together hold the given stars.
+
+**Zi Wei meaning** A phrase like "Ziwei is in the surrounded set" asks exactly whether a star appears
+anywhere among these four palaces, without asking which one.
+
+**Signature**
+
+```rust
+pub fn have(&self, stars: &[StarKey]) -> bool
+pub fn not_have(&self, stars: &[StarKey]) -> bool
+pub fn have_one_of(&self, stars: &[StarKey]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stars` | `&[StarKey]` | Yes | — | A list of star keys |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `have` | Every star in the list appears among the four palaces (not necessarily the same one) |
+| `not_have` | No star in the list appears |
+| `have_one_of` | At least one star in the list appears |
+
+**Example**
+
+```rust
+use x_iztro::StarKey::*;
+
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{}", sp.have(&[ZiweiMaj, TianxiangMaj]));
+println!("{}", sp.have_one_of(&[QishaMaj, PojunMaj]));
+println!("{}", sp.not_have(&[HuoxingMin]));
+```
+
+**Output**
+
+```text
+true
+false
+true
+```
+
+Ziwei is in the Soul palace and Tianxiang in the Wealth palace — different palaces, but both within
+the four, so `have` is `true`.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="have does not require the same palace">
+`have(&[A, B])` means "A and B both appear among these four palaces", not that they sit together.
+For same-palace tests use the palace's
+[`has`](/en/docs/rust/palace#has--not_have--has_one_of).
+</Accordion>
+<Accordion title="What an empty list returns">
+`have` and `not_have` return `true` for an empty list; `have_one_of` returns `false`.
+</Accordion>
+</Accordions>
+
+---
+
+## have_mutagen / not_have_mutagen
+
+**Purpose** Test whether the four palaces carry a given natal mutagen.
+
+**Zi Wei meaning** "Ji is in the surrounded set" means one of these palaces holds a star the
+birth-year stem sent ji to — a common condition when locating a source of pressure.
+
+**Signature**
+
+```rust
+pub fn have_mutagen(&self, mutagen: Mutagen) -> bool
+pub fn not_have_mutagen(&self, mutagen: Mutagen) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `Mutagen` | Yes | — | One of `Lu` / `Quan` / `Ke` / `Ji` |
+
+**Return value** `bool`.
+
+**Example**
+
+```rust
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("lu in the surrounded set: {}", sp.have_mutagen(Mutagen::Lu));
+println!("ji in the surrounded set: {}", sp.have_mutagen(Mutagen::Ji));
+println!("no ke in the surrounded set: {}", sp.not_have_mutagen(Mutagen::Ke));
+```
+
+**Output**
+
+```text
+lu in the surrounded set: false
+ji in the surrounded set: false
+no ke in the surrounded set: true
+```
+
+This chart's natal mutagens land in four palaces: Taiyang with lu in Children, Wuqu with quan in
+Wealth, Taiyin with ke in Friends, Tiantong with ji in Health.
+The Soul palace's surrounded set is Soul, Surface, Wealth and Career — only the quan is among them, so
+asking for lu and for ji both give `false`, while asking for quan would give `true`.
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
+For those, use the palace's flying-star methods.
+</Callout>

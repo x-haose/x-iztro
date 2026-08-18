@@ -42,13 +42,14 @@ if (process.argv[2] === '--inspect') {
   process.exit(0);
 }
 
-/** 单个运限层级的紧凑导出（流耀分布每宫排序）。 */
+/** 单个运限层级的紧凑导出（宫位名序列原序，流耀分布每宫排序）。 */
 function scopeItem(item) {
   const out = {
     i: item.index,
     n: item.name,
     hs: item.heavenlyStem,
     eb: item.earthlyBranch,
+    pn: item.palaceNames,
     m: item.mutagen,
   };
   if (item.stars) {
@@ -187,3 +188,74 @@ for (let year = 1984; year <= 2043; year += 5) {
 }
 writeFileSync(join(__dirname, 'config_horoscopedivide.json'), JSON.stringify(hdCases));
 console.log(`horoscopeDivide=exact: ${hdCases.length} cases`);
+
+// ============================================================
+// 5. 开关组合（排盘层）：yearDivide/dayDivide 与中州派算法的交叉
+// ============================================================
+
+/** 排盘层组合：cfg 标识 -> 覆盖在 DEFAULTS 上的配置项。 */
+const CHART_COMBOS = {
+  yd_dd: { yearDivide: 'exact', dayDivide: 'current' },
+  zz: { algorithm: 'zhongzhou' },
+  zz_yd: { algorithm: 'zhongzhou', yearDivide: 'exact' },
+  zz_dd: { algorithm: 'zhongzhou', dayDivide: 'current' },
+  zz_yd_dd: { algorithm: 'zhongzhou', yearDivide: 'exact', dayDivide: 'current' },
+};
+
+const comboLines = [];
+for (const [cfg, overrides] of Object.entries(CHART_COMBOS)) {
+  astro.config({ ...DEFAULTS, ...overrides });
+  for (let year = 1984; year <= 2043; year += 5) {
+    // 立春窗口三天打穿 yearDivide 分界，8-15 为窗口外对照
+    for (const md of ['2-3', '2-4', '2-5', '8-15']) {
+      const dateStr = `${year}-${md}`;
+      // 时辰 0 与晚子时 12 打穿 dayDivide 分界
+      for (const t of [0, 12]) {
+        for (const g of [0, 1]) {
+          const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
+          comboLines.push(`${cfg},${dateStr},${t},${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+        }
+      }
+    }
+  }
+}
+writeFileSync(join(__dirname, 'config_combos.csv'), comboLines.join('\n') + '\n');
+console.log(`chart combos: ${comboLines.length} cases`);
+
+// ============================================================
+// 6. 开关组合（运限层）：ageDivide/horoscopeDivide 与中州派算法的交叉
+// ============================================================
+
+/** 运限层组合：cfg 标识 -> 覆盖在 DEFAULTS 上的配置项。 */
+const HOROSCOPE_COMBOS = {
+  zz_age: { algorithm: 'zhongzhou', ageDivide: 'birthday' },
+  zz_hd: { algorithm: 'zhongzhou', horoscopeDivide: 'exact' },
+  age_hd: { ageDivide: 'birthday', horoscopeDivide: 'exact' },
+  zz_age_hd: { algorithm: 'zhongzhou', ageDivide: 'birthday', horoscopeDivide: 'exact' },
+};
+
+const comboHoroscopes = [];
+for (const [cfg, overrides] of Object.entries(HOROSCOPE_COMBOS)) {
+  astro.config({ ...DEFAULTS, ...overrides });
+  for (let year = 1984; year <= 2043; year += 10) {
+    const birthDate = `${year}-2-15`;
+    const bl = solar2lunar(birthDate);
+    for (const g of [0, 1]) {
+      const astrolabe = astro.bySolar(birthDate, 6, GENDERS[g], true, 'zh-CN');
+      const birth = { d: birthDate, t: 6, g };
+      // 农历生日当天（ageDivide 分界）与立春前后两天（horoscopeDivide 分界）
+      const anniversary = lunar2solar(`${bl.lunarYear + 20}-${bl.lunarMonth}-${bl.lunarDay}`);
+      const targets = [
+        `${anniversary.solarYear}-${anniversary.solarMonth}-${anniversary.solarDay}`,
+        `${year + 20}-2-3`,
+        `${year + 20}-2-5`,
+        `${year + 20}-9-9`,
+      ];
+      for (const td of targets) {
+        comboHoroscopes.push({ cfg, ...horoscopeCase(astrolabe, birth, td, 8) });
+      }
+    }
+  }
+}
+writeFileSync(join(__dirname, 'config_combos_horoscope.json'), JSON.stringify(comboHoroscopes));
+console.log(`horoscope combos: ${comboHoroscopes.length} cases`);

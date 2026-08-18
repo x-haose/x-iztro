@@ -23,25 +23,58 @@ type tier1Case struct {
 	} `json:"palaces"`
 }
 
+// sampleStride 为抽样步长。金标用例按「年 × 时辰 × 性别」等嵌套循环平铺，
+// 等距切片的步长一旦与某一层的周期同余就会把该层锁死在单一取值（如只抽到
+// time_index=0）；改用与用例总数互素的模步进，保证抽样在每一层都遍历。
+const sampleStride = 101
+
+// sampleCases 从 cases 中模步进抽取至多 limit 个互不重复的用例。
+func sampleCases(cases []tier1Case, limit int) []tier1Case {
+	if len(cases) == 0 {
+		return nil
+	}
+	if limit > len(cases) {
+		limit = len(cases)
+	}
+	out := make([]tier1Case, 0, limit)
+	for i := 0; i < limit; i++ {
+		out = append(out, cases[(i*sampleStride)%len(cases)])
+	}
+	return out
+}
+
 // TestBySolarMatchesGolden 对照 JS 金标数据抽样验证 Go 链路（wasm 往返）。
 func TestBySolarMatchesGolden(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "tests", "golden", "tier1_data.json"))
 	if err != nil {
-		t.Skipf("golden data unavailable: %v", err)
+		t.Fatalf("golden data unavailable: %v", err)
 	}
 	var cases []tier1Case
 	if err := json.Unmarshal(raw, &cases); err != nil {
 		t.Fatalf("parse golden data: %v", err)
 	}
 
-	step := len(cases) / 20
-	for i := 0; i < len(cases); i += step {
-		c := cases[i]
-		gender := "male"
+	sampled := sampleCases(cases, 20)
+	timeIndices := map[uint8]struct{}{}
+	genders := map[string]struct{}{}
+	for _, c := range sampled {
+		timeIndices[c.Params.TimeIndex] = struct{}{}
+		genders[c.Params.Gender] = struct{}{}
+	}
+	// 抽样必须跨越时辰与性别维度，否则这两维上的回归测不出来
+	if len(timeIndices) < 10 {
+		t.Fatalf("sampling covers only %d time indices, want >= 10", len(timeIndices))
+	}
+	if len(genders) != 2 {
+		t.Fatalf("sampling covers %d genders, want both", len(genders))
+	}
+
+	for _, c := range sampled {
+		gender := GenderMale
 		if c.Params.Gender == "女" {
-			gender = "female"
+			gender = GenderFemale
 		}
-		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, "zh-CN", nil)
+		got, err := BySolar(c.Params.SolarDate, c.Params.TimeIndex, gender, true, LanguageZhCN, nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s t%d): %v", c.Params.SolarDate, c.Params.TimeIndex, err)
 		}
@@ -67,8 +100,8 @@ func TestBySolarMatchesGolden(t *testing.T) {
 
 // TestTypedQueries 验证类型化查询方法在任意输出语言下基于 key 正确工作。
 func TestTypedQueries(t *testing.T) {
-	for _, lang := range []string{"zh-CN", "en-US"} {
-		a, err := BySolar("2000-8-16", 2, "female", true, lang, nil)
+	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
+		a, err := BySolar("2000-8-16", 2, GenderFemale, true, lang, nil)
 		if err != nil {
 			t.Fatalf("BySolar(%s): %v", lang, err)
 		}
@@ -162,7 +195,7 @@ func TestInvalidInputBombardment(t *testing.T) {
 	if _, err := chartForHoroscope(t).Horoscope("garbage", 13); err == nil {
 		t.Error("invalid horoscope target should return an error")
 	}
-	if _, err := ByLunar("2000-7-31", 2, "male", false, true, "zh-CN", nil); err == nil {
+	if _, err := ByLunar("2000-7-31", 2, GenderMale, NotLeapMonth, LanguageZhCN, nil); err == nil {
 		t.Error("out-of-range lunar day should return an error")
 	}
 }

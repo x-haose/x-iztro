@@ -1,0 +1,655 @@
+---
+title: Utilities
+description: Index arithmetic, brightness and mutagen lookups, Soul and body palace derivation, and the four-pillar display string.
+---
+
+These functions are the parts the charting algorithm is assembled from. They come in handy when you
+implement Zi Wei logic yourself or want to double-check a step of the derivation; everyday charting
+does not call them directly.
+
+Every enum in the parameters and return values is language-independent and interoperates directly with
+the fields on a chart.
+
+---
+
+## fix_index
+
+**Purpose** Constrain any integer to the cyclic range `0..max` (0 included, `max` excluded).
+
+**Zi Wei meaning** The twelve palaces form a ring: one step past the Chou palace (index 11) is back
+to the Yin palace (index 0). Every "count n forward, count n backward" derivation relies on this
+wrapping.
+
+**Signature**
+
+```rust
+pub fn fix_index(index: i32, max: i32) -> usize
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `index` | `i32` | Yes | — | The index to fix, possibly negative |
+| `max` | `i32` | Yes | — | Cycle length: 12 for palaces, 10 for stems |
+
+**Return value** `usize`, within `0..max` (`max` itself never appears). Passing 0 for `max` triggers a
+divide-by-zero panic; keeping it positive is the caller's job — on a chart it is always 12 or 10.
+
+**Example**
+
+```rust
+println!("{} {}", utils::fix_index(-1, 12), utils::fix_index(13, 12));
+```
+
+**Output**
+
+```text
+11 1
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+Negatives wrap by mathematical modulo (-1 → 11) rather than clamping to 0.
+</Callout>
+
+---
+
+## earthly_branch_to_palace_index
+
+**Purpose** Convert an earthly branch to a palace index.
+
+**Zi Wei meaning** The twelve palaces start from the **Yin palace** while the natural order of the
+branches starts from **zi**, putting them two positions apart. This function handles that conversion:
+yin → 0, mao → 1, …, zi → 10, chou → 11.
+
+**Signature**
+
+```rust
+pub fn earthly_branch_to_palace_index(branch: EarthlyBranch) -> usize
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `branch` | `EarthlyBranch` | Yes | — | The branch |
+
+**Return value** `usize`, 0–11.
+
+**Example**
+
+```rust
+println!("yin={} zi={}",
+    utils::earthly_branch_to_palace_index(EarthlyBranch::Yin),
+    utils::earthly_branch_to_palace_index(EarthlyBranch::Zi));
+```
+
+**Output**
+
+```text
+yin=0 zi=10
+```
+
+---
+
+## time_to_index
+
+**Purpose** Convert a clock hour to an hour index.
+
+**Zi Wei meaning** A day holds twelve double-hours of two hours each, but the Zi hour straddles
+midnight and splits into the early Zi hour (0) and the late Zi hour (12), giving 13 index values.
+
+**Signature**
+
+```rust
+pub fn time_to_index(hour: u8) -> u8
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `hour` | `u8` | Yes | — | The clock hour, 0–23 |
+
+**Return value** `u8`, 0–12.
+
+**Example**
+
+```rust
+println!("{} {} {}", utils::time_to_index(0), utils::time_to_index(4), utils::time_to_index(23));
+```
+
+**Output**
+
+```text
+0 2 12
+```
+
+Midnight is the early Zi hour, 4 o'clock the Tiger hour, 23 o'clock the late Zi hour.
+
+---
+
+## get_age_index
+
+**Purpose** Get the starting palace index of the age scope from the birth-year branch.
+
+**Zi Wei meaning** The age scope starts from a fixed palace and steps forward with the nominal age.
+The starting palace is set by the trine group of the birth-year branch: yin/woo/xu years start at the
+Chen palace, shen/zi/chen years at Xu, si/you/chou years at Wei, hai/mao/wei years at Chou.
+
+**Signature**
+
+```rust
+pub fn get_age_index(branch: EarthlyBranch) -> usize
+```
+
+**Return value** `usize`, 0–11.
+
+**Example**
+
+```rust
+println!("{}", utils::get_age_index(EarthlyBranch::Chen));
+```
+
+**Output**
+
+```text
+8
+```
+
+A chen year belongs to the shen/zi/chen group, so the age scope starts at the Xu palace, whose index
+is 8.
+
+---
+
+## get_brightness
+
+**Purpose** Look up a star's brightness in a given palace.
+
+**Signature**
+
+```rust
+pub fn get_brightness(star: StarKey, palace_index: i32, config: &Config) -> Option<Brightness>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `star` | `StarKey` | Yes | — | Star key |
+| `palace_index` | `i32` | Yes | — | Palace index; out-of-range values are taken modulo 12 |
+| `config` | `&Config` | Yes | — | A custom brightness table changes the result |
+
+**Return value** `Option<Brightness>`. `None` for stars with no brightness table.
+
+**Example**
+
+```rust
+let cfg = Config::default();
+
+println!("{:?}", utils::get_brightness(StarKey::ZiweiMaj, 4, &cfg));
+println!("{:?}", utils::get_brightness(StarKey::LucunMin, 0, &cfg));
+```
+
+**Output**
+
+```text
+Some(Miao)
+None
+```
+
+Ziwei is at miao in the Woo palace (index 4); Lucun has no brightness table.
+
+---
+
+## get_mutagen / get_mutagens_by_heavenly_stem
+
+**Purpose** Look up the mutagens of a heavenly stem.
+
+**Zi Wei meaning** Each of the ten stems assigns four fixed stars to lu, quan, ke and ji.
+`get_mutagen` asks "what does this star take under this stem", while
+`get_mutagens_by_heavenly_stem` asks "which four stars does this stem transform".
+
+**Signature**
+
+```rust
+pub fn get_mutagen(star: StarKey, stem: HeavenlyStem, config: &Config) -> Option<Mutagen>
+pub fn get_mutagens_by_heavenly_stem(stem: HeavenlyStem, config: &Config) -> [StarKey; 4]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `star` | `StarKey` | Yes | — | Star key |
+| `stem` | `HeavenlyStem` | Yes | — | Heavenly stem |
+| `config` | `&Config` | Yes | — | A custom mutagen table changes the result |
+
+**Return value** `get_mutagen` returns `Option<Mutagen>`, `None` when the star is not in that stem's
+mutagen table.
+`get_mutagens_by_heavenly_stem` returns a fixed array of four, in the order **lu, quan, ke, ji**.
+
+**Example**
+
+```rust
+let cfg = Config::default();
+
+println!("{:?}", utils::get_mutagen(StarKey::TaiyangMaj, HeavenlyStem::Geng, &cfg));
+println!("{:?}", utils::get_mutagen(StarKey::ZiweiMaj, HeavenlyStem::Geng, &cfg));
+println!("{:?}", utils::get_mutagens_by_heavenly_stem(HeavenlyStem::Geng, &cfg)
+    .iter().map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+Some(Lu)
+None
+["sun", "general", "moon", "fortunate"]
+```
+
+---
+
+## get_soul_and_body
+
+**Purpose** Derive the Soul and body palaces from the lunar month index, the hour and the year stem.
+
+**Zi Wei meaning** The Soul palace is the origin of the whole chart: start at the Yin palace for the
+first month, count forward to the birth month, then count backward from there to the birth hour. The
+body palace uses the same starting point but counts the hour forward. The Soul palace's stem comes
+from the year stem via the Five Tigers rule.
+
+**Signature**
+
+```rust
+pub fn get_soul_and_body(month_index: usize, time_index: u8, yearly_stem: HeavenlyStem) -> SoulAndBody
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `month_index` | `usize` | Yes | — | Lunar month index with the first month at 0; obtained from `fix_lunar_month_index` |
+| `time_index` | `u8` | Yes | — | Hour index 0–12 |
+| `yearly_stem` | `HeavenlyStem` | Yes | — | Birth-year stem |
+
+**Return value** `SoulAndBody`, holding `soul_index`, `body_index`, `heavenly_stem_of_soul` and
+`earthly_branch_of_soul`.
+
+**Example**
+
+```rust
+let sb = get_soul_and_body(6, 2, HeavenlyStem::Geng);
+
+println!("soul index {} body index {} soul branch {}", sb.soul_index, sb.body_index,
+    translate_earthly_branch(sb.earthly_branch_of_soul, Language::EnUS));
+```
+
+**Output**
+
+```text
+soul index 4 body index 8 soul branch woo
+```
+
+---
+
+## get_five_elements_class
+
+**Purpose** Derive the five elements class from the Soul palace's stem and branch.
+
+**Zi Wei meaning** The five elements class (water 2nd, wood 3rd, metal 4th, earth 5th, fire 6th)
+decides two major things: where Ziwei starts, and the age at which the decadal scope begins.
+
+**Signature**
+
+```rust
+pub fn get_five_elements_class(stem: HeavenlyStem, branch: EarthlyBranch) -> FiveElementsClass
+```
+
+**Return value** `FiveElementsClass`.
+
+**Example**
+
+```rust
+let c = get_five_elements_class(HeavenlyStem::Ren, EarthlyBranch::Wu);
+println!("{}", translate_five_elements_class(c, Language::EnUS));
+```
+
+**Output**
+
+```text
+wood 3rd
+```
+
+---
+
+## get_palace_names
+
+**Purpose** Derive the twelve palace names from the Soul palace index.
+
+**Zi Wei meaning** Once the Soul palace is fixed, the other eleven run counterclockwise in a fixed
+order: Soul, Siblings, Spouse, Children, Wealth, Health, Surface, Friends, Career, Property, Spirit,
+Parents.
+
+**Signature**
+
+```rust
+pub fn get_palace_names(soul_index: usize) -> [Palace; 12]
+```
+
+**Return value** A fixed array of twelve **indexed by palace index** — item `i` is the name of
+`chart.palaces[i]`.
+
+**Example**
+
+```rust
+let names = get_palace_names(4);
+println!("{:?}", names.iter().take(4).map(|p| translate_palace(*p, Language::EnUS)).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+["wealth", "children", "spouse", "siblings"]
+```
+
+The Soul palace is at index 4, so index 0 (the Yin palace) is Wealth.
+
+---
+
+## get_decadals_and_ages
+
+**Purpose** Derive the decadal and age scopes of the twelve palaces from the Soul palace index and
+the five elements class.
+
+**Zi Wei meaning** The decadal scope starts at the Soul palace, ten years per palace, beginning at
+the age given by the class number (water 2nd at 2, wood 3rd at 3, and so on), with direction from
+gender polarity and year-branch polarity; the age scope starts at the palace fixed by the trine group
+of the year branch and moves one palace per nominal year.
+
+**Signature**
+
+```rust
+pub fn get_decadals_and_ages(
+    soul_index: usize,
+    five_elements_class: FiveElementsClass,
+    gender: Gender,
+    yearly_stem: HeavenlyStem,
+    yearly_branch: EarthlyBranch,
+) -> ([Decadal; 12], [Vec<u32>; 12])
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `soul_index` | `usize` | Yes | — | Palace index of the Soul palace |
+| `five_elements_class` | `FiveElementsClass` | Yes | — | The class, which sets the starting age and where Ziwei begins |
+| `gender` | `Gender` | Yes | — | Gender; with the year-branch polarity it sets the decadal direction |
+| `yearly_stem` | `HeavenlyStem` | Yes | — | Year stem |
+| `yearly_branch` | `EarthlyBranch` | Yes | — | Year branch, which sets the starting palace of the age scope |
+
+**Return value** `([Decadal; 12], [Vec<u32>; 12])` — two fixed arrays of twelve, both indexed by
+palace index.
+
+The fields of `Decadal`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `range` | `(u32, u32)` | Start and end nominal ages of the decade, both inclusive |
+| `heavenly_stem` | `HeavenlyStem` | Stem of that decade |
+| `earthly_branch` | `EarthlyBranch` | Branch of that decade |
+
+The second item is each palace's list of age-scope nominal ages.
+
+**Example**
+
+```rust
+let (decadals, ages) = astro::palace::get_decadals_and_ages(
+    4,
+    FiveElementsClass::Wood3rd,
+    Gender::Female,
+    HeavenlyStem::Geng,
+    EarthlyBranch::Chen,
+);
+
+let d = &decadals[0];
+println!("Yin palace ages {:?} pillar {} {}", d.range,
+    translate_heavenly_stem(d.heavenly_stem, Language::EnUS),
+    translate_earthly_branch(d.earthly_branch, Language::EnUS));
+println!("{:?}", &ages[0][..3]);
+```
+
+**Output**
+
+```text
+Yin palace ages (43, 52) pillar wu yin
+[9, 21, 33]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+On a fully charted astrolabe every palace already carries `decadal` and `ages` fields with the same
+contents. This function is for cases where you want the scopes without charting the whole thing.
+</Callout>
+
+---
+
+## fix_lunar_month_index / fix_lunar_day_index
+
+**Purpose** Compute the corrected lunar month index and day index.
+
+**Zi Wei meaning** Where leap-month days belong and where the late Zi hour belongs are two
+long-disputed boundaries in Zi Wei Dou Shu; these two functions pin the rules down: days after the
+fifteenth of a leap month count as the next month (can be turned off, and never in the late Zi hour),
+and the day index of the late Zi hour belongs to the next day.
+
+**Signature**
+
+```rust
+pub fn fix_lunar_month_index(
+    lunar_month: u32,
+    lunar_day: u32,
+    is_leap: bool,
+    time_index: u8,
+    fix_leap: bool,
+) -> usize
+
+pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunar_month` | `u32` | Yes | — | Lunar month 1–12 |
+| `lunar_day` | `u32` | Yes | — | Lunar day |
+| `is_leap` | `bool` | Yes | — | Whether that month is a leap month |
+| `time_index` | `u8` | Yes | — | Hour index |
+| `fix_leap` | `bool` | Yes | — | Whether leap-month correction is enabled |
+
+**Return value** The month index is 0-based (the first month is 0); the day index is not decremented
+in the late Zi hour.
+
+Four conditions must hold together for `fix_lunar_month_index` to advance the month: `is_leap` true,
+`fix_leap` true, `lunar_day` greater than 15, and `time_index` not 12. Miss any one and the month
+itself is used.
+
+**Example**
+
+```rust
+println!("{}", astro::builder::fix_lunar_month_index(7, 17, false, 2, true));
+println!("{} {}", astro::builder::fix_lunar_day_index(17, 2), astro::builder::fix_lunar_day_index(17, 12));
+```
+
+**Output**
+
+```text
+6
+16 17
+```
+
+The seventh month is not a leap month, giving index 6; day seventeen decrements to 16 in the Tiger
+hour, but stays 17 in the late Zi hour because that belongs to the next day.
+
+---
+
+## translate_chinese_date
+
+**Purpose** Assemble the four pillars into a display string.
+
+**Signature**
+
+```rust
+pub fn translate_chinese_date(
+    pillars: [(HeavenlyStem, EarthlyBranch); 4],
+    lang: Language,
+) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pillars` | `[(HeavenlyStem, EarthlyBranch); 4]` | Yes | — | The four pillars, in the order year, month, day, hour |
+| `lang` | `Language` | Yes | — | Output language |
+
+**Return value** `String`. When every term is a single character, the parts of a pillar run together
+and the pillars are separated by spaces; when any term is multi-character, the parts within a pillar
+are separated by spaces and the pillars by ` - `.
+
+**Example**
+
+```rust
+let pillars = [
+    (HeavenlyStem::Geng, EarthlyBranch::Chen),
+    (HeavenlyStem::Jia, EarthlyBranch::Shen),
+    (HeavenlyStem::Bing, EarthlyBranch::Wu),
+    (HeavenlyStem::Geng, EarthlyBranch::Yin),
+];
+
+println!("{}", utils::translate_chinese_date(pillars, Language::EnUS));
+println!("{}", utils::translate_chinese_date(pillars, Language::ZhCN));
+```
+
+**Output**
+
+```text
+geng chen - jia shen - bing woo - geng yin
+庚辰 甲申 丙午 庚寅
+```
+
+A chart's `chinese_date` field is generated this way, and the four-pillar enums can be taken from
+`chart.raw_dates.chinese_date`.
+
+## merge_stars
+
+**Purpose** Merge several "twelve palaces of stars" groups into one, palace by palace.
+
+**Zi Wei meaning** Star placement happens in batches: major stars, minor stars and adjective stars
+each produce their own list of twelve palaces. Use this function to fuse them into one complete chart
+face.
+
+**Signature**
+
+```rust
+pub fn merge_stars(groups: &[[Vec<Star>; 12]]) -> [Vec<Star>; 12]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `groups` | `&[[Vec<Star>; 12]]` | Yes | — | Several twelve-palace star lists |
+
+**Return value** The merged twelve-palace list, with each palace's stars concatenated in the order
+the groups were passed.
+
+**Example**
+
+```rust
+use x_iztro::{star::query::{self, StarParam}, utils, Config, Gender, Language};
+
+let param = StarParam {
+    solar_date: "2000-8-16",
+    time_index: 2,
+    gender: Gender::Female,
+    fix_leap: true,
+    from: None,
+    language: Language::EnUS,
+    config: &Config::default(),
+};
+
+let major = query::get_major_stars(&param)?;
+let minor = query::get_minor_stars(&param)?;
+let merged = utils::merge_stars(&[major, minor]);
+
+println!("{:?}", merged[0].iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+["general", "minister", "horse"]
+```
+
+The array length is guaranteed to be 12 by the type system, so the length-validation failures possible
+on the Python and Go sides cannot occur here.
+
+---
+
+## parse_heavenly_stem / parse_earthly_branch
+
+**Purpose** Turn a single Chinese character back into a stem or branch enum.
+
+**Zi Wei meaning** External systems (Bazi charting software, old hand-entered records) commonly give
+stems and branches as single Chinese characters. These two functions are the way to take that input
+in.
+
+**Signature**
+
+```rust
+pub fn parse_heavenly_stem(s: &str) -> Option<HeavenlyStem>
+pub fn parse_earthly_branch(s: &str) -> Option<EarthlyBranch>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `s` | `&str` | Yes | — | A single Chinese character such as `"甲"` or `"子"` |
+
+**Return value** `Option<...>`. Only single Chinese characters are recognized — not romanizations, not
+translations in other languages — and no whitespace is trimmed; anything else returns `None`.
+
+**Example**
+
+```rust
+use x_iztro::astro::builder::{parse_earthly_branch, parse_heavenly_stem};
+
+println!("{:?} {:?}", parse_heavenly_stem("庚"), parse_earthly_branch("辰"));
+println!("{:?} {:?}", parse_heavenly_stem("geng"), parse_heavenly_stem("庚 "));
+```
+
+**Output**
+
+```text
+Some(Geng) Some(Chen)
+None None
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="For other languages use key_of">
+These two handle Chinese characters only. To accept a translation in any language, go through
+[`key_of`](/en/docs/rust/i18n#key_of), which returns an i18n key, and convert it with
+`HeavenlyStem::from_key` / `EarthlyBranch::from_key`.
+</Callout>
+
+<Callout type="info">
+They live under `x_iztro::astro::builder` and are not re-exported at the crate root, so the full path
+is required.
+</Callout>

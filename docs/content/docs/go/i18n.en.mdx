@@ -1,0 +1,209 @@
+---
+title: Translation
+description: Two-way lookup between keys and translations.
+---
+
+Every field on a chart already carries both a translation and a `*Key`, so manual translation is
+usually unnecessary. These functions exist for the cases where you have only a key (or only a
+translation in some language) and need to convert.
+
+Six languages are supported: `zh-CN`, `zh-TW`, `en-US`, `ja-JP`, `ko-KR`, `vi-VN`.
+
+---
+
+## Translate
+
+**Purpose** Translate any key into a given language.
+
+**Signature**
+
+```go
+func Translate(key string, language Language) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `key` | `string` | Yes | — | A language-independent key |
+| `language` | `Language` | Yes | — | Target language |
+
+Covering 260 keys across twelve categories:
+
+| Category | Count | Examples |
+| --- | --- | --- |
+| Stars | 162 | `ziweiMaj`, `changsheng`, `yunlu` |
+| Palaces (including the Body palace and the palace of origin) | 14 | `soulPalace`, `wealthPalace`, `bodyPalace`, `originalPalace` |
+| Heavenly stems | 10 | `jiaHeavenly` |
+| Earthly branches | 12 | `ziEarthly` |
+| Brightness | 7 | `miao`, `wang` |
+| Mutagens | 4 | `sihuaLu` |
+| Five elements class | 5 | `water2nd` |
+| Gender | 2 | `male`, `female` |
+| Chinese zodiac | 12 | `rat`, `ox` |
+| Hours | 13 | `earlyRatHour` |
+| Zodiac signs | 12 | `aries` |
+| Horoscope scopes | 7 | `decadal`, `turn` |
+
+**Return value** The translation; an unknown key returns an empty string, not an error.
+
+**Example**
+
+```go
+a, _ := iztro.Translate(iztro.StarZiweiMaj, iztro.LanguageEnUS)
+b, _ := iztro.Translate(iztro.PalaceSoul, iztro.LanguageJaJP)
+c, _ := iztro.Translate("nosuch", iztro.LanguageZhCN)
+
+fmt.Printf("%q %q %q\n", a, b, c)
+```
+
+**Output**
+
+```text
+"emperor" "命宮" ""
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="An unknown key returns an empty string, not an error">
+A key that cannot be found is not an exception; it returns an empty string. To tell "the translation
+happens to be empty" from "the key does not exist", confirm the key belongs to one of the categories
+in the table above.
+</Callout>
+
+---
+
+## KeyOf
+
+**Purpose** Reverse-look-up a key from a translation in any language.
+
+**Signature**
+
+```go
+func KeyOf(text string) (string, error)
+func KeyOfIn(text, keyFilter string) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `text` | `string` | Yes | — | A translation in any supported language |
+| `keyFilter` | `string` | Yes | — | A substring the key name must contain, for disambiguating homographic translations |
+
+**Return value** The key; an empty string when nothing matches.
+
+**Example**
+
+```go
+a, _ := iztro.KeyOf("紫微")
+b, _ := iztro.KeyOf("emperor")
+c, _ := iztro.KeyOf("자미")
+d, _ := iztro.KeyOf("no such name")
+
+fmt.Printf("%q %q %q %q\n", a, b, c, d)
+```
+
+**Output**
+
+```text
+"ziweiMaj" "ziweiMaj" "ziweiMaj" ""
+```
+
+Translations in all three languages resolve to the same key.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Homographic translations and KeyOfIn">
+A few translations are identical across categories: in en-US `horse` is both the zodiac horse and the
+star Tianma, `dragon` is both the zodiac dragon and Qinglong; in ko-KR `사` is both the branch si and
+Si among the Changsheng gods.
+
+`KeyOf` scans language by language, and within each language key by key, taking the first hit — in
+exactly the same order as iztro's `kot` (guarded case by case by golden tests). To pin down a
+category, use `KeyOfIn`, which only compares keys containing the substring:
+
+```go
+a, _ := iztro.KeyOf("horse")               // "horse" (the zodiac horse)
+b, _ := iztro.KeyOfIn("horse", "Min")      // "tianmaMin" (Tianma)
+c, _ := iztro.KeyOf("유시")                 // "hourly" (the hourly scope)
+d, _ := iztro.KeyOfIn("유시", "Hour")       // "roosterHour" (the You hour)
+e, _ := iztro.KeyOfIn("horse", "Palace")   // ""
+```
+
+Common substrings: `Maj` for the fourteen major stars, `Min` for minor stars, `Heavenly` / `Earthly`
+for stems and branches, `Palace` for palaces, `Hour` for hours. When the filter matches nothing the
+result is an empty string; it does not fall back to the unfiltered result.
+</Accordion>
+<Accordion title="It is a full-table scan">
+`KeyOf` walks 260 keys × 6 languages and makes one wasm round trip.
+Do not put it in an inner loop over every palace and star — use the `*Key` fields that come with the
+data there.
+</Accordion>
+</Accordions>
+
+---
+
+## AllKeys
+
+**Purpose** Get all 260 translatable keys.
+
+**Signature**
+
+```go
+func AllKeys() ([]string, error)
+```
+
+**Return value** A slice of keys, in the order `KeyOf` scans them: horoscope scopes, Chinese zodiac,
+hours, zodiac signs, five elements classes, heavenly stems, earthly branches, brightness, mutagens,
+stars, palaces, gender — matching the merge order of iztro's per-language translation files.
+
+**Example**
+
+```go
+keys, _ := iztro.AllKeys()
+first, _ := iztro.Translate(keys[0], iztro.LanguageEnUS)
+
+fmt.Println(len(keys), keys[:4], first)
+```
+
+**Output**
+
+```text
+260 [decadal childhood yearly monthly] decadal
+```
+
+To iterate the keys of one category, the constants in `keys.go` or `GetConstants()` are simpler.
+
+---
+
+## There is no global language switch
+
+x-iztro keeps no global "current language" state: the language is passed as a parameter when charting,
+and translation functions name their target language explicitly on every call.
+
+<Callout type="info" title="Why">
+A global language switch makes the same code produce different results depending on call order, which
+is especially dangerous under concurrency. Passing it explicitly means a call's result depends only on
+its arguments.
+</Callout>
+
+To emit several languages within one process, just chart several times; they do not interfere:
+
+```go
+zh, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+en, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+
+fmt.Println(zh.Palace(iztro.PalaceSoul).MajorStars[0].Name,
+    en.Palace(iztro.PalaceSoul).MajorStars[0].Name)
+```
+
+**Output**
+
+```text
+紫微 emperor
+```
+
+The `*Key` fields of the two charts are identical, so any key-based predicate gives the same answer on
+both.

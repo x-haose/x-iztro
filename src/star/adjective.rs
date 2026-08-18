@@ -9,7 +9,7 @@ use crate::models::star::Star;
 use crate::star::location::{DailyStar, MonthlyStar, YearlyStars};
 
 /// 创建一颗杂耀（无亮度、无四化）
-fn make_adj_star(key: StarKey, star_type: StarType, _palace_index: usize, lang: Language) -> Star {
+fn make_adj_star(key: StarKey, star_type: StarType, lang: Language) -> Star {
     Star {
         key,
         name: translate_star(key, lang).to_string(),
@@ -83,50 +83,32 @@ pub fn get_adjective_stars(
         (yearly_stars.xunkong, StarKey::Xunkong, StarType::Adjective),
     ];
     for (idx, key, star_type) in head {
-        result[idx].push(make_adj_star(key, star_type, idx, lang));
+        result[idx].push(make_adj_star(key, star_type, lang));
     }
 
     // 派别专属：默认派安截路空亡；中州派安龙德（取岁前12中龙德所落宫）、截空、劫杀、大耗
     if algorithm != Algorithm::Zhongzhou {
-        result[yearly_stars.jielu].push(make_adj_star(
-            StarKey::Jielu,
-            StarType::Adjective,
-            yearly_stars.jielu,
-            lang,
-        ));
+        result[yearly_stars.jielu].push(make_adj_star(StarKey::Jielu, StarType::Adjective, lang));
         result[yearly_stars.kongwang].push(make_adj_star(
             StarKey::Kongwang,
             StarType::Adjective,
-            yearly_stars.kongwang,
             lang,
         ));
     } else {
         if let Some(longde_pos) = suiqian12.iter().position(|&k| k == StarKey::Longde) {
-            result[longde_pos].push(make_adj_star(
-                StarKey::Longde,
-                StarType::Adjective,
-                longde_pos,
-                lang,
-            ));
+            result[longde_pos].push(make_adj_star(StarKey::Longde, StarType::Adjective, lang));
         }
         result[yearly_stars.jiekong].push(make_adj_star(
             StarKey::Jiekong,
             StarType::Adjective,
-            yearly_stars.jiekong,
             lang,
         ));
         result[yearly_stars.jiesha].push(make_adj_star(
             StarKey::JieshaAdj,
             StarType::Adjective,
-            yearly_stars.jiesha,
             lang,
         ));
-        result[yearly_stars.dahao].push(make_adj_star(
-            StarKey::Dahao,
-            StarType::Adjective,
-            yearly_stars.dahao,
-            lang,
-        ));
+        result[yearly_stars.dahao].push(make_adj_star(StarKey::Dahao, StarType::Adjective, lang));
     }
 
     let tail: [(usize, StarKey, StarType); 11] = [
@@ -151,7 +133,7 @@ pub fn get_adjective_stars(
         (yearly_stars.nianjie, StarKey::Nianjie, StarType::Helper),
     ];
     for (idx, key, star_type) in tail {
-        result[idx].push(make_adj_star(key, star_type, idx, lang));
+        result[idx].push(make_adj_star(key, star_type, lang));
     }
 
     result

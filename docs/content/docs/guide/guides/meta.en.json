@@ -1,0 +1,17 @@
+{
+  "title": "Guides",
+  "icon": "Settings",
+  "pages": [
+    "index",
+    "for-non-developers",
+    "ai-prompt",
+    "llm",
+    "config",
+    "keys",
+    "i18n",
+    "errors",
+    "plugins",
+    "step-api",
+    "llms-txt"
+  ]
+}

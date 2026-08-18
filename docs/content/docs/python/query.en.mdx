@@ -1,0 +1,190 @@
+---
+title: Lightweight queries
+description: The Chinese zodiac animal, zodiac sign and Soul palace major stars, without charting the whole thing.
+---
+
+Some questions do not need a whole chart. These five functions each run only as far as necessary and
+return; their results always agree with the corresponding fields of a full chart, because they go
+through the same core logic.
+
+<Callout type="info">
+The examples on this page all query in `en-US`, so the display values in the output are the English
+translations.
+</Callout>
+
+```python
+from x_iztro import query
+```
+
+---
+
+## get_zodiac_by_solar_date
+
+**Purpose** Get the Chinese zodiac animal from a solar date.
+
+**Zi Wei meaning** The zodiac animal is determined by the **year branch**, and when the year branch
+turns over is governed by `year_divide`.
+For someone born between lunar New Year and the Beginning of Spring, the two settings give different
+animals — not a defect, a difference of school.
+
+**Signature**
+
+```python
+def get_zodiac_by_solar_date(
+    solar_date: str,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D` |
+| `language` | `str` | No | `"zh-CN"` | Output language |
+| `config` | `ChartConfig \| None` | No | `None` | Only `year_divide` affects the result |
+
+**Return value** `str` — the animal name translated into the language.
+
+**Example**
+
+```python
+print(query.get_zodiac_by_solar_date("2000-8-16", language="en-US"))
+```
+
+**Output**
+
+```text
+dragon
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The year boundary moves with the configuration">
+By default the year turns over at lunar New Year. Switch to `ChartConfig(year_divide="exact")` and it
+turns over at the Beginning of Spring, so people born from late January to early February can get a
+different animal.
+</Callout>
+
+---
+
+## get_sign_by_solar_date / get_sign_by_lunar_date
+
+**Purpose** Get the zodiac sign.
+
+**Zi Wei meaning** The zodiac sign is a Western astrology concept determined solely by the solar
+date, unrelated to the Zi Wei algorithm. The lunar version converts to solar first, so both give the
+same result for the same day.
+
+**Signature**
+
+```python
+def get_sign_by_solar_date(solar_date: str, language: LanguageType = "zh-CN") -> str
+def get_sign_by_lunar_date(
+    lunar_date: str,
+    is_leap_month: bool = False,
+    language: LanguageType = "zh-CN",
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solar_date` / `lunar_date` | `str` | Yes | — | The date in `YYYY-M-D` |
+| `is_leap_month` | `bool` | No | `False` | Lunar version only: whether that month is a leap month |
+| `language` | `str` | No | `"zh-CN"` | Output language |
+
+There is no `config` parameter — zodiac signs are unaffected by any setting.
+
+**Return value** `str`.
+
+**Example**
+
+```python
+print(query.get_sign_by_solar_date("2000-8-16", language="en-US"))
+print(query.get_sign_by_lunar_date("2000-7-17", language="en-US"))
+```
+
+**Output**
+
+```text
+leo
+leo
+```
+
+---
+
+## get_major_star_by_solar_date / get_major_star_by_lunar_date
+
+**Purpose** Get just the Soul palace's major stars, without charting the whole thing.
+
+**Zi Wei meaning** The major stars of the Soul palace are the single most commonly asked item in Zi
+Wei Dou Shu. When the Soul palace is empty, convention borrows the major stars of the opposite palace,
+and this function already handles that step.
+
+**Signature**
+
+```python
+def get_major_star_by_solar_date(
+    solar_date: str,
+    time_index: TimeIndexType,
+    *,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+
+def get_major_star_by_lunar_date(
+    lunar_date: str,
+    time_index: TimeIndexType,
+    *,
+    is_leap_month: bool = False,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solar_date` / `lunar_date` | `str` | Yes | — | The date |
+| `time_index` | `int` | Yes | — | Hour index 0–12; the Soul palace is fixed jointly by month and hour. Everything after it is keyword-only |
+| `is_leap_month` | `bool` | No | `False` | Lunar version only |
+| `fix_leap` | `bool` | No | `True` | Whether to correct for leap months |
+| `language` | `str` | No | `"zh-CN"` | Output language |
+| `config` | `ChartConfig \| None` | No | `None` | Charting configuration |
+
+**Return value** `str` — several major stars separated by commas; the opposite palace's major stars
+when the Soul palace is empty.
+
+**Example**
+
+```python
+print(query.get_major_star_by_solar_date("2000-8-16", 2, language="en-US"))
+print(query.get_major_star_by_solar_date("2000-8-16", 2, language="zh-CN"))
+```
+
+**Output**
+
+```text
+emperor
+紫微
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Without an hour there is no Soul palace">
+The Soul palace is located jointly from the lunar month and the birth hour, so `time_index` is
+required. Knowing only the date and not the hour, Zi Wei Dou Shu cannot fix a Soul palace.
+</Accordion>
+<Accordion title="For predicates, chart the whole thing">
+The return value is a translated string and changes with the language. For programmatic tests, chart
+in full, fetch the palace with `chart.palace("soulPalace")` and compare the `key` fields inside
+`major_stars`.
+</Accordion>
+</Accordions>

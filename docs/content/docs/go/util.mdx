@@ -10,9 +10,9 @@ description: 索引换算、亮度与四化查表、命身宫推算、大限小�
 
 ---
 
-## FixIndex
+## FixIndex / FixIndex12
 
-**用途**　把任意整数约束到 `0..max` 的循环区间。
+**用途**　把任意整数约束到循环区间。
 
 **斗数含义**　十二宫首尾相接，从丑宫（索引 11）再走一格回到寅宫（索引 0）。
 所有「顺数几格、逆数几格」的推算都靠这个回绕。
@@ -21,6 +21,7 @@ description: 索引换算、亮度与四化查表、命身宫推算、大限小�
 
 ```go
 func FixIndex(index int, max int) (int, error)
+func FixIndex12(index int) int
 ```
 
 **参数**
@@ -28,30 +29,44 @@ func FixIndex(index int, max int) (int, error)
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `index` | `int` | 是 | — | 待修正的索引，可为负 |
-| `max` | `int` | 是 | — | 循环长度；传 `0` 取默认值 12，天干用 10 |
+| `max` | `int` | 是 | — | 循环长度；传 `0` 取默认值 12，天干用 10。负数返回错误 |
 
-**返回值**　落在 `0..max` 的索引。
+**返回值**　落在 `0..max` 的索引（含 0，不含 `max`）。
+`FixIndex12` 固定模 12、不返回错误——十二宫回绕直接用它。
 
 **示例**
 
 ```go
 a, _ := iztro.FixIndex(-1, 0)
 b, _ := iztro.FixIndex(13, 0)
+c, _ := iztro.FixIndex(11, 10)
 
-fmt.Println(a, b)
+fmt.Println(a, b, c)
+fmt.Println(iztro.FixIndex12(-1), iztro.FixIndex12(13))
+
+_, err := iztro.FixIndex(0, -1)
+fmt.Println(err)
 ```
 
 **输出**
 
 ```text
+11 1 1
 11 1
+iztro: invalid max '-1': expected a positive integer
 ```
 
 **边界与陷阱**
 
+<Callout type="warn" title="max 传 0 表示「用默认值 12」，不是「模 0」">
+这是复刻 iztro `fixIndex(index, max = 12)` 默认参数的写法，与 Go 的零值直觉相反：
+`FixIndex(13, 0)` 得到 1 而不是报错。十二宫回绕请直接用 `FixIndex12`，
+省掉这个歧义与那个永远不会发生的 `error`。
+</Callout>
+
 <Callout type="info">
 负数按数学取模回绕（-1 → 11），不是截断到 0。
-`max` 传 0 表示「用默认值」而非「模 0」。
+这两个函数在 Go 侧直接算，不往返 wasm。
 </Callout>
 
 ---
@@ -98,7 +113,7 @@ fmt.Println(yin, zi)
 **签名**
 
 ```go
-func TimeToIndex(hour uint8) (int, error)
+func TimeToIndex(hour uint8) (uint8, error)
 ```
 
 **参数**
@@ -107,7 +122,7 @@ func TimeToIndex(hour uint8) (int, error)
 | --- | --- | --- | --- | --- |
 | `hour` | `uint8` | 是 | — | 小时数 0–23，越界返回错误 |
 
-**返回值**　`int`，0–12。
+**返回值**　`uint8`，0–12——正好是排盘入口 `timeIndex` 参数的类型，可以直接传过去。
 
 **示例**
 
@@ -117,12 +132,24 @@ b, _ := iztro.TimeToIndex(4)
 c, _ := iztro.TimeToIndex(23)
 
 fmt.Println(a, b, c)
+
+_, err := iztro.TimeToIndex(24)
+fmt.Println(err)
+
+// 结果可直接喂给排盘入口
+chart, err := iztro.BySolar("2000-8-16", b, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.Time)
 ```
 
 **输出**
 
 ```text
 0 2 12
+iztro: invalid hour '24': expected 0-23
+寅时
 ```
 
 0 点为早子时，4 点为寅时，23 点为晚子时。排盘时不确定时辰索引，用这个函数换算。
@@ -318,7 +345,9 @@ wood3rd
 func GetPalaceNames(soulIndex int) ([]string, error)
 ```
 
-**返回值**　十二项切片，**按宫位索引排列**——第 `i` 项就是 `chart.Palaces[i]` 的宫名标识。
+**返回值**　十二项**标识**切片（不是译名），**按宫位索引排列**——
+第 `i` 项就是 `chart.Palaces[i]` 的 `NameKey`。
+与 `GetConstants().Palaces` 不同：那个给的是宫名的固定排列顺序，与具体盘无关。
 
 **示例**
 
@@ -348,7 +377,7 @@ fmt.Println(names[:4])
 
 ```go
 func GetDecadalsAndAges(
-    soulIndex int, fiveElementsClass, gender, yearlyStemKey, yearlyBranchKey string,
+    soulIndex int, fiveElementsClass string, gender Gender, yearlyStemKey, yearlyBranchKey string,
 ) (DecadalsAndAges, error)
 ```
 
@@ -358,16 +387,24 @@ func GetDecadalsAndAges(
 | --- | --- | --- | --- | --- |
 | `soulIndex` | `int` | 是 | — | 命宫宫位索引 |
 | `fiveElementsClass` | `string` | 是 | — | 五行局标识 |
-| `gender` | `string` | 是 | — | `"male"` 或 `"female"` |
+| `gender` | `Gender` | 是 | — | `GenderMale` 或 `GenderFemale` |
 | `yearlyStemKey` | `string` | 是 | — | 年干标识 |
 | `yearlyBranchKey` | `string` | 是 | — | 年支标识 |
 
 **返回值**　`DecadalsAndAges`，含 `Decadals []Decadal` 与 `Ages [][]int`，均按宫位索引排列。
 
+`Decadal` 与宫位上的 `palace.Decadal` 是同一个类型：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Range` | `[2]int` | 大限起止虚岁，含两端 |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | 大限天干的译名 / 标识 |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | 大限地支的译名 / 标识 |
+
 **示例**
 
 ```go
-da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", "female", iztro.StemGeng, iztro.BranchChen)
+da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", iztro.GenderFemale, iztro.StemGeng, iztro.BranchChen)
 
 fmt.Printf("%+v\n", da.Decadals[0])
 fmt.Println(da.Ages[0][:3])
@@ -387,6 +424,11 @@ fmt.Println(da.Ages[0][:3])
 连译名与标识两组字段的含义都相同。这个函数用于不排整盘、只推大限小限的场合。
 </Callout>
 
+<Callout type="info" title="译名固定按 zh-CN">
+这个函数不收 `language` 参数，`Decadal` 的译名字段一律是中文。
+要别的语言用 `HeavenlyStemKey` 走 [`Translate`](/zh/docs/go/i18n#translate)。
+</Callout>
+
 ---
 
 ## FixLunarMonthIndex / FixLunarDayIndex
@@ -394,7 +436,7 @@ fmt.Println(da.Ages[0][:3])
 **用途**　求修正后的农历月索引与日索引。
 
 **斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
-闰月十五日之后按下月算（可关），晚子时属次日。
+闰月十六日起按下月算（可关，且晚子时不进位），晚子时的日索引属次日。
 
 **签名**
 
@@ -404,6 +446,9 @@ func FixLunarDayIndex(lunarDay int, timeIndex uint8) (int, error)
 ```
 
 **返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+`FixLunarMonthIndex` 进位要同时满足四个条件：`isLeap` 为真、`fixLeap` 为真、
+`lunarDay` 大于 15、且 `timeIndex` 不是 12。四者缺一，就按本月算。
 
 **示例**
 
@@ -432,7 +477,7 @@ fmt.Println(m, d1, d2)
 **签名**
 
 ```go
-func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
+func TranslateChineseDate(pillars [4][2]string, language Language) (string, error)
 ```
 
 **参数**
@@ -440,7 +485,7 @@ func TranslateChineseDate(pillars [4][2]string, language string) (string, error)
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `pillars` | `[4][2]string` | 是 | — | 四柱标识 [年, 月, 日, 时]，每柱为 [天干, 地支] |
-| `language` | `string` | 是 | — | 输出语言 |
+| `language` | `Language` | 是 | — | 盘面语言 |
 
 **返回值**　词条均为单字符时柱内紧凑相连、柱间空格；
 任一词条为多字符时柱内空格、柱间 ` - `。
@@ -457,7 +502,7 @@ s, _ := iztro.TranslateChineseDate([4][2]string{
 fmt.Println(s)
 
 // 星盘上的四柱标识可直接取
-s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), "zh-CN")
+s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), iztro.LanguageZhCN)
 fmt.Println(s2)
 ```
 
@@ -500,7 +545,7 @@ func MergeStars(groups ...[][]Star) ([][]Star, error)
 **示例**
 
 ```go
-birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: "female", FixLeap: true}
+birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: iztro.GenderFemale, FixLeap: true}
 major, _ := iztro.GetMajorStar(birth)
 minor, _ := iztro.GetMinorStar(birth)
 

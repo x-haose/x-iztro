@@ -1,0 +1,149 @@
+---
+title: Overview
+description: The package layout, the type system, and how to read this reference.
+icon: Braces
+---
+
+The Python package is a typed wrapper around the Rust core: computation happens in Rust, while the
+Python side provides a strongly typed API of dataclasses and StrEnums with zero external dependencies.
+
+This section is the complete Python API reference — every function, class and method has its own
+entry.
+
+## Install
+
+```bash
+pip install x-iztro
+```
+
+Requires Python 3.10 or newer. The distribution ships a precompiled native extension (an abi3-py310
+wheel), so installing needs no Rust toolchain.
+
+<Callout type="info" title="StrEnum works on 3.10 too">
+`enum.StrEnum` only entered the standard library in 3.11. On 3.10 `x_iztro.enums` falls back
+automatically to the equivalent `class StrEnum(str, Enum)` implementation — the members are still
+both strings and completion targets, and the two versions behave identically.
+</Callout>
+
+## Your first chart
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")  # 2 = Tiger hour (03:00–05:00)
+
+print(chart.solar_date, chart.lunar_date)
+# 2000-8-16 二〇〇〇年七月十七
+
+soul = chart.palace("soulPalace")
+print(" ".join(s.name for s in soul.major_stars))
+# emperor
+```
+
+`lunar_date` is a Chinese-numeral lunar date string and stays Chinese under every language:
+`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+
+## Package layout
+
+| Module | Contents | Page in this reference |
+| --- | --- | --- |
+| `x_iztro.Astro` | The main charting class | [Charting entries](/en/docs/python/astro) |
+| `x_iztro.models` | The `Astrolabe`, `Palace`, `Star`, `Horoscope`, `ChartConfig` and related dataclasses | The four pages from [Astrolabe object](/en/docs/python/astrolabe) onward |
+| `x_iztro.enums` | StrEnums for every language-independent key, plus the `GenderType`, `LanguageType`, `TimeIndexType` and other type aliases | [Data tables](/en/docs/python/data), further down this page |
+| `x_iztro.query` | Lightweight queries for the zodiac animal, sign and Soul palace major stars | [Lightweight queries](/en/docs/python/query) |
+| `x_iztro.utils` | Index arithmetic, brightness and mutagen lookups | [Utilities](/en/docs/python/util) |
+| `x_iztro.star` | Star placement from birth data | [Star placement](/en/docs/python/star) |
+| `x_iztro.data` | Star and stem/branch tables, ordering constants | [Data tables](/en/docs/python/data) |
+| `x_iztro.i18n` | Two-way lookup between keys and translations | [Translation](/en/docs/python/i18n) |
+| `x_iztro.plugin` | Attaching custom methods to the astrolabe class | [Extending the astrolabe](/en/docs/python/extend) |
+
+`models` is an aggregation layer: `Astrolabe` actually lives in `x_iztro.astrolabe`, `Palace` in
+`x_iztro.palace`, `Star` in `x_iztro.star_object`, `Horoscope` in `x_iztro.horoscope`,
+`ChartConfig` in `x_iztro.config` and `SurroundedPalaces` in `x_iztro.surpalaces`. Importing from the
+`x_iztro` top level or from `x_iztro.models` gets you the same objects; take whichever you prefer.
+
+## Type aliases
+
+`x_iztro.enums` holds a handful of `Literal` aliases whose job is to make your editor flag a wrong
+argument immediately:
+
+| Alias | Definition |
+| --- | --- |
+| `GenderType` | `Literal["male", "female"]` |
+| `LanguageType` | `Literal["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]` |
+| `TimeIndexType` | `Literal[0, 1, …, 12]` |
+| `StarTypeLiteral` | `Literal["major", "soft", "tough", "adjective", "flower", "helper", "lucun", "tianma"]` |
+| `ScopeLiteral` | `Literal["origin", "decadal", "yearly", "monthly", "daily", "hourly"]` |
+
+They are annotations only and validate nothing at runtime — the real value checking happens in the
+core, which raises `IztroError` on an illegal value.
+
+## Enums are the keys
+
+Every enum in `x_iztro.enums` is a `StrEnum` whose **value is the language-independent key**, so it
+compares directly against the `*_key` fields on the data objects:
+
+```python
+from x_iztro import MajorStar, PalaceName
+
+soul = chart.palace(PalaceName.SOUL)
+print(soul.major_stars[0].key == MajorStar.ZIWEI)
+# True
+```
+
+Being `StrEnum`s, string literals work just as well — `chart.palace("soulPalace")` and
+`chart.palace(PalaceName.SOUL)` are equivalent. The enums earn their keep through IDE completion and
+spell checking.
+
+<Callout type="warn" title="Test on key, never on name">
+`star.name` varies with the charting language (`紫微` on a Chinese chart, `emperor` on an English one);
+`star.key` is `ziweiMaj` under any language. Every predicate should rest on the `*_key` fields or on
+the built-in predicate methods.
+</Callout>
+
+## The data objects are immutable
+
+Astrolabes, palaces and stars are all `frozen=True` dataclasses whose fields cannot be assigned after
+construction. When you need a variant, use a method that returns a new object, such as
+`chart.rearranged(...)`.
+
+```python
+try:
+    chart.solar_date = "2001-1-1"
+except Exception as e:
+    print(type(e).__name__, e)
+```
+
+**Output**
+
+```text
+FrozenInstanceError cannot assign to field 'solar_date'
+```
+
+<Callout type="info">
+Immutability lets a chart travel safely between analysis functions, go into a cache and be shared
+across threads, without worrying that a change in one place will affect another.
+</Callout>
+
+## How to read an entry
+
+Every API entry is organized into the same eight sections:
+
+<Steps>
+<Step>**Purpose** — one sentence on what it does</Step>
+<Step>**Zi Wei meaning** — the concept it corresponds to in Zi Wei Dou Shu (omitted for purely engineering functions)</Step>
+<Step>**Signature** — lifted verbatim from the source</Step>
+<Step>**Parameters** — name, type, whether required, default, description</Step>
+<Step>**Return value** — type and structure</Step>
+<Step>**Example** — a snippet you can run as-is</Step>
+<Step>**Output** — the real result of running that example</Step>
+<Step>**Edge cases and pitfalls** — empty values, out-of-range input, configuration effects, interactions with other APIs</Step>
+</Steps>
+
+Examples all use the same chart — **a female born 16 August 2000 in the Tiger hour**
+(`by_solar("2000-8-16", 2, "female")`) — so they can be compared across pages. The full data for that
+chart is on [the data model](/en/docs/guide/data-model).
+
+Every example on these English pages charts in `en-US`, so the display values in the output blocks are
+the English translations. Changing the language changes only those display strings; the `*_key`
+identifiers and the results of every predicate method stay the same.

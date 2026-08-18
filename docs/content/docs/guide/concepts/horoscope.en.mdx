@@ -1,0 +1,153 @@
+---
+title: Horoscopes
+description: What each of the six time scopes computes, why the palace name on a cell changes, how the childhood scope is derived, and where flowing stars and yearly twelve gods come from.
+---
+
+*For: everyone. Code is at the end of the page*
+
+The natal chart never changes. A **horoscope** is the dynamic information you get by laying time on
+top of it. Give a target date and x-iztro returns all six scopes at once.
+
+## The same cell, a different palace name
+
+This is the part of horoscopes people trip over most, so it goes first:
+
+Reading a horoscope means treating the palace the horoscope landed on as "the Soul palace for this
+step", with the other eleven re-laid-out around it. So **a cell that is the Wealth palace on the
+natal chart may be the Soul palace within some decadal**.
+
+Every horoscope scope hands back its own re-laid-out list of twelve palace names, ordered by slot on
+the chart. The natal palace names are untouched; the two sets coexist — when reading results, be
+clear which one you are holding.
+
+## The six scopes
+
+| Scope | Period | Derived from |
+| --- | --- | --- |
+| Decadal | Ten years | The Five Elements class starting nominal age, plus a direction from gender and year-branch polarity |
+| Age fortune | One year | Origin from the year branch's trine group, direction from gender |
+| Yearly | One year | The lunar year the target date falls in |
+| Monthly | One month | The lunar month the target date falls in |
+| Daily | One day | The target date |
+| Hourly | One double-hour | The target hour index |
+
+Decadal and age fortune both "advance by age", but under completely different rules, and each runs
+its own course; yearly through hourly "advance by calendar". The two tracks run in parallel and
+together make up one query's result.
+
+<Callout title="Nominal age">
+**Nominal age** (虚岁) is East Asian age reckoning: you are 1 at birth and gain a year at the turn of
+the year, not on your birthday.
+</Callout>
+
+## What each scope carries
+
+Apart from age fortune and the yearly scope, every level has the same structure:
+
+| Field | Meaning |
+| --- | --- |
+| `index` | Which slot on the chart this horoscope landed on (0–11; slot 0 is the Yin palace) |
+| `name` | The scope name, translated into the chart language (`decadal`, `yearly`, …) |
+| `heavenly_stem` / `earthly_branch` | This scope's stem and branch |
+| `palace_names` | The twelve palace names re-laid-out with this scope's slot as the Soul palace |
+| `mutagen` | The mutagen stars raised by this scope's stem, in the order Lu, Quan, Ke, Ji |
+| `stars` | Flowing stars distributed across the twelve palaces; empty for scopes that have none |
+
+Age fortune additionally carries the **nominal age** (`nominal_age`).
+
+The yearly scope additionally carries the **yearly twelve gods**: the Sui-qian and Jiang-qian gods
+re-placed from the yearly branch. These two groups are a different thing from the two the palaces
+carry natally — the natal ones are placed from the birth-year branch, the yearly ones from the
+target year's branch.
+
+## The childhood scope
+
+Decadals only begin at the nominal age set by the Five Elements class (2 for water 2nd, 6 for fire
+6th). The years before that belong to no decadal, and are derived as the **childhood scope**.
+
+The childhood scope cycles through six palaces by nominal age, by the mnemonic "first Soul, second
+Wealth, third Health, fourth Spouse, fifth Spirit, sixth Career":
+
+| Nominal age | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | … |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Childhood palace | soul | wealth | health | spouse | spirit | career | soul | wealth | cycles |
+
+When the target date falls before the decadals begin, the decadal field returns the childhood scope
+instead, with the scope name shown as `childhood`. The field structure is unchanged, so callers need
+no special handling; check the scope name only when you need to tell them apart.
+
+## Flowing stars
+
+The yearly, monthly and other scopes carry a batch of stars that exist only at that level, called
+**flowing stars** (运昌 Yunchang, 运曲 Yunqu, 运魁 Yunkui, 运钺 Yunyue, 运鸾 Yunluan, 运喜 Yunxi,
+运禄 Yunlu, 运羊 Yunyang, 运陀 Yuntuo, 运马 Yunma, plus 流昌 Liuchang, 流曲 Liuqu … at the yearly
+level). They are stored grouped by palace.
+
+A star's scope field says which level it belongs to: natal stars are `origin`, decadal flowing stars
+are `decadal`, yearly ones are `yearly`.
+
+## Boundaries change the results
+
+A horoscope's stems, branches and nominal ages are affected by two configuration switches:
+
+- `horoscope_divide` decides whether the horoscope year turns over at lunar New Year or at the
+  Beginning of Spring (立春, the solar term around 4 February), and whether the monthly scope divides
+  on the first of the lunar month or on solar terms.
+- `age_divide` decides whether nominal age increments at the turn of the lunar year or only after
+  the birthday.
+
+Query near the start of a year or around a birthday and these two switches change the returned stems,
+branches and nominal age directly. See [Config in depth](/en/docs/guide/guides/config).
+
+## In code
+
+A horoscope is raised from an already-charted astrolabe. Birth parameters, chart language and
+configuration all come from the chart, so you supply only the target date and hour:
+
+```python
+h = chart.horoscope("2024-10-1", 0)
+```
+
+```rust
+let h = astrolabe.horoscope("2024-10-1", 0)?;
+```
+
+```go
+h, err := astrolabe.Horoscope("2024-10-1", 0)
+```
+
+Reading the six scopes:
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+h = chart.horoscope("2024-10-1", 0)
+
+print(h.decadal.name, h.decadal.heavenly_stem + h.decadal.earthly_branch, h.decadal.mutagen)
+print(h.age.name, "nominal age", h.age.nominal_age)
+print(h.yearly.name, h.yearly.heavenly_stem + h.yearly.earthly_branch)
+print("rearranged yearly palace names:", h.yearly.palace_names)
+print("yearly Sui-qian gods:", h.yearly.yearly_dec_star.suiqian12)
+```
+
+```text
+decadal gengchen ['sun', 'general', 'moon', 'fortunate']
+age nominal age 25
+yearly jiachen
+rearranged yearly palace names: ['spouse', 'siblings', 'soul', 'parents', 'spirit', 'property', 'career', 'friends', 'surface', 'health', 'wealth', 'children']
+yearly Sui-qian gods: ['sorrowing', 'illness', 'initial', 'unlucky', 'downcast', 'tied', 'official', 'consumer', 'wastrel', 'virtuous', 'sinister', 'blessed']
+```
+
+Walking the flowing stars:
+
+```python
+for palace_index, stars in enumerate(h.yearly.stars or []):
+    for s in stars:
+        print(palace_index, s.name, s.scope)
+```
+
+<Callout title="Same access path on all three sides">
+Age fortune and the yearly scope each carry one extra datum of their own (nominal age, the yearly
+gods), so in Rust their shared fields live under `.base` — but both types implement `Deref`, so
+`h.yearly.heavenly_stem` reads directly. The layer is flattened when serialized to Python and Go,
+where you write `h.yearly.heavenly_stem` as well.
+</Callout>

@@ -67,8 +67,7 @@ fn golden_variants_by_lunar() {
             ld,
             ti.parse().unwrap(),
             gender,
-            il == "1",
-            fl == "1",
+            LeapMonth::from_flags(il == "1", fl == "1"),
             Language::ZhCN,
             Config::default(),
         )

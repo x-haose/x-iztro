@@ -3,6 +3,8 @@ title: Python
 description: pip 安装，dataclass 类型化 API，用枚举做与语言无关的判断。
 ---
 
+*适合：开发者*
+
 ## 安装
 
 ```bash
@@ -38,14 +40,29 @@ print(chart.soul, chart.body)    # 命主、身主
 print(chart.five_elements_class) # 五行局
 ```
 
-农历排盘：
+```text
+2000-8-16
+二〇〇〇年七月十七
+庚辰 甲申 丙午 庚寅
+寅时 03:00~05:00
+狮子座 龙
+破军 文昌
+木三局
+```
+
+`solar_date` 原样回显入参字符串，不补零 —— 传 `"2000-08-16"` 就回 `"2000-08-16"`。
+要结构化的日期用 `chart.raw_dates`。
+
+农历排盘用 `by_lunar`，比 `by_solar` 多一个 `is_leap_month`。`gender` 之后的参数
+（`is_leap_month`、`fix_leap`、`language`、`config`）只能按关键字传入——两个布尔相邻，
+位置传参写反了不报错：
 
 ```python
 chart = astro.by_lunar("2000-7-17", 2, "female", is_leap_month=False)
 ```
 
 返回的 `Astrolabe` 是 dataclass，字段有类型标注，IDE 能自动补全。
-所有文本字段已按排盘语言翻译好。
+所有文本字段已按盘面语言翻译好。
 
 ## 接下来
 

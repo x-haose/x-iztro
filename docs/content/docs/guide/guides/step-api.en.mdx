@@ -1,0 +1,129 @@
+---
+title: The API behind the nine charting steps
+description: Which public function corresponds to each of the nine charting steps, and which steps the configuration switches change.
+---
+
+*For: developers*
+
+**Every one** of the [nine charting steps](/en/docs/guide/concepts/how-it-works) has a corresponding
+public function in x-iztro. Everyday charting never needs them — call the charting entry point
+instead. This page serves two needs: checking the derivation of one step, or reusing part of the
+chain in a pipeline of your own.
+
+The examples below use the chart for 2000-8-16, Yin hour, female — the same one as on
+[How charting works](/en/docs/guide/concepts/how-it-works).
+
+## Step-to-API mapping
+
+### 2. Fix the month index
+
+```python
+# 17th day of the 7th lunar month, not a leap month, Yin hour, leap correction on
+utils.fix_lunar_month_index(7, 17, False, 2, True)
+```
+
+```text
+6
+```
+
+[Rust](/en/docs/rust/util#fix_lunar_month_index--fix_lunar_day_index) ·
+[Python](/en/docs/python/util#fix_lunar_month_index--fix_lunar_day_index) ·
+[Go](/en/docs/go/util#fixlunarmonthindex--fixlunardayindex)
+
+### 3. Locate the Soul and Body palaces
+
+```python
+utils.get_soul_and_body(6, 2, "gengHeavenly")   # month index, hour index, year stem
+```
+
+```text
+SoulAndBody(soul_index=4, body_index=8, heavenly_stem_of_soul='renHeavenly', earthly_branch_of_soul='wuEarthly')
+```
+
+[Rust](/en/docs/rust/util#get_soul_and_body) ·
+[Python](/en/docs/python/util#get_soul_and_body) ·
+[Go](/en/docs/go/util#getsoulandbody)
+
+### 4. Determine the Five Elements class
+
+```python
+utils.get_five_elements_class("renHeavenly", "wuEarthly")   # Soul palace stem, Soul palace branch
+```
+
+```text
+wood3rd
+```
+
+[Rust](/en/docs/rust/util#get_five_elements_class) ·
+[Python](/en/docs/python/util#get_five_elements_class) ·
+[Go](/en/docs/go/util#getfiveelementsclass)
+
+### 5. Place Ziwei and Tianfu
+
+```python
+star.get_start_index("2000-8-16", 2, "female")
+```
+
+```text
+StartIndex(ziwei_index=4, tianfu_index=8)
+```
+
+[Rust](/en/docs/rust/star#get_start_index) ·
+[Python](/en/docs/python/star#get_start_index) ·
+[Go](/en/docs/go/star#getstartindex)
+
+### 6 and 7. Place major stars, minor stars and adjective stars
+
+Each of the three groups has an entry point returning that group's distribution across the twelve
+palaces. There are also per-group slot-index functions (`get_lu_yang_tuo_ma_index`,
+`get_chang_qu_index` and so on); the full list is on each language's star-placement page.
+
+[Rust](/en/docs/rust/star) · [Python](/en/docs/python/star) · [Go](/en/docs/go/star)
+
+### 8. Place the four groups of twelve gods
+
+`get_changsheng12`, `get_boshi12` and `get_yearly12`, plus the two origin functions
+`get_changsheng12_start_index` and `get_jiangqian12_start_index`.
+
+### 9. Derive decadals and age fortune
+
+```python
+r = utils.get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
+print(r.decadals[0], r.ages[0])
+```
+
+```text
+Decadal(range=(43, 52), heavenly_stem='戊', heavenly_stem_key='wuHeavenly', earthly_branch='寅', earthly_branch_key='yinEarthly') [9, 21, 33, 45, 57, 69, 81, 93, 105, 117]
+```
+
+<Callout title="Reading the output">
+This low-level function takes no chart language, so the display fields come out in the default
+Simplified Chinese: `戊` is the stem wu and `寅` is the branch yin. The `*_key` fields alongside them
+(`wuHeavenly`, `yinEarthly`) are language-independent — predicate on those. The `ages` list holds
+nominal ages (虚岁, the reckoning that starts at 1 on the day of birth).
+</Callout>
+
+<Callout>
+This function takes a Soul palace index and a Five Elements class directly, so you do not have to
+assemble a full set of birth data first; its capability is a superset of iztro's counterpart. See
+[Migrating from iztro: API mapping](/en/docs/guide/about/iztro-parity#decadals-and-age-fortune).
+</Callout>
+
+[Rust](/en/docs/rust/util#get_decadals_and_ages) ·
+[Python](/en/docs/python/util#get_decadals_and_ages) ·
+[Go](/en/docs/go/util#getdecadalsandages)
+
+## Which steps the configuration changes
+
+| Config | Steps affected |
+| --- | --- |
+| `year_divide` | 1 (year stem and branch) → knock-on to 6, 7, 8, 9 |
+| `horoscope_divide` | 1 (month pillar and the year branch used by year-derived adjective stars) → knock-on to 7 |
+| `day_divide` | 1, 2 (late Zi hour attribution) → knock-on to 3, 5 |
+| `age_divide` | 9 (when nominal age increments) |
+| `algorithm` | 4 (Zhongzhou takes the soul star from the year branch), 7, 8 (placement of some stars) |
+| `astro_type` | 4 onwards (the class comes from a different palace) → knock-on to 5, 6, 8, 9 |
+| Custom mutagen table | 6 (mutagen marks) and every flying-star predicate |
+| Custom brightness table | 6, 7 (star brightness) |
+
+Per-item notes are on [Config in depth](/en/docs/guide/guides/config).

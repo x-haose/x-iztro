@@ -11,7 +11,7 @@
 //! 内存协定：
 //! - 调用方用 `iztro_wasm_alloc` 申请入参缓冲并写入 UTF-8 JSON；
 //! - 功能函数接收 (ptr, len)，返回 `(ptr << 32) | len` 打包的结果缓冲，
-//!   内容为 DTO JSON 或 `{"error":"..."}`；
+//!   内容为 DTO JSON 或 `{"error":"...","code":"..."}`；
 //! - 双方的缓冲都用 `iztro_wasm_free` 释放。
 //!
 //! 入参 JSON 键为 camelCase，字段见 [`crate::bridge`] 的入参结构体：
@@ -21,6 +21,7 @@
 use serde::de::DeserializeOwned;
 
 use crate::bridge::{self, HoroscopeInput, LunarChartInput, QueryInput, SolarChartInput};
+use crate::error::BridgeError;
 
 /// 将结果字符串移交给调用方：泄漏缓冲并打包 (ptr << 32) | len。
 fn hand_over(s: String) -> u64 {
@@ -30,17 +31,18 @@ fn hand_over(s: String) -> u64 {
     (ptr << 32) | len
 }
 
-fn error_result(msg: &str) -> u64 {
-    hand_over(serde_json::json!({ "error": msg }).to_string())
+fn error_result(err: &BridgeError) -> u64 {
+    hand_over(crate::dto::error_json(err))
 }
 
 /// 读取调用方写入的入参缓冲。
 ///
 /// # Safety
 /// (ptr, len) 必须指向本模块 `iztro_wasm_alloc` 分配且已写入 len 字节的缓冲。
-unsafe fn read_input(ptr: *const u8, len: u32) -> Result<String, String> {
+unsafe fn read_input(ptr: *const u8, len: u32) -> Result<String, BridgeError> {
     let slice = unsafe { std::slice::from_raw_parts(ptr, len as usize) };
-    String::from_utf8(slice.to_vec()).map_err(|e| format!("Input is not valid UTF-8: {e}"))
+    String::from_utf8(slice.to_vec())
+        .map_err(|e| BridgeError::invalid_argument(format!("invalid input: not valid UTF-8: {e}")))
 }
 
 /// 读入参、反序列化、交给 bridge、序列化结果，任一步出错都落成错误 JSON。
@@ -50,18 +52,19 @@ unsafe fn read_input(ptr: *const u8, len: u32) -> Result<String, String> {
 unsafe fn run<T, F>(ptr: *const u8, len: u32, compute: F) -> u64
 where
     T: DeserializeOwned,
-    F: FnOnce(&T) -> Result<serde_json::Value, String>,
+    F: FnOnce(&T) -> Result<serde_json::Value, BridgeError>,
 {
     let result = unsafe { read_input(ptr, len) }.and_then(|raw| {
-        let input: T =
-            serde_json::from_str(&raw).map_err(|e| format!("Invalid input JSON: {e}"))?;
+        let input: T = serde_json::from_str(&raw)
+            .map_err(|e| BridgeError::invalid_argument(format!("invalid input JSON: {e}")))?;
         let value = compute(&input)?;
-        serde_json::to_string(&value).map_err(|e| e.to_string())
+        serde_json::to_string(&value)
+            .map_err(|e| BridgeError::internal(format!("failed to serialize result: {e}")))
     });
 
     match result {
         Ok(json) => hand_over(json),
-        Err(msg) => error_result(&msg),
+        Err(err) => error_result(&err),
     }
 }
 

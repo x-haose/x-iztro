@@ -43,13 +43,14 @@ function findLeapSecondHalfDate(fromYear) {
   throw new Error(`No leap second-half date found from ${fromYear}`);
 }
 
-/** 单个运限层级的紧凑导出（流耀分布每宫排序）。 */
+/** 单个运限层级的紧凑导出（宫位名序列原序，流耀分布每宫排序）。 */
 function scopeItem(item) {
   const out = {
     i: item.index,
     n: item.name,
     hs: item.heavenlyStem,
     eb: item.earthlyBranch,
+    pn: item.palaceNames,
     m: item.mutagen,
   };
   if (item.stars) {

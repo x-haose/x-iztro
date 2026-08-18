@@ -8,10 +8,7 @@
     "build": "next build",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "types:check": "tsc --noEmit",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@fumadocs/language": "^0.2.2",
@@ -23,7 +20,6 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.2.0",
@@ -31,7 +27,6 @@
     "@types/react-dom": "^19.2.4",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2",
-    "wrangler": "^4.122.0"
+    "typescript": "^7.0.2"
   }
 }

@@ -1,13 +1,18 @@
 [package]
 name = "x-iztro"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
-description = "紫微斗数排盘核心库：100% 对齐 iztro，支持 Rust / Python / Go 调用"
+# 摘要用英文：crates.io 的搜索与列表面向的是国际读者，中文说明在 README 里。
+description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"
 license = "MIT"
 repository = "https://github.com/x-haose/x-iztro"
+homepage = "https://ziwei.x-hoase.com"
+documentation = "https://ziwei.x-hoase.com/en/docs/rust"
 readme = "README.md"
 keywords = ["ziwei", "iztro", "astrology", "horoscope", "chinese"]
 categories = ["date-and-time", "science"]
+# edition 2024 的下限；写明后低版本工具链报的是「需要 1.85」而不是一串语法错误
+rust-version = "1.85"
 # crates.io 发布只含核心库（金标数据与各语言绑定包不随 crate 分发）。
 # 路径一律加前导斜杠锚到仓库根：include 用的是 gitignore 语义，
 # 不带斜杠的 README.md 会匹配任意层级，把 docs/node_modules 下的同名文件一并吸进来。

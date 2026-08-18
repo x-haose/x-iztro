@@ -1,0 +1,607 @@
+---
+title: Utilities
+description: Index arithmetic, brightness and mutagen lookups, Soul and body palace derivation, decadal and age scopes, and the four-pillar display string.
+---
+
+These functions are the parts the charting algorithm is assembled from. They come in handy when you
+implement Zi Wei logic yourself or want to double-check a step of the derivation; everyday charting
+does not call them directly.
+
+```python
+from x_iztro import utils
+```
+
+Every key in the parameters and return values is language-independent and interoperates directly with
+the `*_key` fields on a chart.
+Functions that return a structure hand back a **named dataclass** whose fields are read as attributes;
+functions that return a single key hand back an enum member (a `StrEnum`, directly comparable with the
+equivalent string).
+
+---
+
+## fix_index
+
+**Purpose** Constrain any integer to the cyclic range `0..max`.
+
+**Zi Wei meaning** The twelve palaces form a ring: one step past the Chou palace (index 11) is back
+to the Yin palace (index 0). Every "count n forward, count n backward" derivation relies on this
+wrapping.
+
+**Signature**
+
+```python
+def fix_index(index: int, max: int = 12) -> int
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `index` | `int` | Yes | — | The index to fix, possibly negative |
+| `max` | `int` | No | `12` | Cycle length; use 10 for stems |
+
+**Return value** `int`, landing in `0..max` — including 0, **excluding `max`** itself.
+
+**Example**
+
+```python
+print(utils.fix_index(-1), utils.fix_index(13))
+```
+
+**Output**
+
+```text
+11 1
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+Negatives wrap by mathematical modulo (-1 → 11) rather than clamping to 0. A `max` of 0 raises
+`ZeroDivisionError`; the caller guarantees it is positive — on a chart the usage is fixed at 12 or 10.
+</Callout>
+
+---
+
+## earthly_branch_to_palace_index
+
+**Purpose** Convert an earthly branch to a palace index.
+
+**Zi Wei meaning** The twelve palaces start from the **Yin palace** while the natural order of the
+branches starts from **zi**, putting them two positions apart. This function handles that conversion:
+yin → 0, mao → 1, …, zi → 10, chou → 11.
+
+**Signature**
+
+```python
+def earthly_branch_to_palace_index(branch: EarthlyBranch | str) -> int
+```
+
+**Return value** `int`, 0–11.
+
+**Example**
+
+```python
+from x_iztro import EarthlyBranch
+
+print(utils.earthly_branch_to_palace_index(EarthlyBranch.YIN))
+print(utils.earthly_branch_to_palace_index(EarthlyBranch.ZI))
+```
+
+**Output**
+
+```text
+0
+10
+```
+
+---
+
+## time_to_index
+
+**Purpose** Convert a clock hour to an hour index.
+
+**Zi Wei meaning** A day holds twelve double-hours of two hours each, but the Zi hour straddles
+midnight and splits into the early Zi hour (0) and the late Zi hour (12), giving 13 index values.
+
+**Signature**
+
+```python
+def time_to_index(hour: int) -> int
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `hour` | `int` | Yes | — | The clock hour, 0–23 |
+
+**Return value** `int`, 0–12.
+
+**Example**
+
+```python
+print(utils.time_to_index(0), utils.time_to_index(4), utils.time_to_index(23))
+```
+
+**Output**
+
+```text
+0 2 12
+```
+
+Midnight is the early Zi hour, 4 o'clock the Tiger hour, 23 o'clock the late Zi hour. When you are
+unsure of the hour index while charting, convert with this function.
+
+---
+
+## get_age_index
+
+**Purpose** Get the starting palace index of the age scope from the birth-year branch.
+
+**Zi Wei meaning** The age scope starts from a fixed palace and steps forward with the nominal age.
+The starting palace is set by the trine group of the birth-year branch: yin/woo/xu years start at the
+Chen palace, shen/zi/chen years at Xu, si/you/chou years at Wei, hai/mao/wei years at Chou.
+
+**Signature**
+
+```python
+def get_age_index(branch: EarthlyBranch | str) -> int
+```
+
+**Return value** `int`, 0–11.
+
+**Example**
+
+```python
+print(utils.get_age_index("chenEarthly"))
+```
+
+**Output**
+
+```text
+8
+```
+
+A chen year belongs to the shen/zi/chen group, so the age scope starts at the Xu palace, whose index
+is 8.
+
+---
+
+## get_brightness
+
+**Purpose** Look up a star's brightness in a given palace.
+
+**Signature**
+
+```python
+def get_brightness(
+    star: str,
+    palace_index: int,
+    config: ChartConfig | None = None,
+) -> Brightness | None
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `star` | `str` | Yes | — | Star key |
+| `palace_index` | `int` | Yes | — | Palace index; out-of-range values are taken modulo 12 |
+| `config` | `ChartConfig \| None` | No | `None` | A custom brightness table changes the result |
+
+**Return value** A `Brightness` enum member; `None` for stars with no brightness table.
+It is a `StrEnum`, so `utils.get_brightness("ziweiMaj", 4) == "miao"` holds.
+An unknown star key raises `IztroError` (with `code` `invalid_argument`).
+
+**Example**
+
+```python
+print(utils.get_brightness("ziweiMaj", 4))
+print(utils.get_brightness("lucunMin", 0))
+```
+
+**Output**
+
+```text
+miao
+None
+```
+
+Ziwei is at miao in the Woo palace (index 4); Lucun has no brightness table.
+
+---
+
+## get_mutagen / get_mutagens_by_heavenly_stem
+
+**Purpose** Look up the mutagens of a heavenly stem.
+
+**Zi Wei meaning** Each of the ten stems assigns four fixed stars to lu, quan, ke and ji.
+`get_mutagen` asks "what does this star take under this stem", while
+`get_mutagens_by_heavenly_stem` asks "which four stars does this stem transform".
+
+**Signature**
+
+```python
+def get_mutagen(star: str, stem: HeavenlyStem | str, config: ChartConfig | None = None) -> Mutagen | None
+def get_mutagens_by_heavenly_stem(stem: HeavenlyStem | str, config: ChartConfig | None = None) -> list[str]
+```
+
+**Return value** `get_mutagen` returns a `Mutagen` enum member, or `None` when the star is not in that
+stem's mutagen table.
+`get_mutagens_by_heavenly_stem` returns a list of four star keys (`list[str]`), in the order **lu,
+quan, ke, ji**. Both are affected by a custom mutagen table in `config`.
+
+**Example**
+
+```python
+print(utils.get_mutagen("taiyangMaj", "gengHeavenly"))
+print(utils.get_mutagen("ziweiMaj", "gengHeavenly"))
+print(utils.get_mutagens_by_heavenly_stem("gengHeavenly"))
+```
+
+**Output**
+
+```text
+sihuaLu
+None
+['taiyangMaj', 'wuquMaj', 'taiyinMaj', 'tiantongMaj']
+```
+
+---
+
+## get_soul_and_body
+
+**Purpose** Derive the Soul and body palaces from the lunar month index, the hour and the year stem.
+
+**Zi Wei meaning** The Soul palace is the origin of the whole chart: start at the Yin palace for the
+first month, count forward to the birth month, then count backward from there to the birth hour. The
+body palace uses the same starting point but counts the hour forward. The Soul palace's stem comes
+from the year stem via the Five Tigers rule.
+
+**Signature**
+
+```python
+def get_soul_and_body(
+    month_index: int,
+    time_index: int,
+    yearly_stem: HeavenlyStem | str,
+) -> SoulAndBody
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `month_index` | `int` | Yes | — | Lunar month index with the first month at 0; obtained from `fix_lunar_month_index` |
+| `time_index` | `int` | Yes | — | Hour index 0–12 |
+| `yearly_stem` | `str` | Yes | — | Birth-year stem key |
+
+**Return value** `SoulAndBody`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `soul_index` | `int` | Palace index of the Soul palace |
+| `body_index` | `int` | Palace index of the body palace |
+| `heavenly_stem_of_soul` | `str` | Stem key of the Soul palace |
+| `earthly_branch_of_soul` | `str` | Branch key of the Soul palace |
+
+**Example**
+
+```python
+sb = utils.get_soul_and_body(6, 2, "gengHeavenly")
+
+print(sb)
+print(sb.soul_index, sb.body_index, sb.earthly_branch_of_soul)
+```
+
+**Output**
+
+```text
+SoulAndBody(soul_index=4, body_index=8, heavenly_stem_of_soul='renHeavenly', earthly_branch_of_soul='wuEarthly')
+4 8 wuEarthly
+```
+
+---
+
+## get_five_elements_class
+
+**Purpose** Derive the five elements class from the Soul palace's stem and branch.
+
+**Zi Wei meaning** The five elements class (water 2nd, wood 3rd, metal 4th, earth 5th, fire 6th)
+decides two major things: where Ziwei starts, and the age at which the decadal scope begins.
+
+**Signature**
+
+```python
+def get_five_elements_class(stem: HeavenlyStem | str, branch: EarthlyBranch | str) -> str
+```
+
+**Return value** A five elements class key string (from the value set of `FiveElementsClass`).
+
+**Example**
+
+```python
+print(utils.get_five_elements_class("renHeavenly", "wuEarthly"))
+```
+
+**Output**
+
+```text
+wood3rd
+```
+
+---
+
+## get_palace_names
+
+**Purpose** Derive the twelve palace names from the Soul palace index.
+
+**Zi Wei meaning** Once the Soul palace is fixed, the other eleven run counterclockwise in a fixed
+order: Soul, Siblings, Spouse, Children, Wealth, Health, Surface, Friends, Career, Property, Spirit,
+Parents.
+
+**Signature**
+
+```python
+def get_palace_names(soul_index: int) -> list[PalaceName]
+```
+
+**Return value** A list of twelve `PalaceName` members **indexed by palace index** — item `i` is the
+palace name of `chart.palaces[i]`.
+
+**Example**
+
+```python
+names = utils.get_palace_names(4)
+
+print(names[:4])
+print([str(n) for n in names[:4]])
+print(names[0] == "wealthPalace")
+```
+
+**Output**
+
+```text
+[<PalaceName.WEALTH: 'wealthPalace'>, <PalaceName.CHILDREN: 'childrenPalace'>, <PalaceName.SPOUSE: 'spousePalace'>, <PalaceName.SIBLINGS: 'siblingsPalace'>]
+['wealthPalace', 'childrenPalace', 'spousePalace', 'siblingsPalace']
+True
+```
+
+The list elements are `PalaceName` enum members: `repr` shows the enum name while `str` gives the key
+itself, and being a `StrEnum` they also compare directly with plain strings.
+
+The Soul palace is at index 4, so index 0 (the Yin palace) is Wealth.
+
+---
+
+## get_decadals_and_ages
+
+**Purpose** Derive the decadal and age scopes of the twelve palaces from the Soul palace index and
+the five elements class.
+
+**Zi Wei meaning** The starting age of the decadal scope comes from the five elements class (water
+2nd at 2, wood 3rd at 3, and so on), with direction from gender polarity and year-branch polarity;
+the age scope's starting palace comes from the year branch and it steps forward with the nominal age.
+
+**Signature**
+
+```python
+def get_decadals_and_ages(
+    soul_index: int,
+    five_elements_class: str,
+    gender: str,
+    yearly_stem: HeavenlyStem | str,
+    yearly_branch: EarthlyBranch | str,
+) -> DecadalsAndAges
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `soul_index` | `int` | Yes | — | Palace index of the Soul palace |
+| `five_elements_class` | `str` | Yes | — | Five elements class key |
+| `gender` | `str` | Yes | — | `"male"` or `"female"` |
+| `yearly_stem` | `str` | Yes | — | Year stem key |
+| `yearly_branch` | `str` | Yes | — | Year branch key |
+
+**Return value** `DecadalsAndAges`, both fields indexed by palace index:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `decadals` | `list[Decadal]` | The decadal of each of the twelve palaces |
+| `ages` | `list[list[int]]` | The age-scope nominal ages of each of the twelve palaces |
+
+`Decadal` is the same type as `palace.decadal` on a palace:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `range` | `tuple[int, int]` | The decadal's first and last nominal age, both inclusive |
+| `heavenly_stem` / `heavenly_stem_key` | `str` | Translated stem / key of the decadal |
+| `earthly_branch` / `earthly_branch_key` | `str` | Translated branch / key of the decadal |
+
+**Example**
+
+```python
+d = utils.get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
+
+print(d.decadals[0])
+print(d.decadals[0].range, d.decadals[0].earthly_branch_key)
+print(d.ages[0][:3])
+```
+
+**Output**
+
+```text
+Decadal(range=(43, 52), heavenly_stem='戊', heavenly_stem_key='wuHeavenly', earthly_branch='寅', earthly_branch_key='yinEarthly')
+(43, 52) yinEarthly
+[9, 21, 33]
+```
+
+<Callout type="info">
+`Decadal`'s translated fields are generated in **zh-CN** — this function takes no `language`
+parameter. For another language, run `heavenly_stem_key` through
+[`i18n.translate`](/en/docs/python/i18n#translate).
+</Callout>
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+On a fully charted astrolabe every palace already carries `decadal` and `ages` fields with the same
+contents. This function is for cases where you want the scopes without charting the whole thing.
+</Callout>
+
+---
+
+## fix_lunar_month_index / fix_lunar_day_index
+
+**Purpose** Compute the corrected lunar month index and day index.
+
+**Zi Wei meaning** Where leap-month days belong and where the late Zi hour belongs are two
+long-disputed boundaries in Zi Wei Dou Shu; these two functions pin the rules down: days after the
+fifteenth of a leap month count as the next month (can be turned off), and the late Zi hour belongs to
+the next day.
+
+**Signature**
+
+```python
+def fix_lunar_month_index(
+    lunar_month: int,
+    lunar_day: int,
+    is_leap: bool,
+    time_index: int,
+    fix_leap: bool,
+) -> int
+
+def fix_lunar_day_index(lunar_day: int, time_index: int) -> int
+```
+
+**Return value** The month index is 0-based (the first month is 0); the day index is not decremented
+in the late Zi hour.
+
+`fix_lunar_month_index` carries over only when four conditions hold at once: `is_leap` is true,
+`fix_leap` is true, `lunar_day` is greater than 15, and `time_index` is not 12. Miss any one of them
+and the current month is used.
+
+**Example**
+
+```python
+print(utils.fix_lunar_month_index(7, 17, False, 2, True))
+print(utils.fix_lunar_day_index(17, 2), utils.fix_lunar_day_index(17, 12))
+```
+
+**Output**
+
+```text
+6
+16 17
+```
+
+The seventh month is not a leap month, giving index 6; day seventeen decrements to 16 in the Tiger
+hour, but stays 17 in the late Zi hour because that belongs to the next day.
+
+---
+
+## translate_chinese_date
+
+**Purpose** Assemble the four pillars into a display string.
+
+**Signature**
+
+```python
+def translate_chinese_date(
+    pillars: list[tuple[str, str]],
+    language: str = "zh-CN",
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pillars` | `list[tuple[str, str]]` | Yes | — | The four pillar keys [year, month, day, hour], each a (stem, branch) pair |
+| `language` | `str` | No | `"zh-CN"` | Output language |
+
+**Return value** `str`. When every term is a single character, the pillar's parts run together and
+the pillars are separated by spaces; when any term is multi-character, the parts within a pillar are
+separated by spaces and the pillars by ` - `.
+
+**Example**
+
+```python
+pillars = [
+    ("gengHeavenly", "chenEarthly"),
+    ("jiaHeavenly", "shenEarthly"),
+    ("bingHeavenly", "wuEarthly"),
+    ("gengHeavenly", "yinEarthly"),
+]
+print(utils.translate_chinese_date(pillars, "en-US"))
+
+# the four-pillar keys can be taken straight from the chart
+print(utils.translate_chinese_date(chart.raw_dates.chinese_date.pillar_keys(), "en-US"))
+```
+
+**Output**
+
+```text
+geng chen - jia shen - bing woo - geng yin
+geng chen - jia shen - bing woo - geng yin
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+Raises `IztroError` (with `code` `invalid_argument`) when there are not four pillars, when a pillar
+does not have two entries, or when a stem or branch key is invalid.
+</Callout>
+
+---
+
+## merge_stars
+
+**Purpose** Merge several "twelve palaces of stars" groups into one, palace by palace.
+
+**Zi Wei meaning** Star placement happens in batches: major stars, minor stars and adjective stars
+each produce their own list of twelve palaces. Use this function to fuse them into one complete chart
+face.
+
+**Signature**
+
+```python
+def merge_stars(*groups: list[list[Star]]) -> list[list[Star]]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `groups` | `list[list[Star]]` | Yes | — | Several twelve-palace star lists, each of length 12. Note it is a **varargs** parameter: write `merge_stars(major, minor)`, not one list of lists |
+
+**Return value** The merged twelve-palace list, with each palace's stars concatenated in the order
+the groups were passed.
+
+**Example**
+
+```python
+from x_iztro import star
+
+major = star.get_major_star("2000-8-16", 2, "female", language="en-US")
+minor = star.get_minor_star("2000-8-16", 2, "female", language="en-US")
+
+merged = utils.merge_stars(major, minor)
+print([s.name for s in merged[0]])
+```
+
+**Output**
+
+```text
+['general', 'minister', 'horse']
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+Raises `ValueError` when a group's length is not 12. This is a pure local implementation and does not
+go through the binding layer.
+</Callout>

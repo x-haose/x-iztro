@@ -6,6 +6,10 @@ description: 不排整盘就能拿到的生肖、星座与命宫主星。
 有些问题不需要整张星盘。这五个函数各自只跑到必要的那一步就返回，
 结果与完整排盘的对应字段永远一致——它们走的是同一套核心逻辑。
 
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 排盘，因此输出里的展示值都是中文。
+</Callout>
+
 ---
 
 ## get_zodiac_by_solar_date
@@ -123,8 +127,7 @@ pub fn get_major_star_by_solar_date(
 pub fn get_major_star_by_lunar_date(
     lunar_date: &str,
     time_index: u8,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError>
@@ -136,8 +139,8 @@ pub fn get_major_star_by_lunar_date(
 | --- | --- | --- | --- | --- |
 | `solar_date` / `lunar_date` | `&str` | 是 | — | 日期 |
 | `time_index` | `u8` | 是 | — | 时辰索引 0–12，命宫由月份与时辰共同决定 |
-| `is_leap_month` | `bool` | 是 | — | 仅农历版本 |
-| `fix_leap` | `bool` | 是 | — | 是否修正闰月 |
+| `fix_leap` | `bool` | 是 | — | 仅阳历版本：阳历日期落在闰月十五之后时是否视作次月 |
+| `leap` | `LeapMonth` | 是 | — | 仅农历版本：`NotLeap` / `Leap` / `LeapFixed`，见 [`by_lunar`](/zh/docs/rust/astro#by_lunar) |
 | `language` | `Language` | 是 | — | 输出语言 |
 | `config` | `Config` | 是 | — | 排盘配置 |
 

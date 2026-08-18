@@ -1,0 +1,188 @@
+---
+title: Extending the astrolabe
+description: Adding custom analysis methods to a chart through struct embedding.
+---
+
+Zi Wei analysis rules differ from practitioner to practitioner and no library can enumerate them. Go
+forbids adding methods to a type from another package, so the extension point is **embedding**: put
+`*Astrolabe` inside a struct of your own, and the new methods are called with a dot just like the
+built-in ones — and checked at compile time.
+
+## The recipe
+
+<Steps>
+<Step>Define a struct embedding `*iztro.Astrolabe`</Step>
+<Step>Add methods to that struct</Step>
+<Step>Construct it from a charted astrolabe</Step>
+</Steps>
+
+```go
+package main
+
+import (
+    "strings"
+
+    "github.com/x-haose/x-iztro/go/iztro"
+)
+
+// MyChart embeds the astrolabe and adds analysis methods of its own.
+type MyChart struct {
+    *iztro.Astrolabe
+}
+
+// MajorStar returns the major stars of the Soul palace (borrowing the opposite
+// palace when empty), comma separated.
+func (c MyChart) MajorStar() string {
+    soul := c.Palace(iztro.PalaceSoul)
+    source := soul
+    if soul.IsEmpty() {
+        source = soul.OppositePalace()
+    }
+
+    names := make([]string, 0, len(source.MajorStars))
+    for _, s := range source.MajorStars {
+        if s.Type == iztro.StarTypeMajor {
+            names = append(names, s.Name)
+        }
+    }
+    return strings.Join(names, ",")
+}
+
+// FiveElementsValue returns the number of the five elements class.
+func (c MyChart) FiveElementsValue() int {
+    return map[string]int{
+        iztro.ClassWater2nd: 2,
+        iztro.ClassWood3rd:  3,
+        iztro.ClassMetal4th: 4,
+        iztro.ClassEarth5th: 5,
+        iztro.ClassFire6th:  6,
+    }[c.FiveElementsClassKey]
+}
+```
+
+**Usage**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+my := MyChart{chart}
+
+fmt.Println(my.MajorStar())
+fmt.Println(my.FiveElementsValue())
+
+// the built-in fields and methods remain available
+fmt.Println(my.SolarDate)
+fmt.Println(my.Palace(iztro.PalaceSoul).Name)
+
+// the extension method follows the charting language
+zhChart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+fmt.Println(MyChart{zhChart}.MajorStar())
+```
+
+**Output**
+
+```text
+emperor
+3
+2000-8-16
+soul
+紫微
+```
+
+<Callout type="info" title="Embed, do not wrap">
+Write `*iztro.Astrolabe`, not `Astrolabe *iztro.Astrolabe` — the former promotes the built-in fields
+and methods to the outer type so `my.SolarDate` works, while the latter forces
+`my.Astrolabe.SolarDate` every time.
+</Callout>
+
+---
+
+## Extending other types
+
+The same recipe works for palaces and stars:
+
+```go
+type MyPalace struct {
+    *iztro.Palace
+}
+
+// IsAfflicted reports whether this palace holds a malefic and carries ji.
+func (p MyPalace) IsAfflicted() bool {
+    return p.HasOneOf(
+        iztro.StarQingyangMin, iztro.StarTuoluoMin,
+        iztro.StarHuoxingMin, iztro.StarLingxingMin,
+        iztro.StarDikongMin, iztro.StarDijieMin,
+    ) && p.HasMutagen(iztro.MutagenJi)
+}
+```
+
+```go
+for i := range chart.Palaces {
+    p := MyPalace{&chart.Palaces[i]}
+    if p.IsAfflicted() {
+        fmt.Println(p.Name, "is afflicted")
+    }
+}
+```
+
+**Output**
+
+```text
+health is afflicted
+```
+
+---
+
+## Constraining extensions with an interface
+
+When several chart types must provide the same set of analysis capabilities, use an interface:
+
+```go
+type WealthAnalyzer interface {
+    WealthScore() int
+    HasWealthPattern() bool
+}
+
+func report(a WealthAnalyzer) {
+    fmt.Println(a.WealthScore(), a.HasWealthPattern())
+}
+```
+
+Any type implementing both methods can be passed in, checked at compile time.
+
+---
+
+## How to organize this
+
+<Accordions>
+<Accordion title="One type per analysis topic, not one big pile">
+Have `WealthChart`, `CareerChart` and `HealthChart` each embed the astrolabe and let callers construct
+what they need. One large type forces every call site to carry every method.
+</Accordion>
+<Accordion title="Always test on Key, never on Name">
+`s.Key == iztro.StarZiweiMaj` holds under any output language; `s.Name == "紫微"` holds only on a
+Chinese chart. Use `Name` at display time only.
+</Accordion>
+<Accordion title="Value receiver or pointer receiver">
+Extension methods are usually read-only, so a value receiver is fine — what is embedded is a pointer,
+and copying the outer struct does not copy the chart.
+A pointer receiver is only needed when the method has to modify the outer struct's own fields.
+</Accordion>
+</Accordions>
+
+---
+
+## Compared to runtime injection
+
+Embedding happens at compile time. Against attaching functions to objects at runtime:
+
+| | Embedding | Runtime injection |
+| --- | --- | --- |
+| Whether the method exists | Known at compile time | Known only at runtime |
+| Type checking | Yes | No |
+| Call cost | Same as a built-in method | One extra dynamic lookup |
+| When errors appear | Compilation fails | Fails at runtime |
+| Scope | Affects only your own type | Global or per instance |
+
+The price is that extension methods must be written at compile time and cannot be decided by a config
+file or user input. When you need that flexibility, dispatch yourself through a
+`map[string]func(*iztro.Astrolabe) bool`.

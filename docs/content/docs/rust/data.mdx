@@ -1,11 +1,234 @@
 ---
 title: 数据表
-description: 星耀基础信息、天干地支信息与顺序常量。
+description: 枚举与它们的方法、排盘配置、星耀基础信息、天干地支信息与顺序常量。
 ---
 
-排盘算法的输入表。分析程序要复核某一步推算、或要展示星耀与干支的属性时用得上。
+`x_iztro::data` 收着两类东西：贯穿全库的**枚举**（星盘字段与几乎所有函数参数的类型），
+以及排盘算法的**输入表**。两者都与输出语言无关——它们是算法的输入而非结果。
 
-这些表与输出语言无关——它们是算法的输入而非结果。
+常用枚举都在 crate 根重导出，`use x_iztro::*;` 即可用。
+
+---
+
+## 枚举
+
+十九个枚举 + `StarKey`。所有枚举都实现 `Debug`、`Clone`、`Copy`、`PartialEq`、`Eq`
+与 serde 的 `Serialize` / `Deserialize`，可以直接比较、直接放进集合。
+
+### 语言无关标识：as_key / from_key
+
+绝大多数枚举带一对互逆的方法，把变体与 iztro i18n key 字符串来回换。
+这套 key 就是 DTO 里 `*Key` 字段的取值，也是 Python 枚举与 Go 常量的值——
+三侧写同一个字符串，判断结果一致。
+
+| 枚举 | 变体数 | 取标识 | 由标识还原 | key 举例 |
+| --- | --- | --- | --- | --- |
+| `StarKey` | 162 | `as_key()` | `from_key(&str)` | `ziweiMaj`、`yunlu` |
+| `Palace` | 12 | `as_key()` | `from_key(&str)` | `soulPalace`、`wealthPalace` |
+| `HeavenlyStem` | 10 | `as_key()` | `from_key(&str)` | `jiaHeavenly` |
+| `EarthlyBranch` | 12 | `as_key()` | `from_key(&str)` | `ziEarthly` |
+| `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
+| `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
+| `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
+| `StarType` | 8 | `as_key()` | — | `major`、`lucun` |
+| `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`、`decadal` |
+| `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
+| `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
+| `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
+| `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
+| `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
+| `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+| `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
+
+`from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
+
+```rust
+println!("{}", StarKey::ZiweiMaj.as_key());
+println!("{:?}", StarKey::from_key("taiyinMaj"));
+println!("{:?}", StarKey::from_key("nosuch"));
+println!("{} {}", Palace::Soul.as_key(), AstroType::Earth.as_key());
+println!("{:?}", DayDivide::from_key("current"));
+```
+
+**输出**
+
+```text
+ziweiMaj
+Some(TaiyinMaj)
+None
+soulPalace earth
+Some(Current)
+```
+
+### 其余方法
+
+| 枚举 | 方法 | 说明 |
+| --- | --- | --- |
+| `HeavenlyStem` | `index() -> usize` / `from_index(usize)` | 天干序号，甲 = 0 … 癸 = 9 |
+| `EarthlyBranch` | `index() -> usize` / `from_index(usize)` | 地支序号，子 = 0 … 亥 = 11。**不是宫位索引**，换算用 [`earthly_branch_to_palace_index`](/zh/docs/rust/util#earthly_branch_to_palace_index) |
+| `Palace` | `index() -> usize` / `from_index(usize)` | 宫名在 `PALACES` 里的序号，命宫 = 0、父母 = 1 …… 兄弟 = 11。**不是盘上位置**；`from_index` 对 12 取模、不返回 `Option` |
+| `FiveElementsClass` | `value() -> usize` | 局数：水二局 2、木三局 3、金四局 4、土五局 5、火六局 6 |
+| `Gender` | `yin_yang() -> YinYang` | 男为阳、女为阴，决定大限与长生十二神的顺逆 |
+| `Language` | `as_code() -> &'static str` / `from_code(&str)` | 语言代码 `zh-CN` 等；`from_code` 大小写不敏感，连字符与下划线等价（`zh_cn` 也接受） |
+| `YinYang` | `as_str() -> &'static str` | 「阳」/「阴」，不参与国际化 |
+| `FiveElements` | `as_str() -> &'static str` | 「木」「金」「水」「火」「土」，不参与国际化 |
+
+```rust
+println!("{} {}", HeavenlyStem::Gui.index(), EarthlyBranch::Hai.index());
+println!("{:?}", Palace::from_index(4));
+println!("{}", FiveElementsClass::Wood3rd.value());
+println!("{:?} {}", Gender::Female.yin_yang(), Gender::Female.yin_yang().as_str());
+println!("{} {:?}", Language::JaJP.as_code(), Language::from_code("ZH-cn"));
+```
+
+**输出**
+
+```text
+9 11
+Career
+3
+Yin 阴
+ja-JP Some(ZhCN)
+```
+
+### 变体清单
+
+只列非「一眼可推」的几个；干支、宫名、星耀的变体名与它们的 key 一一对应。
+
+| 枚举 | 变体 |
+| --- | --- |
+| `YinYang` | `Yang` `Yin` |
+| `FiveElements` | `Wood` `Metal` `Water` `Fire` `Earth` |
+| `FiveElementsClass` | `Water2nd` `Wood3rd` `Metal4th` `Earth5th` `Fire6th` |
+| `Mutagen` | `Lu` `Quan` `Ke` `Ji` |
+| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` |
+| `StarType` | `Major` `Soft` `Tough` `Adjective` `Flower` `Helper` `Lucun` `Tianma` |
+| `Scope` | `Origin` `Decadal` `Yearly` `Monthly` `Daily` `Hourly` |
+| `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
+| `Gender` | `Male` `Female` |
+| `Language` | `ZhCN` `ZhTW` `EnUS` `JaJP` `KoKR` `ViVN` |
+| `LeapMonth` | `NotLeap` `Leap` `LeapFixed`——`by_lunar` 的闰月处理方式；另有 `from_flags(is_leap_month, fix_leap)`、`is_leap_month()`、`fix_leap()` 与 iztro 风格的两个布尔互换 |
+| `Palace` | 按 `index()` 序：`Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
+| `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
+
+<Callout type="warn" title="五个枚举是 #[non_exhaustive] 的">
+`IztroError`、`StarType`、`Scope`、`Algorithm`、`AstroType` 标了 `#[non_exhaustive]`，
+crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破坏性变更。
+</Callout>
+
+`Scope` 比 `HoroscopeName` 少一个 `Childhood`：童限不是独立的查询层级，
+它只是大限的显示名——未起运时 `h.decadal.name` 显示「童限」，`Scope::Decadal` 照常用。
+
+`TimeIndex` 是 `u8` 的类型别名，仅作可读性标注，没有额外校验。
+
+---
+
+## Config
+
+排盘配置：六个开关加两张可选的自定义表。`Config::default()` 与 JS iztro 的默认配置一致。
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `year_divide` | `YearDivide` | `Normal` | 年干支按正月初一还是立春换年 |
+| `horoscope_divide` | `HoroscopeDivide` | `Normal` | 运限干支与月柱按初一还是节气推 |
+| `age_divide` | `AgeDivide` | `Normal` | 虚岁按自然农历年还是生日进位 |
+| `day_divide` | `DayDivide` | `Forward` | 晚子时归次日还是归当天 |
+| `algorithm` | `Algorithm` | `Default` | 派别：默认或中州派 |
+| `astro_type` | `AstroType` | `Heaven` | 排盘视角：天盘 / 地盘 / 人盘 |
+| `overrides` | `Option<Arc<TableOverrides>>` | `None` | 自定义四化与亮度表 |
+
+六个开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
+
+<Callout type="info" title="overrides 不参与序列化">
+`overrides` 标了 `#[serde(skip)]`：它是排盘的**输入**而不是结果，
+放进 DTO 会破坏与 JS iztro 的字段契约。因此 JSON 输出里的 `config` 对象只有六个开关，
+自定义表不会回显。
+</Callout>
+
+### 构造方法
+
+字段都是 `pub`，可以直接改；链式写法更省事：
+
+| 方法 | 说明 |
+| --- | --- |
+| `with_astro_type(AstroType) -> Config` | 指定排盘视角 |
+| `with_mutagens(HeavenlyStem, [StarKey; 4]) -> Config` | 覆盖某个天干的四化表，顺序为禄、权、科、忌 |
+| `with_brightness(StarKey, [Option<Brightness>; 12]) -> Config` | 覆盖某颗星的十二宫亮度表，索引 0 为寅宫 |
+
+### 查表方法
+
+| 方法 | 说明 |
+| --- | --- |
+| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | 该天干**实际生效**的四化表：有覆盖用覆盖，否则用默认表 |
+| `brightness_of(StarKey, usize) -> Option<Brightness>` | 该星在该宫实际生效的亮度；宫位索引越界对 12 取模 |
+
+**示例**
+
+```rust
+let cfg = Config::default()
+    .with_astro_type(AstroType::Earth)
+    .with_mutagens(HeavenlyStem::Geng, [
+        StarKey::TaiyangMaj, StarKey::WuquMaj, StarKey::TianfuMaj, StarKey::TiantongMaj,
+    ]);
+
+println!("{:?}", cfg.astro_type);
+println!("{:?}", cfg.mutagens_of(HeavenlyStem::Geng)
+    .iter().map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+println!("{:?}", cfg.mutagens_of(HeavenlyStem::Jia)
+    .iter().map(|s| translate_star(*s, Language::ZhCN)).collect::<Vec<_>>());
+println!("{:?}", cfg.brightness_of(StarKey::ZiweiMaj, 4));
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, cfg)?;
+println!("{}", translate_five_elements_class(chart.five_elements_class, Language::ZhCN));
+```
+
+**输出**
+
+```text
+Earth
+["太阳", "武曲", "天府", "天同"]
+["廉贞", "破军", "武曲", "太阳"]
+Some(Miao)
+土五局
+```
+
+庚干的四化被换成「太阳禄、武曲权、天府科、天同忌」（默认表是太阴化科），
+甲干未被覆盖，仍走默认表。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="按天干、按星整表替换">
+`with_mutagens` 一次替换某个天干的**全部四位**，不能只换其中一位；
+`with_brightness` 一次替换某颗星的**全部十二宫**。未提到的天干与星仍用默认表。
+</Accordion>
+<Accordion title="Config 不是 Copy">
+`Config` 含 `Option<Arc<...>>`，只实现 `Clone`。要在循环里复用同一份配置，
+写 `cfg.clone()`——`Arc` 的克隆是引用计数加一，不复制表本身。
+</Accordion>
+<Accordion title="自定义表会改变哪些结果">
+四化表影响：生年四化标记、宫干飞星族方法、运限各层级的四化、
+`get_mutagen` / `get_mutagens_by_heavenly_stem`。
+亮度表影响：星耀的 `brightness` 字段与 `with_brightness` 判断、`get_brightness`。
+两者都不改变星耀落宫。
+</Accordion>
+</Accordions>
+
+### TableOverrides
+
+`Config` 里那两张表的载体，一般不必直接构造——用上面两个 `with_*` 即可。
+需要一次塞多条时可以自己建：
+
+| 方法 | 说明 |
+| --- | --- |
+| `set_mutagens(HeavenlyStem, [StarKey; 4])` | 写入某天干的四化表 |
+| `set_brightness(StarKey, [Option<Brightness>; 12])` | 写入某星的亮度表 |
+| `mutagens_of(HeavenlyStem) -> Option<&[StarKey; 4]>` | 取被覆盖的四化表，未覆盖为 `None` |
+| `brightness_of(StarKey) -> Option<&[Option<Brightness>; 12]>` | 取被覆盖的亮度表 |
+| `is_empty() -> bool` | 是否一条覆盖都没有 |
+
+注意与 `Config` 上同名方法的区别：`TableOverrides::mutagens_of` 只报告**有没有被覆盖**，
+`Config::mutagens_of` 报告**实际生效**的表（未覆盖时回落到默认表）。
 
 ---
 
@@ -162,7 +385,7 @@ Yang Water 对冲 Wu
 | --- | --- | --- |
 | `HEAVENLY_STEMS` | `[HeavenlyStem; 10]` | 天干顺序：甲乙丙丁戊己庚辛壬癸 |
 | `EARTHLY_BRANCHES` | `[EarthlyBranch; 12]` | 地支顺序：子丑寅卯辰巳午未申酉戌亥 |
-| `PALACES` | `[Palace; 12]` | 十二宫名，从命宫起的排列顺序 |
+| `PALACES` | `[Palace; 12]` | 十二宫名，从命宫起**逆时针**排：命、父母、福德、田宅、官禄、仆役、迁移、疾厄、财帛、子女、夫妻、兄弟 |
 | `LANGUAGES` | `[&str; 6]` | 支持的语言代码 |
 | `ZODIAC` | `[&str; 12]` | 生肖标识，按地支顺序 |
 | `SIGNS` | `[&str; 12]` | 星座标识，按黄道顺序 |
@@ -220,3 +443,42 @@ for star in data::stars::STARS_WITH_INFO {
 162 20
 紫微 天机 太阳 武曲 天同 廉贞 天府 太阴 贪狼 巨门 天相 天梁 七杀 破军 文昌 文曲 火星 铃星 擎羊 陀罗
 ```
+
+---
+
+## get_brightness_table
+
+**用途**　取一颗星的十二宫亮度表原文。
+
+**签名**
+
+```rust
+pub fn get_brightness_table(key: StarKey) -> Option<[Option<Brightness>; 12]>
+```
+
+**返回值**　定长十二项数组，索引 0 为寅宫；该宫无亮度的位置为 `None`。
+没有亮度表的星耀返回外层 `None`。
+
+**示例**
+
+```rust
+let t = data::stars::get_brightness_table(StarKey::ZiweiMaj).unwrap();
+println!("{:?}", &t[..4]);
+println!("{:?}", data::stars::get_brightness_table(StarKey::LucunMin).is_none());
+```
+
+**输出**
+
+```text
+[Some(Wang), Some(Wang), Some(De), Some(Wang)]
+true
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="与 get_brightness 的分工">
+`get_brightness_table` 给的是**内置默认表**，不看配置；
+[`utils::get_brightness`](/zh/docs/rust/util#get_brightness) 收 `&Config`，
+自定义亮度表会改变它的结果。要复核「这张盘上实际用了什么亮度」，用后者。
+`get_star_info(key).brightness` 与本函数取值相同，只是顺带给出五行与阴阳。
+</Callout>

@@ -1,0 +1,182 @@
+---
+title: Multilingual output
+description: Six chart languages, which fields get translated, what switching language does to the result, and two-way conversion between keys and names.
+---
+
+*For: developers*
+
+## Supported chart languages
+
+"Chart language" means which language the human-readable text in the output is written in. It has
+nothing to do with which **programming language** you call from.
+
+| Value | Language | Rust enum |
+| --- | --- | --- |
+| `zh-CN` | Simplified Chinese (default) | `Language::ZhCN` |
+| `zh-TW` | Traditional Chinese | `Language::ZhTW` |
+| `en-US` | English | `Language::EnUS` |
+| `ja-JP` | Japanese | `Language::JaJP` |
+| `ko-KR` | Korean | `Language::KoKR` |
+| `vi-VN` | Vietnamese | `Language::ViVN` |
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageJaJP, nil)
+```
+
+```rust
+by_solar("2000-8-16", 2, Gender::Female, true, Language::KoKR, Config::default())?;
+```
+
+## What gets translated
+
+Everything meant for a person to read:
+
+- Star names, palace names, mutagen names, brightness names
+- Heavenly stems, earthly branches, the Five Elements class
+- Hour names and their clock ranges, zodiac sign, zodiac animal, gender
+- The Chinese rendering of the lunar date, and the stem-branch display string
+- Horoscope scope names (decadal / yearly / …)
+
+**Not translated**: every key field and every numeric field — a star's `key`, a palace's `nameKey`,
+palace indexes, decadal ranges, [nominal ages](/en/docs/guide/concepts#four-concepts-to-get-straight-first) (虚岁). See
+[The key contract](/en/docs/guide/guides/keys).
+
+<Callout type="warn" title="Three traps in the non-Chinese vocabularies">
+1. **English and Korean have no brightness translations**, so the output is a mark: `[+3]`
+   (miaowang), `[+2]` (wangxiang), `[+1]` (dedi), `[0]` (liyi), `[-1]` (pinghe), `[-2]` (budedi),
+   `[-3]` (luoxian). Traditional Chinese, Japanese and Vietnamese have real translations.
+2. **English mutagens print as `A`/`B`/`C`/`D`**, in the order Lu, Quan, Ke, Ji.
+3. **The non-Chinese vocabularies come from iztro's word list and are not guaranteed to be the
+   rendering conventional among practitioners in that language.** Some entries are simply wrong —
+   Korean renders the Original palace as `라인`, a transliteration of the English word "line". A few
+   English entries are not words at all (`considery`, `disastery`). Translations are for display;
+   predicate on the key fields.
+</Callout>
+
+## Switching chart language does not change the chart
+
+The chart language affects only the translation layer. Across all six languages, for one birthday:
+
+- The positions of the twelve palaces and the order of the palace names are identical.
+- The stars in each palace are identical.
+- Mutagens, brightness, decadals, age fortune and horoscope stems and branches are identical.
+
+All that changes is which characters those things are written in. So the two charts below are equal
+field for field apart from the text:
+
+```python
+zh = astro.by_solar("2000-8-16", 2, "female", language="zh-CN")
+en = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+assert zh.palace(PalaceName.SOUL).index == en.palace(PalaceName.SOUL).index
+assert zh.soul_key == en.soul_key
+```
+
+Consistency across the six chart languages is covered by the variant golden tests, with zero
+tolerated deviation.
+
+## Converting between keys and names
+
+When you hold only a key (or only a name in some language), use the two-way lookup functions rather
+than charting again:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+translate_key("ziweiMaj", Language::EnUS);   // Some("emperor")
+key_of("emperor");                           // Some("ziweiMaj")
+key_of("자미");                               // Some("ziweiMaj")
+```
+
+When the category is already known, the strongly typed versions are more direct and drop the
+`Option`:
+
+```rust
+use x_iztro::{translate_palace, translate_star};
+
+translate_star(StarKey::ZiweiMaj, Language::ViVN);   // Tử Vi
+translate_palace(Palace::Soul, Language::KoKR);      // 명궁
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+i18n.key_of("emperor")                # ziweiMaj
+i18n.translate("ziweiMaj", "en-US")   # emperor
+i18n.key_of("자미")                    # ziweiMaj
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+key, _ := iztro.KeyOf("emperor")                          // ziweiMaj
+name, _ := iztro.Translate(iztro.StarZiweiMaj, iztro.LanguageEnUS)   // emperor
+key, _ = iztro.KeyOf("자미")                               // ziweiMaj
+```
+
+Both Go functions return `(string, error)`: an unknown key or a failed reverse lookup gives an empty
+string and an `*iztro.Error` of category `invalid_argument`.
+
+</Tab>
+</Tabs>
+
+Coverage is 260 keys across twelve categories: stars, palaces (including the Body and Original
+palaces), heavenly stems, earthly branches, brightness, mutagens, the Five Elements class, gender,
+zodiac animal, hour, zodiac sign and horoscope scope. The complete list with per-entry notes is on
+the i18n page for [Rust](/en/docs/rust/i18n), [Python](/en/docs/python/i18n) and
+[Go](/en/docs/go/i18n).
+
+<Callout type="warn" title="A failed reverse lookup returns empty, not the input">
+`key_of("no such name")` returns `None` / an empty string; it does not echo the argument back.
+
+There is also the matter of homographs: different keys translate to the same name in some languages
+(`horse`, `dragon`, `유시` and others). Reverse lookup takes the first hit in a fixed scan order,
+matching iztro's `kot` case for case. To pin down a category use `key_of_in` (Rust) /
+`key_of(text, key_filter)` (Python) / `KeyOfIn` (Go), passing the shared suffix of the key names to
+disambiguate: `"Maj"` searches only the fourteen major stars, `"Min"` only the minor stars,
+`"Palace"` only palaces, `"Hour"` only hours.
+</Callout>
+
+## The three programming languages hold values differently
+
+| | What the chart holds | Cost of switching chart language |
+| --- | --- | --- |
+| Rust | Enums (`StarKey`, `Palace`, …), with only a few display fields as `String` | Call a translation function; one chart can emit several languages at once |
+| Python | Both the translated and the key fields are already strings | Chart again |
+| Go | As above | Chart again |
+
+Charting itself is a matter of milliseconds, so charting more than once is not a problem. Keep
+predicates on the key fields and switching chart language requires no code changes at all.
+
+## There is no global language switch
+
+x-iztro keeps no "current language" global state: the language is passed as a parameter when
+charting, and translation functions name their target language explicitly on every call.
+
+<Callout type="info" title="Why">
+A global language switch makes the same code produce different results depending on call order,
+which is especially dangerous under concurrency. Explicit parameters make each call's result a
+function of its arguments alone.
+</Callout>
+
+## What adding a language would touch
+
+The vocabularies are not a resource file you can drop in; they are static tables compiled into the
+library. Adding a language touches four places:
+
+<Steps>
+<Step>Add a variant to the `Language` enum in `src/data/types.rs`, and add its language code to `as_code` / `from_code`</Step>
+<Step>Add a vocabulary file under `src/i18n/`, implementing the same set of functions as the existing files (star names, palace names, stem and branch names, brightness, mutagens, …)</Step>
+<Step>Add a dispatch arm to the `match` in every translation function in `src/i18n/mod.rs` — this is per function, not one place</Step>
+<Step>Add an entry to `lang_index` and to the reverse-lookup scan order table in `src/i18n/lookup.rs`; the scan order decides which key a homographic name resolves to, and has to be checked against the golden data</Step>
+</Steps>
+
+The binding layer needs no changes: language codes are passed as strings, so a new enum variant is
+immediately available in all three programming languages.

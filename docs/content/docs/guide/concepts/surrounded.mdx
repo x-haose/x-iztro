@@ -1,7 +1,9 @@
 ---
 title: 三方四正
-description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，以及在三种语言里怎么取。
+description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，以及在三种编程语言里怎么取。
 ---
+
+*适合：所有人。代码与判断方法表在页尾*
 
 ## 为什么需要它
 
@@ -13,16 +15,16 @@ description: 为什么一个宫不能单独看，三方四正由哪四个宫组�
 
 ## 由哪四个宫组成
 
-以本宫的盘上索引为基准，另外三宫的位置是固定的：
+以本宫在盘上的位置为基准，另外三宫的位置是固定的：
 
 | 成员 | 位置 | 说明 |
 | --- | --- | --- |
-| `target` 本宫 | `i` | 要看的那个宫 |
-| `opposite` 对宫 | `i + 6` | 正对面，影响最直接 |
-| `career` 官禄位 | `i + 4` | 三合之一 |
-| `wealth` 财帛位 | `i + 8` | 三合之一 |
+| 本宫 | `i` | 要看的那个宫 |
+| 对宫 | `i + 6` | 正对面，影响最直接 |
+| 官禄位 | `i + 4` | 三合之一 |
+| 财帛位 | `i + 8` | 三合之一 |
 
-索引对 12 取模。这四个位置在盘上构成一个三角加一条对角线，
+位置对 12 取模。这四个位置在盘上构成一个三角加一条对角线，
 「三方」指三合的三个宫，「四正」指加上对宫共四个。
 
 ```
@@ -36,32 +38,47 @@ description: 为什么一个宫不能单独看，三方四正由哪四个宫组�
 ```
 
 <Callout>
-`career` 与 `wealth` 是**相对本宫**的称呼，不是盘上的官禄宫与财帛宫。
+「官禄位」与「财帛位」是**相对本宫**的称呼，不是盘上的官禄宫与财帛宫。
 以命宫为本宫时它们才恰好是官禄宫和财帛宫；以其他宫为本宫时只是位置关系相同。
 </Callout>
 
-## 取三方四正
+## 在代码里怎么取
 
-三种语言都既接受宫位索引，也接受宫名：
+三种编程语言都既接受宫位索引，也接受宫名：
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
 
 ```rust
 let sp = astrolabe.surrounded_palaces(Palace::Soul).unwrap();
 println!("{:?}", sp.opposite.name);
 ```
 
+</Tab>
+<Tab value="Python">
+
 ```python
 sp = chart.surrounded_palaces(PalaceName.SOUL)
+sp = chart.surrounded_palaces(soul.index)
 ```
+
+</Tab>
+<Tab value="Go">
 
 ```go
 sp := chart.SurroundedPalaces(iztro.PalaceSoul)          // 按宫名
 sp = chart.SurroundedPalacesByIndex(soul.Index)          // 按索引
 ```
 
-## 判断方法
+</Tab>
+</Tabs>
 
+四个成员分别是 `target`（本宫）、`opposite`（对宫）、`career`（官禄位）、
+`wealth`（财帛位）。
 
-三方四正的判断方法与单宫同名，但检查范围是四个宫的并集，三种语言一致：
+### 判断方法
+
+三方四正的判断方法与单宫同名，但检查范围是四个宫的并集，三种编程语言一致：
 
 | 方法 | 作用 |
 | --- | --- |
@@ -92,19 +109,27 @@ chart.not_surrounded(PalaceName.SOUL, [MinorStar.HUOXING])
 判断「见煞」这类需求几乎总是用 `have_one_of`。
 </Callout>
 
-## 一个实际例子
+### 一个实际例子
 
 判断命宫格局是否「吉星拱照且不见煞」：
 
 ```python
-sp = chart.surrounded_palaces(chart.palace(PalaceName.SOUL).index)
+from x_iztro.enums import PalaceName, MinorStar
+
+sp = chart.surrounded_palaces(PalaceName.SOUL)
 
 lucky = sp.have_one_of([MinorStar.ZUOFU, MinorStar.YOUBI,
                         MinorStar.WENCHANG, MinorStar.WENQU])
 clean = sp.not_have([MinorStar.QINGYANG, MinorStar.TUOLUO,
                      MinorStar.HUOXING, MinorStar.LINGXING])
 
-print(lucky and clean)
+print(lucky, clean, lucky and clean)
 ```
 
-星耀的分类与 key 见[星耀](/zh/docs/guide/concepts/stars)。
+```text
+True False False
+```
+
+这张盘的三方四正里有文昌文曲，但也见了羊陀火铃中的某几颗，所以不成立。
+
+星耀的分类与标识见[星耀](/zh/docs/guide/concepts/stars)。

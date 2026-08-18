@@ -1,28 +1,23 @@
 ---
 title: 干支与五行
-description: 天干、地支、五行、阴阳在 API 里出现在哪些字段，以及它们各自决定什么。
+description: 天干、地支、五行、阴阳各自决定排盘的哪一部分，宫干从哪来，命主身主怎么查。
 ---
 
-排盘从头到尾都建立在干支之上。x-iztro 把它们做成枚举与查表，
-`data` 模块整块内容都是这些表。读懂本页就能看懂那些字段在说什么。
+*适合：所有人。代码在页尾*
+
+排盘从头到尾都建立在干支之上。看懂这一页，盘上那些两字一组的名词就都有着落了。
 
 ## 十天干与十二地支
 
-| | 数量 | 标识形态 | 枚举 |
-| --- | --- | --- | --- |
-| 天干 | 10 | `jiaHeavenly`、`yiHeavenly`… | `HeavenlyStem` |
-| 地支 | 12 | `ziEarthly`、`chouEarthly`… | `EarthlyBranch` |
+天干十个：甲乙丙丁戊己庚辛壬癸。地支十二个：子丑寅卯辰巳午未申酉戌亥。
 
 两者依次配对循环，10 与 12 的最小公倍数是 60，因此一轮是**六十甲子**。
-年、月、日、时各配一组干支，合称**四柱**。
+年、月、日、时各配一组干支，合称**四柱**：
 
 ```text
 庚辰  甲申  丙午  庚寅
 年柱  月柱  日柱  时柱
 ```
-
-这就是星盘的 `chinese_date` 字段。要拿标识而非译名，用 `raw_dates.chinese_date` 下的
-`yearly_keys` / `monthly_keys` / `daily_keys` / `hourly_keys`。
 
 ## 每一柱决定什么
 
@@ -30,7 +25,7 @@ description: 天干、地支、五行、阴阳在 API 里出现在哪些字段�
 
 | 柱 | 驱动 |
 | --- | --- |
-| **年柱** | 生年四化、命主身主、宫位天干、大限顺逆、全部年系星 |
+| **年柱** | 生年四化、命主身主、十二宫的宫干、大限顺逆、全部年系星 |
 | **月柱** | 展示用；月份本身（而非月柱）决定命宫与左辅右弼等月系星 |
 | **日柱** | 展示用；农历日决定紫微起宫与三台八座等日系星 |
 | **时柱** | 展示用；时辰本身决定命宫、身宫与文昌文曲等时系星 |
@@ -45,30 +40,23 @@ description: 天干、地支、五行、阴阳在 API 里出现在哪些字段�
 干支各自有阴阳，按序号奇偶交替：甲、丙、戊、庚、壬为阳，乙、丁、己、辛、癸为阴；
 子、寅、辰、午、申、戌为阳，丑、卯、巳、未、酉、亥为阴。
 
+六十甲子只配同阴阳的干与支（甲子、乙丑…），所以**一组干支的干与支阴阳必然相同**，
+「年干阴阳」与「年支阴阳」永远给出同一个答案。x-iztro 一律按**年支**判定。
+
 阴阳在排盘里只做一件事，但这件事影响很大——**定顺逆**：
 
 | 用途 | 规则 |
 | --- | --- |
-| 大限方向 | 性别阴阳与**年支**阴阳相同则顺行，相异则逆行 |
+| 大限方向 | 性别阴阳与年支阴阳相同则顺行，相异则逆行 |
 | 长生十二神 | 同上 |
 | 博士十二神 | 同上 |
 
 性别也算阴阳：男为阳、女为阴。所以「阳男阴女顺行，阴男阳女逆行」这句口诀，
-说的就是这三处。
-
-```python
-data.earthly_branches()["ziEarthly"]["yinYang"]   # 阳
-data.constants()["GENDER"]                        # {'male': '阳', 'female': '阴'}
-```
+说的就是这三处。小限不在其中——小限的方向只看性别，见[十二宫](/zh/docs/guide/concepts/palaces#小限)。
 
 ## 五行
 
-金木水火土。干支各自属一行：
-
-```python
-data.heavenly_stems()["jiaHeavenly"]["fiveElements"]    # 木
-data.earthly_branches()["ziEarthly"]["fiveElements"]    # 水
-```
+金木水火土。每个天干、每个地支各自属一行。
 
 <Callout type="warn" title="五行 ≠ 五行局">
 两个概念名字像，作用完全不同：
@@ -77,32 +65,22 @@ data.earthly_branches()["ziEarthly"]["fiveElements"]    # 水
 - **五行局**：由**命宫干支**推出的水二局、木三局、金四局、土五局、火六局，
   决定紫微起宫与大限起运岁数
 
-前者是 `fiveElements` 字段，后者是 `five_elements_class`。做判断时别搞混。
+做判断时别搞混：前者是干支的 `fiveElements` 字段，后者是星盘的 `five_elements_class`。
 </Callout>
 
 ## 对冲
 
 地支两两相对，相隔六位即为对冲：子午、丑未、寅申、卯酉、辰戌、巳亥。
 
-这正是**对宫**的由来——十二宫排成一圈，本宫与索引 +6 的那一宫地支恰好对冲，
+这正是**对宫**的由来——十二宫排成一圈，本宫与隔六位的那一宫地支恰好对冲，
 所以对宫的影响最直接。天干也有对冲（甲庚、乙辛、丙壬、丁癸），戊己居中无冲。
-
-```python
-data.earthly_branches()["ziEarthly"]["crash"]     # wuEarthly（子午冲）
-data.heavenly_stems()["wuHeavenly"]["crash"]      # None（戊无冲）
-```
 
 ## 宫位的干支从哪来
 
-十二宫的地支是**固定**的：索引 0 永远是寅宫，11 永远是丑宫，从不改变。
+十二宫的地支是**固定**的：第一格永远是寅宫，最后一格永远是丑宫，从不改变。
 
 天干则由年干经**五虎遁**推出：先定寅宫天干，其余十一宫依次顺排。
-
-```python
-data.constants()["TIGER_RULE"]["jiaHeavenly"]   # bingHeavenly（甲年寅宫起丙）
-```
-
-这张盘生年干为庚，庚年寅宫起戊，于是十二宫干支是：
+以本页这张盘为例，生年干为庚，庚年寅宫起戊，于是十二宫干支是：
 
 ```text
 戊寅 己卯 庚辰 辛巳 壬午 癸未 甲申 乙酉 丙戌 丁亥 戊子 己丑
@@ -111,35 +89,56 @@ data.constants()["TIGER_RULE"]["jiaHeavenly"]   # bingHeavenly（甲年寅宫起
 宫干不是摆设——它决定该宫**飞出**哪四颗四化星，是飞星派全部判断的起点。
 见[四化与飞星](/zh/docs/guide/concepts/mutagen)。
 
-另有**五鼠遁**，由日干推子时天干，用于定时柱：
-
-```python
-data.constants()["RAT_RULE"]["jiaHeavenly"]     # jiaHeavenly
-```
+另有**五鼠遁**，由日干推子时天干，用于定时柱。
 
 ## 命主与身主
 
-每个地支各自对应一颗命主星与一颗身主星，同样是查表：
+每个地支各自对应一颗命主星与一颗身主星，查表即得。两者查表的依据不同：
 
-```python
-zi = data.earthly_branches()["ziEarthly"]
-zi["soul"]   # tanlangMaj —— 命主，按命宫地支查
-zi["body"]   # huoxingMin —— 身主，按生年地支查
-```
+| | 按什么查 | 换命宫重排时 |
+| --- | --- | --- |
+| 命主（默认派） | **命宫地支** | 会变 |
+| 命主（中州派） | **生年地支** | 不变 |
+| 身主 | **生年地支** | 不变 |
 
-<Callout type="info" title="两者查表的依据不同">
-命主按**命宫地支**查，身主按**生年地支**查。
-所以用 `rearranged` 换命宫起盘时，命主星会变，身主星不会。
+<Callout type="info" title="中州派把命主也改成按年支">
+`algorithm = zhongzhou` 下命主改按生年地支查，因此换命宫起盘（`rearranged`、
+或天盘/地盘/人盘切换）时命主星不再变化。默认派下命主会跟着命宫走。
+见 [Config 详解](/zh/docs/guide/guides/config#算法派别-algorithm)。
 </Callout>
 
-## 在 API 里的对应
+## 在代码里怎么取
+
+干支、五行、五虎遁五鼠遁、命主身主全部以数据表形式提供，不必自己抄表。
+
+```python
+from x_iztro import data
+
+data.heavenly_stems()["jiaHeavenly"].five_elements   # 木
+data.earthly_branches()["ziEarthly"].yin_yang        # 阳
+data.earthly_branches()["ziEarthly"].crash           # wuEarthly（子午冲）
+data.heavenly_stems()["wuHeavenly"].crash            # None（戊无冲）
+
+data.constants().tiger_rule["jiaHeavenly"]           # bingHeavenly（甲年寅宫起丙）
+data.constants().rat_rule["jiaHeavenly"]             # jiaHeavenly
+data.constants().five_elements_class                 # {'water2nd': 2, ... 'fire6th': 6}
+
+zi = data.earthly_branches()["ziEarthly"]
+zi.soul    # tanlangMaj —— 命主
+zi.body    # huoxingMin —— 身主
+```
+
+四柱的语言无关标识在 `raw_dates.chinese_date` 下的
+`yearly_keys` / `monthly_keys` / `daily_keys` / `hourly_keys`；
+顶层 `chinese_date` 是展示串。
 
 | 概念 | 数据表 | 常量 |
 | --- | --- | --- |
-| 天干信息 | `data.heavenly_stems()` | `HEAVENLY_STEMS` |
-| 地支信息 | `data.earthly_branches()` | `EARTHLY_BRANCHES` |
-| 五虎遁 | — | `TIGER_RULE` |
-| 五鼠遁 | — | `RAT_RULE` |
-| 性别阴阳 | — | `GENDER` |
+| 天干信息 | `data.heavenly_stems()` | — |
+| 地支信息 | `data.earthly_branches()` | — |
+| 五虎遁 | — | `constants().tiger_rule` |
+| 五鼠遁 | — | `constants().rat_rule` |
+| 性别阴阳 | — | `constants().gender` |
+| 五行局局数 | — | `constants().five_elements_class` |
 
 逐字段说明见 [Rust](/zh/docs/rust/data)、[Python](/zh/docs/python/data)、[Go](/zh/docs/go/data) 的数据表一页。

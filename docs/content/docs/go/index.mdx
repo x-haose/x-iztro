@@ -22,7 +22,7 @@ import "github.com/x-haose/x-iztro/go/iztro"
 ## 第一张盘
 
 ```go
-chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -31,9 +31,19 @@ fmt.Println(chart.SolarDate, chart.LunarDate)
 // 2000-8-16 二〇〇〇年七月十七
 
 soul := chart.Palace(iztro.PalaceSoul)
-fmt.Println(soul.MajorStars[0].Name)
-// 紫微
+if len(soul.MajorStars) > 0 {
+    fmt.Println(soul.MajorStars[0].Name)
+    // 紫微
+} else {
+    fmt.Println("命宫是空宫，借对宫看:", soul.OppositePalace().MajorStars[0].Name)
+}
 ```
+
+<Callout type="warn" title="主星列表可能为空">
+一张盘上通常有两宫无主星（空宫），命宫也可能是其中之一。
+直接写 `soul.MajorStars[0]` 在那种盘上会 panic——先判长度，或用
+[`IsEmpty`](/zh/docs/go/palace#isempty) 分支到借对宫的写法。
+</Callout>
 
 ## 包结构
 
@@ -42,13 +52,15 @@ fmt.Println(soul.MajorStars[0].Name)
 | 主题 | 主要导出 | 本参考对应页 |
 | --- | --- | --- |
 | 排盘 | `BySolar`、`ByLunar`、`Rearranged` | [排盘入口](/zh/docs/go/astro) |
-| 数据类型 | `Astrolabe`、`Palace`、`Star`、`Horoscope` | [星盘对象](/zh/docs/go/astrolabe) 起的四页 |
+| 数据类型 | `Astrolabe`、`Palace`、`Star`、`Horoscope`、`Config` | [星盘对象](/zh/docs/go/astrolabe) 起的四页 |
 | 标识常量 | `PalaceSoul`、`StarZiweiMaj`、`MutagenLu` 等 | [数据表](/zh/docs/go/data) |
 | 轻量查询 | `GetZodiacBySolarDate` 等 | [轻量查询](/zh/docs/go/query) |
 | 工具函数 | `FixIndex`、`GetBrightness` 等 | [工具函数](/zh/docs/go/util) |
 | 安星 | `GetMajorStar`、`GetHoroscopeStar` 等 | [安星模块](/zh/docs/go/star) |
 | 数据表 | `StarsInfo`、`HeavenlyStems` 等 | [数据表](/zh/docs/go/data) |
-| 翻译 | `Translate`、`KeyOf` | [翻译](/zh/docs/go/i18n) |
+| 翻译 | `Translate`、`KeyOf`、`KeyOfIn` | [翻译](/zh/docs/go/i18n) |
+| 错误 | `*Error`、`Err*` 哨兵、`Code*` 常量 | [错误处理](/zh/docs/go/errors) |
+| 运行时 | `Warmup`、`Close`、`CompilationCacheDir` | 本页下方 |
 
 ## 常量即标识
 
@@ -74,15 +86,33 @@ fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
 需要传星耀列表或四化列表的方法一律用可变参数，调用处不必构造切片：
 
 ```go
-soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj)
-soul.FliesTo(target, iztro.MutagenLu, iztro.MutagenJi)
+soul := chart.Palace(iztro.PalaceSoul)
+target := chart.Palace(iztro.PalaceWealth)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(soul.FliesTo(target, iztro.MutagenLu, iztro.MutagenJi))
+```
+
+**输出**
+
+```text
+false
+false
 ```
 
 已有切片时用 `...` 展开：
 
 ```go
+soul := chart.Palace(iztro.PalaceSoul)
 stars := []string{iztro.StarZiweiMaj, iztro.StarTianxiangMaj}
-soul.Has(stars...)
+
+fmt.Println(soul.Has(stars...))
+```
+
+**输出**
+
+```text
+false
 ```
 
 <Callout type="info" title="运限的流耀查询是例外">
@@ -96,14 +126,135 @@ soul.Has(stars...)
 查不到时返回 `nil` 或零值。
 
 ```go
-chart, err := iztro.BySolar("2000-13-1", 2, "female", true, "zh-CN", nil)
-// err: invalid solar date '2000-13-1': month must be within 1-12
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+
+fmt.Println(err)
+fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
+
+var e *iztro.Error
+if errors.As(err, &e) {
+    fmt.Println(e.Code)
+}
 ```
 
-## 首次调用的开销
+**输出**
 
-wasm 模块在首次调用时初始化，之后常驻。初始化约几十毫秒，
-后续调用与原生代码同量级。并发安全，可在多个 goroutine 里同时排盘。
+```text
+iztro: invalid solar date '2000-13-1': month must be within 1-12
+true
+invalid_date
+```
+
+错误一律是 `*iztro.Error`，带机器可读的 `Code`，并可用 `errors.Is` 对四个哨兵匹配。
+详见[错误处理](/zh/docs/go/errors)。
+
+## 运行时与性能
+
+wasm 模块**编译一次、实例按需铺开**：实例各持有自己的线性内存，
+因此并发调用各占一个实例而不是共享一个加锁，实例数上限为 `GOMAXPROCS`。
+排盘的热路径上没有全局互斥锁——取实例走 channel，只有运行时首次初始化与 `Close`
+才加锁。多 goroutine 同时排盘因此能真正并行：同一台十核机器上，
+8 个 goroutine 跑 800 次排盘比单 goroutine 快四倍出头。
+
+编译产物落盘缓存在用户缓存目录下（`CompilationCacheDir` 可查），
+按 wasm 内容哈希分桶，换了 wasm 自然换桶。
+
+实测量级（Apple M 系列，10 核；具体数字随机器与 wasm 体积浮动）：
+
+| 阶段 | 耗时 |
+| --- | --- |
+| 首次调用，编译缓存**未命中**（要现编译 wasm） | 一两百毫秒 |
+| 首次调用，编译缓存命中 | 二三十毫秒 |
+| 稳态单次排盘 | 半毫秒上下 |
+
+<Callout type="info" title="主要成本是 JSON 编解码不是计算">
+稳态那半毫秒里，大头是 wasm 侧把整张盘序列化成 JSON、Go 侧再反序列化成结构体，
+而不是斗数推算本身。只需要个别字段时，用
+[轻量查询](/zh/docs/go/query)（`GetMajorStarBySolarDate` 一类）比排整盘划算得多。
+</Callout>
+
+### Warmup / Close / CompilationCacheDir
+
+```go
+func Warmup(ctx context.Context) error
+func Close(ctx context.Context) error
+func CompilationCacheDir(ctx context.Context) (string, error)
+```
+
+| 函数 | 说明 |
+| --- | --- |
+| `Warmup` | 预先完成编译并把实例池铺满，把冷启动开销提前到启动阶段。不调用也能正常工作——编译与实例化本来就是惰性的 |
+| `Close` | 关闭运行时、归还全部实例内存。通常不必调用；关闭后再调用本包任何函数会自动重新初始化 |
+| `CompilationCacheDir` | 返回编译缓存目录；未启用落盘缓存时返回空串 |
+
+```go
+ctx := context.Background()
+
+if err := iztro.Warmup(ctx); err != nil {
+    log.Fatal(err)
+}
+
+dir, err := iztro.CompilationCacheDir(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(dir != "")
+
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.SolarDate)
+```
+
+**输出**
+
+```text
+true
+2000-8-16
+```
+
+服务进程希望第一个请求就走热路径时，在启动阶段调一次 `Warmup` 即可。
+
+### Context 变体
+
+排盘、运限、重排、Prompt 这些要进 wasm 的入口都有一个 `*Context` 版本，
+多收一个 `context.Context`：
+
+| 无 ctx | 带 ctx |
+| --- | --- |
+| `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
+| `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
+| `Astrolabe.Rearranged` | `RearrangedContext` |
+| `Astrolabe.AstrolabeToPrompt` / `HoroscopeToPrompt` | `AstrolabeToPromptContext` / `HoroscopeToPromptContext` |
+| — | `Warmup` / `Close` / `CompilationCacheDir` 只有 ctx 版本 |
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.SolarDate)
+```
+
+**输出**
+
+```text
+2000-8-16
+```
+
+<Callout type="info" title="ctx 管的是排队，不是计算">
+`ctx` 用于取消**等待空闲 wasm 实例**的排队。实例一旦拿到，wasm 侧的计算不可中断——
+单次排盘本来就是亚毫秒级，没有需要中途打断的长任务。
+</Callout>
+
+<Callout type="warn" title="wazero 编译器只覆盖 amd64 与 arm64">
+这两个架构上 wazero 走优化编译器（编译成机器码）。其余架构回落到解释器，
+仍然能跑出正确结果，但速度会低一个量级以上。生产环境请部署在 amd64 或 arm64 上。
+</Callout>
 
 ## 条目怎么读
 

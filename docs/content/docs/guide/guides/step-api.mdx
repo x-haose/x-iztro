@@ -1,0 +1,119 @@
+---
+title: 排盘九步对应的 API
+description: 排盘的九个步骤各自对应哪个公开函数，以及哪些步骤会被配置开关改变。
+---
+
+*适合：开发者*
+
+排盘的[九个步骤](/zh/docs/guide/concepts/how-it-works)在 x-iztro 里**每一步都有对应的公开函数**。
+日常排盘用不到它们——直接调排盘入口即可；
+这一页面向两类需求：想核对某一步的推算，或想复用其中一段自建流程。
+
+下面的示例用的是 2000-8-16 寅时 女这张盘，与
+[排盘是怎么算的](/zh/docs/guide/concepts/how-it-works)一页同一个例子。
+
+## 步骤与 API 对照
+
+### 2. 定月索引
+
+```python
+utils.fix_lunar_month_index(7, 17, False, 2, True)   # 农历七月十七、非闰月、寅时、修正闰月
+```
+
+```text
+6
+```
+
+[Rust](/zh/docs/rust/util#fix_lunar_month_index--fix_lunar_day_index) ·
+[Python](/zh/docs/python/util#fix_lunar_month_index--fix_lunar_day_index) ·
+[Go](/zh/docs/go/util#fixlunarmonthindex--fixlunardayindex)
+
+### 3. 定命宫身宫
+
+```python
+utils.get_soul_and_body(6, 2, "gengHeavenly")   # 月索引、时辰索引、年干
+```
+
+```text
+SoulAndBody(soul_index=4, body_index=8, heavenly_stem_of_soul='renHeavenly', earthly_branch_of_soul='wuEarthly')
+```
+
+[Rust](/zh/docs/rust/util#get_soul_and_body) ·
+[Python](/zh/docs/python/util#get_soul_and_body) ·
+[Go](/zh/docs/go/util#getsoulandbody)
+
+### 4. 定五行局
+
+```python
+utils.get_five_elements_class("renHeavenly", "wuEarthly")   # 命宫干、命宫支
+```
+
+```text
+wood3rd
+```
+
+[Rust](/zh/docs/rust/util#get_five_elements_class) ·
+[Python](/zh/docs/python/util#get_five_elements_class) ·
+[Go](/zh/docs/go/util#getfiveelementsclass)
+
+### 5. 起紫微天府
+
+```python
+star.get_start_index("2000-8-16", 2, "female")
+```
+
+```text
+StartIndex(ziwei_index=4, tianfu_index=8)
+```
+
+[Rust](/zh/docs/rust/star#get_start_index) ·
+[Python](/zh/docs/python/star#get_start_index) ·
+[Go](/zh/docs/go/star#getstartindex)
+
+### 6 与 7. 安主星、辅星与杂耀
+
+三组各有一个入口，返回十二宫的星耀分布；
+另有各组的落宫索引函数（`get_lu_yang_tuo_ma_index`、`get_chang_qu_index` 等），
+清单见各语言的安星模块页。
+
+[Rust](/zh/docs/rust/star) · [Python](/zh/docs/python/star) · [Go](/zh/docs/go/star)
+
+### 8. 安四组十二神
+
+`get_changsheng12`、`get_boshi12`、`get_yearly12`，
+以及两个起点函数 `get_changsheng12_start_index`、`get_jiangqian12_start_index`。
+
+### 9. 推大限小限
+
+```python
+r = utils.get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
+print(r.decadals[0], r.ages[0])
+```
+
+```text
+Decadal(range=(43, 52), heavenly_stem='戊', heavenly_stem_key='wuHeavenly', earthly_branch='寅', earthly_branch_key='yinEarthly') [9, 21, 33, 45, 57, 69, 81, 93, 105, 117]
+```
+
+<Callout>
+这个函数直接收命宫索引与五行局，不必先凑出一份完整的出生数据，
+能力是 iztro 对应函数的超集。见[从 iztro 迁移：API 对照](/zh/docs/guide/about/iztro-parity#大限小限)。
+</Callout>
+
+[Rust](/zh/docs/rust/util#get_decadals_and_ages) ·
+[Python](/zh/docs/python/util#get_decadals_and_ages) ·
+[Go](/zh/docs/go/util#getdecadalsandages)
+
+## 哪些步骤会被配置改变
+
+| 配置 | 影响的步骤 |
+| --- | --- |
+| `year_divide` | 1（年干支）→ 连带 6、7、8、9 |
+| `horoscope_divide` | 1（月柱与年系杂耀所用年支）→ 连带 7 |
+| `day_divide` | 1、2（晚子时归属）→ 连带 3、5 |
+| `age_divide` | 9（虚岁进位时点） |
+| `algorithm` | 4（中州派命主按年支）、7、8（部分星耀的取法） |
+| `astro_type` | 4 起（换宫起局）→ 连带 5、6、8、9 |
+| 自定义四化表 | 6（四化标记）与全部飞星判断 |
+| 自定义亮度表 | 6、7（星耀亮度） |
+
+逐项说明见 [Config 详解](/zh/docs/guide/guides/config)。

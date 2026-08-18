@@ -12,11 +12,15 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
+<Callout type="info">
+本页示例统一用 `"zh-CN"` 的本命盘，因此输出里的展示值都是中文。
+</Callout>
+
 ## 字段
 
 | 字段 | 类型 | 跨度 | 说明 |
 | --- | --- | --- | --- |
-| `SolarDate` / `LunarDate` | `string` | — | 目标日期 |
+| `SolarDate` / `LunarDate` | `string` | — | **目标**日期的公历串与农历中文写法。出生日期在本命盘上，用 `h.Astrolabe().SolarDate` 取 |
 | `Decadal` | `HoroscopeScope` | 十年 | 大限。未起运的幼年期为童限 |
 | `Age` | `HoroscopeScope` | 一年 | 小限。按虚岁逐年走一宫 |
 | `Yearly` | `HoroscopeScope` | 一年 | 流年。按流年干支定宫 |
@@ -40,13 +44,74 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 | `PalaceNames` / `PalaceNameKeys` | `[]string` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
 | `Mutagen` / `MutagenKeys` | `[]string` | 该层级天干引发的四化星，顺序为禄权科忌 |
 | `Stars` | `[][]Star` | 该层级的流耀分布；无流耀的层级为 `nil` |
-| `NominalAge` | `int` | 仅小限：虚岁 |
-| `YearlyDecStar` | `YearlyDecStar` | 仅流年：岁前与将前十二神 |
+| `NominalAge` | `int` | 仅小限：虚岁。其余层级为 `0` |
+| `YearlyDecStar` | `*YearlyDecStar` | 仅流年：岁前与将前十二神。其余层级为 **`nil`** |
+
+```go
+type YearlyDecStar struct {
+    Suiqian12       []string `json:"suiqian12"`        // 岁前十二神译名，按宫位索引排列
+    Suiqian12Keys   []string `json:"suiqian12Keys"`    // 对应标识
+    Jiangqian12     []string `json:"jiangqian12"`      // 将前十二神译名
+    Jiangqian12Keys []string `json:"jiangqian12Keys"`  // 对应标识
+}
+```
 
 <Callout type="info" title="六个层级共用一个类型">
 Go 侧不为小限与流年各开一个类型，而是把 `NominalAge` 与 `YearlyDecStar`
 放进共用的 `HoroscopeScope`——其余层级上这两项为零值。
 调用处因此可以写按层级参数化的通用逻辑。
+</Callout>
+
+<Callout type="warn" title="YearlyDecStar 是指针，非流年层级为 nil">
+`h.Decadal.YearlyDecStar` 是 `nil`，直接取字段会 panic。
+只有 `h.Yearly.YearlyDecStar` 非空——按层级遍历时先判空。
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.Decadal.YearlyDecStar == nil, h.Yearly.YearlyDecStar != nil)
+fmt.Println(h.Yearly.YearlyDecStar.Suiqian12[:3])
+fmt.Println(h.Yearly.YearlyDecStar.Jiangqian12Keys[:3])
+fmt.Println(h.Decadal.NominalAge, h.Age.NominalAge)
+```
+
+**输出**
+
+```text
+true true
+[天德 吊客 病符]
+[jiesha zhaisha tiansha]
+0 26
+```
+</Callout>
+
+### PalaceIndexByName
+
+```go
+func (item *HoroscopeScope) PalaceIndexByName(nameKeyOrName string) int
+```
+
+在该层级重排后的十二宫里，按宫名标识或当前语言宫名查宫位索引；**找不到返回 -1**。
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.Decadal.PalaceIndexByName(iztro.PalaceSoul))
+fmt.Println(h.Decadal.PalaceIndexByName(iztro.PalaceWealth))
+fmt.Println(h.Decadal.PalaceIndexByName("nosuch"))
+```
+
+**输出**
+
+```text
+2
+10
+-1
+```
+
+<Callout type="warn">
+返回 `-1` 而不是 `0`——`0` 是合法的宫位索引（寅宫）。
+拿它去索引 `chart.Palaces` 前务必判负。
 </Callout>
 
 **示例**
@@ -243,9 +308,19 @@ true
 这三个方法前面已有宫名与层级两个字符串参数，再用可变参数会让调用处产生歧义，
 因此星耀参数取 `[]string`。包里其余带星耀列表的方法都是可变参数。
 </Accordion>
+<Accordion title="scope 只决定查哪一宫，不决定查哪些星">
+三个方法用 `scope` + 宫名定位到本命盘上的某一格，
+但要比对的星耀集合恒为**大限流耀与流年流耀的并集**，与 `scope` 无关。
+
+因此 `scope` 传 `ScopeMonthly` 时，查的是「流月某宫这一格里有没有大限或流年的流耀」，
+而不是流月自己的流耀——流月、流日、流时三层的流耀不参与这里的比对。
+要按层级取流耀分布，用 `h.Monthly.Stars`，或
+[`GetHoroscopeStar`](/zh/docs/go/star#gethoroscopestar)。
+</Accordion>
 <Accordion title="流耀标识按层级区分">
-大限层级查 `yunlu`（运禄），流年层级查 `liulu`（流禄），层级与标识必须配对。
-拿 `yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
+大限流耀叫 `StarYunlu`（运禄）、`StarYunyang`（运羊）……，流年流耀叫
+`StarLiulu`（流禄）、`StarLiuyang`（流羊）……，两组标识不同名。
+由于比对集合恒是这两组的并集，两组标识在任何 `scope` 下都查得到，只是落宫不同。
 各层级的标识对照见[安星模块](/zh/docs/go/star#gethoroscopestar)。
 </Accordion>
 </Accordions>
@@ -273,7 +348,7 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 | `scope` | `string` | 是 | — | 运限层级 |
 | `mutagenKey` | `string` | 是 | — | 四化标识 |
 
-**返回值**　`bool`。
+**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。
 
 **示例**
 
@@ -292,6 +367,15 @@ false
 ```
 
 大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
+
+**边界与陷阱**
+
+<Callout type="warn" title="scope 为 ScopeOrigin 时恒为 false">
+本命层级没有「层级天干」这回事——生年四化已经打在星耀自身的 `MutagenKey` 上。
+`HasHoroscopeMutagen(name, iztro.ScopeOrigin, m)` 因此直接返回 `false`，
+不代表本命盘上没有这个四化。要查本命四化，用宫位的
+[`HasMutagen`](/zh/docs/go/palace#hasmutagen--nothavemutagen)。
+</Callout>
 
 ---
 

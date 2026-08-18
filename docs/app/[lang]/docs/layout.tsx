@@ -1,6 +1,7 @@
 import { source } from '@/lib/source';
 import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
 import { baseOptions } from '@/lib/layout.shared';
+import { Footer } from '@/components/footer';
 
 /**
  * 文档版式。
@@ -22,6 +23,13 @@ export default async function Layout({ params, children }: LayoutProps<'/[lang]/
       links={[]}
     >
       {children}
+      {/*
+        文档页也挂页脚：页脚里「给 AI 用」的三个端点不出现在任何页面正文中，
+        而按 URL 抓文档的人恰好停在文档页上，这里是唯一露出的机会。
+        notebook 版式的容器是 CSS 网格，`col-span-full` 让页脚落在
+        正文与侧栏下方的整行，不占具名区域之间的空格子。
+      */}
+      <Footer lang={lang} className="col-span-full" />
     </DocsLayout>
   );
 }

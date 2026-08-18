@@ -5,46 +5,48 @@
 
 use std::ffi::{CStr, CString, c_char};
 
-use crate::data::types::{Gender, Language};
-use crate::dto::parse_config_json;
+use crate::data::types::{Gender, Language, LeapMonth};
+use crate::dto::{error_json as build_error_json, parse_config_json};
+use crate::error::BridgeError;
 
-/// Parse a gender string, returning Ok or an error message.
-fn parse_gender(s: &str) -> Result<Gender, String> {
+/// Parse a gender string, returning Ok or an `invalid_argument` error.
+fn parse_gender(s: &str) -> Result<Gender, BridgeError> {
     match s.to_lowercase().as_str() {
         "male" => Ok(Gender::Male),
         "female" => Ok(Gender::Female),
-        _ => Err(format!(
-            "Invalid gender '{}'. Expected 'male' or 'female'.",
-            s
-        )),
+        _ => Err(BridgeError::invalid_argument(format!(
+            "invalid gender '{s}': expected 'male' or 'female'"
+        ))),
     }
 }
 
-/// Parse a language string, returning Ok or an error message.
-fn parse_language(s: &str) -> Result<Language, String> {
+/// Parse a language string, returning Ok or an `invalid_argument` error.
+fn parse_language(s: &str) -> Result<Language, BridgeError> {
     Language::from_code(s).ok_or_else(|| {
-        format!(
-            "Invalid language '{s}'. Expected one of: zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN."
-        )
+        BridgeError::invalid_argument(format!(
+            "invalid language '{s}': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN"
+        ))
     })
 }
 
 /// Helper: convert a C string pointer to a Rust &str.
 /// Returns Err with a message if the pointer is null or not valid UTF-8.
-unsafe fn cstr_to_str<'a>(ptr: *const c_char, param_name: &str) -> Result<&'a str, String> {
+unsafe fn cstr_to_str<'a>(ptr: *const c_char, param_name: &str) -> Result<&'a str, BridgeError> {
     if ptr.is_null() {
-        return Err(format!("'{}' is null", param_name));
+        return Err(BridgeError::invalid_argument(format!(
+            "invalid {param_name}: pointer is null"
+        )));
     }
-    unsafe { CStr::from_ptr(ptr) }
-        .to_str()
-        .map_err(|e| format!("'{}' is not valid UTF-8: {}", param_name, e))
+    unsafe { CStr::from_ptr(ptr) }.to_str().map_err(|e| {
+        BridgeError::invalid_argument(format!("invalid {param_name}: not valid UTF-8: {e}"))
+    })
 }
 
 /// Helper: convert an optional C string pointer (NULL allowed) to Option<&str>.
 unsafe fn cstr_to_opt_str<'a>(
     ptr: *const c_char,
     param_name: &str,
-) -> Result<Option<&'a str>, String> {
+) -> Result<Option<&'a str>, BridgeError> {
     if ptr.is_null() {
         return Ok(None);
     }
@@ -58,22 +60,20 @@ unsafe fn cstr_to_opt_str<'a>(
 /// `panic = "unwind"` strategy — building with `panic = "abort"` turns any
 /// remaining panic into a process abort instead of an error JSON.
 fn catch(
-    f: impl FnOnce() -> Result<String, String> + std::panic::UnwindSafe,
-) -> Result<String, String> {
+    f: impl FnOnce() -> Result<String, BridgeError> + std::panic::UnwindSafe,
+) -> Result<String, BridgeError> {
     std::panic::catch_unwind(f).unwrap_or_else(|panic| {
-        Err(format!(
-            "Invalid input: {}",
-            crate::dto::panic_message(panic.as_ref())
-        ))
+        Err(BridgeError::internal(crate::dto::panic_message(
+            panic.as_ref(),
+        )))
     })
 }
 
-/// Helper: return a JSON error string as a C string. The message is JSON-encoded
-/// via serde so quotes, backslashes and control characters are always escaped;
-/// NUL bytes are escaped as \u0000, so `CString::new` cannot fail.
-fn error_json(msg: &str) -> *mut c_char {
-    let json = serde_json::json!({ "error": msg }).to_string();
-    CString::new(json).unwrap().into_raw()
+/// Helper: return the `{"error":..., "code":...}` JSON as a C string. The message
+/// is JSON-encoded via serde so quotes, backslashes and control characters are
+/// always escaped; NUL bytes are escaped as \u0000, so `CString::new` cannot fail.
+fn error_json(err: &BridgeError) -> *mut c_char {
+    CString::new(build_error_json(err)).unwrap().into_raw()
 }
 
 /// Helper: return a JSON result string as a C string.
@@ -95,7 +95,7 @@ fn ok_json(json: String) -> *mut c_char {
 ///
 /// # Returns
 /// A heap-allocated JSON C string. The caller must free it with `iztro_free_string`.
-/// On error, returns a JSON string like `{"error": "message"}`.
+/// On error, returns a JSON string like `{"error": "message", "code": "invalid_date"}`.
 ///
 /// # Safety
 /// All pointer parameters except `config_json` must be valid NUL-terminated
@@ -110,7 +110,7 @@ pub unsafe extern "C" fn iztro_by_solar(
     language: *const c_char,
     config_json: *const c_char,
 ) -> *mut c_char {
-    let parsed = (|| -> Result<_, String> {
+    let parsed = (|| -> Result<_, BridgeError> {
         let solar_date = unsafe { cstr_to_str(solar_date, "solar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
@@ -124,14 +124,15 @@ pub unsafe extern "C" fn iztro_by_solar(
     })();
     let result = parsed.and_then(|(solar_date, gender, language, config)| {
         catch(move || {
-            crate::by_solar_json(solar_date, time_index, gender, fix_leap, language, config)
-                .map_err(|e| e.to_string())
+            Ok(crate::by_solar_json(
+                solar_date, time_index, gender, fix_leap, language, config,
+            )?)
         })
     });
 
     match result {
         Ok(json) => ok_json(json),
-        Err(msg) => error_json(&msg),
+        Err(err) => error_json(&err),
     }
 }
 
@@ -148,7 +149,7 @@ pub unsafe extern "C" fn iztro_by_solar(
 ///
 /// # Returns
 /// A heap-allocated JSON C string. The caller must free it with `iztro_free_string`.
-/// On error, returns a JSON string like `{"error": "message"}`.
+/// On error, returns a JSON string like `{"error": "message", "code": "invalid_date"}`.
 ///
 /// # Safety
 /// All pointer parameters except `config_json` must be valid NUL-terminated
@@ -164,7 +165,7 @@ pub unsafe extern "C" fn iztro_by_lunar(
     language: *const c_char,
     config_json: *const c_char,
 ) -> *mut c_char {
-    let parsed = (|| -> Result<_, String> {
+    let parsed = (|| -> Result<_, BridgeError> {
         let lunar_date = unsafe { cstr_to_str(lunar_date, "lunar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
@@ -178,22 +179,20 @@ pub unsafe extern "C" fn iztro_by_lunar(
     })();
     let result = parsed.and_then(|(lunar_date, gender, language, config)| {
         catch(move || {
-            crate::by_lunar_json(
+            Ok(crate::by_lunar_json(
                 lunar_date,
                 time_index,
                 gender,
-                is_leap_month,
-                fix_leap,
+                LeapMonth::from_flags(is_leap_month, fix_leap),
                 language,
                 config,
-            )
-            .map_err(|e| e.to_string())
+            )?)
         })
     });
 
     match result {
         Ok(json) => ok_json(json),
-        Err(msg) => error_json(&msg),
+        Err(err) => error_json(&err),
     }
 }
 
@@ -215,7 +214,7 @@ pub unsafe extern "C" fn iztro_by_lunar(
 ///
 /// # Returns
 /// A heap-allocated JSON C string. The caller must free it with `iztro_free_string`.
-/// On error, returns a JSON string like `{"error": "message"}`.
+/// On error, returns a JSON string like `{"error": "message", "code": "invalid_date"}`.
 ///
 /// # Safety
 /// All pointer parameters except `config_json` must be valid NUL-terminated
@@ -232,7 +231,7 @@ pub unsafe extern "C" fn iztro_get_horoscope(
     target_date: *const c_char,
     target_time_index: u8,
 ) -> *mut c_char {
-    let parsed = (|| -> Result<_, String> {
+    let parsed = (|| -> Result<_, BridgeError> {
         let solar_date = unsafe { cstr_to_str(solar_date, "solar_date")? };
         let gender_str = unsafe { cstr_to_str(gender, "gender")? };
         let language_str = unsafe { cstr_to_str(language, "language")? };
@@ -249,19 +248,59 @@ pub unsafe extern "C" fn iztro_get_horoscope(
     let result = parsed.and_then(|(solar_date, gender, language, config, target_date)| {
         catch(move || {
             let astrolabe =
-                crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)
-                    .map_err(|e| e.to_string())?;
+                crate::by_solar(solar_date, time_index, gender, fix_leap, language, config)?;
             let horoscope =
-                crate::get_horoscope(&astrolabe, target_date, target_time_index, language)
-                    .map_err(|e| e.to_string())?;
+                crate::get_horoscope(&astrolabe, target_date, target_time_index, language)?;
             serde_json::to_string(&horoscope.to_dto(language))
-                .map_err(|e| format!("Failed to serialize horoscope: {}", e))
+                .map_err(|e| BridgeError::internal(format!("failed to serialize horoscope: {e}")))
         })
     });
 
     match result {
         Ok(json) => ok_json(json),
-        Err(msg) => error_json(&msg),
+        Err(err) => error_json(&err),
+    }
+}
+
+/// Run a lightweight query and return the result as a JSON string.
+///
+/// This is the single entry point for every non-charting function: the
+/// `astro` lightweight queries, `astro/palace`, `util`, `star`, the `data`
+/// tables, the i18n translation/lookup helpers and the AI prompt generators.
+/// Which one runs is decided by the `kind` field of the input; the remaining
+/// fields are taken as needed.
+///
+/// # Parameters
+/// - `query_json`: A JSON object such as `{"kind":"getPalaceNames","soulIndex":0}`.
+///   Keys are camelCase; identifiers (stars, stems, branches, palaces …) are
+///   passed and returned as language-independent keys.
+///
+/// # Returns
+/// A heap-allocated JSON C string `{"value": <result>}`. The caller must free it
+/// with `iztro_free_string`. On error, returns a JSON string like
+/// `{"error": "message", "code": "invalid_argument"}`.
+///
+/// # Safety
+/// `query_json` must be a valid NUL-terminated C string (or null, which yields
+/// an error JSON). The returned pointer must be released with `iztro_free_string`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn iztro_query(query_json: *const c_char) -> *mut c_char {
+    let parsed = (|| -> Result<_, BridgeError> {
+        let raw = unsafe { cstr_to_str(query_json, "query_json")? };
+        serde_json::from_str::<crate::bridge::QueryInput>(raw)
+            .map_err(|e| BridgeError::invalid_argument(format!("invalid query JSON: {e}")))
+    })();
+    let result = parsed.and_then(|input| {
+        catch(move || {
+            let value = crate::bridge::query(&input)?;
+            serde_json::to_string(&serde_json::json!({ "value": value }))
+                .map_err(|e| BridgeError::internal(format!("failed to serialize result: {e}")))
+        })
+    });
+
+    match result {
+        Ok(json) => ok_json(json),
+        Err(err) => error_json(&err),
     }
 }
 

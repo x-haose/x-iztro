@@ -1,0 +1,220 @@
+---
+title: The twelve palaces
+description: What each of the twelve palace names covers, how the Body palace and Original palace are decided, what palace stems are for, and how decadals and age fortune hang off palaces.
+---
+
+*For: everyone. Code is at the end of the page*
+
+## The twelve palace names
+
+The twelve palaces cover twelve domains of a life. Starting from the **Soul palace**, they are laid
+out **counter-clockwise** around the chart in a fixed order:
+
+| Order | Name on the chart | Common aliases | Roughly covers |
+| --- | --- | --- | --- |
+| 1 | soul (命宫) | Life palace, Self palace | Nature and the overall thrust; the core of the chart |
+| 2 | parents (父母) | Parents palace, Appearance palace | Parents, elders, superiors, patronage |
+| 3 | spirit (福德) | Fortune palace, Blessings palace | Inner life, interests, good fortune |
+| 4 | property (田宅) | Property palace, Estate palace | Real estate, the domestic environment |
+| 5 | career (官禄) | Career palace, Officials palace | Career, occupation, study |
+| 6 | friends (仆役) | Friends palace, Servants palace | Friends, colleagues, subordinates |
+| 7 | surface (迁移) | Travel palace, Migration palace | Going out, movement, encounters with the outside |
+| 8 | health (疾厄) | Health palace, Illness palace | Body, illness |
+| 9 | wealth (财帛) | Wealth palace, Finance palace | Money, income |
+| 10 | children (子女) | Children palace | Children, juniors, creativity |
+| 11 | spouse (夫妻) | Spouse palace, Marriage palace | Spouse, intimate relationships |
+| 12 | siblings (兄弟) | Siblings palace | Brothers and sisters, peers |
+
+<Callout title="Names on the chart are bare words">
+In an English chart the palace name is exactly the single word in the first column — `soul`,
+`friends`, `surface` — with no "palace" suffix. (In a Chinese chart the same is true, with 命宫 the
+one exception that keeps its 宫.) The aliases column records how different traditions talk; those
+strings never appear in the output. For predicates, use the keys — see the end of this page.
+</Callout>
+
+<Callout>
+"The order of the palace names" and "where a palace sits on the chart" are two different things. The
+name order is always the cycle in the table above, but which branch cell holds the Soul palace is
+computed, and the other eleven follow it. So a slot in the twelve-palace array corresponds to a
+branch, not to a position in the name order.
+</Callout>
+
+## How the Soul palace is located
+
+The Soul palace is located from the **lunar month** and the **hour** of birth together: start at the
+Yin palace as the first lunar month and count forward to the month of birth, then from that palace
+count backward from the Zi hour to the hour of birth. This position sets the shape of the whole
+chart and is the starting point for the Five Elements class and the decadals.
+
+## The Body palace
+
+The Body palace uses the same month and hour data but counts the hour forward, and always lands on
+one of the twelve palaces. It is not an independent thirteenth palace, just a flag added to one of
+the twelve.
+
+Traditionally the Soul palace speaks to innate nature, the Body palace to acquired effort and the
+direction of the second half of life.
+
+## The Original palace
+
+The Original palace is the palace whose **stem equals the birth-year stem**, excluding the Zi and
+Chou palaces. It marks where the chart "comes from" and is an important starting point in the
+flying-star school.
+
+A chart **always has exactly one** Original palace. The reason lies in how palace stems are laid
+out:
+
+The twelve palace stems run forward from the Yin palace by the Five Tigers rule — ten stems across
+twelve palaces — so only the first two (Yin, Mao) repeat at the end (Zi, Chou). That makes exactly
+two palaces whose stem equals the year stem, and they are necessarily a pair of "Yin or Mao" with
+"Zi or Chou". Excluding Zi and Chou leaves exactly one.
+
+## Palace stems and branches
+
+Every palace has a stem-branch pair of its own:
+
+- **Palace branch**: fixed by the palace's slot on the chart (slot 0 is Yin, see
+  [What a chart is made of](/en/docs/guide/concepts#how-the-chart-is-laid-out)), unchanging for
+  life.
+- **Palace stem**: derived from the birth-year stem by the Five Tigers rule.
+
+Palace stems exist for **flying mutagens**: a palace's stem decides which four mutagen stars it
+"flies out", and relationships between palaces are judged from that. See
+[Mutagens and flying stars](/en/docs/guide/concepts/mutagen#flying-stars).
+
+## Decadals
+
+A decadal is a ten-year stretch of fortune, one per palace. The starting nominal age is set by the
+[Five Elements class](/en/docs/guide/concepts#five-elements-class):
+
+| Five Elements class | Class number | Starting nominal age | First decadal range |
+| --- | --- | --- | --- |
+| water 2nd | 2 | 2 | 2–11 |
+| wood 3rd | 3 | 3 | 3–12 |
+| metal 4th | 4 | 4 | 4–13 |
+| earth 5th | 5 | 5 | 5–14 |
+| fire 6th | 6 | 6 | 6–15 |
+
+Direction is decided by **gender polarity against year-branch polarity**: same → forward, different
+→ backward, which is the mnemonic "yang man and yin woman go forward, yin man and yang woman go
+backward". (The year stem and the year branch always share a polarity, so phrasing the rule in terms
+of the year stem says the same thing — see
+[Yin and yang](/en/docs/guide/concepts/stems-branches#yin-and-yang).)
+
+<Callout title="Nominal age">
+All ages here are **nominal ages** (虚岁), the East Asian reckoning in which you are 1 at birth and
+gain a year at the turn of the year rather than on your birthday.
+</Callout>
+
+<Callout title="The years before the decadals begin">
+The years between birth and the starting nominal age belong to no decadal. That stretch is derived
+as the **childhood scope**, returned by the horoscope API. See
+[Horoscopes](/en/docs/guide/concepts/horoscope#the-childhood-scope).
+</Callout>
+
+## Age fortune
+
+Age fortune is a one-year-per-step track running in parallel with the decadals: one palace per year,
+so a given palace comes round every twelve years.
+
+Its rules **differ** from the decadals — the two are independent:
+
+- **The origin** is set by the trine group of the year branch (yin/woo/xu years start at the Chen
+  palace, shen/zi/chen years at Xu, si/you/chou years at Wei, hai/mao/wei years at Chou).
+- **Direction depends on gender alone**: male forward, female backward, regardless of year-branch
+  polarity.
+
+## In code
+
+Look a palace up by name, then ask what is in it:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let soul = astrolabe.palace(Palace::Soul).unwrap();
+
+soul.has(&[StarKey::ZiweiMaj]);                              // holds all of these stars?
+soul.has_one_of(&[StarKey::ZiweiMaj, StarKey::TianfuMaj]);   // holds any one of them?
+soul.has_mutagen(Mutagen::Lu);                               // holds a Wealth mutagen?
+soul.is_empty();                                             // empty palace (no major stars)?
+
+soul.is_body_palace;        // is it the Body palace
+soul.is_original_palace;    // is it the Original palace
+soul.decadal.range;         // the decadal range this palace governs, (3, 12)
+soul.ages;                  // nominal ages at which age fortune passes through
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro.enums import PalaceName, MajorStar, Mutagen
+
+soul = chart.palace(PalaceName.SOUL)
+
+soul.has([MajorStar.ZIWEI])
+soul.has_one_of([MajorStar.ZIWEI, MajorStar.TIANFU])
+soul.has_mutagen(Mutagen.LU)
+soul.is_empty()
+
+soul.is_body_palace
+soul.is_original_palace
+soul.decadal.range          # (3, 12)
+soul.ages                   # [5, 17, 29, 41, 53, 65, 77, 89, 101, 113]
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+soul.Has(iztro.StarZiweiMaj)
+soul.HasOneOf(iztro.StarZiweiMaj, iztro.StarTianfuMaj)
+soul.HasMutagen(iztro.MutagenLu)
+soul.IsEmpty()
+
+soul.IsBodyPalace
+soul.IsOriginalPalace
+soul.Decadal.Range
+soul.Ages
+```
+
+</Tab>
+</Tabs>
+
+<Callout>
+"Empty palace" means no major stars, not that the palace is bare — minor and adjective stars are
+usually still there. An empty palace is read by borrowing the stars of its opposite palace, which is
+one of the reasons [surrounded palaces](/en/docs/guide/concepts/surrounded) exist.
+</Callout>
+
+### Language-independent keys for palace names
+
+Predicate on keys; never match the palace name text — switch the chart language and a branch that
+matches text fails silently.
+
+| Palace | Key |
+| --- | --- |
+| soul | `soulPalace` |
+| parents | `parentsPalace` |
+| spirit | `spiritPalace` |
+| property | `propertyPalace` |
+| career | `careerPalace` |
+| friends | `friendsPalace` |
+| surface | `surfacePalace` |
+| health | `healthPalace` |
+| wealth | `wealthPalace` |
+| children | `childrenPalace` |
+| spouse | `spousePalace` |
+| siblings | `siblingsPalace` |
+
+There are two further keys that can only be used for lookup and never appear as a palace name:
+`bodyPalace` (the Body palace) and `originalPalace` (the Original palace). Pass either to the palace
+lookup method to get the palace carrying that flag — on this chart they resolve to `career` and
+`spouse` respectively.
+
+The values of Python's `PalaceName` enum and Go's `Palace*` constants are exactly the keys above,
+and they hold on a chart in any chart language. See
+[The key contract](/en/docs/guide/guides/keys).

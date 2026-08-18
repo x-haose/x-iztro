@@ -1,0 +1,169 @@
+---
+title: Lightweight queries
+description: The Chinese zodiac animal, zodiac sign and Soul palace major stars, without charting the whole thing.
+---
+
+Some questions do not need a whole chart. These five functions each run only as far as necessary and
+return; their results always agree with the corresponding fields of a full chart, because they go
+through the same core logic.
+
+<Callout type="info">
+The examples on this page chart with `"en-US"`, so the display values in the output are English.
+</Callout>
+
+---
+
+## GetZodiacBySolarDate
+
+**Purpose** Get the Chinese zodiac animal from a solar date.
+
+**Zi Wei meaning** The zodiac animal is determined by the **year branch**, and when the year branch
+turns over is governed by `YearDivide`.
+For someone born between lunar New Year and the Beginning of Spring, the two settings give different
+animals — not a defect, a difference of school.
+
+**Signature**
+
+```go
+func GetZodiacBySolarDate(solarDate string, language Language, config *Config) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D` |
+| `language` | `Language` | Yes | — | Chart language |
+| `config` | `*Config` | Yes | — | Pass `nil` for the defaults; only `YearDivide` affects the result |
+
+**Return value** The animal name translated into the language.
+
+**Example**
+
+```go
+zodiac, _ := iztro.GetZodiacBySolarDate("2000-8-16", iztro.LanguageEnUS, nil)
+fmt.Println(zodiac)
+```
+
+**Output**
+
+```text
+dragon
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The year boundary moves with the configuration">
+By default the year turns over at lunar New Year. Switch to
+`&Config{YearDivide: iztro.YearDivideExact}` and it turns over at the Beginning of Spring, so people
+born from late January to early February can get a different animal.
+</Callout>
+
+---
+
+## GetSignBySolarDate / GetSignByLunarDate
+
+**Purpose** Get the zodiac sign.
+
+**Zi Wei meaning** The zodiac sign is a Western astrology concept determined solely by the solar
+date, unrelated to the Zi Wei algorithm. The lunar version converts to solar first, so both give the
+same result for the same day.
+
+**Signature**
+
+```go
+func GetSignBySolarDate(solarDate string, language Language) (string, error)
+func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language Language) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solarDate` / `lunarDate` | `string` | Yes | — | The date in `YYYY-M-D` |
+| `isLeapMonth` | `bool` | Yes | — | Lunar version only: whether that month is a leap month |
+| `language` | `Language` | Yes | — | Chart language |
+
+There is no `config` parameter — zodiac signs are unaffected by any setting.
+
+**Return value** The sign name.
+
+**Example**
+
+```go
+s1, _ := iztro.GetSignBySolarDate("2000-8-16", iztro.LanguageEnUS)
+s2, _ := iztro.GetSignByLunarDate("2000-7-17", false, iztro.LanguageEnUS)
+
+fmt.Println(s1, s2)
+```
+
+**Output**
+
+```text
+leo leo
+```
+
+---
+
+## GetMajorStarBySolarDate / GetMajorStarByLunarDate
+
+**Purpose** Get just the Soul palace's major stars, without charting the whole thing.
+
+**Zi Wei meaning** The major stars of the Soul palace are the single most commonly asked item in Zi
+Wei Dou Shu. When the Soul palace is empty, convention borrows the major stars of the opposite palace,
+and this function already handles that step.
+
+**Signature**
+
+```go
+func GetMajorStarBySolarDate(
+    solarDate string, timeIndex uint8, fixLeap bool, language Language, config *Config,
+) (string, error)
+
+func GetMajorStarByLunarDate(
+    lunarDate string, timeIndex uint8, leap LeapMonth, language Language, config *Config,
+) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solarDate` / `lunarDate` | `string` | Yes | — | The date |
+| `timeIndex` | `uint8` | Yes | — | Hour index 0–12; the Soul palace is fixed jointly by month and hour |
+| `fixLeap` | `bool` | Yes | — | Solar version only: whether a solar date falling after the 15th of a leap month is treated as the next month |
+| `leap` | `LeapMonth` | Yes | — | Lunar version only: `NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`, see [`ByLunar`](/en/docs/go/astro#bylunar) |
+| `language` | `Language` | Yes | — | Chart language |
+| `config` | `*Config` | Yes | — | Pass `nil` for the defaults |
+
+**Return value** Several major stars separated by commas; the opposite palace's major stars when the
+Soul palace is empty.
+
+**Example**
+
+```go
+en, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageEnUS, nil)
+zh, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageZhCN, nil)
+
+fmt.Println(en, zh)
+```
+
+**Output**
+
+```text
+emperor 紫微
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Without an hour there is no Soul palace">
+The Soul palace is located jointly from the lunar month and the birth hour, so `timeIndex` is
+required. Knowing only the date and not the hour, Zi Wei Dou Shu cannot fix a Soul palace.
+</Accordion>
+<Accordion title="For predicates, chart the whole thing">
+The return value is a translated string and changes with the language. For programmatic tests, chart
+in full, fetch the palace with `chart.Palace(iztro.PalaceSoul)` and compare the `Key` fields inside
+`MajorStars`.
+</Accordion>
+</Accordions>

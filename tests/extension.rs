@@ -170,6 +170,6 @@ fn horoscope_now_equals_explicit_today() {
 
     assert_eq!(by_now.solar_date, explicit.solar_date);
     assert_eq!(by_now.decadal.index, explicit.decadal.index);
-    assert_eq!(by_now.yearly.base.index, explicit.yearly.base.index);
+    assert_eq!(by_now.yearly.index, explicit.yearly.index);
     assert_eq!(by_now.hourly.index, explicit.hourly.index);
 }

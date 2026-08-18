@@ -10,6 +10,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -18,13 +20,18 @@ import (
 )
 
 func main() {
+	// 预热：提前完成 wasm 编译与实例池铺开，让第一次排盘就走热路径
+	if err := iztro.Warmup(context.Background()); err != nil {
+		log.Fatalf("Warmup failed: %v", err)
+	}
+
 	// ============================================================
 	// 1. 阳历排盘
 	// ============================================================
 	fmt.Println("===== 1. 阳历排盘 =====")
 	fmt.Println()
 
-	astrolabe, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+	astrolabe, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 	if err != nil {
 		log.Fatalf("BySolar failed: %v", err)
 	}
@@ -107,11 +114,21 @@ func main() {
 	fmt.Println("===== 5. 中州派 =====")
 	fmt.Println()
 
-	zz, err := iztro.BySolar("1990-11-5", 4, "male", true, "zh-CN", &iztro.Config{Algorithm: "zhongzhou"})
+	zz, err := iztro.BySolar("1990-11-5", 4, iztro.GenderMale, true, iztro.LanguageZhCN, &iztro.Config{Algorithm: iztro.AlgorithmZhongzhou})
 	if err != nil {
 		log.Fatalf("BySolar zhongzhou failed: %v", err)
 	}
 	fmt.Printf("中州派命主：%s\n", zz.Soul)
+	fmt.Println()
+
+	// ============================================================
+	// 6. 结构化错误
+	// ============================================================
+	fmt.Println("===== 6. 结构化错误 =====")
+	fmt.Println()
+
+	_, err = iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
+	fmt.Printf("非法日期是否为 ErrInvalidDate：%v（%v）\n", errors.Is(err, iztro.ErrInvalidDate), err)
 
 	fmt.Println()
 	fmt.Println("===== 完毕 =====")

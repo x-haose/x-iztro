@@ -4,7 +4,7 @@ name: CI
 
 on:
   push:
-    branches: [dev]
+    branches: [main, dev]
   pull_request:
     branches: [main, dev]
 
@@ -55,15 +55,21 @@ jobs:
       - name: Go 示例构建
         run: cd examples/go && go build .
 
+  # 两端各测一次：3.10 是 pyproject 声明的下限，也是 abi3 轮子的目标下限，
+  # 语法与标准库用法一旦越界（如 3.11 才有的 StrEnum）只有它能拦住；
+  # 3.12 代表当前主流。中间版本由 abi3 的兼容承诺覆盖。
   python:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       - name: 构建并安装 Python 绑定
         run: |
           python -m venv .venv
@@ -89,6 +95,6 @@ jobs:
       - name: 安装依赖
         run: cd docs && npm ci
       - name: 类型检查
-        run: cd docs && npm run types:check
+        run: cd docs && npx next typegen && npm run types:check
       - name: 构建
         run: cd docs && npm run build

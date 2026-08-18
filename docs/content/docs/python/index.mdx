@@ -15,14 +15,20 @@ Python 侧提供 dataclass 与 StrEnum 构成的强类型 API，零外部依赖�
 pip install x-iztro
 ```
 
-要求 Python 3.10 及以上。发行版内含预编译的原生扩展，安装时不需要 Rust 工具链。
+要求 Python 3.10 及以上。发行版内含预编译的原生扩展（abi3-py310 轮子），
+安装时不需要 Rust 工具链。
+
+<Callout type="info" title="3.10 上也能用 StrEnum">
+`enum.StrEnum` 是 3.11 才进标准库的。`x_iztro.enums` 在 3.10 上自动回退到等价的
+`class StrEnum(str, Enum)` 实现——枚举成员照样既是字符串又能补全，两个版本行为一致。
+</Callout>
 
 ## 第一张盘
 
 ```python
 from x_iztro import Astro
 
-chart = Astro().by_solar("2000-8-16", 2, "female")
+chart = Astro().by_solar("2000-8-16", 2, "female")  # 2 = 寅时（03:00–05:00）
 
 print(chart.solar_date, chart.lunar_date)
 # 2000-8-16 二〇〇〇年七月十七
@@ -37,14 +43,33 @@ print(" ".join(s.name for s in soul.major_stars))
 | 模块 | 内容 | 本参考对应页 |
 | --- | --- | --- |
 | `x_iztro.Astro` | 排盘主类 | [排盘入口](/zh/docs/python/astro) |
-| `x_iztro.models` | `Astrolabe`、`Palace`、`Star`、`Horoscope` 等 dataclass | [星盘对象](/zh/docs/python/astrolabe) 起的四页 |
-| `x_iztro.enums` | 全部语言无关标识的 StrEnum | [数据表](/zh/docs/python/data) |
+| `x_iztro.models` | `Astrolabe`、`Palace`、`Star`、`Horoscope`、`ChartConfig` 等 dataclass | [星盘对象](/zh/docs/python/astrolabe) 起的四页 |
+| `x_iztro.enums` | 全部语言无关标识的 StrEnum，以及 `GenderType`、`LanguageType`、`TimeIndexType` 等类型别名 | [数据表](/zh/docs/python/data)、本页下方 |
 | `x_iztro.query` | 生肖、星座、命宫主星的轻量查询 | [轻量查询](/zh/docs/python/query) |
 | `x_iztro.utils` | 索引换算、亮度与四化查表 | [工具函数](/zh/docs/python/util) |
 | `x_iztro.star` | 按出生数据安星 | [安星模块](/zh/docs/python/star) |
 | `x_iztro.data` | 星耀与干支数据表、顺序常量 | [数据表](/zh/docs/python/data) |
 | `x_iztro.i18n` | 标识与译名的双向查找 | [翻译](/zh/docs/python/i18n) |
 | `x_iztro.plugin` | 给星盘类挂自定义方法 | [扩展星盘](/zh/docs/python/extend) |
+
+`models` 是聚合层：`Astrolabe` 实际定义在 `x_iztro.astrolabe`，`Palace` 在 `x_iztro.palace`，
+`Star` 在 `x_iztro.star_object`，`Horoscope` 在 `x_iztro.horoscope`，
+`ChartConfig` 在 `x_iztro.config`，`SurroundedPalaces` 在 `x_iztro.surpalaces`。
+从 `x_iztro` 顶层或 `x_iztro.models` 导入都拿得到，按哪个都行。
+
+## 类型别名
+
+`x_iztro.enums` 里几个 `Literal` 别名，作用是让编辑器在参数写错时立刻标红：
+
+| 别名 | 定义 |
+| --- | --- |
+| `GenderType` | `Literal["male", "female"]` |
+| `LanguageType` | `Literal["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]` |
+| `TimeIndexType` | `Literal[0, 1, …, 12]` |
+| `StarTypeLiteral` | `Literal["major", "soft", "tough", "adjective", "flower", "helper", "lucun", "tianma"]` |
+| `ScopeLiteral` | `Literal["origin", "decadal", "yearly", "monthly", "daily", "hourly"]` |
+
+它们只是类型标注，运行期不做校验——真正的取值校验在核心层，非法值抛 `IztroError`。
 
 ## 枚举即标识
 
@@ -73,8 +98,16 @@ print(soul.major_stars[0].key == MajorStar.ZIWEI)
 需要变体时用返回新对象的方法，如 `chart.rearranged(...)`。
 
 ```python
-chart.solar_date = "2001-1-1"
-# dataclasses.FrozenInstanceError: cannot assign to field 'solar_date'
+try:
+    chart.solar_date = "2001-1-1"
+except Exception as e:
+    print(type(e).__name__, e)
+```
+
+**输出**
+
+```text
+FrozenInstanceError cannot assign to field 'solar_date'
 ```
 
 <Callout type="info">
@@ -99,3 +132,6 @@ chart.solar_date = "2001-1-1"
 
 示例统一用同一张盘：**2000 年 8 月 16 日寅时女命**（`by_solar("2000-8-16", 2, "female")`），
 方便跨页对照。这张盘的完整数据见[数据结构](/zh/docs/guide/data-model)。
+
+排盘语言不传时默认 `zh-CN`，因此本参考所有输出块里的展示值都是中文。
+换语言只改这些展示串，`*_key` 标识与全部判断方法的结果不变。

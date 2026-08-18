@@ -6,6 +6,10 @@ description: 不排整盘就能拿到的生肖、星座与命宫主星。
 有些问题不需要整张星盘。这五个函数各自只跑到必要的那一步就返回，
 结果与完整排盘的对应字段永远一致——它们走的是同一套核心逻辑。
 
+<Callout type="info">
+本页示例统一用默认的 `zh-CN` 排盘，因此输出里的展示值都是中文。
+</Callout>
+
 ```python
 from x_iztro import query
 ```
@@ -119,6 +123,7 @@ print(query.get_sign_by_lunar_date("2000-7-17"))
 def get_major_star_by_solar_date(
     solar_date: str,
     time_index: TimeIndexType,
+    *,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
     config: ChartConfig | None = None,
@@ -127,6 +132,7 @@ def get_major_star_by_solar_date(
 def get_major_star_by_lunar_date(
     lunar_date: str,
     time_index: TimeIndexType,
+    *,
     is_leap_month: bool = False,
     fix_leap: bool = True,
     language: LanguageType = "zh-CN",
@@ -139,7 +145,7 @@ def get_major_star_by_lunar_date(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `solar_date` / `lunar_date` | `str` | 是 | — | 日期 |
-| `time_index` | `int` | 是 | — | 时辰索引 0–12，命宫由月份与时辰共同决定 |
+| `time_index` | `int` | 是 | — | 时辰索引 0–12，命宫由月份与时辰共同决定。之后的参数只能按关键字传入 |
 | `is_leap_month` | `bool` | 否 | `False` | 仅农历版本 |
 | `fix_leap` | `bool` | 否 | `True` | 是否修正闰月 |
 | `language` | `str` | 否 | `"zh-CN"` | 输出语言 |

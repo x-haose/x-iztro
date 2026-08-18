@@ -12,7 +12,7 @@ description: 索引换算、亮度与四化查表、命身宫推算、四柱展�
 
 ## fix_index
 
-**用途**　把任意整数约束到 `0..max` 的循环区间。
+**用途**　把任意整数约束到 `0..max` 的循环区间（含 0，不含 `max`）。
 
 **斗数含义**　十二宫首尾相接，从丑宫（索引 11）再走一格回到寅宫（索引 0）。
 所有「顺数几格、逆数几格」的推算都靠这个回绕。
@@ -30,7 +30,8 @@ pub fn fix_index(index: i32, max: i32) -> usize
 | `index` | `i32` | 是 | — | 待修正的索引，可为负 |
 | `max` | `i32` | 是 | — | 循环长度，宫位用 12、天干用 10 |
 
-**返回值**　`usize`，落在 `0..max`。
+**返回值**　`usize`，落在 `0..max`（`max` 本身不会出现）。`max` 传 0 会触发除零 panic，
+调用方自己保证它是正数——盘上的用法固定为 12 或 10。
 
 **示例**
 
@@ -427,7 +428,7 @@ println!("{:?}", &ages[0][..3]);
 **用途**　求修正后的农历月索引与日索引。
 
 **斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
-闰月十五日之后按下月算（可关），晚子时属次日。
+闰月十六日起按下月算（可关，且晚子时不进位），晚子时的日索引属次日。
 
 **签名**
 
@@ -454,6 +455,9 @@ pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32
 | `fix_leap` | `bool` | 是 | — | 是否启用闰月修正 |
 
 **返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+`fix_lunar_month_index` 进位要同时满足四个条件：`is_leap` 为真、`fix_leap` 为真、
+`lunar_day` 大于 15、且 `time_index` 不是 12。四者缺一，就按本月算。
 
 **示例**
 
@@ -482,7 +486,7 @@ println!("{} {}", astro::builder::fix_lunar_day_index(17, 2), astro::builder::fi
 ```rust
 pub fn translate_chinese_date(
     pillars: [(HeavenlyStem, EarthlyBranch); 4],
-    language: Language,
+    lang: Language,
 ) -> String
 ```
 
@@ -491,7 +495,7 @@ pub fn translate_chinese_date(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `pillars` | `[(HeavenlyStem, EarthlyBranch); 4]` | 是 | — | 四柱，顺序为年、月、日、时 |
-| `language` | `Language` | 是 | — | 输出语言 |
+| `lang` | `Language` | 是 | — | 输出语言 |
 
 **返回值**　`String`。词条均为单字符时柱内紧凑相连、柱间空格；
 任一词条为多字符时柱内空格、柱间 ` - `。
@@ -569,3 +573,56 @@ println!("{:?}", merged[0].iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
 ```
 
 数组长度由类型系统保证为 12，因此不会出现 Python / Go 侧那种长度校验失败。
+
+---
+
+## parse_heavenly_stem / parse_earthly_branch
+
+**用途**　把中文单字的干支还原成枚举。
+
+**斗数含义**　外部系统（八字排盘、老命书录入）常以中文单字给干支。
+这两个函数是把那种输入接进来的入口。
+
+**签名**
+
+```rust
+pub fn parse_heavenly_stem(s: &str) -> Option<HeavenlyStem>
+pub fn parse_earthly_branch(s: &str) -> Option<EarthlyBranch>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `s` | `&str` | 是 | — | 中文单字，如 `"甲"`、`"子"` |
+
+**返回值**　`Option<...>`。只认中文单字，不认拼音、不认其他语言的译名，也不做去空白——
+不匹配返回 `None`。
+
+**示例**
+
+```rust
+use x_iztro::astro::builder::{parse_earthly_branch, parse_heavenly_stem};
+
+println!("{:?} {:?}", parse_heavenly_stem("庚"), parse_earthly_branch("辰"));
+println!("{:?} {:?}", parse_heavenly_stem("geng"), parse_heavenly_stem("庚 "));
+```
+
+**输出**
+
+```text
+Some(Geng) Some(Chen)
+None None
+```
+
+**边界与陷阱**
+
+<Callout type="info" title="要认别的语言请用 key_of">
+这两个函数只处理中文单字。收任意语言的译名请走
+[`key_of`](/zh/docs/rust/i18n#key_of)，它返回 i18n key，
+再用 `HeavenlyStem::from_key` / `EarthlyBranch::from_key` 转成枚举。
+</Callout>
+
+<Callout type="info">
+它们在 `x_iztro::astro::builder` 下，未在 crate 根重导出，需要写全路径。
+</Callout>

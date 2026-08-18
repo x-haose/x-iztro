@@ -1,7 +1,7 @@
 //! 不需要完整星盘的轻量查询。
 //!
 //! 对齐 iztro `astro` 模块中那几个「只取一个结果」的函数：生肖、星座、命宫主星。
-//! 实现上复用排盘主流程再取字段，以保证与 [`by_solar`] / [`by_lunar`] 的结果永远一致。
+//! 实现上复用排盘主流程再取字段，以保证与 [`crate::by_solar`] / [`crate::by_lunar`] 的结果永远一致。
 
 use crate::astro::builder::{by_lunar, by_solar};
 use crate::data::types::*;
@@ -73,8 +73,7 @@ pub fn get_sign_by_lunar_date(
         lunar_date,
         ZODIAC_TIME_INDEX,
         Gender::Male,
-        is_leap_month,
-        true,
+        LeapMonth::from_flags(is_leap_month, true),
         language,
         Config::default(),
     )?
@@ -141,20 +140,11 @@ pub fn get_major_star_by_solar_date(
 pub fn get_major_star_by_lunar_date(
     lunar_date: &str,
     time_index: u8,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError> {
-    let astrolabe = by_lunar(
-        lunar_date,
-        time_index,
-        Gender::Male,
-        is_leap_month,
-        fix_leap,
-        language,
-        config,
-    )?;
+    let astrolabe = by_lunar(lunar_date, time_index, Gender::Male, leap, language, config)?;
     Ok(major_stars_of_soul_palace(&astrolabe))
 }
 

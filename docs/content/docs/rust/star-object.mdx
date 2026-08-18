@@ -9,9 +9,15 @@ description: Star 的字段与亮度、四化判断，以及 StarRef 的回溯�
 ```rust
 let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
 
-ziwei.name;            // 经 Deref 直接取字段
-ziwei.palace();        // 视图独有：回溯所在宫
+let _name = &ziwei.name;   // 经 Deref 直接取字段
+let _palace = ziwei.palace();  // 视图独有：回溯所在宫
 ```
+
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 排盘，因此输出里的展示值都是中文。
+`Star` 本身不实现 `Copy`，经 `Deref` 取字段时按引用借用（`&ziwei.name`）
+或克隆，不能直接搬走。
+</Callout>
 
 ## 字段
 
@@ -157,10 +163,11 @@ pub fn surrounded_palaces(&self) -> SurroundedPalaces<'a>
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
 
-println!("{}", ziwei.palace().name);
-println!("{}", ziwei.opposite_palace().name);
+println!("{}", translate_palace(ziwei.palace().name, zh));
+println!("{}", translate_palace(ziwei.opposite_palace().name, zh));
 println!("同宫或三方见天相: {}", ziwei.surrounded_palaces().have(&[StarKey::TianxiangMaj]));
 ```
 

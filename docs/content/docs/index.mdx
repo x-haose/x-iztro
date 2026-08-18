@@ -1,11 +1,46 @@
 ---
 title: 文档
-description: 紫微斗数排盘引擎，Rust 核心，供 Rust、Python、Go 三种语言调用。
+description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go 调用。
 icon: Star
 ---
 
-x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰，它算出一张完整的命盘：
-十二宫的位置与干支、每个宫里落了哪些星、星的亮度与四化，以及从大限到流时的六层运限。
+把出生时间算成一张完整的紫微斗数命盘，并能一键转成大模型读得懂的文字 ——
+**排盘交给它算准，解读交给 AI**。
+
+一行调用得到的就是下面这段文字，直接贴进任何大模型就能开始问：
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
+干支: 庚辰 甲申 丙午 庚寅
+时辰: 寅时 (03:00~05:00)
+星座: 狮子座
+生肖: 龙
+命宫地支: 午
+身宫地支: 戌
+命主: 破军
+身主: 文昌
+五行局: 木三局
+生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+
+=== 十二宫 ===
+
+--- 财帛 ---
+天干地支: 戊寅
+大限: 43-52
+小限虚岁: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+十二神: 绝, 飞廉, 吊客, 岁驿
+主星: 武曲(得)[权], 天相(庙)
+辅星: 天马
+杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
+
+（其余十一宫略）
+```
+
+排出来的盘准不准，有一条硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8 逐字段零差异**，
+由约 71 万例金标测试守着。见[准确性保证](/zh/docs/guide/about/accuracy)。
 
 ## 从哪开始
 
@@ -13,29 +48,39 @@ x-iztro 是一个**紫微斗数排盘引擎**。给定出生的日期与时辰�
   <Card
     title="x-iztro 指南"
     href="/zh/docs/guide"
-    description="安装、第一张盘、紫微斗数概念、配置与数据结构。不分语言的通用内容。"
+    description="安装、第一张盘、紫微斗数概念、配置与数据结构。不分编程语言的通用内容。"
   />
   <Card
-    title="Rust API"
+    title="不写代码怎么用它"
+    href="/zh/docs/guide/guides/for-non-developers"
+    description="能做什么、典型场景、要跟工程师交代哪几件事。"
+  />
+  <Card
+    title="Rust API 参考"
     href="/zh/docs/rust"
     description="核心库。Python 与 Go 绑定都调用它。"
   />
   <Card
-    title="Python API"
+    title="Python API 参考"
     href="/zh/docs/python"
     description="dataclass 与 StrEnum 构成的类型化 API，零外部依赖。"
   />
   <Card
-    title="Go API"
+    title="Go API 参考"
     href="/zh/docs/go"
     description="内嵌 WebAssembly，纯 Go 运行时，无 cgo。"
   />
+  <Card
+    title="AI Prompt 生成"
+    href="/zh/docs/guide/guides/ai-prompt"
+    description="上面那段文字怎么生成、格式约定、怎么接进大模型。"
+  />
 </Cards>
 
-## 三种语言，同一套结果
+## 三种编程语言，同一套结果
 
 三套绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
-判断方法基于语言无关标识，同一条分析规则在三种语言上写出来、结果也一致。
+判断方法基于语言无关标识，同一条分析规则在三种编程语言上写出来、结果也一致。
 
 <Tabs items={['Rust', 'Python', 'Go']}>
 <Tab value="Rust">
@@ -65,7 +110,7 @@ print(soul.has(["ziweiMaj"]))
 <Tab value="Go">
 
 ```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 soul := chart.Palace(iztro.PalaceSoul)
 
 fmt.Println(soul.Has(iztro.StarZiweiMaj))
@@ -74,9 +119,4 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 </Tab>
 </Tabs>
 
-三段代码的输出都是 `true`。
-
-## 准确性
-
-排盘结果由约 66 万例金标测试守着，零容忍差异。
-覆盖矩阵、生成方式与已知偏离见[准确性](/zh/docs/guide/about/accuracy)。
+三段代码的输出都是 `true`：这张盘的命宫里有紫微星。

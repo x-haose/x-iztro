@@ -11,6 +11,9 @@
  *
  * 单例重放（排查哈希不一致时用）：
  *   node generate_tier3.mjs --inspect <date> <timeIndex> <男|女> <1|0>
+ *
+ * 年份分段（多进程并行跑满时可用，各段互不重叠）：
+ *   node generate_tier3.mjs --range <startYear> <endYear>
  */
 import { astro } from 'iztro';
 import { solar2lunar } from 'lunar-lite';
@@ -40,10 +43,15 @@ if (process.argv[2] === '--inspect') {
 
 mkdirSync(outDir, { recursive: true });
 
+const [rangeStart, rangeEnd] =
+  process.argv[2] === '--range'
+    ? [Number(process.argv[3]), Number(process.argv[4])]
+    : [START_YEAR, END_YEAR];
+
 let totalCases = 0;
 const startTime = Date.now();
 
-for (let year = START_YEAR; year <= END_YEAR; year++) {
+for (let year = rangeStart; year <= rangeEnd; year++) {
   const outPath = join(outDir, `year_${year}.csv`);
   if (existsSync(outPath)) {
     console.log(`Year ${year}: exists, skipped`);

@@ -1,0 +1,523 @@
+---
+title: Palace object
+description: The fields of PalaceData plus every star predicate, empty-palace check and flying-star method.
+---
+
+Palaces are where most Zi Wei analysis happens. The data itself is a `PalaceData`, while
+`chart.palace(...)` returns a `PalaceRef` — the same data plus a reference back to the astrolabe.
+
+| | `PalaceData` | `PalaceRef<'a>` |
+| --- | --- | --- |
+| Where it comes from | `chart.palaces[i]`, `sp.target` and other fields | `chart.palace(...)`, `star.palace()`, every query entry other than `sp` |
+| Fields | All | All readable through `Deref`; `data()` reaches the underlying value |
+| Predicates | `has` / `is_empty` / the `flies_to` family (the target palace must be a `&PalaceData`) | The same methods, with the target palace written as an index or a palace name |
+| View-only | — | `opposite_palace` / `surrounded_palaces` / `mutaged_places` / `astrolabe` |
+
+The entries on this page give the signatures in their `PalaceRef` form; the same methods on
+`PalaceData` differ only in the target-palace parameter of the flying-star family (`&PalaceData`
+rather than `impl Into<PalaceTarget>`).
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+
+soul.name;                  // reached directly through Deref
+soul.opposite_palace();     // view-only
+```
+
+<Callout type="info">
+The examples on this page all chart with `Language::EnUS`, so the display values in the output are
+iztro's en-US vocabulary — `emperor` for Ziwei, `soul` for the Soul palace, and so on. Enum fields
+such as `name` are themselves language-independent; the translation to text happens only at display
+time through `translate_*`.
+</Callout>
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `index` | `usize` | Palace index 0–11, where 0 is the Yin palace |
+| `name` | `Palace` | Palace name |
+| `is_body_palace` | `bool` | Whether this is the body palace |
+| `is_original_palace` | `bool` | Whether this is the original palace (stem equal to the year stem, and not the Zi or Chou palace) |
+| `heavenly_stem` | `HeavenlyStem` | Palace stem, which determines the mutagens this palace flies out |
+| `earthly_branch` | `EarthlyBranch` | Palace branch, fixed by the index: 0 is yin, 11 is chou |
+| `major_stars` | `Vec<Star>` | Whichever of the fourteen major stars fall here, in placement order |
+| `minor_stars` | `Vec<Star>` | Whichever of the fourteen minor stars fall here |
+| `adjective_stars` | `Vec<Star>` | Adjective stars |
+| `changsheng12` | `StarKey` | The Changsheng god of this palace, exactly one per palace |
+| `boshi12` | `StarKey` | The Boshi god |
+| `jiangqian12` | `StarKey` | The Jiang-qian god |
+| `suiqian12` | `StarKey` | The Sui-qian god |
+| `decadal` | `Decadal` | The decade: age range plus stem and branch |
+| `ages` | `Vec<u32>` | Nominal ages at which the age scope passes through this palace |
+| `overrides` | `Option<Arc<TableOverrides>>` | The custom mutagen and brightness tables in effect when charting; `None` when nothing was customized |
+
+<Callout type="info" title="The four groups of gods versus the three star groups">
+Major, minor and adjective stars are **lists** — a palace can hold zero or many.
+The Changsheng, Boshi, Jiang-qian and Sui-qian gods are marks of which each palace has **exactly
+one**, filling one full cycle across the twelve palaces, so they are single-valued fields rather than
+lists.
+</Callout>
+
+<Callout type="info" title="overrides is input, not result">
+What `overrides` carries are the custom tables from the charting configuration — the flying-star
+methods look up mutagens by palace stem, and a custom table may have rewritten the mutagens of some
+stem, so the palace has to carry it around.
+It takes no part in serialization: neither the DTO nor the JSON output has this item.
+</Callout>
+
+---
+
+## has / not_have / has_one_of
+
+**Purpose** Test which stars sit in this palace.
+
+**Zi Wei meaning** Where stars fall is the basic information on a chart. "The Soul palace holds Ziwei
+and Tianxiang" is `has(&[ZiweiMaj, TianxiangMaj])`. The search covers all three groups of major, minor
+and adjective stars.
+
+**Signature**
+
+```rust
+pub fn has(&self, stars: &[StarKey]) -> bool
+pub fn not_have(&self, stars: &[StarKey]) -> bool
+pub fn has_one_of(&self, stars: &[StarKey]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stars` | `&[StarKey]` | Yes | — | A list of star keys |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `has` | Every star in the list is in this palace |
+| `not_have` | No star in the list is in this palace |
+| `has_one_of` | At least one star in the list is in this palace |
+
+**Example**
+
+```rust
+use x_iztro::StarKey::*;
+
+let soul = chart.palace(Palace::Soul).unwrap();
+
+println!("{}", soul.has(&[ZiweiMaj, TianxiangMaj]));
+println!("{}", soul.has_one_of(&[QishaMaj, ZiweiMaj]));
+println!("{}", soul.not_have(&[HuoxingMin, LingxingMin]));
+```
+
+**Output**
+
+```text
+false
+true
+true
+```
+
+On this chart the Soul palace holds only Ziwei, with Tianxiang in the Wealth palace, so `has` — which
+demands both — is `false`.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+With an empty list, `has` and `not_have` return `true` while `has_one_of` returns `false`.
+</Callout>
+
+---
+
+## has_mutagen / not_have_mutagen
+
+**Purpose** Test whether this palace carries a given mutagen.
+
+**Zi Wei meaning** Natal mutagens are determined by the **birth-year stem** and marked on the
+corresponding stars. A palace "having lu" means some star sitting in it was given lu by the birth-year
+stem.
+Note this differs from flying stars — flying looks at the palace stem, while this looks at the mark
+already on the star.
+
+**Signature**
+
+```rust
+pub fn has_mutagen(&self, mutagen: Mutagen) -> bool
+pub fn not_have_mutagen(&self, mutagen: Mutagen) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `Mutagen` | Yes | — | One of `Lu` / `Quan` / `Ke` / `Ji` |
+
+**Return value** `bool`. Only `major_stars` and `minor_stars` are scanned — **not** adjective stars.
+
+**Example**
+
+```rust
+let children = chart.palace(Palace::Children).unwrap();
+
+println!("Children palace has lu: {}", children.has_mutagen(Mutagen::Lu));
+println!("Children palace lacks ji: {}", children.not_have_mutagen(Mutagen::Ji));
+```
+
+**Output**
+
+```text
+Children palace has lu: true
+Children palace lacks ji: true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Adjective stars are not scanned">
+`has_mutagen` looks only at the mutagen marks on major and minor stars; an adjective star carrying a
+mark does not count (this reproduces iztro's behaviour). To include adjective stars, walk the
+`mutagen` field of `adjective_stars` yourself.
+Natal mutagens only ever land on the fourteen major stars and a few minor stars, so on real charts the
+two readings usually agree.
+</Callout>
+
+---
+
+## is_empty / is_empty_excluding
+
+**Purpose** Test whether this palace is empty.
+
+**Zi Wei meaning** An "empty palace" holds none of the fourteen major stars. Empty palaces are read
+by borrowing the major stars of the opposite palace, and the test is a very common branch in Zi Wei
+analysis. Minor and adjective stars do not by default prevent a palace from counting as empty.
+
+**Signature**
+
+```rust
+pub fn is_empty(&self) -> bool
+pub fn is_empty_excluding(&self, exclude_stars: &[StarKey]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `exclude_stars` | `&[StarKey]` | Yes | — | Stars that additionally count: with no major star but one of these present, the palace is **not** empty either |
+
+**Return value** `bool`. The order of decision is: major stars first — any present and it is not
+empty; then `exclude_stars` — a hit and it is not empty; only if neither holds is the palace empty.
+
+**Example**
+
+```rust
+let parents = chart.palace(Palace::Parents).unwrap();
+println!("Parents palace empty: {}", parents.is_empty());
+
+let friends = chart.palace(Palace::Friends).unwrap();
+println!("Friends palace empty: {}", friends.is_empty());
+
+// the Parents palace has no major star but does hold Tuoluo — counting Tuoluo makes it non-empty
+println!("Parents palace counting Tuoluo: {}", parents.is_empty_excluding(&[StarKey::TuoluoMin]));
+```
+
+**Output**
+
+```text
+Parents palace empty: true
+Friends palace empty: false
+Parents palace counting Tuoluo: false
+```
+
+On this chart only the Parents and Property palaces lack major stars. The Friends palace holds Taiyin
+and so is not empty.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The parameter name reads backwards easily">
+`exclude_stars` does not mean "ignore these stars in the test"; it means "these stars count too".
+It has no effect at all when the palace already holds a major star — a major star settles the question
+before the list is consulted.
+</Accordion>
+<Accordion title="Only major stars are considered">
+`is_empty` checks `major_stars` only. A palace packed with minor and adjective stars but no major star
+is still empty. To have certain minor stars count as "filling" the palace, pass them to
+`is_empty_excluding`.
+</Accordion>
+</Accordions>
+
+---
+
+## flies_to / flies_one_of_to / not_fly_to
+
+**Purpose** Test whether the mutagens flown by this palace's stem land in a target palace.
+
+**Zi Wei meaning** The core technique of the flying-star school. Every palace has its own stem, and
+the stem determines through the mutagen table which four stars take lu, quan, ke and ji. If a
+transformed star happens to sit in the target palace, that is "this palace flies X into the target
+palace". "The Soul palace flies lu into Wealth" says that the smooth going of the Soul palace's
+affairs lands on wealth.
+
+**Signature**
+
+```rust
+pub fn flies_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) -> bool
+pub fn flies_one_of_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) -> bool
+pub fn not_fly_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<PalaceTarget>` | Yes | — | The target palace: index / name / body palace / original palace |
+| `mutagens` | `&[Mutagen]` | Yes | — | The mutagens to check |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `flies_to` | **All** the listed mutagens fly into the target palace |
+| `flies_one_of_to` | **At least one** of them flies into the target palace |
+| `not_fly_to` | **None** of them flies into the target palace |
+
+**Example**
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+
+println!("Soul flies lu into Wealth: {}", soul.flies_to(Palace::Wealth, &[Mutagen::Lu]));
+println!("Soul flies lu or ji into Surface: {}", soul.flies_one_of_to(Palace::Surface, &[Mutagen::Lu, Mutagen::Ji]));
+println!("Soul does not fly quan into Children: {}", soul.not_fly_to(Palace::Children, &[Mutagen::Quan]));
+```
+
+**Output**
+
+```text
+Soul flies lu into Wealth: false
+Soul flies lu or ji into Surface: false
+Soul does not fly quan into Children: true
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="An empty mutagen list: flies_to is false, the other two are true">
+With an empty `mutagens` slice, `flies_to` returns `false` while `flies_one_of_to` and `not_fly_to`
+return `true`.
+
+That runs against the intuition that a universal statement holds vacuously over the empty set, but it
+reproduces iztro's behaviour: `flies_to` first works out the stars to look for and returns false the
+moment there are none. Passing an empty list is usually a caller oversight — confirm the list is
+non-empty.
+</Accordion>
+<Accordion title="All three return false when the target palace cannot be located">
+When the target resolves to no palace, all three methods on a `PalaceRef` return `false`, including
+the semantically negative `not_fly_to` — failing to locate a palace is not the same as "nothing flew
+in". Indices are taken modulo 12 first, so values like `12` or `-1` are not location failures.
+</Accordion>
+<Accordion title="A custom mutagen table changes the result">
+Once `Config::with_mutagens` replaces the table for a heavenly stem, the stars flown by palaces
+carrying that stem change with it. The flying-star methods read the table that was in effect during
+charting, not the built-in default.
+</Accordion>
+<Accordion title="Flying into your own palace is a self-mutagen">
+Writing the palace itself as the target means "self-mutagen" semantically. The `self_mutaged` family
+is more direct there.
+</Accordion>
+</Accordions>
+
+---
+
+## self_mutaged / self_mutaged_one_of / not_self_mutaged
+
+**Purpose** Test whether this palace self-mutates.
+
+**Zi Wei meaning** A self-mutagen is when a star transformed by the palace's own stem happens to sit
+in that palace. It reads as "releasing its own energy back into itself", unlike the directed action of
+flying into another palace.
+
+**Signature**
+
+```rust
+pub fn self_mutaged(&self, mutagens: &[Mutagen]) -> bool
+pub fn self_mutaged_one_of(&self, mutagens: &[Mutagen]) -> bool
+pub fn not_self_mutaged(&self, mutagens: &[Mutagen]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagens` | `&[Mutagen]` | Yes | — | The mutagens to check; an empty slice means "all four" |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `self_mutaged` | All the listed mutagens are self-mutated |
+| `self_mutaged_one_of` | At least one of them is self-mutated; an empty list checks all four |
+| `not_self_mutaged` | None of them is self-mutated; an empty list checks all four |
+
+**Example**
+
+```rust
+let career = chart.palace(Palace::Career).unwrap();
+
+println!("Career self-mutates lu: {}", career.self_mutaged(&[Mutagen::Lu]));
+println!("Career self-mutates ji: {}", career.self_mutaged(&[Mutagen::Ji]));
+println!("Career has any self-mutagen: {}", career.self_mutaged_one_of(&[]));
+println!("Career has no self-mutagen: {}", career.not_self_mutaged(&[]));
+```
+
+**Output**
+
+```text
+Career self-mutates lu: false
+Career self-mutates ji: true
+Career has any self-mutagen: true
+Career has no self-mutagen: false
+```
+
+The Career palace's stem is bing, bing sends ji to Lianzhen, and Lianzhen sits right in the Career
+palace — hence a self-mutated ji.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="An empty list means something different here than in the flying family">
+`self_mutaged_one_of` and `not_self_mutaged` read an empty list as "all four mutagens", not as the
+empty set. `self_mutaged` makes no such fallback: an empty list degenerates into "does this palace
+contain the empty set", which is always `true` — the exact opposite of the empty-list `false` of
+`flies_to`. Do not carry the intuition from one family over to the other.
+</Callout>
+
+---
+
+## mutaged_places / mutagen_stars
+
+**Purpose** Get which palaces the four stars transformed by this palace's stem land in, or get those
+four stars themselves.
+
+**Zi Wei meaning** The panoramic version of flying-star analysis: instead of asking "does it fly to
+that palace?", collect all four landing places for lu, quan, ke and ji at once.
+
+**Signature**
+
+```rust
+pub fn mutaged_places(&self) -> Vec<Option<PalaceRef<'a>>>
+pub fn mutagen_stars(&self, mutagens: &[Mutagen]) -> Vec<StarKey>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagens` | `&[Mutagen]` | Yes | — | Which mutagen slots to take; repeating one repeats it in the output |
+
+**Return value** `mutaged_places` returns a `Vec` of length 4 in the order **lu, quan, ke, ji**, with
+`None` in a slot whose transformed star is not on this chart.
+`mutagen_stars` returns a `Vec<StarKey>` in the order the mutagens were passed.
+
+**Example**
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+
+for (m, place) in ["lu", "quan", "ke", "ji"].iter().zip(soul.mutaged_places()) {
+    match place {
+        Some(p) => println!("{m} → {}", translate_palace(p.name, Language::EnUS)),
+        None => println!("{m} → not on this chart"),
+    }
+}
+
+println!("{:?}", soul.mutagen_stars(&[Mutagen::Lu, Mutagen::Ji]));
+```
+
+**Output**
+
+```text
+lu → children
+quan → soul
+ke → career
+ji → wealth
+[TianliangMaj, WuquMaj]
+```
+
+The Soul palace's stem is ren, and ren sends lu to Tianliang, quan to Ziwei, ke to Zuofu and ji to
+Wuqu; those four stars sit in the Children, Soul, Career and Wealth palaces respectively.
+
+<Callout>
+`mutagen_stars` gives "which stars this palace's stem transforms", unrelated to a star's own
+`mutagen` field (the natal mutagens), which is determined by the birth-year stem.
+</Callout>
+
+<Callout type="info" title="mutaged_places takes no arguments">
+`PalaceRef::mutaged_places` takes no parameters and always returns a result of length 4 in the slots
+lu, quan, ke, ji. The method of the same name on `PalaceData` takes the twelve-palace slice
+(`p.mutaged_places(&chart.palaces)`) and returns `Vec<Option<usize>>` palace indices rather than
+palace views.
+</Callout>
+
+---
+
+## opposite_palace / surrounded_palaces
+
+**Purpose** Get this palace's opposite palace and its surrounded set.
+
+**Zi Wei meaning** The opposite palace sits at index +6, and the two are always read facing each
+other. The surrounded set adds +4 (the career position) and +8 (the wealth position) to that.
+
+**Signature**
+
+```rust
+pub fn opposite_palace(&self) -> PalaceRef<'a>
+pub fn surrounded_palaces(&self) -> SurroundedPalaces<'a>
+```
+
+**Return value** `opposite_palace` always exists and does not return an `Option`.
+For `surrounded_palaces` see [Surrounded palaces](/en/docs/rust/surpalaces).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let soul = chart.palace(Palace::Soul).unwrap();
+
+println!("the opposite of {} is {}", translate_palace(soul.name, en),
+    translate_palace(soul.opposite_palace().name, en));
+println!("malefics in the surrounded set: {}", soul.surrounded_palaces().have_one_of(&[StarKey::HuoxingMin, StarKey::LingxingMin]));
+```
+
+**Output**
+
+```text
+the opposite of soul is surface
+malefics in the surrounded set: true
+```
+
+---
+
+## astrolabe
+
+**Purpose** Get back from a palace to the astrolabe it belongs to.
+
+**Signature**
+
+```rust
+pub fn astrolabe(&self) -> &'a Astrolabe
+```
+
+**Return value** `&Astrolabe`. A view always holds its astrolabe, so this does not return an
+`Option`.
+
+**Example**
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+println!("{}", translate_five_elements_class(soul.astrolabe().five_elements_class, Language::EnUS));
+```
+
+**Output**
+
+```text
+wood 3rd
+```

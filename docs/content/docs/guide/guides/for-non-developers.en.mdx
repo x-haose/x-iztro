@@ -1,0 +1,115 @@
+---
+title: Using it without writing code
+description: What x-iztro does, where it is typically used, what to hand your engineers, and how accurate it is.
+---
+
+*For: Zi Wei enthusiasts · product and decision makers. No code required anywhere on this page*
+
+## What this is
+
+x-iztro is a **charting engine**: give it a date of birth, an hour of birth and a gender, and it
+computes a complete Zi Wei Dou Shu chart — and can turn that chart into text a language model can
+read.
+
+It is not an app and not a website. It is code for programs to use, and an engineer has to build it
+into your own product.
+
+## What it can do
+
+- **Compute a complete natal chart**: where the twelve palaces sit and their stems and branches,
+  which stars fall into each palace, star brightness and mutagens, the four groups of twelve gods,
+  the decadals and the age fortune track.
+- **Compute the horoscope for any moment**: six scopes — decadal, age fortune, yearly, monthly,
+  daily, hourly.
+- **Turn a chart into AI-readable text in one call**: no need to describe the chart yourself; paste
+  the generated text into a language model and start asking.
+- **Six chart languages**: Simplified Chinese, Traditional Chinese, English, Japanese, Korean,
+  Vietnamese.
+- **Switchable schools**: the year boundary, late Zi hour attribution, the Zhongzhou school and the
+  heaven/earth/human plates are all configuration.
+
+What it does **not** do is interpret. It can tell you which star landed in which palace; "how will
+this person's career go" is not the library's job — that step goes to an AI or to a person.
+
+## Where it is typically used
+
+### An AI reading bot
+
+The most common shape. A user gives their birth details in conversation, the backend calls x-iztro
+to chart, and the generated chart text is sent to a language model along with the user's question;
+the model produces the reading.
+
+The library gets the chart right, the model does the talking — two separate jobs, each reliable on
+its own terms.
+
+### The backend of a Zi Wei app
+
+The app's frontend draws the chart and handles interaction; the charting computation sits on the
+server. One body of computation can serve iOS, Android, web and mini-programs at the same time.
+
+### Bulk data analysis
+
+Questions like "across these hundred thousand birth records, what fraction have Ziwei in the Soul
+palace?" or "how does a given pattern correlate with a given field". x-iztro charts in milliseconds,
+so hundreds of thousands of records finish on a single machine.
+
+## Do we need an engineer?
+
+Yes. x-iztro is a code library, not software you can open.
+
+But the work is small: install it, write three lines of calls, wire the result into a flow you
+already have. A competent backend engineer usually has a working prototype inside half a day.
+
+## What to tell your engineers
+
+Passing along the following is enough:
+
+| Item | Detail |
+| --- | --- |
+| Repository | [github.com/x-haose/x-iztro](https://github.com/x-haose/x-iztro) |
+| Programming language | Rust, Python or Go — pick one, the results are identical |
+| Installation | Python: `pip install x-iztro`; Go: `go get`; Rust: `cargo add` |
+| Requirements | Python 3.10 or later / Go 1.22 or later / Rust edition 2024 |
+| Inputs | Three things: date of birth, hour index (0–12), gender |
+| For AI use | Call `astrolabe_to_prompt` to get the chart text and feed it straight to a model |
+| Docs | [Getting started](/en/docs/guide/getting-started), [AI prompt generation](/en/docs/guide/guides/ai-prompt) |
+
+<Callout title="How to fill in the hour index">
+It is not the clock hour; it is one of thirteen values, 0 through 12. 0 is the early Zi hour
+(00:00–01:00), 1 is Chou, 2 is Yin, … 11 is Hai, and 12 is the late Zi hour (23:00–24:00). The full
+table is on [The inputs you need](/en/docs/guide/getting-started#hour-index).
+
+**Born after 23:00 means 12, not 0** — the two values produce different charts.
+</Callout>
+
+## How accurate is it?
+
+"Accurate" has a very specific definition here: **identical field for field to the JavaScript
+[iztro](https://github.com/SylarLong/iztro)**.
+
+iztro is one of the most complete and longest-maintained open-source Zi Wei Dou Shu charting
+implementations, and a fair number of frontend projects use it. x-iztro treats it as the reference
+and checks against it field by field across roughly 710,000 test cases — any divergence is treated
+as a bug and fixed.
+
+The **boundary** of that claim matters too: agreeing with iztro is not the same as being "the one
+correct answer in the art". Zi Wei has many schools, and different schools genuinely place stars and
+assign mutagens differently. What x-iztro guarantees is "given the same set of school choices, it
+computes exactly what the reference implementation computes" — not "this set of school choices is
+the right one".
+
+See [Accuracy](/en/docs/guide/about/accuracy).
+
+## What MIT means
+
+x-iztro is open source under the MIT licence. For a user, that means:
+
+- **Commercial use is fine**, with no fee and no need to notify the author.
+- **Closed-source use is fine**: build it into your commercial product and the product itself need
+  not be open sourced.
+- **Modification is fine.**
+- The single obligation is to **keep the copyright notice** (usually on the product's "open source
+  licences" page).
+- The author **provides no warranty**: if something goes wrong in use, that is on you.
+
+Among open-source licences, MIT is the least restrictive category, and legal teams rarely object.

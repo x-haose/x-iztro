@@ -1,0 +1,375 @@
+---
+title: Charting entries
+description: BySolar, ByLunar, Rearranged and AI prompt generation.
+---
+
+Charting is where everything starts: give a birth date, hour and gender, get an `*Astrolabe`.
+
+<Callout type="info">
+Every entry point returns an `error`. Date format and existence, the solar year range, the hour index,
+gender, language and configuration are all validated up front in the core. See
+[Error handling](/en/docs/go/errors).
+</Callout>
+
+---
+
+## BySolar
+
+**Purpose** Chart a natal chart from a solar date.
+
+**Zi Wei meaning** Zi Wei Dou Shu computes on the lunar calendar, but most people only remember their
+solar birthday. This function converts solar to lunar first (including the year, month, day and hour
+pillars) and places the stars from there.
+When the year turns over is governed by `YearDivide` — for someone born between lunar New Year and
+the Beginning of Spring, the two settings give different year pillars, which in turn affects the
+mutagens, the soul and body stars, and every year-based star.
+
+**Signature**
+
+```go
+func BySolar(
+    solarDate string,
+    timeIndex uint8,
+    gender Gender,
+    fixLeap bool,
+    language Language,
+    config *Config,
+) (*Astrolabe, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `timeIndex` | `uint8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
+| `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` (the literals `"male"`/`"female"` also work). Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
+| `fixLeap` | `bool` | Yes | — | Whether to correct for lunar leap months. When true, the sixteenth of a leap month onward counts as the next month (the late Zi hour excepted, see below) |
+| `language` | `Language` | Yes | — | Chart language (`LanguageZhCN` and friends); affects every translated field. The `*Key` fields are unaffected |
+| `config` | `*Config` | Yes | — | Charting configuration; pass `nil` for the defaults |
+
+**Return value** `*Astrolabe` — a complete chart with the twelve palaces, the four pillars, the soul
+and body stars and the five elements class.
+
+**Example**
+
+```go
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.SolarDate, "|", chart.LunarDate, "|", chart.ChineseDate)
+fmt.Println(chart.Sign, chart.Zodiac, chart.FiveElementsClass)
+fmt.Println("soul", chart.Soul, "body", chart.Body)
+```
+
+**Output**
+
+```text
+2000-8-16 | 二〇〇〇年七月十七 | geng chen - jia shen - bing woo - geng yin
+leo dragon wood 3rd
+soul rebel body scholar
+```
+
+`LunarDate` is a lunar date in Chinese numerals and stays Chinese under every language;
+`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Why the hour index runs 0–12 rather than 0–11">
+The Zi hour straddles midnight, splitting into the early Zi hour (00:00–01:00, belonging to the
+current day) and the late Zi hour (23:00–24:00, belonging to the next). Their day pillars differ and
+Ziwei's starting palace can be a day apart, so they must be distinguished — hence 13 indices.
+When unsure of the index, convert with `TimeToIndex(hour)`.
+</Accordion>
+<Accordion title="fixLeap only bites in a leap month">
+The bump requires four conditions at once: that lunar month really is a leap month, `fixLeap` is
+`true`, the lunar day is greater than 15, and the hour index is not 12 (the late Zi hour). Miss any
+one of them and the month index stays with the current month.
+So only for someone born in the second half of a lunar leap month do `true` and `false` give
+different month indices, which in turn affects Zuofu, Youbi and every month-based star.
+</Accordion>
+<Accordion title="Pass nil rather than a zero value for config">
+`&Config{}` and `nil` behave identically — every field carries `omitempty` and an empty value does not
+override a default. But writing `nil` says "use the defaults" more clearly.
+</Accordion>
+</Accordions>
+
+---
+
+## ByLunar
+
+**Purpose** Chart a natal chart from a lunar date.
+
+**Zi Wei meaning** The lunar date is Zi Wei Dou Shu's native input, and this skips the solar
+conversion. Anyone who knows their lunar birthday can use it directly; the result is identical to
+calling `BySolar` with the corresponding solar date.
+
+**Signature**
+
+```go
+func ByLunar(
+    lunarDate string,
+    timeIndex uint8,
+    gender Gender,
+    leap LeapMonth,
+    language Language,
+    config *Config,
+) (*Astrolabe, error)
+```
+
+**Parameters** Identical to `BySolar` apart from the following two; `BySolar`'s `fixLeap` is folded into `leap` here.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarDate` | `string` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `leap` | `LeapMonth` | Yes | — | `NotLeapMonth` — not a leap month; `LeapMonthKeep` — leap month, charted as itself; `LeapMonthFixed` — leap month, and days after the 15th are treated as the next month (iztro `fixLeap`). Flagging a leap month that does not exist in that year falls back to the ordinary month; any other value returns `ErrInvalidArgument` |
+
+**Return value** Same as `BySolar`.
+
+**Example**
+
+```go
+a, _ := iztro.ByLunar("2000-7-17", 2, iztro.GenderFemale, iztro.NotLeapMonth, iztro.LanguageEnUS, nil)
+b, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+
+fmt.Println(a.SolarDate, a.SolarDate == b.SolarDate)
+```
+
+**Output**
+
+```text
+2000-8-16 true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The silent fallback for a wrongly flagged leap month">
+Flag `leap` as a leap month when that month is not one and the chart is cast for the ordinary month
+without an error (as in iztro). If you need strict validation, confirm the leap month exists for that
+year and month before calling.
+</Callout>
+
+---
+
+## Config
+
+The charting configuration. Every field may be omitted, and omitting it takes the default.
+
+```go
+type Config struct {
+    YearDivide      string
+    HoroscopeDivide string
+    AgeDivide       string
+    DayDivide       string
+    Algorithm       string
+    AstroType       string
+    Mutagens        map[string][]string
+    Brightness      map[string][]string
+}
+```
+
+| Field | Values | Default | Description |
+| --- | --- | --- | --- |
+| `YearDivide` | `"normal"` / `"exact"` | `"normal"` | Whether the year pillar turns over at lunar New Year or the Beginning of Spring |
+| `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | Which boundary the yearly spirits take their year branch from |
+| `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | Whether the nominal age increments with the lunar year or with the birthday |
+| `DayDivide` | `"forward"` / `"current"` | `"forward"` | Whether the late Zi hour belongs to the next day or the current one |
+| `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | The algorithm school |
+| `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | The charting perspective |
+| `Mutagens` | Stem key → four star keys | — | A custom mutagen table, replacing the whole table for a stem |
+| `Brightness` | Star key → twelve brightness keys | — | A custom brightness table, replacing the whole table for a star |
+
+**Example**
+
+```go
+cfg := &iztro.Config{
+    Algorithm:  iztro.AlgorithmZhongzhou,
+    YearDivide: iztro.YearDivideExact,
+}
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
+
+fmt.Println(chart.FiveElementsClass)
+```
+
+**Output**
+
+```text
+wood 3rd
+```
+
+Every value set has matching constants, so you need not write the strings by hand:
+`YearDivideNormal` / `YearDivideExact`, `HoroscopeDivideNormal` / `HoroscopeDivideExact`,
+`AgeDivideNormal` / `AgeDivideBirthday`, `DayDivideForward` / `DayDivideCurrent`,
+`AlgorithmDefault` / `AlgorithmZhongzhou`, `AstroHeaven` / `AstroEarth` / `AstroHuman`.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Custom tables replace a whole table and their length is checked strictly">
+`Mutagens["jiaHeavenly"]` must give all four entries (Lu, Quan, Ke, Ji) and
+`Brightness["ziweiMaj"]` all twelve; one entry too many or too few and charting fails
+(an `*Error` whose `Code` is `invalid_argument`). Stems and stars not listed keep the default table.
+Both tables accept keys and values as keys only, never as translated names.
+</Accordion>
+<Accordion title="Custom tables are not echoed back on chart.Config">
+`chart.Config` is reconstructed from the output DTO and holds the six switches only — the two custom
+tables are charting **input** rather than result and do not enter the DTO (matching the field
+contract of JS iztro).
+
+The chart does keep the originals you passed in internally, so `Rearranged`, `Horoscope` and the
+prompts still use those tables in their secondary computations; nothing is silently lost.
+To record the configuration, keep the `*Config` on your own call site.
+
+```go
+cfg := &iztro.Config{
+    AstroType: iztro.AstroEarth,
+    Mutagens: map[string][]string{
+        iztro.StemGeng: {iztro.StarTaiyangMaj, iztro.StarWuquMaj,
+            iztro.StarTianfuMaj, iztro.StarTiantongMaj},
+    },
+}
+
+chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.FiveElementsClass, chart.Config.AstroType)
+fmt.Println(chart.Config.Mutagens == nil)
+fmt.Println(chart.Palace(iztro.PalaceSoul).MutagenStarKeys)
+```
+
+**Output**
+
+```text
+earth 5th earth
+true
+[tiantongMaj tianjiMaj wenchangMin lianzhenMaj]
+```
+</Accordion>
+<Accordion title="&Config{} is equivalent to nil">
+Every field carries `omitempty`, so empty values never reach the JSON and never override a default.
+To change one switch, build a `&Config{...}` filling in only that field.
+</Accordion>
+</Accordions>
+
+---
+
+## Rearranged
+
+**Purpose** Re-anchor the chart on a given stem and branch as the Soul palace and return a new chart;
+the original is untouched.
+
+**Zi Wei meaning** The Zhongzhou school reads one set of birth data as three charts: the heaven chart
+anchors the five elements class on the Soul palace's pillar, the earth chart on the Body palace's, the
+human chart on the Spirit palace's. Change the anchoring pillar and the class changes, and with it the
+placement of Ziwei and Tianfu, the twelve palace names, the Changsheng gods and the decadal and age
+scopes are all recomputed.
+This method opens that capability up to **any** stem and branch.
+
+**Signature**
+
+```go
+func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astrolabe, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `fromStemKey` | `string` | Yes | — | Stem key of the new Soul palace |
+| `fromBranchKey` | `string` | Yes | — | Branch key of the new Soul palace |
+
+**Return value** A new `*Astrolabe`. Recomputed: the Soul and Body palaces, the five elements class,
+the fourteen major stars, the twelve palace names, the Changsheng gods, the decadal and age scopes,
+the soul star, plus Tianshang, Tianshi and Tiancai, which follow the Soul palace.
+Carried over from the original chart: minor stars, the remaining adjective stars, the Boshi gods, the
+Sui-qian and Jiang-qian gods, and the body star.
+
+**Example**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+
+// anchor on the original chart's Body palace pillar — equivalent to the earth chart
+var body *iztro.Palace
+for i := range chart.Palaces {
+    if chart.Palaces[i].IsBodyPalace {
+        body = &chart.Palaces[i]
+    }
+}
+earth, _ := chart.Rearranged(body.HeavenlyStemKey, body.EarthlyBranchKey)
+
+fmt.Println("heaven", chart.FiveElementsClass, "→ earth", earth.FiveElementsClass)
+```
+
+**Output**
+
+```text
+heaven wood 3rd → earth earth 5th
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="The three standard charts do not need this method">
+For the heaven, earth and human charts just chart with `&Config{AstroType: iztro.AstroEarth}`; both
+charting entry points support it. `Rearranged` exists for anchoring on an arbitrary stem and branch.
+</Callout>
+
+<Accordions>
+<Accordion title="The body star does not move under re-anchoring">
+The body star is looked up by the **birth-year branch**, independent of where the Soul palace sits,
+and re-anchoring does not change the year of birth.
+The soul star is looked up by the Soul palace branch and therefore does update.
+</Accordion>
+</Accordions>
+
+---
+
+## AstrolabeToPrompt / HoroscopeToPrompt
+
+**Purpose** Render a chart or a horoscope into structured text for a language model.
+
+**Signature**
+
+```go
+func (a *Astrolabe) AstrolabeToPrompt() (string, error)
+func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `targetDate` | `string` | Yes | — | Horoscope version only: the target solar date |
+| `targetTimeIndex` | `uint8` | Yes | — | Horoscope version only: the target hour index |
+
+**Return value** `string` — structured text in the chart's own charting language.
+
+**Example**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+prompt, _ := chart.AstrolabeToPrompt()
+
+fmt.Println(string([]rune(prompt)[:68]))
+```
+
+**Output**
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The output language follows the chart's charting language and is not set separately. For an English
+prompt, chart in English.
+</Callout>

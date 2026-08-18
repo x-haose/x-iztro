@@ -1,0 +1,212 @@
+---
+title: Error handling
+description: What is validated, at which layer, what the four error categories mean, and why the core refuses to panic.
+---
+
+*For: developers*
+
+x-iztro validates external input as far in as it can, so all three programming languages sit behind
+one line of defence. Each language only translates the error into its own conventional type; none of
+them re-validates or reinterprets.
+
+## Error categories
+
+Every error carries a machine-readable category, with the same values across languages — **branch on
+it, do not parse the message**.
+
+| Category | Meaning |
+| --- | --- |
+| `invalid_date` | Malformed date, a date that does not exist, or one outside the supported range (Gregorian 1583–9999) |
+| `invalid_time_index` | Hour index out of range (0–12 are legal) |
+| `invalid_argument` | Any other invalid argument or config: unknown gender, chart language, star key, switch value, or a wrong override-table length |
+| `internal` | A defect or runtime failure inside the library. Not the caller's fault; please report it |
+
+## The error type in each language
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+The `IztroError` enum, with `code()` giving the category:
+
+```rust
+match by_solar(date, ti, Gender::Female, true, Language::EnUS, Config::default()) {
+    Ok(chart) => { /* ... */ }
+    Err(e) => println!("{:20} {}", e.code(), e),
+}
+```
+
+```text
+invalid_date         invalid solar date '2000-2-30': day is out of range for that month
+invalid_date         invalid solar date '1000-1-1': year must be within 1583-9999
+invalid_time_index   time_index must be 0-12, got 13
+```
+
+There are three variants: `InvalidDate`, `InvalidTimeIndex` and `Internal`. The enum is marked
+`#[non_exhaustive]`, so leave a `_` arm when matching.
+
+</Tab>
+<Tab value="Python">
+
+`IztroError`, a subclass of `ValueError`, so an existing `except ValueError` still catches it:
+
+```python
+from x_iztro import Astro, IztroError
+
+try:
+    Astro().by_solar("2000-2-30", 2, "female")
+except IztroError as e:
+    print(e.code, e)
+```
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+```
+
+</Tab>
+<Tab value="Go">
+
+`*iztro.Error`, carrying `Code` and `Message`; four sentinel variables let `errors.Is` match by
+category:
+
+```go
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+
+if errors.Is(err, iztro.ErrInvalidDate) {
+    var e *iztro.Error
+    errors.As(err, &e)
+    fmt.Println(e.Code, e.Message)
+}
+```
+
+```text
+invalid_date invalid solar date '2000-13-1': month must be within 1-12
+```
+
+| Sentinel | Category |
+| --- | --- |
+| `ErrInvalidDate` | `CodeInvalidDate` |
+| `ErrInvalidTimeIndex` | `CodeInvalidTimeIndex` |
+| `ErrInvalidArgument` | `CodeInvalidArgument` |
+| `ErrInternal` | `CodeInternal` |
+
+`Error()` prints with an `iztro: ` prefix; `Message` is the unprefixed text.
+
+</Tab>
+</Tabs>
+
+The C FFI and wasm exits render the same error as `{"error":"<message>","code":"<code>"}`, generated
+by serde so escaping is always complete.
+
+## What is validated, with sample messages
+
+Messages start lower-case, introduce the detail after a colon, and carry the original input — so
+batch processing can pinpoint which record went wrong.
+
+| Input | Sample message |
+| --- | --- |
+| Gregorian date format | `invalid solar date 'not-a-date': year is not a number` |
+| Gregorian date does not exist | `invalid solar date '2000-2-30': day is out of range for that month` |
+| Gregorian year range | `invalid solar date '1000-1-1': year must be within 1583-9999` |
+| Lunar month | `invalid lunar date '2000-13-1': month must be within 1-12` |
+| Days in that lunar month | `invalid lunar date '2000-2-31': day is out of range for that lunar month` |
+| Hour index | `time_index must be 0-12, got 13` |
+| Gender | `invalid gender 'x': expected 'male' or 'female'` |
+| Chart language | `invalid language 'fr-FR': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
+| Custom mutagen table length | `invalid mutagens for 'gengHeavenly': expected 4 stars (lu, quan, ke, ji), got 3` |
+| Override table given a translated name | `invalid mutagens for 'gengHeavenly': unknown star '太阳'` |
+
+<Callout title="Which layer validates what">
+Dates and hour indexes are validated in the **core**, identically for all three programming
+languages. Gender, chart language, configuration switches and star keys — the things passed as
+strings — are validated in the **binding layer** as they are parsed; on the Rust side they are enums
+to begin with, so there is no invalid value to reject.
+</Callout>
+
+## A miss is not an error
+
+Entry points that compute return errors; **query** methods return an empty value on a miss rather
+than an error — "this chart does not have that star" is a normal result, not an exception.
+
+| Situation | Returns |
+| --- | --- |
+| A star is not on this chart | `None` / `nil` |
+| Palace index out of range | `None` / `nil` |
+| The star has no brightness table | `None` / empty string |
+| Reverse lookup of a name that does not exist | `None` / empty string |
+
+<Callout type="warn" title="A misspelled key fails silently">
+`chart.palace("soulPalce")` raises nothing and simply returns empty; `has(["ziweiMj"])` returns
+`False` forever. Use enums or constants in predicates (Python's `PalaceName.SOUL`, Go's
+`iztro.PalaceSoul`) — then a misspelling is a compile-time or construction-time error, not a silent
+runtime one. To validate a string that came from outside, feed it to the enum constructor:
+`PalaceName("x")` raises `ValueError`.
+</Callout>
+
+## Why the core does not panic
+
+This is not a style preference; it is a hard constraint imposed by the wasm target.
+
+<Steps>
+<Step>On wasm a panic becomes a **trap**, aborting the call outright</Step>
+<Step>`catch_unwind` **does not work** on wasm — the binding layer cannot catch it</Step>
+<Step>Every trap **permanently consumes** stack space in the module instance, and once enough have accumulated even legitimate calls start failing</Step>
+</Steps>
+
+So the line of defence has to sit further in: all external input is validated before it reaches the
+algorithm, and the entry points return a `Result`. The binding layer's `catch_unwind` is a backstop
+for defects inside the library only; it carries no argument-validation duty.
+
+<Callout type="info" title="What a panic would mean">
+The charting entry points do not panic on invalid **external input**. If you hit one anyway, it is a
+defect inside the library; it is returned under the `internal` category and should be reported as a
+bug — not something callers are expected to defend against.
+</Callout>
+
+## Writing a batch job
+
+Skip the bad records, keep going with the good ones, rather than failing the whole batch:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let (charts, failed): (Vec<_>, Vec<_>) = rows
+    .iter()
+    .map(|r| by_solar(&r.date, r.ti, r.gender, true, Language::EnUS, Config::default()))
+    .partition(Result::is_ok);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+charts, failed = [], []
+
+for row in rows:
+    try:
+        charts.append(Astro().by_solar(row["date"], row["ti"], row["gender"]))
+    except IztroError as e:
+        failed.append((row, e.code, str(e)))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+for _, row := range rows {
+    chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, iztro.LanguageEnUS, nil)
+    if err != nil {
+        var e *iztro.Error
+        errors.As(err, &e)
+        failed = append(failed, failure{row, e.Code, e.Message})
+        continue
+    }
+    charts = append(charts, chart)
+}
+```
+
+</Tab>
+</Tabs>
+
+Per-API error behaviour is on the errors page for [Rust](/en/docs/rust/errors),
+[Python](/en/docs/python/errors) and [Go](/en/docs/go/errors).

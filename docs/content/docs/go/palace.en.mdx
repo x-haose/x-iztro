@@ -1,0 +1,467 @@
+---
+title: Palace object
+description: The fields of Palace plus every star predicate, empty-palace check and flying-star method.
+---
+
+Palaces are where most Zi Wei analysis happens. `chart.Palace(...)` returns a `*Palace`, which both
+holds the palace's data and can trace back to its astrolabe, its opposite palace and its surrounded
+set.
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+```
+
+<Callout type="info">
+The examples on this page chart with `"en-US"`, so the display values in the output are English.
+Every method on `*Palace` checks for a nil receiver and returns a zero value rather than panicking;
+**reading a field** still panics, so the nil check remains yours to make.
+</Callout>
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Index` | `int` | Palace index 0–11, where 0 is the Yin palace |
+| `Name` / `NameKey` | `string` | Translated palace name / its key |
+| `IsBodyPalace` | `bool` | Whether this is the Body palace |
+| `IsOriginalPalace` | `bool` | Whether this is the palace of origin (stem equal to the year stem, and not the Zi or Chou palace) |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | Palace stem, which determines the mutagens this palace flies out |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | Palace branch, fixed by the index: 0 is yin, 11 is chou |
+| `MajorStars` | `[]Star` | Whichever of the fourteen major stars fall here, in placement order |
+| `MinorStars` | `[]Star` | Whichever of the fourteen minor stars fall here |
+| `AdjectiveStars` | `[]Star` | Adjective stars |
+| `Changsheng12` / `Changsheng12Key` | `string` | The Changsheng god of this palace, exactly one per palace |
+| `Boshi12` / `Boshi12Key` | `string` | The Boshi god |
+| `Jiangqian12` / `Jiangqian12Key` | `string` | The Jiang-qian god |
+| `Suiqian12` / `Suiqian12Key` | `string` | The Sui-qian god |
+| `Decadal` | `Decadal` | The decadal: age range plus stem and branch |
+| `Ages` | `[]int` | Nominal ages at which the age scope passes through this palace |
+| `MutagenStarKeys` | `[4]string` | Keys of the four stars transformed by this palace's **own stem**, in the order lu, quan, ke, ji |
+
+<Callout type="info" title="The four groups of gods versus the three star groups">
+Major, minor and adjective stars are **slices** — a palace can hold zero or many.
+The Changsheng, Boshi, Jiang-qian and Sui-qian gods are marks of which each palace has **exactly
+one**, filling one full cycle across the twelve palaces, so they are single-valued fields rather than
+slices.
+</Callout>
+
+<Callout type="info" title="MutagenStarKeys is the palace-stem mutagen, not the natal one">
+It is computed from the mutagen table **in effect when charting** — a custom table
+(`Config.Mutagens`) shows up here, and it is exactly what the flying-star methods read. The natal
+mutagen is a mark on the star's own `MutagenKey` field; the two are not the same thing.
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.HeavenlyStem, soul.MutagenStarKeys)
+```
+
+**Output**
+
+```text
+ren [tianliangMaj ziweiMaj zuofuMin wuquMaj]
+```
+</Callout>
+
+---
+
+## Has / NotHave / HasOneOf
+
+**Purpose** Test which stars sit in this palace.
+
+**Zi Wei meaning** Where stars fall is the basic information on a chart. "The Soul palace holds Ziwei
+and Tianxiang" is `Has(StarZiweiMaj, StarTianxiangMaj)`. The search covers all three groups of major,
+minor and adjective stars.
+
+**Signature**
+
+```go
+func (p *Palace) Has(stars ...string) bool
+func (p *Palace) NotHave(stars ...string) bool
+func (p *Palace) HasOneOf(stars ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stars` | `...string` | Yes | — | Star keys, variadic |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `Has` | Every listed star is in this palace |
+| `NotHave` | None of the listed stars is in this palace |
+| `HasOneOf` | At least one listed star is in this palace |
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(soul.HasOneOf(iztro.StarQishaMaj, iztro.StarZiweiMaj))
+fmt.Println(soul.NotHave(iztro.StarHuoxingMin, iztro.StarLingxingMin))
+```
+
+**Output**
+
+```text
+false
+true
+true
+```
+
+On this chart the Soul palace holds only Ziwei, with Tianxiang in the Wealth palace, so `Has` — which
+demands both — is false.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="What passing no stars returns">
+`Has` and `NotHave` return `true`; `HasOneOf` returns `false`.
+</Accordion>
+<Accordion title="A misspelled star name fails silently">
+The comparison is against the set of "all keys and translated names of the stars in this palace", and
+a miss simply means absent — `soul.Has("ziweiMj")` returns `false` without an error, indistinguishable
+from "the Soul palace has no Ziwei".
+The `Star*` constants in the package let the compiler and the IDE stop the typo where it is written.
+</Accordion>
+<Accordion title="Star names in the current language are accepted too">
+The `Has` family compares against both `Key` and `Name`, so `soul.Has("emperor")` also holds on an
+English chart. But writing it that way breaks the moment the language changes — always test on keys.
+</Accordion>
+</Accordions>
+
+---
+
+## HasMutagen / NotHaveMutagen
+
+**Purpose** Test whether this palace carries a given mutagen.
+
+**Zi Wei meaning** Natal mutagens are determined by the **birth-year stem** and marked on the
+corresponding stars. A palace "having Lu" means some star sitting in it was given Lu by the birth-year
+stem.
+Note this differs from flying stars — flying looks at the palace stem, while this looks at the mark
+already on the star.
+
+**Signature**
+
+```go
+func (p *Palace) HasMutagen(mutagenKey string) bool
+func (p *Palace) NotHaveMutagen(mutagenKey string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagenKey` | `string` | Yes | — | `MutagenLu` / `MutagenQuan` / `MutagenKe` / `MutagenJi` |
+
+**Return value** `bool`.
+
+**Example**
+
+```go
+children := chart.Palace(iztro.PalaceChildren)
+
+fmt.Println("Children palace has lu:", children.HasMutagen(iztro.MutagenLu))
+fmt.Println("Children palace lacks ji:", children.NotHaveMutagen(iztro.MutagenJi))
+```
+
+**Output**
+
+```text
+Children palace has lu: true
+Children palace lacks ji: true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Adjective stars are not scanned">
+`HasMutagen` looks only at the mutagen marks on `MajorStars` and `MinorStars`; an adjective star
+carrying a mark does not count (replicating iztro's behaviour). Natal mutagens only ever land on the
+fourteen major stars and a few minor ones, so in practice the two readings rarely differ on a real
+chart.
+</Callout>
+
+---
+
+## IsEmpty
+
+**Purpose** Test whether this palace is empty.
+
+**Zi Wei meaning** An "empty palace" holds none of the fourteen major stars. Empty palaces are read
+by borrowing the major stars of the opposite palace, and the test is a very common branch in Zi Wei
+analysis. Minor and adjective stars do not by default prevent a palace from counting as empty.
+
+**Signature**
+
+```go
+func (p *Palace) IsEmpty(excludeStars ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `excludeStars` | `...string` | No | — | Stars that additionally count: with no major star but one of these present, the palace is **not** empty either |
+
+**Return value** `bool`. The order of decision is: major stars first — any present and it is not
+empty; then `excludeStars` — a hit and it is not empty; only if neither holds is the palace empty.
+
+**Example**
+
+```go
+parents := chart.Palace(iztro.PalaceParents)
+
+fmt.Println("Parents palace empty:", parents.IsEmpty())
+fmt.Println("Friends palace empty:", chart.Palace(iztro.PalaceFriends).IsEmpty())
+
+// the Parents palace has no major star but does hold Tuoluo — counting Tuoluo makes it non-empty
+fmt.Println("Parents palace counting Tuoluo:", parents.IsEmpty(iztro.StarTuoluoMin))
+```
+
+**Output**
+
+```text
+Parents palace empty: true
+Friends palace empty: false
+Parents palace counting Tuoluo: false
+```
+
+On this chart only the Parents and Property palaces lack major stars. The Friends palace holds Taiyin
+and so is not empty.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The parameter name reads backwards easily">
+`excludeStars` does not mean "ignore these stars in the test"; it means "these stars count too".
+It has no effect at all when the palace already holds a major star — a major star settles the question
+before the list is consulted.
+</Accordion>
+<Accordion title="Only major stars are considered">
+Without `excludeStars` only `MajorStars` is checked. A palace packed with minor and adjective stars
+but no major star is still empty.
+</Accordion>
+</Accordions>
+
+---
+
+## FliesTo / FliesOneOfTo / NotFlyTo
+
+**Purpose** Test whether the mutagens flown by this palace's stem land in a target palace.
+
+**Zi Wei meaning** The core technique of the flying-star school. Every palace has its own stem, and
+the stem determines through the mutagen table which four stars take Lu, Quan, Ke and Ji. If a
+transformed star happens to sit in the target palace, that is "this palace flies X into the target
+palace". "The Soul palace flies Lu into Wealth" says that the smooth going of the Soul palace's
+affairs lands on wealth.
+
+**Signature**
+
+```go
+func (p *Palace) FliesTo(to *Palace, mutagenKeys ...string) bool
+func (p *Palace) FliesOneOfTo(to *Palace, mutagenKeys ...string) bool
+func (p *Palace) NotFlyTo(to *Palace, mutagenKeys ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `to` | `*Palace` | Yes | — | The target palace object |
+| `mutagenKeys` | `...string` | Yes | — | The mutagens to check |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `FliesTo` | **All** the listed mutagens fly into the target palace |
+| `FliesOneOfTo` | **At least one** of them flies into the target palace |
+| `NotFlyTo` | **None** of them flies into the target palace |
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println("Soul flies lu into Wealth:",
+    soul.FliesTo(chart.Palace(iztro.PalaceWealth), iztro.MutagenLu))
+fmt.Println("Soul flies lu or ji into Surface:",
+    soul.FliesOneOfTo(chart.Palace(iztro.PalaceSurface), iztro.MutagenLu, iztro.MutagenJi))
+fmt.Println("Soul does not fly quan into Children:",
+    soul.NotFlyTo(chart.Palace(iztro.PalaceChildren), iztro.MutagenQuan))
+```
+
+**Output**
+
+```text
+Soul flies lu into Wealth: false
+Soul flies lu or ji into Surface: false
+Soul does not fly quan into Children: true
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The target palace is an object">
+On the Go side the target is a `*Palace` rather than a string — fetch it with `chart.Palace(...)`
+first. All three methods return `false` when passed `nil`.
+</Accordion>
+<Accordion title="With no mutagens: FliesTo is false, the other two are true">
+Passing no mutagens (or an empty slice) makes `FliesTo` return `false`, while `FliesOneOfTo` and
+`NotFlyTo` return `true`.
+
+That runs against the intuition that a universal statement holds vacuously over the empty set, but it
+replicates iztro's behaviour: `FliesTo` first works out which stars to look for and calls it false
+outright when there is not a single one.
+</Accordion>
+<Accordion title="A custom mutagen table changes the result">
+Once `Config.Mutagens` replaces the table for a heavenly stem, the stars flown by palaces carrying
+that stem change with it. The flying-star methods read the table that was in effect during charting,
+not the built-in default.
+</Accordion>
+</Accordions>
+
+---
+
+## SelfMutaged / SelfMutagedOneOf / NotSelfMutaged
+
+**Purpose** Test whether this palace self-mutates.
+
+**Zi Wei meaning** A self-mutagen is when a star transformed by the palace's own stem happens to sit
+in that palace. It reads as "releasing its own energy back into itself", unlike the directed action of
+flying into another palace.
+
+**Signature**
+
+```go
+func (p *Palace) SelfMutaged(mutagenKeys ...string) bool
+func (p *Palace) SelfMutagedOneOf(mutagenKeys ...string) bool
+func (p *Palace) NotSelfMutaged(mutagenKeys ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagenKeys` | `...string` | No | — | The mutagens to check; passing none to the latter two methods means "all four" |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `SelfMutaged` | All the listed mutagens are self-mutated |
+| `SelfMutagedOneOf` | At least one of them is self-mutated; passing none checks all four |
+| `NotSelfMutaged` | None of them is self-mutated; passing none checks all four |
+
+**Example**
+
+```go
+career := chart.Palace(iztro.PalaceCareer)
+
+fmt.Println("Career self-mutates lu:", career.SelfMutaged(iztro.MutagenLu))
+fmt.Println("Career self-mutates ji:", career.SelfMutaged(iztro.MutagenJi))
+fmt.Println("Career has any self-mutagen:", career.SelfMutagedOneOf())
+fmt.Println("Career has no self-mutagen:", career.NotSelfMutaged())
+```
+
+**Output**
+
+```text
+Career self-mutates lu: false
+Career self-mutates ji: true
+Career has any self-mutagen: true
+Career has no self-mutagen: false
+```
+
+The Career palace's stem is bing, bing sends Ji to Lianzhen, and Lianzhen sits right in the Career
+palace — hence a self-mutated Ji.
+
+---
+
+## MutagedPlaces / MutagenStars
+
+**Purpose** Get which palaces the four stars transformed by this palace's stem land in, or get those
+four stars themselves.
+
+**Zi Wei meaning** The panoramic version of flying-star analysis: instead of asking "does it fly to
+that palace?", collect all four landing places for Lu, Quan, Ke and Ji at once.
+
+**Signature**
+
+```go
+func (p *Palace) MutagedPlaces() []*Palace
+func (p *Palace) MutagenStars(mutagenKeys ...string) []string
+```
+
+**Return value** `MutagedPlaces` returns a slice of length 4 in the order **lu, quan, ke, ji**, with
+`nil` in a slot whose transformed star is not on the chart.
+`MutagenStars` returns a slice of star keys in the order the mutagens were passed.
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+for i, m := range []string{"lu", "quan", "ke", "ji"} {
+    if place := soul.MutagedPlaces()[i]; place != nil {
+        fmt.Printf("%s → %s\n", m, place.Name)
+    } else {
+        fmt.Printf("%s → not on this chart\n", m)
+    }
+}
+
+fmt.Println(soul.MutagenStars(iztro.MutagenLu, iztro.MutagenJi))
+```
+
+**Output**
+
+```text
+lu → children
+quan → soul
+ke → career
+ji → wealth
+[tianliangMaj wuquMaj]
+```
+
+The Soul palace's stem is ren, and ren sends Lu to Tianliang, Quan to Ziwei, Ke to Zuofu and Ji to
+Wuqu.
+
+---
+
+## OppositePalace / SurroundedPalaces / Astrolabe
+
+**Purpose** Trace from a palace to its opposite palace, its surrounded set and its astrolabe.
+
+**Signature**
+
+```go
+func (p *Palace) OppositePalace() *Palace
+func (p *Palace) SurroundedPalaces() *SurroundedPalaces
+func (p *Palace) Astrolabe() *Astrolabe
+```
+
+**Return value** A palace constructed on its own, detached from a chart, returns `nil`; a palace
+obtained from a chart query never does.
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println("the opposite of", soul.Name, "is", soul.OppositePalace().Name)
+fmt.Println("malefics in the surrounded set:",
+    soul.SurroundedPalaces().HaveOneOf(iztro.StarHuoxingMin, iztro.StarLingxingMin))
+fmt.Println(soul.Astrolabe().FiveElementsClass)
+```
+
+**Output**
+
+```text
+the opposite of soul is surface
+malefics in the surrounded set: true
+wood 3rd
+```

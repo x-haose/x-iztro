@@ -1,0 +1,72 @@
+---
+title: Overview
+description: Guides for AI readings, configuration and schools, cross-language predicates, multilingual output, error handling and extension.
+---
+
+*For: everyone. Each card says who it is for*
+
+Everything you actually run into once it is installed lives in this chapter.
+
+<Cards>
+  <Card
+    title="Using it without writing code"
+    href="/en/docs/guide/guides/for-non-developers"
+    description="What it can do, where it fits, and what to hand your engineers"
+  />
+  <Card
+    title="AI prompt generation"
+    href="/en/docs/guide/guides/ai-prompt"
+    description="Turning a chart or horoscope into structured text: format conventions and length"
+  />
+  <Card
+    title="Letting an AI read the chart"
+    href="/en/docs/guide/guides/llm"
+    description="Charting to the library, reading to the model: tool calls and a few traps already hit"
+  />
+  <Card
+    title="Config in depth"
+    href="/en/docs/guide/guides/config"
+    description="What each of the six switches and two custom tables changes, and when you would notice"
+  />
+  <Card
+    title="The language-independent key contract"
+    href="/en/docs/guide/guides/keys"
+    description="Why predicates must not match star names, and how the key fields work"
+  />
+  <Card
+    title="Multilingual output"
+    href="/en/docs/guide/guides/i18n"
+    description="Six chart languages, which fields get translated, converting between keys and names"
+  />
+  <Card
+    title="Error handling"
+    href="/en/docs/guide/guides/errors"
+    description="Four error categories and how each of the three programming languages reports them"
+  />
+  <Card
+    title="Extending the astrolabe"
+    href="/en/docs/guide/guides/plugins"
+    description="Hanging your own analysis rules off a chart, with each language's extension point"
+  />
+  <Card
+    title="The API behind the nine charting steps"
+    href="/en/docs/guide/guides/step-api"
+    description="Come here when you only want the result of one intermediate step"
+  />
+  <Card
+    title="Documentation endpoints for AI"
+    href="/en/docs/guide/guides/llms-txt"
+    description="llms.txt, single-page Markdown, Accept-header negotiation"
+  />
+</Cards>
+
+## The three easiest traps to fall into
+
+1. **Predicating on star names.** Switch the chart language and every branch silently fails. Use the
+   [language-independent keys](/en/docs/guide/guides/keys).
+2. **Forgetting the late Zi hour.** Born between 23:00 and 24:00 means hour index `12`, not `0`, and
+   the two produce different charts. See
+   [Config](/en/docs/guide/guides/config#late-zi-hour-attribution-day_divide).
+3. **Treating a palace slot as a position in the name order.** Slot 0 of the twelve-palace array is
+   the Yin palace, not the Soul palace. See
+   [The twelve palaces](/en/docs/guide/concepts/palaces).

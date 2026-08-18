@@ -1,0 +1,245 @@
+---
+title: Translation
+description: Two-way lookup between keys and translations, plus the per-category translation functions.
+---
+
+Every field on a chart already carries both a translation and a `*_key`, so manual translation is
+usually unnecessary. These functions exist for the cases where you have only a key (or only a
+translation in some language) and need to convert.
+
+Six languages are supported: `zh-CN`, `zh-TW`, `en-US`, `ja-JP`, `ko-KR`, `vi-VN`.
+
+---
+
+## translate_key
+
+**Purpose** Translate any key into a given language.
+
+**Signature**
+
+```rust
+pub fn translate_key(key: &str, lang: Language) -> Option<&'static str>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `key` | `&str` | Yes | — | A language-independent key |
+| `lang` | `Language` | Yes | — | Target language |
+
+Covering 260 keys across twelve categories:
+
+| Category | Count | Examples |
+| --- | --- | --- |
+| Stars | 162 | `ziweiMaj`, `changsheng`, `yunlu` |
+| Palaces (including the body and original palaces) | 14 | `soulPalace`, `wealthPalace`, `bodyPalace`, `originalPalace` |
+| Heavenly stems | 10 | `jiaHeavenly` |
+| Earthly branches | 12 | `ziEarthly` |
+| Brightness | 7 | `miao`, `wang` |
+| Mutagens | 4 | `sihuaLu` |
+| Five elements class | 5 | `water2nd` |
+| Gender | 2 | `male`, `female` |
+| Chinese zodiac | 12 | `rat`, `ox` |
+| Hours | 13 | `earlyRatHour` |
+| Zodiac signs | 12 | `aries` |
+| Horoscope scopes | 7 | `decadal`, `turn` |
+
+**Return value** `Option<&'static str>`. An unknown key returns `None`.
+
+**Example**
+
+```rust
+println!("{:?}", translate_key("ziweiMaj", Language::EnUS));
+println!("{:?}", translate_key("soulPalace", Language::JaJP));
+println!("{:?}", translate_key("nosuch", Language::ZhCN));
+```
+
+**Output**
+
+```text
+Some("emperor")
+Some("命宮")
+None
+```
+
+---
+
+## key_of
+
+**Purpose** Reverse-look-up a key from a translation in any language.
+
+**Signature**
+
+```rust
+pub fn key_of(text: &str) -> Option<&'static str>
+pub fn key_of_in(text: &str, key_filter: &str) -> Option<&'static str>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `text` | `&str` | Yes | — | A translation in any supported language |
+| `key_filter` | `&str` | Yes | — | A substring the key name must contain, for disambiguating homographic translations |
+
+**Return value** `Option<&'static str>`. `None` when nothing matches.
+
+**Example**
+
+```rust
+println!("{:?}", key_of("紫微"));
+println!("{:?}", key_of("emperor"));
+println!("{:?}", key_of("자미"));
+println!("{:?}", key_of("no such name"));
+```
+
+**Output**
+
+```text
+Some("ziweiMaj")
+Some("ziweiMaj")
+Some("ziweiMaj")
+None
+```
+
+Translations in all three languages resolve to the same key.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Homographic translations and key_of_in">
+A few translations are identical across categories: in en-US `horse` is both the zodiac horse and the
+star Tianma, `dragon` is both the zodiac dragon and Qinglong; in ko-KR `사` is both the branch si and
+Si among the Changsheng gods.
+
+`key_of` scans language by language, and within each language key by key, taking the first hit — in
+exactly the same order as iztro's `kot` (guarded case by case by golden tests). To pin down a
+category, use `key_of_in`, which only compares keys containing the substring:
+
+```rust
+println!("{:?}", key_of("horse"));                // Some("horse") (the zodiac horse)
+println!("{:?}", key_of_in("horse", "Min"));      // Some("tianmaMin") (Tianma)
+println!("{:?}", key_of("유시"));                  // Some("hourly") (the hourly scope)
+println!("{:?}", key_of_in("유시", "Hour"));       // Some("roosterHour") (the You hour)
+println!("{:?}", key_of_in("horse", "Palace"));   // None
+```
+
+Common substrings: `Maj` for the fourteen major stars, `Min` for minor stars, `Heavenly` / `Earthly`
+for stems and branches, `Palace` for palaces, `Hour` for hours. When the filter matches nothing the
+result is `None`; it does not fall back to the unfiltered result.
+</Accordion>
+<Accordion title="It is a full-table scan">
+`key_of` walks 260 keys × 6 languages. The cost of a single call is negligible, but do not put it in
+an inner loop over every palace and star — use the `*_key` fields that come with the data there.
+</Accordion>
+</Accordions>
+
+---
+
+## all_keys
+
+**Purpose** Get all 260 translatable keys.
+
+**Signature**
+
+```rust
+pub fn all_keys() -> Vec<&'static str>
+```
+
+**Return value** `Vec<&'static str>`, in the order `key_of` scans them: horoscope scopes, Chinese
+zodiac, hours, zodiac signs, five elements classes, heavenly stems, earthly branches, brightness,
+mutagens, stars, palaces, gender — matching the merge order of iztro's per-language translation files.
+
+**Example**
+
+```rust
+use x_iztro::i18n::lookup::{all_keys, translate_key};
+
+let keys = all_keys();
+println!("{} keys", keys.len());
+println!("{:?}", &keys[..4]);
+println!("{:?}", translate_key(keys[0], Language::EnUS));
+```
+
+**Output**
+
+```text
+260 keys
+["decadal", "childhood", "yearly", "monthly"]
+Some("decadal")
+```
+
+To iterate the keys of one category, the matching constant in the `data` module (`ALL_STARS`,
+`PALACES`, `HEAVENLY_STEMS`, `MUTAGEN` and so on) is simpler.
+
+---
+
+## Per-category translation functions
+
+When the category of a key is known, the matching strongly typed function is more direct and drops the
+`Option`.
+
+| Function | Input |
+| --- | --- |
+| `translate_star` | `StarKey` |
+| `translate_palace` | `Palace` |
+| `translate_heavenly_stem` | `HeavenlyStem` |
+| `translate_earthly_branch` | `EarthlyBranch` |
+| `translate_brightness` | `Brightness` |
+| `translate_mutagen` | `Mutagen` |
+| `translate_five_elements_class` | `FiveElementsClass` |
+| `translate_gender` | `Gender` |
+| `translate_zodiac` | `EarthlyBranch` |
+| `translate_time` | `u8` (hour index 0–12) |
+| `translate_sign` | `usize` (sign index 0–11, from Aries) |
+| `translate_horoscope_name` | `HoroscopeName` |
+
+All take the form `fn(value, Language) -> &'static str` and return static strings without allocating.
+All twelve are re-exported at the crate root, so `use x_iztro::*;` brings them in.
+
+**Example**
+
+```rust
+use x_iztro::i18n::{translate_palace, translate_star};
+
+println!("{}", translate_star(StarKey::ZiweiMaj, Language::ViVN));
+println!("{}", translate_palace(Palace::Soul, Language::KoKR));
+```
+
+**Output**
+
+```text
+Tử Vi
+명궁
+```
+
+---
+
+## There is no global language switch
+
+x-iztro keeps no global "current language" state: the language is passed as a parameter when charting,
+and translation functions name their target language explicitly on every call.
+
+<Callout type="info" title="Why">
+A global language switch makes the same code produce different results depending on call order, which
+is especially dangerous with multiple threads. Passing it explicitly means a call's result depends
+only on its arguments.
+</Callout>
+
+To emit several languages within one process, just chart several times or call the translation
+functions repeatedly; they do not interfere:
+
+```rust
+let en = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+let zh = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+println!("{} / {}", en.palace(Palace::Soul).unwrap().major_stars[0].name,
+                    zh.palace(Palace::Soul).unwrap().major_stars[0].name);
+```
+
+**Output**
+
+```text
+emperor / 紫微
+```

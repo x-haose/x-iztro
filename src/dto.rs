@@ -10,12 +10,17 @@
 //! - 排盘上下文（`genderKey`/`timeIndex`/`fixLeap`/`language`/`config`），
 //!   使消费方能以纯参数（无状态）方式发起运限计算；
 //! - 语言无关标识（星/宫/干支/四化/亮度的 `*key`/`*Key(s)` 字段，取值为
-//!   iztro i18n key），供强类型绑定做跨语言的身份判断与枚举映射。
+//!   iztro i18n key），供强类型绑定做跨语言的身份判断与枚举映射；宫位另带
+//!   `mutagenStarKeys`（本宫天干化出的禄权科忌四星），绑定层据此做飞星判断。
+//!
+//! 出错时三条绑定出口（FFI/wasm/PyO3）返回同一形状的错误 JSON
+//! `{"error": "<描述>", "code": "<分类>"}`，分类取值见 [`crate::error::BridgeError`]。
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::stars::StarKey;
+use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::*;
+use crate::error::BridgeError;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
@@ -120,6 +125,10 @@ pub struct PalaceDto {
     pub decadal: DecadalDto,
     /// 小限经过的虚岁列表
     pub ages: Vec<u32>,
+    /// x-iztro 扩展：本宫天干化出的四颗星的语言无关标识，顺序为禄、权、科、忌。
+    /// 取自排盘时生效的四化表（含 `Config` 的自定义覆盖），
+    /// 绑定层据此做飞星判断，无须各自再抄一份四化表。
+    pub mutagen_star_keys: [String; 4],
 }
 
 /// 数字化农历生日 DTO。
@@ -334,7 +343,23 @@ pub struct HoroscopeDto {
 // 枚举 → 字符串
 // ============================================================
 
-/// StarType 的 JS 取值
+/// 绑定层出口的错误 JSON：`{"error": "<message>", "code": "<code>"}`。
+///
+/// 用结构体而非 map 序列化，键序固定为 error 先、code 后；消息经 serde
+/// 转义，引号、反斜杠与控制字符一律安全。
+pub(crate) fn error_json(err: &BridgeError) -> String {
+    #[derive(Serialize)]
+    struct ErrorJson<'a> {
+        error: &'a str,
+        code: &'a str,
+    }
+    serde_json::to_string(&ErrorJson {
+        error: &err.message,
+        code: err.code,
+    })
+    .expect("错误 JSON 只含两个字符串字段，序列化不会失败")
+}
+
 /// 从 panic 载荷提取人类可读消息（downcast String/&str，兜底固定文案）。
 /// 供各绑定层把核心计算的 panic 转为对外错误。
 pub(crate) fn panic_message(panic: &(dyn std::any::Any + Send)) -> &str {
@@ -363,94 +388,83 @@ struct ConfigPatch {
 
 /// 解析绑定层的 config JSON（如 `{"algorithm":"zhongzhou"}`）。
 /// `None` 或空串返回默认配置；未出现的键取默认值；非法取值报错。
-pub fn parse_config_json(json: Option<&str>) -> Result<Config, String> {
+///
+/// # Errors
+/// JSON 语法错误或任一键取值不在允许集合内时返回 `invalid_argument`。
+pub fn parse_config_json(json: Option<&str>) -> Result<Config, BridgeError> {
     let json = match json {
         None => return Ok(Config::default()),
         Some(s) if s.trim().is_empty() => return Ok(Config::default()),
         Some(s) => s,
     };
-    let patch: ConfigPatch =
-        serde_json::from_str(json).map_err(|e| format!("Invalid config JSON: {e}"))?;
+    let patch: ConfigPatch = serde_json::from_str(json)
+        .map_err(|e| BridgeError::invalid_argument(format!("invalid config JSON: {e}")))?;
+    config_from_patch(patch)
+}
 
+/// 由已反序列化的补丁构造配置，供 `parse_config_json` 与 `serde_json::Value`
+/// 入参共用——后者不必先序列化回字符串再解析一遍。
+///
+/// # Errors
+/// 任一键取值不在允许集合内时返回 `invalid_argument`。
+pub fn parse_config_value(value: &serde_json::Value) -> Result<Config, BridgeError> {
+    let patch: ConfigPatch = serde_json::from_value(value.clone())
+        .map_err(|e| BridgeError::invalid_argument(format!("invalid config: {e}")))?;
+    config_from_patch(patch)
+}
+
+/// 开关键取值非法的统一报错：`invalid <field> '<value>': expected <expected>`
+fn bad_switch(field: &str, value: &str, expected: &str) -> BridgeError {
+    BridgeError::invalid_argument(format!("invalid {field} '{value}': expected {expected}"))
+}
+
+fn config_from_patch(patch: ConfigPatch) -> Result<Config, BridgeError> {
     let mut config = Config::default();
     if let Some(v) = patch.year_divide {
-        config.year_divide = match v.as_str() {
-            "normal" => YearDivide::Normal,
-            "exact" => YearDivide::Exact,
-            _ => {
-                return Err(format!(
-                    "Invalid yearDivide '{v}'. Expected 'normal' or 'exact'."
-                ));
-            }
-        };
+        config.year_divide = YearDivide::from_key(&v)
+            .ok_or_else(|| bad_switch("yearDivide", &v, "'normal' or 'exact'"))?;
     }
     if let Some(v) = patch.horoscope_divide {
-        config.horoscope_divide = match v.as_str() {
-            "normal" => HoroscopeDivide::Normal,
-            "exact" => HoroscopeDivide::Exact,
-            _ => {
-                return Err(format!(
-                    "Invalid horoscopeDivide '{v}'. Expected 'normal' or 'exact'."
-                ));
-            }
-        };
+        config.horoscope_divide = HoroscopeDivide::from_key(&v)
+            .ok_or_else(|| bad_switch("horoscopeDivide", &v, "'normal' or 'exact'"))?;
     }
     if let Some(v) = patch.age_divide {
-        config.age_divide = match v.as_str() {
-            "normal" => AgeDivide::Normal,
-            "birthday" => AgeDivide::Birthday,
-            _ => {
-                return Err(format!(
-                    "Invalid ageDivide '{v}'. Expected 'normal' or 'birthday'."
-                ));
-            }
-        };
+        config.age_divide = AgeDivide::from_key(&v)
+            .ok_or_else(|| bad_switch("ageDivide", &v, "'normal' or 'birthday'"))?;
     }
     if let Some(v) = patch.day_divide {
-        config.day_divide = match v.as_str() {
-            "forward" => DayDivide::Forward,
-            "current" => DayDivide::Current,
-            _ => {
-                return Err(format!(
-                    "Invalid dayDivide '{v}'. Expected 'forward' or 'current'."
-                ));
-            }
-        };
+        config.day_divide = DayDivide::from_key(&v)
+            .ok_or_else(|| bad_switch("dayDivide", &v, "'forward' or 'current'"))?;
     }
     if let Some(v) = patch.algorithm {
-        config.algorithm = match v.as_str() {
-            "default" => Algorithm::Default,
-            "zhongzhou" => Algorithm::Zhongzhou,
-            _ => {
-                return Err(format!(
-                    "Invalid algorithm '{v}'. Expected 'default' or 'zhongzhou'."
-                ));
-            }
-        };
+        config.algorithm = Algorithm::from_key(&v)
+            .ok_or_else(|| bad_switch("algorithm", &v, "'default' or 'zhongzhou'"))?;
     }
-
     if let Some(v) = patch.astro_type {
-        config.astro_type = AstroType::from_key(&v).ok_or_else(|| {
-            format!("Invalid astroType '{v}'. Expected 'heaven', 'earth' or 'human'.")
-        })?;
+        config.astro_type = AstroType::from_key(&v)
+            .ok_or_else(|| bad_switch("astroType", &v, "'heaven', 'earth' or 'human'"))?;
     }
 
     // 自定义四化与亮度表：键与值都是语言无关标识
     if let Some(map) = patch.mutagens {
         for (stem_key, star_keys) in map {
             let stem = HeavenlyStem::from_key(&stem_key).ok_or_else(|| {
-                format!("Invalid mutagens key '{stem_key}': unknown heavenly stem.")
+                BridgeError::invalid_argument(format!(
+                    "invalid mutagens key '{stem_key}': unknown heavenly stem"
+                ))
             })?;
             if star_keys.len() != 4 {
-                return Err(format!(
-                    "Invalid mutagens for '{stem_key}': expected 4 stars (lu, quan, ke, ji), got {}.",
+                return Err(BridgeError::invalid_argument(format!(
+                    "invalid mutagens for '{stem_key}': expected 4 stars (lu, quan, ke, ji), got {}",
                     star_keys.len()
-                ));
+                )));
             }
             let mut stars = [StarKey::ZiweiMaj; 4];
             for (i, key) in star_keys.iter().enumerate() {
                 stars[i] = StarKey::from_key(key).ok_or_else(|| {
-                    format!("Invalid mutagens for '{stem_key}': unknown star '{key}'.")
+                    BridgeError::invalid_argument(format!(
+                        "invalid mutagens for '{stem_key}': unknown star '{key}'"
+                    ))
                 })?;
             }
             config = config.with_mutagens(stem, stars);
@@ -458,13 +472,16 @@ pub fn parse_config_json(json: Option<&str>) -> Result<Config, String> {
     }
     if let Some(map) = patch.brightness {
         for (star_key, brightness_keys) in map {
-            let star = StarKey::from_key(&star_key)
-                .ok_or_else(|| format!("Invalid brightness key '{star_key}': unknown star."))?;
+            let star = StarKey::from_key(&star_key).ok_or_else(|| {
+                BridgeError::invalid_argument(format!(
+                    "invalid brightness key '{star_key}': unknown star"
+                ))
+            })?;
             if brightness_keys.len() != 12 {
-                return Err(format!(
-                    "Invalid brightness for '{star_key}': expected 12 entries, got {}.",
+                return Err(BridgeError::invalid_argument(format!(
+                    "invalid brightness for '{star_key}': expected 12 entries, got {}",
                     brightness_keys.len()
-                ));
+                )));
             }
             let mut table = [None; 12];
             for (i, key) in brightness_keys.iter().enumerate() {
@@ -473,7 +490,9 @@ pub fn parse_config_json(json: Option<&str>) -> Result<Config, String> {
                     continue;
                 }
                 table[i] = Some(Brightness::from_key(key).ok_or_else(|| {
-                    format!("Invalid brightness for '{star_key}': unknown brightness '{key}'.")
+                    BridgeError::invalid_argument(format!(
+                        "invalid brightness for '{star_key}': unknown brightness '{key}'"
+                    ))
                 })?);
             }
             config = config.with_brightness(star, table);
@@ -486,31 +505,11 @@ pub fn parse_config_json(json: Option<&str>) -> Result<Config, String> {
 impl From<Config> for ConfigDto {
     fn from(c: Config) -> Self {
         ConfigDto {
-            year_divide: match c.year_divide {
-                YearDivide::Normal => "normal",
-                YearDivide::Exact => "exact",
-            }
-            .to_string(),
-            horoscope_divide: match c.horoscope_divide {
-                HoroscopeDivide::Normal => "normal",
-                HoroscopeDivide::Exact => "exact",
-            }
-            .to_string(),
-            age_divide: match c.age_divide {
-                AgeDivide::Normal => "normal",
-                AgeDivide::Birthday => "birthday",
-            }
-            .to_string(),
-            day_divide: match c.day_divide {
-                DayDivide::Forward => "forward",
-                DayDivide::Current => "current",
-            }
-            .to_string(),
-            algorithm: match c.algorithm {
-                Algorithm::Default => "default",
-                Algorithm::Zhongzhou => "zhongzhou",
-            }
-            .to_string(),
+            year_divide: c.year_divide.as_key().to_string(),
+            horoscope_divide: c.horoscope_divide.as_key().to_string(),
+            age_divide: c.age_divide.as_key().to_string(),
+            day_divide: c.day_divide.as_key().to_string(),
+            algorithm: c.algorithm.as_key().to_string(),
             astro_type: c.astro_type.as_key().to_string(),
         }
     }
@@ -638,6 +637,10 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
             earthly_branch_key: p.decadal.earthly_branch.as_key().to_string(),
         },
         ages: p.ages.clone(),
+        mutagen_star_keys: {
+            let stars = p.mutagen_stars(&MUTAGEN);
+            std::array::from_fn(|i| stars[i].as_key().to_string())
+        },
     }
 }
 

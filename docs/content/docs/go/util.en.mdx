@@ -1,0 +1,595 @@
+---
+title: Utilities
+description: Index arithmetic, brightness and mutagen lookups, Soul and body palace derivation, decadal and age scopes, and the four-pillar display string.
+---
+
+These functions are the parts the charting algorithm is assembled from. They come in handy when you
+implement Zi Wei logic yourself or want to double-check a step of the derivation; everyday charting
+does not call them directly.
+
+Every key in the parameters and return values is language-independent and interoperates directly with
+the `*Key` fields on a chart.
+
+---
+
+## FixIndex / FixIndex12
+
+**Purpose** Constrain any integer to a cyclic range.
+
+**Zi Wei meaning** The twelve palaces form a ring: one step past the Chou palace (index 11) is back
+to the Yin palace (index 0). Every "count n forward, count n backward" derivation relies on this
+wrapping.
+
+**Signature**
+
+```go
+func FixIndex(index int, max int) (int, error)
+func FixIndex12(index int) int
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `index` | `int` | Yes | — | The index to fix, possibly negative |
+| `max` | `int` | Yes | — | Cycle length; passing `0` takes the default of 12, and stems use 10. A negative value returns an error |
+
+**Return value** An index within `0..max` (0 included, `max` excluded).
+`FixIndex12` is fixed at modulo 12 and returns no error — use it directly for twelve-palace wrapping.
+
+**Example**
+
+```go
+a, _ := iztro.FixIndex(-1, 0)
+b, _ := iztro.FixIndex(13, 0)
+c, _ := iztro.FixIndex(11, 10)
+
+fmt.Println(a, b, c)
+fmt.Println(iztro.FixIndex12(-1), iztro.FixIndex12(13))
+
+_, err := iztro.FixIndex(0, -1)
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+11 1 1
+11 1
+iztro: invalid max '-1': expected a positive integer
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Passing 0 for max means the default of 12, not modulo 0">
+This replicates iztro's `fixIndex(index, max = 12)` default parameter and runs against Go's zero-value
+intuition: `FixIndex(13, 0)` gives 1 rather than an error. For twelve-palace wrapping reach for
+`FixIndex12` instead and skip both the ambiguity and an `error` that can never occur.
+</Callout>
+
+<Callout type="info">
+Negatives wrap by mathematical modulo (-1 → 11) rather than clamping to 0.
+Both functions compute on the Go side and do not cross into wasm.
+</Callout>
+
+---
+
+## EarthlyBranchToPalaceIndex
+
+**Purpose** Convert an earthly branch to a palace index.
+
+**Zi Wei meaning** The twelve palaces start from the **Yin palace** while the natural order of the
+branches starts from **zi**, putting them two positions apart. This function handles that conversion:
+yin → 0, mao → 1, …, zi → 10, chou → 11.
+
+**Signature**
+
+```go
+func EarthlyBranchToPalaceIndex(branchKey string) (int, error)
+```
+
+**Return value** `int`, 0–11.
+
+**Example**
+
+```go
+yin, _ := iztro.EarthlyBranchToPalaceIndex(iztro.BranchYin)
+zi, _ := iztro.EarthlyBranchToPalaceIndex(iztro.BranchZi)
+
+fmt.Println(yin, zi)
+```
+
+**Output**
+
+```text
+0 10
+```
+
+---
+
+## TimeToIndex
+
+**Purpose** Convert a clock hour to an hour index.
+
+**Zi Wei meaning** A day holds twelve double-hours of two hours each, but the Zi hour straddles
+midnight and splits into the early Zi hour (0) and the late Zi hour (12), giving 13 index values.
+
+**Signature**
+
+```go
+func TimeToIndex(hour uint8) (uint8, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `hour` | `uint8` | Yes | — | The clock hour, 0–23; out of range returns an error |
+
+**Return value** `uint8`, 0–12 — exactly the type of the `timeIndex` parameter of the charting entry
+points, so it can be handed straight over.
+
+**Example**
+
+```go
+a, _ := iztro.TimeToIndex(0)
+b, _ := iztro.TimeToIndex(4)
+c, _ := iztro.TimeToIndex(23)
+
+fmt.Println(a, b, c)
+
+_, err := iztro.TimeToIndex(24)
+fmt.Println(err)
+
+// the result feeds a charting entry point directly
+chart, err := iztro.BySolar("2000-8-16", b, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.Time)
+```
+
+**Output**
+
+```text
+0 2 12
+iztro: invalid hour '24': expected 0-23
+Tiger hour
+```
+
+Midnight is the early Zi hour, 4 o'clock the Tiger hour, 23 o'clock the late Zi hour. When you are
+unsure of the hour index while charting, convert with this function.
+
+---
+
+## GetAgeIndex
+
+**Purpose** Get the starting palace index of the age scope from the birth-year branch.
+
+**Zi Wei meaning** The age scope starts from a fixed palace and steps forward with the nominal age.
+The starting palace is set by the trine group of the birth-year branch: yin/woo/xu years start at the
+Chen palace, shen/zi/chen years at Xu, si/you/chou years at Wei, hai/mao/wei years at Chou.
+
+**Signature**
+
+```go
+func GetAgeIndex(branchKey string) (int, error)
+```
+
+**Return value** `int`, 0–11.
+
+**Example**
+
+```go
+idx, _ := iztro.GetAgeIndex(iztro.BranchChen)
+fmt.Println(idx)
+```
+
+**Output**
+
+```text
+8
+```
+
+A chen year belongs to the shen/zi/chen group, so the age scope starts at the Xu palace, whose index
+is 8.
+
+---
+
+## GetBrightness
+
+**Purpose** Look up a star's brightness in a given palace.
+
+**Signature**
+
+```go
+func GetBrightness(starKey string, palaceIndex int, config *Config) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `starKey` | `string` | Yes | — | Star key |
+| `palaceIndex` | `int` | Yes | — | Palace index; out-of-range values are taken modulo 12 |
+| `config` | `*Config` | Yes | — | A custom brightness table changes the result |
+
+**Return value** A brightness key; an empty string for stars with no brightness table.
+
+**Example**
+
+```go
+a, _ := iztro.GetBrightness(iztro.StarZiweiMaj, 4, nil)
+b, _ := iztro.GetBrightness(iztro.StarLucunMin, 0, nil)
+
+fmt.Printf("%q %q\n", a, b)
+```
+
+**Output**
+
+```text
+"miao" ""
+```
+
+Ziwei is at miao in the Woo palace (index 4); Lucun has no brightness table.
+
+---
+
+## GetMutagen / GetMutagensByHeavenlyStem
+
+**Purpose** Look up the mutagens of a heavenly stem.
+
+**Zi Wei meaning** Each of the ten stems assigns four fixed stars to lu, quan, ke and ji.
+`GetMutagen` asks "what does this star take under this stem", while
+`GetMutagensByHeavenlyStem` asks "which four stars does this stem transform".
+
+**Signature**
+
+```go
+func GetMutagen(starKey string, stemKey string, config *Config) (string, error)
+func GetMutagensByHeavenlyStem(stemKey string, config *Config) ([]string, error)
+```
+
+**Return value** `GetMutagen` returns a mutagen key, or an empty string when the star is not in that
+stem's mutagen table.
+`GetMutagensByHeavenlyStem` returns a slice of four, in the order **lu, quan, ke, ji**.
+
+**Example**
+
+```go
+a, _ := iztro.GetMutagen(iztro.StarTaiyangMaj, iztro.StemGeng, nil)
+b, _ := iztro.GetMutagen(iztro.StarZiweiMaj, iztro.StemGeng, nil)
+c, _ := iztro.GetMutagensByHeavenlyStem(iztro.StemGeng, nil)
+
+fmt.Printf("%q %q\n%v\n", a, b, c)
+```
+
+**Output**
+
+```text
+"sihuaLu" ""
+[taiyangMaj wuquMaj taiyinMaj tiantongMaj]
+```
+
+---
+
+## GetSoulAndBody
+
+**Purpose** Derive the Soul and body palaces from the lunar month index, the hour and the year stem.
+
+**Zi Wei meaning** The Soul palace is the origin of the whole chart: start at the Yin palace for the
+first month, count forward to the birth month, then count backward from there to the birth hour. The
+body palace uses the same starting point but counts the hour forward. The Soul palace's stem comes
+from the year stem via the Five Tigers rule.
+
+**Signature**
+
+```go
+func GetSoulAndBody(monthIndex int, timeIndex uint8, yearlyStemKey string) (*SoulAndBody, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `monthIndex` | `int` | Yes | — | Lunar month index with the first month at 0; obtained from `FixLunarMonthIndex` |
+| `timeIndex` | `uint8` | Yes | — | Hour index 0–12 |
+| `yearlyStemKey` | `string` | Yes | — | Birth-year stem key |
+
+**Return value** `*SoulAndBody`, holding `SoulIndex`, `BodyIndex`, `HeavenlyStemOfSoul` and
+`EarthlyBranchOfSoul`.
+
+**Example**
+
+```go
+sb, _ := iztro.GetSoulAndBody(6, 2, iztro.StemGeng)
+fmt.Printf("%+v\n", *sb)
+```
+
+**Output**
+
+```text
+{SoulIndex:4 BodyIndex:8 HeavenlyStemOfSoul:renHeavenly EarthlyBranchOfSoul:wuEarthly}
+```
+
+---
+
+## GetFiveElementsClass
+
+**Purpose** Derive the five elements class from the Soul palace's stem and branch.
+
+**Zi Wei meaning** The five elements class (water 2nd, wood 3rd, metal 4th, earth 5th, fire 6th)
+decides two major things: where Ziwei starts, and the age at which the decadal scope begins.
+
+**Signature**
+
+```go
+func GetFiveElementsClass(stemKey string, branchKey string) (string, error)
+```
+
+**Return value** A five elements class key.
+
+**Example**
+
+```go
+fe, _ := iztro.GetFiveElementsClass(iztro.StemRen, iztro.BranchWu)
+fmt.Println(fe)
+```
+
+**Output**
+
+```text
+wood3rd
+```
+
+---
+
+## GetPalaceNames
+
+**Purpose** Derive the twelve palace names from the Soul palace index.
+
+**Zi Wei meaning** Once the Soul palace is fixed, the other eleven run counterclockwise in a fixed
+order: Soul, Siblings, Spouse, Children, Wealth, Health, Surface, Friends, Career, Property, Spirit,
+Parents.
+
+**Signature**
+
+```go
+func GetPalaceNames(soulIndex int) ([]string, error)
+```
+
+**Return value** A slice of twelve **keys** (not translated names), **indexed by palace index** —
+item `i` is the `NameKey` of `chart.Palaces[i]`.
+Not the same as `GetConstants().Palaces`, which gives the fixed ordering of the palace names,
+independent of any particular chart.
+
+**Example**
+
+```go
+names, _ := iztro.GetPalaceNames(4)
+fmt.Println(names[:4])
+```
+
+**Output**
+
+```text
+[wealthPalace childrenPalace spousePalace siblingsPalace]
+```
+
+The Soul palace is at index 4, so index 0 (the Yin palace) is Wealth.
+
+---
+
+## GetDecadalsAndAges
+
+**Purpose** Derive the decadal and age scopes of the twelve palaces from the Soul palace index and
+the five elements class.
+
+**Zi Wei meaning** The starting age of the decadal scope comes from the five elements class (water
+2nd at 2, wood 3rd at 3, and so on), with direction from gender polarity and year-branch polarity;
+the age scope's starting palace comes from the year branch and it steps forward with the nominal age.
+
+**Signature**
+
+```go
+func GetDecadalsAndAges(
+    soulIndex int, fiveElementsClass string, gender Gender, yearlyStemKey, yearlyBranchKey string,
+) (DecadalsAndAges, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `soulIndex` | `int` | Yes | — | Palace index of the Soul palace |
+| `fiveElementsClass` | `string` | Yes | — | Five elements class key |
+| `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` |
+| `yearlyStemKey` | `string` | Yes | — | Year stem key |
+| `yearlyBranchKey` | `string` | Yes | — | Year branch key |
+
+**Return value** `DecadalsAndAges`, holding `Decadals []Decadal` and `Ages [][]int`, both indexed by
+palace index.
+
+`Decadal` is the same type as `palace.Decadal` on a palace:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Range` | `[2]int` | First and last nominal age of the decadal, both inclusive |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | Translated stem of the decadal / its key |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | Translated branch of the decadal / its key |
+
+**Example**
+
+```go
+da, _ := iztro.GetDecadalsAndAges(4, "wood3rd", iztro.GenderFemale, iztro.StemGeng, iztro.BranchChen)
+
+fmt.Printf("%+v\n", da.Decadals[0])
+fmt.Println(da.Ages[0][:3])
+```
+
+**Output**
+
+```text
+{Range:[43 52] HeavenlyStem:戊 HeavenlyStemKey:wuHeavenly EarthlyBranch:寅 EarthlyBranchKey:yinEarthly}
+[9 21 33]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+On a fully charted astrolabe every palace already carries `Decadal` and `Ages` fields with the same
+contents, down to the meaning of the translated and key field pairs. This function is for cases where
+you want the scopes without charting the whole thing.
+</Callout>
+
+<Callout type="info" title="The translations are always zh-CN">
+This function takes no `language` parameter, so the translated fields of `Decadal` are always Chinese.
+For another language take `HeavenlyStemKey` through [`Translate`](/en/docs/go/i18n#translate).
+</Callout>
+
+---
+
+## FixLunarMonthIndex / FixLunarDayIndex
+
+**Purpose** Compute the corrected lunar month index and day index.
+
+**Zi Wei meaning** Where leap-month days belong and where the late Zi hour belongs are two
+long-disputed boundaries in Zi Wei Dou Shu; these two functions pin the rules down: days after the
+fifteenth of a leap month count as the next month (can be turned off), and the late Zi hour belongs to
+the next day.
+
+**Signature**
+
+```go
+func FixLunarMonthIndex(lunarMonth int, lunarDay int, isLeap bool, timeIndex uint8, fixLeap bool) (int, error)
+func FixLunarDayIndex(lunarDay int, timeIndex uint8) (int, error)
+```
+
+**Return value** The month index is 0-based (the first month is 0); the day index is not decremented
+in the late Zi hour.
+
+**Example**
+
+```go
+m, _ := iztro.FixLunarMonthIndex(7, 17, false, 2, true)
+d1, _ := iztro.FixLunarDayIndex(17, 2)
+d2, _ := iztro.FixLunarDayIndex(17, 12)
+
+fmt.Println(m, d1, d2)
+```
+
+**Output**
+
+```text
+6 16 17
+```
+
+The seventh month is not a leap month, giving index 6; day seventeen decrements to 16 in the Tiger
+hour, but stays 17 in the late Zi hour because that belongs to the next day.
+
+---
+
+## TranslateChineseDate
+
+**Purpose** Assemble the four pillars into a display string.
+
+**Signature**
+
+```go
+func TranslateChineseDate(pillars [4][2]string, language Language) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pillars` | `[4][2]string` | Yes | — | The four pillar keys [year, month, day, hour], each a [stem, branch] pair |
+| `language` | `Language` | Yes | — | Chart language |
+
+**Return value** When every term is a single character, the pillar's parts run together and the
+pillars are separated by spaces; when any term is multi-character, the parts within a pillar are
+separated by spaces and the pillars by ` - `.
+
+**Example**
+
+```go
+s, _ := iztro.TranslateChineseDate([4][2]string{
+    {iztro.StemGeng, iztro.BranchChen},
+    {iztro.StemJia, iztro.BranchShen},
+    {iztro.StemBing, iztro.BranchWu},
+    {iztro.StemGeng, iztro.BranchYin},
+}, "en-US")
+fmt.Println(s)
+
+// the four-pillar keys can be taken straight from the chart
+s2, _ := iztro.TranslateChineseDate(chart.RawDates.ChineseDate.PillarKeys(), iztro.LanguageEnUS)
+fmt.Println(s2)
+```
+
+**Output**
+
+```text
+geng chen - jia shen - bing woo - geng yin
+geng chen - jia shen - bing woo - geng yin
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+Returns an error when a stem or branch key is invalid. The fixed-length array guarantees there are
+exactly four pillars, so no length check is needed.
+</Callout>
+
+---
+
+## MergeStars
+
+**Purpose** Merge several "twelve palaces of stars" groups into one, palace by palace.
+
+**Zi Wei meaning** Star placement happens in batches: major stars, minor stars and adjective stars
+each produce their own list of twelve palaces. Use this function to fuse them into one complete chart
+face.
+
+**Signature**
+
+```go
+func MergeStars(groups ...[][]Star) ([][]Star, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `groups` | `...[][]Star` | Yes | — | Several twelve-palace star groups, each of length 12 |
+
+**Return value** The merged twelve-palace slice, with each palace's stars concatenated in the order
+the groups were passed.
+
+**Example**
+
+```go
+birth := iztro.StarBirth{SolarDate: "2000-8-16", TimeIndex: 2, Gender: iztro.GenderFemale,
+    FixLeap: true, Language: "en-US"}
+major, _ := iztro.GetMajorStar(birth)
+minor, _ := iztro.GetMinorStar(birth)
+
+merged, _ := iztro.MergeStars(major, minor)
+names := []string{}
+for _, s := range merged[0] {
+    names = append(names, s.Name)
+}
+fmt.Println(names)
+```
+
+**Output**
+
+```text
+[general minister horse]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+Returns an error when a group's length is not 12. This is a pure local implementation and does not go
+through wasm.
+</Callout>

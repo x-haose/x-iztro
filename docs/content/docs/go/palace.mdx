@@ -10,6 +10,12 @@ description: Palace 的字段，以及星耀判断、空宫判断与飞星族的
 soul := chart.Palace(iztro.PalaceSoul)
 ```
 
+<Callout type="info">
+本页示例统一用 `"zh-CN"` 排盘，因此输出里的展示值都是中文。
+`*Palace` 上的方法都做了 nil 接收者判断，对 `nil` 调用返回零值而不 panic；
+但**取字段**仍会 panic，判空还是要做。
+</Callout>
+
 ## 字段
 
 | 字段 | 类型 | 说明 |
@@ -29,11 +35,29 @@ soul := chart.Palace(iztro.PalaceSoul)
 | `Suiqian12` / `Suiqian12Key` | `string` | 岁前十二神 |
 | `Decadal` | `Decadal` | 大限：岁数区间与宫干支 |
 | `Ages` | `[]int` | 小限经过本宫的虚岁列表 |
+| `MutagenStarKeys` | `[4]string` | 本宫**宫干**化出的四颗星标识，顺序为禄、权、科、忌 |
 
 <Callout type="info" title="四组十二神与三组星耀的区别">
 主星、辅星、杂耀是**切片**，一宫可以有零到多颗。
 长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
 因此是单值字段而不是切片。
+</Callout>
+
+<Callout type="info" title="MutagenStarKeys 是宫干四化，不是生年四化">
+它由**排盘时生效的**四化表算得——自定义四化表（`Config.Mutagens`）会反映在这里，
+飞星族方法读的正是它。生年四化是打在星耀自身 `MutagenKey` 字段上的标记，
+两者不是一回事。
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.HeavenlyStem, soul.MutagenStarKeys)
+```
+
+**输出**
+
+```text
+壬 [tianliangMaj ziweiMaj zuofuMin wuquMaj]
+```
 </Callout>
 
 ---
@@ -89,9 +113,20 @@ true
 
 **边界与陷阱**
 
-<Callout type="warn">
-不传任何星耀时 `Has` 与 `NotHave` 返回 `true`，`HasOneOf` 返回 `false`。
-</Callout>
+<Accordions>
+<Accordion title="不传星耀时的返回值">
+`Has` 与 `NotHave` 返回 `true`，`HasOneOf` 返回 `false`。
+</Accordion>
+<Accordion title="星名拼错是静默的">
+比对的是「本宫全部星耀的标识与译名」这个集合，比不中就是没有——
+`soul.Has("ziweiMj")` 返回 `false` 而不报错，与「命宫没有紫微」无法区分。
+用包里的 `Star*` 常量可以让编译器与 IDE 在写错的当场挡下。
+</Accordion>
+<Accordion title="也接受当前语言的星名">
+`Has` 一族同时比对 `Key` 与 `Name`，因此中文盘上 `soul.Has("紫微")` 也成立。
+但这样写换语言就失效——判断请一律用标识。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -133,6 +168,14 @@ fmt.Println("子女宫无化忌:", children.NotHaveMutagen(iztro.MutagenJi))
 子女宫有化禄: true
 子女宫无化忌: true
 ```
+
+**边界与陷阱**
+
+<Callout type="warn" title="不扫杂耀">
+`HasMutagen` 只看 `MajorStars` 与 `MinorStars` 上的四化标记，杂耀即使带标记也不计入
+（复刻 iztro 的行为）。生年四化只会落在十四主星与部分辅星上，
+因此实际盘面上两种口径通常没有差别。
+</Callout>
 
 ---
 
@@ -252,8 +295,12 @@ fmt.Println("命宫不化权入子女:",
 Go 侧目标宫是 `*Palace` 而非字符串——先用 `chart.Palace(...)` 取出来再传。
 传 `nil` 时三个方法都返回 `false`。
 </Accordion>
-<Accordion title="不传四化时的返回值">
-`FliesTo` 与 `NotFlyTo` 返回 `true`，`FliesOneOfTo` 返回 `false`。
+<Accordion title="不传四化时：FliesTo 为假，另两个为真">
+不传四化（或传空切片）时 `FliesTo` 返回 `false`，
+`FliesOneOfTo` 与 `NotFlyTo` 返回 `true`。
+
+这与「空集上全称命题为真」的直觉相反，但复刻的是 iztro 的行为：
+`FliesTo` 先算出要找的星，一颗都没有就直接判假。
 </Accordion>
 <Accordion title="自定义四化表会改变结果">
 `Config.Mutagens` 换掉某个天干的四化表后，宫干落在该天干的宫飞出的星随之改变。

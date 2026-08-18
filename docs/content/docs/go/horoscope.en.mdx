@@ -1,0 +1,435 @@
+---
+title: Horoscope object
+description: The data structures of the six scopes, plus palace lookups that need not be handed the astrolabe again.
+---
+
+A horoscope projects the natal chart onto a point in time. The same chart shows a different palace
+layout in different years — which is exactly what "the decadal scope has moved to that palace" means.
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+```
+
+`Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
+passed in again.
+
+<Callout type="info">
+The examples on this page start from an `"en-US"` natal chart, so the display values in the output are
+English.
+</Callout>
+
+## Fields
+
+| Field | Type | Span | Description |
+| --- | --- | --- | --- |
+| `SolarDate` / `LunarDate` | `string` | — | The solar string and the Chinese lunar spelling of the **target** date. The birth date lives on the natal chart; read it from `h.Astrolabe().SolarDate` |
+| `Decadal` | `HoroscopeScope` | Ten years | The decadal scope; the childhood scope for the years before it begins |
+| `Age` | `HoroscopeScope` | One year | The age scope, moving one palace per nominal year |
+| `Yearly` | `HoroscopeScope` | One year | The yearly scope, its palace fixed by the year's pillar |
+| `Monthly` | `HoroscopeScope` | One month | The monthly scope |
+| `Daily` | `HoroscopeScope` | One day | The daily scope |
+| `Hourly` | `HoroscopeScope` | One double-hour | The hourly scope |
+
+<Callout type="info" title="The age scope versus the yearly scope">
+Both advance once per year, but they start differently: the age scope starts from the birth-year
+branch and steps forward with the nominal age, while the yearly scope simply asks which palace that
+year's pillar falls in. The two lines are independent, and Zi Wei practice usually reads them
+together.
+</Callout>
+
+### HoroscopeScope
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Index` | `int` | Which palace this scope lands on (a palace index) |
+| `Name` | `string` | Display name of the scope, translated into the output language |
+| `HeavenlyStem` / `HeavenlyStemKey` | `string` | Stem of the scope, which determines the mutagens it flies |
+| `EarthlyBranch` / `EarthlyBranchKey` | `string` | Branch of the scope |
+| `PalaceNames` / `PalaceNameKeys` | `[]string` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
+| `Mutagen` / `MutagenKeys` | `[]string` | The stars this scope's stem transforms, in the order lu, quan, ke, ji |
+| `Stars` | `[][]Star` | The scope stars of this layer; `nil` for layers that have none |
+| `NominalAge` | `int` | Age scope only: the nominal age. `0` on every other layer |
+| `YearlyDecStar` | `*YearlyDecStar` | Yearly scope only: the Sui-qian and Jiang-qian gods. **`nil`** on every other layer |
+
+```go
+type YearlyDecStar struct {
+    Suiqian12       []string `json:"suiqian12"`        // Sui-qian gods, translated, by palace index
+    Suiqian12Keys   []string `json:"suiqian12Keys"`    // their keys
+    Jiangqian12     []string `json:"jiangqian12"`      // Jiang-qian gods, translated
+    Jiangqian12Keys []string `json:"jiangqian12Keys"`  // their keys
+}
+```
+
+<Callout type="info" title="All six scopes share one type">
+Rather than giving the age and yearly scopes types of their own, the Go side puts `NominalAge` and
+`YearlyDecStar` into the shared `HoroscopeScope`, where the other layers leave them at their zero
+values. Call sites can therefore write generic logic parameterized by scope.
+</Callout>
+
+<Callout type="warn" title="YearlyDecStar is a pointer and is nil outside the yearly scope">
+`h.Decadal.YearlyDecStar` is `nil`, and reading a field on it panics.
+Only `h.Yearly.YearlyDecStar` is non-nil — check before you walk the layers.
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.Decadal.YearlyDecStar == nil, h.Yearly.YearlyDecStar != nil)
+fmt.Println(h.Yearly.YearlyDecStar.Suiqian12[:3])
+fmt.Println(h.Yearly.YearlyDecStar.Jiangqian12Keys[:3])
+fmt.Println(h.Decadal.NominalAge, h.Age.NominalAge)
+```
+
+**Output**
+
+```text
+true true
+[blessed sorrowing illness]
+[jiesha zhaisha tiansha]
+0 26
+```
+</Callout>
+
+### PalaceIndexByName
+
+```go
+func (item *HoroscopeScope) PalaceIndexByName(nameKeyOrName string) int
+```
+
+Looks a palace index up by palace-name key, or by palace name in the current language, among the
+twelve palaces as re-derived for that scope; **returns -1 when nothing matches**.
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.Decadal.PalaceIndexByName(iztro.PalaceSoul))
+fmt.Println(h.Decadal.PalaceIndexByName(iztro.PalaceWealth))
+fmt.Println(h.Decadal.PalaceIndexByName("nosuch"))
+```
+
+**Output**
+
+```text
+2
+10
+-1
+```
+
+<Callout type="warn">
+It returns `-1` rather than `0` — `0` is a legitimate palace index (the Yin palace).
+Always check for a negative before indexing `chart.Palaces` with it.
+</Callout>
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+for _, item := range []iztro.HoroscopeScope{h.Decadal, h.Monthly, h.Daily, h.Hourly} {
+    fmt.Printf("%s lands on palace %d with pillar %s%s\n",
+        item.Name, item.Index, item.HeavenlyStem, item.EarthlyBranch)
+}
+
+fmt.Println("age scope nominal age", h.Age.NominalAge)
+fmt.Println("decadal mutagens", h.Decadal.Mutagen)
+fmt.Println("yearly Sui-qian gods", h.Yearly.YearlyDecStar.Suiqian12[:3])
+```
+
+**Output**
+
+```text
+decadal lands on palace 2 with pillar gengchen
+monthly lands on palace 3 with pillar renwoo
+daily lands on palace 8 with pillar xinchou
+hourly lands on palace 8 with pillar wuzi
+age scope nominal age 26
+decadal mutagens [sun general moon fortunate]
+yearly Sui-qian gods [blessed sorrowing illness]
+```
+
+---
+
+## AgePalace
+
+**Purpose** Get the palace the age scope occupies this year.
+
+**Zi Wei meaning** The age scope is a line advancing year by year; whichever palace it lands on
+becomes the focus for that year.
+
+**Signature**
+
+```go
+func (h *Horoscope) AgePalace() *Palace
+```
+
+**Return value** `*Palace` — a palace on the natal chart.
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+fmt.Println(h.AgePalace().Name)
+```
+
+**Output**
+
+```text
+property
+```
+
+---
+
+## Palace
+
+**Purpose** Get one of the twelve palaces as re-derived under a given horoscope scope.
+
+**Zi Wei meaning** Once the decadal scope reaches a palace, the twelve palaces are re-anchored with
+that palace as the "decadal Soul palace". "The decadal Spouse palace" refers to that re-anchored
+naming, and it is usually not the same palace as the natal Spouse palace.
+
+**Signature**
+
+```go
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | Yes | — | The palace-name key or translated name to fetch |
+| `scope` | `string` | Yes | — | Which scope's twelve palaces to search |
+
+**Return value** `*Palace` — a palace on the natal chart (the same cell carries different names under
+different scopes). With `ScopeOrigin`, these are the natal twelve palaces. `nil` when nothing matches.
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println("the decadal Soul palace is the natal", h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal).Name)
+fmt.Println("the natal Soul palace is", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Name)
+```
+
+**Output**
+
+```text
+the decadal Soul palace is the natal spouse
+the natal Soul palace is soul
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="What comes back is the cell on the natal chart">
+On the returned palace object, `Name` is still the **natal palace name** (spouse in the example),
+because it is that cell on the natal chart. To see what the cell is called at the decadal layer, read
+`h.Decadal.PalaceNames[index]`.
+</Callout>
+
+---
+
+## SurroundPalaces
+
+**Purpose** Get the surrounded palaces of a palace under a given horoscope scope.
+
+**Signature**
+
+```go
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces
+```
+
+**Parameters** Same as `Palace`.
+
+**Return value** `*SurroundedPalaces`; its predicates are on
+[Surrounded palaces](/en/docs/go/surpalaces).
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+sp := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
+
+fmt.Println("the surrounded set of the yearly Wealth palace is anchored on the natal", sp.Target.Name)
+```
+
+**Output**
+
+```text
+the surrounded set of the yearly Wealth palace is anchored on the natal health
+```
+
+---
+
+## HasHoroscopeStars / HasOneOfHoroscopeStars / NotHaveHoroscopeStars
+
+**Purpose** Test whether a palace under a given scope holds the given scope stars.
+
+**Zi Wei meaning** Scope stars are a group produced by each horoscope layer: Tiankui, Tianyue,
+Wenchang, Wenqu, Lucun, Qingyang, Tuoluo, Tianma, Hongluan and Tianxi.
+They carry different names in different layers — Yunkui and Yunyue at the decadal layer, Liukui and
+Liuyue at the yearly layer — with the same meaning applied to their own time span.
+
+**Signature**
+
+```go
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | Yes | — | The palace name under that scope |
+| `scope` | `string` | Yes | — | The horoscope scope |
+| `stars` | `[]string` | Yes | — | A slice of scope star keys, which must use that layer's names |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `HasHoroscopeStars` | All of them are present |
+| `HasOneOfHoroscopeStars` | At least one is present |
+| `NotHaveHoroscopeStars` | None is present |
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"}))
+fmt.Println(h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"}))
+fmt.Println(h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"}))
+```
+
+**Output**
+
+```text
+false
+false
+true
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The star parameter is a slice, not variadic">
+Two string parameters (palace name and scope) already precede it in these three methods, and a
+variadic list would make call sites ambiguous, so the star parameter takes a `[]string`. Every other
+method in the package that takes a list of stars is variadic.
+</Accordion>
+<Accordion title="scope picks the palace, not the stars searched">
+All three methods use `scope` plus the palace name to locate one cell on the natal chart, but the set
+of stars compared against is always the **union of the decadal and yearly scope stars**, regardless of
+`scope`.
+
+So passing `ScopeMonthly` asks "does this cell — the monthly such-and-such palace — hold a decadal or
+yearly scope star?", not a monthly one: the scope stars of the monthly, daily and hourly layers take
+no part in the comparison. For the scope-star layout of a given layer read `h.Monthly.Stars`, or use
+[`GetHoroscopeStar`](/en/docs/go/star#gethoroscopestar).
+</Accordion>
+<Accordion title="Scope star keys are layer-specific">
+The decadal scope stars are `StarYunlu`, `StarYunyang` and so on, the yearly ones `StarLiulu`,
+`StarLiuyang` and so on; the two groups have different keys.
+Since the comparison set is always the union of those two groups, keys from either group can be found
+under any `scope` — only the palace they land in differs. The per-layer key table is on
+[Star placement](/en/docs/go/star#gethoroscopestar).
+</Accordion>
+</Accordions>
+
+---
+
+## HasHoroscopeMutagen
+
+**Purpose** Test whether a palace under a given scope carries a mutagen flown by that scope's stem.
+
+**Zi Wei meaning** Every horoscope layer has a stem of its own, and it transforms four stars just as
+the birth-year stem does. A question like "does the decadal Lu land in the decadal Wealth palace?" is
+asking about this.
+
+**Signature**
+
+```go
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | Yes | — | The palace name under that scope |
+| `scope` | `string` | Yes | — | The horoscope scope |
+| `mutagenKey` | `string` | Yes | — | A mutagen key |
+
+**Return value** `bool`. It checks whether the star transformed by that layer's stem is among the
+major or minor stars of the target palace (adjective stars are not scanned).
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu))
+fmt.Println(h.Decadal.Mutagen)
+```
+
+**Output**
+
+```text
+false
+[sun general moon fortunate]
+```
+
+The decadal stem is geng, and geng sends Lu to Taiyang, Quan to Wuqu, Ke to Taiyin and Ji to
+Tiantong.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Always false when scope is ScopeOrigin">
+The natal layer has no "layer stem" — the natal mutagens are already marked on the stars' own
+`MutagenKey`. `HasHoroscopeMutagen(name, iztro.ScopeOrigin, m)` therefore returns `false` outright,
+which does not mean the natal chart lacks that mutagen. For natal mutagens use the palace's
+[`HasMutagen`](/en/docs/go/palace#hasmutagen--nothavemutagen).
+</Callout>
+
+---
+
+## ScopeItem / Astrolabe
+
+**Purpose** Get the `HoroscopeScope` for a scope key, or get back to the natal chart.
+
+**Signature**
+
+```go
+func (h *Horoscope) ScopeItem(scope string) *HoroscopeScope
+func (h *Horoscope) Astrolabe() *Astrolabe
+```
+
+**Return value** `ScopeItem` returns `nil` for `ScopeOrigin` or an unknown scope — the natal chart is
+not a horoscope layer.
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(h.ScopeItem(iztro.ScopeDecadal).Name)
+fmt.Println(h.ScopeItem(iztro.ScopeOrigin))
+fmt.Println(h.Astrolabe().SolarDate)
+```
+
+**Output**
+
+```text
+decadal
+<nil>
+2000-8-16
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+`ScopeItem` is for writing generic logic parameterized by scope, which is tidier than a chain of
+`switch scope`. Remember to check for `nil`.
+</Callout>

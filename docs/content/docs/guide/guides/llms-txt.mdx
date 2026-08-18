@@ -1,0 +1,73 @@
+---
+title: 给 AI 读的文档端点
+description: 本站提供的 llms.txt、llms-full.txt、单页 Markdown 与 Accept 头协商。
+---
+
+*适合：开发者 · 运维*
+
+这一页讲的是**怎么让 AI 读懂这份文档**——不是怎么用这个库。
+想把 x-iztro 接进 AI 应用，看[让 AI 解读命盘](/zh/docs/guide/guides/llm)。
+
+## `/llms.txt`
+
+站点结构索引，列出该语言所有页面的标题、描述与链接。适合让模型先定位再抓取。
+
+<Endpoint path="/zh/llms.txt" />
+
+## `/llms-full.txt`
+
+该语言全站文档的 Markdown 全文，一次抓取即可作为完整上下文。
+
+<Endpoint path="/zh/llms-full.txt" />
+
+## 两个端点都分语言
+
+索引与全文各语言一份，互不混杂——全文本来就是整份塞进上下文用的，
+掺入用不上的语言只会挤占窗口。
+
+| 端点 | 内容 |
+| --- | --- |
+| `/zh/llms.txt` · `/en/llms.txt` | 该语言的结构索引，末尾列出其余语言与全文端点 |
+| `/zh/llms-full.txt` · `/en/llms-full.txt` | 该语言的全文 |
+| `/llms.txt` · `/llms-full.txt` | llms.txt 约定的根路径，内容同 `/zh/` 那两个 |
+
+## 单页 Markdown
+
+任意文档页 URL 追加 `.md` 就得到该页的 Markdown 原文：
+
+<Endpoint path="/zh/docs/guide/guides/config.md" />
+
+`.md` 与 `.mdx` 两种后缀都可以，返回内容相同。
+页面标题下方的「复制 Markdown」按钮取的就是这个端点，「打开」下拉里还能
+直接送进 ChatGPT 或 Claude。
+
+## 不知道后缀约定也能拿到
+
+AI 代理在请求任意文档页时，只要 `Accept` 头里表明更想要 Markdown，
+就会拿到 Markdown 原文而不是整页 HTML：
+
+```bash
+curl -H "Accept: text/markdown" <本站地址>/zh/docs/rust/palace
+```
+
+同一个页面，HTML 约 400 KB，Markdown 约 14 KB。
+
+<Callout>
+这三种取法返回的都是纯文本，没有导航、样式与脚本，
+比让模型抓 HTML 省 token 也更准确。
+</Callout>
+
+## 建议的用法
+
+问 AI 关于 x-iztro 的问题时，把 `/zh/llms-full.txt` 作为上下文一起给它。
+单一语言的全文约 500 KB，在常见模型的上下文窗口内绰绰有余。
+
+如果只关心某个主题，抓对应的单页 `.md` 更省：
+
+| 主题 | 页面 |
+| --- | --- |
+| 参数与安装 | `/zh/docs/guide/getting-started.md` |
+| 领域概念 | `/zh/docs/guide/concepts.md` 及其子页 |
+| 分界点与流派 | `/zh/docs/guide/guides/config.md` |
+| 字段字典 | `/zh/docs/guide/data-model.md` |
+| Prompt 格式 | `/zh/docs/guide/guides/ai-prompt.md` |

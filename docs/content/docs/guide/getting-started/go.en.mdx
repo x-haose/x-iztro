@@ -1,0 +1,124 @@
+---
+title: Go
+description: go get and go — embedded WebAssembly, no cgo, cross-compilation preserved.
+---
+
+*For: developers*
+
+## Installation
+
+```bash
+go get github.com/x-haose/x-iztro/go/iztro
+```
+
+The package embeds a WebAssembly module compiled from the core library (`wasm32-wasip1`) and calls
+into it through [wazero](https://wazero.io), a runtime implemented in pure Go.
+
+Which means: **no cgo, no Rust toolchain on the machine, and cross-compilation still works**.
+wazero's compiler backend covers amd64 and arm64 only; other architectures fall back to the
+interpreter — slower, same results.
+
+<Callout title="Concurrency and cold start">
+A single wasm instance cannot be used concurrently, so the package keeps an instance pool (capped at
+`GOMAXPROCS`). Calls from multiple goroutines are not serialized against each other and run in
+genuine parallel.
+
+The first call has to compile the wasm module. The compiled artifact is cached on disk (under
+`os.UserCacheDir()`), so only the very first run costs ~200ms; after that the first call in each
+process costs ~30ms. If you want a service's first request to take the hot path, call
+`iztro.Warmup(ctx)` once at startup. On the hot path a chart — including JSON encoding, decoding and
+memory copies — is on the order of 0.5ms.
+</Callout>
+
+## Charting
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/x-haose/x-iztro/go/iztro"
+)
+
+func main() {
+    // the fifth argument is the chart language; "zh-CN" is what the other
+    // pages default to, "en-US" gives an English chart
+    chart, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(chart.SolarDate)         // Gregorian date
+    fmt.Println(chart.LunarDate)         // lunar date
+    fmt.Println(chart.ChineseDate)       // the four pillars
+    fmt.Println(chart.Time, chart.TimeRange)
+    fmt.Println(chart.Sign, chart.Zodiac)
+    fmt.Println(chart.Soul, chart.Body)  // soul star, body star
+    fmt.Println(chart.FiveElementsClass)
+}
+```
+
+```text
+2000-8-16
+二〇〇〇年七月十七
+geng chen - jia shen - bing woo - geng yin
+Tiger hour 03:00~05:00
+leo dragon
+rebel scholar
+wood 3rd
+```
+
+<Callout title="Reading the output">
+`LunarDate` is the one field that stays in Chinese in an English chart: the lunar date is written
+with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 7th lunar month, 2000.
+`ChineseDate` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
+</Callout>
+
+The last argument is a `*Config`; pass `nil` for the defaults. `gender` and `language` are the named
+types `iztro.Gender` / `iztro.Language` (`iztro.GenderFemale`, `iztro.LanguageEnUS`; string literals
+still work). Chart from a lunar date with `ByLunar`: where `BySolar` takes `fixLeap`, this takes a
+three-way `iztro.LeapMonth` (`NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`), so one argument
+says how the leap month is handled:
+
+```go
+iztro.ByLunar("2000-7-17", 2, iztro.GenderFemale, iztro.NotLeapMonth, iztro.LanguageEnUS, nil)
+```
+
+Every entry point has a `*Context` variant (`BySolarContext`, `ByLunarContext` and so on), where
+`ctx` cancels the wait for a pooled instance.
+
+## Error handling
+
+Failures always come back as `*iztro.Error` carrying a machine-readable `Code`; match them by
+category with `errors.Is`:
+
+```go
+_, err := iztro.BySolar("2000-13-1", 2, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+if errors.Is(err, iztro.ErrInvalidDate) {
+    var e *iztro.Error
+    errors.As(err, &e)
+    fmt.Println(e.Code, e.Message)
+}
+```
+
+```text
+invalid_date invalid solar date '2000-13-1': month must be within 1-12
+```
+
+See [Error handling](/en/docs/guide/guides/errors).
+
+## Next
+
+The example above only touches the charting entry point. The full API — locating the twelve palaces,
+star predicates, flying stars, horoscopes, the star-placement module, data tables and translation —
+lives under **[Go API](/en/docs/go)**, where every exported function, type and method has its own
+entry with real run output and edge-case notes.
+
+<Cards>
+  <Card title="Charting entry points" href="/en/docs/go/astro" description="BySolar, ByLunar, Config and Rearranged" />
+  <Card title="Astrolabe" href="/en/docs/go/astrolabe" description="Fields, palace lookup, surrounded-palace predicates" />
+  <Card title="Palace" href="/en/docs/go/palace" description="Star predicates, empty-palace checks and the flying-star family" />
+  <Card title="Horoscope" href="/en/docs/go/horoscope" description="Six scopes and palace queries" />
+</Cards>

@@ -1,0 +1,26 @@
+{
+  "title": "Go",
+  "description": "Go API reference",
+  "icon": "Boxes",
+  "root": true,
+  "pages": [
+    "index",
+    "---Charting---",
+    "astro",
+    "astrolabe",
+    "---Object methods---",
+    "palace",
+    "star-object",
+    "surpalaces",
+    "horoscope",
+    "---Module functions---",
+    "query",
+    "util",
+    "star",
+    "data",
+    "i18n",
+    "---Advanced---",
+    "extend",
+    "errors"
+  ]
+}

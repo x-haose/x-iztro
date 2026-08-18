@@ -11,8 +11,8 @@ x-iztro Python 示例
     python examples/python/main.py
 """
 
-from x_iztro import Astro, ChartConfig
-from x_iztro.enums import Algorithm, MajorStar, Mutagen, PalaceName
+from x_iztro import Astro, IztroError
+from x_iztro.enums import MajorStar, Mutagen, PalaceName
 
 
 def main():
@@ -144,6 +144,22 @@ def main():
 
     fortune_prompt = astro.horoscope_to_prompt(result, "2024-10-1", 0)
     print(fortune_prompt[:200] + "...\n")
+
+    # ============================================================
+    # 9. JSON 导出与错误处理
+    # ============================================================
+    print("===== 9. JSON 导出与错误处理 =====\n")
+
+    # 与 JS iztro 的 JSON.stringify 逐键逐值一致
+    print(f"JSON 长度：{len(result.to_json())} 字符，首个宫位："
+          f"{result.to_dict()['palaces'][0]['name']}")
+
+    # 入参非法时抛 IztroError（继承 ValueError），code 为机器可读分类
+    try:
+        astro.by_solar("not-a-date", 2, "female")
+    except IztroError as e:
+        print(f"错误分类：{e.code}，描述：{e}")
+    print()
 
     print("===== 示例完毕 =====")
 

@@ -7,9 +7,10 @@ description: by_solar、by_lunar、rearranged 与 JSON 便捷版本。
 本页是四个排盘入口的完整参考。
 
 <Callout type="info">
-所有入口都返回 `Result`，外部输入（日期格式与存在性、公历年份范围、时辰索引）
-在核心层前置校验，非法输入返回 `IztroError` 而不是 panic。
-错误类型见[错误处理](/zh/docs/rust/errors)。
+收外部输入的入口（`by_solar`、`by_lunar`、两个 JSON 版本、`get_horoscope`）都返回
+`Result`：日期格式与存在性、公历年份范围、时辰索引在核心层前置校验，非法输入返回
+`IztroError` 而不是 panic。入参全是枚举、无非法值的函数（`rearranged`、
+`astrolabe_to_prompt`）直接返回结果。错误类型见[错误处理](/zh/docs/rust/errors)。
 </Callout>
 
 ---
@@ -43,7 +44,7 @@ pub fn by_solar(
 | `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
 | `time_index` | `u8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
 | `gender` | `Gender` | 是 | — | `Gender::Male` 或 `Gender::Female`。决定大限顺逆与长生、博士十二神的排列方向 |
-| `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十五日之后按下月算 |
+| `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十六日起按下月算（晚子时除外，见下） |
 | `language` | `Language` | 是 | — | 输出语言，影响 DTO 中所有译名字段；`*_key` 标识字段不受影响 |
 | `config` | `Config` | 是 | — | 排盘配置，六个开关加自定义表。取默认值用 `Config::default()` |
 
@@ -86,8 +87,10 @@ println!("命主 {} 身主 {}",
 `day_divide` 配置可以把晚子时改判为当日，见 [Config 详解](/zh/docs/guide/guides/config)。
 </Accordion>
 <Accordion title="fix_leap 只在闰月生效">
-该月不是闰月时 `fix_leap` 无任何作用。只有农历闰月出生、且生日在十五之后的人，
-`true` 与 `false` 会得到不同的月索引，进而影响左辅右弼与全部月系星。
+进位要同时满足四个条件：该农历月确实是闰月、`fix_leap` 为 `true`、
+农历日大于 15、且时辰索引不是 12（晚子时）。四者缺一，月索引就按本月算。
+因此只有农历闰月下半月出生的人，`true` 与 `false` 会得到不同的月索引，
+进而影响左辅右弼与全部月系星。
 </Accordion>
 <Accordion title="年份下限是 1583">
 1582 年格里历改革留下了不存在的日期空洞，底层历法库在这些日期上会 panic。
@@ -115,8 +118,7 @@ pub fn by_lunar(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<Astrolabe, IztroError>
@@ -124,12 +126,12 @@ pub fn by_lunar(
 
 **参数**
 
-除以下一项外，其余与 `by_solar` 相同。
+除以下两项外，其余与 `by_solar` 相同；`by_solar` 的 `fix_leap` 在这里并入 `leap`。
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `lunar_date` | `&str` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
-| `is_leap_month` | `bool` | 是 | — | 该农历月是否为闰月。若那一年那个月本来就没有闰月，此参数不生效 |
+| `leap` | `LeapMonth` | 是 | — | `NotLeap` 非闰月；`Leap` 闰月、按闰月本身排；`LeapFixed` 闰月且十五之后视作次月（iztro `fixLeap`）。标为闰月但那年那月没有闰月时按普通月处理 |
 
 **返回值**　同 `by_solar`。
 
@@ -138,7 +140,7 @@ pub fn by_lunar(
 ```rust
 use x_iztro::*;
 
-let a = by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::ZhCN, Config::default())?;
+let a = by_lunar("2000-7-17", 2, Gender::Female, LeapMonth::NotLeap, Language::ZhCN, Config::default())?;
 let b = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
 
 assert_eq!(a.solar_date, b.solar_date);
@@ -153,9 +155,10 @@ println!("{}", a.solar_date);
 
 **边界与陷阱**
 
-<Callout type="warn" title="is_leap_month 的静默失效是刻意的">
-传 `true` 但那个月并非闰月时，参数被静默忽略，不报错。
+<Callout type="warn" title="标错闰月的静默失效是刻意的">
+`leap` 标为闰月但那个月并非闰月时，按普通月排盘，不报错（与 iztro 一致）。
 如果需要严格校验，调用前先自行确认该年该月确实有闰月。
+`LeapMonth::from_flags(is_leap_month, fix_leap)` 可从 iztro 风格的两个布尔换算。
 </Callout>
 
 ---
@@ -251,8 +254,7 @@ pub fn by_lunar_json(
     lunar_date: &str,
     time_index: u8,
     gender: Gender,
-    is_leap_month: bool,
-    fix_leap: bool,
+    leap: LeapMonth,
     language: Language,
     config: Config,
 ) -> Result<String, IztroError>
@@ -328,7 +330,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 let h = get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN)?;
 
 println!("大限宫位索引 {}，流年干支 {:?}{:?}",
-    h.decadal.index, h.yearly.base.heavenly_stem, h.yearly.base.earthly_branch);
+    h.decadal.index, h.yearly.heavenly_stem, h.yearly.earthly_branch);
 ```
 
 **输出**
@@ -390,7 +392,30 @@ print!("{}", astrolabe_to_prompt(&chart, Language::ZhCN));
 农历: 二〇〇〇年七月十七
 干支: 庚辰 甲申 丙午 庚寅
 时辰: 寅时 (03:00~05:00)
+星座: 狮子座
+生肖: 龙
+命宫地支: 午
+身宫地支: 戌
+命主: 破军
+身主: 文昌
+五行局: 木三局
+生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+
+=== 十二宫 ===
+
+--- 财帛 ---
+天干地支: 戊寅
+大限: 43-52
+小限虚岁: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+十二神: 绝, 飞廉, 吊客, 岁驿
+主星: 武曲(得)[权], 天相(庙)
+辅星: 天马
+杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
+
+（以下十一宫格式相同，此处从略）
 ```
 
+完整输出与逐字段说明见[生成 AI 提示词](/zh/docs/guide/guides/ai-prompt)。
+
 这是 x-iztro 在 iztro 之外自加的功能，三语言均可用。
-用法与提示词写法见[喂给大模型](/zh/docs/guide/guides/llm)。
+用法与提示词写法见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。

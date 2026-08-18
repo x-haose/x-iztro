@@ -1,0 +1,99 @@
+---
+title: Overview
+description: The inputs a chart needs, what each parameter accepts, and how to install for each of the three programming languages.
+---
+
+*For: everyone. The parameter table is readable without writing code*
+
+All three bindings share one Rust core, so parameter meanings and chart results are identical —
+only the spelling differs. Get clear on what you need to supply, then pick your programming
+language.
+
+## The inputs you need
+
+Whatever the programming language, charting starts from these parameters. The first three are
+required; the last three have defaults.
+
+| Parameter | Meaning | Accepts |
+| --- | --- | --- |
+| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`. Gregorian range 1583–9999 |
+| `time_index` | Hour of birth | Integer 0–12, see the table below |
+| `gender` | Gender | `"male"` / `"female"` (a `Gender` enum in Rust) |
+| `fix_leap` | Correct for leap months | Boolean, defaults to `true` |
+| `language` | Chart language | `"zh-CN"` (default), `"zh-TW"`, `"en-US"`, `"ja-JP"`, `"ko-KR"`, `"vi-VN"` |
+| `config` | Boundaries and school | See [Config in depth](/en/docs/guide/guides/config); omit for the iztro defaults |
+
+<Callout title="The chart language defaults to zh-CN">
+Omit `language` and you get a Simplified Chinese chart. For English output pass the exact string
+`"en-US"` — every example on the English pages does. The chart language only changes the text of
+names; it never changes which star lands in which palace.
+</Callout>
+
+<Callout title="Not a developer? This table is what you hand to your engineers">
+Charting needs only three things: date of birth, hour of birth, gender. Write them out in the
+formats above and hand them over — one call on their side produces the chart. For what the library
+can do and how it is typically used, see
+[Using it without writing code](/en/docs/guide/guides/for-non-developers).
+</Callout>
+
+### Hour index
+
+Zi Wei Dou Shu divides the day into twelve double-hours, and splits the Zi hour into an early and a
+late segment — hence 13 index values, 0 through 12.
+
+| Index | Hour | Time | Index | Hour | Time |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Early Zi (Rat) | 00:00–01:00 | 7 | Wei (Goat) | 13:00–15:00 |
+| 1 | Chou (Ox) | 01:00–03:00 | 8 | Shen (Monkey) | 15:00–17:00 |
+| 2 | Yin (Tiger) | 03:00–05:00 | 9 | You (Rooster) | 17:00–19:00 |
+| 3 | Mao (Rabbit) | 05:00–07:00 | 10 | Xu (Dog) | 19:00–21:00 |
+| 4 | Chen (Dragon) | 07:00–09:00 | 11 | Hai (Pig) | 21:00–23:00 |
+| 5 | Si (Snake) | 09:00–11:00 | 12 | Late Zi (Rat) | 23:00–24:00 |
+| 6 | Woo (Horse) | 11:00–13:00 | | | |
+
+<Callout type="warn" title="The late Zi hour is not a typo">
+Someone born between 23:00 and 24:00 uses index `12`, not `0`. The two indexes produce different
+charts: under the default configuration the late Zi hour takes its day pillar from the **following**
+day, while the early Zi hour takes it from the current day. The behaviour is controlled by the
+`day_divide` switch — see
+[Config in depth](/en/docs/guide/guides/config#late-zi-hour-attribution-day_divide).
+</Callout>
+
+### About `fix_leap`
+
+A leap month in the lunar calendar has no month pillar of its own, so charting has to decide whether
+its days count towards the preceding or the following month. With `fix_leap = true` (the default)
+iztro's correction applies: the first half of the leap month counts as the current month, the second
+half as the next. Set it to `false` and the whole leap month counts as the current month.
+
+Only people born in a leap month are affected; otherwise the parameter does nothing.
+
+## Pick a programming language
+
+<Cards>
+  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="cargo add x-iztro" />
+  <Card title="Python" href="/en/docs/guide/getting-started/python" description="pip install x-iztro" />
+  <Card title="Go" href="/en/docs/guide/getting-started/go" description="go get .../go/iztro" />
+</Cards>
+
+## Input validation
+
+<small>For developers</small>
+
+Dates and hour indexes are validated up front in the **core**, so all three programming languages
+sit behind the same line of defence. Invalid input never panics; it is reported the way each
+language expects:
+
+| Programming language | Behaviour |
+| --- | --- |
+| Rust | Returns `Err(IztroError)`; `.code()` gives a machine-readable category |
+| Python | Raises `IztroError` (a subclass of `ValueError`) with the same `.code` |
+| Go | Returns `*iztro.Error`, matchable against sentinels with `errors.Is` |
+| C FFI | Returns `{"error":"...","code":"..."}` as JSON |
+
+The core validates date format and real existence, the Gregorian range 1583–9999, and hour index
+0–12. Gender, chart language and configuration switches — the parameters passed as strings — are
+validated in the **binding layer** as they are parsed; in Rust they are enums to begin with, so
+there is no invalid value to reject.
+
+See [Error handling](/en/docs/guide/guides/errors).

@@ -41,17 +41,11 @@ func (c MyChart) MajorStar() string {
 
 // FiveElementsValue 返回五行局的局数。
 func (c MyChart) FiveElementsValue() int {
-	return map[string]int{
-		ClassWater2nd: 2,
-		ClassWood3rd:  3,
-		ClassMetal4th: 4,
-		ClassEarth5th: 5,
-		ClassFire6th:  6,
-	}[c.FiveElementsClassKey]
+	return FiveElementsClassNumber(c.FiveElementsClassKey)
 }
 
 func TestPluginViaEmbedding(t *testing.T) {
-	chart, err := BySolar("2000-8-16", 2, "female", true, "zh-CN", nil)
+	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +65,7 @@ func TestPluginViaEmbedding(t *testing.T) {
 }
 
 func TestPluginOutputFollowsChartLanguage(t *testing.T) {
-	chart, err := BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageEnUS, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

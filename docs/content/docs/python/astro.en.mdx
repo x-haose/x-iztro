@@ -1,0 +1,434 @@
+---
+title: Charting entries
+description: The charting methods of the Astro class, re-anchoring, and AI prompt generation.
+---
+
+Charting is where everything starts: give a birth date, hour and gender, get an `Astrolabe`.
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+```
+
+`Astro` holds no internal state, so instantiate it once and use it everywhere — or construct one per
+call.
+
+<Callout type="info">
+Every entry point raises `IztroError` on invalid input (it subclasses `ValueError`, so
+`except ValueError` catches it too). Date format and existence, the solar year range and the hour
+index are validated up front in the core; string values such as gender, language and palace name are
+validated in the binding layer.
+The exception carries a machine-readable classification in `.code` — see
+[Error handling](/en/docs/python/errors).
+</Callout>
+
+---
+
+## ChartConfig
+
+The charting configuration: six switches plus two optional override tables. It is a frozen dataclass
+in which every field has a default, and the defaults match JS iztro — `ChartConfig()` is equivalent to
+passing no `config` at all.
+
+| Field | Type | Default | Values (matching enum) |
+| --- | --- | --- | --- |
+| `year_divide` | `str` | `"normal"` | `normal` lunar New Year's Day / `exact` Beginning of Spring (`YearDivide`) |
+| `horoscope_divide` | `str` | `"normal"` | `normal` first of the month / `exact` solar term (`HoroscopeDivide`) |
+| `age_divide` | `str` | `"normal"` | `normal` increments at the turn of the year / `birthday` increments on the birthday (`AgeDivide`) |
+| `day_divide` | `str` | `"forward"` | `forward` the late Zi hour belongs to the next day / `current` to the current day (`DayDivide`) |
+| `algorithm` | `str` | `"default"` | `default` / `zhongzhou` (`Algorithm`) |
+| `astro_type` | `str` | `"heaven"` | `heaven` heaven chart / `earth` earth chart / `human` human chart (`AstroType`) |
+| `mutagens` | `dict[str, list[str]] \| None` | `None` | Stem key → four star keys (Lu, Quan, Ke, Ji) |
+| `brightness` | `dict[str, list[str]] \| None` | `None` | Star key → twelve brightness keys; index 0 is the Yin palace, an empty string means no brightness in that palace |
+
+For what the six switches mean and the schools behind them, see
+[Config in depth](/en/docs/guide/guides/config).
+
+**Methods**
+
+| Method | Description |
+| --- | --- |
+| `to_dict() -> dict` | Convert to the camelCase config object the binding layer accepts; either table is omitted from the result when it is `None` |
+
+**Example**
+
+```python
+from x_iztro import Astro, ChartConfig, AstroType, HeavenlyStem, MajorStar
+
+cfg = ChartConfig(
+    astro_type="earth",
+    mutagens={HeavenlyStem.GENG: [MajorStar.TAIYANG, MajorStar.WUQU,
+                                  MajorStar.TIANFU, MajorStar.TIANTONG]},
+)
+
+print(cfg.to_dict())
+
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US", config=cfg)
+print(chart.five_elements_class, chart.config.astro_type)
+print(chart.palace("soulPalace").mutagen_star_keys)
+```
+
+**Output**
+
+```text
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+earth 5th earth
+['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
+```
+
+The earth chart's Soul palace lands on the original chart's body palace (Career, bing-xu), so the
+palace-stem mutagens are taken from the bing stem.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Each table is replaced whole, per stem and per star">
+`mutagens` replaces **all four** positions of one stem at a time, and `brightness` replaces **all
+twelve** palaces of one star at a time. The lengths are strictly validated: a mutagen list must be
+exactly four entries and a brightness list exactly twelve, and one entry too many or too few raises
+`IztroError`. Stems and stars you do not list keep the default table.
+</Accordion>
+<Accordion title="Keys only, never translated names">
+Both the keys and the values of the two tables must be language-independent keys
+(`"gengHeavenly"`, `"taiyangMaj"`). Passing `"庚"` or `"太阳"` raises an `invalid mutagens key` style
+error. The enum members are `StrEnum`s, so use them as keys directly and `to_dict` converts them to
+strings for you.
+</Accordion>
+<Accordion title="to_dict does not stringify the six switches' enum members">
+`to_dict` applies `str()` only to the keys and values inside the two tables; the six switch fields
+come out as they went in. Writing `ChartConfig(astro_type=AstroType.EARTH)` charts perfectly well
+(a `StrEnum` is equivalent to its string), it is only that the entry in `to_dict()`'s result prints as
+`<AstroType.EARTH: 'earth'>`.
+To serialize the configuration as clean JSON, pass the switches as string literals, or run `str()`
+over them yourself.
+</Accordion>
+<Accordion title="The override tables are not echoed back on chart.config">
+`chart.config` is restored from the output DTO and carries only the six switches — the two override
+tables are charting **input** rather than result, so they never enter the DTO (matching the field
+contract of JS iztro).
+
+The chart does keep the originals you passed in internally, however, so follow-up computations such as
+`chart.rearranged(...)`, `chart.horoscope(...)` and prompt generation still use those two tables; they
+are not silently dropped.
+To record the configuration, keep your `ChartConfig` object on your own call site.
+</Accordion>
+</Accordions>
+
+---
+
+## by_solar
+
+**Purpose** Chart a natal chart from a solar date.
+
+**Zi Wei meaning** Zi Wei Dou Shu computes on the lunar calendar, but most people only remember their
+solar birthday. This method converts solar to lunar first (including the year, month, day and hour
+pillars) and places the stars from there.
+When the year turns over is governed by `year_divide` — for someone born between lunar New Year and
+the Beginning of Spring, the two settings give different year pillars, which in turn affects the
+mutagens, the soul and body stars, and every year-based star.
+
+**Signature**
+
+```python
+def by_solar(
+    self,
+    solar_date: str,
+    time_index: TimeIndexType,
+    gender: GenderType,
+    *,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> Astrolabe
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `time_index` | `int` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
+| `gender` | `str` | Yes | — | `"male"` or `"female"`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
+| `fix_leap` | `bool` | No | `True` | Keyword-only. Whether to correct for lunar leap months. When true, days from the sixteenth of a leap month onward count as the next month (the late Zi hour excepted, see below) |
+| `language` | `str` | No | `"zh-CN"` | Output language; affects every translated field. The `*_key` fields are unaffected |
+| `config` | `ChartConfig \| None` | No | `None` | Charting configuration; `None` takes the defaults |
+
+**Return value** `Astrolabe` — a complete chart with the twelve palaces, the four pillars, the soul
+and body stars and the five elements class.
+
+**Example**
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(chart.solar_date, "|", chart.lunar_date, "|", chart.chinese_date)
+print(chart.sign, chart.zodiac, chart.five_elements_class)
+print("soul", chart.soul, "body", chart.body)
+```
+
+**Output**
+
+```text
+2000-8-16 | 二〇〇〇年七月十七 | geng chen - jia shen - bing woo - geng yin
+leo dragon wood 3rd
+soul rebel body scholar
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Why the hour index runs 0–12 rather than 0–11">
+The Zi hour straddles midnight, splitting into the early Zi hour (00:00–01:00, belonging to the
+current day) and the late Zi hour (23:00–24:00, belonging to the next). Their day pillars differ and
+Ziwei's starting palace can be a day apart, so they must be distinguished — hence 13 indices.
+When unsure of the index, convert with `utils.time_to_index(hour)`.
+</Accordion>
+<Accordion title="fix_leap only bites in a leap month">
+Carrying over into the next month requires four conditions at once: that lunar month really is a leap
+month, `fix_leap` is true, the lunar day is greater than 15, and the hour index is not 12 (the late Zi
+hour). Miss any one of them and the month index is that of the current month.
+So only for someone born in the second half of a lunar leap month do `True` and `False` give different
+month indices, which in turn affects Zuofu, Youbi and every month-based star.
+</Accordion>
+<Accordion title="language does not affect predicates">
+Every predicate on the chart (`has`, `flies_to`, `with_mutagen` and so on) rests on
+language-independent keys, so charting in a different language changes no predicate result — only
+display fields such as `name`.
+</Accordion>
+</Accordions>
+
+---
+
+## by_lunar
+
+**Purpose** Chart a natal chart from a lunar date.
+
+**Zi Wei meaning** The lunar date is Zi Wei Dou Shu's native input, and this skips the solar
+conversion. Anyone who knows their lunar birthday can use it directly; the result is identical to
+calling `by_solar` with the corresponding solar date.
+
+**Signature**
+
+```python
+def by_lunar(
+    self,
+    lunar_date: str,
+    time_index: TimeIndexType,
+    gender: GenderType,
+    *,
+    is_leap_month: bool = False,
+    fix_leap: bool = True,
+    language: LanguageType = "zh-CN",
+    config: ChartConfig | None = None,
+) -> Astrolabe
+```
+
+**Parameters** Identical to `by_solar` apart from the following. Everything after `gender` is
+keyword-only — `is_leap_month` and `fix_leap` sit next to each other, and swapping them positionally
+would raise no error while silently shifting the chart by a month.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunar_date` | `str` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `is_leap_month` | `bool` | No | `False` | Keyword-only. Whether that lunar month is a leap month. Has no effect if that month in that year has no leap month to begin with |
+
+**Return value** Same as `by_solar`.
+
+**Example**
+
+```python
+a = Astro().by_lunar("2000-7-17", 2, "female", language="en-US")
+b = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(a.solar_date, a.solar_date == b.solar_date)
+```
+
+**Output**
+
+```text
+2000-8-16 True
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The silent no-op of is_leap_month">
+Pass `True` when that month is not a leap month and the parameter is silently ignored rather than
+raising an error. If you need strict validation, confirm the leap month exists for that year and month
+before calling.
+</Callout>
+
+---
+
+## get_horoscope
+
+**Purpose** Compute the horoscope for a target date, starting from a natal chart.
+
+**Signature**
+
+```python
+def get_horoscope(
+    self,
+    astrolabe: Astrolabe,
+    target_date: str | None = None,
+    target_time_index: TimeIndexType | None = None,
+) -> Horoscope
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `astrolabe` | `Astrolabe` | Yes | — | The natal chart |
+| `target_date` | `str \| None` | No | `None` | Target solar date; today when omitted |
+| `target_time_index` | `int \| None` | No | `None` | Target hour index; the current hour when omitted |
+
+**Return value** `Horoscope`, holding the chart passed in. Details on
+[the horoscope object](/en/docs/python/horoscope).
+
+**Example**
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+h = Astro().get_horoscope(chart, "2025-6-1", 0)
+
+print(h.decadal.heavenly_stem + h.decadal.earthly_branch)
+print(h.yearly.heavenly_stem + h.yearly.earthly_branch)
+```
+
+**Output**
+
+```text
+gengchen
+yisi
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="There is an equivalent method on the chart">
+`chart.horoscope("2025-6-1", 0)` is exactly equivalent and needs no `Astro` instance in hand.
+`Astro.get_horoscope` exists so that "every entry point on one class" also works as a usage style.
+</Callout>
+
+---
+
+## rearranged
+
+**Purpose** Re-anchor the chart on a given stem and branch as the Soul palace and return a new chart;
+the original is untouched.
+
+**Zi Wei meaning** The Zhongzhou school reads one set of birth data as three charts: the heaven chart
+anchors the five elements class on the Soul palace's pillar, the earth chart on the body palace's, the
+human chart on the Spirit palace's. Change the anchoring pillar and the class changes, and with it the
+placement of Ziwei and Tianfu, the twelve palace names, the Changsheng gods and the decadal and age
+scopes are all recomputed.
+This method opens that capability up to **any** stem and branch.
+
+**Signature**
+
+```python
+def rearranged(self, from_stem: str, from_branch: str) -> Astrolabe
+```
+
+This is a method on `Astrolabe`, not on the `Astro` class.
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `from_stem` | `str` | Yes | — | Stem key of the new Soul palace, from the `HeavenlyStem` enum's value set |
+| `from_branch` | `str` | Yes | — | Branch key of the new Soul palace, from the `EarthlyBranch` enum's value set |
+
+**Return value** A new `Astrolabe`. Recomputed: the Soul and body palaces, the five elements class,
+the fourteen major stars, the twelve palace names, the Changsheng gods, the decadal and age scopes,
+the soul star, plus Tianshang, Tianshi and Tiancai, which follow the Soul palace.
+Carried over from the original chart: minor stars, the remaining adjective stars, the Boshi gods, the
+Sui-qian and Jiang-qian gods, and the body star.
+
+**Example**
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+# anchor on the original chart's body palace pillar — equivalent to the earth chart
+body = next(p for p in chart.palaces if p.is_body_palace)
+earth = chart.rearranged(body.heavenly_stem_key, body.earthly_branch_key)
+
+print("heaven", chart.five_elements_class, "→ earth", earth.five_elements_class)
+```
+
+**Output**
+
+```text
+heaven wood 3rd → earth earth 5th
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="The three standard charts do not need this method">
+For the heaven, earth and human charts just chart with `ChartConfig(astro_type="earth")`; both
+charting entry points support it. `rearranged` exists for anchoring on an arbitrary stem and branch.
+</Callout>
+
+<Accordions>
+<Accordion title="The body star does not move under re-anchoring">
+The body star is looked up by the **birth-year branch**, independent of where the Soul palace sits,
+and re-anchoring does not change the year of birth.
+The soul star is looked up by the Soul palace branch and therefore does update.
+</Accordion>
+</Accordions>
+
+---
+
+## astrolabe_to_prompt / horoscope_to_prompt
+
+**Purpose** Render a chart or a horoscope into structured text for a language model.
+
+**Signature**
+
+```python
+def astrolabe_to_prompt(self, astrolabe: Astrolabe) -> str
+def horoscope_to_prompt(
+    self,
+    astrolabe: Astrolabe,
+    target_date: str,
+    target_time_index: TimeIndexType,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `astrolabe` | `Astrolabe` | Yes | — | The chart object |
+| `target_date` | `str` | Yes | — | Horoscope version only: the target solar date |
+| `target_time_index` | `int` | Yes | — | Horoscope version only: the target hour index |
+
+**Return value** `str` — structured text in the chart's own charting language.
+
+**Example**
+
+```python
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(astro.astrolabe_to_prompt(chart)[:77])
+```
+
+**Output**
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The output language follows the chart's `language` and is not set separately. For an English prompt,
+chart in English.
+</Callout>

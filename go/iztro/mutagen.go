@@ -1,22 +1,11 @@
 package iztro
 
-// 天干四化表：宫干或运限干决定哪四颗星分别化禄、权、科、忌。
-// 键为天干标识（keys.go 的 Stem* 常量），值按 [禄, 权, 科, 忌] 排列。
-// 与 Rust 核心 `data::heavenly_stems` 的表一一对应。
-var mutagenTable = map[string][4]string{
-	StemJia:  {StarLianzhenMaj, StarPojunMaj, StarWuquMaj, StarTaiyangMaj},
-	StemYi:   {StarTianjiMaj, StarTianliangMaj, StarZiweiMaj, StarTaiyinMaj},
-	StemBing: {StarTiantongMaj, StarTianjiMaj, StarWenchangMin, StarLianzhenMaj},
-	StemDing: {StarTaiyinMaj, StarTiantongMaj, StarTianjiMaj, StarJumenMaj},
-	StemWu:   {StarTanlangMaj, StarTaiyinMaj, StarYoubiMin, StarTianjiMaj},
-	StemJi:   {StarWuquMaj, StarTanlangMaj, StarTianliangMaj, StarWenquMin},
-	StemGeng: {StarTaiyangMaj, StarWuquMaj, StarTaiyinMaj, StarTiantongMaj},
-	StemXin:  {StarJumenMaj, StarTaiyangMaj, StarWenquMin, StarWenchangMin},
-	StemRen:  {StarTianliangMaj, StarZiweiMaj, StarZuofuMin, StarWuquMaj},
-	StemGui:  {StarPojunMaj, StarJumenMaj, StarTaiyinMaj, StarTanlangMaj},
-}
+// 四化的顺序与标识。
+//
+// 天干化出哪四颗星由排盘时的配置决定（Config.Mutagens 可整表替换某个天干），
+// 因此结果由 wasm 侧随盘给出，落在 Palace.MutagenStarKeys 上，本地不留副本。
 
-// mutagenIndex 把四化标识映射到四化表中的位置。
+// mutagenIndex 把四化标识映射到 Palace.MutagenStarKeys 中的位置。
 var mutagenIndex = map[string]int{
 	MutagenLu:   0,
 	MutagenQuan: 1,

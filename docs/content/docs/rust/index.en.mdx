@@ -1,0 +1,128 @@
+---
+title: Overview
+description: The crate layout, the type system, and how to read this reference.
+icon: Cog
+---
+
+The x-iztro Rust crate is the core of the whole project; both the Python and Go bindings call into it.
+This section is the complete Rust API reference — every public function, type and method has its own
+entry.
+
+## Install
+
+```toml title="Cargo.toml"
+[dependencies]
+x-iztro = "0.2"
+```
+
+The crate has no default features and works as-is. The `python` feature is only for building the PyO3
+extension and is not needed by ordinary dependents.
+
+## Your first chart
+
+```rust
+use x_iztro::*;
+
+fn main() -> Result<(), IztroError> {
+    let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+
+    println!("{} {}", chart.solar_date, chart.lunar_date);
+    // 2000-8-16 二〇〇〇年七月十七
+
+    let soul = chart.palace(Palace::Soul).unwrap();
+    println!("{}", soul.data().major_stars.iter().map(|s| s.name.as_str()).collect::<Vec<_>>().join(" "));
+    // emperor
+
+    Ok(())
+}
+```
+
+`lunar_date` is a lunar date written in Chinese numerals in every output language — `二〇〇〇年七月十七`
+is "the 17th day of the 7th lunar month of 2000".
+
+## Crate layout
+
+| Module | Contents | Page in this reference |
+| --- | --- | --- |
+| `x_iztro::astro` | Charting, horoscopes, palace derivation, lightweight queries | [Charting entries](/en/docs/rust/astro), [Horoscope object](/en/docs/rust/horoscope), [Lightweight queries](/en/docs/rust/query) |
+| `x_iztro::models` | `Astrolabe`, `PalaceData`, `Star`, `HoroscopeData` and the three view types | The four pages from [Astrolabe object](/en/docs/rust/astrolabe) onward |
+| `x_iztro::star` | Star placement: low-level building blocks and entry points taking birth data | [Star placement](/en/docs/rust/star) |
+| `x_iztro::data` | Enums, constants, star and stem/branch tables | [Data tables](/en/docs/rust/data) |
+| `x_iztro::utils` | Index arithmetic, brightness and mutagen lookups and other utilities | [Utilities](/en/docs/rust/util) |
+| `x_iztro::i18n` | Six vocabularies, `translate_*` and two-way lookup | [Translation](/en/docs/rust/i18n) |
+| `x_iztro::error` | `IztroError`, `BridgeError` | [Error handling](/en/docs/rust/errors) |
+| `x_iztro::prompt` | `astrolabe_to_prompt`, `horoscope_to_prompt` | [Charting entries](/en/docs/rust/astro#astrolabe_to_prompt--horoscope_to_prompt) |
+| `x_iztro::dto` | The serialization DTOs shared across the language bindings | [Data model](/en/docs/guide/data-model) |
+| `x_iztro::ffi` | The C ABI exports, for Go and C callers | Rust callers do not need it |
+
+The marshalling and dispatch shared by the bindings (formerly `x_iztro::bridge`) is now crate-internal
+and no longer part of the public API surface.
+
+`use x_iztro::*;` brings in every entry function, data structure and enum plus the twelve
+`translate_*` functions — every name in this reference written without a module prefix is among them.
+The ones written with a prefix (`utils::fix_index`, `star::query::get_major_stars`,
+`data::stars::get_star_info`, `astro::palace::get_decadals_and_ages`) are low-level building blocks
+called by path.
+
+## Two API layers
+
+The same job often exists at two levels in the crate; which one you want depends on what you already
+have.
+
+<Cards>
+  <Card title="Takes birth data" description="solar_date + time_index + gender, deriving the year pillar, Soul palace and five elements class internally. This is the layer for everyday charting.">
+    `by_solar` · `star::query::*` · `astro::query::*`
+  </Card>
+  <Card title="Takes precomputed indices" description="lu_index, soul_index, month_day_count and other intermediates. Building blocks of the charting pipeline, reusable in a pipeline of your own.">
+    `star::location::*` · `star::decorative::*` · `astro::palace::*`
+  </Card>
+</Cards>
+
+<Callout type="info" title="Both layers share the same derivation">
+The derivation from birth data to the star-placement intermediates (effective hour, lunar year, month
+and day, the two year pillars, the month index, the Soul and body palaces, the five elements class)
+lives in `astro::context`. The birth-data layer calls it once and feeds the result to the low-level
+building blocks. The two layers therefore always agree, and assembling a placement pipeline of your
+own does not mean re-deriving everything from the date.
+</Callout>
+
+## View types
+
+Rust's data structures do not hold the astrolabe themselves, so `PalaceData` cannot answer "which
+palace is opposite me?" on its own. The crate binds data to astrolabe at the query entry points via
+three view types:
+
+| View | Returned by | Derefs to | Extra capability |
+| --- | --- | --- | --- |
+| `PalaceRef<'a>` | `chart.palace(...)` | `&PalaceData` | Opposite palace, surrounded palaces, flying stars, mutagen palaces |
+| `StarRef<'a>` | `chart.star(...)` | `&Star` | Its palace, that palace's opposite, the surrounded palaces |
+| `HoroscopeRef<'a>` | `chart.horoscope(...)` | `&HoroscopeData` | Horoscope palace lookups without passing the astrolabe again |
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+
+soul.data().name;              // reach the underlying fields through data()
+soul.opposite_palace();        // view-only: the opposite palace
+soul.flies_to(Palace::Wealth, &[Mutagen::Lu]);
+```
+
+All three views implement `Deref`, so `soul.name` and `soul.data().name` are equivalent.
+
+## How to read an entry
+
+Every API entry is organized into the same eight sections:
+
+<Steps>
+<Step>**Purpose** — one sentence on what it does</Step>
+<Step>**Zi Wei meaning** — the concept it corresponds to in Zi Wei Dou Shu (omitted for purely engineering functions)</Step>
+<Step>**Signature** — lifted verbatim from the source</Step>
+<Step>**Parameters** — name, type, whether required, default, description</Step>
+<Step>**Return value** — type and structure</Step>
+<Step>**Example** — a snippet you can run as-is</Step>
+<Step>**Output** — the real result of running that example</Step>
+<Step>**Edge cases and pitfalls** — empty values, out-of-range input, configuration effects, interactions with other APIs</Step>
+</Steps>
+
+Examples all use the same chart — **a female born 16 August 2000 in the Tiger hour**
+(`("2000-8-16", 2, Gender::Female)`) — so they can be compared across pages. The full data for that
+chart is on [the data model](/en/docs/guide/data-model).

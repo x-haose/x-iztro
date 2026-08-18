@@ -1,0 +1,353 @@
+---
+title: Error handling
+description: "The Code categories of *Error, the four sentinels, what triggers them, and handling patterns."
+---
+
+Entry points that compute something return `(value, error)`. Date format, date existence, the year
+range and the hour index are validated up front in the core; the string values of gender, language,
+keys and configuration are validated in the binding layer.
+
+Pure query methods (`Palace`, `Star`, `Has` and so on) return no error and give `nil` or a zero value
+when nothing is found.
+
+## *Error
+
+Every failure in the package comes back as the same concrete type:
+
+```go
+type Error struct {
+    Code    string // machine-readable category, one of the Code* constants
+    Message string // the error text itself (English)
+}
+
+func (e *Error) Error() string   // returns "iztro: " + Message
+func (e *Error) Unwrap() error   // returns the sentinel of this category, for errors.Is
+```
+
+### The four categories
+
+| Sentinel | `Code` constant | Value | Meaning |
+| --- | --- | --- | --- |
+| `ErrInvalidDate` | `CodeInvalidDate` | `invalid_date` | Malformed date, non-existent date, or a solar year outside 1583–9999 |
+| `ErrInvalidTimeIndex` | `CodeInvalidTimeIndex` | `invalid_time_index` | Hour index out of range (0–12 are legal) |
+| `ErrInvalidArgument` | `CodeInvalidArgument` | `invalid_argument` | Any other illegal argument or configuration: gender, language, star keys, custom tables |
+| `ErrInternal` | `CodeInternal` | `internal` | A defect inside the library or a Go-side runtime failure, such as wasm instantiation or result decoding |
+
+The four values of `Code` are the same set as Rust's `IztroError::code()` and Python's
+`IztroError.code`, so cross-language branching logic transfers verbatim.
+
+### Two ways to test
+
+```go
+_, err := iztro.BySolar("2000-2-30", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+
+// branch by category: errors.Is against the sentinels
+fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
+fmt.Println(errors.Is(err, iztro.ErrInvalidTimeIndex))
+
+// for the Code and the raw text: errors.As for the concrete type
+var e *iztro.Error
+if errors.As(err, &e) {
+    fmt.Println(e.Code, "|", e.Message)
+}
+
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+true
+false
+invalid_date | invalid solar date '2000-2-30': day is out of range for that month
+iztro: invalid solar date '2000-2-30': day is out of range for that month
+```
+
+<Callout type="info" title="Error messages all carry the iztro: prefix">
+`Error()` prepends `iztro: ` to `Message`, keeping these errors easy to tell apart from the caller's
+own; the `Message` field itself has no prefix. The body of the message comes from the core and is
+identical across the three language bindings, but **the wording may change between versions** — branch
+on `errors.Is` or `Code`, never by parsing the text.
+</Callout>
+
+---
+
+## Date-related
+
+| Situation | Example | Message body |
+| --- | --- | --- |
+| The format is not `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
+| Month out of range | `"2000-13-1"` | `month must be within 1-12` |
+| That month has no such day | `"2000-2-30"` | `day is out of range for that month` |
+| Year outside the supported range | `"1500-1-1"` | `year must be within 1583-9999` |
+
+`Code` is `invalid_date`. Lunar-only cases (reachable through `ByLunar` and the two `*ByLunarDate`
+queries):
+
+| Situation | Example | Message body |
+| --- | --- | --- |
+| That lunar year has no such month | month missing from the table | `month does not exist in that lunar year` |
+| That lunar month has no such day | `"2000-7-30"` (a short month) | `day is out of range for that lunar month` |
+
+Lunar messages are prefixed `invalid lunar date '<input>': ` and solar ones
+`invalid solar date '<input>': `, so the message alone tells you which entry point was used.
+
+**Example**
+
+```go
+for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
+    if _, err := iztro.BySolar(date, 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil); err != nil {
+        fmt.Println(err)
+    }
+}
+```
+
+**Output**
+
+```text
+iztro: invalid solar date '2000-13-1': month must be within 1-12
+iztro: invalid solar date '2000-2-30': day is out of range for that month
+iztro: invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+The message carries the original input, so batch jobs can pinpoint which record failed.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Where the 1583 lower bound comes from">
+The Gregorian reform year of 1582 contains a stretch of dates that never existed. The underlying
+calendar library has no definition for them, so support starts from 1583, after the reform. The upper
+bound of 9999 is where the lunar data tables end.
+</Accordion>
+<Accordion title="No zero padding needed">
+Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
+</Accordion>
+<Accordion title="Validation of lunar leap months">
+`ByLunar` checks whether that month really exists in that lunar year and how many days it has (30 in a
+long month, 29 in a short one). Flagging `leap` as a leap month when that year and month have none is
+not an error — the ordinary month is used; a `leap` value outside the three `LeapMonth` constants
+returns `ErrInvalidArgument`.
+</Accordion>
+</Accordions>
+
+---
+
+## Hour index
+
+**Trigger** An hour index greater than 12.
+
+**Example**
+
+```go
+_, err := iztro.BySolar("2000-8-16", 13, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+iztro: time_index must be 0-12, got 13
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Thirteen values, not twelve">
+The Zi hour straddles midnight and splits into the early Zi hour (index 0) and the late Zi hour
+(index 12), so there are 13 legal values.
+To convert from a clock hour use [`TimeToIndex`](/en/docs/go/util#timetoindex), which is guaranteed to
+land in the legal range.
+</Callout>
+
+---
+
+## Gender and language
+
+`Code` is `invalid_argument` for both.
+
+| Parameter | Legal values | Message body |
+| --- | --- | --- |
+| `gender` | `"male"` / `"female"` (the `GenderMale` / `GenderFemale` constants) | `invalid gender 'x': expected 'male' or 'female'` |
+| `language` | The six language codes (the `Language*` constants) | `invalid language 'xx': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
+
+Language codes are case-insensitive, and hyphen and underscore are interchangeable (`"zh-cn"` and
+`"zh_cn"` are both accepted). `gender` and `language` are the named types `Gender` / `Language`, so
+passing some other string variable by mistake is rejected at compile time; a misspelled literal
+lands in this error class at run time.
+
+**Example**
+
+```go
+_, err := iztro.BySolar("2000-8-16", 2, "x", true, iztro.LanguageEnUS, nil)
+
+fmt.Println(err)
+fmt.Println(errors.Is(err, iztro.ErrInvalidArgument))
+```
+
+**Output**
+
+```text
+iztro: invalid gender 'x': expected 'male' or 'female'
+true
+```
+
+---
+
+## Key-related
+
+The utility and star-placement functions take language-independent keys, and an unknown key is an
+error:
+
+```go
+_, err := iztro.GetBrightness("nosuch", 0, nil)
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+iztro: unknown star key 'nosuch'
+```
+
+<Callout type="warn" title="Passing a translated name is an error">
+These functions recognize keys, not translated names. Passing `"紫微"` gives
+`unknown star key '紫微'` — convert with [`KeyOf`](/en/docs/go/i18n#keyof) first.
+
+The exception is the **query methods on a chart**, such as `chart.Palace()` and `chart.Star()`, which
+accept both a key and a translated name in the chart's current language.
+</Callout>
+
+---
+
+## Configuration-related
+
+The six switches and the two custom tables on `Config` are all validated during charting, with `Code`
+being `invalid_argument` throughout:
+
+| Situation | Message body |
+| --- | --- |
+| Unknown value for a switch | `invalid yearDivide 'nope': expected 'normal' or 'exact'` |
+| Unknown stem key in the mutagen table | `invalid mutagens key 'nope': unknown heavenly stem` |
+| A stem's mutagens are not four entries | `invalid mutagens for 'jiaHeavenly': expected 4 stars (lu, quan, ke, ji), got 1` |
+| A star's brightness table is not twelve entries | `invalid brightness for 'ziweiMaj': expected 12 entries, got 1` |
+
+<Callout type="info">
+The lengths are checked **strictly**: exactly four mutagens and exactly twelve brightness entries, one
+too many or too few being an error alike. The custom tables take keys only, never translated names.
+</Callout>
+
+---
+
+## Handling patterns
+
+**Skip bad rows in a batch**
+
+```go
+rows := []struct {
+    Date      string
+    TimeIndex uint8
+    Gender    iztro.Gender
+}{
+    {"2000-8-16", 2, "female"},
+    {"2000-2-30", 2, "female"},
+    {"1990-3-3", 13, "male"},
+}
+
+var charts []*iztro.Astrolabe
+var failed []string
+
+for _, r := range rows {
+    chart, err := iztro.BySolar(r.Date, r.TimeIndex, r.Gender, true, iztro.LanguageEnUS, nil)
+    if err != nil {
+        var e *iztro.Error
+        errors.As(err, &e)
+        failed = append(failed, r.Date+" -> "+e.Code)
+        continue
+    }
+    charts = append(charts, chart)
+}
+
+fmt.Println(len(charts), failed)
+```
+
+**Output**
+
+```text
+1 [2000-2-30 -> invalid_date 1990-3-3 -> invalid_time_index]
+```
+
+**Wrap into your own error**
+
+```go
+build := func(date string, ti uint8, gender iztro.Gender) (*iztro.Astrolabe, error) {
+    chart, err := iztro.BySolar(date, ti, gender, true, iztro.LanguageEnUS, nil)
+    if err != nil {
+        return nil, fmt.Errorf("charting failed: %w", err)
+    }
+    return chart, nil
+}
+
+_, err := build("2000-2-30", 2, "female")
+
+fmt.Println(err)
+fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
+```
+
+**Output**
+
+```text
+charting failed: iztro: invalid solar date '2000-2-30': day is out of range for that month
+true
+```
+
+`%w` preserves the original error, so callers can keep narrowing it down with `errors.Is` /
+`errors.As`.
+
+---
+
+## About nil
+
+Query methods return `nil` rather than an error when nothing is found — not finding something is a
+normal result, not an exception:
+
+```go
+p := chart.Palace("nosuchPalace")
+fmt.Println(p == nil)
+
+s, sp := chart.Star("nosuchStar")
+fmt.Println(s == nil, sp == nil)
+
+fmt.Println(chart.Palace(iztro.PalaceSoul).Has("ziweiMj"))
+```
+
+**Output**
+
+```text
+true
+true true
+false
+```
+
+<Callout type="warn" title="Check for nil before reading fields">
+`chart.Palace(...)`, `chart.Star(...)` and `h.ScopeItem(...)` can all return `nil`.
+Reading a field straight off will panic.
+</Callout>
+
+<Callout type="warn" title="A misspelling fails silently">
+All three lines above are misspellings rather than "not on this chart": one letter short in a palace
+name gives `nil`, one letter short in a star name makes `Has` return `false` — indistinguishable from
+genuinely lacking that star.
+
+The `Palace*` and `Star*` constants in the package let the compiler and the IDE stop the typo where it
+is written. When the name comes from outside, run it through
+[`KeyOf`](/en/docs/go/i18n#keyof) first: it returns an empty string for text it cannot recognize,
+which is a solid basis for rejecting bad input.
+</Callout>
+
+<Callout type="info" title="The Body palace and the palace of origin always exist">
+`chart.Palace("bodyPalace")` and `chart.Palace("originalPalace")` are non-`nil` on every chart: the
+palace of origin requires the palace stem to equal the birth-year stem and the palace not to be Zi or
+Chou, and the ten palaces from Yin to You walk the ten stems exactly once each, so the birth-year stem
+is bound to hit exactly once. If you do get `nil`, the name is misspelled.
+</Callout>

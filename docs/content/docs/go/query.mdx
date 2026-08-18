@@ -6,6 +6,10 @@ description: 不排整盘就能拿到的生肖、星座与命宫主星。
 有些问题不需要整张星盘。这五个函数各自只跑到必要的那一步就返回，
 结果与完整排盘的对应字段永远一致——它们走的是同一套核心逻辑。
 
+<Callout type="info">
+本页示例统一用 `"zh-CN"` 排盘，因此输出里的展示值都是中文。
+</Callout>
+
 ---
 
 ## GetZodiacBySolarDate
@@ -18,7 +22,7 @@ description: 不排整盘就能拿到的生肖、星座与命宫主星。
 **签名**
 
 ```go
-func GetZodiacBySolarDate(solarDate string, language string, config *Config) (string, error)
+func GetZodiacBySolarDate(solarDate string, language Language, config *Config) (string, error)
 ```
 
 **参数**
@@ -26,7 +30,7 @@ func GetZodiacBySolarDate(solarDate string, language string, config *Config) (st
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `solarDate` | `string` | 是 | — | 公历日期，格式 `YYYY-M-D` |
-| `language` | `string` | 是 | — | 输出语言 |
+| `language` | `Language` | 是 | — | 盘面语言 |
 | `config` | `*Config` | 是 | — | 传 `nil` 取默认；仅 `YearDivide` 影响结果 |
 
 **返回值**　按语言翻译的生肖名。
@@ -34,7 +38,7 @@ func GetZodiacBySolarDate(solarDate string, language string, config *Config) (st
 **示例**
 
 ```go
-zodiac, _ := iztro.GetZodiacBySolarDate("2000-8-16", "zh-CN", nil)
+zodiac, _ := iztro.GetZodiacBySolarDate("2000-8-16", iztro.LanguageZhCN, nil)
 fmt.Println(zodiac)
 ```
 
@@ -63,8 +67,8 @@ fmt.Println(zodiac)
 **签名**
 
 ```go
-func GetSignBySolarDate(solarDate string, language string) (string, error)
-func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (string, error)
+func GetSignBySolarDate(solarDate string, language Language) (string, error)
+func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language Language) (string, error)
 ```
 
 **参数**
@@ -73,7 +77,7 @@ func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (st
 | --- | --- | --- | --- | --- |
 | `solarDate` / `lunarDate` | `string` | 是 | — | 日期，格式 `YYYY-M-D` |
 | `isLeapMonth` | `bool` | 是 | — | 仅农历版本：该月是否闰月 |
-| `language` | `string` | 是 | — | 输出语言 |
+| `language` | `Language` | 是 | — | 盘面语言 |
 
 无 `config` 参数——星座不受任何配置影响。
 
@@ -82,8 +86,8 @@ func GetSignByLunarDate(lunarDate string, isLeapMonth bool, language string) (st
 **示例**
 
 ```go
-s1, _ := iztro.GetSignBySolarDate("2000-8-16", "zh-CN")
-s2, _ := iztro.GetSignByLunarDate("2000-7-17", false, "zh-CN")
+s1, _ := iztro.GetSignBySolarDate("2000-8-16", iztro.LanguageZhCN)
+s2, _ := iztro.GetSignByLunarDate("2000-7-17", false, iztro.LanguageZhCN)
 
 fmt.Println(s1, s2)
 ```
@@ -107,11 +111,11 @@ fmt.Println(s1, s2)
 
 ```go
 func GetMajorStarBySolarDate(
-    solarDate string, timeIndex uint8, fixLeap bool, language string, config *Config,
+    solarDate string, timeIndex uint8, fixLeap bool, language Language, config *Config,
 ) (string, error)
 
 func GetMajorStarByLunarDate(
-    lunarDate string, timeIndex uint8, isLeapMonth bool, fixLeap bool, language string, config *Config,
+    lunarDate string, timeIndex uint8, leap LeapMonth, language Language, config *Config,
 ) (string, error)
 ```
 
@@ -121,9 +125,9 @@ func GetMajorStarByLunarDate(
 | --- | --- | --- | --- | --- |
 | `solarDate` / `lunarDate` | `string` | 是 | — | 日期 |
 | `timeIndex` | `uint8` | 是 | — | 时辰索引 0–12，命宫由月份与时辰共同决定 |
-| `isLeapMonth` | `bool` | 是 | — | 仅农历版本 |
-| `fixLeap` | `bool` | 是 | — | 是否修正闰月 |
-| `language` | `string` | 是 | — | 输出语言 |
+| `fixLeap` | `bool` | 是 | — | 仅阳历版本：阳历日期落在闰月十五之后时是否视作次月 |
+| `leap` | `LeapMonth` | 是 | — | 仅农历版本：`NotLeapMonth` / `LeapMonthKeep` / `LeapMonthFixed`，见 [`ByLunar`](/zh/docs/go/astro#bylunar) |
+| `language` | `Language` | 是 | — | 盘面语言 |
 | `config` | `*Config` | 是 | — | 传 `nil` 取默认 |
 
 **返回值**　多颗主星以逗号分隔；空宫时返回对宫主星。
@@ -131,8 +135,8 @@ func GetMajorStarByLunarDate(
 **示例**
 
 ```go
-zh, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, "zh-CN", nil)
-en, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, "en-US", nil)
+zh, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageZhCN, nil)
+en, _ := iztro.GetMajorStarBySolarDate("2000-8-16", 2, true, iztro.LanguageEnUS, nil)
 
 fmt.Println(zh, en)
 ```

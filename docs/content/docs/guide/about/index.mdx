@@ -1,18 +1,20 @@
 ---
 title: 概览
-description: 准确性保证、给 AI 用的文档端点，以及移植与架构说明。
+description: 准确性保证、给 AI 读的文档端点，以及移植与架构说明。
 ---
+
+*适合：所有人*
 
 <Cards>
   <Card
     title="准确性保证"
     href="/zh/docs/guide/about/accuracy"
-    description="约 66 万例金标测试如何保证与 JS iztro 零差异"
+    description="约 71 万例金标测试如何保证与 JS iztro 零差异，以及这个「准」的边界"
   />
   <Card
-    title="给 AI 用的文档"
-    href="/zh/docs/guide/guides/llm"
-    description="llms.txt、单页 Markdown 端点，以及把 x-iztro 接进 AI 应用"
+    title="给 AI 读的文档端点"
+    href="/zh/docs/guide/guides/llms-txt"
+    description="llms.txt、llms-full.txt、单页 Markdown 与 Accept 头协商"
   />
   <Card
     title="移植说明"
@@ -20,7 +22,7 @@ description: 准确性保证、给 AI 用的文档端点，以及移植与架构
     description="与 iztro 的关系、三套绑定的架构取舍"
   />
   <Card
-    title="与 iztro 的对应"
+    title="从 iztro 迁移：API 对照"
     href="/zh/docs/guide/about/iztro-parity"
     description="iztro 每个 API 的落点、换了形状的几处，以及不提供的那些"
   />
@@ -30,9 +32,10 @@ description: 准确性保证、给 AI 用的文档端点，以及移植与架构
 
 | 项目 | 值 |
 | --- | --- |
-| 版本 | 0.1.1 |
 | 对照的 iztro | v2.5.8（版本锁定） |
 | 许可 | MIT |
 | 仓库 | [github.com/x-haose/x-iztro](https://github.com/x-haose/x-iztro) |
 | crates.io | [x-iztro](https://crates.io/crates/x-iztro) |
 | PyPI | [x-iztro](https://pypi.org/project/x-iztro/) |
+
+当前版本号以 crates.io 与 PyPI 上的发布为准。

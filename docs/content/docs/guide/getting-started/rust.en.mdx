@@ -1,0 +1,82 @@
+---
+title: Rust
+description: Install the x-iztro crate, produce your first chart, and see how enums and translation functions divide the work.
+---
+
+*For: developers*
+
+## Installation
+
+```bash
+cargo add x-iztro
+```
+
+Or in `Cargo.toml`:
+
+```toml
+[dependencies]
+x-iztro = "0.2"
+```
+
+The crate is named `x-iztro`; in code the library is `x_iztro`. No C dependencies, pure Rust build.
+
+## Charting
+
+```rust
+use x_iztro::{by_solar, IztroError};
+use x_iztro::data::types::*;
+
+fn main() -> Result<(), IztroError> {
+    let astrolabe = by_solar(
+        "2000-8-16",        // Gregorian date of birth
+        2,                  // hour index: the Yin (Tiger) hour, 03:00-05:00
+        Gender::Female,     // gender
+        true,               // fix_leap: correct for leap months
+        Language::EnUS,     // chart language; Language::ZhCN is the default elsewhere
+        Config::default(),  // boundaries and school, same defaults as JS iztro
+    )?;
+
+    println!("Solar: {}", astrolabe.solar_date);
+    println!("Lunar: {}", astrolabe.lunar_date);
+    println!("Pillars: {}", astrolabe.chinese_date);
+    println!("Hour: {} ({})", astrolabe.time, astrolabe.time_range);
+    Ok(())
+}
+```
+
+```text
+Solar: 2000-8-16
+Lunar: 二〇〇〇年七月十七
+Pillars: geng chen - jia shen - bing woo - geng yin
+Hour: Tiger hour (03:00~05:00)
+```
+
+<Callout title="Reading the output">
+`lunar_date` is the one field that stays in Chinese in an English chart: the lunar date is written
+with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 7th lunar month, 2000.
+`chinese_date` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
+Pass `Language::ZhCN` instead and both come out in Chinese.
+</Callout>
+
+Chart from a lunar date with [`by_lunar`](/en/docs/rust/astro#by_lunar): where `by_solar` takes
+`fix_leap`, this takes a three-way `LeapMonth` (`NotLeap` / `Leap` / `LeapFixed` — leap month with
+days after the 15th treated as the next month), so one argument says how the leap month is handled
+and there is no pair of booleans to swap:
+
+```rust
+by_lunar("2000-7-17", 2, Gender::Female, LeapMonth::NotLeap, Language::EnUS, Config::default())?;
+```
+
+## Next
+
+The example above only touches the charting entry point. The full API — locating the twelve palaces,
+star predicates, flying stars, horoscopes, the star-placement module, data tables and translation —
+lives under **[Rust API](/en/docs/rust)**, where every function, type and method has its own entry
+with real run output and edge-case notes.
+
+<Cards>
+  <Card title="Charting entry points" href="/en/docs/rust/astro" description="by_solar, by_lunar, rearranged and the JSON variants" />
+  <Card title="Astrolabe" href="/en/docs/rust/astrolabe" description="Fields, palace lookup, surrounded-palace predicates" />
+  <Card title="Palace" href="/en/docs/rust/palace" description="Star predicates, empty-palace checks and the flying-star family" />
+  <Card title="Horoscope" href="/en/docs/rust/horoscope" description="Six scopes and palace queries" />
+</Cards>
