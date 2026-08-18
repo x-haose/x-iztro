@@ -1,0 +1,6 @@
+interface:
+  display_name: "X Iztro"
+  short_description: "Repo-specific patterns and workflows for x-iztro"
+  default_prompt: "Use the x-iztro repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
