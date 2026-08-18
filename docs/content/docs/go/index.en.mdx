@@ -1,0 +1,293 @@
+---
+title: Overview
+description: The package layout, the type system, and how to read this reference.
+icon: Boxes
+---
+
+The Go package embeds a WebAssembly build of the core and calls it through wazero, a runtime written
+in pure Go — **no cgo required**, with cross-compilation and static linking left intact.
+
+This section is the complete Go API reference — every exported function, type and method has its own
+entry.
+
+## Install
+
+```bash
+go get github.com/x-haose/x-iztro/go/iztro
+```
+
+```go
+import "github.com/x-haose/x-iztro/go/iztro"
+```
+
+## Your first chart
+
+```go
+chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.SolarDate, chart.LunarDate)
+// 2000-8-16 二〇〇〇年七月十七
+
+soul := chart.Palace(iztro.PalaceSoul)
+if len(soul.MajorStars) > 0 {
+    fmt.Println(soul.MajorStars[0].Name)
+    // emperor
+} else {
+    fmt.Println("the Soul palace is empty, borrowing from the opposite palace:", soul.OppositePalace().MajorStars[0].Name)
+}
+```
+
+`LunarDate` stays in Chinese under every language — it is a lunar date written in Chinese numerals.
+`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+
+<Callout type="warn" title="The major-star list can be empty">
+A chart usually has two palaces with no major star (empty palaces), and the Soul palace may well be
+one of them. Writing `soul.MajorStars[0]` straight out panics on such a chart — check the length
+first, or branch on [`IsEmpty`](/en/docs/go/palace#isempty) and borrow from the opposite palace.
+</Callout>
+
+## Package layout
+
+The package is flat; everything exported lives under `iztro`. By topic:
+
+| Topic | Main exports | Page in this reference |
+| --- | --- | --- |
+| Charting | `BySolar`, `ByLunar`, `Rearranged` | [Charting entries](/en/docs/go/astro) |
+| Data types | `Astrolabe`, `Palace`, `Star`, `Horoscope`, `Config` | The four pages from [Astrolabe object](/en/docs/go/astrolabe) onward |
+| Key constants | `PalaceSoul`, `StarZiweiMaj`, `MutagenLu` and so on | [Data tables](/en/docs/go/data) |
+| Lightweight queries | `GetZodiacBySolarDate` and friends | [Lightweight queries](/en/docs/go/query) |
+| Utilities | `FixIndex`, `GetBrightness` and friends | [Utilities](/en/docs/go/util) |
+| Star placement | `GetMajorStar`, `GetHoroscopeStar` and friends | [Star placement](/en/docs/go/star) |
+| Data tables | `StarsInfo`, `HeavenlyStems` and friends | [Data tables](/en/docs/go/data) |
+| Translation | `Translate`, `KeyOf`, `KeyOfIn` | [Translation](/en/docs/go/i18n) |
+| Errors | `*Error`, the `Err*` sentinels, the `Code*` constants | [Error handling](/en/docs/go/errors) |
+| Runtime | `Warmup`, `Close`, `CompilationCacheDir` | Further down this page |
+
+## Constants are the keys
+
+The key constants in the package have the language-independent keys as their values, so they compare
+directly against the `*Key` fields on the data objects:
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
+// true
+```
+
+They are all untyped string constants, so string literals work just as well —
+`chart.Palace("soulPalace")` and `chart.Palace(iztro.PalaceSoul)` are equivalent.
+The constants earn their keep through IDE completion and spell checking.
+
+<Callout type="warn" title="Test on Key, never on Name">
+`star.Name` varies with the charting language (`紫微` on a Chinese chart, `emperor` on an English one);
+`star.Key` is `ziweiMaj` under any language. Every predicate should rest on the `*Key` fields or on
+the built-in predicate methods.
+</Callout>
+
+## Variadic parameters
+
+Methods taking a list of stars or mutagens are variadic throughout, so call sites need not build a
+slice:
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+target := chart.Palace(iztro.PalaceWealth)
+
+fmt.Println(soul.Has(iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(soul.FliesTo(target, iztro.MutagenLu, iztro.MutagenJi))
+```
+
+**Output**
+
+```text
+false
+false
+```
+
+Expand an existing slice with `...`:
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+stars := []string{iztro.StarZiweiMaj, iztro.StarTianxiangMaj}
+
+fmt.Println(soul.Has(stars...))
+```
+
+**Output**
+
+```text
+false
+```
+
+<Callout type="info" title="Horoscope scope-star queries are the exception">
+The star parameter of the `HasHoroscopeStars` family is a `[]string` rather than variadic, because two
+string parameters (palace name and scope) already precede it and a variadic list would make call sites
+ambiguous.
+</Callout>
+
+## Error handling
+
+Entry points that compute something return `(value, error)`; pure query methods (`Palace`, `Star`,
+`Has` and so on) return no error and give `nil` or a zero value when nothing is found.
+
+```go
+_, err := iztro.BySolar("2000-13-1", 2, "female", true, "en-US", nil)
+
+fmt.Println(err)
+fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
+
+var e *iztro.Error
+if errors.As(err, &e) {
+    fmt.Println(e.Code)
+}
+```
+
+**Output**
+
+```text
+iztro: invalid solar date '2000-13-1': month must be within 1-12
+true
+invalid_date
+```
+
+Every error is an `*iztro.Error` carrying a machine-readable `Code`, and `errors.Is` matches it
+against the four sentinels. See [Error handling](/en/docs/go/errors).
+
+## Runtime and performance
+
+The wasm module is **compiled once and instantiated on demand**: each instance owns its linear
+memory, so concurrent calls take an instance each rather than sharing one behind a lock, and the
+number of instances is capped at `GOMAXPROCS`. There is no global mutex on the charting hot path —
+instances are handed out over a channel, and the lock is taken only when the runtime first
+initializes and on `Close`. Several goroutines charting at once therefore run genuinely in parallel:
+on the same ten-core machine, 8 goroutines running 800 charts finish more than four times faster
+than a single goroutine.
+
+The compiled machine code is cached on disk under the user cache directory (`CompilationCacheDir`
+reports it), bucketed by the hash of the wasm contents, so a new wasm naturally lands in a new
+bucket.
+
+Measured magnitudes (Apple M series, 10 cores; the exact figures move with the machine and the size
+of the wasm):
+
+| Stage | Time |
+| --- | --- |
+| First call, compilation cache **miss** (the wasm has to be compiled) | one or two hundred milliseconds |
+| First call, compilation cache hit | twenty to thirty milliseconds |
+| Steady-state single chart | around half a millisecond |
+
+<Callout type="info" title="The cost is JSON encoding, not the computation">
+Most of that steady-state half millisecond goes on serializing the whole chart to JSON on the wasm
+side and deserializing it back into structs on the Go side, not on the Zi Wei Dou Shu computation
+itself. When you only need a field or two, a
+[lightweight query](/en/docs/go/query) (`GetMajorStarBySolarDate` and friends) is far cheaper than
+charting in full.
+</Callout>
+
+### Warmup / Close / CompilationCacheDir
+
+```go
+func Warmup(ctx context.Context) error
+func Close(ctx context.Context) error
+func CompilationCacheDir(ctx context.Context) (string, error)
+```
+
+| Function | Description |
+| --- | --- |
+| `Warmup` | Compiles ahead of time and fills the instance pool, moving the cold-start cost into startup. Skipping it is fine — compilation and instantiation are lazy anyway |
+| `Close` | Shuts the runtime down and returns all instance memory. Rarely needed; calling any function in this package afterwards re-initializes it automatically |
+| `CompilationCacheDir` | Returns the compilation cache directory; empty string when the on-disk cache is not enabled |
+
+```go
+ctx := context.Background()
+
+if err := iztro.Warmup(ctx); err != nil {
+    log.Fatal(err)
+}
+
+dir, err := iztro.CompilationCacheDir(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(dir != "")
+
+chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.SolarDate)
+```
+
+**Output**
+
+```text
+true
+2000-8-16
+```
+
+A service process that wants its very first request on the hot path only has to call `Warmup` once
+during startup.
+
+### Context variants
+
+The entry points that cross into wasm — charting, horoscope, rearranging, prompts — each have a
+`*Context` version taking one extra `context.Context`:
+
+| Without ctx | With ctx |
+| --- | --- |
+| `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
+| `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
+| `Astrolabe.Rearranged` | `RearrangedContext` |
+| `Astrolabe.AstrolabeToPrompt` / `HoroscopeToPrompt` | `AstrolabeToPromptContext` / `HoroscopeToPromptContext` |
+| — | `Warmup` / `Close` / `CompilationCacheDir` exist only in the ctx form |
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+chart, err := iztro.BySolarContext(ctx, "2000-8-16", 2, "female", true, "en-US", nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(chart.SolarDate)
+```
+
+**Output**
+
+```text
+2000-8-16
+```
+
+<Callout type="info" title="ctx governs the queue, not the computation">
+`ctx` cancels the wait for **a free wasm instance**. Once an instance is in hand the computation on
+the wasm side cannot be interrupted — a single chart is sub-millisecond to begin with, so there is no
+long task to break off.
+</Callout>
+
+<Callout type="warn" title="The wazero compiler covers only amd64 and arm64">
+On those two architectures wazero uses its optimizing compiler (down to machine code). Everything
+else falls back to the interpreter, which still produces correct results but is more than an order of
+magnitude slower. Deploy on amd64 or arm64 in production.
+</Callout>
+
+## How to read an entry
+
+Every API entry is organized into the same eight sections:
+
+<Steps>
+<Step>**Purpose** — one sentence on what it does</Step>
+<Step>**Zi Wei meaning** — the concept it corresponds to in Zi Wei Dou Shu (omitted for purely engineering functions)</Step>
+<Step>**Signature** — lifted verbatim from the source</Step>
+<Step>**Parameters** — name, type, whether required, default, description</Step>
+<Step>**Return value** — type and structure</Step>
+<Step>**Example** — a snippet you can run as-is</Step>
+<Step>**Output** — the real result of running that example</Step>
+<Step>**Edge cases and pitfalls** — empty values, out-of-range input, configuration effects, interactions with other APIs</Step>
+</Steps>
+
+Examples all use the same chart — **a female born 16 August 2000 in the Tiger hour** — so they can be
+compared across pages. The full data for that chart is on
+[the data model](/en/docs/guide/data-model).

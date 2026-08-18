@@ -1,0 +1,180 @@
+---
+title: How charting works
+description: Nine steps from birth data to a complete natal chart — what each step does and what it works from.
+---
+
+*For: everyone. To drive the steps through the API, see [The API behind the nine charting steps](/en/docs/guide/guides/step-api)*
+
+Charting is not mysticism; it is a chain of determinate derivations. Given the same birth data and
+the same school-of-thought choices, anyone should arrive at exactly the same chart. This page breaks
+that chain into nine steps.
+
+<Callout type="info">
+Everyday charting does not require walking these steps yourself — the charting entry point does all
+of it. Read this page to know where the results come from, and why a particular field looks the way
+it does.
+</Callout>
+
+## The whole flow
+
+<Steps>
+<Step>**Convert Gregorian to lunar** — obtain the lunar year, month and day, plus the four pillars</Step>
+<Step>**Fix the month index** — resolve leap-month attribution</Step>
+<Step>**Locate the Soul and Body palaces** — from the month index and the hour</Step>
+<Step>**Determine the Five Elements class** — from the Soul palace's stem and branch</Step>
+<Step>**Place Ziwei and Tianfu** — from the Five Elements class and the lunar day</Step>
+<Step>**Place the fourteen major stars** — unfolded from the positions of Ziwei and Tianfu</Step>
+<Step>**Place minor and adjective stars** — each derived from the year stem, year branch, month, day or hour</Step>
+<Step>**Place the four groups of twelve gods** — Changsheng, Boshi, Sui-qian, Jiang-qian</Step>
+<Step>**Derive decadals and age fortune** — from the Five Elements class, gender and year branch</Step>
+</Steps>
+
+---
+
+## Step by step
+
+### 1. Convert Gregorian to lunar
+
+Zi Wei Dou Shu is built on the lunar calendar, but the input is usually Gregorian. This step also
+produces the stem-branch pillars for the year, month, day and hour.
+
+When the year's stem and branch turn over is configurable: someone born between lunar New Year and
+the Beginning of Spring (立春, the solar term around 4 February) gets a different year pillar under
+each setting. Year-derived adjective stars take their year branch from a *separate* switch, and the
+two switches can be set independently — so year-derived adjective stars and the major stars may rest
+on different year branches. This is iztro's actual behaviour, reproduced verbatim by x-iztro.
+
+### 2. Fix the month index
+
+Days after the 15th of a leap month count towards the following month (this can be switched off),
+and the late Zi hour takes no part in the correction.
+
+### 3. Locate the Soul and Body palaces
+
+Start at the Yin palace as the first lunar month, count forward to the month of birth, then count
+backward from there to the hour of birth — where you land is the **Soul palace**. The **Body palace**
+uses the same starting point but counts the hour forward. The Soul palace's heavenly stem is derived
+from the year stem by the Five Tigers rule.
+
+### 4. Determine the Five Elements class
+
+Looked up from the **Soul palace's stem and branch**, with five possible values: water 2nd, wood
+3rd, metal 4th, earth 5th, fire 6th.
+
+The class number (2/3/4/5/6) gets used twice further on: as the divisor when placing Ziwei, and as
+the starting nominal age when deriving the decadals.
+
+<Callout type="info" title="Zhongzhou forks here">
+The earth plate takes the class from the Body palace's stem and branch instead, and the human plate
+from the Spirit palace's. Change the stem and branch the class is taken from and steps 5, 6, 8 and 9
+are all recomputed — that is what the charting-perspective configuration does.
+</Callout>
+
+### 5. Place Ziwei and Tianfu
+
+Divide the lunar day by the class number and apply the Ziwei placement rule to fix which palace
+Ziwei falls in. Tianfu mirrors Ziwei about the Yin–Shen axis: the Tianfu slot = 12 − the Ziwei slot
+(modulo 12).
+
+### 6. Place the fourteen major stars
+
+The six stars of the Ziwei series unfold **counter-clockwise** from Ziwei's slot at fixed offsets,
+and the eight stars of the Tianfu series unfold **clockwise** from Tianfu's slot. The offsets are
+not contiguous — there are gaps:
+
+| Ziwei series (backward, from Ziwei's slot) | Slots back |
+| --- | --- |
+| Ziwei | 0 |
+| Tianji | 1 |
+| Taiyang | 3 |
+| Wuqu | 4 |
+| Tiantong | 5 |
+| Lianzhen | 8 |
+
+| Tianfu series (forward, from Tianfu's slot) | Slots forward |
+| --- | --- |
+| Tianfu | 0 |
+| Taiyin | 1 |
+| Tanlang | 2 |
+| Jumen | 3 |
+| Tianxiang | 4 |
+| Tianliang | 5 |
+| Qisha | 6 |
+| Pojun | 10 |
+
+With both series laid out, all fourteen major star positions are fixed. The birth-year stem's
+mutagen marks are stamped on in this step too.
+
+### 7. Place minor and adjective stars
+
+Each group is placed from something different:
+
+| Group | Derived from | Example |
+| --- | --- | --- |
+| Lucun, Qingyang, Tuoluo | Year stem | "jia's lu goes to the Yin palace", with Qingyang before and Tuoluo after |
+| Tianma | Year branch | Only ever lands on the four horse branches (yin, shen, si, hai) |
+| Tiankui, Tianyue | Year stem | |
+| Zuofu, Youbi | Lunar month | "from Chen, count the months forward for Zuofu" |
+| Wenchang, Wenqu | Hour branch | "from Xu, count the hours backward for Wenchang" |
+| Huoxing, Lingxing | Year branch + hour branch | |
+| Dikong, Dijie | Hour branch | Start at the Hai palace for the Zi hour, Dikong backward and Dijie forward |
+| Santai, Bazuo, Enguang, Tiangui | Lunar day | Counted from the positions of the minor stars |
+| Year-derived adjective stars | Year stem or year branch | The largest group |
+
+<Callout title="The four day-derived stars each have their own origin and direction">
+All four use the same lunar day count, but start from different places and run in different
+directions: Santai counts **forward** from Zuofu's slot, Bazuo **backward** from Youbi's slot,
+Enguang forward from Wenchang's slot and Tiangui forward from Wenqu's slot (with Enguang and Tiangui
+each then stepping back one). This is iztro's actual algorithm, reproduced verbatim by x-iztro.
+</Callout>
+
+### 8. Place the four groups of twelve gods
+
+Each group fills all twelve palaces with twelve markers, exactly one per palace:
+
+| Group | Origin | Direction |
+| --- | --- | --- |
+| The twelve Changsheng gods | Fixed by the Five Elements class (water 2nd starts at Shen, …) | Gender and year-branch polarity |
+| The twelve Boshi gods | The palace holding Lucun | As above |
+| The twelve Sui-qian gods | The palace of the year branch | Always forward |
+| The twelve Jiang-qian gods | Fixed by the year branch's trine group | Always forward |
+
+<Callout title="Sui-qian and Jiang-qian">
+**Sui-qian** (岁前, "ahead of the year") is a cycle of twelve annual markers counted from the year
+branch itself. **Jiang-qian** (将前, "ahead of the general") is a second cycle of twelve counted from
+the General star, whose position comes from the year branch's trine group. Both are per-palace
+annual markers; they are unrelated to the fourteen major stars.
+</Callout>
+
+### 9. Derive decadals and age fortune
+
+Decadals start at the Soul palace, ten years per palace; the starting nominal age is the class
+number (water 2nd starts at nominal age 2, wood 3rd at 3, …). Direction is decided by the polarity
+of gender against the polarity of the year branch.
+
+Age fortune runs on a separate scheme: it starts from the palace fixed by the year branch's trine
+group and advances one palace per nominal year, with direction depending on gender alone (male
+forward, female backward).
+
+<Callout title="Nominal age">
+**Nominal age** (虚岁) is East Asian age reckoning: you are 1 at birth and gain a year at the turn of
+the year, not on your birthday.
+</Callout>
+
+---
+
+## Horoscopes are a separate line
+
+The nine steps above produce the **natal chart**, computed once and fixed thereafter. A horoscope
+projects the natal chart onto a moment in time: the stems and branches for that level are computed
+from the target date, then the twelve palace names are re-laid-out and that level's mutagens and
+flowing stars are derived.
+
+The natal chart does not change; what changes is "which palace you are standing in right now". See
+[Horoscopes](/en/docs/guide/concepts/horoscope).
+
+## Driving the steps through the API
+
+Each of the nine steps has a corresponding public function in x-iztro, so you can take just the
+result of one intermediate step. The mapping table, and which steps configuration changes, are on
+[The API behind the nine charting steps](/en/docs/guide/guides/step-api).

@@ -1,0 +1,197 @@
+---
+title: Star object
+description: The fields of Star, its brightness and mutagen predicates, and the back-references StarRef adds.
+---
+
+A `Star` is one star sitting in a palace, carrying its type, brightness and mutagen mark.
+`chart.star(...)` returns a `StarRef`, which adds the ability to trace back to the palace it sits in.
+
+```rust
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+
+let _name = &ziwei.name;       // reached directly through Deref
+let _palace = ziwei.palace();  // view-only: back to its palace
+```
+
+<Callout type="info">
+The examples on this page all chart with `Language::EnUS`, so the display values in the output are
+iztro's en-US vocabulary — `emperor` for Ziwei, `soul` for the Soul palace, and so on.
+`Star` itself is not `Copy`, so fields reached through `Deref` are borrowed (`&ziwei.name`) or cloned;
+they cannot be moved out.
+</Callout>
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `StarKey` | Star key, independent of language; use it in predicates |
+| `name` | `String` | Star name, translated into the charting language |
+| `star_type` | `StarType` | Star type, see below |
+| `scope` | `Scope` | Which layer it acts on: `Origin` for natal stars, the matching scope for scope stars |
+| `brightness` | `Option<Brightness>` | Brightness; `None` for stars with no brightness table |
+| `mutagen` | `Option<Mutagen>` | Natal mutagen; `None` for stars the birth-year stem did not transform |
+
+### The eight values of StarType
+
+| Value | Meaning | Typical members |
+| --- | --- | --- |
+| `Major` | The fourteen major stars | Ziwei, Tianfu, Qisha, Pojun |
+| `Soft` | Auspicious stars | Zuofu, Youbi, Wenchang, Wenqu, Tiankui, Tianyue |
+| `Tough` | Malefic stars | Qingyang, Tuoluo, Huoxing, Lingxing, Dikong, Dijie |
+| `Adjective` | Adjective stars | Santai, Bazuo, Tianxing, Tianyao |
+| `Flower` | Peach-blossom stars | Hongluan, Tianxi, Xianchi |
+| `Helper` | Jieshen | Jieshen |
+| `Lucun` | Lucun | Lucun |
+| `Tianma` | Tianma | Tianma |
+
+Lucun and Tianma each get a category of their own, because in the traditional division they are
+neither purely auspicious nor purely malefic and predicates routinely single them out.
+
+<Callout type="info" title="A brightness of None does not mean a weak star">
+Only twenty stars have a brightness table — the fourteen major stars plus Wenchang, Wenqu, Huoxing,
+Lingxing, Qingyang and Tuoluo. Brightness is simply not a concept for the rest, whose `brightness` is
+`None`.
+</Callout>
+
+---
+
+## with_brightness
+
+**Purpose** Test whether this star is at one of the given brightness levels.
+
+**Zi Wei meaning** Brightness (miao, wang, de, li, ping, bu, xian) describes how strong a star is in
+its palace. Each star has a fixed value in each of the twelve palaces; at miao or wang its power comes
+out in full, at xian it is constrained.
+
+**Signature**
+
+```rust
+pub fn with_brightness(&self, brightness: &[Brightness]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `brightness` | `&[Brightness]` | Yes | — | A list of brightness levels; any match is true |
+
+**Return value** `bool`. Always `false` for a star with no brightness.
+
+**Example**
+
+```rust
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{}", ziwei.with_brightness(&[Brightness::Miao]));
+println!("{}", ziwei.with_brightness(&[Brightness::Wang, Brightness::De]));
+```
+
+**Output**
+
+```text
+true
+false
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+The semantics are "any match", not "all match" — a star has exactly one brightness, so demanding all
+of them would be permanently false for a list longer than one.
+</Callout>
+
+---
+
+## with_mutagen
+
+**Purpose** Test whether this star carries a given natal mutagen.
+
+**Zi Wei meaning** Natal mutagens are fixed by the birth-year stem: a given year always sends lu,
+quan, ke and ji to four particular stars. The mark travels with the star, whichever palace it lands
+in.
+
+**Signature**
+
+```rust
+pub fn with_mutagen(&self, mutagens: &[Mutagen]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagens` | `&[Mutagen]` | Yes | — | A list of mutagens; any match is true |
+
+**Return value** `bool`. Always `false` for a star the birth-year stem did not transform.
+
+**Example**
+
+```rust
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+let taiyang = chart.star(StarKey::TaiyangMaj).unwrap();
+
+println!("Ziwei takes lu: {}", ziwei.with_mutagen(&[Mutagen::Lu]));
+println!("Taiyang takes lu: {}", taiyang.with_mutagen(&[Mutagen::Lu]));
+```
+
+**Output**
+
+```text
+Ziwei takes lu: false
+Taiyang takes lu: true
+```
+
+This chart's birth-year stem is geng, and geng sends lu to Taiyang, so the mark lands on Taiyang
+rather than Ziwei.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Natal mutagens and flying mutagens are not the same thing">
+`with_mutagen` looks at the mark the **birth-year stem** placed on this star; only four stars on a
+chart carry one. Mutagens flown by palace stems do not show up here — for those use the palace's
+[`flies_to`](/en/docs/rust/palace#flies_to--flies_one_of_to--not_fly_to) family.
+</Callout>
+
+---
+
+## palace / opposite_palace / surrounded_palaces
+
+**Purpose** Trace from a star back to its palace, that palace's opposite, and its surrounded set.
+
+**Signature**
+
+```rust
+pub fn palace(&self) -> PalaceRef<'a>
+pub fn opposite_palace(&self) -> PalaceRef<'a>
+pub fn surrounded_palaces(&self) -> SurroundedPalaces<'a>
+```
+
+**Return value** All three necessarily exist and return no `Option` — a `StarRef` can only be
+produced by a chart query, so it inherently knows where it belongs.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{}", translate_palace(ziwei.palace().name, en));
+println!("{}", translate_palace(ziwei.opposite_palace().name, en));
+println!("Tianxiang in the same palace or the trine: {}", ziwei.surrounded_palaces().have(&[StarKey::TianxiangMaj]));
+```
+
+**Output**
+
+```text
+soul
+surface
+Tianxiang in the same palace or the trine: true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A star appears exactly once on a chart, so `chart.star(key)` has a unique result.
+Horoscope scope stars are not in the natal chart's star lists; to reach them use the horoscope
+object's [`palace`](/en/docs/rust/horoscope#palace) with a scope argument.
+</Callout>

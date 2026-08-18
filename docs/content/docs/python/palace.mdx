@@ -10,6 +10,10 @@ description: Palace 的字段，以及星耀判断、空宫判断与飞星族的
 soul = chart.palace("soulPalace")
 ```
 
+<Callout type="info">
+本页示例统一用默认的 `zh-CN` 排盘，因此输出里的展示值都是中文。
+</Callout>
+
 ## 字段
 
 | 字段 | 类型 | 说明 |
@@ -29,11 +33,18 @@ soul = chart.palace("soulPalace")
 | `suiqian12` / `suiqian12_key` | `str` | 岁前十二神 |
 | `decadal` | `Decadal` | 大限：岁数区间与宫干支 |
 | `ages` | `list[int]` | 小限经过本宫的虚岁列表 |
+| `mutagen_star_keys` | `list[str]` | 本宫**宫干**化出的四颗星标识，顺序为禄、权、科、忌 |
 
 <Callout type="info" title="四组十二神与三组星耀的区别">
 主星、辅星、杂耀是**列表**，一宫可以有零到多颗。
 长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
 因此是单值字段而不是列表。
+</Callout>
+
+<Callout type="info" title="mutagen_star_keys 是宫干四化，不是生年四化">
+它由**排盘时生效的**四化表算得——自定义四化表（`ChartConfig(mutagens=...)`）
+会反映在这里，飞星族方法读的正是它。
+生年四化是打在星耀自身 `mutagen_key` 字段上的标记，两者不是一回事。
 </Callout>
 
 ---
@@ -57,7 +68,7 @@ def has_one_of(self, stars: list[str]) -> bool
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `stars` | `list[str]` | 是 | — | 星耀标识列表 |
+| `stars` | `list[str]` | 是 | — | 星耀标识列表；也接受**当前排盘语言**下的星名 |
 
 **返回值**
 
@@ -91,9 +102,18 @@ True
 
 **边界与陷阱**
 
-<Callout type="warn">
+<Accordions>
+<Accordion title="空列表的返回值">
 空列表下 `has` 与 `not_have` 返回 `True`，`has_one_of` 返回 `False`。
-</Callout>
+</Accordion>
+<Accordion title="星名拼错是静默的">
+比对的是「本宫全部星耀的标识与译名」这个集合，比不中就是没有——
+`soul.has(["ziweiMj"])` 返回 `False` 而不报错，看起来跟「命宫没有紫微」一模一样。
+
+外部输入的星名先过一遍枚举构造函数就能当场发现：
+`MajorStar("ziweiMj")` 抛 `ValueError`。写死在代码里的用枚举成员，靠 IDE 补全。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -118,7 +138,7 @@ def not_have_mutagen(self, mutagen: Mutagen) -> bool
 | --- | --- | --- | --- | --- |
 | `mutagen` | `str` | 是 | — | `"sihuaLu"` / `"sihuaQuan"` / `"sihuaKe"` / `"sihuaJi"` |
 
-**返回值**　`bool`。
+**返回值**　`bool`。只扫描 `major_stars` 与 `minor_stars`，**不看杂耀**。
 
 **示例**
 
@@ -137,6 +157,13 @@ print("子女宫无化忌:", children.not_have_mutagen(Mutagen.JI))
 子女宫有化禄: True
 子女宫无化忌: True
 ```
+
+**边界与陷阱**
+
+<Callout type="warn" title="不扫杂耀">
+`has_mutagen` 只看主星与辅星上的四化标记，杂耀即使带标记也不计入（复刻 iztro 的行为）。
+生年四化只会落在十四主星与部分辅星上，因此实际盘面上两种口径通常没有差别。
+</Callout>
 
 ---
 
@@ -250,9 +277,16 @@ print("命宫不化权入子女:", soul.not_fly_to(PalaceName.CHILDREN, Mutagen.
 **边界与陷阱**
 
 <Accordions>
-<Accordion title="空的四化列表返回 True">
-`mutagens` 传空列表时 `flies_to` 与 `not_fly_to` 返回 `True`，
-`flies_one_of_to` 返回 `False`。传空通常是调用方的疏漏，先确认列表非空。
+<Accordion title="空的四化列表：flies_to 为假，另两个为真">
+`mutagens` 传空列表时 `flies_to` 返回 `False`，
+`flies_one_of_to` 与 `not_fly_to` 返回 `True`。
+
+这与「空集上全称命题为真」的直觉相反，但复刻的是 iztro 的行为：
+`flies_to` 先算出要找的星，一颗都没有就直接判假。传空通常是调用方的疏漏。
+</Accordion>
+<Accordion title="目标宫定位不到时三个方法都返回 False">
+`target` 写成越界索引或拼错的宫名时，三个方法一律返回 `False`，
+包括语义上「否定」的 `not_fly_to`——定位失败不等于「没飞进去」。
 </Accordion>
 <Accordion title="自定义四化表会改变结果">
 `ChartConfig(mutagens=...)` 换掉某个天干的四化表后，宫干落在该天干的宫飞出的星随之改变。
@@ -316,6 +350,14 @@ print("官禄宫无任何自化:", career.not_self_mutaged())
 
 官禄宫宫干为丙，丙干化忌在廉贞，而廉贞正坐官禄宫，故成自化忌。
 
+**边界与陷阱**
+
+<Callout type="info" title="空列表在这三个方法里的含义不同于飞星族">
+`self_mutaged_one_of` 与 `not_self_mutaged` 把不传参数（或空列表）解释为「全部四化」。
+`self_mutaged` 不做这层回退，空列表退化成「本宫是否包含空集」，恒为 `True`——
+与 `flies_to` 的空列表判假正好相反，别把两者的直觉混用。
+</Callout>
+
 ---
 
 ## mutaged_places / mutagen_stars
@@ -363,7 +405,15 @@ print(soul.mutagen_stars([Mutagen.LU, Mutagen.JI]))
 ['tianliangMaj', 'wuquMaj']
 ```
 
-命宫宫干为壬，壬干四化为天梁化禄、紫微化权、左辅化科、武曲化忌。
+命宫宫干为壬，壬干四化为天梁化禄、紫微化权、左辅化科、武曲化忌，
+四颗星分别坐在子女、命宫、官禄、财帛四宫。
+
+<Callout type="info">
+不传 `all_palaces` 时检索范围是本宫所属星盘的十二宫。
+脱离星盘单独构造的宫位既没有星盘也没传范围，此时返回**空列表**而不是四个 `None`。
+`mutaged_places` 恒按禄、权、科、忌四位取，不受参数影响；
+要挑其中几位用 `mutagen_stars`。
+</Callout>
 
 ---
 

@@ -1,0 +1,132 @@
+---
+title: What a chart is made of
+description: The minimum Zi Wei Dou Shu you need, readable without code — what a chart is, what parts it has, and what each part decides.
+---
+
+*For: everyone. No code needed to read this; each page ends with a "In code" section*
+
+This chapter does not teach you how to *interpret* a chart. It explains **what a chart is made of**
+— read it and you will know what each of those nouns in the output is talking about.
+
+## What charting does
+
+Charting takes four inputs: the **date** of birth, the **hour** of birth, the **gender**, and a set
+of **configuration** switches that pin down school and boundary choices.
+
+The output is a chart of fixed shape: **twelve palaces**, each with its own stem and branch, its own
+palace name, and however many **stars** land in it. This chart never changes for the rest of a life;
+it is called the **natal chart**.
+
+On top of the natal chart, **horoscopes** are projected forward in time: which palaces and which
+mutagens govern this decade (the decadal), this year, this month, this day, this hour. Horoscopes
+change with the date you query.
+
+```
+date of birth + hour + gender + config
+        │
+        ├─→ natal chart (twelve palaces + stars + mutagens)   ← fixed for life
+        │
+        └─→ horoscope (decadal/age/yearly/monthly/daily/hourly) ← varies with the target date
+```
+
+## Four concepts to get straight first
+
+### Stems and branches
+
+Ten heavenly stems (jia, yi, bing, ding, wu, ji, geng, xin, ren, gui) and twelve earthly branches
+(zi, chou, yin, mao, chen, si, woo, wei, shen, you, xu, hai) are paired off in a cycle of sixty and
+used to number years, months, days and hours.
+
+The four stem-branch pairs for a moment of birth are the **four pillars** — the
+`geng chen - jia shen - bing woo - geng yin` you see in the chart output.
+
+Each of the twelve palaces also carries a heavenly stem of its own (the palace stem), which is what
+the flying mutagens are derived from.
+
+### Soul palace and Body palace
+
+The **Soul palace** is the origin of the whole chart, located from the lunar month and hour of
+birth. The twelve palace names are laid out starting from it.
+
+The **Body palace** is not a thirteenth palace: it is one of the twelve, additionally marked, and it
+indicates where effort is applied in later life.
+
+### Five Elements class
+
+Derived from the stem and branch of the Soul palace. It is one of five values: water 2nd, wood 3rd,
+metal 4th, earth 5th, fire 6th. The number (2 to 6) is used twice further on:
+
+1. **Placing Ziwei**: the lunar day is divided by the class number to fix which palace Ziwei falls
+   in — and the positions of all fourteen major stars unfold from that one step.
+2. **Fixing the starting age of the decadals**: water 2nd starts at nominal age 2, fire 6th at 6,
+   and each palace governs ten years from there.
+
+<Callout title="Nominal age">
+**Nominal age** (虚岁) is East Asian age reckoning: you are 1 at birth and gain a year at the turn of
+the year, not on your birthday. Every age quoted in a chart — decadal ranges, age-fortune years — is
+a nominal age, so it runs one or two ahead of the age on your passport.
+</Callout>
+
+### Mutagens
+
+Each heavenly stem carries an assignment of four mutagens — Wealth (禄), Power (权), Status (科),
+Trouble (忌) — pointing at four specific stars. When charting, the birth year's stem stamps its
+mutagens onto the corresponding stars; each horoscope level then has mutagens of its own.
+
+This is the main source of dynamic information in Zi Wei Dou Shu. See
+[Mutagens and flying stars](/en/docs/guide/concepts/mutagen).
+
+## How the chart is laid out
+
+A Zi Wei chart is twelve cells arranged in a ring, each cell owned by one **earthly branch**. The
+twelve palaces in the output are stored in a fixed order, and **slot 0 is the Yin palace**:
+
+| Slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Branch | yin | mao | chen | si | woo | wei | shen | you | xu | hai | zi | chou |
+
+<Callout type="warn">
+The slot order follows the **branches**, not the palace names. The Soul palace can land in any one
+of the twelve cells, and slot 0 is not necessarily the Soul palace. Look palaces up by name; never
+hard-code a slot index.
+</Callout>
+
+The twelve **palace names** (Soul, Parents, Spirit, …) are what charting computes: starting from the
+cell holding the Soul palace, they are laid out counter-clockwise. So "which cell holds the Soul
+palace" differs from chart to chart — which is exactly what the first step of charting decides. See
+[The twelve palaces](/en/docs/guide/concepts/palaces).
+
+## The layers of information on a chart
+
+<Files>
+  <Folder name="Astrolabe" defaultOpen>
+    <File name="solar_date / lunar_date / chinese_date — the birthday in three calendars" />
+    <File name="time / time_range — the hour and the clock range it covers" />
+    <File name="sign / zodiac — zodiac sign and zodiac animal" />
+    <File name="soul / body — soul star and body star" />
+    <File name="five_elements_class — Five Elements class; decides Ziwei placement and the decadal starting age" />
+    <Folder name="palaces[12]" defaultOpen>
+      <File name="name — palace name (soul, wealth, spouse, …)" />
+      <File name="heavenly_stem / earthly_branch — the palace stem and branch" />
+      <File name="is_body_palace / is_original_palace — Body palace / Original palace flags" />
+      <File name="major_stars / minor_stars / adjective_stars — the three star groups" />
+      <File name="changsheng12 / boshi12 / jiangqian12 / suiqian12 — the four groups of twelve gods" />
+      <File name="decadal — the decadal range this palace governs, plus its stem and branch" />
+      <File name="ages — the age-fortune nominal ages that pass through this palace" />
+    </Folder>
+  </Folder>
+</Files>
+
+For the type and meaning of every field, see the [Data model](/en/docs/guide/data-model).
+
+## Read on
+
+<Cards>
+  <Card title="Stems, branches and elements" href="/en/docs/guide/concepts/stems-branches" description="What each pillar drives, how yin and yang set direction, where palace stems come from" />
+  <Card title="The twelve palaces" href="/en/docs/guide/concepts/palaces" description="Palace names, palace stems, Body palace, Original palace, decadals and age fortune" />
+  <Card title="Stars" href="/en/docs/guide/concepts/stars" description="The three star groups, brightness, the four groups of twelve gods, and a star-name table" />
+  <Card title="Mutagens and flying stars" href="/en/docs/guide/concepts/mutagen" description="Wealth, Power, Status, Trouble; self-mutagens; flying predicates" />
+  <Card title="Surrounded palaces" href="/en/docs/guide/concepts/surrounded" description="A palace is read together with its opposite and its two trine palaces" />
+  <Card title="Horoscopes" href="/en/docs/guide/concepts/horoscope" description="What each of the six time scopes computes" />
+  <Card title="How charting works" href="/en/docs/guide/concepts/how-it-works" description="Nine steps from birth data to a complete natal chart" />
+</Cards>

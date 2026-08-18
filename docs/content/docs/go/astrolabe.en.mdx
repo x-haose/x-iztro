@@ -1,0 +1,436 @@
+---
+title: Astrolabe object
+description: The fields of Astrolabe, its lookup methods, and the surrounded-palace predicates.
+---
+
+`Astrolabe` is what charting produces and the entry point for every query. It holds all the data of
+the twelve palaces along with chart-level information such as the four pillars, the soul and body
+stars and the five elements class.
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "en-US", nil)
+```
+
+<Callout type="info">
+The examples on this page chart with `"en-US"`, so the display values in the output are English.
+Charting in another language changes only those display strings; the `*Key` fields and the results of
+every predicate stay the same.
+</Callout>
+
+## Fields
+
+<Accordions>
+<Accordion title="Display fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Gender` | `string` | Translated gender |
+| `SolarDate` | `string` | Solar date, as passed in |
+| `LunarDate` | `string` | The lunar date written in Chinese |
+| `ChineseDate` | `string` | Display string of the four pillars |
+| `Time` | `string` | Hour name |
+| `TimeRange` | `string` | The clock range of that hour |
+| `Sign` | `string` | Zodiac sign |
+| `Zodiac` | `string` | Chinese zodiac animal |
+| `Soul` | `string` | Translated soul star |
+| `Body` | `string` | Translated body star |
+| `FiveElementsClass` | `string` | Translated five elements class |
+| `EarthlyBranchOfSoulPalace` | `string` | Translated branch of the Soul palace |
+| `EarthlyBranchOfBodyPalace` | `string` | Translated branch of the Body palace |
+
+Display fields follow the charting language. For predicates use the `*Key` fields in the next group.
+
+</Accordion>
+<Accordion title="Key fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `GenderKey` | `string` | `"male"` / `"female"` |
+| `SoulKey` | `string` | Soul star key |
+| `BodyKey` | `string` | Body star key |
+| `FiveElementsClassKey` | `string` | Five elements class key |
+| `EarthlyBranchOfSoulPalaceKey` | `string` | Key of the Soul palace branch |
+| `EarthlyBranchOfBodyPalaceKey` | `string` | Key of the Body palace branch |
+
+The values correspond one to one with the key constants in the package and compare directly with `==`.
+
+</Accordion>
+<Accordion title="Structural fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Palaces` | `[]Palace` | The twelve palaces; index 0 is the Yin palace, 11 the Chou palace |
+| `RawDates` | `RawDates` | The structured lunar birth date and the four-pillar keys |
+
+Indices into `Palaces` are **palace indices**, not the palace-name order: `Palaces[0]` is always the
+Yin palace, and the Soul palace can be in any of the cells. Fetch it with
+`chart.Palace(iztro.PalaceSoul)`.
+
+`RawDates` is the data form of the two display strings `LunarDate` and `ChineseDate`. Use it for date
+arithmetic or for table lookups by stem and branch, instead of parsing the Chinese strings:
+
+```go
+type RawDates struct {
+    LunarDate   RawLunarDate   `json:"lunarDate"`
+    ChineseDate RawChineseDate `json:"chineseDate"`
+}
+
+type RawLunarDate struct {
+    LunarYear  int  `json:"lunarYear"`   // lunar year
+    LunarMonth int  `json:"lunarMonth"`  // lunar month 1–12; leap or not is IsLeap
+    LunarDay   int  `json:"lunarDay"`    // lunar day 1–30
+    IsLeap     bool `json:"isLeap"`      // whether it is a leap month
+}
+
+type RawChineseDate struct {
+    Yearly      [2]string `json:"yearly"`      // year pillar as [stem, branch] text
+    YearlyKeys  [2]string `json:"yearlyKeys"`  // year pillar keys
+    Monthly     [2]string `json:"monthly"`
+    MonthlyKeys [2]string `json:"monthlyKeys"`
+    Daily       [2]string `json:"daily"`
+    DailyKeys   [2]string `json:"dailyKeys"`
+    Hourly      [2]string `json:"hourly"`
+    HourlyKeys  [2]string `json:"hourlyKeys"`
+}
+```
+
+The four `[2]string` name arrays hold the stem and branch as un-localized Chinese text under every
+output language; the `*Keys` arrays next to them are what you compare against.
+
+`RawChineseDate` also has a method `PillarKeys() [4][2]string` giving the keys of all four pillars at
+once in year, month, day, hour order — exactly the shape
+[`TranslateChineseDate`](/en/docs/go/util#translatechinesedate) takes as input:
+
+```go
+rd := chart.RawDates
+
+fmt.Println(rd.LunarDate.LunarYear, rd.LunarDate.LunarMonth,
+    rd.LunarDate.LunarDay, rd.LunarDate.IsLeap)
+fmt.Println(rd.ChineseDate.Yearly, rd.ChineseDate.YearlyKeys)
+fmt.Println(rd.ChineseDate.PillarKeys())
+```
+
+**Output**
+
+```text
+2000 7 17 false
+[庚 辰] [gengHeavenly chenEarthly]
+[[gengHeavenly chenEarthly] [jiaHeavenly shenEarthly] [bingHeavenly wuEarthly] [gengHeavenly yinEarthly]]
+```
+
+</Accordion>
+<Accordion title="Charting context">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `TimeIndex` | `uint8` | Birth hour index |
+| `FixLeap` | `bool` | Whether leap-month correction was applied when charting |
+| `Language` | `string` | Output language |
+| `Config` | `Config` | Charting configuration — the six switches reconstructed from the DTO |
+
+Horoscopes, re-anchoring and prompts restart their computation from these four, so the charting
+parameters need not be supplied again.
+
+<Callout type="info" title="The Config field does not echo custom tables">
+`chart.Config` is reconstructed from the output DTO and holds the six switches only; the custom
+mutagen and brightness tables passed in when charting are not in it. The chart does keep the caller's
+originals internally, so `Rearranged`, `Horoscope` and the prompts still use those two tables in
+their secondary computations — nothing is silently lost.
+</Callout>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Palace / PalaceByIndex
+
+**Purpose** Fetch a palace by name, as the Body palace or the palace of origin, or by index.
+
+**Zi Wei meaning** The twelve palaces are the skeleton of a chart. Once the Soul palace is fixed the
+other eleven follow counterclockwise in a fixed order.
+The "Body palace" is whichever of the twelve also carries that flag, marking where acquired effort
+concentrates; the "palace of origin" is the one whose stem matches the birth-year stem, marking where
+matters originate.
+
+**Signature**
+
+```go
+func (a *Astrolabe) Palace(nameKeyOrName string) *Palace
+func (a *Astrolabe) PalaceByIndex(index int) *Palace
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | Yes | — | A palace-name key, `"bodyPalace"`, `"originalPalace"`, or a translated palace name |
+| `index` | `int` | Yes | — | Palace index 0–11, where 0 is the Yin palace |
+
+**Return value** `*Palace`. `nil` when the name is misspelled or the index is out of range;
+a palace name such as `"soulPalace"`, plus `"bodyPalace"` and `"originalPalace"`, resolves on every
+chart as long as it is spelled correctly.
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+fmt.Println(soul.Name, soul.HeavenlyStem+soul.EarthlyBranch)
+
+fmt.Println("body:", chart.Palace("bodyPalace").Name)
+fmt.Println("origin:", chart.Palace("originalPalace").Name)
+fmt.Println("Yin palace:", chart.PalaceByIndex(0).Name)
+```
+
+**Output**
+
+```text
+soul renwoo
+body: career
+origin: spouse
+Yin palace: wealth
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The palace of origin always exists, and exactly once">
+The palace of origin requires the palace stem to equal the birth-year stem and the palace not to be
+Zi or Chou. The stems of the twelve palaces run forward from the Yin palace under the Five Tigers
+rule, and the ten palaces from Yin to You walk the ten stems exactly once each; Zi and Chou repeat
+the stems of Yin and Mao — and it is precisely that repetition that gets them excluded.
+So the birth-year stem is bound to hit exactly once between Yin and You: the palace of origin exists
+on every chart, and is unique. The Body palace likewise always exists. `nil` can therefore only come
+from an out-of-range index or a misspelled name.
+</Accordion>
+<Accordion title="A misspelled name fails silently">
+`chart.Palace("soulPalce")` (one `a` short) reports no error and simply returns `nil`; reading a
+field on it panics a step later, by which point the crash site is some way from the actual typo.
+
+The `Palace*` constants in the package let the compiler and the IDE stop it on the spot; when the
+name comes from outside, validate it through [`KeyOf`](/en/docs/go/i18n#keyof) first.
+</Accordion>
+<Accordion title="By index and by name are separate methods">
+Go has no union types, so this splits into `Palace` (taking a string) and `PalaceByIndex` (taking an
+int). The surrounded set does the same, with `SurroundedPalaces` and `SurroundedPalacesByIndex`.
+</Accordion>
+</Accordions>
+
+---
+
+## Star
+
+**Purpose** Find a star by key and get the palace it sits in at the same time.
+
+**Signature**
+
+```go
+func (a *Astrolabe) Star(keyOrName string) (*Star, *Palace)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `keyOrName` | `string` | Yes | — | A star key or a translated name |
+
+**Return value** `(*Star, *Palace)`. Both are `nil` when the star is not on this chart.
+
+**Example**
+
+```go
+ziwei, palace := chart.Star(iztro.StarZiweiMaj)
+
+fmt.Println(ziwei.Name, "sits in", palace.Name)
+fmt.Println("its opposite palace is", ziwei.OppositePalace().Name)
+fmt.Println("brightness", ziwei.Brightness, "mutagen", ziwei.Mutagen)
+```
+
+**Output**
+
+```text
+emperor sits in soul
+its opposite palace is surface
+brightness [+3] mutagen 
+```
+
+An empty mutagen string means this star has no natal mutagen.
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The search covers only the three groups of major, minor and adjective stars. The Changsheng, Boshi,
+Sui-qian and Jiang-qian gods are one-per-palace marks rather than star lists — read them from fields
+like `palace.Changsheng12Key`.
+</Callout>
+
+---
+
+## SurroundedPalaces / SurroundedPalacesByIndex
+
+**Purpose** Fetch the surrounded palaces of a target palace.
+
+**Zi Wei meaning** The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu: the
+palace itself, its opposite (the palace +6), the career position (+4) and the wealth position (+8).
+The four are read together rather than the palace alone, because the stars of the opposite and trine
+palaces bear on the palace's affairs just as much.
+
+**Signature**
+
+```go
+func (a *Astrolabe) SurroundedPalaces(nameKeyOrName string) *SurroundedPalaces
+func (a *Astrolabe) SurroundedPalacesByIndex(index int) *SurroundedPalaces
+```
+
+**Return value** `*SurroundedPalaces`, holding the four `*Palace`s `Target` / `Opposite` / `Wealth` /
+`Career`. `SurroundedPalaces` returns `nil` on a misspelled name; `SurroundedPalacesByIndex` takes the
+index modulo 12, so negative indices and indices above 11 wrap correctly and only a zero-valued chart
+(fewer than twelve palaces) gives `nil`.
+Its predicates are on [Surrounded palaces](/en/docs/go/surpalaces).
+
+**Example**
+
+```go
+sp := chart.SurroundedPalaces(iztro.PalaceSoul)
+
+fmt.Println(sp.Target.Name, sp.Opposite.Name, sp.Wealth.Name, sp.Career.Name)
+fmt.Println("Ziwei in the surrounded set:", sp.Have(iztro.StarZiweiMaj))
+```
+
+**Output**
+
+```text
+soul surface wealth career
+Ziwei in the surrounded set: true
+```
+
+---
+
+## IsSurrounded / IsSurroundedOneOf / NotSurrounded
+
+**Purpose** Test the surrounded palaces of a palace straight from the chart, skipping the step of
+fetching the set first.
+
+**Signature**
+
+```go
+func (a *Astrolabe) IsSurrounded(nameKeyOrName string, stars ...string) bool
+func (a *Astrolabe) IsSurroundedOneOf(nameKeyOrName string, stars ...string) bool
+func (a *Astrolabe) NotSurrounded(nameKeyOrName string, stars ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `nameKeyOrName` | `string` | Yes | — | A palace-name key or a translated name |
+| `stars` | `...string` | Yes | — | Star keys, variadic |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `IsSurrounded` | **Every** listed star is in the surrounded set |
+| `IsSurroundedOneOf` | **At least one** listed star is in the surrounded set |
+| `NotSurrounded` | **None** of the listed stars is in the surrounded set |
+
+**Example**
+
+```go
+fmt.Println(chart.IsSurrounded(iztro.PalaceSoul, iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(chart.IsSurroundedOneOf(iztro.PalaceSoul, iztro.StarQishaMaj, iztro.StarPojunMaj))
+fmt.Println(chart.NotSurrounded(iztro.PalaceSoul, iztro.StarHuoxingMin))
+```
+
+**Output**
+
+```text
+true
+false
+true
+```
+
+The Soul palace holds only Ziwei, while Tianxiang sits in the Wealth palace, one of the trine — hence
+the first line is true. Neither Qisha nor Pojun is in any of the four, hence the second is false.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="What passing no stars returns">
+With no stars at all, `IsSurrounded` and `NotSurrounded` return `true` ("all elements satisfy" and "no
+element fails" both hold vacuously) while `IsSurroundedOneOf` returns `false`.
+</Callout>
+
+---
+
+## Horoscope / HoroscopeNow
+
+**Purpose** Compute the horoscope for a target date, starting from this chart.
+
+**Signature**
+
+```go
+func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `targetDate` | `string` | Yes | — | Target solar date in `YYYY-M-D` |
+| `targetTimeIndex` | `uint8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
+
+`HoroscopeNow` takes the current date and hour from the local clock and has no parameters.
+
+**Return value** `*Horoscope` — a horoscope object holding this chart, so palace lookups across the
+six scopes need not be passed the astrolabe again.
+Details on [the horoscope object](/en/docs/go/horoscope).
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println("decadal", h.Decadal.HeavenlyStem+h.Decadal.EarthlyBranch)
+fmt.Println("yearly ", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch)
+```
+
+**Output**
+
+```text
+decadal gengchen
+yearly  yisi
+```
+
+---
+
+## How it relates to JSON
+
+`Astrolabe` and every type beneath it carry `json` tags whose names match the field contract of JS
+iztro. `json.Marshal(chart)` is therefore already the DTO you can hand to a frontend or another
+process:
+
+```go
+b, err := json.Marshal(chart)
+if err != nil {
+    log.Fatal(err)
+}
+
+var v map[string]any
+_ = json.Unmarshal(b, &v)
+
+fmt.Println(v["solarDate"], v["genderKey"], v["timeIndex"])
+fmt.Println(v["palaces"].([]any)[4].(map[string]any)["nameKey"])
+```
+
+**Output**
+
+```text
+2000-8-16 female 2
+soulPalace
+```
+
+<Callout type="info">
+The custom mutagen and brightness tables in `Config` do not enter the JSON — they are charting
+**input** rather than result, and echoing them back would break the field contract with JS iztro.
+</Callout>

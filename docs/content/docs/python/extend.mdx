@@ -106,8 +106,16 @@ def load_plugins(plugins: Iterable[Plugin]) -> None
 `Astrolabe` 是 `slots=True` 的 frozen dataclass，实例上挂不了属性：
 
 ```python
-chart.foo = 1
-# dataclasses.FrozenInstanceError: cannot assign to field 'foo'
+try:
+    chart.foo = 1
+except Exception as e:
+    print(type(e).__name__, e)
+```
+
+**输出**
+
+```text
+FrozenInstanceError cannot assign to field 'foo'
 ```
 
 但**类**上挂方法不受影响。这正是插件需要的粒度：

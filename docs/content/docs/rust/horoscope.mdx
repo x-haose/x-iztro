@@ -12,6 +12,29 @@ let h = chart.horoscope("2025-6-1", 0)?;
 
 `HoroscopeRef` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 的本命盘，因此输出里的展示值都是中文。
+</Callout>
+
+## HoroscopeData
+
+`HoroscopeRef` 经 `Deref` 得到 `HoroscopeData`，它有八个字段：两个日期串与六个层级。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solar_date` | `String` | 目标公历日期，与入参一致 |
+| `lunar_date` | `String` | 目标日期的农历中文写法 |
+| `decadal` | `HoroscopeItem` | 大限 |
+| `age` | `AgeItem` | 小限 |
+| `yearly` | `YearlyItem` | 流年 |
+| `monthly` | `HoroscopeItem` | 流月 |
+| `daily` | `HoroscopeItem` | 流日 |
+| `hourly` | `HoroscopeItem` | 流时 |
+
+<Callout type="info">
+`solar_date` 是**目标日期**不是出生日期；出生日期在本命盘上，用 `h.astrolabe().solar_date` 取。
+</Callout>
+
 ## 六个层级
 
 | 字段 | 类型 | 跨度 | 说明 |
@@ -40,9 +63,27 @@ let h = chart.horoscope("2025-6-1", 0)?;
 | `mutagen` | `Vec<StarKey>` | 该层级天干引发的四化星，顺序为禄权科忌 |
 | `stars` | `Option<Vec<Vec<Star>>>` | 该层级的流耀分布；无流耀的层级为 `None` |
 
-`age` 在此之外多一个 `nominal_age`（虚岁）；
-`yearly` 多一个 `yearly_dec_star`，含流年的岁前与将前十二神。
-两者的通用字段都在 `base` 里：`h.yearly.base.heavenly_stem`。
+`age` 与 `yearly` 不是 `HoroscopeItem` 本身，而是各自多带一项数据的包装：
+
+```rust
+pub struct AgeItem {
+    pub base: HoroscopeItem,
+    pub nominal_age: u32,          // 该日期对应的虚岁
+}
+
+pub struct YearlyItem {
+    pub base: HoroscopeItem,
+    pub yearly_dec_star: YearlyDecStar,
+}
+
+pub struct YearlyDecStar {
+    pub jiangqian12: Vec<StarKey>, // 流年将前十二神，按宫位索引排列
+    pub suiqian12: Vec<StarKey>,   // 流年岁前十二神，按宫位索引排列
+}
+```
+
+因此通用字段要经 `base` 取：写 `h.yearly.base.heavenly_stem`，不是 `h.yearly.heavenly_stem`。
+四个类型都在 crate 根重导出。
 
 **示例**
 
@@ -87,7 +128,7 @@ pub fn age_palace(&self) -> PalaceRef<'a>
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-println!("{}", h.age_palace().name);
+println!("{}", translate_palace(h.age_palace().name, Language::ZhCN));
 ```
 
 **输出**
@@ -124,10 +165,13 @@ pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("大限命宫落在本命的 {}", h.palace(Palace::Soul, Scope::Decadal).unwrap().name);
-println!("本命命宫是 {}", h.palace(Palace::Soul, Scope::Origin).unwrap().name);
+println!("大限命宫落在本命的 {}",
+    translate_palace(h.palace(Palace::Soul, Scope::Decadal).unwrap().name, zh));
+println!("本命命宫是 {}",
+    translate_palace(h.palace(Palace::Soul, Scope::Origin).unwrap().name, zh));
 ```
 
 **输出**
@@ -166,7 +210,7 @@ pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedP
 let h = chart.horoscope("2025-6-1", 0)?;
 let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
 
-println!("流年财帛的三方四正以本命 {} 为本宫", sp.target.name);
+println!("流年财帛的三方四正以本命 {} 为本宫", translate_palace(sp.target.name, Language::ZhCN));
 ```
 
 **输出**
@@ -231,11 +275,27 @@ true
 
 **边界与陷阱**
 
-<Callout type="warn" title="流耀标识按层级区分">
-大限层级查 `Yunlu`（运禄），流年层级查 `Liulu`（流禄），层级与标识必须配对。
-拿 `Yunlu` 去查流年层级恒为假，因为流年的流耀列表里根本没有这个标识。
+<Accordions>
+<Accordion title="scope 只决定查哪一宫，不决定查哪些星">
+三个方法用 `scope` + `name` 定位到本命盘上的某一格，
+但要比对的星耀集合恒为**大限流耀与流年流耀的并集**，与 `scope` 无关。
+
+因此 `scope` 传 `Monthly` 时，查的是「流月某宫这一格里有没有大限或流年的流耀」，
+而不是流月自己的流耀——流月、流日、流时三层的流耀不参与这里的比对。
+要按层级取流耀分布，用 `h.monthly.stars` 一类字段，或
+[`get_horoscope_stars`](/zh/docs/rust/star#get_horoscope_stars)。
+</Accordion>
+<Accordion title="流耀标识按层级区分">
+大限流耀叫 `Yunlu`（运禄）、`Yunyang`（运羊）……，流年流耀叫 `Liulu`（流禄）、
+`Liuyang`（流羊）……，两组标识不同名。由于比对集合恒是这两组的并集，
+`Yunlu` 与 `Liulu` 在任何 `scope` 下都查得到，只是落宫不同。
 各层级的标识对照见[安星模块](/zh/docs/rust/star#get_horoscope_stars)。
-</Callout>
+</Accordion>
+<Accordion title="scope 传 Origin 时定位到本命宫位">
+`Origin` 走的是本命十二宫，因此仍能定位到宫位；
+只是本命盘上没有流耀，比对的仍是大限与流年的流耀落在那一格的部分。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -260,7 +320,7 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `scope` | `Scope` | 是 | — | 运限层级 |
 | `mutagen` | `Mutagen` | 是 | — | 四化之一 |
 
-**返回值**　`bool`。
+**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。
 
 **示例**
 
@@ -282,6 +342,15 @@ false
 ```
 
 大限干为庚，庚干四化为太阳化禄、武曲化权、太阴化科、天同化忌。
+
+**边界与陷阱**
+
+<Callout type="warn" title="scope 为 Origin 时恒为 false">
+本命层级没有「层级天干」这回事——生年四化已经打在星耀自身的 `mutagen` 字段上。
+`has_horoscope_mutagen(name, Scope::Origin, m)` 因此直接返回 `false`，
+不代表本命盘上没有这个四化。要查本命四化，用宫位的
+[`has_mutagen`](/zh/docs/rust/palace#has_mutagen--not_have_mutagen)。
+</Callout>
 
 ---
 
@@ -321,4 +390,45 @@ println!("{}", data.solar_date);
 ```text
 2000-8-16
 2025-6-1
+```
+
+---
+
+## to_dto
+
+**用途**　把运限数据转成与 JS iztro 字段契约一致的序列化结构。
+
+**签名**
+
+```rust
+pub fn to_dto(&self, lang: Language) -> HoroscopeDto
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lang` | `Language` | 是 | — | 译名字段用哪种语言 |
+
+定义在 `HoroscopeData` 上（不是 `HoroscopeRef`）。运限数据本身不记语言，
+因此这里要显式传——通常传 `chart.language` 与本命盘保持一致。
+
+**返回值**　`x_iztro::dto::HoroscopeDto`，camelCase 键 + `*Key` 标识。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+let json = serde_json::to_string(&h.to_dto(chart.language))?;
+let v: serde_json::Value = serde_json::from_str(&json)?;
+
+println!("{} {}", v["solarDate"], v["decadal"]["heavenlyStem"]);
+println!("{}", v["age"]["nominalAge"]);
+```
+
+**输出**
+
+```text
+"2025-6-1" "庚"
+26
 ```

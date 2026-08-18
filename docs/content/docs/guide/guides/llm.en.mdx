@@ -1,0 +1,113 @@
+---
+title: Letting an AI read the chart
+description: Charting to the library, reading to the model — how to wire x-iztro into an AI application, plus a few traps already hit.
+---
+
+*For: developers · product and decision makers*
+
+<Callout type="warn" title="Do not let the model chart for itself">
+This is the single most important point. Language models cannot compute stems, branches and star
+placements reliably — they produce results that **look plausible and are wrong**, wrong in no
+discernible pattern, and you cannot tell from the output.
+
+Charting is deterministic computation; give it to the library. The model only interprets. That
+division of labour is the whole premise of putting Zi Wei into an AI application.
+</Callout>
+
+## The minimal integration
+
+Turn the chart into text, put your analysis request in front of it, and send them together:
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
+          "do not invent information that is not on it.")
+user = f"""{astro.astrolabe_to_prompt(chart)}
+
+{astro.horoscope_to_prompt(chart, "2025-1-1", 0)}
+
+Analyse this person's career prospects for 2025."""
+```
+
+For what the generated text looks like and how to read its format, see
+[AI prompt generation](/en/docs/guide/guides/ai-prompt).
+
+## Exposing it as a tool call
+
+Letting the model decide when to chart is more flexible than hard-coding the flow in the
+application: the model handles understanding and interpretation, x-iztro gets the numbers right. A
+minimal tool definition:
+
+```python
+{
+    "name": "cast_chart",
+    "description": "Zi Wei Dou Shu charting. Given a Gregorian birthday, hour index and gender, "
+                   "returns a structured description of the complete natal chart.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "solar_date": {"type": "string", "description": "Gregorian birthday, format YYYY-M-D"},
+            "time_index": {"type": "integer", "minimum": 0, "maximum": 12,
+                           "description": "hour index; 0 = early Zi hour (00-01), "
+                                          "12 = late Zi hour (23-24)"},
+            "gender": {"type": "string", "enum": ["male", "female"]},
+        },
+        "required": ["solar_date", "time_index", "gender"],
+    },
+}
+```
+
+The implementation just calls `astrolabe_to_prompt` and returns the text. Make the horoscope a
+separate tool (one extra parameter, the target date) so the model can fetch it when it needs it.
+
+<Callout title="Spell out the hour index in the tool description">
+A user saying "11 at night" means index `12`, not `0`, and the model will not work that out for
+itself. Put the meaning of 0–12 in the parameter description, or have the tool take a birth time as
+`HH:MM` and do the conversion yourself.
+</Callout>
+
+## Feed the model a Chinese chart
+
+The chart itself is independent of the chart language, but the generated prompt follows it. The
+default Chinese chart is the better choice, even for an English-language product.
+
+Mainstream models handle Chinese Zi Wei terminology well. An English chart, by contrast, uses
+iztro's interpretive word list (Ziwei is `emperor`, Qisha is `marshal`), degrades brightness to
+marks such as `[+3]`, writes mutagens as `A`/`B`/`C`/`D`, and includes a couple of entries that are
+not English words (`considery`, `disastery`). None of that matches the rendering conventional in
+English-language Zi Wei writing, so a model may not recognise it.
+
+When you need English output, the move is to **feed the model a Chinese chart and ask it to answer
+in English**, rather than switching to an English chart.
+
+## Predicate on keys
+
+If your application branches on the contents of a chart ("use the more cautious script when the Soul
+palace holds Hua Ji"), predicate on the
+[language-independent keys](/en/docs/guide/guides/keys) rather than matching text — otherwise
+switching chart language makes every branch fail silently.
+
+```python
+soul = chart.palace("soulPalace")
+if soul.has_mutagen("sihuaJi"):
+    prompt_style = "cautious"
+```
+
+## Don't treat the model's reading as a computed result
+
+A model may quietly "fill in" information the chart does not carry — an extra star, a misstated
+decadal range, two palace names swapped.
+
+If a reading feeds back into your product (written to a database, pushed as a notification, driving
+a decision), take every fact that can be read off the chart *from the chart*, not from the model's
+prose. Treat model output as text and nothing more.
+
+## Letting an AI read this documentation
+
+This site also serves plain-text endpoints intended for model consumption (`llms.txt`, per-page
+Markdown) — see
+[Documentation endpoints for AI](/en/docs/guide/guides/llms-txt).

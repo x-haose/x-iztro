@@ -1,9 +1,11 @@
 ---
 title: Config 详解
-description: 五个开关分别改变什么、什么时候会看出差别、三种语言怎么传。
+description: 六个开关分别改变什么、自定义四化表与亮度表怎么传、什么时候会看出差别。
 ---
 
-排盘中真正有分歧的地方都收在 `Config` 的六个开关里。
+*适合：开发者 · 命理爱好者（前半页的流派差异不需要会写代码）*
+
+排盘中真正有分歧的地方都收在 `Config` 里：六个开关，外加两张可整表替换的数据表。
 默认值与 JS iztro 完全一致，所以**不传配置就能得到与 iztro 相同的盘**。
 
 | 开关 | 取值 | 默认 | 管什么 |
@@ -14,6 +16,9 @@ description: 五个开关分别改变什么、什么时候会看出差别、三�
 | `day_divide` | `forward` / `current` | `forward` | 晚子时算今天还是明天 |
 | `algorithm` | `default` / `zhongzhou` | `default` | 算法派别 |
 | `astro_type` | `heaven` / `earth` / `human` | `heaven` | 排盘视角（天盘/地盘/人盘） |
+
+另有两张覆盖表：`mutagens`（自定义四化表）与 `brightness`（自定义亮度表），
+见[自定义四化表与亮度表](#自定义四化表与亮度表)。
 
 ## 怎么传
 
@@ -60,30 +65,49 @@ Python 与 Go 都只需填要改的键，其余取默认；Rust 用 `..Config::d
 | `normal`（默认） | 农历正月初一 |
 | `exact` | 立春 |
 
-年干支是一连串东西的源头：本命四化、命主与身主、部分年系杂耀。
+年干支是一连串东西的源头：本命四化、命主与身主、十二宫宫干。
 所以这个开关一旦改变，整张盘可能大幅不同。
 
 **什么时候会看出差别**：出生在农历正月初一与立春之间的人。
 这两个日期通常相差几天到半个月，落在这个窗口里的生日，两种配置排出的年干支相差一位。
 
-<Callout type="warn" title="年支的两套用法">
-x-iztro 复刻了 iztro 内部的一处细节：并非所有依赖年支的星都用同一个开关。
-年系杂耀与本命的岁前十二神、将前十二神按 `horoscope_divide` 的年支起，
-而红鸾、天喜按 `year_divide` 的年支起。
+<Callout title="什么时候该选 exact">
+八字体系一律以立春换年，所以要与八字盘对齐时选 `exact`。
+紫微斗数的通行做法是以正月初一换年，`normal` 也是 iztro 的默认。
+拿不准就别动 —— 改了就不再与 iztro 的默认输出一致。
+</Callout>
+
+<Callout type="warn" title="年支分成三份用">
+x-iztro 复刻了 iztro 内部的一处细节：依赖年支的东西并非全走同一个开关。
+分工是固定的三条：
+
+1. **跟 `year_divide` 的年干支**：生年四化、命主与身主、十二宫宫干、
+   禄存、擎羊、陀罗、天魁、天钺、天马、红鸾、天喜、长生十二神、博士十二神
+2. **跟 `horoscope_divide` 的年干支**：其余全部年系杂耀，
+   以及本命盘上的岁前十二神与将前十二神
+3. **跟 `horoscope_divide` 的月分界**：本命四柱里的**月柱**
+
+两个开关可以分别设，所以「主星按一个年支、部分杂耀按另一个年支」是可能出现的。
 这看起来不对称，但它就是 iztro 的实际行为，为保证零差异必须原样保留。
 </Callout>
 
 ## 运限分界点 `horoscope_divide`
 
-决定**运限干支**与**干支纪日的月柱**在哪一天分界。
+决定**运限干支**、**本命月柱**与**干支纪月**在哪一天分界。
 
 | 取值 | 年分界 | 月分界 |
 | --- | --- | --- |
 | `normal`（默认） | 正月初一 | 初一，以五虎遁推月干 |
 | `exact` | 立春 | 节气 |
 
-**什么时候会看出差别**：查询日期落在年初（正月初一到立春之间）或每个节气交接的前后。
-此时 `yearly` 与 `monthly` 的干支会差一位，进而改变运限四化。
+**什么时候会看出差别**：查询日期落在年初（正月初一到立春之间）或每个节气交接的前后，
+流年与流月的干支会差一位，进而改变运限四化。
+
+<Callout>
+这个开关还会改**本命盘的月柱**——不只是运限。
+例如 2000-8-5 寅时：`normal` 下四柱是 `庚辰 甲申 乙未 戊寅`，
+`exact` 下是 `庚辰 癸未 乙未 戊寅`，月柱由甲申变癸未。
+</Callout>
 
 ## 虚岁分界点 `age_divide`
 
@@ -106,10 +130,19 @@ x-iztro 复刻了 iztro 内部的一处细节：并非所有依赖年支的星�
 | `forward`（默认） | 晚子时归**次日**，按次日的日柱排盘 |
 | `current` | 晚子时归**当天**，按当日早子时排盘 |
 
-**什么时候会看出差别**：只影响 `time_index == 12` 的盘。其余时辰完全无差异。
+**什么时候会看出差别**：只影响时辰索引为 `12` 的盘，其余时辰完全无差异。
+
+<Callout type="warn" title="forward 下农历日也一并进位，但展示串不变">
+`forward` 会把日柱与**起紫微用的农历日**一起推到次日，
+但星盘上的农历日期展示串仍显示**出生当日**。
+
+例如 2000-8-16 晚子时：农历日期照旧显示「二〇〇〇年七月十七」，
+四柱却是 `庚辰 甲申 丁未 庚子` —— 日柱丁未已是 8 月 17 日的。
+读结果时别拿农历展示串去反推日柱。
+</Callout>
 
 <Callout>
-无论选哪种，`time_index` 字段都保留原始传入值 `12`，
+无论选哪种，时辰索引字段都保留原始传入值 `12`，
 不会因为归到次日就变成 `0` —— 这样调用方始终能知道出生的真实时辰。
 </Callout>
 
@@ -117,33 +150,28 @@ x-iztro 复刻了 iztro 内部的一处细节：并非所有依赖年支的星�
 
 | 取值 | 说明 |
 | --- | --- |
-| `default`（默认） | 通行的安星与四化规则，与 JS iztro 默认一致 |
+| `default`（默认） | 通行的安星规则，与 JS iztro 默认一致 |
 | `zhongzhou` | 中州派 |
 
-中州派在部分星耀的安法与四化取法上与通行做法不同。切换后同一个生日会得到不同的盘，
-这是流派差异而非计算错误。
+中州派与默认派的差别集中在四处，**四化表不在其中**：
+
+| 改动 | `default` | `zhongzhou` |
+| --- | --- | --- |
+| 命主怎么查 | 按**命宫地支** | 按**生年地支**（因此换命宫重排时命主不再变） |
+| 岁前十二神 | 大耗 `dahao` | 岁破 `suipo` |
+| 杂耀 | 截路 `jielu`、空亡 `kongwang` | 截空 `jiekong`、劫杀 `jieshaAdj`、大耗 `dahao`、龙德 `longde` |
+| 天伤天使 | 天伤在仆役、天使在疾厄 | 阴阳男女互换，两星位置对调 |
+
+<Callout type="warn" title="algorithm 不改四化表">
+庚干化科在两派下都是太阴 —— 要换四化取法请用下面的自定义四化表，
+不要指望 `algorithm`。
+</Callout>
 
 ```python
 astro.by_solar("1990-11-5", 4, "male", config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
 ```
 
-## 配置会跟着星盘走
-
-排盘用的配置存在星盘上，运限从那里取，
-所以**运限一定与排盘用同一套配置**，不会出现本命盘用中州派、运限用默认派的错配。
-
-```python
-chart = astro.by_solar("2000-8-16", 2, "female", config=ChartConfig(age_divide="birthday"))
-h = chart.horoscope("2024-10-1", 0)   # 自动沿用 age_divide=birthday
-```
-
-```go
-chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN",
-    &iztro.Config{AgeDivide: "birthday"})
-h, _ := chart.Horoscope("2024-10-1", 0)   // 同上
-```
-
-## astro_type：天盘、地盘、人盘
+## 排盘视角 `astro_type`
 
 中州派把同一组出生数据看作三张盘，差别只在**用哪一宫的干支起五行局**：
 
@@ -153,7 +181,7 @@ h, _ := chart.Horoscope("2024-10-1", 0)   // 同上
 | `earth` 地盘 | 身宫 | 身宫 |
 | `human` 人盘 | 福德宫 | 福德宫 |
 
-五行局一变，紫微天府的落点、十二宫名、长生十二神、大限小限全部跟着变；
+五行局一变，紫微天府的落点、十二宫名、身宫地支、长生十二神、大限小限全部跟着变；
 辅星、杂耀（天伤天使天才随命宫走，会重新落位）、博士十二神、
 岁前将前十二神沿用天盘。
 
@@ -175,7 +203,7 @@ let earth = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN,
 <Callout>
 JS iztro 把 `astroType` 放在 `withOptions` 的选项对象上，因为它的 `config()`
 是全局单例、装不下按盘变化的值。x-iztro 的配置本来就随盘传入，
-所以直接收进 `Config`，`by_solar` 与 `by_lunar` 都能用。
+所以直接收进 `Config`，两个排盘入口都能用。
 </Callout>
 
 ### 从任意干支起盘
@@ -197,8 +225,85 @@ let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
 
 以身宫干支重排，结果与 `astro_type = earth` 一致。
 
+## 自定义四化表与亮度表
+
+四化与亮度是流派分歧最集中的两处。`Config` 允许**按标识整表替换**：
+给出某个天干的四化就只改那个天干，未给出的天干仍用默认表；亮度同理。
+
+### 四化表
+
+一个天干配四颗星，顺序固定为**禄、权、科、忌**，必须给满四项。
+
+```rust
+let config = Config::default().with_mutagens(
+    HeavenlyStem::Geng,
+    [StarKey::TaiyangMaj, StarKey::WuquMaj, StarKey::TiantongMaj, StarKey::TianfuMaj],
+);
+by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, config)?;
+```
+
+```python
+cfg = ChartConfig(mutagens={
+    "gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "tianfuMaj"],
+})
+chart = astro.by_solar("2000-8-16", 2, "female", config=cfg)
+```
+
+```go
+cfg := &iztro.Config{Mutagens: map[string][]string{
+    "gengHeavenly": {"taiyangMaj", "wuquMaj", "tiantongMaj", "tianfuMaj"},
+}}
+```
+
+把庚干换成「天同化科、天府化忌」之后，这张庚年盘的四化变成：
+
+```text
+财帛 武曲 权
+子女 太阳 禄
+官禄 天府 忌
+疾厄 天同 科
+```
+
+自定义四化表同时改变**全部飞星判断** —— 宫干化出哪四颗星走的是同一张表。
+
+### 亮度表
+
+一颗星配十二个亮度，按盘上位置排列（第一项是寅宫），必须给满十二项；
+该位置无亮度时用空值（Python / Go 传空串）。
+
+```python
+cfg = ChartConfig(brightness={
+    "ziweiMaj": ["miao", "wang", "de", "li", "ping", "bu",
+                 "xian", "miao", "wang", "de", "li", "ping"],
+})
+```
+
+<Callout type="warn" title="三条硬规则">
+1. **只收标识，不收译名**：`"ziweiMaj"` 可以，`"紫微"` 不行。
+2. **长度严格校验**：四化表必须 4 项、亮度表必须 12 项，多一项少一项都会报错。
+3. **不回显在输出里**：覆盖表是排盘的输入，不属于排盘结果，
+   星盘上回显的 `config` 只有六个开关，两张表读回来是空的。
+   自己要留档就自己存那份配置。
+</Callout>
+
+## 配置会跟着星盘走
+
+排盘用的配置存在星盘上，运限从那里取，
+所以**运限一定与排盘用同一套配置**，不会出现本命盘用中州派、运限用默认派的错配。
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", config=ChartConfig(age_divide="birthday"))
+h = chart.horoscope("2024-10-1", 0)   # 自动沿用 age_divide=birthday
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN",
+    &iztro.Config{AgeDivide: "birthday"})
+h, _ := chart.Horoscope("2024-10-1", 0)   // 同上
+```
+
 ## 测试覆盖
 
-四个开关的非默认取值各有专门的金标测试，共 8,544 例，
-覆盖立春窗口逐日、晚子时、生日前后等所有会产生分歧的边界。
-见[准确性保证](/zh/docs/guide/about/accuracy)。
+四个分界开关的非默认取值有 9,696 例专门的金标测试（含排盘层与运限层的组合），
+中州派盘型另有 12,488 例，覆盖立春窗口逐日、晚子时、生日前后等所有会产生分歧的边界。
+自定义四化表与亮度表另有一组专门的测试。见[准确性保证](/zh/docs/guide/about/accuracy)。

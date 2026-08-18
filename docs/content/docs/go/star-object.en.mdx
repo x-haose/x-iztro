@@ -1,0 +1,192 @@
+---
+title: Star object
+description: The fields of Star, its brightness and mutagen predicates, and tracing back to its palace.
+---
+
+A `Star` is one star sitting in a palace, carrying its type, brightness and mutagen mark, and able to
+trace back to the palace it sits in.
+
+```go
+ziwei, palace := chart.Star(iztro.StarZiweiMaj)
+```
+
+<Callout type="info">
+The examples on this page chart with `"en-US"`, so the display values in the output are English.
+</Callout>
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Key` | `string` | Star key, independent of language; use it in predicates |
+| `Name` | `string` | Star name, translated into the charting language |
+| `Type` | `string` | Star type, see below |
+| `Scope` | `string` | Which layer it acts on: `"origin"` for natal stars, the matching scope for scope stars |
+| `Brightness` | `string` | Translated brightness; an empty string for stars with no brightness table |
+| `BrightnessKey` | `string` | Brightness key |
+| `Mutagen` | `string` | Translated natal mutagen; an empty string for stars the birth-year stem did not transform |
+| `MutagenKey` | `string` | Mutagen key |
+
+### The eight star types
+
+| Value | Meaning | Typical members |
+| --- | --- | --- |
+| `major` | The fourteen major stars | Ziwei, Tianfu, Qisha, Pojun |
+| `soft` | Auspicious stars | Zuofu, Youbi, Wenchang, Wenqu, Tiankui, Tianyue |
+| `tough` | Malefic stars | Qingyang, Tuoluo, Huoxing, Lingxing, Dikong, Dijie |
+| `adjective` | Adjective stars | Santai, Bazuo, Tianxing, Tianyao |
+| `flower` | Peach-blossom stars | Hongluan, Tianxi, Xianchi |
+| `helper` | Jieshen | Jieshen |
+| `lucun` | Lucun | Lucun |
+| `tianma` | Tianma | Tianma |
+
+Lucun and Tianma each get a category of their own, because in the traditional division they are
+neither purely auspicious nor purely malefic and predicates routinely single them out.
+
+<Callout type="info" title="Empty strings rather than nil">
+The Go side uses an empty string for "absent" — an empty `Brightness` means the star has no brightness
+table, an empty `Mutagen` means the birth-year stem did not transform it. Test with
+`if star.MutagenKey != ""`.
+</Callout>
+
+---
+
+## WithBrightness
+
+**Purpose** Test whether this star is at one of the given brightness levels.
+
+**Zi Wei meaning** Brightness (miao, wang, de, li, ping, bu, xian) describes how strong a star is in
+its palace. Each star has a fixed value in each of the twelve palaces; at miao or wang its power comes
+out in full, at xian it is constrained.
+
+**Signature**
+
+```go
+func (s *Star) WithBrightness(brightnessKeys ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `brightnessKeys` | `...string` | Yes | — | Brightness keys; any match is true |
+
+**Return value** `bool`. Always false for a star with no brightness.
+
+**Example**
+
+```go
+ziwei, _ := chart.Star(iztro.StarZiweiMaj)
+
+fmt.Println(ziwei.WithBrightness(iztro.BrightnessMiao))
+fmt.Println(ziwei.WithBrightness(iztro.BrightnessWang, iztro.BrightnessDe))
+```
+
+**Output**
+
+```text
+true
+false
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+The semantics are "any match", not "all match" — a star has exactly one brightness, so passing several
+just means "any one of these will do".
+</Callout>
+
+---
+
+## WithMutagen
+
+**Purpose** Test whether this star carries a given natal mutagen.
+
+**Zi Wei meaning** Natal mutagens are fixed by the birth-year stem: a given year always sends lu,
+quan, ke and ji to four particular stars. The mark travels with the star, whichever palace it lands
+in.
+
+**Signature**
+
+```go
+func (s *Star) WithMutagen(mutagenKeys ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagenKeys` | `...string` | Yes | — | Mutagen keys; any match is true |
+
+**Return value** `bool`. Always false for a star the birth-year stem did not transform.
+
+**Example**
+
+```go
+ziwei, _ := chart.Star(iztro.StarZiweiMaj)
+taiyang, _ := chart.Star(iztro.StarTaiyangMaj)
+
+fmt.Println("Ziwei takes lu:", ziwei.WithMutagen(iztro.MutagenLu))
+fmt.Println("Taiyang takes lu:", taiyang.WithMutagen(iztro.MutagenLu))
+```
+
+**Output**
+
+```text
+Ziwei takes lu: false
+Taiyang takes lu: true
+```
+
+This chart's birth-year stem is geng, and geng sends lu to Taiyang, so the mark lands on Taiyang
+rather than Ziwei.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Natal mutagens and flying mutagens are not the same thing">
+`WithMutagen` looks at the mark the **birth-year stem** placed on this star; only four stars on a
+chart carry one. Mutagens flown by palace stems do not show up here — for those use the palace's
+[`FliesTo`](/en/docs/go/palace#fliesto--fliesoneofto--notflyto) family.
+</Callout>
+
+---
+
+## Palace / OppositePalace / SurroundedPalaces
+
+**Purpose** Trace from a star back to its palace, that palace's opposite, and its surrounded set.
+
+**Signature**
+
+```go
+func (s *Star) Palace() *Palace
+func (s *Star) OppositePalace() *Palace
+func (s *Star) SurroundedPalaces() *SurroundedPalaces
+```
+
+**Return value** A star constructed on its own, detached from a chart, returns `nil`; a star obtained
+from a chart query never does.
+
+**Example**
+
+```go
+ziwei, _ := chart.Star(iztro.StarZiweiMaj)
+
+fmt.Println(ziwei.Palace().Name)
+fmt.Println(ziwei.OppositePalace().Name)
+fmt.Println("Tianxiang in the same palace or the trine:",
+    ziwei.SurroundedPalaces().Have(iztro.StarTianxiangMaj))
+```
+
+**Output**
+
+```text
+soul
+surface
+Tianxiang in the same palace or the trine: true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+`chart.Star()` already hands back the palace as its second return value, so calling `ziwei.Palace()`
+again is usually unnecessary.
+</Callout>

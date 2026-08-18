@@ -1,19 +1,59 @@
 ---
 title: 错误处理
-description: IztroError 的两种变体、触发条件与排查方式。
+description: IztroError 的三个变体、code() 分类标识、BridgeError 与排查方式。
 ---
 
 所有收外部输入的入口都返回 `Result`。日期格式、日期存在性、年份范围、
 时辰索引这四类都在核心层前置校验，非法输入得到错误值而不是 panic。
 
 ```rust
+#[non_exhaustive]
 pub enum IztroError {
+    /// 日期串格式错、日期不存在，或超出公历 1583–9999
     InvalidDate(String),
+    /// 时辰索引超出 0–12
     InvalidTimeIndex(u8),
+    /// 依赖的历法库没给出本应存在的干支或星座取值
+    Internal(String),
+}
+
+impl IztroError {
+    /// 机器可读的错误分类标识
+    pub fn code(&self) -> &'static str
 }
 ```
 
 `IztroError` 实现了 `Display` 与 `std::error::Error`，可直接用 `?` 传播、用 `{}` 打印。
+
+## code()
+
+`Display` 给的是面向人的文案，会随版本调整；要在程序里分支请用 `code()`：
+
+| 变体 | `code()` | 含义 |
+| --- | --- | --- |
+| `InvalidDate` | `invalid_date` | 日期非法 |
+| `InvalidTimeIndex` | `invalid_time_index` | 时辰索引越界 |
+| `Internal` | `internal` | 库内部缺陷 |
+
+这三个取值与 Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套，
+跨语言分支逻辑可以照抄。
+
+```rust
+let e = by_solar("2000-2-30", 2, Gender::Female, true, Language::ZhCN, Config::default())
+    .unwrap_err();
+println!("{} / {}", e.code(), e);
+```
+
+**输出**
+
+```text
+invalid_date / invalid solar date '2000-2-30': day is out of range for that month
+```
+
+<Callout type="warn" title="枚举是 #[non_exhaustive] 的">
+`IztroError` 标了 `#[non_exhaustive]`，crate 外无法穷尽匹配——`match` 必须带兜底分支。
+将来新增错误分类因此不构成破坏性变更；按 `code()` 分支的代码则完全不受影响。
+</Callout>
 
 ---
 
@@ -28,7 +68,16 @@ pub enum IztroError {
 | 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
 | 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
 | 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
-| 农历该年该月不存在 | — | `month does not exist in that lunar year` |
+
+农历专有（只有 `by_lunar` 与 `get_sign_by_lunar_date`、`get_major_star_by_lunar_date` 会碰到）：
+
+| 情形 | 例 | 消息 |
+| --- | --- | --- |
+| 该农历年没有这个月 | `by_lunar("2000-13-1", …)` 之外的表内缺月 | `month does not exist in that lunar year` |
+| 该农历月没有这一天 | `"2000-7-30"`（七月是小月） | `day is out of range for that lunar month` |
+
+农历消息的前缀是 `invalid lunar date '<原串>': `，公历是 `invalid solar date '<原串>': `，
+从消息就能看出走的是哪个入口。
 
 **示例**
 
@@ -98,6 +147,83 @@ time_index must be 0-12, got 13
 
 ---
 
+## Internal
+
+**触发条件**　依赖的历法库 `lunar_rust` 没有交回本应存在的干支或星座取值。
+这是库内部缺陷而非调用方过错。
+
+**为什么不 panic**　wasm 目标下 panic 即 trap，而且每次 trap 都会永久损耗模块实例的
+栈空间。把这类情况落成错误值，非法调用就不会累积损坏 Go 侧的 wasm 实例。
+
+**消息形状**　`internal error: <细节>`，`code()` 为 `internal`。
+
+<Callout type="warn">
+在金标覆盖的全部日期上都没有触发过这个变体。真的碰到请当作 bug 上报，
+并附上完整的排盘入参。
+</Callout>
+
+---
+
+## BridgeError
+
+绑定层（C FFI / wasm / PyO3）对外报错的统一形状。Rust 调用方一般用不到它——
+它是 Python 与 Go 侧错误对象的来源。
+
+```rust
+pub struct BridgeError {
+    /// invalid_date / invalid_time_index / invalid_argument / internal
+    pub code: &'static str,
+    /// 面向人的错误描述
+    pub message: String,
+}
+
+impl BridgeError {
+    pub fn invalid_argument(message: impl Into<String>) -> Self
+    pub fn internal(message: impl Into<String>) -> Self
+}
+
+impl From<IztroError> for BridgeError { /* code 与 message 直接沿用 */ }
+```
+
+比 `IztroError` 多一个分类 `invalid_argument`：绑定层收的是字符串而非枚举，
+性别、语言、宫名、四化、配置 JSON 这些取值的合法性只能在那一层校验，
+落到这个分类下。
+
+三条出口都把它序列化成同一段 JSON：
+
+```json
+{ "error": "invalid solar date '2000-2-30': day is out of range for that month",
+  "code": "invalid_date" }
+```
+
+Python 侧变成 `IztroError`（继承 `ValueError`，带 `.code`），
+Go 侧变成 `*iztro.Error`（带 `Code`、可用 `errors.Is` 比对哨兵）。
+
+## C FFI
+
+`x_iztro::ffi` 导出的 C ABI 里，统一查询入口是 `iztro_query`：
+
+```c
+// include/x_iztro.h
+char *iztro_query(const char *query_json);
+void  iztro_free_string(char *s);
+```
+
+收一段以 `kind` 选择具体查询的 JSON（如 `{"kind":"getPalaceNames","soulIndex":0}`），
+成功返回 `{"value": <结果>}`，失败返回上面那段带 `code` 的错误 JSON。
+它把轻量查询、宫位推算、工具函数、安星、数据表、翻译与 Prompt 生成收进一个符号，
+不必为每个函数导出一个 C 符号。键名 camelCase，星耀、干支、宫位等标识按
+iztro i18n key 传入与返回。
+
+返回的字符串都由调用方用 `iztro_free_string` 归还；这些函数永不返回 `NULL`。
+
+<Callout type="info">
+`ffi` 模块标了 `#[doc(hidden)]`，不是给 Rust 调用方用的——
+Rust 里直接调 `by_solar` 一族即可。
+</Callout>
+
+---
+
 ## 处理方式
 
 **用 `?` 传播**
@@ -113,12 +239,32 @@ fn analyze(date: &str) -> Result<String, IztroError> {
 **分变体处理**
 
 ```rust
-match by_solar(date, ti, gender, true, Language::ZhCN, Config::default()) {
-    Ok(chart) => { /* ... */ }
-    Err(IztroError::InvalidDate(msg)) => eprintln!("日期有误: {msg}"),
-    Err(IztroError::InvalidTimeIndex(t)) => eprintln!("时辰索引 {t} 越界"),
+fn describe(date: &str, ti: u8) -> String {
+    match by_solar(date, ti, Gender::Female, true, Language::ZhCN, Config::default()) {
+        Ok(chart) => format!("排盘成功: {}", chart.solar_date),
+        Err(IztroError::InvalidDate(msg)) => format!("日期有误: {msg}"),
+        Err(IztroError::InvalidTimeIndex(t)) => format!("时辰索引 {t} 越界"),
+        Err(e) => format!("其他错误 [{}]: {e}", e.code()),
+    }
 }
+
+println!("{}", describe("2000-8-16", 2));
+println!("{}", describe("2000-2-30", 2));
+println!("{}", describe("2000-8-16", 13));
 ```
+
+**输出**
+
+```text
+排盘成功: 2000-8-16
+日期有误: invalid solar date '2000-2-30': day is out of range for that month
+时辰索引 13 越界
+```
+
+<Callout type="warn" title="必须留通配分支">
+`IztroError` 标了 `#[non_exhaustive]`，crate 外的 `match` 必须带一个
+`_` 或 `Err(e)` 兜底分支，否则编译不过。这样将来新增变体不会成为破坏性变更。
+</Callout>
 
 **转成自己的错误类型**
 
@@ -137,8 +283,9 @@ enum AppError {
 
 ## 关于 panic
 
-排盘入口不会因非法**外部输入**而 panic。仍可能 panic 的只有库内部缺陷，
-这类情况应视为 bug 上报。
+排盘入口不会因非法**外部输入**而 panic：日期、时辰这些都落成 `IztroError`，
+连历法库交不出取值这种内部情形也走 `IztroError::Internal` 而不是 panic。
+仍可能 panic 的只有库自身的逻辑缺陷（如断言失败），这类情况应视为 bug 上报。
 
 <Callout type="warn" title="wasm 目标下尤其重要">
 wasm 上 panic 即 trap，而且每次 trap 都会永久损耗模块实例的栈空间。

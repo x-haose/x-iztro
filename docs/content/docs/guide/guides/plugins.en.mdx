@@ -1,0 +1,122 @@
+---
+title: Extending the astrolabe
+description: Hanging your own analysis rules off a chart — the extension point in each of the three programming languages.
+---
+
+*For: developers*
+
+A chart is data; how it is interpreted is each school's own business. Zi Wei has many schools and
+predicate rules vary from reader to reader, so cramming them all into the core is neither possible
+nor desirable. What x-iztro does instead is let you attach your own rules to the astrolabe as
+methods, called with the same syntax as the built-in ones.
+
+## The extension point in each programming language
+
+Each language uses the mechanism most natural to it; they are not forced into one shape:
+
+| Programming language | Mechanism | Checked | Scope |
+| --- | --- | --- | --- |
+| [Rust](/en/docs/rust/extend) | Extension trait | Compile time | Visible where the trait is `use`d |
+| [Python](/en/docs/python/extend) | Attaching methods to the class | Run time | Process-wide |
+| [Go](/en/docs/go/extend) | Struct embedding | Compile time | Only your own type |
+
+All three do the same thing: you call `chart.my_method()` and have the astrolabe's full built-in
+capability available. Exact syntax and runnable examples are on the respective pages.
+
+## Shared conventions
+
+<Accordions>
+<Accordion title="Always predicate on language-independent keys">
+`star.key == "ziweiMaj"` holds on a chart in any language; `star.name == "emperor"` holds only on an
+English one.
+
+Inside an extension method, predicate on the `*_key` / `*Key` fields or the built-in predicate
+methods, and reach for the translated name only when displaying. That way one rule gives the same
+answer across all six chart languages. See
+[The language-independent key contract](/en/docs/guide/guides/keys).
+</Accordion>
+<Accordion title="Split by analysis topic; don't pile everything into one">
+Keep `WealthAnalysis`, `CareerAnalysis` and `HealthAnalysis` as separate groups so callers pull in
+what they need. One big bundle forces every call site to carry every method.
+</Accordion>
+<Accordion title="Cross-language consistency comes from assertions, not shared code">
+When the same rule has to work in all three programming languages, the current approach is to write
+it three times and hold the line with a set of tests asserting the same values on the same chart.
+
+Because the predicates rest on language-independent keys, three implementations with the same logic
+necessarily produce the same results — the tests exist to prove the logic really is the same.
+</Accordion>
+</Accordions>
+
+## An example
+
+The same plugin in all three programming languages: take the Soul palace's major stars (borrowing
+from the opposite palace when it is empty).
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+trait MyAnalysis {
+    fn major_star(&self) -> String;
+}
+
+impl MyAnalysis for Astrolabe {
+    fn major_star(&self) -> String {
+        let soul = self.palace(Palace::Soul).expect("the Soul palace always exists");
+        let source = if soul.is_empty() { soul.opposite_palace() } else { soul };
+        source.major_stars.iter()
+            .filter(|s| s.star_type == StarType::Major)
+            .map(|s| translate_star(s.key, self.language))
+            .collect::<Vec<_>>().join(",")
+    }
+}
+
+chart.major_star()   // emperor
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+def my_analysis(cls: type[Astrolabe]) -> None:
+    def major_star(self) -> str:
+        soul = self.palace(PalaceName.SOUL)
+        source = soul.opposite_palace() if soul.is_empty() else soul
+        return ",".join(s.name for s in source.major_stars)
+
+    cls.major_star = major_star
+
+load_plugin(my_analysis)
+chart.major_star()   # emperor
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+type MyChart struct{ *iztro.Astrolabe }
+
+func (c MyChart) MajorStar() string {
+    soul := c.Palace(iztro.PalaceSoul)
+    source := soul
+    if soul.IsEmpty() {
+        source = soul.OppositePalace()
+    }
+    names := []string{}
+    for _, s := range source.MajorStars {
+        if s.Type == iztro.StarTypeMajor {
+            names = append(names, s.Name)
+        }
+    }
+    return strings.Join(names, ",")
+}
+
+MyChart{chart}.MajorStar()   // emperor
+```
+
+</Tab>
+</Tabs>
+
+All three return `emperor` on an English chart of this birthday, and `紫微` on a Simplified Chinese
+one — the same star, written differently.

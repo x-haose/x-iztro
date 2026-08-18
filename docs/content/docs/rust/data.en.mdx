@@ -1,0 +1,501 @@
+---
+title: Data tables
+description: The enums and their methods, the charting configuration, star information, stem and branch information, and the ordering constants.
+---
+
+`x_iztro::data` holds two kinds of thing: the **enums** that run through the whole library (the types
+of the chart fields and of nearly every function parameter), and the **input tables** of the charting
+algorithm. Both are independent of output language — they are inputs to the algorithm, not results.
+
+The common enums are re-exported at the crate root, so `use x_iztro::*;` is enough.
+
+---
+
+## Enums
+
+Nineteen enums plus `StarKey`. All of them implement `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq` and
+serde's `Serialize` / `Deserialize`, so they compare directly and go straight into collections.
+
+### Language-independent keys: as_key / from_key
+
+Most of the enums carry a mutually inverse pair of methods converting between a variant and its iztro
+i18n key string. These keys are exactly the values of the `*Key` fields in the DTO, and the values of
+the Python enums and Go constants — write the same string on any of the three sides and the predicates
+agree.
+
+| Enum | Variants | To key | From key | Example keys |
+| --- | --- | --- | --- | --- |
+| `StarKey` | 162 | `as_key()` | `from_key(&str)` | `ziweiMaj`, `yunlu` |
+| `Palace` | 12 | `as_key()` | `from_key(&str)` | `soulPalace`, `wealthPalace` |
+| `HeavenlyStem` | 10 | `as_key()` | `from_key(&str)` | `jiaHeavenly` |
+| `EarthlyBranch` | 12 | `as_key()` | `from_key(&str)` | `ziEarthly` |
+| `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
+| `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
+| `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
+| `StarType` | 8 | `as_key()` | — | `major`, `lucun` |
+| `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`, `decadal` |
+| `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
+| `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
+| `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
+| `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
+| `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
+| `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+
+`from_key` always returns an `Option`, giving `None` for an unknown key — which is how the bindings
+reject invalid input.
+
+```rust
+println!("{}", StarKey::ZiweiMaj.as_key());
+println!("{:?}", StarKey::from_key("taiyinMaj"));
+println!("{:?}", StarKey::from_key("nosuch"));
+println!("{} {}", Palace::Soul.as_key(), AstroType::Earth.as_key());
+println!("{:?}", DayDivide::from_key("current"));
+```
+
+**Output**
+
+```text
+ziweiMaj
+Some(TaiyinMaj)
+None
+soulPalace earth
+Some(Current)
+```
+
+### The other methods
+
+| Enum | Method | Description |
+| --- | --- | --- |
+| `HeavenlyStem` | `index() -> usize` / `from_index(usize)` | Stem ordinal, jia = 0 … gui = 9 |
+| `EarthlyBranch` | `index() -> usize` / `from_index(usize)` | Branch ordinal, zi = 0 … hai = 11. **Not a palace index**; convert with [`earthly_branch_to_palace_index`](/en/docs/rust/util#earthly_branch_to_palace_index) |
+| `Palace` | `index() -> usize` / `from_index(usize)` | The name's ordinal within `PALACES`: Soul = 0, Parents = 1, …, Siblings = 11. **Not a position on the chart**; `from_index` takes the value modulo 12 and returns no `Option` |
+| `FiveElementsClass` | `value() -> usize` | The class number: water 2nd 2, wood 3rd 3, metal 4th 4, earth 5th 5, fire 6th 6 |
+| `Gender` | `yin_yang() -> YinYang` | Male is yang, female yin; it sets the direction of the decadal scope and the Changsheng gods |
+| `Language` | `as_code() -> &'static str` / `from_code(&str)` | Language codes such as `zh-CN`; `from_code` is case-insensitive |
+| `YinYang` | `as_str() -> &'static str` | `阳` / `阴`, not internationalized |
+| `FiveElements` | `as_str() -> &'static str` | `木` `金` `水` `火` `土`, not internationalized |
+
+```rust
+println!("{} {}", HeavenlyStem::Gui.index(), EarthlyBranch::Hai.index());
+println!("{:?}", Palace::from_index(4));
+println!("{}", FiveElementsClass::Wood3rd.value());
+println!("{:?} {}", Gender::Female.yin_yang(), Gender::Female.yin_yang().as_str());
+println!("{} {:?}", Language::JaJP.as_code(), Language::from_code("ZH-cn"));
+```
+
+**Output**
+
+```text
+9 11
+Career
+3
+Yin 阴
+ja-JP Some(ZhCN)
+```
+
+### The variant listings
+
+Only the ones not obvious at a glance are listed; the variant names of stems, branches, palaces and
+stars correspond one-to-one with their keys.
+
+| Enum | Variants |
+| --- | --- |
+| `YinYang` | `Yang` `Yin` |
+| `FiveElements` | `Wood` `Metal` `Water` `Fire` `Earth` |
+| `FiveElementsClass` | `Water2nd` `Wood3rd` `Metal4th` `Earth5th` `Fire6th` |
+| `Mutagen` | `Lu` `Quan` `Ke` `Ji` |
+| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` |
+| `StarType` | `Major` `Soft` `Tough` `Adjective` `Flower` `Helper` `Lucun` `Tianma` |
+| `Scope` | `Origin` `Decadal` `Yearly` `Monthly` `Daily` `Hourly` |
+| `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
+| `Gender` | `Male` `Female` |
+| `Language` | `ZhCN` `ZhTW` `EnUS` `JaJP` `KoKR` `ViVN` |
+| `Palace` | In `index()` order: `Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
+| `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
+
+<Callout type="warn" title="Five of the enums are #[non_exhaustive]">
+`IztroError`, `StarType`, `Scope`, `Algorithm` and `AstroType` are marked `#[non_exhaustive]`, so a
+`match` outside the crate must carry a catch-all arm. Adding variants later is therefore not a
+breaking change.
+</Callout>
+
+`Scope` has one member fewer than `HoroscopeName`: `Childhood`. The childhood scope is not a query
+layer of its own, only a display name for the decadal scope — before the decadal scope begins,
+`h.decadal.name` shows the childhood name, while `Scope::Decadal` is used as usual.
+
+`TimeIndex` is a type alias for `u8`, purely a readability marker with no extra validation.
+
+---
+
+## Config
+
+The charting configuration: six switches plus two optional custom tables. `Config::default()` matches
+the JS iztro defaults.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `year_divide` | `YearDivide` | `Normal` | Whether the year pillar turns over at lunar New Year or at the Beginning of Spring |
+| `horoscope_divide` | `HoroscopeDivide` | `Normal` | Whether horoscope pillars and the month pillar follow the lunar first day or the solar terms |
+| `age_divide` | `AgeDivide` | `Normal` | Whether the nominal age advances with the lunar year or with the birthday |
+| `day_divide` | `DayDivide` | `Forward` | Whether the late Zi hour belongs to the next day or the current one |
+| `algorithm` | `Algorithm` | `Default` | The school: default or Zhongzhou |
+| `astro_type` | `AstroType` | `Heaven` | The charting perspective: heaven / earth / human chart |
+| `overrides` | `Option<Arc<TableOverrides>>` | `None` | Custom mutagen and brightness tables |
+
+The meaning of the six switches and the schools behind them are on
+[Config in depth](/en/docs/guide/guides/config).
+
+<Callout type="info" title="overrides takes no part in serialization">
+`overrides` is marked `#[serde(skip)]`: it is charting **input** rather than result, and putting it in
+the DTO would break the field contract with JS iztro. The `config` object in the JSON output therefore
+holds only the six switches, and the custom tables are not echoed back.
+</Callout>
+
+### Construction methods
+
+The fields are all `pub` and can be set directly; the chained form is less work:
+
+| Method | Description |
+| --- | --- |
+| `with_astro_type(AstroType) -> Config` | Set the charting perspective |
+| `with_mutagens(HeavenlyStem, [StarKey; 4]) -> Config` | Override one stem's mutagen table, in the order lu, quan, ke, ji |
+| `with_brightness(StarKey, [Option<Brightness>; 12]) -> Config` | Override one star's twelve-palace brightness table, index 0 being the Yin palace |
+
+### Lookup methods
+
+| Method | Description |
+| --- | --- |
+| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | The mutagen table **actually in effect** for that stem: the override if there is one, the default table otherwise |
+| `brightness_of(StarKey, usize) -> Option<Brightness>` | The brightness actually in effect for that star in that palace; out-of-range palace indices are taken modulo 12 |
+
+**Example**
+
+```rust
+let cfg = Config::default()
+    .with_astro_type(AstroType::Earth)
+    .with_mutagens(HeavenlyStem::Geng, [
+        StarKey::TaiyangMaj, StarKey::WuquMaj, StarKey::TianfuMaj, StarKey::TiantongMaj,
+    ]);
+
+println!("{:?}", cfg.astro_type);
+println!("{:?}", cfg.mutagens_of(HeavenlyStem::Geng)
+    .iter().map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+println!("{:?}", cfg.mutagens_of(HeavenlyStem::Jia)
+    .iter().map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+println!("{:?}", cfg.brightness_of(StarKey::ZiweiMaj, 4));
+
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, cfg)?;
+println!("{}", translate_five_elements_class(chart.five_elements_class, Language::EnUS));
+```
+
+**Output**
+
+```text
+Earth
+["sun", "general", "empress", "fortunate"]
+["judge", "rebel", "general", "sun"]
+Some(Miao)
+earth 5th
+```
+
+The mutagens of the geng stem have been replaced with "Taiyang lu, Wuqu quan, Tianfu ke, Tiantong ji"
+(the default table has Taiyin taking ke); the jia stem was not overridden and still uses the default
+table.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Tables are replaced whole, per stem and per star">
+`with_mutagens` replaces **all four slots** of one stem at once — a single slot cannot be changed on
+its own; `with_brightness` replaces **all twelve palaces** of one star at once. Stems and stars not
+mentioned keep the default tables.
+</Accordion>
+<Accordion title="Config is not Copy">
+`Config` contains an `Option<Arc<...>>` and implements only `Clone`. To reuse one configuration in a
+loop, write `cfg.clone()` — cloning an `Arc` bumps a reference count rather than copying the tables.
+</Accordion>
+<Accordion title="What the custom tables change">
+The mutagen table affects: the natal mutagen marks, the palace-stem flying-star methods, the mutagens
+of every horoscope layer, and `get_mutagen` / `get_mutagens_by_heavenly_stem`.
+The brightness table affects: a star's `brightness` field, the `with_brightness` predicate, and
+`get_brightness`.
+Neither changes where any star lands.
+</Accordion>
+</Accordions>
+
+### TableOverrides
+
+The carrier of those two tables inside `Config`. There is usually no need to build one directly — the
+two `with_*` methods above are enough. Build one yourself when you need to load several entries at
+once:
+
+| Method | Description |
+| --- | --- |
+| `set_mutagens(HeavenlyStem, [StarKey; 4])` | Write one stem's mutagen table |
+| `set_brightness(StarKey, [Option<Brightness>; 12])` | Write one star's brightness table |
+| `mutagens_of(HeavenlyStem) -> Option<&[StarKey; 4]>` | Get the overridden mutagen table, `None` when not overridden |
+| `brightness_of(StarKey) -> Option<&[Option<Brightness>; 12]>` | Get the overridden brightness table |
+| `is_empty() -> bool` | Whether there is no override at all |
+
+Note how these differ from the methods of the same name on `Config`: `TableOverrides::mutagens_of`
+reports only **whether there is an override**, while `Config::mutagens_of` reports the table
+**actually in effect** (falling back to the default when there is none).
+
+---
+
+## get_star_info
+
+**Purpose** Get a star's brightness table, five element and polarity.
+
+**Signature**
+
+```rust
+pub fn get_star_info(key: StarKey) -> Option<StarInfo>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `key` | `StarKey` | Yes | — | Star key |
+
+**Return value** `Option<StarInfo>`. Only twenty stars have an entry; the rest return `None`.
+
+The fields of `StarInfo`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `brightness` | `[Option<Brightness>; 12]` | Brightness across the twelve palaces, index 0 being the Yin palace; `None` where the palace has no brightness |
+| `five_elements` | `Option<FiveElements>` | Five element |
+| `yin_yang` | `Option<YinYang>` | Polarity |
+
+The twenty with entries are the **fourteen major stars** plus Wenchang, Wenqu, Huoxing, Lingxing,
+Qingyang and Tuoluo — exactly those listed in the `STARS_WITH_INFO` constant.
+
+**Example**
+
+```rust
+let info = data::stars::get_star_info(StarKey::ZiweiMaj).unwrap();
+
+println!("five element {:?} polarity {:?}", info.five_elements, info.yin_yang);
+println!("brightness in the Yin palace {:?}", info.brightness[0]);
+println!("Lucun has an entry: {}", data::stars::get_star_info(StarKey::LucunMin).is_some());
+```
+
+**Output**
+
+```text
+five element Some(Earth) polarity Some(Yin)
+brightness in the Yin palace Some(Wang)
+Lucun has an entry: false
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Five elements and polarity have gaps">
+Some stars have no five element or polarity in the table: Taiyang and Qisha have neither, Tanlang,
+Tianxiang, Tianliang and Pojun have no polarity, and the six minor stars have neither.
+Reading `None` means the table has no such datum; it is not an intermediate state produced by the
+algorithm.
+</Callout>
+
+---
+
+## get_heavenly_stem_info
+
+**Purpose** Get a heavenly stem's polarity, five element, clashing stem and four mutagen stars.
+
+**Zi Wei meaning** The mutagen table of the stems is the root of the whole mutagen system: the
+birth-year stem determines the natal mutagens, a palace stem determines what that palace flies, and a
+scope stem determines that layer's mutagens.
+
+**Signature**
+
+```rust
+pub fn get_heavenly_stem_info(stem: HeavenlyStem) -> HeavenlyStemInfo
+```
+
+**Return value** `HeavenlyStemInfo`, with fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `yin_yang` | `YinYang` | Polarity |
+| `five_elements` | `FiveElements` | Five element |
+| `crash` | `Option<HeavenlyStem>` | Clashing stem; `None` for wu and ji, which clash with nothing |
+| `mutagen` | `[StarKey; 4]` | The four mutagen stars, in the order lu, quan, ke, ji |
+
+**Example**
+
+```rust
+let jia = data::heavenly_stems::get_heavenly_stem_info(HeavenlyStem::Jia);
+
+println!("{:?} {:?} clashes with {:?}", jia.yin_yang, jia.five_elements, jia.crash);
+println!("{:?}", jia.mutagen.iter().map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+
+println!("wu clashes with {:?}", data::heavenly_stems::get_heavenly_stem_info(HeavenlyStem::Wu).crash);
+```
+
+**Output**
+
+```text
+Yang Wood clashes with Some(Geng)
+["judge", "rebel", "general", "sun"]
+wu clashes with None
+```
+
+---
+
+## get_earthly_branch_info
+
+**Purpose** Get an earthly branch's polarity, five element, clashing branch, soul and body stars and
+bodily correspondences.
+
+**Signature**
+
+```rust
+pub fn get_earthly_branch_info(branch: EarthlyBranch) -> EarthlyBranchInfo
+```
+
+**Return value** `EarthlyBranchInfo`, with fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `yin_yang` | `YinYang` | Polarity, which sets the direction of the decadal scope and the Changsheng gods |
+| `five_elements` | `FiveElements` | Five element |
+| `crash` | `EarthlyBranch` | Clashing branch |
+| `soul` | `StarKey` | Soul star (looked up by the Soul palace branch) |
+| `body` | `StarKey` | Body star (looked up by the birth-year branch) |
+| `inside` | `&'static str` | Corresponding internal organ |
+| `outside` | `&'static str` | Corresponding body part |
+| `health_tip` | `&'static str` | Health note |
+
+<Callout type="info">
+`inside`, `outside` and `health_tip` exist only in Chinese and take no part in internationalization.
+</Callout>
+
+**Example**
+
+```rust
+let zi = data::earthly_branches::get_earthly_branch_info(EarthlyBranch::Zi);
+
+println!("{:?} {:?} clashes with {:?}", zi.yin_yang, zi.five_elements, zi.crash);
+println!("soul {} body {}", translate_star(zi.soul, Language::EnUS), translate_star(zi.body, Language::EnUS));
+println!("{} / {}", zi.inside, zi.outside);
+```
+
+**Output**
+
+```text
+Yang Water clashes with Wu
+soul wolf body impulsive
+胆 / 下体
+```
+
+---
+
+## Ordering constants
+
+| Constant | Type | Contents |
+| --- | --- | --- |
+| `HEAVENLY_STEMS` | `[HeavenlyStem; 10]` | Stem order: jia, yi, bing, ding, wu, ji, geng, xin, ren, gui |
+| `EARTHLY_BRANCHES` | `[EarthlyBranch; 12]` | Branch order: zi, chou, yin, mao, chen, si, woo, wei, shen, you, xu, hai |
+| `PALACES` | `[Palace; 12]` | The twelve palace names running **counterclockwise** from the Soul palace: Soul, Parents, Spirit, Property, Career, Friends, Surface, Health, Wealth, Children, Spouse, Siblings |
+| `LANGUAGES` | `[&str; 6]` | Supported language codes |
+| `ZODIAC` | `[&str; 12]` | Chinese zodiac keys, in branch order |
+| `SIGNS` | `[&str; 12]` | Zodiac sign keys, in ecliptic order |
+| `CHINESE_TIME` | `[&str; 13]` | Hour keys, from the early Zi hour to the late Zi hour |
+| `TIME_RANGES` | `[&str; 13]` | The clock range of each hour |
+| `TIGER_RULE` | `[HeavenlyStem; 10]` | Five Tigers rule: year stem to first-month stem |
+| `RAT_RULE` | `[HeavenlyStem; 10]` | Five Rats rule: day stem to Zi-hour stem |
+| `MUTAGEN` | `[Mutagen; 4]` | Mutagen order: lu, quan, ke, ji (under `data::stars`) |
+
+`TIGER_RULE` and `RAT_RULE` are indexed by stem ordinal: `TIGER_RULE[0]` is the first-month stem for a
+jia year.
+
+**Example**
+
+```rust
+use x_iztro::data::constants::*;
+
+println!("{} {} {}", LANGUAGES[0], ZODIAC[0], CHINESE_TIME[12]);
+println!("{}", TIME_RANGES[2]);
+println!("first-month stem of a jia year {}", translate_heavenly_stem(TIGER_RULE[0], Language::EnUS));
+println!("Zi-hour stem of a jia day {}", translate_heavenly_stem(RAT_RULE[0], Language::EnUS));
+```
+
+**Output**
+
+```text
+en-US rat lateRatHour
+03:00~05:00
+first-month stem of a jia year bing
+Zi-hour stem of a jia day jia
+```
+
+---
+
+## Star enum listings
+
+| Constant | Length | Contents |
+| --- | --- | --- |
+| `ALL_STARS` | 162 | Every star key, in the order `StarKey` declares them |
+| `STARS_WITH_INFO` | 20 | The twenty stars that have a `StarInfo` entry |
+
+**Example**
+
+```rust
+println!("{} {}", data::stars::ALL_STARS.len(), data::stars::STARS_WITH_INFO.len());
+
+// list every star that has a brightness table
+for star in data::stars::STARS_WITH_INFO {
+    print!("{} ", translate_star(star, Language::EnUS));
+}
+```
+
+**Output**
+
+```text
+162 20
+emperor advisor sun general fortunate judge empress moon wolf advocator minister sage marshal rebel scholar artist impulsive spark driven tangled
+```
+
+---
+
+## get_brightness_table
+
+**Purpose** Get a star's twelve-palace brightness table as written in the data.
+
+**Signature**
+
+```rust
+pub fn get_brightness_table(key: StarKey) -> Option<[Option<Brightness>; 12]>
+```
+
+**Return value** A fixed array of twelve with index 0 being the Yin palace; `None` in any palace with
+no brightness. Stars with no brightness table return the outer `None`.
+
+**Example**
+
+```rust
+let t = data::stars::get_brightness_table(StarKey::ZiweiMaj).unwrap();
+println!("{:?}", &t[..4]);
+println!("{:?}", data::stars::get_brightness_table(StarKey::LucunMin).is_none());
+```
+
+**Output**
+
+```text
+[Some(Wang), Some(Wang), Some(De), Some(Wang)]
+true
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="How it divides work with get_brightness">
+`get_brightness_table` gives the **built-in default table** and ignores any configuration;
+[`utils::get_brightness`](/en/docs/rust/util#get_brightness) takes a `&Config`, so a custom brightness
+table changes its result. To double-check "what brightness was actually used on this chart", use the
+latter.
+`get_star_info(key).brightness` carries the same values as this function, and throws in the five
+element and polarity besides.
+</Callout>

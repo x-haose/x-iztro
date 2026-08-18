@@ -11,6 +11,8 @@ from x_iztro import utils
 ```
 
 参数与返回值中的标识都与语言无关，可直接与星盘上的 `*_key` 字段互操作。
+返回结构体的函数给的是**具名 dataclass**，字段用属性访问；
+返回单个标识的函数给的是枚举成员（`StrEnum`，与等值字符串可直接比较）。
 
 ---
 
@@ -34,7 +36,7 @@ def fix_index(index: int, max: int = 12) -> int
 | `index` | `int` | 是 | — | 待修正的索引，可为负 |
 | `max` | `int` | 否 | `12` | 循环长度，天干用 10 |
 
-**返回值**　`int`，落在 `0..max`。
+**返回值**　`int`，落在 `0..max`——含 0，**不含 `max`** 本身。
 
 **示例**
 
@@ -51,7 +53,8 @@ print(utils.fix_index(-1), utils.fix_index(13))
 **边界与陷阱**
 
 <Callout type="info">
-负数按数学取模回绕（-1 → 11），不是截断到 0。
+负数按数学取模回绕（-1 → 11），不是截断到 0。`max` 传 0 会抛
+`ZeroDivisionError`，调用方自己保证它是正数——盘上的用法固定为 12 或 10。
 </Callout>
 
 ---
@@ -179,7 +182,9 @@ def get_brightness(
 | `palace_index` | `int` | 是 | — | 宫位索引，越界会对 12 取模 |
 | `config` | `ChartConfig \| None` | 否 | `None` | 自定义亮度表会改变结果 |
 
-**返回值**　亮度标识；该星没有亮度表时返回 `None`。
+**返回值**　`Brightness` 枚举成员；该星没有亮度表时返回 `None`。
+它是 `StrEnum`，`utils.get_brightness("ziweiMaj", 4) == "miao"` 成立。
+星耀标识未知时抛 `IztroError`（`code` 为 `invalid_argument`）。
 
 **示例**
 
@@ -214,8 +219,9 @@ def get_mutagen(star: str, stem: HeavenlyStem | str, config: ChartConfig | None 
 def get_mutagens_by_heavenly_stem(stem: HeavenlyStem | str, config: ChartConfig | None = None) -> list[str]
 ```
 
-**返回值**　`get_mutagen` 返回四化标识，该星不在此天干的四化表内时为 `None`。
-`get_mutagens_by_heavenly_stem` 返回四项列表，顺序为**禄、权、科、忌**。
+**返回值**　`get_mutagen` 返回 `Mutagen` 枚举成员，该星不在此天干的四化表内时为 `None`。
+`get_mutagens_by_heavenly_stem` 返回四项星耀标识列表（`list[str]`），顺序为**禄、权、科、忌**。
+两者都受 `config` 里的自定义四化表影响。
 
 **示例**
 
@@ -249,7 +255,7 @@ def get_soul_and_body(
     month_index: int,
     time_index: int,
     yearly_stem: HeavenlyStem | str,
-) -> dict
+) -> SoulAndBody
 ```
 
 **参数**
@@ -260,19 +266,29 @@ def get_soul_and_body(
 | `time_index` | `int` | 是 | — | 时辰索引 0–12 |
 | `yearly_stem` | `str` | 是 | — | 生年天干标识 |
 
-**返回值**　含 `soulIndex`、`bodyIndex`、`heavenlyStemOfSoul`、`earthlyBranchOfSoul` 的 dict，
-后两项为语言无关标识。
+**返回值**　`SoulAndBody`：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `soul_index` | `int` | 命宫宫位索引 |
+| `body_index` | `int` | 身宫宫位索引 |
+| `heavenly_stem_of_soul` | `str` | 命宫天干标识 |
+| `earthly_branch_of_soul` | `str` | 命宫地支标识 |
 
 **示例**
 
 ```python
-print(utils.get_soul_and_body(6, 2, "gengHeavenly"))
+sb = utils.get_soul_and_body(6, 2, "gengHeavenly")
+
+print(sb)
+print(sb.soul_index, sb.body_index, sb.earthly_branch_of_soul)
 ```
 
 **输出**
 
 ```text
-{'bodyIndex': 8, 'earthlyBranchOfSoul': 'wuEarthly', 'heavenlyStemOfSoul': 'renHeavenly', 'soulIndex': 4}
+SoulAndBody(soul_index=4, body_index=8, heavenly_stem_of_soul='renHeavenly', earthly_branch_of_soul='wuEarthly')
+4 8 wuEarthly
 ```
 
 ---
@@ -290,7 +306,7 @@ print(utils.get_soul_and_body(6, 2, "gengHeavenly"))
 def get_five_elements_class(stem: HeavenlyStem | str, branch: EarthlyBranch | str) -> str
 ```
 
-**返回值**　五行局标识。
+**返回值**　五行局标识字符串（`FiveElementsClass` 的值域）。
 
 **示例**
 
@@ -319,19 +335,28 @@ wood3rd
 def get_palace_names(soul_index: int) -> list[PalaceName]
 ```
 
-**返回值**　十二项列表，**按宫位索引排列**——第 `i` 项就是 `chart.palaces[i]` 的宫名标识。
+**返回值**　十二项 `PalaceName` 列表，**按宫位索引排列**——第 `i` 项就是 `chart.palaces[i]` 的宫名。
 
 **示例**
 
 ```python
-print(utils.get_palace_names(4)[:4])
+names = utils.get_palace_names(4)
+
+print(names[:4])
+print([str(n) for n in names[:4]])
+print(names[0] == "wealthPalace")
 ```
 
 **输出**
 
 ```text
+[<PalaceName.WEALTH: 'wealthPalace'>, <PalaceName.CHILDREN: 'childrenPalace'>, <PalaceName.SPOUSE: 'spousePalace'>, <PalaceName.SIBLINGS: 'siblingsPalace'>]
 ['wealthPalace', 'childrenPalace', 'spousePalace', 'siblingsPalace']
+True
 ```
+
+列表元素是 `PalaceName` 枚举成员，`repr` 带枚举名、`str` 给标识本身；
+因为是 `StrEnum`，与字符串直接比较也成立。
 
 命宫在索引 4，因此索引 0（寅宫）是财帛。
 
@@ -353,7 +378,7 @@ def get_decadals_and_ages(
     gender: str,
     yearly_stem: HeavenlyStem | str,
     yearly_branch: EarthlyBranch | str,
-) -> dict
+) -> DecadalsAndAges
 ```
 
 **参数**
@@ -366,24 +391,43 @@ def get_decadals_and_ages(
 | `yearly_stem` | `str` | 是 | — | 年干标识 |
 | `yearly_branch` | `str` | 是 | — | 年支标识 |
 
-**返回值**　含 `decadals` 与 `ages` 两项的 dict，均按宫位索引排列。
-`decadals[i]` 含 `range` 岁数区间与该宫干支标识；`ages[i]` 是小限经过该宫的虚岁列表。
+**返回值**　`DecadalsAndAges`，两个字段都按宫位索引排列：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `decadals` | `list[Decadal]` | 十二宫各自的大限 |
+| `ages` | `list[list[int]]` | 十二宫各自的小限虚岁列表 |
+
+`Decadal` 与宫位上的 `palace.decadal` 是同一个类型：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `range` | `tuple[int, int]` | 大限起止虚岁，含两端 |
+| `heavenly_stem` / `heavenly_stem_key` | `str` | 大限天干的译名 / 标识 |
+| `earthly_branch` / `earthly_branch_key` | `str` | 大限地支的译名 / 标识 |
 
 **示例**
 
 ```python
 d = utils.get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
 
-print(d["decadals"][0])
-print(d["ages"][0][:3])
+print(d.decadals[0])
+print(d.decadals[0].range, d.decadals[0].earthly_branch_key)
+print(d.ages[0][:3])
 ```
 
 **输出**
 
 ```text
-{'earthlyBranch': 'yinEarthly', 'heavenlyStem': 'wuHeavenly', 'range': [43, 52]}
+Decadal(range=(43, 52), heavenly_stem='戊', heavenly_stem_key='wuHeavenly', earthly_branch='寅', earthly_branch_key='yinEarthly')
+(43, 52) yinEarthly
 [9, 21, 33]
 ```
+
+<Callout type="info">
+`Decadal` 的译名字段按 **zh-CN** 生成——这个函数不收 `language` 参数。
+要别的语言用 `heavenly_stem_key` 走 [`i18n.translate`](/zh/docs/python/i18n#translate)。
+</Callout>
 
 **边界与陷阱**
 
@@ -399,7 +443,7 @@ print(d["ages"][0][:3])
 **用途**　求修正后的农历月索引与日索引。
 
 **斗数含义**　闰月归属与晚子时归属是斗数两个长期有争议的边界，这两个函数把规则落定：
-闰月十五日之后按下月算（可关），晚子时属次日。
+闰月十六日起按下月算（可关，且晚子时不进位），晚子时的日索引属次日。
 
 **签名**
 
@@ -416,6 +460,9 @@ def fix_lunar_day_index(lunar_day: int, time_index: int) -> int
 ```
 
 **返回值**　月索引为 0-based（正月为 0）；日索引在晚子时不减一。
+
+`fix_lunar_month_index` 进位要同时满足四个条件：`is_leap` 为真、`fix_leap` 为真、
+`lunar_day` 大于 15、且 `time_index` 不是 12。四者缺一，就按本月算。
 
 **示例**
 
@@ -483,7 +530,7 @@ print(utils.translate_chinese_date(chart.raw_dates.chinese_date.pillar_keys()))
 **边界与陷阱**
 
 <Callout type="warn">
-柱数不为四、某柱不是两项，或干支标识非法时抛 `ValueError`。
+柱数不为四、某柱不是两项，或干支标识非法时抛 `IztroError`（`code` 为 `invalid_argument`）。
 </Callout>
 
 ---
@@ -505,7 +552,7 @@ def merge_stars(*groups: list[list[Star]]) -> list[list[Star]]
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `groups` | `list[list[Star]]` | 是 | — | 若干组十二宫星耀列表，每组长度须为 12 |
+| `groups` | `list[list[Star]]` | 是 | — | 若干组十二宫星耀列表，每组长度须为 12。注意是**可变参数**：写 `merge_stars(major, minor)`，不是传一个列表的列表 |
 
 **返回值**　合并后的十二宫列表，同宫内按传入顺序首尾相接。
 

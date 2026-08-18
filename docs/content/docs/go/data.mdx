@@ -154,13 +154,14 @@ func GetConstants() (Constants, error)
 | `EarthlyBranches` | `[]string` | 地支顺序 |
 | `Zodiac` | `[]string` | 生肖标识，按地支顺序 |
 | `Signs` | `[]string` | 星座标识，按黄道顺序 |
-| `Palaces` | `[]string` | 十二宫名，从命宫起的排列顺序 |
+| `Palaces` | `[]string` | 十二宫名，从命宫起**逆时针**排：命、父母、福德、田宅、官禄、仆役、迁移、疾厄、财帛、子女、夫妻、兄弟 |
 | `Gender` | `map[string]string` | 男女各自的阴阳 |
 | `ChineseTime` | `[]string` | 时辰标识，早子时起、晚子时止 |
 | `TimeRange` | `[]string` | 时辰对应的钟点区间 |
 | `TigerRule` | `map[string]string` | 五虎遁：年干推正月天干 |
 | `RatRule` | `map[string]string` | 五鼠遁：日干推子时天干 |
 | `Mutagen` | `[]string` | 四化顺序 |
+| `FiveElementsClass` | `map[string]int` | 五行局标识 → 局数（水二局 2 …… 火六局 6） |
 
 **示例**
 
@@ -171,6 +172,8 @@ fmt.Println(c.Languages)
 fmt.Println(c.Zodiac[:3], c.ChineseTime[12], c.TimeRange[2])
 fmt.Println(c.Gender)
 fmt.Println("甲年正月干:", c.TigerRule[iztro.StemJia])
+fmt.Println(c.Palaces)
+fmt.Println(c.FiveElementsClass[iztro.ClassWood3rd], iztro.FiveElementsClassNumber(iztro.ClassFire6th))
 ```
 
 **输出**
@@ -180,7 +183,25 @@ fmt.Println("甲年正月干:", c.TigerRule[iztro.StemJia])
 [rat ox tiger] lateRatHour 03:00~05:00
 map[female:阴 male:阳]
 甲年正月干: bingHeavenly
+[soulPalace parentsPalace spiritPalace propertyPalace careerPalace friendsPalace surfacePalace healthPalace wealthPalace childrenPalace spousePalace siblingsPalace]
+3 6
 ```
+
+**边界与陷阱**
+
+<Callout type="info" title="Palaces 是逆时针序，不是盘上位置">
+`Palaces` 给的是宫名的**排列顺序**，不是某张盘上第 `i` 格叫什么。
+要那个用 [`GetPalaceNames(soulIndex)`](/zh/docs/go/util#getpalacenames)。
+</Callout>
+
+<Callout type="info" title="局数也可以直接查">
+`FiveElementsClassNumber(key)` 不必先取 `Constants`，未知标识返回 0。
+</Callout>
+
+<Callout type="info">
+`Languages` 的顺序是 iztro 词表的合并次序（en-US 起），不是常量的声明次序。
+[`KeyOf`](/zh/docs/go/i18n#keyof) 的逐语言扫描顺序与它一致。
+</Callout>
 
 ---
 
@@ -196,9 +217,11 @@ map[female:阴 male:阳]
 | `Branch*` | 12 | `BranchZi`、`BranchWu` |
 | `Mutagen*` | 4 | `MutagenLu`、`MutagenJi` |
 | `Brightness*` | 7 | `BrightnessMiao`、`BrightnessWang` |
-| `FiveElements*` | 5 | `FiveElementsWater2nd` |
+| `Class*` | 5 | `ClassWater2nd`、`ClassWood3rd`、`ClassMetal4th`、`ClassEarth5th`、`ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`、`ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`、`StarTypeTough` |
+| `Gender*` | 2 | `GenderMale`、`GenderFemale` |
+| `Language*` | 6 | `LanguageZhCN`、`LanguageZhTW`、`LanguageEnUS`、`LanguageJaJP`、`LanguageKoKR`、`LanguageViVN` |
 
 配置类另有六组：
 
@@ -211,6 +234,11 @@ map[female:阴 male:阳]
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
 | `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
 
+<Callout type="warn" title="五行局常量的前缀是 Class 不是 FiveElements">
+写 `iztro.ClassWood3rd`，不是 `iztro.FiveElementsWood3rd`——
+后者不存在，编译不过。取局数用 `iztro.FiveElementsClassNumber(key)`。
+</Callout>
+
 **示例**
 
 ```go
@@ -218,6 +246,14 @@ soul := chart.Palace(iztro.PalaceSoul)
 
 fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
 fmt.Println(iztro.StarZiweiMaj, iztro.MutagenLu, iztro.PalaceWealth)
+fmt.Println(iztro.ClassWood3rd, iztro.GenderFemale, iztro.LanguageEnUS)
+
+// 排盘入口的 gender 与 language 也用这两组常量
+en, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(en.Palace(iztro.PalaceSoul).MajorStars[0].Name)
 ```
 
 **输出**
@@ -225,6 +261,8 @@ fmt.Println(iztro.StarZiweiMaj, iztro.MutagenLu, iztro.PalaceWealth)
 ```text
 true
 ziweiMaj sihuaLu wealthPalace
+wood3rd female en-US
+emperor
 ```
 
 <Callout type="info" title="常量与字符串等价">

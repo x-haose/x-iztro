@@ -3,6 +3,8 @@ title: Go
 description: go get 即用，内嵌 WebAssembly，无 cgo，保留交叉编译能力。
 ---
 
+*适合：开发者*
+
 ## 安装
 
 ```bash
@@ -13,12 +15,16 @@ go get github.com/x-haose/x-iztro/go/iztro
 经纯 Go 实现的 [wazero](https://wazero.io) 运行时调用。
 
 这意味着：**不需要 cgo，不需要本机安装 Rust 工具链，交叉编译照常可用**。
-代价是每次调用有一次 JSON 编解码与 wasm 内存拷贝，
-对排盘这种毫秒级计算可以忽略。
+wazero 的编译器后端只支持 amd64 与 arm64，其余架构走解释器，速度慢但结果相同。
 
-<Callout title="并发">
-wasm 模块实例不是并发安全的，包内已用互斥锁串行化所有调用。
-多 goroutine 直接调用是安全的，但不会并行加速。
+<Callout title="并发与冷启动">
+单个 wasm 实例不能并发使用，包内维护一个实例池（上限 `GOMAXPROCS`），
+多 goroutine 调用互不串行化，能真正并行。
+
+首次调用要编译 wasm 模块。编译产物落盘缓存（`os.UserCacheDir()` 下），
+所以只有第一次是 ~200ms，之后每个进程的首次调用 ~30ms。
+服务进程想让第一个请求就走热路径，在启动时调一次 `iztro.Warmup(ctx)`。
+热路径上一次排盘（含 JSON 编解码与内存拷贝）在 0.5ms 量级。
 </Callout>
 
 ## 排盘
@@ -49,8 +55,44 @@ func main() {
 }
 ```
 
+```text
+2000-8-16
+二〇〇〇年七月十七
+庚辰 甲申 丙午 庚寅
+寅时 03:00~05:00
+狮子座 龙
+破军 文昌
+木三局
+```
+
 最后一个参数是 `*Config`，传 `nil` 即取默认配置。农历排盘用 `ByLunar`，
-比 `BySolar` 多一个 `isLeapMonth bool`。
+比 `BySolar` 多一个 `isLeapMonth bool`，插在 `gender` 之后、`fixLeap` 之前：
+
+```go
+iztro.ByLunar("2000-7-17", 2, "female", false, true, "zh-CN", nil)
+```
+
+每个入口都有 `*Context` 变体（`BySolarContext`、`ByLunarContext` 等），
+`ctx` 用于取消等待实例池的排队。
+
+## 错误处理
+
+失败一律返回 `*iztro.Error`，带机器可读的 `Code`；用 `errors.Is` 按类别匹配：
+
+```go
+_, err := iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+if errors.Is(err, iztro.ErrInvalidDate) {
+    var e *iztro.Error
+    errors.As(err, &e)
+    fmt.Println(e.Code, e.Message)
+}
+```
+
+```text
+invalid_date invalid solar date '2000-13-1': month must be within 1-12
+```
+
+详见[错误处理](/zh/docs/guide/guides/errors)。
 
 ## 接下来
 

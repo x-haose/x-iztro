@@ -1,93 +1,42 @@
 ---
-title: 给 AI 用的文档
-description: 本站提供的 llms.txt、单页 Markdown 端点，以及把 x-iztro 接进 AI 应用的方式。
+title: 让 AI 解读命盘
+description: 排盘交给库、解读交给模型：怎么把 x-iztro 接进 AI 应用，以及几条踩过的坑。
 ---
 
-这一页讲两件事：**怎么让 AI 读懂这份文档**，以及**怎么把 x-iztro 接进 AI 应用**。
+*适合：开发者 · 产品与决策者*
 
-## 让 AI 读这份文档
+<Callout type="warn" title="别让模型自己排盘">
+这是最重要的一条。大模型算不准干支与安星 —— 它会给出**看起来合理但错误**的结果，
+而且错得毫无规律，你没法从输出上看出来。
 
-### `/llms.txt`
-
-站点结构索引，列出所有页面的标题、描述与链接。适合让模型先定位再抓取。
-
-<Endpoint path="/llms.txt" />
-
-### `/llms-full.txt`
-
-全站文档的 Markdown 全文，一次抓取即可作为完整上下文。
-
-<Endpoint path="/llms-full.txt" />
-
-### 单页 Markdown
-
-任意文档页 URL 追加 `.md` 就得到该页的 Markdown 原文：
-
-<Endpoint path="/zh/docs/guide/guides/config.md" />
-
-`.md` 与 `.mdx` 两种后缀都可以，返回内容相同。
-页面标题下方的「复制 Markdown」按钮取的就是这个端点，「打开」下拉里还能
-直接送进 ChatGPT 或 Claude。
-
-### 不知道后缀约定也能拿到
-
-AI 代理在请求任意文档页时，只要 `Accept` 头里表明更想要 Markdown，
-就会拿到 Markdown 原文而不是整页 HTML：
-
-```bash
-curl -H "Accept: text/markdown" <本站地址>/zh/docs/rust/palace
-```
-
-同一个页面，HTML 约 400 KB，Markdown 约 14 KB。
-
-<Callout>
-这三个端点返回的都是纯文本，没有导航、样式与脚本，
-比让模型抓 HTML 省 token 也更准确。
+排盘是确定性计算，交给库；模型只负责解读。
+这条分工是把斗数接进 AI 应用的整个前提。
 </Callout>
 
-### 建议的用法
+## 最小接法
 
-问 AI 关于 x-iztro 的问题时，把 `/llms-full.txt` 作为上下文一起给它。
-全站文档的规模在常见模型的上下文窗口内绰绰有余。
-
-如果只关心某个主题，抓对应的单页 `.md` 更省：
-
-| 主题 | 页面 |
-| --- | --- |
-| 参数与安装 | `/zh/docs/guide/getting-started.md` |
-| 领域概念 | `/zh/docs/guide/concepts.md` 及其子页 |
-| 分界点与流派 | `/zh/docs/guide/guides/config.md` |
-| 字段字典 | `/zh/docs/guide/data-model.md` |
-
-## 把 x-iztro 接进 AI 应用
-
-### 内置 Prompt 生成
-
-库自带把命盘转成结构化文本的函数，不必自己拼描述：
+把盘转成文本，前面加上你的分析要求，一起发给模型：
 
 ```python
-natal = astro.astrolabe_to_prompt(chart)
-fortune = astro.horoscope_to_prompt(chart, "2024-10-1", 0)
+from x_iztro import Astro
+
+astro = Astro()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+system = "你是紫微斗数分析师。基于给定命盘作答，不要编造盘上没有的信息。"
+user = f"""{astro.astrolabe_to_prompt(chart)}
+
+{astro.horoscope_to_prompt(chart, "2025-1-1", 0)}
+
+请分析这个人 2025 年的事业运势。"""
 ```
 
-输出格式与用法见 [AI Prompt 生成](/zh/docs/guide/guides/ai-prompt)。
+生成的文本长什么样、格式怎么读，见 [AI Prompt 生成](/zh/docs/guide/guides/ai-prompt)。
 
-### 用英文盘喂模型
+## 做成工具调用
 
-命理术语的中文对模型不算难，但如果目标模型的中文能力一般，
-可以用英文排盘，生成的 prompt 也会是英文：
-
-```python
-chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
-prompt = astro.astrolabe_to_prompt(chart)   # 英文
-```
-
-排盘结果本身与语言无关，换语言不影响任何计算。
-
-### 做成工具调用
-
-排盘是确定性计算，很适合做成给模型调用的工具：模型负责理解需求与解读，
-x-iztro 负责算准。一个最小的工具定义：
+让模型自己决定什么时候排盘，比在应用里写死流程更灵活：
+模型负责理解需求与解读，x-iztro 负责算准。一个最小的工具定义：
 
 ```python
 {
@@ -107,14 +56,46 @@ x-iztro 负责算准。一个最小的工具定义：
 ```
 
 实现里调 `astrolabe_to_prompt` 返回文本即可。
+运限单独做一个工具（多收一个目标日期），让模型按需要取。
 
-<Callout type="warn" title="别让模型自己排盘">
-大模型算不准干支与安星 —— 它会给出看起来合理但错误的结果。
-排盘交给库，模型只负责解读。
+<Callout title="时辰索引要在工具描述里说清楚">
+用户说的「晚上 11 点」对应索引 `12` 而不是 `0`，模型不会自己知道。
+把 0–12 的含义写进参数描述，或者干脆让工具收「出生时间 HH:MM」再由你换算。
 </Callout>
 
-### 判断逻辑用 key
+## 用中文盘喂模型
+
+排盘结果本身与盘面语言无关，但生成的 prompt 会跟着变。默认的中文盘就是最好的选择：
+
+主流模型的中文命理术语能力都不差；而英文盘的星名走 iztro 的意译词表
+（紫微 `emperor`、七杀 `marshal`），亮度退化成 `[+3]` 这类记号，四化写成 `A`/`B`/`C`/`D`，
+这套写法与英文命理界的通行译法不同，模型未必认得。
+
+确实需要英文输出时，做法是**用中文盘喂模型、让模型用英文作答**，
+而不是换成英文盘。
+
+## 判断逻辑用标识
 
 如果你的应用要基于盘的内容做分支（例如「命宫有化忌时走另一套话术」），
-用[语言无关 key](/zh/docs/guide/guides/keys) 判断，不要匹配文本 ——
-否则换一种输出语言，所有分支都会静默失效。
+用[语言无关标识](/zh/docs/guide/guides/keys)判断，不要匹配文本 ——
+否则换一种盘面语言，所有分支都会静默失效。
+
+```python
+soul = chart.palace("soulPalace")
+if soul.has_mutagen("sihuaJi"):
+    prompt_style = "谨慎"
+```
+
+## 别把模型的解读当计算结果
+
+模型可能在解读里顺手「补」一些盘上没有的信息 ——
+多出一颗星、把大限区间说错、把宫名记混。
+
+如果解读要落进产品（写库、发推送、做决策），
+凡是可以从盘上直接取的事实，都从盘上取，不要从模型的自然语言里回抽。
+模型输出只当文字用。
+
+## 让 AI 读这份文档
+
+本站另有专供模型抓取的纯文本端点（`llms.txt`、单页 Markdown），
+见[给 AI 读的文档端点](/zh/docs/guide/guides/llms-txt)。

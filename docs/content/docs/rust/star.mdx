@@ -14,6 +14,10 @@ description: 按出生数据取某一组星耀的落宫，以及排盘流水线�
 
 所有索引都是**宫位索引**：0 为寅宫，11 为丑宫。
 
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 排盘，因此输出里的展示值都是中文。
+</Callout>
+
 ## StarParam
 
 `star::query` 的全部入口共用这一个参数结构。
@@ -41,6 +45,8 @@ pub struct StarParam<'a> {
 | `config` | `&Config` | 排盘配置 |
 
 ```rust
+use x_iztro::star::query::StarParam;
+
 let cfg = Config::default();
 let param = StarParam {
     solar_date: "2000-8-16",
@@ -157,7 +163,7 @@ pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroErro
 | --- | --- |
 | `DailyStar` | `santai` `bazuo` `enguang` `tiangui` |
 | `MonthlyStar` | `jieshen` `tianyao` `tianxing` `yinsha` `tianyue` `tianwu` |
-| `YearlyStars` | 27 项，含 `xianchi` `huagai` `guchen` `guasu` `tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `tianshang` `tianshi` `jiekong` `jiesha` `nianjie` `dahao` |
+| `YearlyStars` | 29 项：`tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `jiekong` `tianshang` `tianshi` `huagai` `xianchi` `guchen` `guasu` `jiesha` `nianjie` `dahao` `hongluan` `tianxi` |
 
 **示例**
 
@@ -182,10 +188,20 @@ println!("咸池 {} 华盖 {} 天伤 {} 天使 {}", y.xianchi, y.huagai, y.tians
 
 **边界与陷阱**
 
-<Callout type="warn" title="年系星的年支按 horoscope_divide 取">
+<Accordions>
+<Accordion title="年系星的年支按 horoscope_divide 取">
 年系杂耀属流年神煞，取年支时用的是 `horoscope_divide` 而非 `year_divide`。
 两个配置不同时，年系星与主星、辅星可能基于不同的年支——这是刻意的流派区分。
-</Callout>
+</Accordion>
+<Accordion title="红鸾天喜在两处都能取到">
+`YearlyStars` 里带 `hongluan` / `tianxi` 两项，`get_luan_xi_index` 也单独给这两颗。
+两者取值一致，区别只在 `get_luan_xi_index` 不必算其余二十七颗。
+</Accordion>
+<Accordion title="jiekong / jiesha / dahao 是中州派专有">
+这三项只在 `algorithm` 为中州派时进入盘面，替换掉截路、空亡与大耗的默认取法；
+默认派别下它们仍会被算出来，只是不安进宫位。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -392,11 +408,48 @@ println!("{:?}", origin.iter().take(2)
 `star::location` 与 `star::decorative` 下的函数收已算好的索引而非出生数据。
 排盘流水线内部用它们，自建流程时也可复用。
 
-| 模块 | 主要函数 |
-| --- | --- |
-| `star::location` | `get_start_index`、`get_lu_yang_tuo_ma_index`、`get_kui_yue_index`、`get_zuo_you_index`、`get_chang_qu_index`、`get_chang_qu_index_by_stem`、`get_daily_star_index`、`get_timely_star_index`、`get_kong_jie_index`、`get_huo_ling_index`、`get_luan_xi_index`、`get_huagai_xianchi_index`、`get_gu_gua_index`、`get_jiesha_adj_index`、`get_dahao_index`、`get_nianjie_index`、`get_tianshang_tianshi_index`、`get_tiancai_index`、`get_yearly_star_index`、`get_monthly_star_index` |
-| `star::decorative` | `get_changsheng12`、`get_boshi12`、`get_yearly12`、以及上文两个起点函数 |
-| `star::major` / `minor` / `adjective` | `get_major_stars`、`get_minor_stars`、`get_adjective_stars` |
+### star::location
+
+| 函数 | 收 | 返回 |
+| --- | --- | --- |
+| `get_start_index` | `lunar_day, time_index, month_day_count, five_elements_value` | `StartIndex { ziwei, tianfu }` |
+| `get_lu_yang_tuo_ma_index` | `stem, branch` | `LuYangTuoMa { lu, yang, tuo, ma }` |
+| `get_kui_yue_index` | `stem` | `KuiYue { kui, yue }` |
+| `get_zuo_you_index` | `lunar_month` | `ZuoYou { zuo, you }` |
+| `get_chang_qu_index` | `time_index` | `ChangQu { chang, qu }` |
+| `get_chang_qu_index_by_stem` | `stem` | `ChangQu { chang, qu }`（运限层级用） |
+| `get_daily_star_index` | `lunar_day, time_index, zuo_index, you_index, chang_index, qu_index` | `DailyStar { santai, bazuo, enguang, tiangui }` |
+| `get_timely_star_index` | `time_index` | `TimelyStars { taifu, fenggao }` |
+| `get_kong_jie_index` | `time_index` | `KongJie { kong, jie }` |
+| `get_huo_ling_index` | `branch, time_index` | `HuoLing { huo, ling }` |
+| `get_luan_xi_index` | `branch` | `LuanXi { hongluan, tianxi }` |
+| `get_huagai_xianchi_index` | `branch` | `HuagaiXianchi { huagai, xianchi }` |
+| `get_gu_gua_index` | `branch` | `GuGua { guchen, guasu }` |
+| `get_jiesha_adj_index` | `branch` | `usize` |
+| `get_dahao_index` | `branch` | `usize` |
+| `get_nianjie_index` | `branch` | `usize` |
+| `get_tianshang_tianshi_index` | `gender, yearly_branch, soul_index, algorithm` | `(usize, usize)`，依次为天伤、天使 |
+| `get_tiancai_index` | `yearly_branch, soul_index` | `usize` |
+| `get_monthly_star_index` | `month_index` | `MonthlyStar { jieshen, tianyao, tianxing, yinsha, tianyue, tianwu }` |
+| `get_yearly_star_index` | `soul_index, body_index, yearly_stem, yearly_branch, gender, algorithm` | `YearlyStars`（上面那 29 项） |
+
+所有结构体的字段都是 `usize` 宫位索引（0 为寅宫），
+`get_tianshang_tianshi_index` 返回的是裸元组而非具名结构体。
+
+### star::decorative
+
+| 函数 | 收 | 返回 |
+| --- | --- | --- |
+| `get_changsheng12_start_index` | `five_elements_class` | `usize` |
+| `get_jiangqian12_start_index` | `yearly_branch` | `usize` |
+| `get_changsheng12` | 五行局、性别、年支等 | `[StarKey; 12]` |
+| `get_boshi12` | `lu_index, gender, yearly_branch` | `[StarKey; 12]` |
+| `get_yearly12` | 年支等 | `([StarKey; 12], [StarKey; 12])`，依次为岁前、将前 |
+
+### star::major / minor / adjective
+
+`get_major_stars`、`get_minor_stars`、`get_adjective_stars`——
+与 `star::query` 下的同名函数同名不同参：这一层收已算好的索引，那一层收出生数据。
 
 <Callout type="warn" title="名字与 star::query 下的相同">
 两层有若干同名函数（如两个 `get_start_index`），靠模块路径区分：

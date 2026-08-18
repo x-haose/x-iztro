@@ -1,54 +1,141 @@
 ---
 title: 错误处理
-description: 校验了什么、在哪一层校验，以及为什么核心层坚持不 panic。
+description: 校验了什么、在哪一层校验、四个错误分类各是什么，以及为什么核心层坚持不 panic。
 ---
 
-x-iztro 把全部外部输入的校验放在**核心层**，三种语言共用同一道防线。
+*适合：开发者*
+
+x-iztro 把外部输入的校验放在尽量靠内的一层，三种编程语言共用同一道防线。
 各语言只把错误翻译成自己的惯例类型，不重复校验、也不各自解释。
 
-## 校验范围
+## 错误分类
 
-| 输入 | 校验内容 |
+每个错误都带一个机器可读的分类，跨语言取值相同 —— **判断用它，不要解析文案**。
+
+| 分类 | 含义 |
 | --- | --- |
-| 公历日期 | 格式为 `YYYY-M-D`、日期真实存在、年份在 1583–9999 内 |
-| 农历日期 | 同上，另加该农历年该月是否存在、该月有多少天 |
-| 时辰索引 | 0–12 |
-| 性别 | `male` / `female` |
-| 语言 | 六个语言代码之一，大小写不敏感 |
-| 配置 | 各开关取值合法；自定义四化表须四项、亮度表须十二项 |
-| 标识 | 星耀、天干、地支、宫位、四化、运限层级等标识须已知 |
-
-消息里带上原始输入，批量处理时能直接定位是哪一条数据出的问题：
-
-```text
-invalid solar date '2000-2-30': day is out of range for that month
-```
+| `invalid_date` | 日期格式非法、该日期不存在，或超出支持范围（公历 1583–9999） |
+| `invalid_time_index` | 时辰索引越界（合法值 0–12） |
+| `invalid_argument` | 其余入参或配置非法：未知的性别、盘面语言、星耀标识、开关取值、覆盖表长度错 |
+| `internal` | 库内部缺陷或运行时故障，不是调用方的错，请上报 |
 
 ## 各语言的错误类型
 
-同一个错误，三种语言按各自惯例呈现：
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
 
-| 语言 | 类型 | 消息 |
-| --- | --- | --- |
-| [Rust](/zh/docs/rust/errors) | `IztroError`，两个变体 | 原样 |
-| [Python](/zh/docs/python/errors) | `ValueError` | 原样 |
-| [Go](/zh/docs/go/errors) | `error` | 加 `iztro: ` 前缀 |
+`IztroError` 枚举，`code()` 给出分类：
 
-消息主体来自核心层，因此三种语言看到的文字相同。
+```rust
+match by_solar(date, ti, Gender::Female, true, Language::ZhCN, Config::default()) {
+    Ok(chart) => { /* ... */ }
+    Err(e) => println!("{:20} {}", e.code(), e),
+}
+```
+
+```text
+invalid_date         invalid solar date '2000-2-30': day is out of range for that month
+invalid_date         invalid solar date '1000-1-1': year must be within 1583-9999
+invalid_time_index   time_index must be 0-12, got 13
+```
+
+变体有三个：`InvalidDate`、`InvalidTimeIndex`、`Internal`。
+枚举标了 `#[non_exhaustive]`，`match` 时请留 `_` 分支。
+
+</Tab>
+<Tab value="Python">
+
+`IztroError`，继承 `ValueError`，所以既有的 `except ValueError` 依然能捕获：
+
+```python
+from x_iztro import Astro, IztroError
+
+try:
+    Astro().by_solar("2000-2-30", 2, "female")
+except IztroError as e:
+    print(e.code, e)
+```
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+```
+
+</Tab>
+<Tab value="Go">
+
+`*iztro.Error`，带 `Code` 与 `Message`；四个哨兵变量配合 `errors.Is` 按类别匹配：
+
+```go
+_, err := iztro.BySolar("2000-13-1", 2, "male", true, "zh-CN", nil)
+
+if errors.Is(err, iztro.ErrInvalidDate) {
+    var e *iztro.Error
+    errors.As(err, &e)
+    fmt.Println(e.Code, e.Message)
+}
+```
+
+```text
+invalid_date invalid solar date '2000-13-1': month must be within 1-12
+```
+
+| 哨兵 | 对应分类 |
+| --- | --- |
+| `ErrInvalidDate` | `CodeInvalidDate` |
+| `ErrInvalidTimeIndex` | `CodeInvalidTimeIndex` |
+| `ErrInvalidArgument` | `CodeInvalidArgument` |
+| `ErrInternal` | `CodeInternal` |
+
+`Error()` 输出带 `iztro: ` 前缀；`Message` 是不带前缀的原文。
+
+</Tab>
+</Tabs>
+
+C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<code>"}`，
+由 serde 生成以保证转义完备。
+
+## 校验范围与消息样例
+
+消息一律小写起首、以冒号引出细节，并带上原始输入 ——
+批量处理时能直接定位是哪一条数据出的问题。
+
+| 输入 | 消息样例 |
+| --- | --- |
+| 公历日期格式 | `invalid solar date 'not-a-date': year is not a number` |
+| 公历日期不存在 | `invalid solar date '2000-2-30': day is out of range for that month` |
+| 公历年份范围 | `invalid solar date '1000-1-1': year must be within 1583-9999` |
+| 农历月份 | `invalid lunar date '2000-13-1': month must be within 1-12` |
+| 农历该月天数 | `invalid lunar date '2000-2-31': day is out of range for that lunar month` |
+| 时辰索引 | `time_index must be 0-12, got 13` |
+| 性别 | `invalid gender 'x': expected 'male' or 'female'` |
+| 盘面语言 | `invalid language 'fr-FR': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
+| 自定义四化表长度 | `invalid mutagens for 'gengHeavenly': expected 4 stars (lu, quan, ke, ji), got 3` |
+| 自定义表收到译名 | `invalid mutagens for 'gengHeavenly': unknown star '太阳'` |
+
+<Callout title="在哪一层校验">
+日期与时辰在**核心层**校验，三种编程语言完全一致。
+性别、盘面语言、配置开关、星耀标识这些以字符串传入的东西，
+在**绑定层**解析时校验 —— Rust 侧它们本来就是枚举，不存在非法取值。
+</Callout>
 
 ## 查不到不是错误
 
 需要计算的入口返回错误；**查询**方法查不到时返回空值而非错误——
-「这张盘没有来因宫」是正常结果，不是异常。
+「这张盘上没有这颗星」是正常结果，不是异常。
 
 | 场景 | 返回 |
 | --- | --- |
-| 来因宫在这张盘上不存在 | `None` / `nil` |
 | 某颗星不在这张盘上 | `None` / `nil` |
-| 索引越界 | `None` / `nil` |
+| 宫位索引越界 | `None` / `nil` |
 | 该星没有亮度表 | `None` / 空串 |
+| 反查一个不存在的译名 | `None` / 空串 |
 
-取字段前先判空。
+<Callout type="warn" title="拼错的标识会静默失效">
+`chart.palace("soulPalce")` 不会报错，只会返回空；`has(["ziweiMj"])` 恒返回 `False`。
+判断用枚举或常量（Python 的 `PalaceName.SOUL`、Go 的 `iztro.PalaceSoul`）——
+拼错时是编译期或构造期报错，不是运行期静默。
+要校验一个外来的字符串，把它喂给枚举构造：`PalaceName("x")` 会抛 `ValueError`。
+</Callout>
 
 ## 为什么核心层不 panic
 
@@ -65,7 +152,7 @@ invalid solar date '2000-2-30': day is out of range for that month
 
 <Callout type="info" title="仍然 panic 意味着什么">
 排盘入口不会因非法**外部输入**而 panic。若真的遇到，那是库内部缺陷，
-应作为 bug 上报——而不是调用方需要防御的情况。
+会以 `internal` 分类返回，应作为 bug 上报——而不是调用方需要防御的情况。
 </Callout>
 
 ## 批量处理的写法
@@ -91,8 +178,8 @@ charts, failed = [], []
 for row in rows:
     try:
         charts.append(Astro().by_solar(row["date"], row["ti"], row["gender"]))
-    except ValueError as e:
-        failed.append((row, str(e)))
+    except IztroError as e:
+        failed.append((row, e.code, str(e)))
 ```
 
 </Tab>
@@ -102,7 +189,9 @@ for row in rows:
 for _, row := range rows {
     chart, err := iztro.BySolar(row.Date, row.TimeIndex, row.Gender, true, "zh-CN", nil)
     if err != nil {
-        failed = append(failed, failure{row, err})
+        var e *iztro.Error
+        errors.As(err, &e)
+        failed = append(failed, failure{row, e.Code, e.Message})
         continue
     }
     charts = append(charts, chart)
@@ -111,3 +200,6 @@ for _, row := range rows {
 
 </Tab>
 </Tabs>
+
+逐条 API 的错误行为见
+[Rust](/zh/docs/rust/errors)、[Python](/zh/docs/python/errors)、[Go](/zh/docs/go/errors) 三页。

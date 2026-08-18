@@ -1,0 +1,182 @@
+---
+title: Surrounded palaces
+description: The four palaces of SurroundedPalaces and its five predicates.
+---
+
+The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu. A matter cannot be read
+from its own palace alone: the stars of the opposite palace and the two trine palaces bear on it just
+as much, and only all four together give the full picture.
+
+<Callout type="info">
+The examples on this page chart with `"en-US"`, so the display values in the output are English.
+</Callout>
+
+## The four palaces
+
+| Field | Offset | Traditional name | Meaning |
+| --- | --- | --- | --- |
+| `Target` | +0 | The palace itself | The matter itself |
+| `Opposite` | +6 | Opposite palace | The facing side; the most immediate influence |
+| `Career` | +4 | Career position | One of the trine |
+| `Wealth` | +8 | Wealth position | One of the trine |
+
+All four fields are `*Palace`, so every method of the [palace object](/en/docs/go/palace) is available
+on them.
+
+<Callout type="info" title="Wealth and career positions are relative names">
+`Wealth` and `Career` mean "the trine positions relative to this palace", not the two fixed palace
+names among the twelve. Anchored on the Soul palace they happen to land on the Wealth and Career
+palaces (+8 and +4), which is where the names come from; anchored elsewhere they are other palaces.
+</Callout>
+
+## Four ways to get one
+
+```go
+// from the chart, by palace name
+byName := chart.SurroundedPalaces(iztro.PalaceSoul)
+
+// from the chart, by index
+byIndex := chart.SurroundedPalacesByIndex(4)
+
+// from a palace
+fromPalace := chart.Palace(iztro.PalaceSoul).SurroundedPalaces()
+
+// from a star (the surrounded set of the palace it sits in)
+ziwei, _ := chart.Star(iztro.StarZiweiMaj)
+fromStar := ziwei.SurroundedPalaces()
+
+fmt.Println(byName.Target.Name, byIndex.Target.Name,
+    fromPalace.Target.Name, fromStar.Target.Name)
+```
+
+**Output**
+
+```text
+soul soul soul soul
+```
+
+The Soul palace sits at index 4 and Ziwei sits in the Soul palace, so on this chart all four routes
+give the same surrounded set; pick whichever matches what you already have.
+
+<Callout type="warn" title="By index wraps modulo 12, by name does not">
+`SurroundedPalacesByIndex` takes the index modulo 12, so `-1` and `12` both wrap correctly; but a
+**zero-valued chart** (an `Astrolabe` built without charting) has no twelve palaces and returns `nil`
+here. `SurroundedPalaces` takes a name and returns `nil` on a misspelling. Check both for nil before
+reading fields.
+</Callout>
+
+---
+
+## Have / NotHave / HaveOneOf
+
+**Purpose** Test whether the four palaces together hold the given stars.
+
+**Zi Wei meaning** A phrase like "Ziwei is in the surrounded set" asks exactly whether a star appears
+anywhere among these four palaces, without asking which one.
+
+**Signature**
+
+```go
+func (sp *SurroundedPalaces) Have(stars ...string) bool
+func (sp *SurroundedPalaces) NotHave(stars ...string) bool
+func (sp *SurroundedPalaces) HaveOneOf(stars ...string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stars` | `...string` | Yes | — | Star keys, variadic |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `Have` | Every listed star appears among the four palaces (not necessarily the same one) |
+| `NotHave` | None of the listed stars appears |
+| `HaveOneOf` | At least one listed star appears |
+
+**Example**
+
+```go
+sp := chart.SurroundedPalaces(iztro.PalaceSoul)
+
+fmt.Println(sp.Have(iztro.StarZiweiMaj, iztro.StarTianxiangMaj))
+fmt.Println(sp.HaveOneOf(iztro.StarQishaMaj, iztro.StarPojunMaj))
+fmt.Println(sp.NotHave(iztro.StarHuoxingMin))
+```
+
+**Output**
+
+```text
+true
+false
+true
+```
+
+Ziwei is in the Soul palace and Tianxiang in the Wealth palace — different palaces, but both within
+the four, so `Have` is true.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Have does not require the same palace">
+`Have(A, B)` means "A and B both appear among these four palaces", not that they sit together.
+For same-palace tests use the palace's [`Has`](/en/docs/go/palace#has--nothave--hasoneof).
+</Accordion>
+<Accordion title="What passing no stars returns">
+`Have` and `NotHave` return `true`; `HaveOneOf` returns `false`.
+</Accordion>
+</Accordions>
+
+---
+
+## HaveMutagen / NotHaveMutagen
+
+**Purpose** Test whether the four palaces carry a given natal mutagen.
+
+**Zi Wei meaning** "Ji is in the surrounded set" means one of these palaces holds a star the
+birth-year stem sent ji to — a common condition when locating a source of pressure.
+
+**Signature**
+
+```go
+func (sp *SurroundedPalaces) HaveMutagen(mutagenKey string) bool
+func (sp *SurroundedPalaces) NotHaveMutagen(mutagenKey string) bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagenKey` | `string` | Yes | — | One of the mutagen keys |
+
+**Return value** `bool`.
+
+**Example**
+
+```go
+sp := chart.SurroundedPalaces(iztro.PalaceSoul)
+
+fmt.Println("lu in the surrounded set:", sp.HaveMutagen(iztro.MutagenLu))
+fmt.Println("ji in the surrounded set:", sp.HaveMutagen(iztro.MutagenJi))
+fmt.Println("no ke in the surrounded set:", sp.NotHaveMutagen(iztro.MutagenKe))
+```
+
+**Output**
+
+```text
+lu in the surrounded set: false
+ji in the surrounded set: false
+no ke in the surrounded set: true
+```
+
+This chart's natal mutagens fall in the Children, Surface and Health palaces, none of which is in the
+Soul palace's surrounded set.
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
+For those, use the palace's flying-star methods.
+</Callout>

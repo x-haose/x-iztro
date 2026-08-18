@@ -45,11 +45,17 @@ fn main() -> Result<(), IztroError> {
 | `x_iztro::data` | 枚举、常量、星耀与干支数据表 | [数据表](/zh/docs/rust/data) |
 | `x_iztro::utils` | 索引换算、亮度与四化查表等工具函数 | [工具函数](/zh/docs/rust/util) |
 | `x_iztro::i18n` | 六语言词表、`translate_*` 与双向查找 | [翻译](/zh/docs/rust/i18n) |
-| `x_iztro::error` | `IztroError` | [错误处理](/zh/docs/rust/errors) |
-| `x_iztro::bridge` | 绑定层共用的编组与分派 | 内部使用，Rust 调用方不需要 |
+| `x_iztro::error` | `IztroError`、`BridgeError` | [错误处理](/zh/docs/rust/errors) |
+| `x_iztro::prompt` | `astrolabe_to_prompt`、`horoscope_to_prompt` | [排盘入口](/zh/docs/rust/astro#astrolabe_to_prompt--horoscope_to_prompt) |
 | `x_iztro::dto` | 跨语言绑定共用的序列化 DTO | [数据结构](/zh/docs/guide/data-model) |
+| `x_iztro::ffi` | C ABI 导出，供 Go/C 调用 | Rust 调用方不需要 |
 
-常用项在 crate 根重导出，`use x_iztro::*;` 即可拿到全部入口函数与类型。
+绑定层共用的编组与分派（原 `x_iztro::bridge`）已收为 crate 内部，不在公开 API 面上。
+
+`use x_iztro::*;` 拿到全部入口函数、数据结构、枚举与十二个 `translate_*`——
+本参考里所有不带模块前缀的名字都在其中。带模块前缀的（`utils::fix_index`、
+`star::query::get_major_stars`、`data::stars::get_star_info`、
+`astro::palace::get_decadals_and_ages`）是低层构件，按路径调用。
 
 ## 两层 API
 

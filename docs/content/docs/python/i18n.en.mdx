@@ -1,0 +1,210 @@
+---
+title: Translation
+description: Two-way lookup between keys and translations.
+---
+
+Every field on a chart already carries both a translation and a `*_key`, so manual translation is
+usually unnecessary. These functions exist for the cases where you have only a key (or only a
+translation in some language) and need to convert.
+
+```python
+from x_iztro import i18n
+```
+
+Six languages are supported: `zh-CN`, `zh-TW`, `en-US`, `ja-JP`, `ko-KR`, `vi-VN`.
+
+---
+
+## translate
+
+**Purpose** Translate any key into a given language.
+
+**Signature**
+
+```python
+def translate(key: str, language: LanguageType = "zh-CN") -> str | None
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `key` | `str` | Yes | — | A language-independent key |
+| `language` | `str` | No | `"zh-CN"` | Target language |
+
+Covering 260 keys across twelve categories:
+
+| Category | Count | Examples |
+| --- | --- | --- |
+| Stars | 162 | `ziweiMaj`, `changsheng`, `yunlu` |
+| Palaces (including the body palace and the palace of origin) | 14 | `soulPalace`, `wealthPalace`, `bodyPalace`, `originalPalace` |
+| Heavenly stems | 10 | `jiaHeavenly` |
+| Earthly branches | 12 | `ziEarthly` |
+| Brightness | 7 | `miao`, `wang` |
+| Mutagens | 4 | `sihuaLu` |
+| Five elements class | 5 | `water2nd` |
+| Gender | 2 | `male`, `female` |
+| Chinese zodiac | 12 | `rat`, `ox` |
+| Hours | 13 | `earlyRatHour` |
+| Zodiac signs | 12 | `aries` |
+| Horoscope scopes | 7 | `decadal`, `turn` |
+
+**Return value** The translation; `None` for an unknown key.
+
+**Example**
+
+```python
+print(i18n.translate("ziweiMaj", "en-US"))
+print(i18n.translate("soulPalace", "ja-JP"))
+print(i18n.translate("ziweiMaj", "vi-VN"))
+print(i18n.translate("bodyPalace", "en-US"))
+print(i18n.translate("nosuch"))
+```
+
+**Output**
+
+```text
+emperor
+命宮
+Tử Vi
+body
+None
+```
+
+---
+
+## key_of
+
+**Purpose** Reverse-look-up a key from a translation in any language.
+
+**Signature**
+
+```python
+def key_of(text: str, key_filter: str | None = None) -> str | None
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `text` | `str` | Yes | — | A translation in any supported language |
+| `key_filter` | `str \| None` | No | `None` | A substring the key name must contain, for disambiguating homographic translations |
+
+**Return value** The key; `None` when nothing matches.
+
+**Example**
+
+```python
+print(i18n.key_of("紫微"))
+print(i18n.key_of("emperor"))
+print(i18n.key_of("자미"))
+print(i18n.key_of("no such name"))
+```
+
+**Output**
+
+```text
+ziweiMaj
+ziweiMaj
+ziweiMaj
+None
+```
+
+Translations in all three languages resolve to the same key.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Homographic translations and key_filter">
+A few translations are identical across categories: in en-US `horse` is both the zodiac horse and the
+star Tianma, `dragon` is both the zodiac dragon and Qinglong; in ko-KR `사` is both the branch si and
+Si among the Changsheng gods.
+
+Unfiltered, the scan goes language by language and, within each language, key by key, taking the first
+hit — in exactly the same order as iztro's `kot` (guarded case by case by golden tests). To pin down a
+category, pass `key_filter`, which only compares keys containing the substring:
+
+```python
+print(i18n.key_of("horse"))            # horse (the zodiac horse)
+print(i18n.key_of("horse", "Min"))     # tianmaMin (Tianma)
+print(i18n.key_of("유시"))              # hourly (the hourly scope)
+print(i18n.key_of("유시", "Hour"))      # roosterHour (the You hour)
+print(i18n.key_of("horse", "Palace"))  # None
+```
+
+Common substrings: `Maj` for the fourteen major stars, `Min` for minor stars, `Heavenly` / `Earthly`
+for stems and branches, `Palace` for palaces, `Hour` for hours. When the filter matches nothing the
+result is `None`; it does not fall back to the unfiltered result.
+</Accordion>
+<Accordion title="It is a full-table scan">
+`key_of` walks 260 keys × 6 languages. The cost of a single call is negligible, but do not put it in
+an inner loop over every palace and star — use the `*_key` fields that come with the data there.
+</Accordion>
+</Accordions>
+
+---
+
+## all_keys
+
+**Purpose** Get all 260 translatable keys.
+
+**Signature**
+
+```python
+def all_keys() -> list[str]
+```
+
+**Return value** A list of keys, in the order `key_of` scans them: horoscope scopes, Chinese zodiac,
+hours, zodiac signs, five elements classes, heavenly stems, earthly branches, brightness, mutagens,
+stars, palaces, gender — matching the merge order of iztro's per-language translation files.
+
+**Example**
+
+```python
+keys = i18n.all_keys()
+print(len(keys))
+print(keys[:4])
+print(i18n.translate(keys[0], "en-US"))
+```
+
+**Output**
+
+```text
+260
+['decadal', 'childhood', 'yearly', 'monthly']
+decadal
+```
+
+To iterate the keys of one category, the enums in `enums` or `data.constants()` are simpler.
+
+---
+
+## There is no global language switch
+
+x-iztro keeps no global "current language" state: the language is passed as a parameter when charting,
+and translation functions name their target language explicitly on every call.
+
+<Callout type="info" title="Why">
+A global language switch makes the same code produce different results depending on call order, which
+is especially dangerous with multiple threads. Passing it explicitly means a call's result depends
+only on its arguments.
+</Callout>
+
+To emit several languages within one process, just chart several times; they do not interfere:
+
+```python
+zh = Astro().by_solar("2000-8-16", 2, "female")
+en = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(zh.palace("soulPalace").major_stars[0].name,
+      en.palace("soulPalace").major_stars[0].name)
+```
+
+**Output**
+
+```text
+紫微 emperor
+```
+
+The `*_key` fields of the two charts are identical, so any key-based predicate gives the same answer
+on both.

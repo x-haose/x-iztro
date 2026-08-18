@@ -1,0 +1,189 @@
+---
+title: Stems, branches and elements
+description: What heavenly stems, earthly branches, the five elements and yin/yang each decide, where palace stems come from, and how soul and body stars are looked up.
+---
+
+*For: everyone. Code is at the end of the page*
+
+Charting rests on stems and branches from beginning to end. Once this page makes sense, every
+two-character noun on a chart has somewhere to sit.
+
+## Ten stems and twelve branches
+
+The ten heavenly stems: jia, yi, bing, ding, wu, ji, geng, xin, ren, gui (甲乙丙丁戊己庚辛壬癸).
+The twelve earthly branches: zi, chou, yin, mao, chen, si, woo, wei, shen, you, xu, hai
+(子丑寅卯辰巳午未申酉戌亥).
+
+The two are paired off in order and cycle; the least common multiple of 10 and 12 is 60, so one
+round is the **sexagenary cycle**. Year, month, day and hour each get a pair, and together they are
+the **four pillars**:
+
+```text
+geng chen   jia shen   bing woo   geng yin
+  year        month       day        hour
+```
+
+<Callout title="Romanization vs. keys">
+The branch woo (午) is romanized `woo` in this library so that it does not collide with the stem wu
+(戊). In keys they are further apart still: the branch is `wuEarthly`, the stem is `wuHeavenly`. When
+you write code, use the keys and the collision never arises; the romanized spellings appear only in
+prose and in English chart output.
+</Callout>
+
+<Callout title="Yin the branch vs. yin the polarity">
+Two different things share a spelling in English. **Yin** (寅) is the third earthly branch — the
+Tiger, hour index 2 — and it is a *yang* branch. **Yin** (阴) is the negative pole of yin/yang. This
+page uses "the Yin branch" for the former and lower-case "yin" for the latter.
+</Callout>
+
+## What each pillar decides
+
+The four pillars are not parallel decoration; each drives a different part of charting:
+
+| Pillar | Drives |
+| --- | --- |
+| **Year** | Birth-year mutagens, soul and body stars, the stems of all twelve palaces, decadal direction, every year-derived star |
+| **Month** | Display only; the month itself (not the month pillar) fixes the Soul palace and the month-derived stars such as Zuofu and Youbi |
+| **Day** | Display only; the lunar day fixes where Ziwei starts and the day-derived stars such as Santai and Bazuo |
+| **Hour** | Display only; the hour itself fixes the Soul palace, the Body palace and the hour-derived stars such as Wenchang and Wenqu |
+
+<Callout type="info" title="The year pillar carries the most weight">
+The reason the year turnover point (lunar New Year or the Beginning of Spring — 立春, the solar term
+around 4 February) is a configuration switch at all is that the year's stem and branch pull the most
+along with them: change it and the mutagens, the soul and body stars, and the palace stems all move.
+See [Config in depth](/en/docs/guide/guides/config).
+</Callout>
+
+## Yin and yang
+
+Stems and branches each carry a polarity, alternating by ordinal parity: jia, bing, wu, geng, ren
+are yang and yi, ding, ji, xin, gui are yin; zi, yin, chen, woo, shen, xu are yang and chou, mao,
+si, wei, you, hai are yin.
+
+The sexagenary cycle only ever pairs a stem with a branch of matching polarity (jiazi, yichou, …),
+so **the stem and the branch of any pair always have the same polarity** — "the polarity of the year
+stem" and "the polarity of the year branch" can never disagree. x-iztro always decides from the
+**year branch**.
+
+Polarity does exactly one job in charting, but it is a consequential one — **it sets direction**:
+
+| Use | Rule |
+| --- | --- |
+| Decadal direction | Same polarity for gender and year branch → forward; different → backward |
+| The twelve Changsheng gods | As above |
+| The twelve Boshi gods | As above |
+
+Gender has a polarity too: male is yang, female is yin. So the mnemonic "yang man and yin woman go
+forward, yin man and yang woman go backward" is about exactly these three things. Age fortune is not
+among them — its direction depends on gender alone, see
+[The twelve palaces](/en/docs/guide/concepts/palaces#age-fortune).
+
+## The five elements
+
+Metal, wood, water, fire, earth. Every heavenly stem and every earthly branch belongs to one of
+them.
+
+<Callout type="warn" title="Five elements ≠ Five Elements class">
+The names look alike; the roles do not overlap at all:
+
+- **Five elements**: an attribute of a single stem or branch, reference information.
+- **Five Elements class**: derived from the stem and branch of the **Soul palace** — water 2nd,
+  wood 3rd, metal 4th, earth 5th, fire 6th — and it decides where Ziwei starts and at what age the
+  decadals begin.
+
+Don't mix them up in a predicate: the first is the `fiveElements` field of a stem or branch, the
+second is `five_elements_class` on the astrolabe.
+</Callout>
+
+## Clashes
+
+Earthly branches sit opposite one another; six positions apart is a clash: zi–woo, chou–wei,
+yin–shen, mao–you, chen–xu, si–hai.
+
+This is precisely where the **opposite palace** comes from — with the twelve palaces in a ring, a
+palace and the one six positions away hold clashing branches, which is why the opposite palace has
+the most direct influence. Heavenly stems clash too (jia–geng, yi–xin, bing–ren, ding–gui); wu and
+ji sit at the centre and clash with nothing.
+
+## Where palace stems and branches come from
+
+The branches of the twelve palaces are **fixed**: slot 0 is always the Yin palace and the last slot
+is always the Chou palace, without exception.
+
+The stems are derived from the year stem by the **Five Tigers rule** (五虎遁): fix the stem of the
+Yin palace first, then run the remaining eleven forward in order. (It is called that because it
+starts at the Yin palace, the palace of the Tiger.) Take the chart used throughout these pages: the
+birth-year stem is geng, and a geng year starts the Yin palace at wu, giving these twelve palaces:
+
+```text
+wuyin  jimao  gengchen  xinsi  renwoo  guiwei  jiashen  yiyou  bingxu  dinghai  wuzi  jichou
+```
+
+Palace stems are not ornamental — a palace stem decides which four mutagen stars that palace
+**flies out**, and that is the starting point of every flying-star predicate. See
+[Mutagens and flying stars](/en/docs/guide/concepts/mutagen).
+
+There is a companion **Five Rats rule** (五鼠遁), which derives the stem of the Zi hour from the day
+stem and is used to fix the hour pillar. (Zi is the branch of the Rat, hence the name.)
+
+## Soul star and body star
+
+Each earthly branch maps to one soul star and one body star, by table lookup. The two are looked up
+from different things:
+
+| | Looked up from | When the Soul palace is rearranged |
+| --- | --- | --- |
+| Soul star (default school) | The **Soul palace branch** | Changes |
+| Soul star (Zhongzhou school) | The **birth-year branch** | Unchanged |
+| Body star | The **birth-year branch** | Unchanged |
+
+<Callout type="info" title="Zhongzhou moves the soul star onto the year branch too">
+Under `algorithm = zhongzhou` the soul star is looked up from the birth-year branch, so rearranging
+the chart onto another Soul palace (`rearranged`, or switching between the heaven / earth / human
+plate) no longer moves it. Under the default school the soul star follows the Soul palace. See
+[Config in depth](/en/docs/guide/guides/config#algorithm-school-algorithm).
+</Callout>
+
+## In code
+
+Stems, branches, elements, the Five Tigers and Five Rats rules, and the soul and body stars are all
+exposed as data tables; there is no need to copy the tables yourself.
+
+```python
+from x_iztro import data
+
+data.heavenly_stems()["jiaHeavenly"].five_elements   # 木 (wood)
+data.earthly_branches()["ziEarthly"].yin_yang        # 阳 (yang)
+data.earthly_branches()["ziEarthly"].crash           # wuEarthly (zi clashes with woo)
+data.heavenly_stems()["wuHeavenly"].crash            # None (wu clashes with nothing)
+
+data.constants().tiger_rule["jiaHeavenly"]           # bingHeavenly (a jia year starts the Yin palace at bing)
+data.constants().rat_rule["jiaHeavenly"]             # jiaHeavenly
+data.constants().five_elements_class                 # {'earth5th': 5, ... 'wood3rd': 3}
+
+zi = data.earthly_branches()["ziEarthly"]
+zi.soul    # tanlangMaj — soul star
+zi.body    # huoxingMin — body star
+```
+
+<Callout type="warn" title="The data tables are not translated">
+`five_elements` and `yin_yang` come back as the raw Chinese characters (`木`, `阳`) whatever the
+chart language, because they are table values rather than chart output. Everything else in these
+tables is a key, which is language-independent by construction.
+</Callout>
+
+The language-independent keys for the four pillars live under `raw_dates.chinese_date` as
+`yearly_keys` / `monthly_keys` / `daily_keys` / `hourly_keys`; the top-level `chinese_date` is the
+display string.
+
+| Concept | Data table | Constant |
+| --- | --- | --- |
+| Heavenly stem info | `data.heavenly_stems()` | — |
+| Earthly branch info | `data.earthly_branches()` | — |
+| Five Tigers rule | — | `constants().tiger_rule` |
+| Five Rats rule | — | `constants().rat_rule` |
+| Gender polarity | — | `constants().gender` |
+| Five Elements class numbers | — | `constants().five_elements_class` |
+
+Field-by-field notes are on the data table page for
+[Rust](/en/docs/rust/data), [Python](/en/docs/python/data) and [Go](/en/docs/go/data).

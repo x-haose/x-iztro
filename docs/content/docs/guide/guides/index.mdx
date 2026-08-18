@@ -1,43 +1,70 @@
 ---
 title: 概览
-description: 配置、跨语言判断、多语言输出、错误处理与 AI Prompt 的使用指南。
+description: AI 解盘、配置与流派、跨语言判断、多种盘面语言输出、错误处理与扩展的使用指南。
 ---
+
+*适合：所有人。每张卡片标了适合的读者*
 
 装好之后会遇到的实际问题都在这一章。
 
 <Cards>
   <Card
-    title="Config 详解"
-    href="/zh/docs/guide/guides/config"
-    description="五个分界点与流派开关分别改变什么，什么时候会看出差别"
-  />
-  <Card
-    title="语言无关的 key 契约"
-    href="/zh/docs/guide/guides/keys"
-    description="为什么判断逻辑不能匹配星名，key 字段怎么用"
-  />
-  <Card
-    title="多语言输出"
-    href="/zh/docs/guide/guides/i18n"
-    description="六种语言、哪些字段会翻译、换语言对结果的影响"
-  />
-  <Card
-    title="错误处理"
-    href="/zh/docs/guide/guides/errors"
-    description="校验了什么、四种绑定各自怎么报错"
+    title="不写代码怎么用它"
+    href="/zh/docs/guide/guides/for-non-developers"
+    description="能做什么、典型场景、要跟工程师交代哪几件事"
   />
   <Card
     title="AI Prompt 生成"
     href="/zh/docs/guide/guides/ai-prompt"
-    description="把命盘与运限转成结构化文本交给大模型"
+    description="把命盘与运限转成结构化文本，格式约定与篇幅"
+  />
+  <Card
+    title="让 AI 解读命盘"
+    href="/zh/docs/guide/guides/llm"
+    description="排盘交给库、解读交给模型：工具调用与几条踩过的坑"
+  />
+  <Card
+    title="Config 详解"
+    href="/zh/docs/guide/guides/config"
+    description="六个开关与两张自定义表分别改变什么，什么时候会看出差别"
+  />
+  <Card
+    title="语言无关的 key 契约"
+    href="/zh/docs/guide/guides/keys"
+    description="为什么判断逻辑不能匹配星名，标识字段怎么用"
+  />
+  <Card
+    title="多语言输出"
+    href="/zh/docs/guide/guides/i18n"
+    description="六种盘面语言、哪些字段会翻译、标识与译名的换算"
+  />
+  <Card
+    title="错误处理"
+    href="/zh/docs/guide/guides/errors"
+    description="四个错误分类、三种编程语言各自怎么报错"
+  />
+  <Card
+    title="扩展星盘"
+    href="/zh/docs/guide/guides/plugins"
+    description="把自己的分析规则挂到星盘上，三种编程语言各自的扩展点"
+  />
+  <Card
+    title="排盘九步对应的 API"
+    href="/zh/docs/guide/guides/step-api"
+    description="只想要中间某一步的结果时来这里查"
+  />
+  <Card
+    title="给 AI 读的文档端点"
+    href="/zh/docs/guide/guides/llms-txt"
+    description="llms.txt、单页 Markdown、Accept 头协商"
   />
 </Cards>
 
 ## 最容易踩的三个坑
 
-1. **用星名做判断**。换一种输出语言，所有分支静默失效。
-   用 [key](/zh/docs/guide/guides/keys)。
+1. **用星名做判断**。换一种盘面语言，所有分支静默失效。
+   用[语言无关标识](/zh/docs/guide/guides/keys)。
 2. **忽略晚子时**。23:00–24:00 出生要用时辰索引 `12` 而不是 `0`，
    两者排出的盘不同。见 [Config](/zh/docs/guide/guides/config#晚子时归属-day_divide)。
-3. **宫位索引当成宫名顺序**。`palaces[0]` 是寅宫，不是命宫。
+3. **宫位位置当成宫名顺序**。十二宫数组的第一格是寅宫，不是命宫。
    见[十二宫](/zh/docs/guide/concepts/palaces)。

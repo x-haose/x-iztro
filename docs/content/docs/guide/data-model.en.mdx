@@ -1,0 +1,326 @@
+---
+title: Data model
+description: The type and meaning of every field on Astrolabe, Palace, Star and Horoscope.
+---
+
+*For: developers*
+
+This page is written against the serialized JSON field names (camelCase), which are the contract
+shared by all three bindings. Naming translates as follows:
+
+| Layer | Naming | Example |
+| --- | --- | --- |
+| JSON / binding contract | camelCase | `isBodyPalace` |
+| Python | snake_case | `is_body_palace` |
+| Go | PascalCase | `IsBodyPalace` |
+| Rust | snake_case, values are enums | `is_body_palace` |
+
+## Astrolabe
+
+The return value of a charting entry point.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `gender` | string | Gender, translated text |
+| `genderKey` | string | `"male"` / `"female"` |
+| `solarDate` | string | Gregorian birthday, echoing the input |
+| `lunarDate` | string | The lunar birthday written out (always Chinese numerals) |
+| `chineseDate` | string | The four pillars as a display string |
+| `rawDates` | [RawDates](#rawdates) | Structured lunar birthday and four pillars |
+| `time` | string | Hour name, e.g. `Tiger hour` |
+| `timeRange` | string | The hour's clock range, e.g. `03:00~05:00` |
+| `sign` | string | Zodiac sign |
+| `zodiac` | string | Zodiac animal, from the year branch |
+| `earthlyBranchOfSoulPalace` | string | Soul palace branch |
+| `earthlyBranchOfSoulPalaceKey` | string | Soul palace branch key |
+| `earthlyBranchOfBodyPalace` | string | Body palace branch |
+| `earthlyBranchOfBodyPalaceKey` | string | Body palace branch key |
+| `soul` | string | Soul star |
+| `soulKey` | string | Soul star key |
+| `body` | string | Body star |
+| `bodyKey` | string | Body star key |
+| `fiveElementsClass` | string | Five Elements class |
+| `fiveElementsClassKey` | string | Five Elements class key, e.g. `water2nd` |
+| `palaces` | [Palace](#palace)[12] | The twelve palaces; index 0 is the Yin palace |
+| `timeIndex` | int | Hour index of birth, 0–12, keeping the original input value |
+| `fixLeap` | bool | Whether leap-month correction is on |
+| `language` | string | Chart language |
+| `config` | [Config](#config) | The charting configuration |
+
+## Palace
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `index` | int | The palace's slot on the chart, 0–11; 0 is the Yin palace |
+| `name` | string | Palace name |
+| `nameKey` | string | Palace name key, e.g. `soulPalace` |
+| `isBodyPalace` | bool | Is it the Body palace |
+| `isOriginalPalace` | bool | Is it the Original palace |
+| `heavenlyStem` | string | Palace stem |
+| `heavenlyStemKey` | string | Palace stem key |
+| `earthlyBranch` | string | Palace branch |
+| `earthlyBranchKey` | string | Palace branch key |
+| `majorStars` | [Star](#star)[] | Major stars |
+| `minorStars` | [Star](#star)[] | Minor stars |
+| `adjectiveStars` | [Star](#star)[] | Adjective stars |
+| `changsheng12` / `changsheng12Key` | string | The twelve Changsheng gods |
+| `boshi12` / `boshi12Key` | string | The twelve Boshi gods |
+| `jiangqian12` / `jiangqian12Key` | string | The twelve Jiang-qian gods |
+| `suiqian12` / `suiqian12Key` | string | The twelve Sui-qian gods |
+| `mutagenStarKeys` | string[4] | Keys of the four stars this palace's stem mutates, in the order Lu, Quan, Ke, Ji; follows a [custom mutagen table](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables) |
+| `decadal` | [Decadal](#decadal) | The decadal this palace governs |
+| `ages` | int[] | Nominal ages (虚岁) at which age fortune passes through this palace |
+
+## Star
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `key` | string | Star key, e.g. `ziweiMaj` |
+| `name` | string | Star name |
+| `type` | string | `major` / `soft` / `tough` / `adjective` / `flower` / `helper` / `lucun` / `tianma` |
+| `scope` | string | `origin` / `decadal` / `yearly` / `monthly` / `daily` / `hourly` |
+| `brightness` | string | Brightness as display text. **Major and minor stars always have this key**, with an empty string where there is no brightness; on adjective and flowing stars the key is absent entirely |
+| `brightnessKey` | string? | Brightness key. **Absent** when there is no brightness (not an empty string) |
+| `mutagen` | string | Mutagen as display text. **The 18 mutable stars — the fourteen major stars plus Zuofu, Youbi, Wenchang and Wenqu — always have this key**, with an empty string where there is no mutagen; on every other star the key is absent entirely |
+| `mutagenKey` | string? | Mutagen key. **Absent** when there is no mutagen |
+
+<Callout type="warn" title="Translated fields and key fields default in opposite ways">
+The **translated fields** `brightness` and `mutagen` have their key present or absent according to
+the star's category, and when present the value may be an empty string. The **key fields**
+`brightnessKey` and `mutagenKey` simply omit the key when there is no value.
+
+So "does this star have brightness?" must test whether `brightnessKey` is present, not whether the
+`brightness` key exists — the latter is true for every major and minor star.
+</Callout>
+
+## Decadal
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `range` | [int, int] | Starting and ending [nominal age](/en/docs/guide/concepts#four-concepts-to-get-straight-first) (虚岁, the East Asian reckoning that starts at 1 on the day of birth), inclusive |
+| `heavenlyStem` / `heavenlyStemKey` | string | Decadal heavenly stem |
+| `earthlyBranch` / `earthlyBranchKey` | string | Decadal earthly branch |
+
+## RawDates
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `lunarDate.lunarYear` | int | Lunar year |
+| `lunarDate.lunarMonth` | int | Lunar month, 1–12 |
+| `lunarDate.lunarDay` | int | Lunar day, 1–30 |
+| `lunarDate.isLeap` | bool | Is it a leap month |
+| `chineseDate.yearly` | [string, string] | Year pillar, [stem, branch] |
+| `chineseDate.monthly` | [string, string] | Month pillar |
+| `chineseDate.daily` | [string, string] | Day pillar |
+| `chineseDate.hourly` | [string, string] | Hour pillar |
+| `chineseDate.yearlyKeys` | [string, string] | The year pillar's [language-independent keys](/en/docs/guide/guides/keys) |
+| `chineseDate.monthlyKeys` | [string, string] | The month pillar's keys |
+| `chineseDate.dailyKeys` | [string, string] | The day pillar's keys |
+| `chineseDate.hourlyKeys` | [string, string] | The hour pillar's keys |
+
+The stems and branches inside `rawDates.chineseDate` are the unlocalized originals — Chinese
+characters under every chart language — so predicate on `*Keys`. Hand the `*Keys` to
+`translate_chinese_date` to get a display string translated into any language, character for
+character identical to the top-level `chineseDate` field.
+
+## Config
+
+| Field | Accepts | Default |
+| --- | --- | --- |
+| `yearDivide` | `normal` / `exact` | `normal` |
+| `horoscopeDivide` | `normal` / `exact` | `normal` |
+| `ageDivide` | `normal` / `birthday` | `normal` |
+| `dayDivide` | `forward` / `current` | `forward` |
+| `algorithm` | `default` / `zhongzhou` | `default` |
+| `astroType` | `heaven` / `earth` / `human` | `heaven` |
+
+There are two further **input-only** keys, used to replace built-in data tables:
+
+| Input key | Accepts |
+| --- | --- |
+| `mutagens` | `{stem key: [four star keys]}`, in the order Lu, Quan, Ke, Ji; exactly four required |
+| `brightness` | `{star key: [twelve brightness keys]}`, first item the Yin palace; exactly twelve required, empty string where there is no brightness |
+
+<Callout type="warn">
+These two keys **are not echoed in the astrolabe's `config`**. They are charting input rather than
+part of the chart, and adding them to the DTO would break the field contract with JS iztro. Keep
+your own copy of the config if you need a record.
+</Callout>
+
+For what they mean, see [Config in depth](/en/docs/guide/guides/config).
+
+## Horoscope
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `solarDate` | string | Target Gregorian date |
+| `lunarDate` | string | Target lunar date |
+| `decadal` | [HoroscopeScope](#horoscopescope) | The decadal, or the childhood scope before the decadals begin |
+| `age` | HoroscopeScope | Age fortune, carrying `nominalAge` |
+| `yearly` | HoroscopeScope | The yearly scope, carrying `yearlyDecStar` |
+| `monthly` | HoroscopeScope | The monthly scope |
+| `daily` | HoroscopeScope | The daily scope |
+| `hourly` | HoroscopeScope | The hourly scope |
+
+### HoroscopeScope
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `index` | int | This scope's slot on the chart, 0–11 |
+| `name` | string | Scope name, translated text |
+| `heavenlyStem` / `heavenlyStemKey` | string | This scope's heavenly stem |
+| `earthlyBranch` / `earthlyBranchKey` | string | This scope's earthly branch |
+| `palaceNames` | string[12] | The palace names re-laid-out with this scope's slot as the Soul palace, in slot order |
+| `palaceNameKeys` | string[12] | The same as keys |
+| `mutagen` | string[4] | Mutagen star names, in the order Lu, Quan, Ke, Ji |
+| `mutagenKeys` | string[4] | The same as keys |
+| `stars` | [Star](#star)[][12]? | Flowing stars across the twelve palaces (the outer twelve entries are palaces, each inner list that palace's flowing stars); absent on scopes with no flowing stars |
+| `nominalAge` | int? | Nominal age (虚岁); age fortune only |
+| `yearlyDecStar` | [YearlyDecStar](#yearlydecstar)? | Yearly scope only |
+
+### YearlyDecStar
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `suiqian12` / `suiqian12Keys` | string[12] | The twelve Sui-qian gods placed from the yearly branch; the index is the palace slot |
+| `jiangqian12` / `jiangqian12Keys` | string[12] | The twelve Jiang-qian gods placed from the yearly branch |
+
+<Callout title="The base layer on the Rust side">
+In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`)
+and are flattened with `#[serde(flatten)]` on serialization, so the JSON — and the Python and Go
+sides — see a flat structure.
+</Callout>
+
+## A complete JSON example
+
+Real output from `by_solar("2000-8-16", 2, female, language="en-US")` (top level, with the twelve
+entries of `palaces` elided):
+
+```json
+{
+  "gender": "female",
+  "genderKey": "female",
+  "solarDate": "2000-8-16",
+  "lunarDate": "二〇〇〇年七月十七",
+  "chineseDate": "geng chen - jia shen - bing woo - geng yin",
+  "rawDates": {
+    "lunarDate": { "lunarYear": 2000, "lunarMonth": 7, "lunarDay": 17, "isLeap": false },
+    "chineseDate": {
+      "yearly": ["庚", "辰"], "monthly": ["甲", "申"],
+      "daily": ["丙", "午"], "hourly": ["庚", "寅"],
+      "yearlyKeys": ["gengHeavenly", "chenEarthly"],
+      "monthlyKeys": ["jiaHeavenly", "shenEarthly"],
+      "dailyKeys": ["bingHeavenly", "wuEarthly"],
+      "hourlyKeys": ["gengHeavenly", "yinEarthly"]
+    }
+  },
+  "time": "Tiger hour",
+  "timeRange": "03:00~05:00",
+  "sign": "leo",
+  "zodiac": "dragon",
+  "earthlyBranchOfSoulPalace": "woo", "earthlyBranchOfSoulPalaceKey": "wuEarthly",
+  "earthlyBranchOfBodyPalace": "xu", "earthlyBranchOfBodyPalaceKey": "xuEarthly",
+  "soul": "rebel", "soulKey": "pojunMaj",
+  "body": "scholar", "bodyKey": "wenchangMin",
+  "fiveElementsClass": "wood 3rd", "fiveElementsClassKey": "wood3rd",
+  "palaces": [ /* 12 entries */ ],
+  "timeIndex": 2,
+  "fixLeap": true,
+  "language": "en-US",
+  "config": {
+    "yearDivide": "normal", "horoscopeDivide": "normal",
+    "ageDivide": "normal", "dayDivide": "forward",
+    "algorithm": "default", "astroType": "heaven"
+  }
+}
+```
+
+<Callout title="Two fields stay Chinese in an English chart">
+`lunarDate` is rendered with Chinese numerals whatever the language — `二〇〇〇年七月十七` is the 17th
+day of the 7th lunar month, 2000. And the stems and branches under `rawDates.chineseDate` are
+deliberately unlocalized originals; the localized form is the top-level `chineseDate`, romanized in
+pinyin for English.
+</Callout>
+
+### One palace
+
+The Soul palace of the same chart (the `palaces` entry whose `index` is 4):
+
+```json
+{
+  "index": 4,
+  "name": "soul", "nameKey": "soulPalace",
+  "isBodyPalace": false, "isOriginalPalace": false,
+  "heavenlyStem": "ren", "heavenlyStemKey": "renHeavenly",
+  "earthlyBranch": "woo", "earthlyBranchKey": "wuEarthly",
+  "majorStars": [
+    { "key": "ziweiMaj", "name": "emperor", "type": "major", "scope": "origin",
+      "brightness": "[+3]", "brightnessKey": "miao", "mutagen": "" }
+  ],
+  "minorStars": [
+    { "key": "wenquMin", "name": "artist", "type": "soft", "scope": "origin",
+      "brightness": "[-3]", "brightnessKey": "xian", "mutagen": "" }
+  ],
+  "adjectiveStars": [
+    { "key": "fengge",  "name": "refined",       "type": "adjective", "scope": "origin" },
+    { "key": "tianfu",  "name": "lucky",         "type": "adjective", "scope": "origin" },
+    { "key": "jielu",   "name": "intercepted",   "type": "adjective", "scope": "origin" },
+    { "key": "feilian", "name": "instigated",    "type": "adjective", "scope": "origin" },
+    { "key": "nianjie", "name": "considery(Y)",  "type": "helper",    "scope": "origin" }
+  ],
+  "changsheng12": "weak",       "changsheng12Key": "shuai",
+  "boshi12": "dragon",          "boshi12Key": "qinglong",
+  "jiangqian12": "disastery",   "jiangqian12Key": "zhaisha",
+  "suiqian12": "downcast",      "suiqian12Key": "sangmen",
+  "mutagenStarKeys": ["tianliangMaj", "ziweiMaj", "zuofuMin", "wuquMaj"],
+  "decadal": {
+    "range": [3, 12],
+    "heavenlyStem": "ren", "heavenlyStemKey": "renHeavenly",
+    "earthlyBranch": "woo", "earthlyBranchKey": "wuEarthly"
+  },
+  "ages": [5, 17, 29, 41, 53, 65, 77, 89, 101, 113]
+}
+```
+
+Both Ziwei and Wenqu carry `mutagen: ""` — they are mutable stars that happen not to be mutated on
+this chart, so the key is present with an empty value while `mutagenKey` is absent entirely. The
+five adjective stars do not even have a `brightness` key.
+
+<Callout type="warn" title="Some en-US names are not English words">
+`considery(Y)` and `disastery` above are the literal en-US renderings of 年解 (`nianjie`) and 灾煞
+(`zhaisha`), inherited verbatim from iztro's vocabulary. `name` is display text; never parse it.
+</Callout>
+
+## What the `*Key` fields are
+
+Every field that gets translated has a companion field with a `Key` suffix, valued with iztro's i18n
+key names and independent of the chart language:
+
+```json
+{ "name": "emperor", "key": "ziweiMaj", "brightness": "[+3]", "brightnessKey": "miao" }
+```
+
+The translated field is for people, the key field is for code. On stars the key field is simply
+`key` (there is no `nameKey`); everywhere else it is "original field name + Key", and array-valued
+ones use the plural `Keys` (`mutagenKeys`, `palaceNameKeys`, `yearlyKeys`).
+
+<Callout>
+The `*Key` / `key` family, `genderKey`, `timeIndex`, `fixLeap`, `language` and `config` are
+x-iztro's extensions over JS iztro; every other field matches iztro's `JSON.stringify` output key by
+key and value by value, held by the binding contract test. Keep predicate logic on the key fields —
+see [The key contract](/en/docs/guide/guides/keys).
+</Callout>
+
+## Exporting JSON
+
+The Python side has export methods that emit exactly the contract above:
+
+```python
+chart.to_dict()          # dict
+chart.to_json(indent=2)  # str
+```
+
+<Callout type="warn" title="Do not use dataclasses.asdict">
+`Astrolabe`, `Palace` and `Star` hold back-references to each other (a palace holds the astrolabe it
+belongs to), so `asdict()` recurses into them until `RecursionError`. Use `to_json()` for JSON.
+</Callout>

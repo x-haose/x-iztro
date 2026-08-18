@@ -1,0 +1,374 @@
+---
+title: Stars
+description: What each of the three star groups holds, the eight star types, how to read brightness and mutagen marks, the four groups of twelve gods, and a star-name table.
+---
+
+*For: everyone. Code and the key tables are at the end of the page*
+
+Stars on a palace are stored in three groups, and four further groups of "twelve gods" hang off each
+palace as single values.
+
+## Major stars
+
+The fourteen major stars are the skeleton of a reading. They are placed by the rules of two series,
+Ziwei's and Tianfu's. Some palaces end up with two of them, some with none at all — the latter is an
+**empty palace**.
+
+| Ziwei series (six) | Tianfu series (eight) |
+| --- | --- |
+| Ziwei | Tianfu |
+| Tianji | Taiyin |
+| Taiyang | Tanlang |
+| Wuqu | Jumen |
+| Tiantong | Tianxiang |
+| Lianzhen | Tianliang |
+| | Qisha |
+| | Pojun |
+
+The empty-palace predicate is asking whether exactly this group is empty.
+
+## Minor stars
+
+Fourteen minor stars, in four classes by character:
+
+| Class | Members |
+| --- | --- |
+| Soft (the six auspicious) | Zuofu, Youbi, Wenchang, Wenqu, Tiankui, Tianyue |
+| Tough (the six malefics) | Qingyang, Tuoluo, Huoxing, Lingxing, Dikong, Dijie |
+| Lucun | Lucun |
+| Tianma | Tianma |
+
+<Callout title="Why Lucun and Tianma get classes of their own">
+In the traditional division they are neither purely auspicious nor purely malefic: Lucun governs
+wealth but fears the void stars, Tianma governs movement and change but wants Lucun in sight.
+Predicates often need to handle them separately from the six soft and six tough stars, so each takes
+a class of its own — filter by class and you never have to hard-code a star name.
+</Callout>
+
+## Adjective stars
+
+Dozens of auxiliary stars, grouped by origin into year-stem, year-branch, month, day and hour
+families, each placed by a different rule. They split into three types:
+
+| Type | Count | Members |
+| --- | --- | --- |
+| Peach-blossom stars | 4 | Hongluan `hongluan`, Tianxi `tianxi`, Tianyao `tianyao`, Xianchi `xianchi` |
+| Helper stars | 2 | Jieshen `jieshen`, Nianjie `nianjie` |
+| All other adjective stars | 32 | See below |
+
+The 32 remaining adjective stars of the default school, grouped by character:
+
+| Group | Members |
+| --- | --- |
+| Rank and support | Santai `santai`, Bazuo `bazuo`, Enguang `engguang`, Tiangui `tiangui`, Taifu `taifu`, Fenggao `fenggao`, Longchi `longchi`, Fengge `fengge`, Tianguan `tianguan`, Tianfu `tianfu` |
+| Talent and shelter | Tiancai `tiancai`, Tianshou `tianshou`, Tianwu `tianwu`, Tianchu `tianchu`, Tiande `tiande`, Yuede `yuede`, Huagai `huagai` |
+| The void family | Tiankong `tiankong`, Xunkong `xunkong`, Jielu `jielu`, Kongwang `kongwang` |
+| Punishment and isolation | Tianxing `tianxing`, Guchen `guchen`, Guasu `guasu`, Posui `posui`, Feilian `feilian`, Yinsha `yinsha`, Tianku `tianku`, Tianxu `tianxu`, Tianyue `tianyue` |
+| Injury and messenger | Tianshang `tianshang`, Tianshi `tianshi` |
+
+<Callout type="info" title="What peach-blossom stars are">
+"Peach blossom" (桃花) is the traditional metaphor for romance and attraction. These four stars bear
+on romance, appeal to the opposite sex and personal magnetism, and they are the first group a reader
+looks at for relationships. Within the four, Hongluan and Tianxi lean towards committed romance and
+celebration; Tianyao and Xianchi lean towards desire and socialising.
+</Callout>
+
+<Callout type="warn" title="Jielu and Kongwang are two stars, not one">
+The default school places **Jielu** (截路) and **Kongwang** (空亡) as two separate stars; do not
+collapse them into one "Jiekong". The Zhongzhou school (`algorithm = zhongzhou`) instead places
+**Jiekong** (截空), **Jiesha** (劫煞), **Dahao** (大耗) and **Longde** (龙德), and does not place
+Jielu or Kongwang — taking the adjective-star total from 32 to 34. See
+[Config in depth](/en/docs/guide/guides/config#algorithm-school-algorithm).
+</Callout>
+
+<Callout type="warn" title="Mutagen predicates only look at major and minor stars">
+When you ask whether a palace holds a given mutagen, only the major and minor stars are examined —
+**adjective stars are not** — matching iztro's behaviour.
+</Callout>
+
+## Stars come in eight types
+
+The three groups above together cover every type exactly once:
+
+| Type key | Which group it appears in | In one line |
+| --- | --- | --- |
+| `major` | Major stars | The fourteen major stars; the skeleton of the chart |
+| `soft` | Minor stars | The six auspicious |
+| `tough` | Minor stars | The six malefics |
+| `lucun` | Minor stars | Lucun, a class of its own |
+| `tianma` | Minor stars | Tianma, a class of its own |
+| `flower` | Adjective stars | Peach-blossom stars |
+| `helper` | Adjective stars | Helper stars |
+| `adjective` | Adjective stars | Everything else |
+
+For a question like "does this palace see a malefic?", filtering by type is the sturdy way — star
+names change with the chart language, types do not.
+
+## Brightness
+
+Brightness describes how strong a star is in the branch position it landed on, on a seven-step
+scale:
+
+| en-US output | zh-CN output | Full name | Strength |
+| --- | --- | --- | --- |
+| `[+3]` | 庙 | miaowang (temple-flourishing) | Strongest |
+| `[+2]` | 旺 | wangxiang (flourishing) | |
+| `[+1]` | 得 | dedi (well-placed) | |
+| `[0]` | 利 | liyi (advantaged) | |
+| `[-1]` | 平 | pinghe (neutral) | Neutral |
+| `[-2]` | 不 | budedi (poorly placed) | |
+| `[-3]` | 陷 | luoxian (fallen) | Weakest |
+
+The same star has different brightness in different palaces, fixed by a star-against-branch lookup
+table. Adjective stars usually have no brightness at all.
+
+<Callout title="Brightness in a non-Chinese chart is a mark, not a word">
+The English, Korean and other non-Chinese vocabularies have no brightness translations, so the
+output is the mark `[+3]` (miaowang) through `[-3]` (luoxian) shown above. Predicate on
+`brightnessKey` (`miao`, `wang`, `de`, `li`, `ping`, `bu`, `xian`), never on the text — see
+[Multilingual output](/en/docs/guide/guides/i18n).
+</Callout>
+
+## The four groups of twelve gods
+
+Besides the three star groups, every palace carries four **single-valued** fields, each coming from
+its own cycle of twelve gods. Each group's twelve members fill the twelve palaces, exactly one per
+palace.
+
+The Python enums and Go constants for these four are listed on the
+[enum listings](/en/docs/python/data#enum-listings).
+
+### The twelve Changsheng gods
+
+Placed from the **Five Elements class together with gender and year-branch polarity**. They describe
+the twelve stages of a thing coming into being, declining and starting over.
+
+| Key | Chinese | en-US |
+| --- | --- | --- |
+| `changsheng` | 长生 | born |
+| `muyu` | 沐浴 | infancy |
+| `guandai` | 冠带 | adolescence |
+| `linguan` | 临官 | adulthood |
+| `diwang` | 帝旺 | prime |
+| `shuai` | 衰 | weak |
+| `bing` | 病 | sick |
+| `si` | 死 | dead |
+| `mu` | 墓 | buried |
+| `jue` | 绝 | dissipated |
+| `tai` | 胎 | embryo |
+| `yang` | 养 | molding |
+
+### The twelve Boshi gods
+
+Placed from **Lucun's position together with gender and year-branch polarity**. Weighted towards
+talent, wealth and disputes.
+
+| Key | Chinese | en-US |
+| --- | --- | --- |
+| `boshi` | 博士 | doctor |
+| `lishi` | 力士 | sumo |
+| `qinglong` | 青龙 | dragon |
+| `xiaohao` | 小耗 | consumer |
+| `jiangjun` | 将军 | general |
+| `zhoushu` | 奏书 | book |
+| `faylian` | 飞廉 | gossip |
+| `xishen` | 喜神 | happiness |
+| `bingfu` | 病符 | illness |
+| `dahao` | 大耗 | wastrel |
+| `fubing` | 伏兵 | ambush |
+| `guanfu` | 官府 | government |
+
+### The twelve Sui-qian gods
+
+**Sui-qian** (岁前, "ahead of the year") is placed from the **year branch**, always running forward.
+Weighted towards the auspicious and inauspicious events of a single year.
+
+| Key | Chinese | en-US |
+| --- | --- | --- |
+| `suijian` | 岁建 | initial |
+| `huiqi` | 晦气 | unlucky |
+| `sangmen` | 丧门 | downcast |
+| `guansuo` | 贯索 | tied |
+| `gwanfu` | 官符 | official |
+| `xiaohao` | 小耗 | consumer |
+| `dahao` | 大耗 | wastrel |
+| `longde` | 龙德 | virtuous |
+| `baihu` | 白虎 | sinister |
+| `tiande` | 天德 | blessed |
+| `diaoke` | 吊客 | sorrowing |
+| `bingfu` | 病符 | illness |
+
+<Callout>
+The Zhongzhou school replaces **Dahao** in this group with **Suipo** (`suipo`, 岁破), which shares the
+English rendering `wastrel`.
+</Callout>
+
+### The twelve Jiang-qian gods
+
+**Jiang-qian** (将前, "ahead of the general") is placed from the **year branch's trine group**, always
+running forward. Weighted towards movement, travel and obstruction by other people.
+
+| Key | Chinese | en-US |
+| --- | --- | --- |
+| `jiangxing` | 将星 | capable |
+| `panan` | 攀鞍 | admired |
+| `suiyi` | 岁驿 | varied |
+| `xiishen` | 息神 | listless |
+| `huagai` | 华盖 | religious |
+| `jiesha` | 劫煞 | robbed |
+| `zhaisha` | 灾煞 | disastery |
+| `tiansha` | 天煞 | condemned |
+| `zhibei` | 指背 | insidious |
+| `xianchi` | 咸池 | passionate |
+| `yuesha` | 月煞 | hapless |
+| `wangshen` | 亡神 | perished |
+
+<Callout type="warn" title="Keys are not always pinyin">
+`faylian` (飞廉), `gwanfu` (官符), `xiishen` (息神) and `zhaisha` (灾煞) do not match their pinyin.
+They keep iztro's original vocabulary keys, which exist to separate them from the homophonous
+`feilian` (蜚廉, an adjective star), `guanfu` (官府, a Boshi god) and `xishen` (喜神, a Boshi god).
+Copy the keys; do not spell them out from pinyin yourself.
+</Callout>
+
+<Callout type="warn" title="Some en-US renderings are not English words">
+`disastery` and `considery` are not words. They come verbatim from iztro's en-US vocabulary and
+x-iztro reproduces them exactly, because matching iztro field for field outranks fixing its
+spelling. Treat `name` as display text only and never parse it.
+</Callout>
+
+<Callout>
+Horoscope levels carry their own Sui-qian and Jiang-qian gods, placed afresh from that level's year
+branch. They are a different thing from the four groups on the natal chart. See
+[Horoscopes](/en/docs/guide/concepts/horoscope).
+</Callout>
+
+## In code
+
+### Walking the stars of one palace
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+soul = chart.palace("soulPalace")
+
+for s in soul.major_stars + soul.minor_stars + soul.adjective_stars:
+    print(s.key, s.name, s.type, s.brightness, s.mutagen)
+```
+
+```text
+ziweiMaj emperor major [+3] None
+wenquMin artist soft [-3] None
+fengge refined adjective None None
+tianfu lucky adjective None None
+jielu intercepted adjective None None
+feilian instigated adjective None None
+nianjie considery(Y) helper None None
+```
+
+<Callout type="warn" title="The (Y) on nianjie is part of the name">
+`nianjie`'s en-US rendering is literally `considery(Y)`, and it appears that way on the **natal**
+chart too, where `scope` is `origin`. The suffix is not a scope marker — iztro's vocabulary bakes it
+into the string to distinguish 年解 (`nianjie`) from 解神 (`jieshen`, `considery`), and x-iztro copies
+the vocabulary verbatim. One more reason to branch on `key`, never on `name`.
+</Callout>
+
+Fields on a single star:
+
+| Field | Meaning |
+| --- | --- |
+| `name` | Star name, translated into the chart language |
+| `key` | Language-independent key, e.g. `ziweiMaj` |
+| `type` | One of the eight types |
+| `scope` | Which level it belongs to: `origin` natal, `decadal`, `yearly`, … |
+| `brightness` / `brightnessKey` | Brightness; only some stars have one |
+| `mutagen` / `mutagenKey` | Mutagen mark; only stars that were mutated have one |
+
+### The four groups of twelve gods
+
+```python
+for p in chart.palaces:
+    print(p.name, p.changsheng12, p.boshi12, p.suiqian12, p.jiangqian12)
+```
+
+Each field also has a `*_key` variant (`changsheng12_key` and so on); predicate on that.
+
+### Finding where a star is
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+if let Some(star) = astrolabe.star(StarKey::ZiweiMaj) {
+    // StarRef derefs to Star, and can also give the palace it sits in
+    println!("{:?} {:?}", star.brightness, star.palace().name);
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro.enums import MajorStar
+
+star = chart.star(MajorStar.ZIWEI)                     # the star alone
+star, palace = chart.star_in_palace(MajorStar.ZIWEI)   # the star and its palace
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+star, palace := chart.Star(iztro.StarZiweiMaj)
+```
+
+</Tab>
+</Tabs>
+
+The lookup walks all three groups, so major, minor and adjective stars are all findable; a miss
+returns an empty value.
+
+### Star-name table
+
+The same star reads differently in each chart language while the key stays put. The English
+vocabulary comes from iztro's own word list: it is interpretive rather than transliterated, and it
+is *not* the rendering conventional in English-language Zi Wei writing. It is for display only —
+always predicate on the key.
+
+| Pinyin | Key | zh-CN | en-US |
+| --- | --- | --- | --- |
+| Ziwei | `ziweiMaj` | 紫微 | emperor |
+| Tianji | `tianjiMaj` | 天机 | advisor |
+| Taiyang | `taiyangMaj` | 太阳 | sun |
+| Wuqu | `wuquMaj` | 武曲 | general |
+| Tiantong | `tiantongMaj` | 天同 | fortunate |
+| Lianzhen | `lianzhenMaj` | 廉贞 | judge |
+| Tianfu | `tianfuMaj` | 天府 | empress |
+| Taiyin | `taiyinMaj` | 太阴 | moon |
+| Tanlang | `tanlangMaj` | 贪狼 | wolf |
+| Jumen | `jumenMaj` | 巨门 | advocator |
+| Tianxiang | `tianxiangMaj` | 天相 | minister |
+| Tianliang | `tianliangMaj` | 天梁 | sage |
+| Qisha | `qishaMaj` | 七杀 | marshal |
+| Pojun | `pojunMaj` | 破军 | rebel |
+| Zuofu | `zuofuMin` | 左辅 | officer |
+| Youbi | `youbiMin` | 右弼 | helper |
+| Wenchang | `wenchangMin` | 文昌 | scholar |
+| Wenqu | `wenquMin` | 文曲 | artist |
+| Tiankui | `tiankuiMin` | 天魁 | assistant |
+| Tianyue | `tianyueMin` | 天钺 | aide |
+| Qingyang | `qingyangMin` | 擎羊 | driven |
+| Tuoluo | `tuoluoMin` | 陀罗 | tangled |
+| Huoxing | `huoxingMin` | 火星 | impulsive |
+| Lingxing | `lingxingMin` | 铃星 | spark |
+| Dikong | `dikongMin` | 地空 | ideologue |
+| Dijie | `dijieMin` | 地劫 | fickle |
+| Lucun | `lucunMin` | 禄存 | money |
+| Tianma | `tianmaMin` | 天马 | horse |
+
+<Callout>
+Note the collision `helper`: it is the en-US name of the star Youbi (右弼) *and* the name of the
+`helper` star type. They are unrelated — one is a `name`, the other a `type`.
+</Callout>
+
+Keys for the adjective stars and the twelve gods are in the sections above. To convert between any
+key and any language, use the translation and reverse-lookup functions — see
+[Multilingual output](/en/docs/guide/guides/i18n#converting-between-keys-and-names).

@@ -1,0 +1,181 @@
+---
+title: Introduction
+description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python and Go, matching JS iztro field for field.
+icon: Star
+---
+
+*For: developers · Zi Wei enthusiasts · product and decision makers*
+
+Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can
+read in one call — **let the library get the chart right, let the AI do the reading**.
+
+One call produces this text. Paste it into any language model and start asking questions:
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+Chinese Date: geng chen - jia shen - bing woo - geng yin
+Time: Tiger hour (03:00~05:00)
+Zodiac Sign: leo
+Zodiac Animal: dragon
+Soul Palace Branch: woo
+Body Palace Branch: xu
+Soul Star: rebel
+Body Star: scholar
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+=== Palaces ===
+
+--- wealth ---
+Stem-Branch: wuyin
+Decadal: 43-52
+Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+
+(the other eleven palaces omitted)
+```
+
+Whether a chart is *correct* has one hard standard here: **zero field-level divergence from JS
+[iztro](https://github.com/SylarLong/iztro) v2.5.8**, held by roughly 710,000 golden test cases.
+
+The core is written in Rust and exposed to higher-level languages through three bindings:
+
+<Cards>
+  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="A native crate with strongly typed, zero-copy structs" />
+  <Card title="Python" href="/en/docs/guide/getting-started/python" description="A native PyO3 extension with a typed dataclass API" />
+  <Card title="Go" href="/en/docs/guide/getting-started/go" description="Embedded WebAssembly on a pure Go runtime, no cgo" />
+</Cards>
+
+## The problem it solves
+
+Charting Zi Wei Dou Shu looks like table lookup, but it drags in a chain of easily botched calendar
+and school-of-thought details: handling leap months in the lunar calendar, whether the late Zi hour
+belongs to today or tomorrow, whether the year's stem and branch turn over on lunar New Year or at
+the Beginning of Spring (立春, the solar term around 4 February), how nominal age (虚岁, the East Asian
+reckoning that starts at 1 on the day of birth) increments, and how mutagen tables differ between
+schools. Decide any one of them differently and you are no longer
+looking at the same chart.
+
+The most complete open-source implementation in the community is
+[iztro](https://github.com/SylarLong/iztro), written in JavaScript — but it only runs on a JS
+runtime. x-iztro ports that logic to Rust in full, so servers, data-analysis scripts, command-line
+tools and mobile apps can all work from the same charts.
+
+<Callout title="Relationship to iztro">
+x-iztro is a port of iztro v2.5.8, not a reinvention. Wherever iztro has a feature or a data table,
+the two must agree field for field — a line held by roughly 710,000 golden test cases. See
+[Accuracy](/en/docs/guide/about/accuracy).
+</Callout>
+
+## Features
+
+### One call to text an AI can read
+
+Prompt generation is built in: turn a chart or a horoscope into the structured text shown above and
+hand it straight to a language model, with no need to assemble a chart description yourself. See
+[AI prompt generation](/en/docs/guide/guides/ai-prompt).
+
+### Complete charts and horoscopes
+
+Natal chart, decadal, age, childhood, yearly, monthly, daily and hourly scopes: palaces, stars,
+mutagens and surrounded palaces are all reachable across six levels. Yearly adjective stars, the
+twelve Sui-qian gods, the twelve Jiang-qian gods, the twelve Boshi gods and the twelve Changsheng
+gods are all present.
+
+### Configurable schools and boundaries
+
+The six switches on `Config` cover every point practitioners actually disagree on: the year
+boundary, the horoscope boundary, the nominal-age boundary, where the late Zi hour belongs, the
+algorithm school (default / Zhongzhou) and the charting perspective (heaven / earth / human plate).
+The mutagen and brightness tables can also be replaced wholesale. The defaults match JS iztro;
+details on [Config in depth](/en/docs/guide/guides/config).
+
+### Six chart languages
+
+Simplified Chinese, Traditional Chinese, English, Japanese, Korean and Vietnamese. Switching the
+chart language only swaps the translation — the computed result is unaffected.
+
+### A Chinese chart and an English chart answer the same
+
+<small>For developers</small>
+
+Star and palace names read differently in each chart language, but every entity also carries a
+stable key. The Python enums and Go constants are built on those keys, so a check like "does the
+Soul palace hold Ziwei?" is written the same way and yields the same answer on a chart in any chart
+language. See [The key contract](/en/docs/guide/guides/keys).
+
+## One minute in
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+# 2 = hour index; index 2 is the Tiger hour, 03:00-05:00.
+# language defaults to "zh-CN"; pass "en-US" for an English chart.
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+soul = chart.palace("soulPalace")                  # the Soul palace
+print(chart.five_elements_class, chart.soul, chart.body)
+print(soul.name, soul.heavenly_stem + soul.earthly_branch)
+print([s.name for s in soul.major_stars])
+```
+
+```text
+wood 3rd rebel scholar
+soul renwoo
+['emperor']
+```
+
+Full installation and examples for all three programming languages are on
+[Getting started](/en/docs/guide/getting-started).
+
+## Where to read next
+
+<Cards>
+  <Card
+    title="Using it without writing code"
+    href="/en/docs/guide/guides/for-non-developers"
+    description="What it can do, where it fits, and what to hand your engineers"
+  />
+  <Card
+    title="Getting started"
+    href="/en/docs/guide/getting-started"
+    description="Install it and produce your first chart"
+  />
+  <Card
+    title="Zi Wei concepts"
+    href="/en/docs/guide/concepts"
+    description="Readable without any background in the art: what a chart is made of and what each field means"
+  />
+  <Card
+    title="Rust API"
+    href="/en/docs/rust"
+    description="Function signatures, types and methods of the core library"
+  />
+  <Card
+    title="Python API"
+    href="/en/docs/python"
+    description="Every entry of the typed dataclass API"
+  />
+  <Card
+    title="Go API"
+    href="/en/docs/go"
+    description="Every exported function, type and method"
+  />
+  <Card
+    title="Data model"
+    href="/en/docs/guide/data-model"
+    description="The type and meaning of every field — the contract shared by all three programming languages"
+  />
+  <Card
+    title="Accuracy"
+    href="/en/docs/guide/about/accuracy"
+    description="How roughly 710,000 golden cases keep the output identical to iztro"
+  />
+</Cards>

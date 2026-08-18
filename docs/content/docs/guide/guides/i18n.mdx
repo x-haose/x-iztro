@@ -1,9 +1,13 @@
 ---
 title: 多语言输出
-description: 六种输出语言、哪些字段会被翻译、换语言对结果的影响。
+description: 六种盘面语言、哪些字段会被翻译、换盘面语言对结果的影响，以及标识与译名的双向换算。
 ---
 
-## 支持的语言
+*适合：开发者*
+
+## 支持的盘面语言
+
+「盘面语言」指排盘结果里那些人读的文本用哪种语言写，与你用哪种**编程语言**调用无关。
 
 | 取值 | 语言 | Rust 枚举 |
 | --- | --- | --- |
@@ -36,12 +40,22 @@ by_solar("2000-8-16", 2, Gender::Female, true, Language::KoKR, Config::default()
 - 农历日期的中文表示、干支纪日展示串
 - 运限层级名（大限 / 流年 / …）
 
-**不翻译**的是所有 key 字段与数值字段：星耀的 `key`、宫位的 `nameKey`、
+**不翻译**的是所有标识字段与数值字段：星耀的 `key`、宫位的 `nameKey`、
 宫位索引、大限区间、虚岁等。见 [key 契约](/zh/docs/guide/guides/keys)。
 
-## 换语言不改变排盘结果
+<Callout type="warn" title="非中文译名的三个坑">
+1. **英文与韩文没有亮度译名**，输出的是记号：`[+3]`（庙）、`[+2]`（旺）、
+   `[+1]`（得）、`[0]`（利）、`[-1]`（平）、`[-2]`（不）、`[-3]`（陷）。
+   繁体、日文、越南文有真译名。
+2. **英文四化输出 `A`/`B`/`C`/`D`**，依次是禄、权、科、忌。
+3. **非中文译名沿用 iztro 的词表，不保证是该语言命理界的通行译法**，
+   个别条目还是误译 —— 例如韩文把「来因宫」译成 `라인`（line 的音译）。
+   译名只做展示，判断一律用标识字段。
+</Callout>
 
-语言只影响翻译层。同一个生日在六种语言下：
+## 换盘面语言不改变排盘结果
+
+盘面语言只影响翻译层。同一个生日在六种盘面语言下：
 
 - 十二宫的位置与宫名顺序完全相同
 - 每个宫里的星耀完全相同
@@ -57,7 +71,7 @@ assert zh.palace(PalaceName.SOUL).index == en.palace(PalaceName.SOUL).index
 assert zh.soul_key == en.soul_key
 ```
 
-六种语言的一致性由变体金标测试覆盖（`variants_languages`），零容忍差异。
+六种盘面语言的一致性由变体金标测试覆盖，零容忍差异。
 
 ## 标识与译名的换算
 
@@ -68,13 +82,14 @@ assert zh.soul_key == en.soul_key
 
 ```rust
 translate_key("ziweiMaj", Language::EnUS);   // Some("emperor")
+key_of("emperor");                           // Some("ziweiMaj")
 key_of("자미");                               // Some("ziweiMaj")
 ```
 
 类别已知时用强类型版本更直接，也免去 `Option`：
 
 ```rust
-use x_iztro::i18n::{translate_palace, translate_star};
+use x_iztro::{translate_palace, translate_star};
 
 translate_star(StarKey::ZiweiMaj, Language::ViVN);   // Tử Vi
 translate_palace(Palace::Soul, Language::KoKR);      // 명궁
@@ -85,6 +100,7 @@ translate_palace(Palace::Soul, Language::KoKR);      // 명궁
 
 ```python
 i18n.translate("ziweiMaj", "en-US")   # emperor
+i18n.key_of("emperor")                # ziweiMaj
 i18n.key_of("자미")                    # ziweiMaj
 ```
 
@@ -92,27 +108,41 @@ i18n.key_of("자미")                    # ziweiMaj
 <Tab value="Go">
 
 ```go
-iztro.Translate(iztro.StarZiweiMaj, "en-US")   // emperor
-iztro.KeyOf("자미")                             // ziweiMaj
+name, _ := iztro.Translate(iztro.StarZiweiMaj, "en-US")   // emperor
+key, _ := iztro.KeyOf("emperor")                          // ziweiMaj
+key, _ = iztro.KeyOf("자미")                               // ziweiMaj
 ```
+
+Go 侧两个函数都返回 `(string, error)`：标识未知或反查不到时返回空串与
+`*iztro.Error`（分类 `invalid_argument`）。
 
 </Tab>
 </Tabs>
 
-覆盖十一类共 260 个标识：星耀、宫位（含身宫来因宫）、天干、地支、亮度、四化、
+覆盖十二类共 260 个标识：星耀、宫位（含身宫、来因宫）、天干、地支、亮度、四化、
 五行局、性别、生肖、时辰、星座、运限层级。完整清单与逐条说明见
 [Rust](/zh/docs/rust/i18n)、[Python](/zh/docs/python/i18n)、[Go](/zh/docs/go/i18n) 三页。
 
-## 三种语言的取值形态不同
+<Callout type="warn" title="反查查不到时返回空，不是原样返回">
+`key_of("不存在的名字")` 返回 `None` / 空串，而不是把入参吐回来。
 
-| | 排盘结果里存什么 | 换语言的代价 |
+另有同形译名的问题：不同标识在某些语言下译名相同（`horse`、`dragon`、`유시` 等）。
+反查按固定的扫描顺序取第一个命中，与 iztro 的 `kot` 逐例一致。
+要指定类别就用 `key_of_in`（Rust）/ `key_of(text, key_filter)`（Python）/
+`KeyOfIn`（Go），传标识名的共同后缀消歧：
+`"Maj"` 只看十四主星、`"Min"` 只看辅星、`"Palace"` 只看宫位、`"Hour"` 只看时辰。
+</Callout>
+
+## 三种编程语言的取值形态不同
+
+| | 排盘结果里存什么 | 换盘面语言的代价 |
 | --- | --- | --- |
 | Rust | 枚举（`StarKey`、`Palace`…），只有少数展示字段是 `String` | 调翻译函数，同一张盘可同时输出多种语言 |
 | Python | 译名与标识两组字段都已经是字符串 | 重新排盘 |
 | Go | 同上 | 重新排盘 |
 
 排盘本身是毫秒级，多排几次不是问题。判断逻辑请始终用标识字段，
-这样换语言不需要改任何代码。
+这样换盘面语言不需要改任何代码。
 
 ## 没有全局语言开关
 
@@ -124,8 +154,15 @@ x-iztro 不设「当前语言」这样的全局状态：排盘时语言随参数
 显式传参使每次调用的结果只由入参决定。
 </Callout>
 
-## 新增语言
+## 新增一种语言要改哪些地方
 
-`src/i18n/` 下每种语言一个词表文件。新增语言只需增加一个词表文件，
-并在 `Language` 枚举与 `LANGUAGES` 常量里各加一项——
-翻译入口按枚举分派，不需要改动其他地方。
+词表不是一个可以外挂的资源文件，是编译进库的静态表。加一种语言要动四处：
+
+<Steps>
+<Step>`src/data/types.rs` 的 `Language` 枚举加一个变体，并在 `as_code` / `from_code` 里补上语言代码</Step>
+<Step>`src/i18n/` 下新增一个词表文件，实现与既有文件相同的一组函数（星名、宫名、干支名、亮度、四化……）</Step>
+<Step>`src/i18n/mod.rs` 里每个翻译函数的 `match` 各加一条分派 —— 这里是逐个函数的，不是一处</Step>
+<Step>`src/i18n/lookup.rs` 的 `lang_index` 与反查扫描顺序表加一项；反查顺序会影响同形译名落到哪个标识，须与金标对照</Step>
+</Steps>
+
+绑定层不需要改：语言代码是字符串传入的，加了枚举变体三侧自动可用。

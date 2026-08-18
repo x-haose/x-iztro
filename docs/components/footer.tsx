@@ -55,13 +55,16 @@ const linkClass =
  *
  * 除常规导航外，单列出「给 AI 用」的三个端点——它们不在任何页面的正文里，
  * 光靠文档目录读者不会知道站点提供了这些。
+ *
+ * `className` 供调用方交代自己版式里的落位：文档版式是 CSS 网格，
+ * 页脚要显式横跨整行才不会被塞进侧栏旁的空格子。
  */
-export function Footer({ lang }: { lang: string }) {
+export function Footer({ lang, className }: { lang: string; className?: string }) {
   const t = TEXT[lang as keyof typeof TEXT] ?? TEXT.en;
   const doc = (path: string) => `/${lang}/docs/${path}`;
 
   return (
-    <footer className="border-t border-fd-border">
+    <footer className={`border-t border-fd-border ${className ?? ''}`}>
       <div className="mx-auto grid w-full max-w-5xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-2.5">
           <span className="text-sm font-semibold">x-iztro</span>
@@ -79,11 +82,11 @@ export function Footer({ lang }: { lang: string }) {
 
         <Column title={t.forAI}>
           <Link className={linkClass} href={doc('guide/guides/llm')}>{t.howTo}</Link>
-          <a className={`${linkClass} font-mono`} href="/llms.txt">
-            llms.txt <span className="font-sans">· {t.llmsIndex}</span>
+          <a className={`${linkClass} font-mono`} href={`/${lang}/llms.txt`}>
+            /{lang}/llms.txt <span className="font-sans">· {t.llmsIndex}</span>
           </a>
-          <a className={`${linkClass} font-mono`} href="/llms-full.txt">
-            llms-full.txt <span className="font-sans">· {t.llmsFull}</span>
+          <a className={`${linkClass} font-mono`} href={`/${lang}/llms-full.txt`}>
+            /{lang}/llms-full.txt <span className="font-sans">· {t.llmsFull}</span>
           </a>
         </Column>
 

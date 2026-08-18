@@ -1,0 +1,147 @@
+---
+title: Extending the astrolabe
+description: Adding your own analysis methods to Astrolabe and PalaceRef with extension traits.
+---
+
+Zi Wei analysis rules differ from practitioner to practitioner and no library can enumerate them.
+x-iztro's answer is to let you attach your own rules as methods on the astrolabe — the call syntax
+matches the built-in methods, and it all happens at compile time, so it is type-checked and costs
+nothing at runtime.
+
+## The recipe
+
+<Steps>
+<Step>Define a trait declaring the methods you want to add</Step>
+<Step>Implement it for `Astrolabe` (or `PalaceRef`, or `StarRef`)</Step>
+<Step>`use` the trait where you call it, and the methods are available</Step>
+</Steps>
+
+```rust
+use x_iztro::i18n::translate_star;
+use x_iztro::*;
+
+/// Adds two custom analysis methods to the astrolabe.
+trait MyAnalysis {
+    /// Major stars of the Soul palace (borrowing the opposite palace when empty), comma separated
+    fn major_star(&self) -> String;
+    /// The number of the five elements class
+    fn five_elements_value(&self) -> usize;
+}
+
+impl MyAnalysis for Astrolabe {
+    fn major_star(&self) -> String {
+        let soul = self.palace(Palace::Soul).expect("the Soul palace always exists");
+        let source = if soul.is_empty() { soul.opposite_palace() } else { soul };
+
+        source
+            .major_stars
+            .iter()
+            .filter(|s| s.star_type == StarType::Major)
+            .map(|s| translate_star(s.key, self.language))
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    fn five_elements_value(&self) -> usize {
+        self.five_elements_class.value()
+    }
+}
+```
+
+**Usage**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+
+println!("{}", chart.major_star());
+println!("{}", chart.five_elements_value());
+
+// the extension method follows the charting language
+let zh = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+println!("{}", zh.major_star());
+```
+
+**Output**
+
+```text
+emperor
+3
+紫微
+```
+
+---
+
+## Extending other types
+
+The same recipe works for palaces and stars. Mind the lifetime parameter when implementing for a view
+type:
+
+```rust
+trait PalaceAnalysis {
+    /// Whether this palace is "afflicted": holds a malefic and carries ji
+    fn is_afflicted(&self) -> bool;
+}
+
+impl PalaceAnalysis for PalaceRef<'_> {
+    fn is_afflicted(&self) -> bool {
+        use x_iztro::StarKey::*;
+        self.has_one_of(&[QingyangMin, TuoluoMin, HuoxingMin, LingxingMin, DikongMin, DijieMin])
+            && self.has_mutagen(Mutagen::Ji)
+    }
+}
+```
+
+```rust
+for palace in &chart.palaces {
+    let p = chart.palace(palace.index).unwrap();
+    if p.is_afflicted() {
+        println!("{} is afflicted", translate_palace(p.name, Language::EnUS));
+    }
+}
+```
+
+**Output**
+
+```text
+health is afflicted
+```
+
+---
+
+## How to organize this
+
+<Accordions>
+<Accordion title="One trait per analysis topic, not one big pile">
+Keep `WealthAnalysis`, `CareerAnalysis` and `HealthAnalysis` as separate traits and let callers `use`
+what they need. One large trait forces every call site to pull in every method.
+</Accordion>
+<Accordion title="Always test on keys, never on translated names">
+`s.key == StarKey::ZiweiMaj` holds under any output language; `s.name == "emperor"` holds only on an
+en-US chart. Translate at display time only.
+</Accordion>
+<Accordion title="Rules that must agree across languages do not belong only in Rust">
+When one rule set has to work in Python and Go too, writing it as a Rust extension does not help — the
+current approach is to write it once per side; the other two are documented on their own "Extending
+the astrolabe" pages. Since the predicates rest on language-independent keys, asserting the same
+values across the three implementations is enough to guarantee agreement.
+</Accordion>
+</Accordions>
+
+---
+
+## Compared to runtime injection
+
+Some libraries let you attach functions to objects at runtime. Rust's extension traits do the same
+thing at compile time; the differences are:
+
+| | Extension trait | Runtime injection |
+| --- | --- | --- |
+| Whether the method exists | Known at compile time | Known only at runtime |
+| Type checking | Yes | No |
+| Call cost | Same as a built-in method | One extra dynamic lookup |
+| When errors appear | Compilation fails | Fails at runtime |
+| Scope | Visible only where `use`d | Global or per instance |
+
+The price is that extension methods must be written at compile time and cannot be decided by a config
+file or user input. When you need that flexibility, dispatch yourself through a
+`HashMap<String, fn(&Astrolabe) -> bool>`.

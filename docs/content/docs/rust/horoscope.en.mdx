@@ -1,0 +1,454 @@
+---
+title: Horoscope object
+description: The data structures of the six scopes, plus palace lookups that need not be handed the astrolabe again.
+---
+
+A horoscope projects the natal chart onto a point in time. The same chart shows a different palace
+layout in different years — which is exactly what "the decadal scope has moved to that palace" means.
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+```
+
+`HoroscopeRef` holds the natal chart that produced it, so none of the query methods need the
+astrolabe passed in again.
+
+<Callout type="info">
+The examples on this page all start from a `Language::EnUS` natal chart, so the display values in the
+output are iztro's en-US vocabulary.
+</Callout>
+
+## HoroscopeData
+
+`HoroscopeRef` derefs to `HoroscopeData`, which has eight fields: two date strings and the six scopes.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `solar_date` | `String` | Target solar date, as passed in |
+| `lunar_date` | `String` | The target date's lunar form, written in Chinese numerals |
+| `decadal` | `HoroscopeItem` | The decadal scope |
+| `age` | `AgeItem` | The age scope |
+| `yearly` | `YearlyItem` | The yearly scope |
+| `monthly` | `HoroscopeItem` | The monthly scope |
+| `daily` | `HoroscopeItem` | The daily scope |
+| `hourly` | `HoroscopeItem` | The hourly scope |
+
+<Callout type="info">
+`solar_date` is the **target** date, not the birth date; the birth date lives on the natal chart, as
+`h.astrolabe().solar_date`.
+</Callout>
+
+## The six scopes
+
+| Field | Type | Span | Description |
+| --- | --- | --- | --- |
+| `decadal` | `HoroscopeItem` | Ten years | The decadal scope; the childhood scope for the years before it begins |
+| `age` | `AgeItem` | One year | The age scope, moving one palace per nominal year |
+| `yearly` | `YearlyItem` | One year | The yearly scope, its palace fixed by the year's pillar |
+| `monthly` | `HoroscopeItem` | One month | The monthly scope |
+| `daily` | `HoroscopeItem` | One day | The daily scope |
+| `hourly` | `HoroscopeItem` | One double-hour | The hourly scope |
+
+<Callout type="info" title="The age scope versus the yearly scope">
+Both advance once per year, but they start differently: the age scope starts from the birth-year
+branch and steps forward with the nominal age, while the yearly scope simply asks which palace that
+year's pillar falls in. The two lines are independent, and Zi Wei practice usually reads them
+together.
+</Callout>
+
+### HoroscopeItem
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `index` | `usize` | Which palace this scope lands on (a palace index) |
+| `name` | `String` | Display name of the scope, translated into the output language |
+| `heavenly_stem` | `HeavenlyStem` | Stem of the scope, which determines the mutagens it flies |
+| `earthly_branch` | `EarthlyBranch` | Branch of the scope |
+| `palace_names` | `Vec<Palace>` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
+| `mutagen` | `Vec<StarKey>` | The stars this scope's stem transforms, in the order lu, quan, ke, ji |
+| `stars` | `Option<Vec<Vec<Star>>>` | The scope stars of this layer; `None` for layers that have none |
+
+`age` and `yearly` are not `HoroscopeItem`s themselves but wrappers carrying one extra datum each:
+
+```rust
+pub struct AgeItem {
+    pub base: HoroscopeItem,
+    pub nominal_age: u32,          // the nominal age for that date
+}
+
+pub struct YearlyItem {
+    pub base: HoroscopeItem,
+    pub yearly_dec_star: YearlyDecStar,
+}
+
+pub struct YearlyDecStar {
+    pub jiangqian12: Vec<StarKey>, // the yearly Jiang-qian gods, indexed by palace index
+    pub suiqian12: Vec<StarKey>,   // the yearly Sui-qian gods, indexed by palace index
+}
+```
+
+The shared fields therefore go through `base`: write `h.yearly.base.heavenly_stem`, not
+`h.yearly.heavenly_stem`. All four types are re-exported at the crate root.
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+for item in [&h.decadal, &h.monthly, &h.daily, &h.hourly] {
+    println!("{} lands on palace {} with pillar {} {}", item.name, item.index,
+        translate_heavenly_stem(item.heavenly_stem, Language::EnUS),
+        translate_earthly_branch(item.earthly_branch, Language::EnUS));
+}
+println!("age scope nominal age {}", h.age.nominal_age);
+```
+
+**Output**
+
+```text
+decadal lands on palace 2 with pillar geng chen
+monthly lands on palace 3 with pillar ren woo
+daily lands on palace 8 with pillar xin chou
+hourly lands on palace 8 with pillar wu zi
+age scope nominal age 26
+```
+
+---
+
+## age_palace
+
+**Purpose** Get the palace the age scope occupies this year.
+
+**Zi Wei meaning** The age scope is a line advancing year by year; whichever palace it lands on
+becomes the focus for that year.
+
+**Signature**
+
+```rust
+pub fn age_palace(&self) -> PalaceRef<'a>
+```
+
+**Return value** `PalaceRef` — a palace on the natal chart, always present.
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+println!("{}", translate_palace(h.age_palace().name, Language::EnUS));
+```
+
+**Output**
+
+```text
+property
+```
+
+---
+
+## palace
+
+**Purpose** Get one of the twelve palaces as re-derived under a given horoscope scope.
+
+**Zi Wei meaning** Once the decadal scope reaches a palace, the twelve palaces are re-anchored with
+that palace as the "decadal Soul palace". "The decadal Spouse palace" refers to that re-anchored
+naming, and it is usually not the same palace as the natal Spouse palace.
+
+**Signature**
+
+```rust
+pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | Yes | — | The palace name to fetch |
+| `scope` | `Scope` | Yes | — | Which scope's twelve palaces to search |
+
+**Return value** `Option<PalaceRef<'a>>` — a palace on the natal chart (the same cell carries
+different names under different scopes). With `Origin` as the scope, these are the natal twelve
+palaces.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("the decadal Soul palace is the natal {}",
+    translate_palace(h.palace(Palace::Soul, Scope::Decadal).unwrap().name, en));
+println!("the natal Soul palace is {}",
+    translate_palace(h.palace(Palace::Soul, Scope::Origin).unwrap().name, en));
+```
+
+**Output**
+
+```text
+the decadal Soul palace is the natal spouse
+the natal Soul palace is soul
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="What comes back is the cell on the natal chart">
+On the palace object returned by `palace(Soul, Decadal)`, `name` is still the **natal palace name**
+(Spouse in the example), because it is that cell on the natal chart. To see what the cell is called at
+the decadal layer, read `h.decadal.palace_names[index]`.
+</Callout>
+
+---
+
+## surround_palaces
+
+**Purpose** Get the surrounded palaces of a palace under a given horoscope scope.
+
+**Signature**
+
+```rust
+pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>>
+```
+
+**Parameters** Same as `palace`.
+
+**Return value** `Option<SurroundedPalaces<'a>>`; its predicates are on
+[Surrounded palaces](/en/docs/rust/surpalaces).
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
+
+println!("the surrounded set of the yearly Wealth palace is anchored on the natal {}",
+    translate_palace(sp.target.name, Language::EnUS));
+```
+
+**Output**
+
+```text
+the surrounded set of the yearly Wealth palace is anchored on the natal health
+```
+
+---
+
+## has_horoscope_stars / has_one_of_horoscope_stars / not_have_horoscope_stars
+
+**Purpose** Test whether a palace under a given scope holds the given scope stars.
+
+**Zi Wei meaning** Scope stars are a group produced by each horoscope layer: Tiankui, Tianyue,
+Wenchang, Wenqu, Lucun, Qingyang, Tuoluo, Tianma, Hongluan and Tianxi.
+They carry different names in different layers — Yunkui and Yunyue at the decadal layer, Liukui and
+Liuyue at the yearly layer — with the same meaning applied to their own time span.
+
+**Signature**
+
+```rust
+pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | Yes | — | The palace name under that scope |
+| `scope` | `Scope` | Yes | — | The horoscope scope |
+| `stars` | `&[StarKey]` | Yes | — | Scope star keys, which must use that layer's names |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `has_horoscope_stars` | All of them are present |
+| `has_one_of_horoscope_stars` | At least one is present |
+| `not_have_horoscope_stars` | None is present |
+
+**Example**
+
+```rust
+use x_iztro::StarKey::*;
+
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu]));
+println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang]));
+println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo]));
+```
+
+**Output**
+
+```text
+false
+false
+true
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="scope picks the palace, not the set of stars compared against">
+The three methods use `scope` + `name` to locate one cell on the natal chart, but the set of stars
+compared against is always the **union of the decadal and yearly scope stars**, regardless of `scope`.
+
+So with `scope` set to `Monthly` the question is "does this cell, named as a monthly palace, hold any
+decadal or yearly scope star?" — not the monthly scope's own stars. The scope stars of the monthly,
+daily and hourly layers take no part in the comparison here.
+For a layer's scope-star distribution, use a field like `h.monthly.stars`, or
+[`get_horoscope_stars`](/en/docs/rust/star#get_horoscope_stars).
+</Accordion>
+<Accordion title="Scope star keys are layer-specific">
+The decadal scope stars are `Yunlu`, `Yunyang` and so on, the yearly ones `Liulu`, `Liuyang` and so
+on; the two groups have different key names. Since the compared set is always the union of those two
+groups, both `Yunlu` and `Liulu` can be found under any `scope` — only their palaces differ.
+The per-layer key table is on [Star placement](/en/docs/rust/star#get_horoscope_stars).
+</Accordion>
+<Accordion title="With Origin as the scope the cell is located on the natal palaces">
+`Origin` walks the natal twelve palaces, so a palace is still located; there simply are no scope stars
+on the natal chart, and what is compared remains whichever decadal and yearly scope stars fall on that
+cell.
+</Accordion>
+</Accordions>
+
+---
+
+## has_horoscope_mutagen
+
+**Purpose** Test whether a palace under a given scope carries a mutagen flown by that scope's stem.
+
+**Zi Wei meaning** Every horoscope layer has a stem of its own, and it transforms four stars just as
+the birth-year stem does. A question like "does the decadal lu land in the decadal Wealth palace?" is
+asking about this.
+
+**Signature**
+
+```rust
+pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | `Palace` | Yes | — | The palace name under that scope |
+| `scope` | `Scope` | Yes | — | The horoscope scope |
+| `mutagen` | `Mutagen` | Yes | — | One of the four mutagens |
+
+**Return value** `bool`. It checks whether the star transformed by that layer's stem sits among the
+target palace's major or minor stars (adjective stars are not considered).
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu));
+
+// the four stars this layer transforms can be read directly
+println!("{:?}", h.decadal.mutagen.iter()
+    .map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+false
+["sun", "general", "moon", "fortunate"]
+```
+
+The decadal stem is geng, and geng sends lu to Taiyang (`sun`), quan to Wuqu (`general`), ke to Taiyin
+(`moon`) and ji to Tiantong (`fortunate`).
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Always false when the scope is Origin">
+There is no such thing as a "layer stem" at the natal layer — the natal mutagens are already marked on
+the stars' own `mutagen` fields.
+`has_horoscope_mutagen(name, Scope::Origin, m)` therefore returns `false` outright, which does not
+mean the natal chart lacks that mutagen. For natal mutagens use the palace's
+[`has_mutagen`](/en/docs/rust/palace#has_mutagen--not_have_mutagen).
+</Callout>
+
+---
+
+## astrolabe / data / into_data
+
+**Purpose** Get back to the natal chart, or take out the horoscope's plain data.
+
+**Signature**
+
+```rust
+pub fn astrolabe(&self) -> &'a Astrolabe
+pub fn data(&self) -> &HoroscopeData
+pub fn into_data(self) -> HoroscopeData
+```
+
+**Return value**
+
+| Method | Use |
+| --- | --- |
+| `astrolabe` | Back to the natal chart that produced this horoscope |
+| `data` | Borrow the underlying data; the view implements `Deref`, so `h.decadal` usually suffices |
+| `into_data` | Take the data and drop the borrow of the astrolabe, for cases needing a `'static` lifetime |
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("{}", h.astrolabe().solar_date);
+
+let data: HoroscopeData = h.into_data();   // no longer borrows chart
+println!("{}", data.solar_date);
+```
+
+**Output**
+
+```text
+2000-8-16
+2025-6-1
+```
+
+---
+
+## to_dto
+
+**Purpose** Convert the horoscope data into the serialization structure that matches the JS iztro
+field contract.
+
+**Signature**
+
+```rust
+pub fn to_dto(&self, lang: Language) -> HoroscopeDto
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lang` | `Language` | Yes | — | Which language the translated fields use |
+
+It is defined on `HoroscopeData` (not on `HoroscopeRef`). The horoscope data does not itself record a
+language, so it has to be given explicitly here — usually `chart.language`, to stay consistent with
+the natal chart.
+
+**Return value** `x_iztro::dto::HoroscopeDto`, camelCase keys plus the `*Key` identifiers.
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+let json = serde_json::to_string(&h.to_dto(chart.language))?;
+let v: serde_json::Value = serde_json::from_str(&json)?;
+
+println!("{} {}", v["solarDate"], v["decadal"]["heavenlyStem"]);
+println!("{}", v["age"]["nominalAge"]);
+```
+
+**Output**
+
+```text
+"2025-6-1" "geng"
+26
+```

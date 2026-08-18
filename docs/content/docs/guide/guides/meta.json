@@ -3,12 +3,15 @@
   "icon": "Settings",
   "pages": [
     "index",
+    "for-non-developers",
+    "ai-prompt",
+    "llm",
     "config",
     "keys",
     "i18n",
-    "plugins",
     "errors",
-    "ai-prompt",
-    "llm"
+    "plugins",
+    "step-api",
+    "llms-txt"
   ]
 }

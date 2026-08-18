@@ -1,0 +1,448 @@
+---
+title: Astrolabe object
+description: The fields of Astrolabe, its lookup methods, and the surrounded-palace predicates.
+---
+
+`Astrolabe` is what charting produces and the entry point for every query. It holds all the data of
+the twelve palaces along with chart-level information such as the four pillars, the soul and body
+stars and the five elements class.
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+```
+
+<Callout type="info">
+The examples on this page all chart with `Language::EnUS`, so the display values in the output are
+iztro's en-US vocabulary — `emperor` for Ziwei, `soul` for the Soul palace, and so on. Charting in
+another language changes those strings only; the `*_key` fields and every predicate stay the same.
+</Callout>
+
+## Fields
+
+<Accordions>
+<Accordion title="Display fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `gender` | `Gender` | Gender |
+| `solar_date` | `String` | Solar date, as passed in |
+| `lunar_date` | `String` | The lunar date written in Chinese numerals, e.g. `二〇〇〇年七月十七` — "the 17th day of the 7th lunar month of 2000" |
+| `chinese_date` | `String` | Display string of the four pillars, e.g. `geng chen - jia shen - bing woo - geng yin` |
+| `time` | `String` | Hour name, e.g. `Tiger hour` |
+| `time_range` | `String` | The clock range of that hour, e.g. `03:00~05:00` |
+| `sign` | `String` | Zodiac sign, from the solar date |
+| `zodiac` | `String` | Chinese zodiac animal, from the year branch |
+
+Display fields follow `language`. For predicates use the key fields in the next group.
+
+</Accordion>
+<Accordion title="Chart-level key fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `earthly_branch_of_soul_palace` | `EarthlyBranch` | Branch of the Soul palace |
+| `earthly_branch_of_body_palace` | `EarthlyBranch` | Branch of the body palace |
+| `soul` | `StarKey` | Soul star |
+| `body` | `StarKey` | Body star |
+| `five_elements_class` | `FiveElementsClass` | Five elements class, which sets the starting age of the decadal scope and where Ziwei begins |
+
+These are strongly typed enums, independent of language, and can be compared directly.
+
+</Accordion>
+<Accordion title="Structural fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `palaces` | `Vec<PalaceData>` | The twelve palaces; index 0 is the Yin palace, 11 the Chou palace |
+| `raw_dates` | `RawDates` | The structured lunar birth date and the four pillars as enums |
+
+Indices into `palaces` are **palace indices**, not the palace-name order: `palaces[0]` is always the
+Yin palace, and the Soul palace can be in any of the cells. Fetch it with
+`chart.palace(Palace::Soul)`.
+
+`raw_dates` is the data form of the two display strings `lunar_date` and `chinese_date`. Use it for
+date arithmetic or stem-and-branch lookups instead of parsing the Chinese strings:
+
+```rust
+pub struct RawDates {
+    pub lunar_date: RawLunarDate,
+    pub chinese_date: RawChineseDate,
+}
+
+pub struct RawLunarDate {
+    pub lunar_year: i64,     // lunar year
+    pub lunar_month: u32,    // lunar month 1–12; whether it is a leap month is in is_leap
+    pub lunar_day: u32,      // lunar day 1–30
+    pub is_leap: bool,       // whether it is a leap month
+}
+
+pub struct RawChineseDate {
+    pub yearly: (HeavenlyStem, EarthlyBranch),   // year pillar
+    pub monthly: (HeavenlyStem, EarthlyBranch),  // month pillar
+    pub daily: (HeavenlyStem, EarthlyBranch),    // day pillar
+    pub hourly: (HeavenlyStem, EarthlyBranch),   // hour pillar
+}
+```
+
+All three types are re-exported at the crate root, so `use x_iztro::*;` is enough.
+
+</Accordion>
+<Accordion title="Charting context">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `time_index` | `u8` | Birth hour index, kept as passed in even when `day_divide` reassigns the late Zi hour to the current day |
+| `fix_leap` | `bool` | Whether leap-month correction was applied when charting |
+| `language` | `Language` | Output language |
+| `config` | `Config` | Charting configuration |
+
+Horoscopes and prompts restart their computation from these four, so the charting parameters need not
+be supplied again.
+
+</Accordion>
+</Accordions>
+
+---
+
+## palace
+
+**Purpose** Fetch a palace by index, by name, or as the body or original palace.
+
+**Zi Wei meaning** The twelve palaces are the skeleton of a chart. Once the Soul palace is fixed the
+other eleven follow counterclockwise in a fixed order.
+The "body palace" is whichever of the twelve also carries that flag, marking where acquired effort
+concentrates; the "original palace" is the one whose stem matches the birth-year stem, marking where
+matters originate.
+
+**Signature**
+
+```rust
+pub fn palace(&self, target: impl Into<PalaceTarget>) -> Option<PalaceRef<'_>>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<PalaceTarget>` | Yes | — | Four spellings, see the table below |
+
+All four variants of `PalaceTarget` have `From` implementations, so you write the value directly:
+
+| Spelling | Example | Meaning |
+| --- | --- | --- |
+| Index | `chart.palace(0)` | Palace index 0–11, where 0 is the Yin palace |
+| Name | `chart.palace(Palace::Soul)` | One of the twelve palace names |
+| Body palace | `chart.palace(PalaceTarget::Body)` | Whichever palace carries the body-palace flag |
+| Original palace | `chart.palace(PalaceTarget::Original)` | The palace whose stem matches the birth-year stem |
+
+**Return value** `Option<PalaceRef<'_>>`. An out-of-range index returns `None`; the name, body-palace
+and original-palace spellings resolve on any chart and are never `None`.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+
+let soul = chart.palace(Palace::Soul).unwrap();
+println!("{} {} {}", translate_palace(soul.name, en),
+    translate_heavenly_stem(soul.heavenly_stem, en),
+    translate_earthly_branch(soul.earthly_branch, en));
+
+let body = chart.palace(PalaceTarget::Body).unwrap();
+println!("body palace falls in {}", translate_palace(body.name, en));
+
+let original = chart.palace(PalaceTarget::Original).unwrap();
+println!("original palace is {}", translate_palace(original.name, en));
+
+println!("the Yin palace is {}", translate_palace(chart.palace(0).unwrap().name, en));
+```
+
+<Callout type="info">
+`PalaceData::name` has the type `Palace`, an enum rather than a string, so it cannot be printed with
+`{}` directly — the enum is a language-independent key, and display goes through `translate_palace`
+to get text in the current language. The same holds for `heavenly_stem`, `earthly_branch`,
+`five_elements_class` and the other enum fields.
+</Callout>
+
+**Output**
+
+```text
+soul ren woo
+body palace falls in career
+original palace is spouse
+the Yin palace is wealth
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="There is always exactly one original palace">
+The original palace requires the palace stem to equal the birth-year stem, and the palace not to be Zi
+or Chou. Palace stems run forward from the Yin palace under the Five Tigers rule, and the ten palaces
+from Yin to You walk the ten stems exactly once; Zi and Chou are the eleventh and twelfth cells and
+repeat the stems of Yin and Mao — and it is precisely that repetition that excludes them.
+So any birth-year stem hits exactly once between Yin and You: on every chart the original palace
+exists, and it is unique.
+</Accordion>
+<Accordion title="Lookup by palace name is unique">
+Each of the twelve palace names appears exactly once on a chart, so a lookup by name is necessarily
+unique. The body palace is a **flag**, not a name — it is also one of the twelve palaces (the Career
+palace in the example above). The same goes for the original palace, which lands on the Spouse palace
+here.
+</Accordion>
+</Accordions>
+
+---
+
+## star
+
+**Purpose** Find a star by key and get a view that can trace back to its palace.
+
+**Signature**
+
+```rust
+pub fn star(&self, key: StarKey) -> Option<StarRef<'_>>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `key` | `StarKey` | Yes | — | Star key, e.g. `StarKey::ZiweiMaj` |
+
+**Return value** `Option<StarRef<'_>>`. `None` when the star is not on this chart.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{} sits in {}", ziwei.name, translate_palace(ziwei.palace().name, en));
+println!("its opposite palace is {}", translate_palace(ziwei.opposite_palace().name, en));
+println!("brightness {:?} mutagen {:?}", ziwei.brightness, ziwei.mutagen);
+```
+
+`Star::name` is a `String` (already translated into the charting language) and prints directly;
+`PalaceData::name` is an enum and goes through `translate_palace`.
+
+**Output**
+
+```text
+emperor sits in soul
+its opposite palace is surface
+brightness Some(Miao) mutagen None
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The search covers only the three groups of major, minor and adjective stars. The Changsheng, Boshi,
+Sui-qian and Jiang-qian gods are one-per-palace marks rather than star lists — read them from fields
+like `palace.changsheng12`.
+</Callout>
+
+---
+
+## surrounded_palaces
+
+**Purpose** Fetch the surrounded palaces of a target palace.
+
+**Zi Wei meaning** The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu: the
+palace itself, its opposite (index +6), the career position (+4) and the wealth position (+8). The
+four are read together rather than the palace alone, because the stars of the opposite and trine
+palaces bear on the palace's affairs just as much.
+
+**Signature**
+
+```rust
+pub fn surrounded_palaces(&self, target: impl Into<PalaceTarget>) -> Option<SurroundedPalaces<'_>>
+```
+
+**Parameters** Same as `palace`; all four spellings are supported.
+
+**Return value** `Option<SurroundedPalaces<'_>>`, holding the four `&PalaceData` values `target` /
+`opposite` / `wealth` / `career` (not `PalaceRef`s: their fields read directly, but they carry none of
+the methods that need the astrolabe for context, such as the opposite palace or flying stars).
+Its predicates are on [Surrounded palaces](/en/docs/rust/surpalaces).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{} / {} / {} / {}",
+    translate_palace(sp.target.name, en), translate_palace(sp.opposite.name, en),
+    translate_palace(sp.wealth.name, en), translate_palace(sp.career.name, en));
+println!("Ziwei in the surrounded set: {}", sp.have(&[StarKey::ZiweiMaj]));
+```
+
+**Output**
+
+```text
+soul / surface / wealth / career
+Ziwei in the surrounded set: true
+```
+
+---
+
+## is_surrounded / is_surrounded_one_of / not_surrounded
+
+**Purpose** Test the surrounded palaces of a palace straight from the astrolabe, skipping the step of
+fetching the set first.
+
+**Signature**
+
+```rust
+pub fn is_surrounded(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+pub fn is_surrounded_one_of(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+pub fn not_surrounded(&self, target: impl Into<PalaceTarget>, stars: &[StarKey]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<PalaceTarget>` | Yes | — | Located the same way as in `palace` |
+| `stars` | `&[StarKey]` | Yes | — | A list of star keys |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `is_surrounded` | **Every** star in the list is in the surrounded set |
+| `is_surrounded_one_of` | **At least one** star in the list is in the surrounded set |
+| `not_surrounded` | **None** of the stars in the list is in the surrounded set |
+
+**Example**
+
+```rust
+use x_iztro::StarKey::*;
+
+println!("{}", chart.is_surrounded(Palace::Soul, &[ZiweiMaj, TianxiangMaj]));
+println!("{}", chart.is_surrounded_one_of(Palace::Soul, &[QishaMaj, PojunMaj]));
+println!("{}", chart.not_surrounded(Palace::Soul, &[HuoxingMin]));
+```
+
+**Output**
+
+```text
+true
+false
+true
+```
+
+The Soul palace holds only Ziwei, while Tianxiang sits in the Wealth palace, one of the trine — hence
+`true` on the first line. Neither Qisha nor Pojun is in any of the four, hence `false` on the second.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="What an empty list returns">
+With an empty `stars` slice, `is_surrounded` and `not_surrounded` return `true` ("all elements
+satisfy" and "no element fails" both hold vacuously) while `is_surrounded_one_of` returns `false`.
+Make sure the list is non-empty before calling.
+</Callout>
+
+---
+
+## horoscope / horoscope_now
+
+**Purpose** Compute the horoscope for a target date, starting from this chart.
+
+**Signature**
+
+```rust
+pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target_date` | `&str` | Yes | — | Target solar date in `YYYY-M-D` |
+| `target_time_index` | `u8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
+
+`horoscope_now` takes the current date and hour from the local clock and has no parameters.
+
+**Return value** `HoroscopeRef<'_>` — a horoscope view holding this chart, so palace lookups across
+the six scopes need not be passed the astrolabe again.
+Details on [the horoscope object](/en/docs/rust/horoscope).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope("2025-6-1", 0)?;
+
+println!("decadal {} {}",
+    translate_heavenly_stem(h.decadal.heavenly_stem, en),
+    translate_earthly_branch(h.decadal.earthly_branch, en));
+println!("yearly  {} {}",
+    translate_heavenly_stem(h.yearly.base.heavenly_stem, en),
+    translate_earthly_branch(h.yearly.base.earthly_branch, en));
+```
+
+<Callout type="info">
+`decadal` / `monthly` / `daily` / `hourly` are `HoroscopeItem`s whose pillars read directly, while
+`yearly` and `age` each carry one extra datum of their own and keep the shared fields under `base` —
+hence `h.yearly.base.heavenly_stem` rather than `h.yearly.heavenly_stem`.
+</Callout>
+
+**Output**
+
+```text
+decadal geng chen
+yearly  yi si
+```
+
+---
+
+## to_dto
+
+**Purpose** Convert the chart into the serialization structure that matches the JS iztro field
+contract.
+
+**Signature**
+
+```rust
+pub fn to_dto(&self) -> AstrolabeDto
+```
+
+**Return value** `x_iztro::dto::AstrolabeDto` — camelCase keys with values translated into the
+**charting language**, plus the language-independent `*Key` fields and the charting context
+(`genderKey` / `timeIndex` / `fixLeap` / `language` / `config`).
+The field list is on [the data model](/en/docs/guide/data-model).
+
+**Example**
+
+```rust
+let dto = chart.to_dto();
+let json = serde_json::to_string(&dto)?;
+let v: serde_json::Value = serde_json::from_str(&json)?;
+
+println!("{} {}", v["solarDate"], v["palaces"][4]["nameKey"]);
+println!("{}", v["config"]["yearDivide"]);
+```
+
+**Output**
+
+```text
+"2000-8-16" "soulPalace"
+"normal"
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The DTO is for the language bindings and for frontends. For analysis on the Rust side use `Astrolabe`
+itself — it has every query method, while the DTO is only data. To get a JSON string in one step, use
+[`by_solar_json`](/en/docs/rust/astro#by_solar_json--by_lunar_json).
+</Callout>
+
+<Callout type="warn">
+The `overrides` of `Config` (the custom mutagen and brightness tables) do not go into the DTO: they
+are charting input rather than result, and echoing them back would break the field contract with JS
+iztro.
+</Callout>

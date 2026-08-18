@@ -1,0 +1,184 @@
+---
+title: Extending the astrolabe
+description: Attaching custom analysis methods to the Astrolabe class with plugins.
+---
+
+Zi Wei analysis rules differ from practitioner to practitioner and no library can enumerate them.
+x-iztro lets you attach your own rules as methods on the astrolabe class — the call syntax matches the
+built-in methods, and every astrolabe instance gets them.
+
+## The recipe
+
+A plugin is a function that takes the `Astrolabe` class and attaches methods to it.
+
+<Steps>
+<Step>Write a function taking a `type[Astrolabe]`</Step>
+<Step>Define the methods inside it and assign them onto the class</Step>
+<Step>Load it with `load_plugin`</Step>
+</Steps>
+
+```python
+from x_iztro import Astro, Astrolabe, PalaceName
+from x_iztro.plugin import load_plugin
+
+
+def my_analysis(cls: type[Astrolabe]) -> None:
+    """Adds two custom analysis methods to the astrolabe."""
+
+    def major_star(self) -> str:
+        """Major stars of the Soul palace (borrowing the opposite palace when empty), comma separated"""
+        soul = self.palace(PalaceName.SOUL)
+        source = soul.opposite_palace() if soul.is_empty() else soul
+        return ",".join(s.name for s in source.major_stars)
+
+    def five_elements_value(self) -> int:
+        """The number of the five elements class"""
+        return int(self.five_elements_class_key[-3])
+
+    cls.major_star = major_star
+    cls.five_elements_value = five_elements_value
+
+
+load_plugin(my_analysis)
+```
+
+**Usage**
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(chart.major_star())
+
+# the extension method follows the charting language
+zh = Astro().by_solar("2000-8-16", 2, "female")
+print(zh.major_star())
+```
+
+**Output**
+
+```text
+emperor
+紫微
+```
+
+---
+
+## load_plugin / load_plugins
+
+**Signature**
+
+```python
+def load_plugin(plugin: Plugin) -> None
+def load_plugins(plugins: Iterable[Plugin]) -> None
+```
+
+`Plugin` is typed as `Callable[[type[Astrolabe]], None]`.
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `plugin` | `Plugin` | Yes | — | A function taking the `Astrolabe` class |
+| `plugins` | `Iterable[Plugin]` | Yes | — | Several plugins, loaded in order |
+
+**Return value** `None`. The methods land directly on the class.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Charts made before loading get the new methods too">
+The methods go on the **class**, not on instances, so load order does not matter for existing
+instances — a chart made earlier can call the new methods once the plugin is loaded.
+</Accordion>
+<Accordion title="A non-callable plugin is an error">
+`load_plugin` raises `TypeError` when passed something that is not callable.
+`load_plugins` loads one at a time and errors on the first non-callable, leaving the remaining plugins
+unloaded.
+</Accordion>
+<Accordion title="It takes effect globally">
+A plugin modifies the `Astrolabe` class itself, so every chart in the process is affected.
+A method of the same name is overwritten by a later plugin.
+</Accordion>
+</Accordions>
+
+---
+
+## Why this can be attached at all
+
+`Astrolabe` is a frozen dataclass with `slots=True`, so nothing can be attached to an instance:
+
+```python
+try:
+    chart.foo = 1
+except Exception as e:
+    print(type(e).__name__, e)
+```
+
+**Output**
+
+```text
+FrozenInstanceError cannot assign to field 'foo'
+```
+
+Attaching methods to the **class** is unaffected, and that is exactly the granularity a plugin wants:
+a plugin says "every astrolabe has this method", not "this one chart has an extra field".
+
+---
+
+## Extending other types
+
+The same recipe works for palaces and stars — just attach the methods to the corresponding class:
+
+```python
+from x_iztro.models import Palace
+
+
+def palace_analysis(cls: type[Palace]) -> None:
+    def is_afflicted(self) -> bool:
+        """Whether this palace is "afflicted": holds a malefic and carries ji"""
+        sha = ["qingyangMin", "tuoluoMin", "huoxingMin",
+               "lingxingMin", "dikongMin", "dijieMin"]
+        return self.has_one_of(sha) and self.has_mutagen("sihuaJi")
+
+    cls.is_afflicted = is_afflicted
+
+
+palace_analysis(Palace)
+```
+
+```python
+for p in chart.palaces:
+    if p.is_afflicted():
+        print(p.name, "is afflicted")
+```
+
+**Output**
+
+```text
+health is afflicted
+```
+
+<Callout type="info">
+`load_plugin` only accepts plugins that act on `Astrolabe`. To attach to another class, call the
+function directly as above — there is no magic in the plugin mechanism itself.
+</Callout>
+
+---
+
+## How to organize this
+
+<Accordions>
+<Accordion title="One plugin per analysis topic, not one big pile">
+Keep `wealth_analysis`, `career_analysis` and `health_analysis` as separate plugins and
+`load_plugin` what you need. One large plugin forces every consumer to load every method.
+</Accordion>
+<Accordion title="Always test on keys, never on translated names">
+`s.key == MajorStar.ZIWEI` holds under any output language; `s.name == "紫微"` holds only on a Chinese
+chart. Use `name` at display time only.
+</Accordion>
+<Accordion title="Type annotations">
+Attached methods are invisible to static type checkers, and call sites get flagged as unknown
+attributes. When you want type friendliness, declare a Protocol for the extended astrolabe or use
+`cast`.
+</Accordion>
+</Accordions>

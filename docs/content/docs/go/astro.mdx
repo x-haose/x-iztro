@@ -41,7 +41,7 @@ func BySolar(
 | `solarDate` | `string` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
 | `timeIndex` | `uint8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
 | `gender` | `string` | 是 | — | `"male"` 或 `"female"`。决定大限顺逆与长生、博士十二神的排列方向 |
-| `fixLeap` | `bool` | 是 | — | 是否调整农历闰月。为真时闰月十五日之后按下月算 |
+| `fixLeap` | `bool` | 是 | — | 是否调整农历闰月。为真时闰月十六日起按下月算（晚子时除外，见下） |
 | `language` | `string` | 是 | — | 输出语言，影响所有译名字段；`*Key` 标识字段不受影响 |
 | `config` | `*Config` | 是 | — | 排盘配置，传 `nil` 取默认 |
 
@@ -77,8 +77,10 @@ fmt.Println("命主", chart.Soul, "身主", chart.Body)
 不确定时辰索引时用 `TimeToIndex(hour)` 换算。
 </Accordion>
 <Accordion title="fixLeap 只在闰月生效">
-该月不是闰月时 `fixLeap` 无任何作用。只有农历闰月出生、且生日在十五之后的人，
-`true` 与 `false` 会得到不同的月索引，进而影响左辅右弼与全部月系星。
+进位要同时满足四个条件：该农历月确实是闰月、`fixLeap` 为 `true`、
+农历日大于 15、且时辰索引不是 12（晚子时）。四者缺一，月索引就按本月算。
+因此只有农历闰月下半月出生的人，`true` 与 `false` 会得到不同的月索引，
+进而影响左辅右弼与全部月系星。
 </Accordion>
 <Accordion title="config 传 nil 而不是零值">
 `&Config{}` 与 `nil` 效果相同——所有字段都有 `omitempty`，空值不会覆盖默认。
@@ -195,11 +197,53 @@ fmt.Println(chart.FiveElementsClass)
 
 **边界与陷阱**
 
-<Callout type="warn" title="自定义表按整表替换">
+<Accordions>
+<Accordion title="自定义表按整表替换，长度严格校验">
 `Mutagens["jiaHeavenly"]` 必须给满四项（禄权科忌），
-`Brightness["ziweiMaj"]` 必须给满十二项，否则排盘报错。
-未列出的天干与星耀仍用默认表。
-</Callout>
+`Brightness["ziweiMaj"]` 必须给满十二项，多一项少一项都排盘报错
+（`*Error`，`Code` 为 `invalid_argument`）。未列出的天干与星耀仍用默认表。
+两张表的键与值都只收标识，不收译名。
+</Accordion>
+<Accordion title="自定义表不回显在 chart.Config 上">
+`chart.Config` 由输出 DTO 还原，只含六个开关——两张自定义表是排盘**输入**而非结果，
+不进 DTO（这一点与 JS iztro 的字段契约一致）。
+
+但星盘内部保留了你传进来的原件，因此 `Rearranged`、`Horoscope`、Prompt
+这些二次计算仍然用得上那两张表，不会静默丢失。
+要把配置记录下来，请在自己的调用侧保存 `*Config`。
+
+```go
+cfg := &iztro.Config{
+    AstroType: iztro.AstroEarth,
+    Mutagens: map[string][]string{
+        iztro.StemGeng: {iztro.StarTaiyangMaj, iztro.StarWuquMaj,
+            iztro.StarTianfuMaj, iztro.StarTiantongMaj},
+    },
+}
+
+chart, err := iztro.BySolar("2000-8-16", 2, "female", true, "zh-CN", cfg)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(chart.FiveElementsClass, chart.Config.AstroType)
+fmt.Println(chart.Config.Mutagens == nil)
+fmt.Println(chart.Palace(iztro.PalaceSoul).MutagenStarKeys)
+```
+
+**输出**
+
+```text
+土五局 earth
+true
+[tiantongMaj tianjiMaj wenchangMin lianzhenMaj]
+```
+</Accordion>
+<Accordion title="&Config{} 与 nil 等价">
+所有字段都带 `omitempty`，空值不进 JSON，因此不会覆盖默认。
+只想改一个开关时，构造一个只填那一项的 `&Config{...}` 即可。
+</Accordion>
+</Accordions>
 
 ---
 

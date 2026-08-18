@@ -10,6 +10,11 @@ description: Astrolabe 的字段、定位方法与三方四正判断。
 let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
 ```
 
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 排盘，因此输出里的展示值都是中文。
+换成别的语言只改这些展示串，`*_key` 标识与所有判断方法的结果不变。
+</Callout>
+
 ## 字段
 
 <Accordions>
@@ -51,6 +56,32 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 
 `palaces` 的索引是**宫位索引**而非宫名顺序：`palaces[0]` 永远是寅宫，
 命宫可能落在其中任何一格。取命宫用 `chart.palace(Palace::Soul)`。
+
+`raw_dates` 是 `lunar_date` / `chinese_date` 两个展示串的数据形式，
+要做日期运算或按干支查表时用它，不必解析中文串：
+
+```rust
+pub struct RawDates {
+    pub lunar_date: RawLunarDate,
+    pub chinese_date: RawChineseDate,
+}
+
+pub struct RawLunarDate {
+    pub lunar_year: i64,     // 农历年
+    pub lunar_month: u32,    // 农历月 1–12，是否闰月看 is_leap
+    pub lunar_day: u32,      // 农历日 1–30
+    pub is_leap: bool,       // 是否闰月
+}
+
+pub struct RawChineseDate {
+    pub yearly: (HeavenlyStem, EarthlyBranch),   // 年柱
+    pub monthly: (HeavenlyStem, EarthlyBranch),  // 月柱
+    pub daily: (HeavenlyStem, EarthlyBranch),    // 日柱
+    pub hourly: (HeavenlyStem, EarthlyBranch),   // 时柱
+}
+```
+
+三个类型都在 crate 根重导出，`use x_iztro::*;` 即可用。
 
 </Accordion>
 <Accordion title="排盘上下文">
@@ -98,22 +129,32 @@ pub fn palace(&self, target: impl Into<PalaceTarget>) -> Option<PalaceRef<'_>>
 | 身宫 | `chart.palace(PalaceTarget::Body)` | 带身宫标记的那一宫 |
 | 来因宫 | `chart.palace(PalaceTarget::Original)` | 宫干与生年干相同的那一宫 |
 
-**返回值**　`Option<PalaceRef<'_>>`。索引越界返回 `None`；来因宫在某些盘上不存在，同样返回 `None`。
+**返回值**　`Option<PalaceRef<'_>>`。索引越界返回 `None`；宫名、身宫、来因宫三种写法在任何一张盘上都能定位到，不会是 `None`。
 
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
+
 let soul = chart.palace(Palace::Soul).unwrap();
-println!("{} {}{}", soul.name, soul.heavenly_stem, soul.earthly_branch);
+println!("{} {}{}", translate_palace(soul.name, zh),
+    translate_heavenly_stem(soul.heavenly_stem, zh),
+    translate_earthly_branch(soul.earthly_branch, zh));
 
 let body = chart.palace(PalaceTarget::Body).unwrap();
-println!("身宫落在 {}", body.name);
+println!("身宫落在 {}", translate_palace(body.name, zh));
 
 let original = chart.palace(PalaceTarget::Original).unwrap();
-println!("来因宫是 {}", original.name);
+println!("来因宫是 {}", translate_palace(original.name, zh));
 
-println!("寅宫是 {}", chart.palace(0).unwrap().name);
+println!("寅宫是 {}", translate_palace(chart.palace(0).unwrap().name, zh));
 ```
+
+<Callout type="info">
+`PalaceData::name` 的类型是 `Palace` 枚举而非字符串，不能直接用 `{}` 打印——
+枚举是语言无关标识，展示时经 `translate_palace` 转成当前语言的文本。
+`heavenly_stem`、`earthly_branch`、`five_elements_class` 等字段同理。
+</Callout>
 
 **输出**
 
@@ -127,14 +168,16 @@ println!("寅宫是 {}", chart.palace(0).unwrap().name);
 **边界与陷阱**
 
 <Accordions>
-<Accordion title="来因宫可能不存在">
+<Accordion title="来因宫恒有且仅有一个">
 来因宫要求宫干与生年干相同，且该宫不在子、丑二宫。
-十二宫的天干由五虎遁从寅宫起排，子丑两宫的干支组合决定了某些年干下无解，
-此时 `chart.palace(PalaceTarget::Original)` 返回 `None`。
+十二宫的天干由五虎遁从寅宫起排，寅到酉这十宫刚好把十天干各走一遍，
+子、丑两宫是第十一、十二格，重复了寅、卯的天干——正因为重复才被排除在外。
+于是生年干在寅到酉之间必然命中且只命中一次：任何一张盘上来因宫都存在，且唯一。
 </Accordion>
 <Accordion title="宫名查找是唯一的">
 十二宫名在一张盘上各出现一次，因此按宫名查找必然唯一。
-身宫是**标记**不是宫名——身宫同时也是十二宫中的某一宫（如例中的夫妻宫）。
+身宫是**标记**不是宫名——身宫同时也是十二宫中的某一宫（例中的官禄宫）。
+来因宫同理，例中落在夫妻宫。
 </Accordion>
 </Accordions>
 
@@ -161,12 +204,16 @@ pub fn star(&self, key: StarKey) -> Option<StarRef<'_>>
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let ziwei = chart.star(StarKey::ZiweiMaj).unwrap();
 
-println!("{} 在 {}", ziwei.name, ziwei.palace().name);
-println!("对宫是 {}", ziwei.opposite_palace().name);
+println!("{} 在 {}", ziwei.name, translate_palace(ziwei.palace().name, zh));
+println!("对宫是 {}", translate_palace(ziwei.opposite_palace().name, zh));
 println!("亮度 {:?} 四化 {:?}", ziwei.brightness, ziwei.mutagen);
 ```
+
+`Star::name` 是 `String`（排盘时已按语言翻译好），可以直接打印；
+宫名 `PalaceData::name` 是枚举，要经 `translate_palace`。
 
 **输出**
 
@@ -190,7 +237,7 @@ println!("亮度 {:?} 四化 {:?}", ziwei.brightness, ziwei.mutagen);
 **用途**　取目标宫的三方四正。
 
 **斗数含义**　三方四正是斗数最常用的取象范围：本宫、对宫（本宫 +6）、
-财帛位（本宫 +4）、官禄位（本宫 +8）。四个宫合起来看，而不只看本宫，
+官禄位（本宫 +4）、财帛位（本宫 +8）。四个宫合起来看，而不只看本宫，
 是因为对宫与三合宫的星耀同样作用于本宫的事。
 
 **签名**
@@ -201,15 +248,19 @@ pub fn surrounded_palaces(&self, target: impl Into<PalaceTarget>) -> Option<Surr
 
 **参数**　同 `palace`，四种定位写法都支持。
 
-**返回值**　`Option<SurroundedPalaces<'_>>`，含 `target` / `opposite` / `wealth` / `career` 四个 `PalaceRef`。
+**返回值**　`Option<SurroundedPalaces<'_>>`，含 `target` / `opposite` / `wealth` / `career`
+四个 `&PalaceData`（不是 `PalaceRef`，字段可直接读，但没有对宫、飞星那些需要星盘上下文的方法）。
 判断方法见[三方四正](/zh/docs/rust/surpalaces)。
 
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
 
-println!("{} / {} / {} / {}", sp.target.name, sp.opposite.name, sp.wealth.name, sp.career.name);
+println!("{} / {} / {} / {}",
+    translate_palace(sp.target.name, zh), translate_palace(sp.opposite.name, zh),
+    translate_palace(sp.wealth.name, zh), translate_palace(sp.career.name, zh));
 println!("三方四正见紫微: {}", sp.have(&[StarKey::ZiweiMaj]));
 ```
 
@@ -306,11 +357,22 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("大限 {}{}", h.decadal.heavenly_stem, h.decadal.earthly_branch);
-println!("流年 {}{}", h.yearly.heavenly_stem, h.yearly.earthly_branch);
+println!("大限 {}{}",
+    translate_heavenly_stem(h.decadal.heavenly_stem, zh),
+    translate_earthly_branch(h.decadal.earthly_branch, zh));
+println!("流年 {}{}",
+    translate_heavenly_stem(h.yearly.base.heavenly_stem, zh),
+    translate_earthly_branch(h.yearly.base.earthly_branch, zh));
 ```
+
+<Callout type="info">
+`decadal` / `monthly` / `daily` / `hourly` 是 `HoroscopeItem`，干支直接读；
+`yearly` 与 `age` 各自多带一项自己的数据，通用字段收在 `base` 里，
+因此写 `h.yearly.base.heavenly_stem` 而不是 `h.yearly.heavenly_stem`。
+</Callout>
 
 **输出**
 
@@ -318,3 +380,50 @@ println!("流年 {}{}", h.yearly.heavenly_stem, h.yearly.earthly_branch);
 大限 庚辰
 流年 乙巳
 ```
+
+---
+
+## to_dto
+
+**用途**　把星盘转成与 JS iztro 字段契约一致的序列化结构。
+
+**签名**
+
+```rust
+pub fn to_dto(&self) -> AstrolabeDto
+```
+
+**返回值**　`x_iztro::dto::AstrolabeDto`——camelCase 键、值按**排盘语言**翻译，
+另带 `*Key` 语言无关标识与排盘上下文（`genderKey` / `timeIndex` / `fixLeap` / `language` / `config`）。
+字段清单见[数据结构](/zh/docs/guide/data-model)。
+
+**示例**
+
+```rust
+let dto = chart.to_dto();
+let json = serde_json::to_string(&dto)?;
+let v: serde_json::Value = serde_json::from_str(&json)?;
+
+println!("{} {}", v["solarDate"], v["palaces"][4]["nameKey"]);
+println!("{}", v["config"]["yearDivide"]);
+```
+
+**输出**
+
+```text
+"2000-8-16" "soulPalace"
+"normal"
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+DTO 是给跨语言绑定与前端用的。Rust 侧做分析请直接用 `Astrolabe`——
+它有全部查询方法，DTO 只有数据。想一步拿到 JSON 字符串用
+[`by_solar_json`](/zh/docs/rust/astro#by_solar_json--by_lunar_json)。
+</Callout>
+
+<Callout type="warn">
+`Config` 的 `overrides`（自定义四化与亮度表）不进 DTO：它是排盘输入而非结果，
+回显会破坏与 JS iztro 的字段契约。
+</Callout>

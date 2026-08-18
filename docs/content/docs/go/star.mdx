@@ -43,6 +43,10 @@ birth := iztro.StarBirth{
 }
 ```
 
+<Callout type="info">
+本页示例统一用默认的 `zh-CN`（`Language` 留空即取它），因此星名输出都是中文。
+</Callout>
+
 <Callout type="info" title="FromStem / FromBranch 只影响起五行局">
 两者同时给出后，五行局改由该干支推算，进而改变紫微天府落点与长生十二神。
 其余各组星的起法不受影响。用它可以取到中州派地盘、人盘的安星结果。
@@ -127,7 +131,7 @@ fmt.Printf("%+v\n%+v %+v\n", l, c, lx)
 | --- | --- | --- |
 | `GetDailyStarIndex` | `DailyStarIndex` | `SantaiIndex` `BazuoIndex` `EnguangIndex` `TianguiIndex` |
 | `GetMonthlyStarIndex` | `MonthlyStarIndex` | `YuejieIndex` `TianyaoIndex` `TianxingIndex` `YinshaIndex` `TianyueIndex` `TianwuIndex` |
-| `GetYearlyStarIndex` | `YearlyStarIndex` | 27 项，含 `XianchiIndex` `HuagaiIndex` `TianshangIndex` `TianshiIndex` `NianjieIndex` 等 |
+| `GetYearlyStarIndex` | `YearlyStarIndex` | 27 项：`XianchiIndex` `HuagaiIndex` `GuchenIndex` `GuasuIndex` `TiancaiIndex` `TianshouIndex` `TianchuIndex` `PosuiIndex` `FeilianIndex` `LongchiIndex` `FenggeIndex` `TiankuIndex` `TianxuIndex` `TianguanIndex` `TianfuIndex` `TiandeIndex` `YuedeIndex` `TiankongIndex` `JieluIndex` `KongwangIndex` `XunkongIndex` `TianshangIndex` `TianshiIndex` `JiekongIndex` `JieshaAdjIndex` `NianjieIndex` `DahaoAdjIndex` |
 
 **示例**
 
@@ -147,10 +151,19 @@ fmt.Printf("%+v\n%+v\n", d, m)
 
 **边界与陷阱**
 
-<Callout type="warn" title="年系星的年支按 HoroscopeDivide 取">
+<Accordions>
+<Accordion title="年系星的年支按 HoroscopeDivide 取">
 年系杂耀属流年神煞，取年支时用的是 `HoroscopeDivide` 而非 `YearDivide`。
 两个配置不同时，年系星与主星、辅星可能基于不同的年支——这是刻意的流派区分。
-</Callout>
+</Accordion>
+<Accordion title="红鸾天喜不在 YearlyStarIndex 里">
+它们也属年系，但由 `GetLuanXiIndex` 单独给出。
+</Accordion>
+<Accordion title="JiekongIndex / JieshaAdjIndex / DahaoAdjIndex 是中州派专有">
+这三项只在 `Algorithm` 为中州派时进入盘面，替换掉截路、空亡与大耗的默认取法；
+默认派别下它们仍会被算出来，只是不安进宫位。
+</Accordion>
+</Accordions>
 
 ---
 
@@ -363,17 +376,17 @@ for i := 0; i < 4; i++ {
 上面的函数都从出生数据起算，内部先推出年干支、命宫、修正后的农历月，再落宫。
 这一组则直接收那些中间量，自建流程时可以复用。
 
-| 函数 | 收 | 出 |
+| 函数 | 收 | 出（字段全为宫位索引 `int`） |
 | --- | --- | --- |
-| `GetZuoYouIndex(lunarMonth)` | 修正后的农历月 1–12 | `ZuoYouIndex` |
-| `GetHuoLingIndex(branchKey, timeIndex)` | 年支、时辰 | `HuoLingIndex` |
-| `GetHuagaiXianchiIndex(branchKey)` | 年支 | `HuagaiXianchiIndex` |
-| `GetGuGuaIndex(branchKey)` | 年支 | `GuGuaIndex` |
-| `GetJieshaAdjIndex(branchKey)` | 年支 | 劫煞宫位索引 |
-| `GetDahaoIndex(branchKey)` | 年支 | 大耗宫位索引 |
-| `GetNianjieIndex(branchKey)` | 年支 | 年解宫位索引 |
-| `GetTianshiTianshangIndex(gender, branchKey, soulIndex, config)` | 性别、年支、命宫索引 | `TianshiTianshangIndex` |
-| `GetChangQuIndexByHeavenlyStem(stemKey)` | 天干 | `ChangQuIndex` |
+| `GetZuoYouIndex(lunarMonth)` | 修正后的农历月 1–12 | `ZuoYouIndex{ZuoIndex, YouIndex}` |
+| `GetHuoLingIndex(branchKey, timeIndex)` | 年支、时辰 | `HuoLingIndex{HuoIndex, LingIndex}` |
+| `GetHuagaiXianchiIndex(branchKey)` | 年支 | `HuagaiXianchiIndex{HuagaiIndex, XianchiIndex}` |
+| `GetGuGuaIndex(branchKey)` | 年支 | `GuGuaIndex{GuchenIndex, GuasuIndex}` |
+| `GetJieshaAdjIndex(branchKey)` | 年支 | `int`，劫煞宫位索引 |
+| `GetDahaoIndex(branchKey)` | 年支 | `int`，大耗宫位索引 |
+| `GetNianjieIndex(branchKey)` | 年支 | `int`，年解宫位索引 |
+| `GetTianshiTianshangIndex(gender, branchKey, soulIndex, config)` | 性别、年支、命宫索引 | `TianshiTianshangIndex{TianshangIndex, TianshiIndex}` |
+| `GetChangQuIndexByHeavenlyStem(stemKey)` | 天干 | `ChangQuIndex{ChangIndex, QuIndex}` |
 
 **示例**
 
@@ -391,7 +404,7 @@ fmt.Println(hl, gg, cq)
 **输出**
 
 ```text
-{1 3} {3 11} {3 7}
+{2 10} {3 11} {3 7}
 ```
 
 **边界与陷阱**

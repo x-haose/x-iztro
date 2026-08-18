@@ -3,8 +3,18 @@ title: 宫位对象
 description: PalaceData 的字段，以及星耀判断、空宫判断与飞星族的全部方法。
 ---
 
-宫位是斗数分析的主战场。`chart.palace(...)` 返回 `PalaceRef`，
-它解引用得到 `PalaceData`，同时提供数据本身给不出的能力——对宫、三方四正、飞星。
+宫位是斗数分析的主战场。数据本身是 `PalaceData`，`chart.palace(...)` 返回的是
+`PalaceRef`——同一份数据外加一个指回星盘的引用。
+
+| | `PalaceData` | `PalaceRef<'a>` |
+| --- | --- | --- |
+| 从哪来 | `chart.palaces[i]`、`sp.target` 等字段 | `chart.palace(...)`、`star.palace()`、`sp` 之外的查询入口 |
+| 字段 | 全部 | 经 `Deref` 全部可读，`data()` 取到底层 |
+| 判断方法 | `has` / `is_empty` / `flies_to` 一族（目标宫要传 `&PalaceData`） | 同名方法，目标宫可直接写索引或宫名 |
+| 独有 | — | `opposite_palace` / `surrounded_palaces` / `mutaged_places` / `astrolabe` |
+
+本页条目按 `PalaceRef` 的形式给签名；`PalaceData` 上的同名方法只差在飞星族的
+目标宫参数类型（`&PalaceData` 而非 `impl Into<PalaceTarget>`）。
 
 ```rust
 let soul = chart.palace(Palace::Soul).unwrap();
@@ -12,6 +22,11 @@ let soul = chart.palace(Palace::Soul).unwrap();
 soul.name;                  // 经 Deref 直接取字段
 soul.opposite_palace();     // 视图独有
 ```
+
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 排盘，因此输出里的展示值都是中文。
+`name` 等枚举字段本身与语言无关，展示时才经 `translate_*` 转成文本。
+</Callout>
 
 ## 字段
 
@@ -32,11 +47,18 @@ soul.opposite_palace();     // 视图独有
 | `suiqian12` | `StarKey` | 岁前十二神 |
 | `decadal` | `Decadal` | 大限：岁数区间与宫干支 |
 | `ages` | `Vec<u32>` | 小限经过本宫的虚岁列表 |
+| `overrides` | `Option<Arc<TableOverrides>>` | 排盘时生效的自定义四化与亮度表；未自定义时为 `None` |
 
 <Callout type="info" title="四组十二神与三组星耀的区别">
 主星、辅星、杂耀是**列表**，一宫可以有零到多颗。
 长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
 因此是单值字段而不是列表。
+</Callout>
+
+<Callout type="info" title="overrides 是输入不是结果">
+`overrides` 携带的是排盘配置里的自定义表——飞星族方法要按宫干查四化，
+自定义表可能改写了某个天干的四化，因此宫位得随身带着它。
+它不参与序列化，DTO 与 JSON 输出里都没有这一项。
 </Callout>
 
 ---
@@ -121,7 +143,7 @@ pub fn not_have_mutagen(&self, mutagen: Mutagen) -> bool
 | --- | --- | --- | --- | --- |
 | `mutagen` | `Mutagen` | 是 | — | `Lu` / `Quan` / `Ke` / `Ji` 之一 |
 
-**返回值**　`bool`。
+**返回值**　`bool`。只扫描 `major_stars` 与 `minor_stars`，**不看杂耀**。
 
 **示例**
 
@@ -138,6 +160,14 @@ println!("子女宫无化忌: {}", children.not_have_mutagen(Mutagen::Ji));
 子女宫有化禄: true
 子女宫无化忌: true
 ```
+
+**边界与陷阱**
+
+<Callout type="warn" title="不扫杂耀">
+`has_mutagen` 只看主星与辅星上的四化标记，杂耀即使带标记也不计入
+（复刻 iztro 的行为）。要连杂耀一起看，自己遍历 `adjective_stars` 的 `mutagen` 字段。
+生年四化只会落在十四主星与部分辅星上，因此实际盘面上两种口径通常没有差别。
+</Callout>
 
 ---
 
@@ -253,9 +283,18 @@ println!("命宫不化权入子女: {}", soul.not_fly_to(Palace::Children, &[Mut
 **边界与陷阱**
 
 <Accordions>
-<Accordion title="空的四化列表返回 true">
-`mutagens` 传空切片时 `flies_to` 与 `not_fly_to` 返回 `true`，
-`flies_one_of_to` 返回 `false`。传空通常是调用方的疏漏，先确认列表非空。
+<Accordion title="空的四化列表：flies_to 为假，另两个为真">
+`mutagens` 传空切片时 `flies_to` 返回 `false`，
+`flies_one_of_to` 与 `not_fly_to` 返回 `true`。
+
+这与「空集上全称命题为真」的直觉相反，但复刻的是 iztro 的行为：
+`flies_to` 先算出要找的星，一颗都没有就直接判假。传空通常是调用方的疏漏，
+先确认列表非空。
+</Accordion>
+<Accordion title="目标宫定位不到时三个方法都返回 false">
+目标宫写成越界索引之外的无效值时，`PalaceRef` 上的三个方法一律返回 `false`，
+包括语义上「否定」的 `not_fly_to`——定位失败不等于「没飞进去」。
+索引会先对 12 取模，因此写 `12`、`-1` 这类值不算定位失败。
 </Accordion>
 <Accordion title="自定义四化表会改变结果">
 `Config::with_mutagens` 换掉某个天干的四化表后，宫干落在该天干的宫飞出的星随之改变。
@@ -323,7 +362,8 @@ println!("官禄宫无任何自化: {}", career.not_self_mutaged(&[]));
 
 <Callout type="info" title="空列表在这三个方法里的含义不同于飞星族">
 `self_mutaged_one_of` 与 `not_self_mutaged` 把空列表解释为「全部四化」，
-而不是「空集」。`self_mutaged` 则与飞星族一致，空列表返回 `true`。
+而不是「空集」。`self_mutaged` 不做这层回退，空列表退化成「本宫是否包含空集」，
+恒为 `true`——与 `flies_to` 的空列表判假正好相反，别把两者的直觉混用。
 </Callout>
 
 ---
@@ -358,7 +398,7 @@ let soul = chart.palace(Palace::Soul).unwrap();
 
 for (m, place) in ["禄", "权", "科", "忌"].iter().zip(soul.mutaged_places()) {
     match place {
-        Some(p) => println!("化{m} → {}", p.name),
+        Some(p) => println!("化{m} → {}", translate_palace(p.name, Language::ZhCN)),
         None => println!("化{m} → 不在盘上"),
     }
 }
@@ -381,7 +421,13 @@ println!("{:?}", soul.mutagen_stars(&[Mutagen::Lu, Mutagen::Ji]));
 
 <Callout>
 `mutagen_stars` 取的是「本宫宫干化出哪几颗星」，与星耀自身的
-`mutagen_key` 字段（生年四化）无关；后者由出生年干决定。
+`mutagen` 字段（生年四化）无关；后者由出生年干决定。
+</Callout>
+
+<Callout type="info" title="mutaged_places 忽略入参">
+`PalaceRef::mutaged_places` 不收参数，恒按禄、权、科、忌四位返回长度为 4 的结果。
+`PalaceData` 上的同名方法要传十二宫切片（`p.mutaged_places(&chart.palaces)`），
+返回的是 `Vec<Option<usize>>` 宫位索引而不是宫位视图。
 </Callout>
 
 ---
@@ -391,7 +437,7 @@ println!("{:?}", soul.mutagen_stars(&[Mutagen::Lu, Mutagen::Ji]));
 **用途**　取本宫的对宫与三方四正。
 
 **斗数含义**　对宫是本宫 +6 的那一宫，两宫永远相对而看。
-三方四正在对宫之外再加上 +4（财帛位）与 +8（官禄位）。
+三方四正在对宫之外再加上 +4（官禄位）与 +8（财帛位）。
 
 **签名**
 
@@ -406,9 +452,11 @@ pub fn surrounded_palaces(&self) -> SurroundedPalaces<'a>
 **示例**
 
 ```rust
+let zh = Language::ZhCN;
 let soul = chart.palace(Palace::Soul).unwrap();
 
-println!("{} 的对宫是 {}", soul.name, soul.opposite_palace().name);
+println!("{} 的对宫是 {}", translate_palace(soul.name, zh),
+    translate_palace(soul.opposite_palace().name, zh));
 println!("三方四正见煞: {}", soul.surrounded_palaces().have_one_of(&[StarKey::HuoxingMin, StarKey::LingxingMin]));
 ```
 
@@ -437,7 +485,7 @@ pub fn astrolabe(&self) -> &'a Astrolabe
 
 ```rust
 let soul = chart.palace(Palace::Soul).unwrap();
-println!("{}", soul.astrolabe().five_elements_class);
+println!("{}", translate_five_elements_class(soul.astrolabe().five_elements_class, Language::ZhCN));
 ```
 
 **输出**

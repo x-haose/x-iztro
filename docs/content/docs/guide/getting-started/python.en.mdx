@@ -1,0 +1,85 @@
+---
+title: Python
+description: Install with pip, use the typed dataclass API, and write chart-language-independent checks with enums.
+---
+
+*For: developers*
+
+## Installation
+
+```bash
+pip install x-iztro
+```
+
+Requires Python 3.10 or later. The wheel contains a native extension compiled by PyO3 (abi3), so
+there are no runtime dependencies at all — no pydantic, and no Rust toolchain on the machine.
+
+<Callout title="Building from source">
+Only needed when you are changing the Rust side:
+
+```bash
+pip install maturin
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
+```
+</Callout>
+
+## Charting
+
+```python
+from x_iztro import Astro
+
+astro = Astro()
+# language defaults to "zh-CN"; pass "en-US" for an English chart
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+print(chart.solar_date)          # Gregorian date
+print(chart.lunar_date)          # lunar date
+print(chart.chinese_date)        # the four pillars
+print(chart.time, chart.time_range)
+print(chart.sign, chart.zodiac)  # zodiac sign, zodiac animal
+print(chart.soul, chart.body)    # soul star, body star
+print(chart.five_elements_class) # Five Elements class
+```
+
+```text
+2000-8-16
+二〇〇〇年七月十七
+geng chen - jia shen - bing woo - geng yin
+Tiger hour 03:00~05:00
+leo dragon
+rebel scholar
+wood 3rd
+```
+
+<Callout title="Reading the output">
+`lunar_date` is the one field that stays in Chinese in an English chart: the lunar date is written
+with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 7th lunar month, 2000.
+`chinese_date` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
+</Callout>
+
+`solar_date` echoes the input string verbatim, without zero padding — pass `"2000-08-16"` and you
+get `"2000-08-16"` back. For a structured date use `chart.raw_dates`.
+
+Chart from a lunar date with `by_lunar`, which takes one extra argument, `is_leap_month`,
+positioned after `gender` and before `fix_leap`:
+
+```python
+chart = astro.by_lunar("2000-7-17", 2, "female", is_leap_month=False, language="en-US")
+```
+
+The returned `Astrolabe` is a dataclass with annotated fields, so editors autocomplete it. Every
+text field is already translated into the chart language.
+
+## Next
+
+The example above only touches the charting entry point. The full API — locating the twelve palaces,
+star predicates, flying stars, horoscopes, the star-placement module, data tables and translation —
+lives under **[Python API](/en/docs/python)**, where every function, class and method has its own
+entry with real run output and edge-case notes.
+
+<Cards>
+  <Card title="Charting entry points" href="/en/docs/python/astro" description="The Astro class charting methods and prompt generation" />
+  <Card title="Astrolabe" href="/en/docs/python/astrolabe" description="Fields, palace lookup, surrounded-palace predicates" />
+  <Card title="Palace" href="/en/docs/python/palace" description="Star predicates, empty-palace checks and the flying-star family" />
+  <Card title="Horoscope" href="/en/docs/python/horoscope" description="Six scopes and palace queries" />
+</Cards>

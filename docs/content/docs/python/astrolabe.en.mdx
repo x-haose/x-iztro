@@ -1,0 +1,506 @@
+---
+title: Astrolabe object
+description: The fields of Astrolabe, its lookup methods, and the surrounded-palace predicates.
+---
+
+`Astrolabe` is what charting produces and the entry point for every query. It is a `frozen=True`
+dataclass holding all the data of the twelve palaces along with chart-level information such as the
+four pillars, the soul and body stars and the five elements class.
+
+```python
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+```
+
+<Callout type="info">
+The examples on this page all chart in `en-US`, so the display values in the output are the English
+translations. Charting in another language changes those strings and nothing else — the `*_key`
+identifiers and the results of every predicate method stay the same.
+</Callout>
+
+## Fields
+
+<Accordions>
+<Accordion title="Display fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `gender` | `str` | Translated gender |
+| `solar_date` | `str` | Solar date, as passed in |
+| `lunar_date` | `str` | The lunar date written in Chinese |
+| `chinese_date` | `str` | Display string of the four pillars |
+| `time` | `str` | Hour name |
+| `time_range` | `str` | The clock range of that hour |
+| `sign` | `str` | Zodiac sign |
+| `zodiac` | `str` | Chinese zodiac animal |
+| `soul` | `str` | Translated soul star |
+| `body` | `str` | Translated body star |
+| `five_elements_class` | `str` | Translated five elements class |
+| `earthly_branch_of_soul_palace` | `str` | Translated branch of the Soul palace |
+| `earthly_branch_of_body_palace` | `str` | Translated branch of the body palace |
+
+Display fields follow `language`. For predicates use the `*_key` fields in the next group.
+
+</Accordion>
+<Accordion title="Key fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `gender_key` | `str` | `"male"` / `"female"` |
+| `soul_key` | `str` | Soul star key |
+| `body_key` | `str` | Body star key |
+| `five_elements_class_key` | `str` | Five elements class key |
+| `earthly_branch_of_soul_palace_key` | `str` | Key of the Soul palace branch |
+| `earthly_branch_of_body_palace_key` | `str` | Key of the body palace branch |
+
+The values correspond one to one with the enums in `x_iztro.enums` and compare directly with `==`.
+
+</Accordion>
+<Accordion title="Structural fields">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `palaces` | `list[Palace]` | The twelve palaces; index 0 is the Yin palace, 11 the Chou palace |
+| `raw_dates` | `RawDates` | The structured lunar birth date and the four-pillar keys |
+
+Indices into `palaces` are **palace indices**, not the palace-name order: `palaces[0]` is always the
+Yin palace, and the Soul palace can be in any of the cells. Fetch it with
+`chart.palace("soulPalace")`.
+
+<Callout type="info" title="palaces is a lazy property">
+The twelve palaces are built from the underlying DTO — and their back-references filled in — only on
+the **first access** to `chart.palaces`. A call that reads chart-level fields such as the dates or the
+soul and body stars pays none of that conversion cost.
+Once built they are cached on the instance, so every later access yields the very same objects.
+</Callout>
+
+`raw_dates` is the data form of the two display strings `lunar_date` and `chinese_date`. Use it for
+date arithmetic or for table lookups by pillar, instead of parsing the Chinese strings:
+
+| Type | Fields |
+| --- | --- |
+| `RawDates` | `lunar_date: RawLunarDate`, `chinese_date: RawChineseDate` |
+| `RawLunarDate` | `lunar_year: int`, `lunar_month: int` (1–12), `lunar_day: int`, `is_leap: bool` |
+| `RawChineseDate` | The raw, unlocalized pillar characters `yearly` / `monthly` / `daily` / `hourly` (each a `tuple[str, str]`), plus the matching keys `yearly_keys` / `monthly_keys` / `daily_keys` / `hourly_keys` |
+
+`RawChineseDate` also carries a method `pillar_keys() -> list[tuple[str, str]]` that hands back the
+four pillar keys in year, month, day, hour order all at once — exactly the input shape of
+[`utils.translate_chinese_date`](/en/docs/python/util#translate_chinese_date).
+
+```python
+rd = chart.raw_dates
+
+print(rd.lunar_date.lunar_year, rd.lunar_date.lunar_month,
+      rd.lunar_date.lunar_day, rd.lunar_date.is_leap)
+print(rd.chinese_date.yearly, rd.chinese_date.yearly_keys)
+print(rd.chinese_date.pillar_keys())
+```
+
+**Output**
+
+```text
+2000 7 17 False
+('庚', '辰') ('gengHeavenly', 'chenEarthly')
+[('gengHeavenly', 'chenEarthly'), ('jiaHeavenly', 'shenEarthly'), ('bingHeavenly', 'wuEarthly'), ('gengHeavenly', 'yinEarthly')]
+```
+
+The pillar characters stay Chinese on an English chart: they are the raw stem and branch glyphs, not a
+translated field. For English pillar names run the keys through
+[`utils.translate_chinese_date`](/en/docs/python/util#translate_chinese_date).
+
+</Accordion>
+<Accordion title="Charting context">
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `time_index` | `int` | Birth hour index |
+| `fix_leap` | `bool` | Whether leap-month correction was applied when charting |
+| `language` | `str` | Output language |
+| `config` | `ChartConfig` | Charting configuration — the six switches, restored from the DTO |
+
+Horoscopes, re-anchoring and prompts restart their computation from these four, so the charting
+parameters need not be supplied again.
+
+<Callout type="info" title="config does not echo the override tables">
+`chart.config` is restored from the output DTO and carries only the six switches; the custom mutagen
+and brightness tables passed in at charting time are not in it.
+The chart does keep the caller's originals internally, however, so follow-up computations such as
+`rearranged`, `horoscope` and prompt generation still use those two tables — they are not silently
+dropped.
+</Callout>
+
+</Accordion>
+</Accordions>
+
+---
+
+## palace
+
+**Purpose** Fetch a palace by index, by name, or as the body or original palace.
+
+**Zi Wei meaning** The twelve palaces are the skeleton of a chart. Once the Soul palace is fixed the
+other eleven follow counterclockwise in a fixed order.
+The "body palace" is whichever of the twelve also carries that flag, marking where acquired effort
+concentrates; the "palace of origin" is the one whose stem matches the birth-year stem, marking where
+matters originate.
+
+**Signature**
+
+```python
+def palace(self, index_or_name: int | PalaceName | str) -> Palace | None
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `index_or_name` | `int \| str` | Yes | — | Four spellings, see the table below |
+
+| Spelling | Example | Meaning |
+| --- | --- | --- |
+| Index | `chart.palace(0)` | Palace index 0–11, where 0 is the Yin palace |
+| Name key | `chart.palace("soulPalace")` | One of the twelve palace-name keys, i.e. the value set of `PalaceName` |
+| Palace name in the charting language | `chart.palace("soul")` | The palace-name text as translated for the chart's language |
+| Body palace | `chart.palace("bodyPalace")` | Whichever palace carries the body-palace flag |
+| Palace of origin | `chart.palace("originalPalace")` | The palace whose stem matches the birth-year stem |
+
+**Return value** `Palace | None`. An out-of-range index or a misspelled name returns `None`; the
+name, body-palace and origin-palace spellings all resolve on any chart as long as they are spelled
+correctly.
+
+**Example**
+
+```python
+soul = chart.palace("soulPalace")
+print(soul.name, soul.heavenly_stem + soul.earthly_branch)
+
+print("body palace falls in", chart.palace("bodyPalace").name)
+print("palace of origin is", chart.palace("originalPalace").name)
+print("the Yin palace is", chart.palace(0).name)
+```
+
+**Output**
+
+```text
+soul renwoo
+body palace falls in career
+palace of origin is spouse
+the Yin palace is wealth
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="The palace of origin always exists, and exactly once">
+The palace of origin requires the palace stem to equal the birth-year stem and the palace not to be Zi
+or Chou. Palace stems run forward from the Yin palace under the Five Tigers rule, and the ten palaces
+from Yin through You walk the ten stems exactly once each; Zi and Chou repeat the stems of Yin and
+Mao — and it is precisely that repetition that gets them excluded.
+So the birth-year stem always hits somewhere between Yin and You, and hits exactly once: the palace of
+origin exists on every chart, and is unique. The body palace likewise always exists. `None` can
+therefore only come from an out-of-range index or a misspelled name.
+</Accordion>
+<Accordion title="A misspelled name fails silently">
+`chart.palace("soulPalce")` (one `a` short) raises nothing and simply returns `None` — `palace`
+compares palace by palace rather than looking a table up, and no match means no result.
+The next `.name` then becomes `AttributeError: 'NoneType' object has no attribute 'name'`, with the
+crash site some distance from the actual typo.
+
+To catch it where it is written, use the enum: `PalaceName.SOUL` has IDE completion. When the name
+comes from external input, run it through the constructor first, which raises `ValueError` on an
+illegal value:
+
+```python
+from x_iztro import PalaceName
+
+print(PalaceName("soulPalace"))   # a StrEnum: printing it prints its value
+try:
+    PalaceName("soulPalce")
+except ValueError as e:
+    print("ValueError:", e)
+```
+
+**Output**
+
+```text
+soulPalace
+ValueError: 'soulPalce' is not a valid PalaceName
+```
+
+The same rule applies to `star()` (a misspelled star name returns `None`) and to `has()` (a misspelled
+star name returns `False`, because "that key is not in the set").
+The enum listing is on [Data tables](/en/docs/python/data#enum-listings).
+</Accordion>
+</Accordions>
+
+---
+
+## star / star_in_palace
+
+**Purpose** Find a star by key, or get it together with the palace it sits in.
+
+**Signature**
+
+```python
+def star(self, star: str) -> Star | None
+def star_in_palace(self, star: str) -> tuple[Star, Palace] | None
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `star` | `str` | Yes | — | A star key (such as `"ziweiMaj"`), or the star name **in the chart's charting language** (such as `"emperor"`) |
+
+**Return value** `None` when the star is not on this chart.
+`star_in_palace` returns a `(star, palace)` tuple, sparing a further call to `star.palace()`.
+
+**Example**
+
+```python
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.name, "sits in", ziwei.palace().name)
+print("its opposite palace is", ziwei.opposite_palace().name)
+print("brightness", ziwei.brightness, "mutagen", ziwei.mutagen)
+
+star, palace = chart.star_in_palace("ziweiMaj")
+print(star.key, palace.name_key)
+```
+
+**Output**
+
+```text
+emperor sits in soul
+its opposite palace is surface
+brightness [+3] mutagen None
+ziweiMaj soulPalace
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The search covers only the three groups of major, minor and adjective stars. The Changsheng, Boshi,
+Sui-qian and Jiang-qian gods are one-per-palace marks rather than star lists — read them from fields
+like `palace.changsheng12_key`.
+</Callout>
+
+---
+
+## surrounded_palaces
+
+**Purpose** Fetch the surrounded palaces of a target palace.
+
+**Zi Wei meaning** The surrounded set is the most commonly used reading scope in Zi Wei Dou Shu: the
+palace itself, its opposite (index +6), the career position (+4) and the wealth position (+8). The
+four are read together rather than the palace alone, because the stars of the opposite and trine
+palaces bear on the palace's affairs just as much.
+
+**Signature**
+
+```python
+def surrounded_palaces(self, index_or_name: int | PalaceName | str) -> SurroundedPalaces | None
+```
+
+**Parameters** Same as `palace`; all four spellings are supported.
+
+**Return value** `SurroundedPalaces | None`, holding the four `Palace`s `target` / `opposite` /
+`wealth` / `career`. Returns `None` when the palace cannot be located (out-of-range index or
+misspelled name). Its predicates are on [Surrounded palaces](/en/docs/python/surpalaces).
+
+**Example**
+
+```python
+sp = chart.surrounded_palaces("soulPalace")
+
+print(sp.target.name, sp.opposite.name, sp.wealth.name, sp.career.name)
+print("Ziwei in the surrounded set:", sp.have(["ziweiMaj"]))
+```
+
+**Output**
+
+```text
+soul surface wealth career
+Ziwei in the surrounded set: True
+```
+
+---
+
+## is_surrounded / is_surrounded_one_of / not_surrounded
+
+**Purpose** Test the surrounded palaces of a palace straight from the chart, skipping the step of
+fetching the set first.
+
+**Signature**
+
+```python
+def is_surrounded(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+def is_surrounded_one_of(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+def not_surrounded(self, index_or_name: int | PalaceName | str, stars: list[str]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `index_or_name` | `int \| str` | Yes | — | Located the same way as in `palace` |
+| `stars` | `list[str]` | Yes | — | A list of star keys |
+
+**Return value**
+
+| Method | Meaning |
+| --- | --- |
+| `is_surrounded` | **Every** star in the list is in the surrounded set |
+| `is_surrounded_one_of` | **At least one** star in the list is in the surrounded set |
+| `not_surrounded` | **None** of the stars in the list is in the surrounded set |
+
+**Example**
+
+```python
+print(chart.is_surrounded("soulPalace", ["ziweiMaj", "tianxiangMaj"]))
+print(chart.is_surrounded_one_of("soulPalace", ["qishaMaj", "pojunMaj"]))
+print(chart.not_surrounded("soulPalace", ["huoxingMin"]))
+```
+
+**Output**
+
+```text
+True
+False
+True
+```
+
+The Soul palace holds only Ziwei, while Tianxiang sits in the Wealth palace, one of the trine — hence
+the first line is true. Neither Qisha nor Pojun is in any of the four, hence the second is false.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="What an empty list returns">
+With an empty `stars` list, `is_surrounded` and `not_surrounded` return `True` ("all elements satisfy"
+and "no element fails" both hold vacuously) while `is_surrounded_one_of` returns `False`.
+Make sure the list is non-empty before calling.
+</Callout>
+
+---
+
+## horoscope
+
+**Purpose** Compute the horoscope for a target date, starting from this chart.
+
+**Signature**
+
+```python
+def horoscope(
+    self,
+    target_date: str | None = None,
+    target_time_index: int | None = None,
+) -> Horoscope
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target_date` | `str \| None` | No | `None` | Target solar date; today when omitted |
+| `target_time_index` | `int \| None` | No | `None` | Target hour index; the current hour when omitted |
+
+**Return value** `Horoscope` — a horoscope object holding this chart, so palace lookups across the six
+scopes need not be passed the astrolabe again.
+Details on [the horoscope object](/en/docs/python/horoscope).
+
+**Example**
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+
+print("decadal", h.decadal.heavenly_stem + h.decadal.earthly_branch)
+print("yearly ", h.yearly.heavenly_stem + h.yearly.earthly_branch)
+
+# both parameters can be omitted for right now
+now = chart.horoscope()
+```
+
+**Output**
+
+```text
+decadal gengchen
+yearly  yisi
+```
+
+---
+
+## to_dict / to_json
+
+**Purpose** Export the chart as JSON matching the field contract of JS iztro.
+
+**Signature**
+
+```python
+def to_dict(self) -> dict[str, Any]
+def to_json(self, **kwargs: Any) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kwargs` | — | No | — | `to_json` only: forwarded to `json.dumps`, e.g. `indent=2`, `sort_keys=True` |
+
+`to_json` defaults to `ensure_ascii=False`, so non-ASCII characters land in the output directly rather
+than as `\uXXXX`.
+
+**Return value** `to_dict` returns a **deep copy** of the underlying DTO — camelCase keys, values
+translated for the charting language, plus the `*Key` language-independent identifiers and the
+charting context. Mutating it does not affect the chart.
+`to_json` returns the same data as a JSON string, matching iztro's
+`JSON.stringify(astrolabe)` key for key and value for value.
+
+**Example**
+
+```python
+d = chart.to_dict()
+print(d["solarDate"], d["palaces"][4]["nameKey"])
+print(d["config"]["yearDivide"], d["genderKey"], d["timeIndex"])
+
+import json
+print(json.dumps({k: d[k] for k in ("gender", "solarDate", "lunarDate")},
+                 ensure_ascii=False))
+print(len(chart.to_json()) > 10000, chart.to_json()[:1])
+```
+
+**Output**
+
+```text
+2000-8-16 soulPalace
+normal female 2
+{"gender": "female", "solarDate": "2000-8-16", "lunarDate": "二〇〇〇年七月十七"}
+True {
+```
+
+<Callout type="info" title="The key order is lexicographic">
+When the native extension converts the underlying DTO into a Python `dict` the keys come out sorted by
+name, so the top-level keys of `to_dict()` / `to_json()` run `body`, `bodyKey`, `chineseDate`, … rather
+than in iztro's declaration order. The names and values correspond one for one; only the arrangement
+differs. For a fixed order, pick out the keys you need yourself.
+</Callout>
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Do not export with dataclasses.asdict">
+`Astrolabe`, `Palace` and `Star` are all dataclasses, but palaces and stars each hold a reference back
+to the chart (`_astrolabe` / `_palace`). `dataclasses.asdict(chart)` follows that back-reference into
+infinite recursion and ends in `RecursionError`.
+
+Always export through `to_dict()` / `to_json()` — they take the underlying DTO directly, so they
+neither recurse nor lose fields.
+</Callout>
+
+<Callout type="info" title="The override tables are not in the export">
+`config` echoes only the six switches. The custom mutagen and brightness tables passed in at charting
+time are **input** rather than result and do not enter the DTO — matching the field contract of JS
+iztro. To record which tables were used, keep your `ChartConfig` on your own call site.
+</Callout>
+
+<Callout type="info">
+`Horoscope` carries a pair of methods by the same names and the same shape; see
+[the horoscope object](/en/docs/python/horoscope#to_dict--to_json).
+</Callout>

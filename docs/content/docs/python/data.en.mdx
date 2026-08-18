@@ -1,0 +1,325 @@
+---
+title: Data tables
+description: Star information, stem and branch information, ordering constants and all the enums.
+---
+
+The input tables of the charting algorithm, plus the enum listings of the language-independent keys.
+
+```python
+from x_iztro import data
+```
+
+<Callout type="info">
+All four entry points return **named dataclasses** (the outer container is still a `dict` or `list`),
+whose fields are read as attributes rather than by subscript. The field names are snake_case and
+therefore differ from the camelCase keys of the underlying JSON.
+</Callout>
+
+---
+
+## stars_info
+
+**Purpose** Get the star information table.
+
+**Signature**
+
+```python
+def stars_info() -> dict[str, StarInfo]
+```
+
+**Return value** Star key → `StarInfo`.
+Only twenty stars have an entry: the **fourteen major stars** plus Wenchang, Wenqu, Huoxing,
+Lingxing, Qingyang and Tuoluo.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `brightness` | `list[str]` | Brightness keys across the twelve palaces, index 0 being the Yin palace; an empty string where the palace has no brightness |
+| `five_elements` | `str \| None` | Five element |
+| `yin_yang` | `str \| None` | Polarity |
+
+**Example**
+
+```python
+info = data.stars_info()
+
+print(len(info))
+print(info["ziweiMaj"])
+print(info["taiyangMaj"].five_elements)
+```
+
+**Output**
+
+```text
+20
+StarInfo(brightness=['wang', 'wang', 'de', 'wang', 'miao', 'miao', 'wang', 'wang', 'de', 'wang', 'ping', 'miao'], five_elements='土', yin_yang='阴')
+None
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Five elements and polarity have gaps">
+Some stars have no five element or polarity in the table: both are `None` for Taiyang and Qisha,
+polarity is `None` for Tanlang, Tianxiang, Tianliang and Pojun, and both are `None` for the six minor
+stars.
+
+Note also that `five_elements` and `yin_yang` are never internationalized — they are always the
+Chinese characters (`土`, `阴` and so on) in every output language.
+</Callout>
+
+---
+
+## heavenly_stems
+
+**Purpose** Get the heavenly stem information table.
+
+**Zi Wei meaning** The mutagen table of the stems is the root of the whole mutagen system: the
+birth-year stem determines the natal mutagens, a palace stem determines what that palace flies, and a
+scope stem determines that layer's mutagens.
+
+**Signature**
+
+```python
+def heavenly_stems() -> dict[str, HeavenlyStemInfo]
+```
+
+**Return value** Stem key → `HeavenlyStemInfo`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `yin_yang` | `str` | Polarity |
+| `five_elements` | `str` | Five element |
+| `crash` | `str \| None` | Clashing stem key; wu and ji clash with nothing |
+| `mutagen` | `list[str]` | The four mutagen star keys, in the order lu, quan, ke, ji |
+
+**Example**
+
+```python
+stems = data.heavenly_stems()
+
+print(stems["jiaHeavenly"])
+print(stems["wuHeavenly"].crash)
+```
+
+**Output**
+
+```text
+HeavenlyStemInfo(yin_yang='阳', five_elements='木', crash='gengHeavenly', mutagen=['lianzhenMaj', 'pojunMaj', 'wuquMaj', 'taiyangMaj'])
+None
+```
+
+<Callout type="info">
+This is the **built-in default table**. A custom mutagen table (`ChartConfig(mutagens=...)`) is not
+reflected here; for the mutagens actually in effect on a given chart use
+[`utils.get_mutagens_by_heavenly_stem(stem, config)`](/en/docs/python/util#get_mutagen--get_mutagens_by_heavenly_stem)
+or a palace's `mutagen_star_keys`.
+</Callout>
+
+---
+
+## earthly_branches
+
+**Purpose** Get the earthly branch information table.
+
+**Signature**
+
+```python
+def earthly_branches() -> dict[str, EarthlyBranchInfo]
+```
+
+**Return value** Branch key → `EarthlyBranchInfo`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `yin_yang` | `str` | Polarity, which sets the direction of the decadal scope and the Changsheng gods |
+| `five_elements` | `str` | Five element |
+| `crash` | `str` | Clashing branch key |
+| `soul` | `str` | Soul star key (looked up by the Soul palace branch) |
+| `body` | `str` | Body star key (looked up by the birth-year branch) |
+| `inside` | `str` | Corresponding internal organ |
+| `outside` | `str` | Corresponding body part |
+| `health_tip` | `str` | Health note |
+
+<Callout type="info">
+`inside`, `outside` and `health_tip` exist only in Chinese and take no part in internationalization.
+</Callout>
+
+**Example**
+
+```python
+zi = data.earthly_branches()["ziEarthly"]
+
+print(zi)
+print(zi.soul, zi.body, zi.crash)
+```
+
+**Output**
+
+```text
+EarthlyBranchInfo(yin_yang='阳', five_elements='水', crash='wuEarthly', soul='tanlangMaj', body='huoxingMin', inside='胆', outside='下体', health_tip='生殖系统、膀胱、尿道之疾病，听觉障碍')
+tanlangMaj huoxingMin wuEarthly
+```
+
+---
+
+## constants
+
+**Purpose** Get the ordering constants and derivation rule tables.
+
+**Signature**
+
+```python
+def constants() -> Constants
+```
+
+**Return value** `Constants`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `languages` | `list[str]` | Supported language codes |
+| `heavenly_stems` | `list[str]` | Stem order |
+| `earthly_branches` | `list[str]` | Branch order |
+| `zodiac` | `list[str]` | Chinese zodiac keys, in branch order |
+| `signs` | `list[str]` | Zodiac sign keys, in ecliptic order |
+| `palaces` | `list[str]` | The twelve palace names, running **counterclockwise** from the Soul palace |
+| `gender` | `dict[str, str]` | The polarity of each gender |
+| `chinese_time` | `list[str]` | Hour keys, from the early Zi hour to the late Zi hour |
+| `time_range` | `list[str]` | The clock range of each hour |
+| `tiger_rule` | `dict[str, str]` | Five Tigers rule: year stem to first-month stem |
+| `rat_rule` | `dict[str, str]` | Five Rats rule: day stem to Zi-hour stem |
+| `mutagen` | `list[str]` | Mutagen order |
+| `five_elements_class` | `dict[str, int]` | Five elements class key → its number (water 2nd is 2, … fire 6th is 6) |
+
+**Example**
+
+```python
+c = data.constants()
+
+print(c.languages)
+print(c.zodiac[:3], c.chinese_time[12], c.time_range[2])
+print(c.gender)
+print("first-month stem of a jia year:", c.tiger_rule["jiaHeavenly"])
+print(c.palaces)
+print(c.five_elements_class)
+```
+
+**Output**
+
+```text
+['en-US', 'ja-JP', 'ko-KR', 'zh-CN', 'zh-TW', 'vi-VN']
+['rat', 'ox', 'tiger'] lateRatHour 03:00~05:00
+{'female': '阴', 'male': '阳'}
+first-month stem of a jia year: bingHeavenly
+['soulPalace', 'parentsPalace', 'spiritPalace', 'propertyPalace', 'careerPalace', 'friendsPalace', 'surfacePalace', 'healthPalace', 'wealthPalace', 'childrenPalace', 'spousePalace', 'siblingsPalace']
+{'earth5th': 5, 'fire6th': 6, 'metal4th': 4, 'water2nd': 2, 'wood3rd': 3}
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="palaces is a counterclockwise order, not positions on a chart">
+`palaces` gives the **ordering** of the palace names: Soul, Parents, Spirit, Property, Career,
+Friends, Surface, Health, Wealth, Children, Spouse, Siblings. That is the sequence in which the twelve
+palaces spread counterclockwise from the Soul palace; it is not what cell `i` is called on any
+particular chart. For that, use
+[`utils.get_palace_names(soul_index)`](/en/docs/python/util#get_palace_names).
+</Callout>
+
+<Callout type="info">
+The order of `languages` is iztro's vocabulary merge order (starting from en-US), not the declaration
+order of the `Language` enum. The per-language scan order of
+[`i18n.key_of`](/en/docs/python/i18n#key_of) matches it.
+</Callout>
+
+<Callout type="info">
+`five_elements_class`, `gender`, `tiger_rule` and `rat_rule` are `dict`s rather than `list`s, and
+their key order is lexicographic (the native extension sorts on conversion) — it carries no meaning as
+an ordering of classes or stems. The class number is also available straight from the enum:
+`FiveElementsClass.WOOD_3.number`.
+</Callout>
+
+---
+
+## Enum listings
+
+Every enum in `x_iztro.enums` is a `StrEnum` whose value is the language-independent key.
+Import them straight from the package root: `from x_iztro import MajorStar, PalaceName`.
+
+| Enum | Members | Contents |
+| --- | --- | --- |
+| `Gender` | 2 | `MALE` `FEMALE` |
+| `Language` | 6 | `ZH_CN` `ZH_TW` `EN_US` `JA_JP` `KO_KR` `VI_VN` |
+| `HeavenlyStem` | 10 | `JIA` `YI` `BING` `DING` `WU` `JI` `GENG` `XIN` `REN` `GUI` |
+| `EarthlyBranch` | 12 | `ZI` `CHOU` `YIN` `MAO` `CHEN` `SI` `WU` `WEI` `SHEN` `YOU` `XU` `HAI` |
+| `PalaceName` | **14** | The twelve palaces `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`, plus the two locator marks `BODY` (body palace) and `ORIGINAL` (palace of origin) |
+| `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
+| `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
+| `Brightness` | 7 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN` |
+| `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
+| `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
+| `MajorStar` | 14 | The fourteen major stars: `ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
+| `MinorStar` | 14 | The fourteen minor stars: `ZUOFU` `YOUBI` `WENCHANG` `WENQU` `LUCUN` `TIANMA` `QINGYANG` `TUOLUO` `HUOXING` `LINGXING` `TIANKUI` `TIANYUE` `DIKONG` `DIJIE` |
+| `AdjectiveStar` | 43 | Adjective stars, including the Zhongzhou school's `XUNZHONG`; member by member on [Stars](/en/docs/guide/concepts/stars) |
+| `HoroscopeStar` | 50 | Ten scope stars for each of the five horoscope layers: `YUNLU` `LIULU` `YUELU` `RILU` `SHILU` and so on |
+| `Changsheng12` | 12 | `CHANGSHENG` `MUYU` `GUANDAI` `LINGUAN` `DIWANG` `SHUAI` `BING` `SI` `MU` `JUE` `TAI` `YANG` |
+| `Boshi12` | 12 | `BOSHI` `LISHI` `QINGLONG` `XIAOHAO` `JIANGJUN` `ZHOUSHU` `FEILIAN` `XISHEN` `BINGFU` `DAHAO` `FUBING` `GUANFU` |
+| `Suiqian12` | 13 | `SUIJIAN` `HUIQI` `SANGMEN` `GUANSUO` `GWANFU` `XIAOHAO` `DAHAO` `SUIPO` `LONGDE` `BAIHU` `TIANDE` `DIAOKE` `BINGFU` (`SUIPO` is the Zhongzhou school's Suipo) |
+| `Jiangqian12` | 12 | `JIANGXING` `PANAN` `SUIYI` `XISHEN` `HUAGAI` `JIESHA` `ZHAISHA` `TIANSHA` `ZHIBEI` `XIANCHI` `YUESHA` `WANGSHEN` |
+| `Algorithm` | 2 | `DEFAULT` `ZHONGZHOU` |
+| `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
+| `YearDivide` / `HoroscopeDivide` | 2 each | `NORMAL` `EXACT` |
+| `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
+| `DayDivide` | 2 | `FORWARD` `CURRENT` |
+
+A member's name does not always match its value letter for letter — the value of `Boshi12.FEILIAN` is
+`faylian`, that of `Jiangqian12.XISHEN` is `xiishen`, and that of `Suiqian12.GWANFU` is `gwanfu`.
+These spellings come from iztro's vocabulary, so **always test against the enum members** rather than
+writing the strings by hand.
+Every key with its translations is on [the key reference](/en/docs/guide/guides/keys).
+
+### FiveElementsClass.number
+
+The five elements class enum carries one extra property, `number`, giving the class number — used both
+by the starting age of the decadal scope and by the placement of Ziwei:
+
+```python
+from x_iztro import FiveElementsClass
+
+for c in FiveElementsClass:
+    print(c, c.number)
+```
+
+**Output**
+
+```text
+water2nd 2
+wood3rd 3
+metal4th 4
+earth5th 5
+fire6th 6
+```
+
+**Example**
+
+```python
+from x_iztro import MajorStar, PalaceName, Mutagen
+
+soul = chart.palace(PalaceName.SOUL)
+
+print(soul.major_stars[0].key == MajorStar.ZIWEI)
+print(MajorStar.ZIWEI, Mutagen.LU, PalaceName.WEALTH)
+```
+
+**Output**
+
+```text
+True
+ziweiMaj sihuaLu wealthPalace
+```
+
+<Callout type="info" title="StrEnums are equivalent to strings">
+`chart.palace(PalaceName.SOUL)` and `chart.palace("soulPalace")` are exactly equivalent.
+The enums earn their keep through IDE completion and spell checking, not through type enforcement.
+
+When a name comes from external input, use the constructor as a validator: `PalaceName("soulPalce")`
+raises `ValueError: 'soulPalce' is not a valid PalaceName`, exposing the problem one step earlier than
+letting a query method silently return `None`.
+</Callout>

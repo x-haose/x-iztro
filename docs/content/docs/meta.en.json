@@ -1,0 +1,4 @@
+{
+  "title": "x-iztro Docs",
+  "pages": ["index", "guide", "rust", "python", "go"]
+}

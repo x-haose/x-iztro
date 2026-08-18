@@ -1,14 +1,16 @@
 ---
 title: 排盘是怎么算的
-description: 从出生数据到一张完整命盘的九个步骤，以及每一步对应哪个 API。
+description: 从出生数据到一张完整命盘的九个步骤，每一步在做什么、依据是什么。
 ---
 
-`by_solar` 内部走完九步得到一张盘。这些步骤在 x-iztro 里**每一步都有对应的公开函数**，
-因此这一页既是算法说明，也是「我只想要中间某一步」时的索引。
+*适合：所有人。想按步骤调 API 的看[排盘九步对应的 API](/zh/docs/guide/guides/step-api)*
+
+排盘不是玄学，是一串确定的推算。给定同样的出生数据与同样的流派取舍，
+任何人算出来的盘都该一模一样。这一页把这串推算拆成九步。
 
 <Callout type="info">
 日常排盘不需要自己走这些步骤——直接用排盘入口即可。
-本页面向两类需求：想核对某一步的推算，或想复用其中一段自建流程。
+读这一页是为了知道结果从哪来，以及某个字段为什么长这样。
 </Callout>
 
 ## 全流程
@@ -33,31 +35,18 @@ description: 从出生数据到一张完整命盘的九个步骤，以及每一�
 
 斗数以农历为基础，但输入通常是公历。这一步同时得到年、月、日、时四柱干支。
 
-年干支的换算时点受 `year_divide` 影响：正月初一与立春之间出生的人，
-两种配置得到不同的年干支。流年神煞另按 `horoscope_divide` 取年支——
-两个开关可以分别设，因此年系杂耀与主星可能基于不同的年支。
+年干支的换算时点受配置影响：正月初一与立春之间出生的人，两种配置得到不同的年干支。
+年系杂耀另按一个独立的开关取年支——两个开关可以分别设，
+因此年系杂耀与主星可能基于不同的年支。这是 iztro 的实际行为，x-iztro 原样复刻。
 
 ### 2. 定月索引
 
-闰月十五日之后按下月算（`fix_leap` 可关闭），晚子时不参与这项修正。
-
-```text
-fix_lunar_month_index(7, 17, false, 2, true) → 6
-```
-
-对应 API：`fix_lunar_month_index` / `fix_lunar_day_index`（[Rust](/zh/docs/rust/util#fix_lunar_month_index--fix_lunar_day_index)、[Python](/zh/docs/python/util#fix_lunar_month_index--fix_lunar_day_index)、[Go](/zh/docs/go/util#fixlunarmonthindex--fixlunardayindex)）
+闰月十五日之后按下月算（可以关掉），晚子时不参与这项修正。
 
 ### 3. 定命宫身宫
 
-从寅宫起正月，顺数到生月，再从生月逆数到生时——落点即命宫。
-身宫用同样的起点但顺数生时。命宫的天干由五虎遁从年干推得。
-
-```text
-get_soul_and_body(6, 2, "gengHeavenly")
-→ 命宫索引 4，身宫索引 8，命宫干支 壬午
-```
-
-对应 API：`get_soul_and_body`（[Rust](/zh/docs/rust/util#get_soul_and_body)、[Python](/zh/docs/python/util#get_soul_and_body)、[Go](/zh/docs/go/util#getsoulandbody)）
+从寅宫起正月，顺数到生月，再从生月逆数到生时——落点即**命宫**。
+**身宫**用同样的起点但顺数生时。命宫的天干由五虎遁从年干推得。
 
 ### 4. 定五行局
 
@@ -65,36 +54,42 @@ get_soul_and_body(6, 2, "gengHeavenly")
 
 局数（2/3/4/5/6）后面要用两次：起紫微时做除数，推大限时做起运岁数。
 
-```text
-get_five_elements_class("renHeavenly", "wuEarthly") → wood3rd
-```
-
-对应 API：`get_five_elements_class`（[Rust](/zh/docs/rust/util#get_five_elements_class)、[Python](/zh/docs/python/util#get_five_elements_class)、[Go](/zh/docs/go/util#getfiveelementsclass)）
-
 <Callout type="info" title="中州派在这一步分叉">
 地盘改用身宫干支起局，人盘改用福德宫干支。起局干支一变，
-后面第 5、6、8、9 步全部重算——这就是 `astro_type` 配置做的事。
+后面第 5、6、8、9 步全部重算——这就是排盘视角配置做的事。
 </Callout>
 
 ### 5. 起紫微天府
 
-用农历日除以局数，按「起紫微星诀」定出紫微的落宫；天府与紫微互为镜像。
-
-```text
-get_start_index(param) → 紫微 4，天府 8
-```
-
-对应 API：`get_start_index`（[Rust](/zh/docs/rust/star#get_start_index)、[Python](/zh/docs/python/star#get_start_index)、[Go](/zh/docs/go/star#getstartindex)）
+用农历日除以局数，按「起紫微星诀」定出紫微的落宫。
+天府与紫微关于寅申一线互为镜像：天府位 = 12 − 紫微位（对 12 取模）。
 
 ### 6. 安十四主星
 
-紫微系六颗（紫微、天机、太阳、武曲、天同、廉贞）依紫微逆铺，
-天府系八颗（天府、太阴、贪狼、巨门、天相、天梁、七杀、破军）依天府顺铺。
-两系铺完，十四主星的位置就全定了。
+紫微系六颗按固定间隔**逆时针**从紫微位铺开，天府系八颗**顺时针**从天府位铺开。
+间隔不是连续的，中间有空位：
 
-生年干的四化标记也在这一步打上。
+| 紫微系（逆行，从紫微位起） | 退几位 |
+| --- | --- |
+| 紫微 | 0 |
+| 天机 | 1 |
+| 太阳 | 3 |
+| 武曲 | 4 |
+| 天同 | 5 |
+| 廉贞 | 8 |
 
-对应 API：`get_major_star`（[Rust](/zh/docs/rust/star#get_major_stars--get_minor_stars--get_adjective_stars)、[Python](/zh/docs/python/star#get_major_star--get_minor_star--get_adjective_star)、[Go](/zh/docs/go/star#getmajorstar--getminorstar--getadjectivestar)）
+| 天府系（顺行，从天府位起） | 进几位 |
+| --- | --- |
+| 天府 | 0 |
+| 太阴 | 1 |
+| 贪狼 | 2 |
+| 巨门 | 3 |
+| 天相 | 4 |
+| 天梁 | 5 |
+| 七杀 | 6 |
+| 破军 | 10 |
+
+两系铺完，十四主星的位置就全定了。生年干的四化标记也在这一步打上。
 
 ### 7. 安辅星与杂耀
 
@@ -108,12 +103,15 @@ get_start_index(param) → 紫微 4，天府 8
 | 左辅、右弼 | 农历月 | 「辰上顺正寻左辅」 |
 | 文昌、文曲 | 时支 | 「戌上逆时觅文昌」 |
 | 火星、铃星 | 年支 + 时支 | |
-| 地空、地劫 | 时支 | |
-| 三台、八座、恩光、天贵 | 农历日 | 由辅星位置起初一顺数 |
+| 地空、地劫 | 时支 | 亥宫起子时，地空逆、地劫顺 |
+| 三台、八座、恩光、天贵 | 农历日 | 由辅星位置起初一数 |
 | 年系杂耀 | 年干或年支 | 数量最多 |
 
-对应 API：`get_minor_star`、`get_adjective_star`，以及各组的索引函数
-（`get_lu_yang_tuo_ma_index`、`get_chang_qu_index` 等）。清单见安星模块页。
+<Callout title="日系四星各有起点与方向">
+四颗共用同一个农历日数，但起点与方向各不相同：
+三台从左辅位**顺**数、八座从右弼位**逆**数、恩光从文昌位顺数、天贵从文曲位顺数
+（恩光天贵再各退一位）。这是 iztro 的实际算法，x-iztro 原样复刻。
+</Callout>
 
 ### 8. 安四组十二神
 
@@ -126,20 +124,13 @@ get_start_index(param) → 紫微 4，天府 8
 | 岁前十二神 | 年支所在宫 | 恒顺行 |
 | 将前十二神 | 年支三合组定 | 恒顺行 |
 
-对应 API：`get_changsheng12`、`get_boshi12`、`get_yearly12`，
-以及两个起点函数 `get_changsheng12_start_index`、`get_jiangqian12_start_index`。
-
 ### 9. 推大限小限
 
 大限从命宫起，每宫十年，起运岁数即局数（水二局 2 岁起，木三局 3 岁起…）；
-顺逆由性别阴阳与年支阴阳决定。小限从年支所属三合组定的宫起，按虚岁逐年走一宫。
+顺逆由性别阴阳与年支阴阳决定。
 
-```text
-get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
-→ 寅宫 43-52 岁，小限经过 9、21、33…
-```
-
-对应 API：`get_decadals_and_ages`（[Rust](/zh/docs/rust/util#get_soul_and_body)、[Python](/zh/docs/python/util#get_decadals_and_ages)、[Go](/zh/docs/go/util#getdecadalsandages)）
+小限另起一套：从年支所属三合组定的宫起，按虚岁逐年走一宫，
+方向只看性别（男顺女逆）。
 
 ---
 
@@ -150,15 +141,8 @@ get_decadals_and_ages(4, "wood3rd", "female", "gengHeavenly", "chenEarthly")
 
 本命盘不变，变的是「此刻站在哪一宫看」。见[运限](/zh/docs/guide/concepts/horoscope)。
 
-## 哪些步骤会被配置改变
+## 想按步骤调 API
 
-| 配置 | 影响的步骤 |
-| --- | --- |
-| `year_divide` | 1（年干支）→ 连带 6、7、8、9 |
-| `horoscope_divide` | 1（流年年支）→ 连带 7 的年系杂耀 |
-| `day_divide` | 1、2（晚子时归属）→ 连带 3、5 |
-| `age_divide` | 9（虚岁进位时点） |
-| `algorithm` | 7、8（部分星耀的取法） |
-| `astro_type` | 4 起（换宫起局）→ 连带 5、6、8、9 |
-
-逐项说明见 [Config 详解](/zh/docs/guide/guides/config)。
+九步在 x-iztro 里每一步都有对应的公开函数，可以只取中间某一步的结果。
+对照表与「哪些步骤会被配置改变」见
+[排盘九步对应的 API](/zh/docs/guide/guides/step-api)。

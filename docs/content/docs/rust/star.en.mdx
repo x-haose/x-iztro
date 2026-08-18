@@ -1,0 +1,497 @@
+---
+title: Star placement
+description: Where a group of stars lands given birth data, plus the low-level building blocks of the charting pipeline.
+---
+
+Use this layer when you do not want a whole chart and only need "which palace does Lucun land in?" or
+"how are the adjective stars distributed on this chart?".
+
+The module has two layers:
+
+| Layer | Takes | Purpose |
+| --- | --- | --- |
+| `star::query` | Birth data | The outward placement entry points, the subject of this page |
+| `star::location` / `decorative` / `major` / `minor` / `adjective` | Precomputed indices | Building blocks of the charting pipeline, reusable in a pipeline of your own |
+
+Every index is a **palace index**: 0 is the Yin palace, 11 the Chou palace.
+
+<Callout type="info">
+The examples on this page all chart with `Language::EnUS`, so the star names in the output are
+iztro's en-US vocabulary — `emperor` for Ziwei, `general` for Wuqu, and so on. The indices themselves
+are language-independent.
+</Callout>
+
+## StarParam
+
+Every entry point in `star::query` shares this one parameter struct.
+
+```rust
+pub struct StarParam<'a> {
+    pub solar_date: &'a str,
+    pub time_index: u8,
+    pub gender: Gender,
+    pub fix_leap: bool,
+    pub from: Option<(HeavenlyStem, EarthlyBranch)>,
+    pub language: Language,
+    pub config: &'a Config,
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `solar_date` | `&str` | Solar date in `YYYY-M-D` |
+| `time_index` | `u8` | Hour index 0–12 |
+| `gender` | `Gender` | Gender, which sets the direction of the Changsheng and Boshi gods |
+| `fix_leap` | `bool` | Whether to correct for leap months |
+| `from` | `Option<(HeavenlyStem, EarthlyBranch)>` | The pillar anchoring the five elements class; `None` uses the Soul palace's |
+| `language` | `Language` | Output language for star names |
+| `config` | `&Config` | Charting configuration |
+
+```rust
+use x_iztro::star::query::StarParam;
+
+let cfg = Config::default();
+let param = StarParam {
+    solar_date: "2000-8-16",
+    time_index: 2,
+    gender: Gender::Female,
+    fix_leap: true,
+    from: None,
+    language: Language::EnUS,
+    config: &cfg,
+};
+```
+
+<Callout type="info" title="from only affects the five elements class">
+Once `from` is given, the class is derived from that pillar instead, which in turn moves Ziwei and
+Tianfu and the Changsheng gods. How the other star groups are placed is unaffected. Use it to obtain
+the placements of the Zhongzhou school's earth and human charts.
+</Callout>
+
+---
+
+## get_start_index
+
+**Purpose** Find the starting palaces of Ziwei and Tianfu.
+
+**Zi Wei meaning** Ziwei is the anchor of the whole chart, located from the five elements class and
+the lunar day by the Ziwei placement rule; the other thirteen major stars then spread out from Ziwei
+and Tianfu. Tianfu's position mirrors Ziwei's.
+
+**Signature**
+
+```rust
+pub fn get_start_index(param: &StarParam) -> Result<StartIndex, IztroError>
+```
+
+**Return value** `StartIndex { ziwei: usize, tianfu: usize }`.
+
+**Example**
+
+```rust
+let s = star::query::get_start_index(&param)?;
+println!("Ziwei {} Tianfu {}", s.ziwei, s.tianfu);
+```
+
+**Output**
+
+```text
+Ziwei 4 Tianfu 8
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A different pillar in `from` changes the result — which is exactly where the Zhongzhou school's three
+charts differ.
+</Callout>
+
+---
+
+## Landing indices per group
+
+The following six entry points share a shape: they take a `&StarParam` and return a struct whose
+fields are all palace indices.
+
+| Function | Return type | Fields | Placement rule |
+| --- | --- | --- | --- |
+| `get_lu_yang_tuo_ma_index` | `LuYangTuoMa` | `lu` `yang` `tuo` `ma` | The year stem places Lucun, with Qingyang ahead and Tuoluo behind; Tianma from the year branch |
+| `get_kui_yue_index` | `KuiYue` | `kui` `yue` | Year stem |
+| `get_chang_qu_index` | `ChangQu` | `chang` `qu` | Hour branch |
+| `get_kong_jie_index` | `KongJie` | `kong` `jie` | Hour branch |
+| `get_timely_star_index` | `TimelyStars` | `taifu` `fenggao` | Hour branch |
+| `get_luan_xi_index` | `LuanXi` | `hongluan` `tianxi` | Year branch |
+
+**Example**
+
+```rust
+use x_iztro::star::query as sq;
+
+let l = sq::get_lu_yang_tuo_ma_index(&param)?;
+println!("Lucun {} Qingyang {} Tuoluo {} Tianma {}", l.lu, l.yang, l.tuo, l.ma);
+
+let c = sq::get_chang_qu_index(&param)?;
+println!("Wenchang {} Wenqu {}", c.chang, c.qu);
+
+let lx = sq::get_luan_xi_index(&param)?;
+println!("Hongluan {} Tianxi {}", lx.hongluan, lx.tianxi);
+```
+
+**Output**
+
+```text
+Lucun 6 Qingyang 7 Tuoluo 5 Tianma 0
+Wenchang 6 Wenqu 4
+Hongluan 9 Tianxi 3
+```
+
+Qingyang sits one palace ahead of Lucun and Tuoluo one behind — the direct expression of the mnemonic
+"Qingyang before Lucun, Tuoluo after".
+
+---
+
+## get_daily_star_index / get_monthly_star_index / get_yearly_star_index
+
+**Purpose** Get the landing palaces of the adjective stars placed by day, month and year.
+
+**Zi Wei meaning** Adjective stars are grouped by how they are placed: day-based stars count forward
+from a minor star's position, starting at day one, to the birth day; month-based stars are located
+from the lunar month; year-based stars are the largest group and start from the year stem or year
+branch.
+
+**Signature**
+
+```rust
+pub fn get_daily_star_index(param: &StarParam) -> Result<DailyStar, IztroError>
+pub fn get_monthly_star_index(param: &StarParam) -> Result<MonthlyStar, IztroError>
+pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroError>
+```
+
+**Return value**
+
+| Type | Fields |
+| --- | --- |
+| `DailyStar` | `santai` `bazuo` `enguang` `tiangui` |
+| `MonthlyStar` | `jieshen` `tianyao` `tianxing` `yinsha` `tianyue` `tianwu` |
+| `YearlyStars` | 29 fields: `tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `jiekong` `tianshang` `tianshi` `huagai` `xianchi` `guchen` `guasu` `jiesha` `nianjie` `dahao` `hongluan` `tianxi` |
+
+**Example**
+
+```rust
+let d = sq::get_daily_star_index(&param)?;
+println!("Santai {} Bazuo {} Enguang {} Tiangui {}", d.santai, d.bazuo, d.enguang, d.tiangui);
+
+let m = sq::get_monthly_star_index(&param)?;
+println!("Jieshen {} Tianyao {} Tianxing {}", m.jieshen, m.tianyao, m.tianxing);
+
+let y = sq::get_yearly_star_index(&param)?;
+println!("Xianchi {} Huagai {} Tianshang {} Tianshi {}", y.xianchi, y.huagai, y.tianshang, y.tianshi);
+```
+
+**Output**
+
+```text
+Santai 0 Bazuo 10 Enguang 9 Tiangui 7
+Jieshen 0 Tianyao 5 Tianxing 1
+Xianchi 7 Huagai 2 Tianshang 9 Tianshi 11
+```
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Year-based stars take their year branch from horoscope_divide">
+Year-based adjective stars belong to the yearly spirits, so their year branch comes from
+`horoscope_divide` rather than `year_divide`.
+When the two settings differ, year-based stars and the major and minor stars can rest on different
+year branches — a deliberate distinction of school.
+</Accordion>
+<Accordion title="Hongluan and Tianxi are reachable from two places">
+`YearlyStars` carries `hongluan` and `tianxi`, and `get_luan_xi_index` gives those same two on their
+own. The values agree; the only difference is that `get_luan_xi_index` need not compute the other
+twenty-seven.
+</Accordion>
+<Accordion title="jiekong / jiesha / dahao belong to the Zhongzhou school">
+These three enter the chart only when `algorithm` is the Zhongzhou school, replacing the default
+placements of Jielu, Kongwang and Dahao; under the default school they are still computed, just not
+placed into palaces.
+</Accordion>
+</Accordions>
+
+---
+
+## get_major_stars / get_minor_stars / get_adjective_stars
+
+**Purpose** Get the complete distribution of major, minor and adjective stars across the twelve
+palaces.
+
+**Signature**
+
+```rust
+pub fn get_major_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
+```
+
+**Return value** A fixed array of twelve, indexed by palace index. Each item is that palace's star
+list, possibly empty.
+
+<Callout type="info">
+Rust names these three in the plural; the Python and Go bindings name their equivalents in the
+singular (`get_major_star`, `GetMajorStar`, …). Do not confuse them with
+[`get_major_star_by_solar_date`](/en/docs/rust/query#get_major_star_by_solar_date--get_major_star_by_lunar_date),
+which returns only the Soul palace's major stars as a string.
+</Callout>
+
+**Example**
+
+```rust
+let major = sq::get_major_stars(&param)?;
+for (i, stars) in major.iter().take(5).enumerate() {
+    println!("[{i}] {:?}", stars.iter().map(|s| s.name.as_str()).collect::<Vec<_>>());
+}
+```
+
+**Output**
+
+```text
+[0] ["general", "minister"]
+[1] ["sun", "sage"]
+[2] ["marshal"]
+[3] ["advisor"]
+[4] ["emperor"]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The returned `Star`s carry brightness and natal mutagen marks and are identical to those from a full
+chart — they go through the same code. If you want the whole chart, `by_solar` is simpler.
+</Callout>
+
+---
+
+## get_changsheng12 / get_boshi12 / get_yearly12
+
+**Purpose** Get how the four groups of twelve gods are arranged across the twelve palaces.
+
+**Zi Wei meaning** Each group is twelve marks filling the twelve palaces, exactly one per palace:
+the Changsheng gods start from the five elements class with direction from gender and year-branch
+polarity; the Boshi gods start from Lucun with the same direction rule;
+the Sui-qian gods run forward from the year branch, and the Jiang-qian gods start from the trine group
+of the year branch.
+
+**Signature**
+
+```rust
+pub fn get_changsheng12(param: &StarParam) -> Result<[StarKey; 12], IztroError>
+pub fn get_boshi12(param: &StarParam) -> Result<[StarKey; 12], IztroError>
+pub fn get_yearly12(param: &StarParam) -> Result<([StarKey; 12], [StarKey; 12]), IztroError>
+```
+
+**Return value** A fixed array of twelve, indexed by palace index.
+`get_yearly12` returns two groups at once, in the order `(Sui-qian gods, Jiang-qian gods)`.
+
+**Example**
+
+```rust
+let cs = sq::get_changsheng12(&param)?;
+println!("{:?}", cs.iter().take(4).map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+
+let (suiqian, jiangqian) = sq::get_yearly12(&param)?;
+println!("{:?}", suiqian.iter().take(4).map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+println!("{:?}", jiangqian.iter().take(4).map(|s| translate_star(*s, Language::EnUS)).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+["dissipated", "buried", "dead", "sick"]
+["sorrowing", "illness", "initial", "unlucky"]
+["varied", "listless", "religious", "robbed"]
+```
+
+---
+
+## get_changsheng12_start_index / get_jiangqian12_start_index
+
+**Purpose** Get just the starting palace of two of the god groups, without laying out the whole
+cycle.
+
+**Zi Wei meaning** The Changsheng starting point is set by the five elements class: water 2nd starts
+at Shen, wood 3rd at Hai, metal 4th at Si, earth 5th at Shen, fire 6th at Yin. The Jiangxing starting
+point is set by the trine group of the year branch: yin/woo/xu years at Woo, shen/zi/chen years at Zi,
+si/you/chou years at You, hai/mao/wei years at Mao.
+
+**Signature**
+
+```rust
+pub fn get_changsheng12_start_index(five_elements_class: FiveElementsClass) -> usize
+pub fn get_jiangqian12_start_index(yearly_branch: EarthlyBranch) -> usize
+```
+
+**Return value** `usize`, 0–11. Neither function needs birth data, and neither can fail.
+
+**Example**
+
+```rust
+use x_iztro::star::decorative::{get_changsheng12_start_index, get_jiangqian12_start_index};
+
+println!("{} {}",
+    get_changsheng12_start_index(FiveElementsClass::Water2nd),
+    get_changsheng12_start_index(FiveElementsClass::Fire6th));
+println!("{} {}",
+    get_jiangqian12_start_index(EarthlyBranch::Zi),
+    get_jiangqian12_start_index(EarthlyBranch::Wu));
+```
+
+**Output**
+
+```text
+6 0
+10 4
+```
+
+Water 2nd puts Changsheng in Shen (index 6), fire 6th in Yin (index 0).
+
+---
+
+## get_horoscope_stars
+
+**Purpose** Get the scope-star distribution of a horoscope layer.
+
+**Zi Wei meaning** Scope stars are the ten stars a horoscope produces: Tiankui, Tianyue, Wenchang,
+Wenqu, Lucun, Qingyang, Tuoluo, Tianma, Hongluan and Tianxi.
+Where they land is fixed by that layer's stem and branch, and their names change with the layer. The
+yearly layer carries one extra star, Nianjie.
+
+**Signature**
+
+```rust
+pub fn get_horoscope_stars(
+    stem: HeavenlyStem,
+    branch: EarthlyBranch,
+    scope: Scope,
+    lang: Language,
+) -> [Vec<Star>; 12]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stem` | `HeavenlyStem` | Yes | — | Stem of that layer |
+| `branch` | `EarthlyBranch` | Yes | — | Branch of that layer |
+| `scope` | `Scope` | Yes | — | The horoscope layer, which fixes the star names |
+| `lang` | `Language` | Yes | — | Output language |
+
+**Return value** A fixed array of twelve, indexed by palace index. It cannot fail — the parameters
+are enums with no invalid values.
+
+**Star names per layer**
+
+| Natal | Decadal | Yearly | Monthly | Daily | Hourly |
+| --- | --- | --- | --- | --- | --- |
+| Tiankui | Yunkui | Liukui | Yuekui | Rikui | Shikui |
+| Tianyue | Yunyue | Liuyue | Yueyue | Riyue | Shiyue |
+| Wenchang | Yunchang | Liuchang | Yuechang | Richang | Shichang |
+| Wenqu | Yunqu | Liuqu | Yuequ | Riqu | Shiqu |
+| Lucun | Yunlu | Liulu | Yuelu | Rilu | Shilu |
+| Qingyang | Yunyang | Liuyang | Yueyang | Riyang | Shiyang |
+| Tuoluo | Yuntuo | Liutuo | Yuetuo | Rituo | Shituo |
+| Tianma | Yunma | Liuma | Yuema | Rima | Shima |
+| Hongluan | Yunluan | Liuluan | Yueluan | Riluan | Shiluan |
+| Tianxi | Yunxi | Liuxi | Yuexi | Rixi | Shixi |
+
+Those are the `StarKey` names. In the en-US vocabulary a scope star displays as its base name plus a
+layer marker — `money(D)` for Yunlu at the decadal layer, `(Y)` `(M)` `(d)` `(H)` for the yearly,
+monthly, daily and hourly layers, and no marker at the natal layer.
+
+**Example**
+
+```rust
+use x_iztro::astro::horoscope::get_horoscope_stars;
+
+let decadal = get_horoscope_stars(HeavenlyStem::Jia, EarthlyBranch::Zi, Scope::Decadal, Language::EnUS);
+println!("{:?}", decadal.iter().take(4)
+    .map(|g| g.iter().map(|s| s.name.as_str()).collect::<Vec<_>>()).collect::<Vec<_>>());
+
+let origin = get_horoscope_stars(HeavenlyStem::Jia, EarthlyBranch::Zi, Scope::Origin, Language::EnUS);
+println!("{:?}", origin.iter().take(2)
+    .map(|g| g.iter().map(|s| s.name.as_str()).collect::<Vec<_>>()).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+[["money(D)", "horse(D)"], ["driven(D)", "attractive(D)"], [], ["scholar(D)"]]
+[["money", "horse"], ["driven", "attractive"]]
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="The yearly layer has one extra star">
+The result for `Scope::Yearly` additionally contains Nianjie, located from the yearly branch and
+placed ahead of the ten scope stars. No other layer has it.
+</Callout>
+
+---
+
+## The low-level building blocks
+
+The functions under `star::location` and `star::decorative` take precomputed indices rather than birth
+data. The charting pipeline uses them internally, and they are reusable in a pipeline of your own.
+
+### star::location
+
+| Function | Takes | Returns |
+| --- | --- | --- |
+| `get_start_index` | `lunar_day, time_index, month_day_count, five_elements_value` | `StartIndex { ziwei, tianfu }` |
+| `get_lu_yang_tuo_ma_index` | `stem, branch` | `LuYangTuoMa { lu, yang, tuo, ma }` |
+| `get_kui_yue_index` | `stem` | `KuiYue { kui, yue }` |
+| `get_zuo_you_index` | `lunar_month` | `ZuoYou { zuo, you }` |
+| `get_chang_qu_index` | `time_index` | `ChangQu { chang, qu }` |
+| `get_chang_qu_index_by_stem` | `stem` | `ChangQu { chang, qu }` (for horoscope layers) |
+| `get_daily_star_index` | `lunar_day, time_index, zuo_index, you_index, chang_index, qu_index` | `DailyStar { santai, bazuo, enguang, tiangui }` |
+| `get_timely_star_index` | `time_index` | `TimelyStars { taifu, fenggao }` |
+| `get_kong_jie_index` | `time_index` | `KongJie { kong, jie }` |
+| `get_huo_ling_index` | `branch, time_index` | `HuoLing { huo, ling }` |
+| `get_luan_xi_index` | `branch` | `LuanXi { hongluan, tianxi }` |
+| `get_huagai_xianchi_index` | `branch` | `HuagaiXianchi { huagai, xianchi }` |
+| `get_gu_gua_index` | `branch` | `GuGua { guchen, guasu }` |
+| `get_jiesha_adj_index` | `branch` | `usize` |
+| `get_dahao_index` | `branch` | `usize` |
+| `get_nianjie_index` | `branch` | `usize` |
+| `get_tianshang_tianshi_index` | `gender, yearly_branch, soul_index, algorithm` | `(usize, usize)`, Tianshang then Tianshi |
+| `get_tiancai_index` | `yearly_branch, soul_index` | `usize` |
+| `get_monthly_star_index` | `month_index` | `MonthlyStar { jieshen, tianyao, tianxing, yinsha, tianyue, tianwu }` |
+| `get_yearly_star_index` | `soul_index, body_index, yearly_stem, yearly_branch, gender, algorithm` | `YearlyStars` (the 29 fields above) |
+
+Every field of these structs is a `usize` palace index (0 being the Yin palace);
+`get_tianshang_tianshi_index` returns a bare tuple rather than a named struct.
+
+### star::decorative
+
+| Function | Takes | Returns |
+| --- | --- | --- |
+| `get_changsheng12_start_index` | `five_elements_class` | `usize` |
+| `get_jiangqian12_start_index` | `yearly_branch` | `usize` |
+| `get_changsheng12` | the class, gender, year branch and so on | `[StarKey; 12]` |
+| `get_boshi12` | `lu_index, gender, yearly_branch` | `[StarKey; 12]` |
+| `get_yearly12` | the year branch and so on | `([StarKey; 12], [StarKey; 12])`, Sui-qian then Jiang-qian |
+
+### star::major / minor / adjective
+
+`get_major_stars`, `get_minor_stars` and `get_adjective_stars` — same names as the functions under
+`star::query`, different parameters: this layer takes precomputed indices, that one takes birth data.
+
+<Callout type="warn" title="Names collide with those under star::query">
+The two layers share several function names (two `get_start_index`, for instance), distinguished by
+module path: `star::query::get_start_index` takes a `&StarParam`, while
+`star::location::get_start_index` takes the lunar day, the hour, the number of days in that month and
+the five elements class number.
+Use qualified paths when both modules are in scope.
+</Callout>
+
+The derivation from birth data to the intermediates these blocks need lives in
+`astro::context::derive`; in a pipeline of your own, call it first to get the context and feed that to
+the blocks, without re-deriving the year pillar and Soul palace yourself.

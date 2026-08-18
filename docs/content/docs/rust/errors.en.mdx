@@ -1,0 +1,309 @@
+---
+title: Error handling
+description: The three variants of IztroError, the code() classifier, BridgeError, and how to diagnose.
+---
+
+Every entry point taking external input returns a `Result`. Date format, date existence, year range
+and hour index are all validated up front in the core, so invalid input yields an error value rather
+than a panic.
+
+```rust
+#[non_exhaustive]
+pub enum IztroError {
+    /// Malformed date string, non-existent date, or outside the solar range 1583–9999
+    InvalidDate(String),
+    /// Hour index outside 0–12
+    InvalidTimeIndex(u8),
+    /// The calendar library did not return a pillar or sign value that should exist
+    Internal(String),
+}
+
+impl IztroError {
+    /// Machine-readable classification of the error
+    pub fn code(&self) -> &'static str
+}
+```
+
+`IztroError` implements `Display` and `std::error::Error`, so it propagates with `?` and prints with
+`{}`.
+
+## code()
+
+`Display` gives human-facing wording that may be adjusted between versions; branch on `code()` in
+code:
+
+| Variant | `code()` | Meaning |
+| --- | --- | --- |
+| `InvalidDate` | `invalid_date` | The date is invalid |
+| `InvalidTimeIndex` | `invalid_time_index` | The hour index is out of range |
+| `Internal` | `internal` | A defect inside the library |
+
+These three values are the same set as Python's `IztroError.code` and Go's `iztro.Error.Code`, so
+branching logic carries across languages verbatim.
+
+```rust
+let e = by_solar("2000-2-30", 2, Gender::Female, true, Language::EnUS, Config::default())
+    .unwrap_err();
+println!("{} / {}", e.code(), e);
+```
+
+**Output**
+
+```text
+invalid_date / invalid solar date '2000-2-30': day is out of range for that month
+```
+
+<Callout type="warn" title="The enum is #[non_exhaustive]">
+`IztroError` is marked `#[non_exhaustive]`, so a `match` outside the crate cannot be exhaustive and
+must carry a catch-all arm. Adding an error class later is therefore not a breaking change, and code
+branching on `code()` is unaffected either way.
+</Callout>
+
+---
+
+## InvalidDate
+
+**Triggers**
+
+| Situation | Example | Message |
+| --- | --- | --- |
+| The format is not `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
+| Month out of range | `"2000-13-1"` | `month must be within 1-12` |
+| That month has no such day | `"2000-2-30"` | `day is out of range for that month` |
+| Year outside the supported range | `"1500-1-1"` | `year must be within 1583-9999` |
+
+Lunar-only (reachable from `by_lunar`, `get_sign_by_lunar_date` and `get_major_star_by_lunar_date`):
+
+| Situation | Example | Message |
+| --- | --- | --- |
+| That lunar year has no such month | a month missing from the table | `month does not exist in that lunar year` |
+| That lunar month has no such day | `"2000-7-30"` (a short month) | `day is out of range for that lunar month` |
+
+Lunar messages are prefixed `invalid lunar date '<input>': ` and solar ones
+`invalid solar date '<input>': `, so the message alone shows which entry point was taken.
+
+**Example**
+
+```rust
+let cfg = Config::default();
+
+for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
+    match by_solar(date, 2, Gender::Female, true, Language::EnUS, cfg.clone()) {
+        Ok(_) => println!("{date}: ok"),
+        Err(e) => println!("{e}"),
+    }
+}
+```
+
+**Output**
+
+```text
+invalid solar date '2000-13-1': month must be within 1-12
+invalid solar date '2000-2-30': day is out of range for that month
+invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+The message carries the original input, so batch jobs can pinpoint which record failed.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Where the 1583 lower bound comes from">
+The Gregorian reform year of 1582 contains a stretch of dates that never existed. The underlying
+calendar library has no definition for them, so support starts from 1583, after the reform. The upper
+bound of 9999 is where the lunar data tables end.
+</Accordion>
+<Accordion title="No zero padding needed">
+Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
+</Accordion>
+<Accordion title="Validation of lunar leap months">
+`by_lunar` checks whether that month really exists in that lunar year and how many days it has (30 in
+a long month, 29 in a short one). Passing `true` for `is_leap_month` when that year and month have no
+leap month is not an error; the parameter is silently ignored.
+</Accordion>
+</Accordions>
+
+---
+
+## InvalidTimeIndex
+
+**Trigger** An hour index greater than 12.
+
+**Example**
+
+```rust
+let err = by_solar("2000-8-16", 13, Gender::Female, true, Language::EnUS, Config::default())
+    .unwrap_err();
+println!("{err}");
+```
+
+**Output**
+
+```text
+time_index must be 0-12, got 13
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Thirteen values, not twelve">
+The Zi hour straddles midnight and splits into the early Zi hour (index 0) and the late Zi hour
+(index 12), so there are 13 legal values.
+To convert from a clock hour use [`time_to_index`](/en/docs/rust/util#time_to_index), which is
+guaranteed to land in the legal range.
+</Callout>
+
+---
+
+## Internal
+
+**Trigger** The calendar library `lunar_rust` did not hand back a pillar or zodiac-sign value that
+should exist. This is a defect inside the library rather than a caller's mistake.
+
+**Why not panic** On the wasm target a panic is a trap, and every trap permanently consumes stack
+space in the module instance. Turning such cases into error values keeps invalid calls from
+accumulating damage in the wasm instance on the Go side.
+
+**Message shape** `internal error: <detail>`, with `code()` returning `internal`.
+
+<Callout type="warn">
+This variant has never been triggered on any date covered by the golden tests. If you do hit it,
+please report it as a bug together with the full charting parameters.
+</Callout>
+
+---
+
+## BridgeError
+
+The uniform error shape the bindings (C FFI / wasm / PyO3) report outward. Rust callers generally do
+not need it — it is the origin of the error objects on the Python and Go sides.
+
+```rust
+pub struct BridgeError {
+    /// invalid_date / invalid_time_index / invalid_argument / internal
+    pub code: &'static str,
+    /// Human-facing description of the error
+    pub message: String,
+}
+
+impl BridgeError {
+    pub fn invalid_argument(message: impl Into<String>) -> Self
+    pub fn internal(message: impl Into<String>) -> Self
+}
+
+impl From<IztroError> for BridgeError { /* code and message carry straight over */ }
+```
+
+It has one class more than `IztroError`: `invalid_argument`. The bindings receive strings rather than
+enums, so the validity of a gender, language, palace name, mutagen or config JSON can only be checked
+at that layer, and lands in this class.
+
+All three exits serialize it into the same JSON:
+
+```json
+{ "error": "invalid solar date '2000-2-30': day is out of range for that month",
+  "code": "invalid_date" }
+```
+
+On the Python side that becomes an `IztroError` (subclassing `ValueError`, carrying `.code`); on the
+Go side an `*iztro.Error` (carrying `Code`, comparable with `errors.Is` against sentinels).
+
+## C FFI
+
+In the C ABI exported by `x_iztro::ffi`, the single query entry point is `iztro_query`:
+
+```c
+// include/x_iztro.h
+char *iztro_query(const char *query_json);
+void  iztro_free_string(char *s);
+```
+
+It takes a JSON document whose `kind` selects the query (for example
+`{"kind":"getPalaceNames","soulIndex":0}`), returning `{"value": <result>}` on success and the error
+JSON with its `code` shown above on failure.
+It gathers the lightweight queries, palace derivation, utilities, star placement, data tables,
+translation and prompt generation behind one symbol instead of exporting one C symbol per function.
+Keys are camelCase, and stars, stems, branches, palaces and other identifiers are passed and returned
+as iztro i18n keys.
+
+Every returned string is handed back by the caller through `iztro_free_string`; these functions never
+return `NULL`.
+
+<Callout type="info">
+The `ffi` module is marked `#[doc(hidden)]` and is not meant for Rust callers — in Rust, call the
+`by_solar` family directly.
+</Callout>
+
+---
+
+## Handling errors
+
+**Propagate with `?`**
+
+```rust
+fn analyze(date: &str) -> Result<String, IztroError> {
+    let chart = by_solar(date, 2, Gender::Female, true, Language::EnUS, Config::default())?;
+    Ok(chart.palace(Palace::Soul).unwrap().major_stars
+        .iter().map(|s| s.name.clone()).collect::<Vec<_>>().join(","))
+}
+```
+
+**Match on the variant**
+
+```rust
+fn describe(date: &str, ti: u8) -> String {
+    match by_solar(date, ti, Gender::Female, true, Language::EnUS, Config::default()) {
+        Ok(chart) => format!("charted: {}", chart.solar_date),
+        Err(IztroError::InvalidDate(msg)) => format!("bad date: {msg}"),
+        Err(IztroError::InvalidTimeIndex(t)) => format!("hour index {t} out of range"),
+        Err(e) => format!("other error [{}]: {e}", e.code()),
+    }
+}
+
+println!("{}", describe("2000-8-16", 2));
+println!("{}", describe("2000-2-30", 2));
+println!("{}", describe("2000-8-16", 13));
+```
+
+**Output**
+
+```text
+charted: 2000-8-16
+bad date: invalid solar date '2000-2-30': day is out of range for that month
+hour index 13 out of range
+```
+
+<Callout type="warn" title="A wildcard arm is mandatory">
+`IztroError` is marked `#[non_exhaustive]`, so a `match` outside the crate must carry a `_` or
+`Err(e)` catch-all arm or it will not compile. That is what keeps future variants from being a
+breaking change.
+</Callout>
+
+**Convert to your own error type**
+
+`IztroError` implements `std::error::Error`, so it is caught directly by `Box<dyn Error>`,
+`anyhow::Error`, or `thiserror`'s `#[from]`.
+
+```rust
+#[derive(Debug, thiserror::Error)]
+enum AppError {
+    #[error("charting failed: {0}")]
+    Chart(#[from] x_iztro::IztroError),
+}
+```
+
+---
+
+## About panics
+
+The charting entry points do not panic on invalid **external input**: dates and hour indices become an
+`IztroError`, and even the internal case of the calendar library failing to produce a value goes
+through `IztroError::Internal` rather than a panic.
+The only remaining source of panics would be a logic defect inside the library (a failed assertion,
+say), and such a case should be reported as a bug.
+
+<Callout type="warn" title="Especially important on the wasm target">
+On wasm a panic is a trap, and every trap permanently consumes stack space in the module instance.
+Validation therefore lives in the core rather than in the bindings — one line of defense shared by all
+three languages.
+</Callout>

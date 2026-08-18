@@ -1,0 +1,138 @@
+---
+title: The language-independent key contract
+description: Why star names must not drive predicates, what the key fields are, and how each of the three programming languages uses them.
+---
+
+*For: developers*
+
+## The problem
+
+The text in a chart follows the chart language. The same star is `emperor` on an English chart,
+紫微 on a Simplified Chinese one and `자미` on a Korean one. If a predicate is written as:
+
+```python
+# what not to do
+if any(s.name == "emperor" for s in soul.major_stars):
+    ...
+```
+
+then this code is correct only when `language="en-US"`. Switch to any other chart language and it
+fails silently — no error, it just returns `False` forever. That class of bug is very hard to spot.
+
+## The solution
+
+For every field that gets translated, x-iztro also provides a **language-independent key**. Key
+values are iztro's i18n key names: independent of the chart language, and never changing.
+
+```json
+{
+  "name": "emperor",
+  "key": "ziweiMaj",
+  "brightness": "[+3]",
+  "brightnessKey": "miao",
+  "mutagen": "A",
+  "mutagenKey": "sihuaLu"
+}
+```
+
+`name` is for people, `key` is for code.
+
+## Which fields have keys
+
+| Data | Translated field | Key field | Example value |
+| --- | --- | --- | --- |
+| Star | `name` | `key` | `ziweiMaj` |
+| Brightness | `brightness` | `brightnessKey` | `miao` |
+| Mutagen | `mutagen` | `mutagenKey` | `sihuaLu` |
+| Palace name | `name` | `nameKey` | `soulPalace` |
+| Heavenly stem | `heavenly_stem` | `heavenlyStemKey` | `jiaHeavenly` |
+| Earthly branch | `earthly_branch` | `earthlyBranchKey` | `ziEarthly` |
+| Five Elements class | `five_elements_class` | `fiveElementsClassKey` | `water2nd` |
+| Soul / body star | `soul` / `body` | `soulKey` / `bodyKey` | `ziweiMaj` |
+| Gender | `gender` | `genderKey` | `male` |
+| The twelve Changsheng gods | `changsheng12` | `changsheng12Key` | `changsheng` |
+| The twelve Boshi gods | `boshi12` | `boshi12Key` | `boshi` |
+| The twelve Jiang-qian gods | `jiangqian12` | `jiangqian12Key` | `jiangxing` |
+| The twelve Sui-qian gods | `suiqian12` | `suiqian12Key` | `suijian` |
+| Mutagen stars of the palace stem | — | `mutagenStarKeys` | `["taiyangMaj", …]` |
+
+## How each programming language uses them
+
+### Python: enums
+
+Every enum in `x_iztro.enums` is a `StrEnum`, and **a member's value is the key**.
+
+```python
+from x_iztro.enums import MajorStar, Mutagen, PalaceName, Brightness
+
+MajorStar.ZIWEI      # "ziweiMaj"
+Mutagen.LU           # "sihuaLu"
+PalaceName.SOUL      # "soulPalace"
+Brightness.MIAO      # "miao"
+```
+
+The predicate methods accept enums:
+
+```python
+soul = chart.palace(PalaceName.SOUL)
+soul.has([MajorStar.ZIWEI])
+soul.has_mutagen(Mutagen.LU)
+```
+
+Because they are `StrEnum`s they are also strings, so they compare directly against key fields:
+
+```python
+star.key == MajorStar.ZIWEI   # True
+```
+
+### Go: constants
+
+The constants in `keys.go` have the keys as their values:
+
+```go
+iztro.PalaceSoul      // "soulPalace"
+iztro.StarZiweiMaj    // "ziweiMaj"
+iztro.MutagenLu       // "sihuaLu"
+iztro.BrightnessMiao  // "miao"
+
+soul := chart.Palace(iztro.PalaceSoul)
+soul.Has(iztro.StarZiweiMaj)
+star.WithMutagen(iztro.MutagenQuan)
+star.WithBrightness(iztro.BrightnessMiao)
+```
+
+### Rust: the enums themselves
+
+The Rust side needs no key fields — the structs hold enums to begin with, and translation happens
+only at display time.
+
+```rust
+if soul.has(&[StarKey::ZiweiMaj]) { }
+```
+
+When you do need the key string (for your own serialization, say), call `as_key()`:
+
+```rust
+Palace::Soul.as_key();        // "soulPalace"
+Mutagen::Lu.as_key();         // "sihuaLu"
+Brightness::Miao.as_key();    // "miao"
+```
+
+## How this is verified
+
+The same birthday is charted in all six chart languages and every key field must match one for one —
+a line held by the binding contract test (`golden_contract`) and by the end-to-end golden tests on
+the Go and Python sides.
+
+So this code gives the same answer in every chart language:
+
+```python
+for lang in ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]:
+    chart = astro.by_solar("2000-8-16", 2, "female", language=lang)
+    soul = chart.palace(PalaceName.SOUL)
+    assert soul.has_mutagen(Mutagen.LU) == expected
+```
+
+## When text is acceptable
+
+Display. Only display. Any comparison that feeds an `if` should use a key.

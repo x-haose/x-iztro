@@ -1,0 +1,19 @@
+{
+  "title": "x-iztro",
+  "description": "A Zi Wei Dou Shu charting library: a Rust core with three language bindings",
+  "icon": "Sparkles",
+  "root": true,
+  "pages": [
+    "index",
+    "---Get started---",
+    "getting-started",
+    "---Zi Wei Dou Shu---",
+    "concepts",
+    "---Guides---",
+    "guides",
+    "---Data model---",
+    "data-model",
+    "---About---",
+    "about"
+  ]
+}

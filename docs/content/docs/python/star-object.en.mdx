@@ -1,0 +1,194 @@
+---
+title: Star object
+description: The fields of Star, its brightness and mutagen predicates, and tracing back to its palace.
+---
+
+A `Star` is one star sitting in a palace, carrying its type, brightness and mutagen mark, and able to
+trace back to the palace it sits in.
+
+```python
+ziwei = chart.star("ziweiMaj")
+```
+
+<Callout type="info">
+The examples on this page all chart in `en-US`, so the display values in the output are the English
+translations.
+</Callout>
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `str` | Star key, independent of language; use it in predicates |
+| `name` | `str` | Star name, translated into the charting language |
+| `type` | `str` | Star type, see below |
+| `scope` | `str` | Which layer it acts on: `"origin"` for natal stars, the matching scope for scope stars |
+| `brightness` | `str \| None` | Translated brightness; `None` for stars with no brightness table |
+| `brightness_key` | `str \| None` | Brightness key |
+| `mutagen` | `str \| None` | Translated natal mutagen; `None` for stars the birth-year stem did not transform |
+| `mutagen_key` | `str \| None` | Mutagen key |
+
+### The eight star types
+
+| Value | Meaning | Typical members |
+| --- | --- | --- |
+| `major` | The fourteen major stars | Ziwei, Tianfu, Qisha, Pojun |
+| `soft` | Auspicious stars | Zuofu, Youbi, Wenchang, Wenqu, Tiankui, Tianyue |
+| `tough` | Malefic stars | Qingyang, Tuoluo, Huoxing, Lingxing, Dikong, Dijie |
+| `adjective` | Adjective stars | Santai, Bazuo, Tianxing, Tianyao |
+| `flower` | Peach-blossom stars | Hongluan, Tianxi, Xianchi |
+| `helper` | Jieshen | Jieshen |
+| `lucun` | Lucun | Lucun |
+| `tianma` | Tianma | Tianma |
+
+Lucun and Tianma each get a category of their own, because in the traditional division they are
+neither purely auspicious nor purely malefic and predicates routinely single them out.
+
+<Callout type="info" title="A brightness of None does not mean a weak star">
+Only twenty stars have a brightness table — the fourteen major stars plus Wenchang, Wenqu, Huoxing,
+Lingxing, Qingyang and Tuoluo. Brightness is simply not a concept for the rest, whose `brightness` is
+`None`.
+</Callout>
+
+---
+
+## with_brightness
+
+**Purpose** Test whether this star is at one of the given brightness levels.
+
+**Zi Wei meaning** Brightness (miao, wang, de, li, ping, bu, xian) describes how strong a star is in
+its palace. Each star has a fixed value in each of the twelve palaces; at miao or wang its power comes
+out in full, at xian it is constrained.
+
+**Signature**
+
+```python
+def with_brightness(self, brightness: Brightness | list[Brightness]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `brightness` | `str \| list[str]` | Yes | — | A brightness key or a list of them; with a list, any match is true |
+
+**Return value** `bool`. Always false for a star with no brightness.
+
+**Example**
+
+```python
+from x_iztro import Brightness
+
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.with_brightness(Brightness.MIAO))
+print(ziwei.with_brightness([Brightness.WANG, Brightness.DE]))
+```
+
+**Output**
+
+```text
+True
+False
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+A list means "any match", not "all match" — a star has exactly one brightness, so demanding all of
+them would be permanently false for a list longer than one.
+</Callout>
+
+---
+
+## with_mutagen
+
+**Purpose** Test whether this star carries a given natal mutagen.
+
+**Zi Wei meaning** Natal mutagens are fixed by the birth-year stem: a given year always sends lu,
+quan, ke and ji to four particular stars. The mark travels with the star, whichever palace it lands
+in.
+
+**Signature**
+
+```python
+def with_mutagen(self, mutagen: Mutagen | list[Mutagen]) -> bool
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mutagen` | `str \| list[str]` | Yes | — | A mutagen key or a list of them; with a list, any match is true |
+
+**Return value** `bool`. Always false for a star the birth-year stem did not transform.
+
+**Example**
+
+```python
+from x_iztro import Mutagen
+
+print("Ziwei takes lu:", chart.star("ziweiMaj").with_mutagen(Mutagen.LU))
+print("Taiyang takes lu:", chart.star("taiyangMaj").with_mutagen(Mutagen.LU))
+```
+
+**Output**
+
+```text
+Ziwei takes lu: False
+Taiyang takes lu: True
+```
+
+This chart's birth-year stem is geng, and geng sends lu to Taiyang, so the mark lands on Taiyang
+rather than Ziwei.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Natal mutagens and flying mutagens are not the same thing">
+`with_mutagen` looks at the mark the **birth-year stem** placed on this star; only four stars on a
+chart carry one. Mutagens flown by palace stems do not show up here — for those use the palace's
+[`flies_to`](/en/docs/python/palace#flies_to--flies_one_of_to--not_fly_to) family.
+</Callout>
+
+---
+
+## palace / opposite_palace / surrounded_palaces
+
+**Purpose** Trace from a star back to its palace, that palace's opposite, and its surrounded set.
+
+**Signature**
+
+```python
+def palace(self) -> Palace | None
+def opposite_palace(self) -> Palace | None
+def surrounded_palaces(self) -> SurroundedPalaces | None
+```
+
+**Return value** A star constructed on its own, detached from a chart, returns `None`; a star
+obtained from a chart query never does.
+
+**Example**
+
+```python
+ziwei = chart.star("ziweiMaj")
+
+print(ziwei.palace().name)
+print(ziwei.opposite_palace().name)
+print("Tianxiang in the same palace or the trine:", ziwei.surrounded_palaces().have(["tianxiangMaj"]))
+```
+
+**Output**
+
+```text
+soul
+surface
+Tianxiang in the same palace or the trine: True
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A star appears exactly once on a chart, so `chart.star(key)` has a unique result.
+Horoscope scope stars are not in the natal chart's star lists; to reach them use the horoscope
+object's [`palace`](/en/docs/python/horoscope#palace) with a scope argument.
+</Callout>

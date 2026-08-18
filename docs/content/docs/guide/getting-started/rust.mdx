@@ -3,6 +3,8 @@ title: Rust
 description: 安装 x-iztro crate，排出第一张盘，读懂枚举与翻译函数的分工。
 ---
 
+*适合：开发者*
+
 ## 安装
 
 ```bash
@@ -30,7 +32,7 @@ fn main() -> Result<(), IztroError> {
         2,                  // 时辰索引：寅时
         Gender::Female,     // 性别
         true,               // fix_leap：修正闰月
-        Language::ZhCN,     // 输出语言
+        Language::ZhCN,     // 盘面语言
         Config::default(),  // 分界点与流派，默认同 JS iztro
     )?;
 
@@ -42,7 +44,19 @@ fn main() -> Result<(), IztroError> {
 }
 ```
 
-农历排盘用 [`by_lunar`](/zh/docs/rust/astro#by_lunar)，比 `by_solar` 多一个 `is_leap_month` 参数。
+```text
+阳历：2000-8-16
+农历：二〇〇〇年七月十七
+干支：庚辰 甲申 丙午 庚寅
+时辰：寅时 (03:00~05:00)
+```
+
+农历排盘用 [`by_lunar`](/zh/docs/rust/astro#by_lunar)，比 `by_solar` 多一个
+`is_leap_month`，插在 `gender` 之后、`fix_leap` 之前：
+
+```rust
+by_lunar("2000-7-17", 2, Gender::Female, false, true, Language::ZhCN, Config::default())?;
+```
 
 ## 接下来
 

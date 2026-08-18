@@ -1,0 +1,273 @@
+---
+title: Error handling
+description: The code classification of IztroError, what triggers it, the message format, and handling patterns.
+---
+
+Every entry point taking external input raises `IztroError` on invalid arguments. Date format, date
+existence, the year range and the hour index are validated up front in the core; string values such as
+gender, language, keys and configuration are validated in the binding layer.
+
+```python
+from x_iztro import IztroError
+```
+
+`IztroError` subclasses `ValueError`, so an existing `except ValueError` still catches it and no code
+has to change on upgrade.
+
+## code
+
+The exception message is written for humans and its wording may be adjusted between versions; branch
+on `.code` in your programs:
+
+| `code` | Meaning | Typical trigger |
+| --- | --- | --- |
+| `invalid_date` | Illegal date | Bad format, a date that does not exist, outside 1583–9999 |
+| `invalid_time_index` | Hour index out of range | Not within 0–12 |
+| `invalid_argument` | Any other illegal argument or configuration | Gender, language, star key, palace name, custom tables |
+| `internal` | A defect inside the library | Should be reported as a bug |
+
+These four values are the same set as Rust's `IztroError::code()` and Go's `iztro.Error.Code`, so
+cross-language branching logic transfers verbatim.
+
+```python
+from x_iztro import Astro, IztroError
+
+for args in [("2000-2-30", 2, "female"), ("2000-8-16", 13, "female"), ("2000-8-16", 2, "x")]:
+    try:
+        Astro().by_solar(*args)
+    except IztroError as e:
+        print(e.code, "|", e)
+```
+
+**Output**
+
+```text
+invalid_date | invalid solar date '2000-2-30': day is out of range for that month
+invalid_time_index | time_index must be 0-12, got 13
+invalid_argument | invalid gender 'x': expected 'male' or 'female'
+```
+
+<Callout type="info" title="No PanicException is ever raised">
+A panic caused by a defect inside the library is caught in the binding layer and converted into an
+`IztroError` with the code `internal`; a `pyo3_runtime.PanicException`, which `except Exception`
+cannot catch, never escapes.
+</Callout>
+
+---
+
+## Date-related
+
+| Situation | Example | Message |
+| --- | --- | --- |
+| The format is not `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
+| Month out of range | `"2000-13-1"` | `month must be within 1-12` |
+| That month has no such day | `"2000-2-30"` | `day is out of range for that month` |
+| Year outside the supported range | `"1500-1-1"` | `year must be within 1583-9999` |
+
+Lunar-only (reachable through `by_lunar` and the two `*_by_lunar_date` queries):
+
+| Situation | Example | Message |
+| --- | --- | --- |
+| That lunar year has no such month | A month missing from the table | `month does not exist in that lunar year` |
+| That lunar month has no such day | `"2000-7-30"` (a short seventh month) | `day is out of range for that lunar month` |
+
+Lunar messages are prefixed `invalid lunar date '<original string>': ` and solar ones
+`invalid solar date '<original string>': `, so the message alone tells you which entry point was used.
+
+**Example**
+
+```python
+from x_iztro import Astro
+
+for date in ["2000-13-1", "2000-2-30", "1500-1-1"]:
+    try:
+        Astro().by_solar(date, 2, "female")
+    except IztroError as e:
+        print(e)
+```
+
+**Output**
+
+```text
+invalid solar date '2000-13-1': month must be within 1-12
+invalid solar date '2000-2-30': day is out of range for that month
+invalid solar date '1500-1-1': year must be within 1583-9999
+```
+
+The message carries the original input, so batch jobs can pinpoint which record failed.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Where the 1583 lower bound comes from">
+The Gregorian reform year of 1582 contains a stretch of dates that never existed. The underlying
+calendar library has no definition for them, so support starts from 1583, after the reform. The upper
+bound of 9999 is where the lunar data tables end.
+</Accordion>
+<Accordion title="No zero padding needed">
+Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
+</Accordion>
+<Accordion title="Validation of lunar leap months">
+`by_lunar` checks whether that month really exists in that lunar year and how many days it has (30 in
+a long month, 29 in a short one). Passing `True` for `is_leap_month` when that year and month have no
+leap month is not an error; the parameter is silently ignored.
+</Accordion>
+</Accordions>
+
+---
+
+## Hour index
+
+**Trigger** An hour index outside 0–12.
+
+**Example**
+
+```python
+try:
+    Astro().by_solar("2000-8-16", 13, "female")
+except IztroError as e:
+    print(e)
+```
+
+**Output**
+
+```text
+time_index must be 0-12, got 13
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Thirteen values, not twelve">
+The Zi hour straddles midnight and splits into the early Zi hour (index 0) and the late Zi hour
+(index 12), so there are 13 legal values.
+To convert from a clock hour use [`utils.time_to_index`](/en/docs/python/util#time_to_index), which is
+guaranteed to land in the legal range.
+</Callout>
+
+---
+
+## Gender and language
+
+The `code` is `invalid_argument` in both cases.
+
+| Parameter | Legal values | Message |
+| --- | --- | --- |
+| `gender` | `"male"` / `"female"` | `invalid gender 'x': expected 'male' or 'female'` |
+| `language` | The six language codes | `invalid language 'xx': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN` |
+
+Language codes are case-insensitive; both `"zh-cn"` and `"zh-CN"` are accepted.
+Passing the `Gender` / `Language` enum members instead lets the IDE stop a typo where it is written.
+
+---
+
+## Key-related
+
+The utility and star-placement functions take language-independent keys, and an unknown key is an
+error:
+
+```python
+from x_iztro import utils
+
+try:
+    utils.get_brightness("nosuchstar", 0)
+except IztroError as e:
+    print(e.code, "|", e)
+```
+
+**Output**
+
+```text
+invalid_argument | unknown star key 'nosuchstar'
+```
+
+<Callout type="warn" title="Passing a translated name is an error">
+These functions recognize keys, not translated names. Passing `"紫微"` gives
+`unknown star key '紫微'` — convert with [`i18n.key_of`](/en/docs/python/i18n#key_of) first.
+
+The **query methods** on a chart (`chart.palace`, `chart.star`, `palace.has`) follow a different rule:
+they accept both keys and translations in the current language, and on no match they silently return
+`None` / `False` rather than raising.
+See [the astrolabe object](/en/docs/python/astrolabe#palace).
+</Callout>
+
+---
+
+## Configuration-related
+
+The six switches and the two custom tables of `ChartConfig` are all validated during charting, and the
+`code` is `invalid_argument` throughout:
+
+| Situation | Message |
+| --- | --- |
+| An unknown switch value | `invalid yearDivide 'nope': expected 'normal' or 'exact'` |
+| An unknown stem key in the mutagen table | `invalid mutagens key 'nope': unknown heavenly stem` |
+| A stem's mutagens are not four entries | `invalid mutagens for 'jiaHeavenly': expected 4 stars (lu, quan, ke, ji), got 1` |
+| A star's brightness table is not twelve entries | `invalid brightness for 'ziweiMaj': expected 12 entries, got 1` |
+
+<Callout type="info">
+The lengths are **strictly** validated: mutagens must be exactly four entries and brightness exactly
+twelve, and one entry too many or too few is an error.
+The custom tables take keys only, never translated names.
+</Callout>
+
+---
+
+## Handling patterns
+
+**Skip bad rows in a batch**
+
+```python
+rows = [
+    {"date": "2000-8-16", "ti": 2, "gender": "female"},
+    {"date": "2000-2-30", "ti": 2, "gender": "female"},
+    {"date": "1990-3-3", "ti": 13, "gender": "male"},
+]
+
+charts, failed = [], []
+astro = Astro()
+
+for row in rows:
+    try:
+        charts.append(astro.by_solar(row["date"], row["ti"], row["gender"], language="en-US"))
+    except IztroError as e:
+        failed.append((row["date"], e.code))
+
+print(len(charts), failed)
+```
+
+**Output**
+
+```text
+1 [('2000-2-30', 'invalid_date'), ('1990-3-3', 'invalid_time_index')]
+```
+
+**Convert to your own exception type**
+
+```python
+class ChartError(Exception):
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
+def build(date: str, ti: int, gender: str):
+    try:
+        return Astro().by_solar(date, ti, gender, language="en-US")
+    except IztroError as e:
+        raise ChartError(e.code, f"charting failed: {e}") from e
+
+
+try:
+    build("2000-2-30", 2, "female")
+except ChartError as e:
+    print(e.code, "|", e)
+```
+
+**Output**
+
+```text
+invalid_date | charting failed: invalid solar date '2000-2-30': day is out of range for that month
+```
+
+Once `code` is carried outward, the layer above never has to parse the message text.

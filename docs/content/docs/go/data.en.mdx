@@ -1,0 +1,279 @@
+---
+title: Data tables
+description: Star information, stem and branch information, ordering constants and all the key constants.
+---
+
+The input tables of the charting algorithm, plus the language-independent key constants.
+
+---
+
+## StarsInfo
+
+**Purpose** Get the star information table.
+
+**Signature**
+
+```go
+func StarsInfo() (map[string]StarInfo, error)
+```
+
+**Return value** Star key → `StarInfo`. Only twenty stars have an entry: the **fourteen major stars**
+plus Wenchang, Wenqu, Huoxing, Lingxing, Qingyang and Tuoluo.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Brightness` | `[]string` | Brightness keys across the twelve palaces, index 0 being the Yin palace; an empty string where the palace has no brightness |
+| `FiveElements` | `string` | Five element; an empty string when the table leaves it blank |
+| `YinYang` | `string` | Polarity; an empty string when the table leaves it blank |
+
+**Example**
+
+```go
+info, _ := iztro.StarsInfo()
+
+fmt.Println(len(info))
+fmt.Printf("%+v\n", info[iztro.StarZiweiMaj])
+fmt.Printf("%q\n", info[iztro.StarTaiyangMaj].FiveElements)
+```
+
+**Output**
+
+```text
+20
+{Brightness:[wang wang de wang miao miao wang wang de wang ping miao] FiveElements:土 YinYang:阴}
+""
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="Five elements and polarity have gaps">
+Some stars have no five element or polarity in the table: both are empty for Taiyang and Qisha,
+polarity is empty for Tanlang, Tianxiang, Tianliang and Pojun, and both are empty for the six minor
+stars.
+
+Note also that `FiveElements` and `YinYang` are never internationalized — they are always the Chinese
+characters (`土`, `阴` and so on) in every output language.
+</Callout>
+
+---
+
+## HeavenlyStems
+
+**Purpose** Get the heavenly stem information table.
+
+**Zi Wei meaning** The mutagen table of the stems is the root of the whole mutagen system: the
+birth-year stem determines the natal mutagens, a palace stem determines what that palace flies, and a
+scope stem determines that layer's mutagens.
+
+**Signature**
+
+```go
+func HeavenlyStems() (map[string]HeavenlyStemInfo, error)
+```
+
+**Return value** Stem key → `HeavenlyStemInfo`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `YinYang` | `string` | Polarity |
+| `FiveElements` | `string` | Five element |
+| `Crash` | `string` | Clashing stem key; an empty string for wu and ji, which clash with nothing |
+| `Mutagen` | `[]string` | The four mutagen star keys, in the order lu, quan, ke, ji |
+
+**Example**
+
+```go
+stems, _ := iztro.HeavenlyStems()
+
+fmt.Printf("%+v\n", stems[iztro.StemJia])
+fmt.Printf("wu clashes with: %q\n", stems[iztro.StemWu].Crash)
+```
+
+**Output**
+
+```text
+{YinYang:阳 FiveElements:木 Crash:gengHeavenly Mutagen:[lianzhenMaj pojunMaj wuquMaj taiyangMaj]}
+wu clashes with: ""
+```
+
+---
+
+## EarthlyBranches
+
+**Purpose** Get the earthly branch information table.
+
+**Signature**
+
+```go
+func EarthlyBranches() (map[string]EarthlyBranchInfo, error)
+```
+
+**Return value** Branch key → `EarthlyBranchInfo`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `YinYang` | `string` | Polarity, which sets the direction of the decadal scope and the Changsheng gods |
+| `FiveElements` | `string` | Five element |
+| `Crash` | `string` | Clashing branch key |
+| `Soul` | `string` | Soul star key (looked up by the Soul palace branch) |
+| `Body` | `string` | Body star key (looked up by the birth-year branch) |
+| `Inside` | `string` | Corresponding internal organ |
+| `Outside` | `string` | Corresponding body part |
+| `HealthTip` | `string` | Health note |
+
+<Callout type="info">
+`Inside`, `Outside` and `HealthTip` exist only in Chinese and take no part in internationalization.
+</Callout>
+
+**Example**
+
+```go
+branches, _ := iztro.EarthlyBranches()
+fmt.Printf("%+v\n", branches[iztro.BranchZi])
+```
+
+**Output**
+
+```text
+{YinYang:阳 FiveElements:水 Crash:wuEarthly Soul:tanlangMaj Body:huoxingMin Inside:胆 Outside:下体 HealthTip:生殖系统、膀胱、尿道之疾病，听觉障碍}
+```
+
+---
+
+## GetConstants
+
+**Purpose** Get the ordering constants and derivation rule tables.
+
+**Signature**
+
+```go
+func GetConstants() (Constants, error)
+```
+
+**Return value** `Constants`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Languages` | `[]string` | Supported language codes |
+| `HeavenlyStems` | `[]string` | Stem order |
+| `EarthlyBranches` | `[]string` | Branch order |
+| `Zodiac` | `[]string` | Chinese zodiac keys, in branch order |
+| `Signs` | `[]string` | Zodiac sign keys, in ecliptic order |
+| `Palaces` | `[]string` | The twelve palace names running **counterclockwise** from the Soul palace: Soul, Parents, Spirit, Property, Career, Friends, Surface, Health, Wealth, Children, Spouse, Siblings |
+| `Gender` | `map[string]string` | The polarity of each gender |
+| `ChineseTime` | `[]string` | Hour keys, from the early Zi hour to the late Zi hour |
+| `TimeRange` | `[]string` | The clock range of each hour |
+| `TigerRule` | `map[string]string` | Five Tigers rule: year stem to first-month stem |
+| `RatRule` | `map[string]string` | Five Rats rule: day stem to Zi-hour stem |
+| `Mutagen` | `[]string` | Mutagen order |
+| `FiveElementsClass` | `map[string]int` | Five elements class key → its number (water 2nd is 2 … fire 6th is 6) |
+
+**Example**
+
+```go
+c, _ := iztro.GetConstants()
+
+fmt.Println(c.Languages)
+fmt.Println(c.Zodiac[:3], c.ChineseTime[12], c.TimeRange[2])
+fmt.Println(c.Gender)
+fmt.Println("first-month stem of a jia year:", c.TigerRule[iztro.StemJia])
+fmt.Println(c.Palaces)
+fmt.Println(c.FiveElementsClass[iztro.ClassWood3rd], iztro.FiveElementsClassNumber(iztro.ClassFire6th))
+```
+
+**Output**
+
+```text
+[en-US ja-JP ko-KR zh-CN zh-TW vi-VN]
+[rat ox tiger] lateRatHour 03:00~05:00
+map[female:阴 male:阳]
+first-month stem of a jia year: bingHeavenly
+[soulPalace parentsPalace spiritPalace propertyPalace careerPalace friendsPalace surfacePalace healthPalace wealthPalace childrenPalace spousePalace siblingsPalace]
+3 6
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Palaces is a counterclockwise ordering, not a position on a chart">
+`Palaces` gives the **ordering** of the palace names, not what cell `i` is called on a particular
+chart. For that use [`GetPalaceNames(soulIndex)`](/en/docs/go/util#getpalacenames).
+</Callout>
+
+<Callout type="info" title="The class number can be looked up directly">
+`FiveElementsClassNumber(key)` does not need `Constants` first; an unknown key gives 0.
+</Callout>
+
+<Callout type="info">
+The order of `Languages` is the merge order of iztro's vocabularies (starting from en-US), not the
+declaration order of the constants. [`KeyOf`](/en/docs/go/i18n#keyof) scans the languages in that same
+order.
+</Callout>
+
+---
+
+## Key constants
+
+The key constants in the package have the language-independent keys as their values and compare
+directly against the `*Key` fields on the data objects.
+
+| Prefix | Count | Examples |
+| --- | --- | --- |
+| `Palace*` | 12 + 2 | `PalaceSoul`, `PalaceWealth`, `PalaceBody`, `PalaceOriginal` |
+| `Star*` | 162 | `StarZiweiMaj`, `StarLucunMin`, `StarYunlu` |
+| `Stem*` | 10 | `StemJia`, `StemGeng` |
+| `Branch*` | 12 | `BranchZi`, `BranchWu` |
+| `Mutagen*` | 4 | `MutagenLu`, `MutagenJi` |
+| `Brightness*` | 7 | `BrightnessMiao`, `BrightnessWang` |
+| `Class*` | 5 | `ClassWater2nd`, `ClassWood3rd`, `ClassMetal4th`, `ClassEarth5th`, `ClassFire6th` |
+| `Scope*` | 6 | `ScopeOrigin`, `ScopeDecadal` |
+| `StarType*` | 8 | `StarTypeMajor`, `StarTypeTough` |
+| `Gender*` | 2 | `GenderMale`, `GenderFemale` |
+| `Language*` | 6 | `LanguageZhCN`, `LanguageZhTW`, `LanguageEnUS`, `LanguageJaJP`, `LanguageKoKR`, `LanguageViVN` |
+
+The configuration values add six more groups:
+
+| Prefix | Values |
+| --- | --- |
+| `YearDivide*` | `YearDivideNormal` / `YearDivideExact` |
+| `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` |
+| `AgeDivide*` | `AgeDivideNormal` / `AgeDivideBirthday` |
+| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
+| `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
+| `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
+
+<Callout type="warn" title="The five elements class constants are prefixed Class, not FiveElements">
+Write `iztro.ClassWood3rd`, not `iztro.FiveElementsWood3rd` — the latter does not exist and will not
+compile. For the class number use `iztro.FiveElementsClassNumber(key)`.
+</Callout>
+
+**Example**
+
+```go
+soul := chart.Palace(iztro.PalaceSoul)
+
+fmt.Println(soul.MajorStars[0].Key == iztro.StarZiweiMaj)
+fmt.Println(iztro.StarZiweiMaj, iztro.MutagenLu, iztro.PalaceWealth)
+fmt.Println(iztro.ClassWood3rd, iztro.GenderFemale, iztro.LanguageEnUS)
+
+// the gender and language parameters of the charting entries take these two groups too
+en, err := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(en.Palace(iztro.PalaceSoul).MajorStars[0].Name)
+```
+
+**Output**
+
+```text
+true
+ziweiMaj sihuaLu wealthPalace
+wood3rd female en-US
+emperor
+```
+
+<Callout type="info" title="Constants are equivalent to strings">
+They are all untyped string constants, so `chart.Palace("soulPalace")` and
+`chart.Palace(iztro.PalaceSoul)` are exactly equivalent.
+The constants earn their keep through IDE completion and spell checking, not through type enforcement.
+</Callout>
