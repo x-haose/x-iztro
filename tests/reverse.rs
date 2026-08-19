@@ -336,3 +336,92 @@ mod ffi_kinds {
         assert!(err.contains("required"), "{err}");
     }
 }
+
+#[test]
+fn reverse_chart_contradictory_majors_short_circuit() {
+    // 紫微在子与天府在丑几何上互斥（天府位恒为 12-紫微位）：
+    // 主星条件归一化后应立即判空，而不是枚举完整个年份范围。
+    let cfg = Config::default();
+    let crit = ReverseCriteria {
+        stars: vec![
+            StarPosition {
+                star: StarKey::ZiweiMaj,
+                branch: EarthlyBranch::Zi,
+            },
+            StarPosition {
+                star: StarKey::TianfuMaj,
+                branch: EarthlyBranch::Chou,
+            },
+        ],
+        year_range: (1583, 9999),
+        ..Default::default()
+    };
+    let t = std::time::Instant::now();
+    let r = reverse_chart(&crit, &cfg).unwrap();
+    assert!(r.candidates.is_empty() && !r.truncated);
+    assert!(
+        t.elapsed().as_millis() < 100,
+        "should short-circuit, took {:?}",
+        t.elapsed()
+    );
+}
+
+#[test]
+fn reverse_chart_daily_adjective_stars_roundtrip() {
+    // 三台/八座/恩光/天贵（日系杂耀）走日层查表通道，须能与其它条件闭环
+    let cfg = Config::default();
+    let a = by_solar(
+        "2000-8-16",
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        cfg.clone(),
+    )
+    .unwrap();
+    let pos = |k: StarKey| a.star(k).unwrap().palace().earthly_branch;
+    let crit = ReverseCriteria {
+        five_elements_class: Some(a.five_elements_class),
+        mutagens: [Some(StarKey::TaiyangMaj), None, None, None],
+        stars: vec![
+            StarPosition {
+                star: StarKey::ZiweiMaj,
+                branch: pos(StarKey::ZiweiMaj),
+            },
+            StarPosition {
+                star: StarKey::ZuofuMin,
+                branch: pos(StarKey::ZuofuMin),
+            },
+            StarPosition {
+                star: StarKey::WenquMin,
+                branch: pos(StarKey::WenquMin),
+            },
+            StarPosition {
+                star: StarKey::Santai,
+                branch: pos(StarKey::Santai),
+            },
+            StarPosition {
+                star: StarKey::Bazuo,
+                branch: pos(StarKey::Bazuo),
+            },
+            StarPosition {
+                star: StarKey::Engguang,
+                branch: pos(StarKey::Engguang),
+            },
+            StarPosition {
+                star: StarKey::Tianxi,
+                branch: pos(StarKey::Tianxi),
+            },
+        ],
+        year_range: (1907, 2026),
+        ..Default::default()
+    };
+    let r = reverse_chart(&crit, &cfg).unwrap();
+    assert!(
+        r.candidates
+            .iter()
+            .any(|c| c.solar_date == "2000-8-16" && c.time_index == 2),
+        "{:?}",
+        r.candidates
+    );
+}

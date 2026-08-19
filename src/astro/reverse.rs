@@ -271,17 +271,34 @@ pub fn reverse_chart(
     let mut out = Vec::new();
     let mut truncated = false;
 
+    // 解析域：条件先按安星几何锁定各维度；主星条件互斥则整个查询无解
+    let domains = Domains::resolve(criteria);
+    if matches!(domains.ziwei_palace, Some(Err(()))) {
+        return Ok(ReverseResult {
+            candidates: out,
+            truncated,
+        });
+    }
+
     'year: for year in criteria.year_range.0..=criteria.year_range.1 {
         // 农历年与公历年同号枚举；候选的安星年干支按分界口径可能取本年或上一年干支，
         // 年层剪枝对两者都放行（保守），归属差异由终验兜住。
-        let stems = year_stem_candidates(year, config);
-        if !year_prefilter(criteria, &stems, config) {
+        let stems: Vec<(HeavenlyStem, EarthlyBranch)> = year_stem_candidates(year, config)
+            .into_iter()
+            .filter(|(s, b)| domains.admits_year(*s, *b))
+            .collect();
+        if stems.is_empty() || !year_prefilter(criteria, &stems, config) {
             continue;
         }
         let leap_month = lunar_year::LunarYear::from_lunar_year(year)
             .get_leap_months()
             .abs();
         for month in 1..=12i64 {
+            if let Some(months) = &domains.months
+                && !months.contains(&month)
+            {
+                continue;
+            }
             for is_leap in [false, true] {
                 if is_leap && month != leap_month {
                     continue;
@@ -294,6 +311,11 @@ pub fn reverse_chart(
                 };
                 let month_day_count = month_ref.get_day_count() as u32;
                 for time_index in 0..=12u8 {
+                    if let Some(times) = &domains.times
+                        && !times.contains(&time_index)
+                    {
+                        continue;
+                    }
                     // 月×时层剪枝：命宫身宫、五行局与月系/时系星。
                     // 闰月与下半月修正可能使安星月 +1，两种月索引都放行（保守）。
                     let month_indices =
@@ -304,7 +326,9 @@ pub fn reverse_chart(
                         continue;
                     }
                     for day in 1..=month_day_count {
-                        if !day_prefilter(criteria, day, time_index, month_day_count, &fecs) {
+                        if !day_prefilter(&domains, day, time_index, month_day_count, &fecs)
+                            || !daily_star_prefilter(criteria, month as usize - 1, day, time_index)
+                        {
                             continue;
                         }
                         // 终验：农历转公历后完整排盘，逐条核对全部条件
@@ -468,6 +492,156 @@ fn month_time_prefilter(
     fecs
 }
 
+/// 由星耀落宫条件解析出的枚举域：每个维度先按安星几何锁定到最小集合，
+/// 枚举骨架只在锁剩的域上跑。域为 `None` 表示该维度无条件约束（全域）。
+/// 任何反查都是「对小域试正向安星函数」——与排盘共用同一实现，不会与正排脱节。
+struct Domains {
+    /// 主星条件归一化出的紫微落宫；`Some(Err)` 表示多颗主星条件互斥，整个查询无解
+    ziwei_palace: Option<Result<usize, ()>>,
+    /// 干系星（禄存/擎羊/陀罗/天魁/天钺）锁定的年干集合
+    stems: Option<Vec<HeavenlyStem>>,
+    /// 支系星（天马/红鸾/天喜）锁定的年支集合
+    branches: Option<Vec<EarthlyBranch>>,
+    /// 月系星（左辅/右弼）锁定的农历月集合（1-12；含闰月修正的 ±1 保守扩张）
+    months: Option<Vec<i64>>,
+    /// 时系星（文昌/文曲/地空/地劫）锁定的时辰集合
+    times: Option<Vec<u8>>,
+}
+
+impl Domains {
+    /// 从条件集解析各维度域。
+    fn resolve(criteria: &ReverseCriteria) -> Domains {
+        let mut ziwei: Option<Result<usize, ()>> = None;
+        for p in &criteria.stars {
+            if let Some((_, offset, from_tianfu)) =
+                MAJOR_OFFSETS.iter().find(|(k, _, _)| *k == p.star)
+            {
+                // 主星相对紫微/天府的偏移固定，任何主星落宫都唯一反解出紫微落宫
+                let palace = branch_to_palace(p.branch) as i32;
+                let z = if *from_tianfu {
+                    fix_index(12 - fix_index(palace - offset, 12) as i32, 12)
+                } else {
+                    fix_index(palace + offset, 12)
+                };
+                ziwei = Some(match ziwei {
+                    Some(Ok(prev)) if prev != z => Err(()),
+                    Some(Err(())) => Err(()),
+                    _ => Ok(z),
+                });
+            }
+        }
+        let mut stems: Option<Vec<HeavenlyStem>> = None;
+        let mut branches: Option<Vec<EarthlyBranch>> = None;
+        let mut months: Option<Vec<i64>> = None;
+        let mut times: Option<Vec<u8>> = None;
+        let mut narrow_stems = |pred: &dyn Fn(HeavenlyStem) -> bool| {
+            let set: Vec<HeavenlyStem> = (0..10)
+                .map(HeavenlyStem::from_index)
+                .filter(|s| pred(*s))
+                .collect();
+            stems = Some(match stems.take() {
+                Some(prev) => prev.into_iter().filter(|s| set.contains(s)).collect(),
+                None => set,
+            });
+        };
+        let mut narrow_branches = |pred: &dyn Fn(EarthlyBranch) -> bool| {
+            let set: Vec<EarthlyBranch> = (0..12)
+                .map(EarthlyBranch::from_index)
+                .filter(|b| pred(*b))
+                .collect();
+            branches = Some(match branches.take() {
+                Some(prev) => prev.into_iter().filter(|b| set.contains(b)).collect(),
+                None => set,
+            });
+        };
+        for p in &criteria.stars {
+            let want = branch_to_palace(p.branch);
+            match p.star {
+                StarKey::LucunMin => narrow_stems(&|s| {
+                    (0..12).any(|b| {
+                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).lu == want
+                    })
+                }),
+                StarKey::QingyangMin => narrow_stems(&|s| {
+                    (0..12).any(|b| {
+                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).yang == want
+                    })
+                }),
+                StarKey::TuoluoMin => narrow_stems(&|s| {
+                    (0..12).any(|b| {
+                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).tuo == want
+                    })
+                }),
+                StarKey::TiankuiMin => narrow_stems(&|s| get_kui_yue_index(s).kui == want),
+                StarKey::TianyueMin => narrow_stems(&|s| get_kui_yue_index(s).yue == want),
+                StarKey::TianmaMin => {
+                    narrow_branches(&|b| get_lu_yang_tuo_ma_index(HeavenlyStem::Jia, b).ma == want)
+                }
+                StarKey::Hongluan => narrow_branches(&|b| get_luan_xi_index(b).hongluan == want),
+                StarKey::Tianxi => narrow_branches(&|b| get_luan_xi_index(b).tianxi == want),
+                StarKey::ZuofuMin | StarKey::YoubiMin => {
+                    let base: Vec<i64> = (1..=12i64)
+                        .filter(|m| {
+                            let zy = get_zuo_you_index(*m as u32);
+                            let idx = if p.star == StarKey::ZuofuMin {
+                                zy.zuo
+                            } else {
+                                zy.you
+                            };
+                            idx == want
+                        })
+                        .collect();
+                    // 闰月下半月按下月安星：真实农历月可能比安星月小 1，保守并入
+                    let mut set: Vec<i64> = base
+                        .iter()
+                        .flat_map(|m| [*m, fix_index(*m as i32 - 2, 12) as i64 + 1])
+                        .collect();
+                    set.sort_unstable();
+                    set.dedup();
+                    months = Some(match months.take() {
+                        Some(prev) => prev.into_iter().filter(|m| set.contains(m)).collect(),
+                        None => set,
+                    });
+                }
+                StarKey::WenchangMin
+                | StarKey::WenquMin
+                | StarKey::DikongMin
+                | StarKey::DijieMin => {
+                    let set: Vec<u8> = (0..=12u8)
+                        .filter(|t| {
+                            let idx = match p.star {
+                                StarKey::WenchangMin => get_chang_qu_index(*t).chang,
+                                StarKey::WenquMin => get_chang_qu_index(*t).qu,
+                                StarKey::DikongMin => get_kong_jie_index(*t).kong,
+                                _ => get_kong_jie_index(*t).jie,
+                            };
+                            idx == want
+                        })
+                        .collect();
+                    times = Some(match times.take() {
+                        Some(prev) => prev.into_iter().filter(|t| set.contains(t)).collect(),
+                        None => set,
+                    });
+                }
+                _ => {}
+            }
+        }
+        Domains {
+            ziwei_palace: ziwei,
+            stems,
+            branches,
+            months,
+            times,
+        }
+    }
+
+    /// 年干支是否落在锁定域内。
+    fn admits_year(&self, stem: HeavenlyStem, branch: EarthlyBranch) -> bool {
+        self.stems.as_ref().is_none_or(|s| s.contains(&stem))
+            && self.branches.as_ref().is_none_or(|b| b.contains(&branch))
+    }
+}
+
 /// 主星与其相对紫微（负偏移）或天府（正偏移）的位次。
 const MAJOR_OFFSETS: [(StarKey, i32, bool); 14] = [
     (StarKey::ZiweiMaj, 0, false),
@@ -486,35 +660,54 @@ const MAJOR_OFFSETS: [(StarKey, i32, bool); 14] = [
     (StarKey::PojunMaj, 10, true),
 ];
 
-/// 日层剪枝：主星落宫条件在任一可行五行局下成立才保留该日。
+/// 日层剪枝：主星条件已归一化为紫微落宫，任一可行五行局下紫微落到该宫才保留该日。
 fn day_prefilter(
-    criteria: &ReverseCriteria,
+    domains: &Domains,
     day: u32,
     time_index: u8,
     month_day_count: u32,
     fecs: &[u32],
 ) -> bool {
-    let majors: Vec<&StarPosition> = criteria
-        .stars
-        .iter()
-        .filter(|p| MAJOR_OFFSETS.iter().any(|(k, _, _)| *k == p.star))
-        .collect();
-    if majors.is_empty() {
+    let Some(Ok(ziwei)) = domains.ziwei_palace else {
+        return true;
+    };
+    fecs.iter()
+        .any(|fec| get_start_index(day, time_index, month_day_count, *fec).ziwei == ziwei)
+}
+
+/// 日层剪枝（日系杂耀）：三台/八座随左辅右弼逐日行、恩光/天贵随文昌文曲逐日行，
+/// 条件涉及这四颗时按（月, 日, 时）现算落宫比对。安星月与真实农历月可能差 1（闰月修正），
+/// 两种月索引任一成立即放行（保守）。
+fn daily_star_prefilter(
+    criteria: &ReverseCriteria,
+    month_index: usize,
+    day: u32,
+    time_index: u8,
+) -> bool {
+    let involved = criteria.stars.iter().any(|p| {
+        matches!(
+            p.star,
+            StarKey::Santai | StarKey::Bazuo | StarKey::Engguang | StarKey::Tiangui
+        )
+    });
+    if !involved {
         return true;
     }
-    fecs.iter().any(|fec| {
-        let si = get_start_index(day, time_index, month_day_count, *fec);
-        majors.iter().all(|p| {
-            let (_, offset, from_tianfu) = MAJOR_OFFSETS
-                .iter()
-                .find(|(k, _, _)| *k == p.star)
-                .expect("majors 已按 MAJOR_OFFSETS 过滤");
-            let idx = if *from_tianfu {
-                fix_index(si.tianfu as i32 + offset, 12)
-            } else {
-                fix_index(si.ziwei as i32 - offset, 12)
-            };
-            idx == branch_to_palace(p.branch)
+    [month_index, month_index + 1].iter().any(|mi| {
+        let zy = get_zuo_you_index(fix_index(*mi as i32, 12) as u32 + 1);
+        let cq = get_chang_qu_index(time_index);
+        let daily = crate::star::location::get_daily_star_index(
+            day, time_index, zy.zuo, zy.you, cq.chang, cq.qu,
+        );
+        criteria.stars.iter().all(|p| {
+            let want = branch_to_palace(p.branch);
+            match p.star {
+                StarKey::Santai => daily.santai == want,
+                StarKey::Bazuo => daily.bazuo == want,
+                StarKey::Engguang => daily.enguang == want,
+                StarKey::Tiangui => daily.tiangui == want,
+                _ => true,
+            }
         })
     })
 }
