@@ -23,6 +23,8 @@ pub mod dto;
 pub mod error;
 /// 六语言词表与翻译入口
 pub mod i18n;
+/// 知识包：解读文本与门派属性
+pub mod knowledge;
 /// 星盘、宫位、星耀与运限的数据结构
 pub mod models;
 /// 格局判定引擎
@@ -63,6 +65,7 @@ pub use i18n::{
     translate_palace, translate_pattern, translate_sign, translate_star, translate_time,
     translate_zodiac,
 };
+pub use knowledge::KnowledgePack;
 pub use models::astrolabe::{
     Astrolabe, PalaceRef, PalaceTarget, RawChineseDate, RawDates, RawLunarDate, StarRef,
 };

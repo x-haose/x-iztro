@@ -1,0 +1,378 @@
+---
+title: Knowledge packs
+description: How reading texts and school-specific attributes are kept out of the core, what the bundled default pack contains, how to write an overlay, and how to read one from each language.
+---
+
+*For: anyone who wants written interpretation on top of a chart*
+
+Casting a chart gives you facts: the Soul palace sits at Wu, Wuqu is in the Wealth palace carrying
+the Quan transformation, this chart forms 府相朝垣. The next questions — "what does Wuqu mean",
+"what is good about 府相朝垣" — are not facts. They are **opinions**, and different schools,
+different books and different teachers answer them differently.
+
+x-iztro keeps the two apart. The core only judges facts (charting, horoscopes, patterns); reading
+texts and the school-specific star attributes live in a **knowledge pack**. A pack is a JSON file
+whose protocol is "language-independent key → text and attributes". One default pack ships inside
+the library so everything works out of the box; if you disagree with what it says, write an overlay
+pack and change those entries.
+
+## What belongs where
+
+| | Core | Knowledge pack |
+| --- | --- | --- |
+| Contents | Twelve palaces, star placement, brightness, transformations, horoscopes, pattern hits | Star readings, pattern readings, palace and transformation meanings, glossary, school-specific star attributes |
+| Nature | Facts, checkable field by field against iztro | Opinions; another school means another pack |
+| What being wrong looks like | The chart is miscast | You disagree with the reading |
+| How to change it | You cannot (changing it means it is no longer this algorithm) | Swap the pack or write an overlay |
+
+The seam between them is the **language-independent key**: `ziweiMaj` for a star,
+`zi_fu_tong_gong` for a pattern, `soulPalace` for a palace, `sihuaLu` for a transformation. Every
+field the core emits carries these keys (see [the key contract](/en/docs/guide/guides/keys)), so you
+take a key straight to the pack — no matching on translated names, and the chart language never
+enters into it.
+
+## What the bundled default pack contains
+
+| Section | Entries | Contents |
+| --- | --- | --- |
+| `stars` | 107 | 14 major, 14 minor, 34 adjective and 45 decorative stars. Each carries the card attributes (yin-yang, five elements, dipper, chemistry, career, duty, aliases, element colour, energy colour) plus a body of text; the 14 major stars also carry readings for pairing with each other major star |
+| `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
+| `palaces` | 12 | What each of the twelve palaces means |
+| `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
+| `concepts` | 38 | Glossary and basic concepts (same palace, the palace in question, six-harmony branches, the surrounded set …) |
+
+The content comes from the 学习 pages of
+[iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long). The generator
+pins the source commit, and the pack's `source` section records the origin, commit, licence and
+author in full. Text fields are Markdown.
+
+<Callout type="warn" title="The default pack is zh-CN only">
+There is no bundled pack for the other five languages: Rust's `KnowledgePack::builtin` returns
+`None`, Python and Go raise `invalid_argument`. For another language, write your own pack — or hand
+the Chinese entries to an LLM along with the chart and let it translate as it interprets.
+</Callout>
+
+<Callout type="info">
+The default pack adds roughly 380 KB to the wasm binary embedded in the Go package. The Rust and
+Python sides embed the same data.
+</Callout>
+
+## What a pack looks like
+
+The complete field reference is
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md) in the
+repository. Every entry and every field is optional — what is missing simply was not written:
+
+```json
+{
+  "schema": 1,
+  "id": "iztro-docs",
+  "version": "2026-08-19+ec2d58b",
+  "language": "zh-CN",
+  "extends": null,
+  "source": {
+    "name": "iztro-docs",
+    "url": "https://github.com/SylarLong/iztro-docs",
+    "commit": "ec2d58bb8b2a0d243d91212a1e3c87ab866858ee",
+    "license": "MIT",
+    "author": "Sylar Long",
+    "retrievedAt": "2026-08-19"
+  },
+  "stars": {
+    "ziweiMaj": {
+      "name": "紫微",
+      "category": "major",
+      "group": null,
+      "attributes": {
+        "yinYang": "yin",
+        "fiveElements": "earth",
+        "stem": "ji",
+        "dipper": "中天星系",
+        "chemistry": "尊贵",
+        "career": "官禄主",
+        "duty": "众星枢纽，长五行，孕万物",
+        "aliases": ["帝王星", "老板星", "俸禄星"],
+        "elementColor": "黄色",
+        "energyColor": "紫光"
+      },
+      "intro": "看到紫微星，相信很多读者都知道他是一颗 `帝王星`……",
+      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
+    }
+  },
+  "patterns": {
+    "zi_fu_tong_gong": {
+      "name": "紫府同宫",
+      "quotes": ["紫府同宫终身福厚。"],
+      "conditions": "紫府同宫的详细介绍见 紫微天府。这两颗星只会在寅宫和申宫同宫。",
+      "intro": "福厚不厚其实是不一定的……"
+    }
+  },
+  "palaces": { "soulPalace": { "name": "命宫", "intro": "命宫是决定星盘主人属性的宫位……" } },
+  "mutagens": { "sihuaLu": { "name": "化禄", "intro": "化禄星简称 `禄`……" } },
+  "concepts": { "tong-gong": { "title": "遇、加、逢、同宫、同度", "intro": "指星曜在同一个宫位里面……" } }
+}
+```
+
+Keys are always language-independent; the values above are Chinese because the bundled pack is
+zh-CN.
+
+## Reading a pack
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::{KnowledgePack, Language, StarKey};
+
+let pack = KnowledgePack::builtin(Language::ZhCN).expect("zh-CN has a builtin pack");
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{:?} {:?}", ziwei.name, ziwei.attributes.aliases);
+println!("{}", &pack.star_intro(StarKey::ZiweiMaj).unwrap()[..30]);
+```
+
+```text
+Some("紫微") Some(["帝王星", "老板星", "俸禄星"])
+看到紫微星，相信很多
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import KnowledgePack
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+ziwei = pack.star(MajorStar.ZIWEI)
+
+print(ziwei.name, ziwei.attributes.aliases)
+print(pack.star_intro(MajorStar.ZIWEI)[:10])
+```
+
+```text
+紫微 ['帝王星', '老板星', '俸禄星']
+看到紫微星，相信很多
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+pack, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+ziwei := pack.Star(iztro.StarZiweiMaj)
+
+fmt.Println(ziwei.Name, ziwei.Attributes.Aliases)
+fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:10]))
+```
+
+```text
+紫微 [帝王星 老板星 俸禄星]
+看到紫微星，相信很多
+```
+
+</Tab>
+</Tabs>
+
+A key that is not in the pack comes back empty everywhere: `None` in Rust and Python, `nil` in Go
+(and an empty string from `StarIntro`).
+
+## Pairing it with pattern hits
+
+The `key` on a pattern hit is exactly the key used in the pack's `patterns` section:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+for hit in chart.patterns() {
+    let entry = pack.pattern(hit.key).unwrap();
+    let quote = entry.quotes.as_ref().and_then(|q| q.first());
+    println!("{} | {:?}", translate_pattern(hit.key, Language::ZhCN), quote);
+}
+```
+
+```text
+府相朝垣 | Some("府相朝垣命必荣")
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+pack = KnowledgePack.builtin()
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+for hit in chart.patterns():
+    entry = pack.pattern(hit.key)
+    print(hit.name, "|", entry.quotes[0])
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, hit := range hits {
+    entry := pack.Pattern(hit.Key)
+    fmt.Println(hit.Name, "|", entry.Quotes[0])
+}
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+```
+
+</Tab>
+</Tabs>
+
+Stars work the same way: take each star's `key` from the chart to `pack.star(key)`, a palace's
+`palaceNameKey` to `pack.palace(key)`, and a transformation key to `pack.mutagen(key)`.
+
+## Writing an overlay pack
+
+An overlay is the same format, containing only the entries and fields you want to change, with
+`extends` naming the pack it overlays. This one replaces Ziwei's reading and aliases and swaps out
+the reading for 紫府同宫, leaving everything else untouched:
+
+```json
+{
+  "schema": 1,
+  "id": "my-school",
+  "version": "2026-08-19",
+  "language": "zh-CN",
+  "extends": "iztro-docs",
+  "stars": {
+    "ziweiMaj": {
+      "intro": "紫微在我这一派看来先看格局高低，再论性情。",
+      "attributes": { "aliases": ["帝座"] }
+    }
+  },
+  "patterns": {
+    "zi_fu_tong_gong": { "intro": "紫府同宫，我只把它当作起点高，不当作福厚。" }
+  }
+}
+```
+
+Merging produces a new pack:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let overlay = KnowledgePack::from_json(&std::fs::read_to_string("my-school.json")?)?;
+let pack = base.merged(&[&overlay]);
+
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{:?} {:?} {:?}", ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+println!("{:?}", pack.pattern_intro(PatternKey::ZiFuTongGong));
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+base = KnowledgePack.builtin()
+overlay = KnowledgePack.from_json(open("my-school.json", encoding="utf-8").read())
+pack = base.merged(overlay)
+
+ziwei = pack.star(MajorStar.ZIWEI)
+print(ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry)
+print(pack.pattern_intro(PatternKey.ZI_FU_TONG_GONG))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+base, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+data, _ := os.ReadFile("my-school.json")
+overlay, err := iztro.ParseKnowledgePack(data)
+if err != nil {
+    log.Fatal(err)
+}
+pack, err := base.Merged(overlay)
+if err != nil {
+    log.Fatal(err)
+}
+
+ziwei := pack.Star(iztro.StarZiweiMaj)
+fmt.Println(ziwei.Name, ziwei.Attributes.Aliases, ziwei.Attributes.Chemistry)
+fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
+```
+
+</Tab>
+</Tabs>
+
+All three produce the same result: Ziwei keeps its `name` (紫微) and `chemistry` (尊贵) while
+`intro` and `aliases` come from the overlay; 紫府同宫 keeps its `quotes` and `conditions` and takes
+the new `intro`.
+
+<Callout type="info">
+Merging is implemented once, in the Rust core. Python's `merged` and Go's `Merged` both call into
+it, so the merged result is byte-identical across the three languages instead of each side
+re-implementing the rules.
+</Callout>
+
+## Merge rules
+
+Starting from the base pack, each section (`stars`, `patterns`, `palaces`, `mutagens`, `concepts`)
+is merged key by key:
+
+- For an entry present in the overlay, its **non-null fields** replace the corresponding fields of
+  the same-keyed base entry; fields it does not mention are kept
+- `attributes` and `combinations` merge the same way, field by field and sub-key by sub-key
+- Array fields (`aliases`, `quotes`) are replaced wholesale, never merged element by element
+- Keys the base does not have are added
+- Writing a field explicitly as `null` does **not** delete the base content (absent and null mean
+  the same thing); to delete, replace the whole pack
+- After merging, `id`, `version`, `language` and `source` come from the overlay when non-empty,
+  while `extends` stays the base's
+
+A `schema` newer than this library supports is an error rather than a best-effort parse.
+
+## Why the star attributes live here
+
+A star's five-element attribution looks like a fact but is also an opinion. iztro's own `starsInfo`
+table and the iztro-docs star cards already disagree with each other:
+
+| Star | iztro `starsInfo` | iztro-docs card |
+| --- | --- | --- |
+| 贪狼 | Water | 甲 Wood (qi is Water) |
+| 巨门 | yin Earth | 癸 Water and 己 Earth (holding Metal and Wood) |
+
+Two data sets by the same author disagreeing is the clearest sign that these attributes are a
+school's reading, not a single answer. So x-iztro's core `StarInfo` stays value-for-value identical
+to iztro's (code ported from it does not change behaviour), while the card attributes go into the
+knowledge pack where they can be swapped.
+
+## Later
+
+The same protocol supports loading and distributing overlay packs, and handing a pack to an LLM
+along with the chart. That belongs to the application layer, not to this library.
+
+## API reference
+
+- [Rust — knowledge](/en/docs/rust/knowledge)
+- [Python — knowledge](/en/docs/python/knowledge)
+- [Go — KnowledgePack](/en/docs/go/knowledge)
+
+## Sources and credit
+
+Every text in the default pack comes from the 学习 pages of
+[iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
+protocol, the generator and the three-language API are x-iztro's own work.

@@ -474,7 +474,7 @@ pub fn get_tianshang_tianshi_index(
     let mut tianshi = fix_index(7 + soul_index as i32, 12);
 
     if algorithm == Algorithm::Zhongzhou {
-        let branch_is_yang = yearly_branch.index() % 2 == 0;
+        let branch_is_yang = yearly_branch.index().is_multiple_of(2);
         let gender_is_yang = gender == Gender::Male;
         if gender_is_yang != branch_is_yang {
             std::mem::swap(&mut tianshang, &mut tianshi);
@@ -558,7 +558,7 @@ pub fn get_yearly_star_index(
     // 旬空：从年支宫位起，加上年干到癸干的距离再进一位
     let xunkong_raw = fix_index(eb2pi(yearly_branch) as i32 + 9 - stem_idx as i32 + 1, 12);
     // 旬空落宫的奇偶须与年支索引的奇偶一致，不一致时进一位
-    let branch_is_yang = yearly_branch.index() % 2 == 0;
+    let branch_is_yang = yearly_branch.index().is_multiple_of(2);
     let xunkong = if yearly_branch.index() % 2 != xunkong_raw % 2 {
         fix_index(xunkong_raw as i32 + 1, 12)
     } else {

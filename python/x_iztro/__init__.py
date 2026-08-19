@@ -91,7 +91,8 @@ from x_iztro.enums import (
 )
 
 # 主类
-from x_iztro import data, i18n, plugin, query, star, utils
+from x_iztro import data, i18n, knowledge, plugin, query, star, utils
+from x_iztro.knowledge import KnowledgePack
 from x_iztro.astro import Astro
 
 # 轻量查询
@@ -132,6 +133,7 @@ __all__ = [
     "PatternConfig",
     "PatternHit",
     "PatternStar",
+    "KnowledgePack",
     # 枚举
     "Gender",
     "Language",
@@ -166,4 +168,5 @@ __all__ = [
     "utils",
     "query",
     "plugin",
+    "knowledge",
 ]

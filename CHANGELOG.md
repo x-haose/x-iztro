@@ -9,11 +9,35 @@
 
 ### 修正
 
+- 三处 `% 2 == 0` 改为 `is_multiple_of(2)`，以通过新版 clippy 的 `manual_is_multiple_of`。
 - `rust-version` 由 1.85 改为 1.88：代码自 0.2.0 起已使用 let-chains（Rust 1.88 稳定），
   旧声明下 1.85 工具链无法编译；CI 新增 MSRV 编译检查防止再漂移。
 
 ### 新增
 
+- **知识包协议与内嵌默认包**：解读文本与星耀的门派属性从内核里分出来，
+  做成「语言无关标识 → 文本与属性」的 JSON（格式 v1，规范见 `knowledge/SCHEMA.md`）。
+  内核只做事实判定，怎么解读是门派观点，因此可整包替换或用覆盖包逐条合并。
+  内嵌的 zh-CN 默认包有 107 颗星（主星 14、辅星 14、杂耀 34、神煞 45，含卡片属性、
+  特性正文与主星双星组合解读）、64 条格局（引文、成立条件、解读）、12 宫、4 化与 38 条术语，
+  由 `knowledge/generate.py` 从锁定 commit 的 iztro-docs《学习》各页生成
+  （MIT License，作者 Sylar Long）。其余五种语言暂无默认包。
+- **知识包三语言 API**：Rust 的 `KnowledgePack`（`builtin` / `builtin_json` / `from_json` /
+  `to_json` / `merge` / `merged` / `star` / `pattern` / `palace` / `mutagen` /
+  `star_intro` / `pattern_intro`）、Python 的 `KnowledgePack`（另有 `from_dict` / `to_dict` /
+  `concept` / `stars` / `patterns`，条目为 frozen dataclass）、
+  Go 的 `BuiltinKnowledgePack` / `ParseKnowledgePack` / `Merged`（各带 Context 变体）与
+  `Star` / `Pattern` / `Palace` / `Mutagen` / `Concept` 等取值方法。
+  bridge 新增 `knowledgePack` 与 `mergeKnowledgePacks` 两个 kind。
+- **知识包合并语义**：逐段按键合并，覆盖包的非空字段覆盖同键条目的对应字段，
+  `attributes` 与 `combinations` 逐字段合并，数组字段整体替换，显式 `null` 等同缺省；
+  合并后 `id` / `version` / `language` / `source` 取覆盖包的。
+  合并只在 Rust 内核实现一处，三语言共用，结果逐字节一致；
+  `schema` 高于本库支持的版本报 `invalid_argument`。
+  Go 内嵌的 wasm 因内置默认包增大约 380 KB。
+- **知识包的文档与测试**：使用指南《知识包》与三语言 API 参考页（中英各一份）；
+  默认包的完整性与键有效性、合并语义、绑定入口分别由 `tests/knowledge_pack.rs`、
+  `python/tests/test_knowledge.py`、`go/iztro/knowledge_test.go` 守着。
 - **格局判定引擎**：64 条格局的形式化判定，本命盘与运限盘共用同一套规则。
   运限视角以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，
   其中禄衰马困与风云际会两条只在运限视角判定。

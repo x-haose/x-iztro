@@ -191,6 +191,9 @@ func main() {
 - **盘面查询** — 按宫名、地支或索引定位宫位；判断星耀、四化与空宫；三方四正；飞星族。
 - **格局判定** — 64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、
   多口径标记与证据星。iztro 无此 API。
+- **知识包** — 星耀与格局的解读文本、星耀的门派属性放在可替换的 JSON 包里，不进内核。
+  库内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、38 条术语，zh-CN，
+  取自 Sylar Long 的 iztro-docs，MIT），不认同的条目写覆盖包换掉。
 - **两个流派** — 默认算法与中州派，按盘选择。
 - **六种语言** — zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN，另有语言无关的标识常量，
   业务判断不依赖显示语言。
@@ -219,6 +222,26 @@ for hit in chart.patterns():
 ```
 
 判定原则与 64 条格局总表见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/concepts/patterns)。
+
+### 知识包
+
+```python
+from x_iztro import KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+    print(pack.pattern_intro(hit.key)[:10])
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+不难看出，这是个备受
+```
+
+包的格式、合并规则与覆盖包写法见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/guides/knowledge-pack)。
 
 ## 准确性
 

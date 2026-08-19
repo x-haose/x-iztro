@@ -45,6 +45,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - `data/` — 枚举、常量、天干地支、星耀数据表
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
   - `astro/` — 排盘、运限、三方四正算法
+  - `knowledge/` — 知识包（`KnowledgePack`：解析/合并/查询），内嵌默认包 `data/knowledge/iztro_docs.zh-CN.json`
   - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
     `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
   - `i18n/` — 多语言翻译
@@ -57,6 +58,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro/` — Go FFI 绑定包
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
+- `knowledge/` — 知识包格式规范 `SCHEMA.md` 与默认包生成器 `generate.py`（锁定 iztro-docs commit，
+  输出 `src/data/knowledge/iztro_docs.zh-CN.json`；来源缓存 `knowledge/source/` 已 gitignore）
 
 ## 关键约定
 
@@ -129,6 +132,15 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
   规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
 
+### 知识包（x-iztro 扩展）
+- 边界：内核只做事实判定，星耀解读、格局释义、宫位/四化含义、门派属性（阴阳五行化气别号等）全在知识包；
+  核心 `StarInfo` 保持与 iztro 一致，不把卡片属性并进去（卡片与 iztro 表本身有冲突，说明也是观点）
+- 协议：语言无关 key（`StarKey`/`PatternKey`/`Palace`/`Mutagen` 的 `as_key`）→ 文本/属性，格式 `knowledge/SCHEMA.md`；
+  合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
+  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
+- 默认包只有 zh-CN；同步上游：改 `knowledge/generate.py` 的 `COMMIT` 常量重新生成，跑 `tests/knowledge_pack.rs`
+  与三侧知识包测试；映射类字段允许写 `null`（Go nil map 默认序列化）
+
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（八层合计 713,870 例，约 71 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
@@ -154,6 +166,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
   - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
     快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
+  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
+    + Go `knowledge_test.go`
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
     + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，Python `test_patterns.py` 与

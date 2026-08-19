@@ -203,6 +203,10 @@ func main() {
 - **Pattern judgement** — 64 named star arrangements (格局), one rule set shared by
   natal charts and horoscope views, each hit carrying the palace it formed in, the
   reading that matched, and the evidencing stars. iztro has no such API.
+- **Knowledge packs** — reading texts and school-specific star attributes live in a
+  swappable JSON pack, not in the core. A default pack ships inside (107 stars, 64
+  patterns, 12 palaces, 4 transformations, 38 glossary entries, zh-CN, from
+  iztro-docs by Sylar Long, MIT); write an overlay to replace any entry.
 - **Two schools** — the default school and 中州派 (Zhongzhou), selected per chart.
 - **Six languages** — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN, with
   language-independent key constants so your logic never depends on the display
@@ -235,6 +239,28 @@ Literary Stars Facing Life soul True
 
 The judging principles and the full table of 64 patterns are on the
 [documentation site](https://ziwei.x-hoase.com/en/docs/guide/concepts/patterns).
+
+### Knowledge packs
+
+The default pack is Chinese, so pair it with a hit's language-independent `key`
+rather than its translated name:
+
+```python
+from x_iztro import KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+```
+
+```text
+Empress and Minister Facing the Palace | 府相朝垣命必荣
+```
+
+The pack format, the merge rules and how to write an overlay are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/guides/knowledge-pack).
 
 ## Accuracy
 

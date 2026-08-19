@@ -389,6 +389,25 @@ Shen, Si or Hai, so the palace is always one of those four.
 - [Python — patterns](/en/docs/python/patterns)
 - [Go — Patterns](/en/docs/go/patterns)
 
+## Pattern readings live in a knowledge pack
+
+This page and the three API references cover **judgement**: which stars in which arrangement make a
+pattern form. What a formed pattern then *means* is interpretation, and interpretation is a school's
+opinion, so it lives in a [knowledge pack](/en/docs/guide/guides/knowledge-pack) — the bundled
+default pack carries classical quotations, a prose description of the conditions and a reading for
+each of the 64 patterns.
+
+A hit's `key` is exactly the key used in the pack's `patterns` section:
+
+```python
+pack = KnowledgePack.builtin()
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+```
+
+Disagree with a reading? Write an overlay pack replacing those entries; the judgement is unaffected.
+
 ## Sources and credit
 
 The pattern entries, example charts and classical quotations come from the 格局 page of

@@ -166,6 +166,22 @@ four layers of tests: a unit test per rule, a reproduction of the source page's 
 real charts, a bulk invariant sweep over the 1,560 tier-1 charts, and output snapshots that all
 three bindings read back from the same files.
 
+### Knowledge packs (no iztro equivalent)
+
+iztro ships facts only; the reading texts for stars and patterns live on its documentation site, not
+in the library. x-iztro turns interpretation into data behind a protocol: a knowledge pack is JSON
+mapping "language-independent key → text and attributes", and one default pack ships inside the
+library (107 stars, 64 patterns, 12 palaces, 4 transformations, 38 glossary entries, taken from the
+学习 pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
+pack that merges field by field.
+
+The entry points: Rust's `KnowledgePack::builtin` / `merged`, Python's `KnowledgePack.builtin` /
+`merged`, Go's `BuiltinKnowledgePack` / `Merged`, with the merge implemented once in the Rust core.
+A star's yin-yang, five elements, dipper and chemistry are **attributes** that live in the pack
+rather than the core tables — the core `StarInfo` stays value-for-value identical to iztro's, while
+those attributes are a school's reading. See
+[Knowledge packs](/en/docs/guide/guides/knowledge-pack).
+
 ### Everything else
 
 - **Language-independent keys**: every field on the astrolabe carries a `*key` / `*Key` alongside

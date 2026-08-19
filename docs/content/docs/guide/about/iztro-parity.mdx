@@ -152,6 +152,21 @@ Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`，
 每条规则的单测、来源页 32 张示例盘的真实盘复现、tier1 那 1,560 张盘上的批量不变量检查，
 以及三侧共读的输出快照。
 
+### 知识包（iztro 无对应 API）
+
+iztro 只给事实，星耀与格局的解读文本在它的文档站上、不在库里。
+x-iztro 把解读做成一份协议化的数据：知识包是「语言无关标识 → 文本与属性」的 JSON，
+库里内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、38 条术语，
+取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
+不认同其中说法可以写覆盖包按字段合并。
+
+三侧的入口：Rust 的 `KnowledgePack::builtin` / `merged`、
+Python 的 `KnowledgePack.builtin` / `merged`、
+Go 的 `BuiltinKnowledgePack` / `Merged`，合并只在 Rust 内核实现一处。
+星耀的阴阳五行、斗分、化气这类**属性**也在包里而不进核心数据表——
+核心的 `StarInfo` 与 iztro 逐值一致，属性是门派说法。
+见[知识包](/zh/docs/guide/guides/knowledge-pack)。
+
 ### 其余增补
 
 - **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，

@@ -22,3 +22,6 @@ examples/go/x-iztro-example
 .claude/
 .codex/
 .agents/
+
+# 知识包来源缓存：由 knowledge/generate.py 按锁定 commit 下载，可随时重建
+knowledge/source/

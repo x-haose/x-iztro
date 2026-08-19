@@ -1,0 +1,375 @@
+---
+title: 知识包
+description: KnowledgePack 与各条目类型、内嵌默认包、JSON 解析与序列化、覆盖包合并。
+---
+
+知识包是「语言无关标识 → 解读文本与门派属性」的 JSON。内核只判事实，
+解读文本与星耀的门派属性放在这里。概念、格式与写覆盖包的方法见
+[知识包指南](/zh/docs/guide/guides/knowledge-pack)，完整字段表见仓库的
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md)。
+
+```rust
+use x_iztro::{KnowledgePack, Language, StarKey};
+
+let pack = KnowledgePack::builtin(Language::ZhCN).expect("zh-CN 有内嵌默认包");
+let intro = pack.star_intro(StarKey::ZiweiMaj);
+```
+
+`KnowledgePack` 在 crate 根重导出；其余类型在 `x_iztro::knowledge` 下。
+
+## 类型
+
+### KnowledgePack
+
+字段全部公开，可直接读写；映射类字段是 `BTreeMap`，因此迭代顺序按键稳定。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `schema` | `u32` | 格式版本，当前为 `SCHEMA_VERSION`（1） |
+| `id` | `String` | 包标识，默认包为 `"iztro-docs"` |
+| `version` | `String` | 包版本，默认包为「抓取日期+来源 commit 短号」 |
+| `language` | `String` | 文本语言的语言码，如 `"zh-CN"` |
+| `extends` | `Option<String>` | 覆盖包所覆盖的包标识；独立包为 `None` |
+| `source` | `Source` | 来源与许可 |
+| `stars` | `BTreeMap<String, StarEntry>` | 星耀条目，键为 `StarKey::as_key` |
+| `patterns` | `BTreeMap<String, PatternEntry>` | 格局条目，键为 `PatternKey::as_key` |
+| `palaces` | `BTreeMap<String, TextEntry>` | 宫位条目，键为 `Palace::as_key` |
+| `mutagens` | `BTreeMap<String, TextEntry>` | 四化条目，键为 `Mutagen::as_key` |
+| `concepts` | `BTreeMap<String, ConceptEntry>` | 术语条目，键为 slug |
+
+实现 `Clone`、`Default`、`PartialEq`、`Eq`、`Debug`、`Serialize`、`Deserialize`。
+
+### Source
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | `Option<String>` | 来源名称 |
+| `url` | `Option<String>` | 来源地址 |
+| `commit` | `Option<String>` | 来源版本（git commit） |
+| `license` | `Option<String>` | 许可证 |
+| `author` | `Option<String>` | 作者 |
+| `retrieved_at` | `Option<String>` | 取得日期 |
+
+### StarEntry
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | `Option<String>` | 该语言的显示名 |
+| `category` | `Option<String>` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `group` | `Option<String>` | 分组：杂耀的分类、神煞的组别 |
+| `attributes` | `StarAttributes` | 门派属性，缺省为全 `None` |
+| `intro` | `Option<String>` | 解读正文（Markdown） |
+| `combinations` | `BTreeMap<String, String>` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+
+### StarAttributes
+
+全部字段为 `Option<String>`，`aliases` 为 `Option<Vec<String>>`：
+`yin_yang`（`yin` / `yang`）、`five_elements`（`wood` / `fire` / `earth` / `metal` / `water`）、
+`stem`（`jia`…`gui`）、`five_elements_note`、`dipper`、`chemistry`、`career`、`duty`、
+`aliases`、`element_color`、`energy_color`。
+
+<Callout type="info">
+这里的 `five_elements` 与 `yin_yang` 是知识包来源的说法，与核心
+[`StarInfo`](/zh/docs/rust/data) 的取值可能不同——核心那份与 iztro 逐值一致。
+原因见[指南](/zh/docs/guide/guides/knowledge-pack#为什么星耀的阴阳五行放在这里)。
+</Callout>
+
+### PatternEntry
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `name` | `Option<String>` | 该语言的显示名 |
+| `quotes` | `Option<Vec<String>>` | 古籍引文 |
+| `conditions` | `Option<String>` | 来源对成立条件的文字描述 |
+| `intro` | `Option<String>` | 解读正文 |
+
+### TextEntry / ConceptEntry
+
+`TextEntry`（宫位、四化）有 `name` 与 `intro`；`ConceptEntry`（术语）有 `title` 与 `intro`，
+都是 `Option<String>`。
+
+### SCHEMA_VERSION
+
+```rust
+pub const SCHEMA_VERSION: u32 = 1;
+```
+
+本库支持的最高格式版本。解析到更高的 `schema` 会报错。
+
+---
+
+## builtin
+
+**用途**　取内嵌的默认知识包。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn builtin(language: Language) -> Option<&'static KnowledgePack>
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `language` | `Language` | 文本语言 |
+
+**返回值**　`Option<&'static KnowledgePack>`——该语言没有默认包时为 `None`。
+目前只有 `Language::ZhCN` 有。首次调用时解析并缓存，之后是零成本的静态引用。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+println!("{} {} {}", pack.id, pack.version, pack.stars.len());
+println!("{:?}", pack.source.license);
+println!("{}", KnowledgePack::builtin(Language::EnUS).is_some());
+```
+
+**输出**
+
+```text
+iztro-docs 2026-08-19+ec2d58b 107
+Some("MIT")
+false
+```
+
+---
+
+## builtin_json
+
+**用途**　取内嵌默认包的 JSON 原文，不做解析。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn builtin_json(language: Language) -> Option<&'static str>
+}
+```
+
+**返回值**　`Option<&'static str>`，与 `builtin` 同样只有 zh-CN 有。
+要把包原样透传给别的进程或写盘时用它，省一次解析加序列化。绑定层走的就是这条路。
+
+---
+
+## from_json
+
+**用途**　由 JSON 文本解析一份包。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn from_json(json: &str) -> Result<KnowledgePack, String>
+}
+```
+
+**返回值**　`Result<KnowledgePack, String>`。错误是给人看的字符串，两种情况：
+JSON 语法或类型不合格式（`invalid knowledge pack: ...`），
+以及 `schema` 高于 `SCHEMA_VERSION`（不做降级解析）。
+
+<Callout type="info">
+这里返回 `String` 而不是 [`IztroError`](/zh/docs/rust/errors)：知识包是调用方自带的数据，
+不属于排盘入口的输入校验。绑定层会把它包成各语言的 `invalid_argument` 错误。
+</Callout>
+
+**示例**
+
+```rust
+let pack = KnowledgePack::from_json(r#"{
+    "schema": 1, "id": "mine", "version": "1", "language": "zh-CN",
+    "stars": {"ziweiMaj": {"intro": "我的紫微"}}
+}"#)?;
+println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
+```
+
+**输出**
+
+```text
+Some("我的紫微")
+Err("knowledge pack schema 99 is newer than supported 1")
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="缺省与 null 等价">
+所有条目与字段都可选。映射类字段（`source`、`stars`、`combinations`…）写成 `null`
+等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样三侧的默认序列化产物可以互相解析。
+</Accordion>
+<Accordion title="未知的键不报错">
+`stars` 里出现不是星耀标识的键、`patterns` 里出现未知格局标识，都会照原样留在包里。
+校验键的有效性是生成器与测试的事，解析器只管格式。
+</Accordion>
+</Accordions>
+
+---
+
+## to_json
+
+**用途**　序列化为 JSON（紧凑，无缩进）。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn to_json(&self) -> String
+}
+```
+
+**返回值**　`String`。为 `None` 的可选字段与空映射在输出里省略，
+因此 `from_json(&pack.to_json())` 与原包相等。要缩进输出用
+`serde_json::to_string_pretty(&pack)`。
+
+---
+
+## merged
+
+**用途**　把若干覆盖包依次叠加到本包上，返回新包。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn merged(&self, overlays: &[&KnowledgePack]) -> KnowledgePack
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `overlays` | `&[&KnowledgePack]` | 覆盖包，按数组顺序依次叠加，后面的覆盖前面的 |
+
+**返回值**　`KnowledgePack`，本包与覆盖包都不变。
+合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：
+逐段按键合并，覆盖包的非 `None` 字段覆盖同键条目的对应字段，
+`attributes` 与 `combinations` 逐字段合并，数组字段整体替换。
+
+**示例**
+
+```rust
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let overlay = KnowledgePack::from_json(r#"{
+    "schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMaj": {"intro": "我的紫微", "attributes": {"aliases": ["帝座"]}}},
+    "patterns": {"zi_fu_tong_gong": {"intro": "我的紫府同宫"}}
+}"#)?;
+let pack = base.merged(&[&overlay]);
+
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{:?} {:?} {:?}", ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+println!("{:?}", pack.pattern_intro(PatternKey::ZiFuTongGong));
+println!("{:?}", pack.pattern(PatternKey::ZiFuTongGong).unwrap().quotes);
+println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| &s[..15]));
+```
+
+**输出**
+
+```text
+Some("紫微") Some(["帝座"]) Some("尊贵")
+Some("我的紫府同宫")
+Some(["紫府同宫终身福厚。"])
+my-school Some("看到紫微星")
+```
+
+---
+
+## merge
+
+**用途**　把一份覆盖包就地合并进本包。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn merge(&mut self, overlay: &KnowledgePack)
+}
+```
+
+`merged` 是它的不可变版本（克隆本包后逐个 `merge`）。
+手里已经有一份可变的包、又要叠很多层时用 `merge` 省掉克隆。
+
+---
+
+## star / pattern / palace / mutagen
+
+**用途**　按语言无关标识取条目。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn star(&self, key: StarKey) -> Option<&StarEntry>
+    pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
+    pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
+    pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+}
+```
+
+**返回值**　包里没有该条目时为 `None`。四个方法都是在对应 `BTreeMap` 上按
+`as_key()` 取值，等价于自己写 `pack.stars.get(key.as_key())`；
+术语没有专门的方法，直接 `pack.concepts.get(slug)`。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{:?} {:?} {:?}", ziwei.name, ziwei.category, ziwei.attributes.dipper);
+println!("{:?}", ziwei.combinations.keys().collect::<Vec<_>>());
+println!("{:?}", pack.palace(Palace::Soul).and_then(|e| e.name.clone()));
+println!("{:?}", pack.mutagen(Mutagen::Lu).and_then(|e| e.name.clone()));
+println!("{:?}", pack.concepts.get("tong-gong").and_then(|e| e.title.clone()));
+```
+
+**输出**
+
+```text
+Some("紫微") Some("major") Some("中天星系")
+["pojunMaj", "qishaMaj", "tanlangMaj", "tianfuMaj", "tianxiangMaj"]
+Some("命宫")
+Some("化禄")
+Some("遇、加、逢、同宫、同度")
+```
+
+---
+
+## star_intro / pattern_intro
+
+**用途**　直接取解读正文，省掉一层 `Option` 展开。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn star_intro(&self, key: StarKey) -> Option<&str>
+    pub fn pattern_intro(&self, key: PatternKey) -> Option<&str>
+}
+```
+
+**返回值**　条目不存在、或条目存在但没写正文，都是 `None`。
+
+**示例**　把本命格局连同解读列出来：
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+for hit in chart.patterns() {
+    let intro = pack.pattern_intro(hit.key).unwrap_or("（这份包里没写）");
+    let head: String = intro.chars().take(10).collect();
+    println!("{} {}", translate_pattern(hit.key, Language::ZhCN), head);
+}
+```
+
+**输出**
+
+```text
+府相朝垣 不难看出，这是个备受
+```

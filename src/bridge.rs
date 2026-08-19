@@ -175,6 +175,10 @@ pub struct QueryInput {
     // 格局用
     /// 格局判定口径，部分键对象（brightnessSource/borrow/flowStars）；省略取默认
     pub pattern_config: Option<Value>,
+
+    // 知识包用
+    /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
+    pub knowledge_packs: Vec<Value>,
 }
 
 /// `fixIndex` 的 max 默认值，与 iztro 一致
@@ -388,6 +392,20 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 格局 ----
         "patterns" | "horoscopePatterns" => patterns(input),
 
+        // ---- 知识包 ----
+        "knowledgePack" => {
+            let language = parse_language(&input.language)?;
+            let json =
+                crate::knowledge::KnowledgePack::builtin_json(language).ok_or_else(|| {
+                    BridgeError::invalid_argument(format!(
+                        "no builtin knowledge pack for language '{}'",
+                        input.language
+                    ))
+                })?;
+            serde_json::from_str(json).map_err(serialize_failed)
+        }
+        "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
+
         // ---- util 与 astro/palace ----
         "fixIndex"
         | "earthlyBranchToPalaceIndex"
@@ -548,6 +566,24 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
         }
     };
     serde_json::to_value(hits).map_err(serialize_failed)
+}
+
+/// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。
+fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
+    let mut parsed = packs.iter().map(|v| {
+        crate::knowledge::KnowledgePack::from_json(&v.to_string())
+            .map_err(BridgeError::invalid_argument)
+    });
+    let Some(base) = parsed.next() else {
+        return Err(BridgeError::invalid_argument(
+            "knowledgePacks must contain at least one pack",
+        ));
+    };
+    let mut base = base?;
+    for overlay in parsed {
+        base.merge(&overlay?);
+    }
+    serde_json::to_value(base).map_err(serialize_failed)
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key

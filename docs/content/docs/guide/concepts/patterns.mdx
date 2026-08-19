@@ -371,6 +371,24 @@ print([h.name for h in chart.patterns(
 - [Python — patterns](/zh/docs/python/patterns)
 - [Go — Patterns](/zh/docs/go/patterns)
 
+## 格局释义在知识包里
+
+这一页与三个 API 参考页讲的是**判定**：哪几颗星怎么凑在一起才算成格。
+成格之后「这条格局意味着什么」是解读，属于门派观点，
+放在[知识包](/zh/docs/guide/guides/knowledge-pack)里——
+内嵌的默认包给了 64 条格局各自的古籍引文、成立条件的文字描述与解读正文。
+
+命中的 `key` 就是知识包 `patterns` 段的键，直接对上：
+
+```python
+pack = KnowledgePack.builtin()
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+```
+
+不认同其中的说法，写一份覆盖包换掉那几条，判定结果不变。
+
 ## 来源与署名
 
 格局规则的条目、示例盘与古籍引文取自
