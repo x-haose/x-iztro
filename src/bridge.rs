@@ -171,6 +171,10 @@ pub struct QueryInput {
     pub target_date: String,
     /// 运限目标时辰索引 0-12
     pub target_time_index: u8,
+
+    // 格局用
+    /// 格局判定口径，部分键对象（brightnessSource/borrow/flowStars）；省略取默认
+    pub pattern_config: Option<Value>,
 }
 
 /// `fixIndex` 的 max 默认值，与 iztro 一致
@@ -220,6 +224,15 @@ fn parse_config(v: &Option<Value>) -> Result<Config, BridgeError> {
         None => Ok(Config::default()),
         Some(Value::Null) => Ok(Config::default()),
         Some(value) => parse_config_value(value),
+    }
+}
+
+/// 格局判定口径：省略或 null 取默认；对象按 camelCase 部分键解析，未知键报错。
+fn parse_pattern_config(v: &Option<Value>) -> Result<crate::pattern::PatternConfig, BridgeError> {
+    match v {
+        None | Some(Value::Null) => Ok(crate::pattern::PatternConfig::default()),
+        Some(value) => serde_json::from_value(value.clone())
+            .map_err(|e| BridgeError::invalid_argument(format!("invalid patternConfig: {e}"))),
     }
 }
 
@@ -372,6 +385,9 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         "zodiacBySolar" | "signBySolar" | "signByLunar" | "majorStarBySolar"
         | "majorStarByLunar" | "astrolabeToPrompt" | "horoscopeToPrompt" => translated(input),
 
+        // ---- 格局 ----
+        "patterns" | "horoscopePatterns" => patterns(input),
+
         // ---- util 与 astro/palace ----
         "fixIndex"
         | "earthlyBranchToPalaceIndex"
@@ -502,6 +518,36 @@ fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
     };
 
     Ok(json!(text?))
+}
+
+/// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`）。
+/// 返回命中 DTO 数组，名称按语言翻译、标识语言无关。
+fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let config = parse_config(&input.config)?;
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        config,
+    )?;
+    let hits = match input.kind.as_str() {
+        "patterns" => astrolabe.patterns_dto(&pattern_config),
+        _ => {
+            let scope = parse_scope_key(&input.scope)?;
+            let horoscope = crate::get_horoscope(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                language,
+            )?;
+            horoscope.patterns_dto(&astrolabe, scope, &pattern_config)
+        }
+    };
+    serde_json::to_value(hits).map_err(serialize_failed)
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key

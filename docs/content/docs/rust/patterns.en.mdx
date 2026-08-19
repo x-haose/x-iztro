@@ -1,0 +1,408 @@
+---
+title: Patterns
+description: Pattern hits on natal and horoscope charts, the reading switches, pattern keys, and the serialisation DTO.
+---
+
+A pattern (格局) is the recognition of a named star arrangement on a chart. The same 64 rules are
+judged on natal charts and on horoscope views. For what patterns are and each rule's condition and
+source, see the [concept page](/en/docs/guide/concepts/patterns).
+
+```rust
+let chart = by_solar("1985-5-3", 9, Gender::Male, true, Language::EnUS, Config::default())?;
+let hits = chart.patterns();
+```
+
+<Callout type="info">
+The examples on this page all start from a `Language::EnUS` natal chart, so the display values in
+the output are the English translations.
+</Callout>
+
+## Types
+
+All of these are re-exported from the crate root: `PatternHit`, `StarAt`, `PatternConfig`,
+`BrightnessSource`, `PatternKey`, plus the constant `ALL_PATTERNS` and the function `patterns_at`.
+
+### PatternHit
+
+One hit.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `key` | `PatternKey` | The pattern |
+| `scope` | `Scope` | The view it was judged in: `Scope::Origin` for natal, otherwise that level |
+| `palace` | `usize` | Slot of the palace where the pattern formed (0-11, Yin palace is 0) |
+| `variant` | `Option<&'static str>` | Which reading matched; `None` for single-reading patterns |
+| `broken` | `bool` | Whether the "spoiled by malefics" condition fired. The hit is reported either way; this is only a flag |
+| `stars` | `Vec<StarAt>` | The stars evidencing the pattern, with their palaces |
+
+`PatternHit` implements `Clone`, `PartialEq`, `Eq`, `Serialize` and `Deserialize`.
+
+### StarAt
+
+One evidencing star.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `star` | `StarKey` | The star |
+| `palace` | `usize` | The slot the star **actually occupies** (when borrowed, not the borrowing palace) |
+| `brightness` | `Option<Brightness>` | Brightness; `None` for stars with no brightness table |
+| `mutagen` | `Option<Mutagen>` | The mutagen in this view: birth-year for natal, that level's for horoscope views |
+
+### PatternConfig
+
+The reading switches. Anything that is merely a second *form* of the same pattern goes through
+`PatternHit::variant`; only data readings that change the **finding of fact itself** live here,
+which is why there are just three fields.
+
+```rust
+pub struct PatternConfig {
+    pub brightness_source: BrightnessSource,  // default Table
+    pub borrow: bool,                         // default true
+    pub flow_stars: bool,                     // default true
+}
+```
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `brightness_source` | `BrightnessSource::Table` | Basis for Sun and Moon brightness |
+| `borrow` | `true` | Whether an empty palace borrows the opposite palace's majors |
+| `flow_stars` | `true` | Whether flowing stars count as their natal counterparts in horoscope views |
+
+`BrightnessSource` has two variants: `Table` follows the chart's brightness table (Miao and Wang
+bright, Xian and Bu dim — matching iztro value for value), `Positional` follows the traditional
+placement (Sun bright Yin–Wu, dim You–Chou; Moon bright You–Chou, dim Mao–Wei). The trade-off is
+explained on the [concept page](/en/docs/guide/concepts/patterns#which-table-decides-sun-and-moon-brightness).
+
+`PatternConfig` implements `Default`; change one field with struct update syntax:
+
+```rust
+let cfg = PatternConfig {
+    brightness_source: BrightnessSource::Positional,
+    ..Default::default()
+};
+```
+
+### PatternKey
+
+The language-independent key of each of the 64 patterns. `Copy` + `Hash`, so it works directly as a
+`HashMap` key.
+
+| Method | Signature | Meaning |
+| --- | --- | --- |
+| `as_key` | `fn as_key(self) -> &'static str` | The snake_case key, e.g. `"sha_po_lang"` |
+| `from_key` | `fn from_key(key: &str) -> Option<Self>` | Reverse lookup; unknown strings give `None` |
+| `is_horoscope_only` | `fn is_horoscope_only(self) -> bool` | Whether it is a transit pattern (horoscope views only) |
+
+The constant `ALL_PATTERNS: [PatternKey; 64]` lists every pattern in the source page's order. For
+names use `translate_pattern(key, lang)`, available in all six languages.
+
+**Example**
+
+```rust
+println!("{}", ALL_PATTERNS.len());
+println!("{}", PatternKey::ShaPoLang.as_key());
+println!("{:?}", PatternKey::from_key("sha_po_lang"));
+println!("{:?}", PatternKey::from_key("nope"));
+println!("{}", PatternKey::FengYunJiHui.is_horoscope_only());
+```
+
+**Output**
+
+```text
+64
+sha_po_lang
+Some(ShaPoLang)
+None
+true
+```
+
+---
+
+## patterns
+
+**Purpose**　Every pattern hit on the natal chart, with the default reading.
+
+**In Zi Wei terms**　Lists every named star arrangement that holds on this chart, together with the
+palace it formed in and the stars that evidence it.
+
+**Signature**
+
+```rust
+impl Astrolabe {
+    pub fn patterns(&self) -> Vec<PatternHit>
+}
+```
+
+**Returns**　`Vec<PatternHit>` in the source page's entry order; an empty `Vec` when nothing holds.
+The two transit patterns (禄衰马困, 风云际会) never appear on a natal chart.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let chart = by_solar("1985-5-3", 9, Gender::Male, true, en, Config::default())?;
+
+for hit in chart.patterns() {
+    println!("{} {} broken={}", translate_pattern(hit.key, en), hit.palace, hit.broken);
+}
+```
+
+**Output**
+
+```text
+General and Wolf Together 11 broken=false
+Empress and Minister Facing the Palace 5 broken=false
+Marshal, Rebel and Wolf 11 broken=false
+Officer and Helper Flanking Life 5 broken=false
+Literary Nobility and Brilliance 11 broken=false
+Literary Stars Facing Life 5 broken=true
+```
+
+Reading one hit's evidence:
+
+```rust
+let hit = chart.patterns().into_iter()
+    .find(|h| h.key == PatternKey::FuXiangChaoYuan)
+    .unwrap();
+
+println!("{} variant={:?}", translate_pattern(hit.key, en), hit.variant);
+for s in &hit.stars {
+    println!("  {} palace {} brightness {:?}", translate_star(s.star, en), s.palace, s.brightness);
+}
+```
+
+```text
+Empress and Minister Facing the Palace variant=Some("soul_empty")
+  empress palace 9 brightness Some(De)
+  minister palace 1 brightness Some(Xian)
+```
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="palace is not always the Soul palace">
+Most patterns form at the Soul palace, but "Body-or-Soul" patterns (武贪同行, 杀破狼, 石中隐玉 and
+others) are judged at both, and `palace` records whichever matched — if both match, two hits come
+back. 禄马交驰 goes further: it is reported for any palace that qualifies, so one chart may produce
+several hits.
+</Accordion>
+<Accordion title="palace inside stars is where the star really sits">
+When an empty palace borrows the opposite palace's majors, `StarAt::palace` records the palace the
+star actually occupies (the opposite one), not the borrowing palace. For where the pattern formed,
+read `PatternHit::palace`.
+</Accordion>
+<Accordion title="It does not return a Result">
+Judgement runs on an already-cast chart, so there is no external input left to validate and nothing
+can fail. Errors can only come from the charting entry points (`by_solar` / `by_lunar`).
+</Accordion>
+</Accordions>
+
+---
+
+## patterns_with
+
+**Purpose**　As `patterns`, with an explicit reading.
+
+**Signature**
+
+```rust
+impl Astrolabe {
+    pub fn patterns_with(&self, config: &PatternConfig) -> Vec<PatternHit>
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `config` | `&PatternConfig` | yes | — | The reading; `PatternConfig::default()` reproduces `patterns()` |
+
+**Returns**　As `patterns`.
+
+**Example**　The same chart under both Sun/Moon brightness readings:
+
+```rust
+let chart = by_solar("1985-1-5", 11, Gender::Female, true, en, Config::default())?;
+let cfg = PatternConfig {
+    brightness_source: BrightnessSource::Positional,
+    ..Default::default()
+};
+
+println!("{:?}", chart.patterns().iter()
+    .map(|h| translate_pattern(h.key, en)).collect::<Vec<_>>());
+println!("{:?}", chart.patterns_with(&cfg).iter()
+    .map(|h| translate_pattern(h.key, en)).collect::<Vec<_>>());
+```
+
+**Output**
+
+```text
+["Money and Horse Galloping Together", "Officer and Helper Flanking Life", "Sitting on and Facing Nobility"]
+["Sun and Moon Both Bright", "Money and Horse Galloping Together", "Officer and Helper Flanking Life", "Sitting on and Facing Nobility"]
+```
+
+---
+
+## HoroscopeRef::patterns
+
+**Purpose**　Pattern hits in the view of one horoscope level.
+
+**In Zi Wei terms**　Takes that level's palace as the Soul palace, merges in that level's flowing
+stars and mutagens, and runs every rule again. This is how "if the natal chart has the arrangement
+and the decadal then arrives at it, its benefit is enjoyed" is computed.
+
+**Signature**
+
+```rust
+impl<'a> HoroscopeRef<'a> {
+    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit>
+    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit>
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `scope` | `Scope` | yes | — | The level whose view to judge in |
+| `config` | `&PatternConfig` | yes for `patterns_with` | — | The reading |
+
+**Returns**　`Vec<PatternHit>`, each carrying the level passed in as its `scope`. Passing
+`Scope::Origin` gives exactly what `patterns()` on the astrolabe gives.
+
+**Example**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, en, Config::default())?;
+let h = chart.horoscope("2025-6-1", 0)?;
+
+for hit in h.patterns(Scope::Decadal) {
+    println!("{} {:?} {:?}", translate_pattern(hit.key, en), hit.scope, hit.variant);
+}
+```
+
+**Output**
+
+```text
+Marshal, Rebel and Wolf Decadal None
+Meeting of Wind and Cloud Decadal None
+Meeting of Wind and Cloud Decadal Some("yearly")
+```
+
+The natal view of that same chart holds only "Empress and Minister Facing the Palace" — the
+Marshal-Rebel-Wolf pattern holds at this level only because the decadal moved the Soul palace.
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="Horoscope views have no Body palace">
+The Body palace is a natal concept. In a horoscope view, "Body-or-Soul" patterns are judged only at
+that level's Soul palace.
+</Accordion>
+<Accordion title="The two transit patterns appear only here">
+禄衰马困 is judged at whichever level the current view is (decadal view judges the decadal, yearly
+view the year); 风云际会 compares two limits across levels, so it is judged once, in the
+`Scope::Decadal` view — `variant` `None` is decadal + minor limit, `Some("yearly")` is decadal +
+annual, and if both hold, both are reported.
+</Accordion>
+<Accordion title="Flowing stars count as natal auxiliaries">
+Under the default reading a flowing Lucun reads as Lucun, a flowing Wenchang as Wenchang, and so on.
+To turn that off, use `patterns_with` with `flow_stars: false`.
+</Accordion>
+</Accordions>
+
+---
+
+## patterns_at
+
+**Purpose**　The free-function form of horoscope pattern judgement, taking a `HoroscopeData` rather
+than a `HoroscopeRef`.
+
+**Signature**
+
+```rust
+pub fn patterns_at(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    scope: Scope,
+    config: &PatternConfig,
+) -> Vec<PatternHit>
+```
+
+**Returns**　As `HoroscopeRef::patterns_with`.
+
+Use it when all you hold is a `HoroscopeData` (deserialised from elsewhere, say); where a
+`HoroscopeRef` is at hand, the method form is shorter.
+
+---
+
+## patterns_dto
+
+**Purpose**　The hits in serialisation form: camelCase keys, values translated into the chart's
+language, alongside the language-independent keys. All three bindings and the C FFI go through this
+layer.
+
+**Signature**
+
+```rust
+impl Astrolabe {
+    pub fn patterns_dto(&self, config: &PatternConfig) -> Vec<PatternHitDto>
+}
+
+impl HoroscopeData {
+    pub fn patterns_dto(
+        &self,
+        astrolabe: &Astrolabe,
+        scope: Scope,
+        config: &PatternConfig,
+    ) -> Vec<PatternHitDto>
+}
+```
+
+**Returns**　`Vec<PatternHitDto>`. Compared with `PatternHit` it adds four things: each hit carries
+`name` (the translation) and `palaceName` / `palaceNameKey` (the forming palace's name in this
+view), and each evidencing star carries `name` plus `brightnessKey` / `mutagenKey`. Optional keys
+with no value are omitted on serialisation.
+
+**Example**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, en, Config::default())?;
+let dto = chart.patterns_dto(&PatternConfig::default());
+println!("{}", serde_json::to_string_pretty(&dto[0]).unwrap());
+```
+
+**Output**
+
+```json
+{
+  "key": "fu_xiang_chao_yuan",
+  "name": "Empress and Minister Facing the Palace",
+  "scope": "origin",
+  "palaceIndex": 4,
+  "palaceName": "soul",
+  "palaceNameKey": "soulPalace",
+  "broken": false,
+  "stars": [
+    {
+      "key": "tianfuMaj",
+      "name": "empress",
+      "palaceIndex": 8,
+      "brightness": "[+3]",
+      "brightnessKey": "miao"
+    },
+    {
+      "key": "tianxiangMaj",
+      "name": "minister",
+      "palaceIndex": 0,
+      "brightness": "[+3]",
+      "brightnessKey": "miao"
+    }
+  ]
+}
+```
+
+<Callout type="info">
+The DTO field is called `palaceIndex` while the Rust struct field is `palace` — DTO key names follow
+the JS-side naming convention, the Rust side takes the shorter name.
+</Callout>

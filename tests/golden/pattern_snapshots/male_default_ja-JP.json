@@ -1,0 +1,280 @@
+{
+  "decadal": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 0,
+      "palaceName": "官祿",
+      "palaceNameKey": "careerPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天馬",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "風雲際会",
+      "palaceIndex": 8,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "yunma",
+          "name": "限の馬",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "風雲際会",
+      "palaceIndex": 8,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yearly"
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "殺破狼",
+      "palaceIndex": 5,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 5
+        },
+        {
+          "brightness": "平",
+          "brightnessKey": "ping",
+          "key": "pojunMaj",
+          "mutagen": "權",
+          "mutagenKey": "sihuaQuan",
+          "name": "破軍",
+          "palaceIndex": 9
+        },
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "tanlangMaj",
+          "name": "貪狼",
+          "palaceIndex": 1
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "san_qi_jia_hui",
+      "name": "三奇加会",
+      "palaceIndex": 5,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "lianzhenMaj",
+          "mutagen": "祿",
+          "mutagenKey": "sihuaLu",
+          "name": "廉貞",
+          "palaceIndex": 5
+        },
+        {
+          "brightness": "平",
+          "brightnessKey": "ping",
+          "key": "pojunMaj",
+          "mutagen": "權",
+          "mutagenKey": "sihuaQuan",
+          "name": "破軍",
+          "palaceIndex": 9
+        },
+        {
+          "brightness": "平",
+          "brightnessKey": "ping",
+          "key": "wuquMaj",
+          "mutagen": "科",
+          "mutagenKey": "sihuaKe",
+          "name": "武曲",
+          "palaceIndex": 9
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 0,
+      "palaceName": "疾厄",
+      "palaceNameKey": "healthPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天馬",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "zuo_gui_xiang_gui",
+      "name": "坐貴向貴",
+      "palaceIndex": 5,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "key": "tianyueMin",
+          "name": "天鉞",
+          "palaceIndex": 5
+        },
+        {
+          "key": "tiankuiMin",
+          "name": "天魁",
+          "palaceIndex": 11
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 5,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "name": "文曲",
+          "palaceIndex": 9
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 5,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "name": "文曲",
+          "palaceIndex": 9
+        },
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 1
+        }
+      ],
+      "variant": "trine"
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "default",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "male",
+    "language": "ja-JP",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "1984-2-15",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 7
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 0,
+      "palaceName": "財帛",
+      "palaceNameKey": "wealthPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天馬",
+          "palaceIndex": 0
+        }
+      ]
+    }
+  ]
+}

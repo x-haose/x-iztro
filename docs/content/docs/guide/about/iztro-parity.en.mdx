@@ -146,6 +146,28 @@ empty — keep your own copy if you need a record.
 
 ## What x-iztro adds
 
+### Pattern judgement (no iztro equivalent)
+
+iztro has no pattern API at all. On top of chart casting, x-iztro adds a pattern engine: 64 patterns,
+one rule set shared by natal charts and horoscope views, each hit carrying the palace it formed in,
+the reading that matched (`variant`), a "spoiled" flag (`broken`), and the evidencing stars. The
+entries, example charts and classical quotations come from the 格局 page of iztro-docs (MIT License,
+by Sylar Long); the judgement implementation, the pattern names in six languages, and the choices
+between competing readings are x-iztro's own work.
+
+The entry points on each side: `Astrolabe::patterns` / `HoroscopeRef::patterns` in Rust,
+`Astrolabe.patterns` / `Horoscope.patterns` in Python, `Astrolabe.Patterns` / `Horoscope.Patterns`
+in Go, plus the language-independent pattern keys (`PatternKey` in Rust and Python, the `PatternXxx`
+constants in Go). The concepts and the full table of 64 are on
+[Patterns](/en/docs/guide/concepts/patterns).
+
+Since iztro has nothing to compare against, this area has no golden data; its correctness is held by
+four layers of tests: a unit test per rule, a reproduction of the source page's 32 example charts on
+real charts, a bulk invariant sweep over the 1,560 tier-1 charts, and output snapshots that all
+three bindings read back from the same files.
+
+### Everything else
+
 - **Language-independent keys**: every field on the astrolabe carries a `*key` / `*Key` alongside
   its translated name, valued with iztro's i18n keys. Predicate logic is therefore unaffected by the
   chart language and never has to reverse-look-up a translation. See

@@ -45,6 +45,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - `data/` — 枚举、常量、天干地支、星耀数据表
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
   - `astro/` — 排盘、运限、三方四正算法
+  - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
+    `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
   - `i18n/` — 多语言翻译
   - `error.rs` — IztroError（入口前置校验的错误类型）
   - `dto.rs` — JS 兼容序列化 DTO（三语言绑定共用）
@@ -73,7 +75,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   语言无关标识（星/宫/干支/四化/亮度/五行局的 `*key`/`*Key(s)`，取值为 iztro i18n key）
 - 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
   判断方法在任何输出语言的星盘上结果一致
-- 绑定接口无状态：运限/Prompt 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
+- 绑定接口无状态：运限/Prompt/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 
 ### Python 绑定架构
@@ -114,6 +116,19 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   iztro 在本命层级把红鸾误写为 `hongluanMin`，x-iztro 用正确的 `hongluan`
 - 用户视角的对应关系写在文档站「关于 → 与 iztro 的对应」一页
 
+### 格局引擎（x-iztro 扩展，iztro 无对应 API）
+- 规则来源 iztro-docs《格局》页（MIT）63 条，火贪/铃贪分列为 64 个 `PatternKey`；无金标，口径自守：
+  每条规则函数的文档注释就是口径与出处，多口径一律以 `PatternHit.variant` 报出、不设 strict/loose 开关，
+  「破格/加杀平常」只置 `broken` 不否决，「身命」类命宫身宫各判、命中哪宫 `palace` 记哪宫
+- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），页面《日月并明》示例太阴在酉、
+  表为「不」故按表不成格；`Positional` 口径复现传统位置判法。`PatternConfig` 只放会改变事实判定的开关
+- 本命与运限共用同一套规则：`ChartView::at` 以该层命宫为命宫、合并该层流曜（流曜等同对应本命辅星）
+  与该层四化；`Scope::Origin` 等同本命；两条行运格（禄衰马困、风云际会）只在运限视角报，
+  风云际会只在大限视角报一次
+- 新增/修改规则：改 `src/pattern/rules/<组>.rs` 并加入该组 `RULES`（`rules_cover_every_pattern_key_once`
+  强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
+  规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
+
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（八层合计 713,870 例，约 71 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
@@ -139,6 +154,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
   - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
     快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
+  - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
+    + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
+    + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，Python `test_patterns.py` 与
+    Go `pattern_golden_test.go` 读同一批快照；有意改口径后删掉快照重建）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
   - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`

@@ -135,6 +135,25 @@ iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
 
 ## 比 iztro 多的
 
+### 格局判定（iztro 无对应 API）
+
+iztro 没有格局相关的 API，x-iztro 在排盘之上加了一层格局判定引擎：
+64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、口径（`variant`）、
+破格标记（`broken`）与证据星。规则条目、示例盘与古籍引文取自 iztro-docs 的《格局》页
+（MIT License，作者 Sylar Long），判定实现、六语言格局名与多种说法之间的取舍是 x-iztro 的工作。
+
+三侧的入口：Rust 的 `Astrolabe::patterns` / `HoroscopeRef::patterns`、
+Python 的 `Astrolabe.patterns` / `Horoscope.patterns`、
+Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`，
+另有语言无关的格局标识（Rust `PatternKey`、Python `PatternKey`、Go `PatternXxx` 常量）。
+概念与 64 条总表见[格局](/zh/docs/guide/concepts/patterns)。
+
+因为 iztro 没有对应实现，这部分没有金标数据，正确性由四层测试守着：
+每条规则的单测、来源页 32 张示例盘的真实盘复现、tier1 那 1,560 张盘上的批量不变量检查，
+以及三侧共读的输出快照。
+
+### 其余增补
+
 - **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，
   取值是 iztro 的 i18n key。判断逻辑因此不受盘面语言影响，
   不必再反查译名。详见[标识体系](/zh/docs/guide/guides/keys)

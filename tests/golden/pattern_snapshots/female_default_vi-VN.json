@@ -1,0 +1,176 @@
+{
+  "decadal": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Sát Phá Lang",
+      "palaceIndex": 2,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 2
+        },
+        {
+          "brightness": "Đắc",
+          "brightnessKey": "de",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "tanlangMaj",
+          "name": "Tham Lang",
+          "palaceIndex": 10
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Phong Vân Tế Hội",
+      "palaceIndex": 2,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 6
+        },
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Phong Vân Tế Hội",
+      "palaceIndex": 2,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 6
+        },
+        {
+          "key": "tianmaMin",
+          "name": "Thiên Mã",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yearly"
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "fu_xiang_chao_yuan",
+      "name": "Phủ Tướng Triều Viên",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tianfuMaj",
+          "name": "Thiên Phủ",
+          "palaceIndex": 8
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tianxiangMaj",
+          "name": "Thiên Tướng",
+          "palaceIndex": 0
+        }
+      ]
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "default",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "female",
+    "language": "vi-VN",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "2000-8-16",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 2
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "fu_xiang_chao_yuan",
+      "name": "Phủ Tướng Triều Viên",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tianfuMaj",
+          "name": "Thiên Phủ",
+          "palaceIndex": 8
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tianxiangMaj",
+          "name": "Thiên Tướng",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 6,
+      "palaceName": "Phúc Đức",
+      "palaceNameKey": "spiritPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "Lưu Mã",
+          "palaceIndex": 6
+        }
+      ]
+    }
+  ]
+}

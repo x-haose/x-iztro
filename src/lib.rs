@@ -25,6 +25,8 @@ pub mod error;
 pub mod i18n;
 /// 星盘、宫位、星耀与运限的数据结构
 pub mod models;
+/// 格局判定引擎
+pub mod pattern;
 /// AI 分析 Prompt 生成
 pub mod prompt;
 /// 安星算法
@@ -58,7 +60,8 @@ pub use i18n::lookup::{key_of, key_of_in, translate_key};
 pub use i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_gender, translate_heavenly_stem, translate_horoscope_name, translate_mutagen,
-    translate_palace, translate_sign, translate_star, translate_time, translate_zodiac,
+    translate_palace, translate_pattern, translate_sign, translate_star, translate_time,
+    translate_zodiac,
 };
 pub use models::astrolabe::{
     Astrolabe, PalaceRef, PalaceTarget, RawChineseDate, RawDates, RawLunarDate, StarRef,
@@ -69,6 +72,9 @@ pub use models::horoscope::{
 pub use models::palace::{Decadal, PalaceData};
 pub use models::star::Star;
 pub use models::surpalaces::SurroundedPalaces;
+pub use pattern::{
+    ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
+};
 pub use prompt::{astrolabe_to_prompt, horoscope_to_prompt};
 
 /// 便捷函数：排盘并返回 JSON

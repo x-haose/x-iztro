@@ -23,7 +23,8 @@ use crate::data::types::*;
 use crate::error::BridgeError;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
-    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
+    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace,
+    translate_pattern, translate_star,
 };
 use crate::models::astrolabe::Astrolabe;
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem};
@@ -800,5 +801,124 @@ impl HoroscopeData {
             daily: scope_dto(&self.daily, lang),
             hourly: scope_dto(&self.hourly, lang),
         }
+    }
+}
+
+// ============================================================
+// 格局
+// ============================================================
+
+/// 参与成格的一颗星 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatternStarDto {
+    /// 语言无关星耀标识
+    pub key: String,
+    /// 名称（按排盘语言翻译）
+    pub name: String,
+    /// 落宫索引（0-11，寅宫为 0）
+    pub palace_index: usize,
+    /// 亮度显示文本，无亮度时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub brightness: Option<String>,
+    /// 语言无关亮度标识，无亮度时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub brightness_key: Option<String>,
+    /// 判定视角下的四化显示文本，无四化时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mutagen: Option<String>,
+    /// 语言无关四化标识，无四化时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mutagen_key: Option<String>,
+}
+
+/// 一次格局命中 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatternHitDto {
+    /// 语言无关格局标识（如 "zi_fu_tong_gong"）
+    pub key: String,
+    /// 格局名称（按排盘语言翻译）
+    pub name: String,
+    /// 判定视角（origin/decadal/yearly/…）
+    pub scope: String,
+    /// 成格所在宫位索引（0-11，寅宫为 0）
+    pub palace_index: usize,
+    /// 成格所在宫位在该视角下的宫名（按排盘语言翻译）
+    pub palace_name: String,
+    /// 语言无关宫名标识
+    pub palace_name_key: String,
+    /// 多口径格局命中的口径，单口径省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variant: Option<String>,
+    /// 页面称「破格 / 加杀平常」的条件是否触发
+    pub broken: bool,
+    /// 参与成格的星与落宫
+    pub stars: Vec<PatternStarDto>,
+}
+
+impl crate::pattern::PatternHit {
+    /// 转为 DTO：`palace_names` 是该视角下按宫位索引排列的十二宫名
+    /// （本命为 `Astrolabe.palaces[i].name`，运限为 `HoroscopeItem.palace_names`）。
+    pub fn to_dto(&self, palace_names: &[Palace], lang: Language) -> PatternHitDto {
+        let palace_name = palace_names
+            .get(self.palace)
+            .copied()
+            .unwrap_or(Palace::Soul);
+        PatternHitDto {
+            key: self.key.as_key().to_string(),
+            name: translate_pattern(self.key, lang).to_string(),
+            scope: self.scope.as_key().to_string(),
+            palace_index: self.palace,
+            palace_name: translate_palace(palace_name, lang).to_string(),
+            palace_name_key: palace_name.as_key().to_string(),
+            variant: self.variant.map(str::to_string),
+            broken: self.broken,
+            stars: self
+                .stars
+                .iter()
+                .map(|s| PatternStarDto {
+                    key: s.star.as_key().to_string(),
+                    name: translate_star(s.star, lang).to_string(),
+                    palace_index: s.palace,
+                    brightness: s
+                        .brightness
+                        .map(|b| translate_brightness(b, lang).to_string()),
+                    brightness_key: s.brightness.map(|b| b.as_key().to_string()),
+                    mutagen: s.mutagen.map(|m| translate_mutagen(m, lang).to_string()),
+                    mutagen_key: s.mutagen.map(|m| m.as_key().to_string()),
+                })
+                .collect(),
+        }
+    }
+}
+
+impl Astrolabe {
+    /// 本命格局命中的 DTO 列表。
+    pub fn patterns_dto(&self, config: &crate::pattern::PatternConfig) -> Vec<PatternHitDto> {
+        let names: Vec<Palace> = self.palaces.iter().map(|p| p.name).collect();
+        self.patterns_with(config)
+            .iter()
+            .map(|h| h.to_dto(&names, self.language))
+            .collect()
+    }
+}
+
+impl HoroscopeData {
+    /// 某运限层视角格局命中的 DTO 列表；`Scope::Origin` 等同本命。
+    pub fn patterns_dto(
+        &self,
+        astrolabe: &Astrolabe,
+        scope: Scope,
+        config: &crate::pattern::PatternConfig,
+    ) -> Vec<PatternHitDto> {
+        let names: Vec<Palace> = match self.scope_item(scope) {
+            Some(item) => item.palace_names.clone(),
+            None => astrolabe.palaces.iter().map(|p| p.name).collect(),
+        };
+        crate::pattern::patterns_at(astrolabe, self, scope, config)
+            .iter()
+            .map(|h| h.to_dto(&names, astrolabe.language))
+            .collect()
     }
 }

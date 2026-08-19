@@ -1,0 +1,398 @@
+---
+title: Patterns
+description: What a pattern is, the principles x-iztro judges by, how the natal and horoscope views differ, and the complete table of all 64 patterns.
+---
+
+*For: everyone. The full table of 64 patterns is at the end of the page*
+
+## What a pattern is
+
+When a particular set of stars lands on a chart in a particular arrangement, tradition gives that
+combination a name — 紫府同宫 ("Emperor and Empress in One Palace"), 杀破狼 ("Marshal, Rebel and
+Wolf"), 阳梁昌禄 ("Sun, Sage, Scholar and Money"). A named star arrangement like this is a
+**pattern** (格局).
+
+A pattern is not a separate algorithm. It is **pattern matching on a chart that has already been
+cast**: are these stars in these palaces, are they bright enough, do they carry a transformation.
+Once the chart is cast, its patterns are already determined.
+
+<Callout type="info">
+Traditionally a pattern also comes with a verdict ("brings rank", "brings solitude", and so on).
+x-iztro **only judges whether the arrangement holds; it never grades it**. Verdicts are
+interpretation, schools disagree, and that is left to you or to your model.
+</Callout>
+
+## How x-iztro judges
+
+Sources disagree about patterns. The same name often has both a loose and a strict reading. The
+principles this engine follows:
+
+1. **Findings of fact only.** The output says "this arrangement holds, and here are the stars and
+   palaces that evidence it". No auspiciousness, no strength, no score.
+2. **Every rule cites its source.** Each rule carries the classical quotation it comes from, the
+   reading adopted, and why that reading was chosen over the alternative.
+3. **Multiple readings are reported as a `variant`, not hidden behind a switch.** When a pattern has
+   several forms, the engine records which one matched in the `variant` field and lets you decide
+   whether to accept it. 机巨同临 in the You palace, for instance, reports `variant` `"you"`,
+   because some sources hold that the You placement does not count — the engine reports it and
+   labels it.
+4. **"Broken" is a flag, not a veto.** When a source's "spoiled by malefics" condition fires, the
+   pattern is still reported, with `broken` set true. Whether the arrangement holds is a fact;
+   whether it is good is interpretation.
+5. **"Body-or-Soul" patterns record whichever palace matched.** Classical texts often say "in the
+   Soul or Body palace", meaning either qualifies. Such patterns are judged at both palaces;
+   `palace_index` records the one that actually matched, and if both match, two hits are reported.
+6. **Empty palaces borrow from the opposite palace.** When a palace holds no major star, tradition
+   borrows the opposite palace's majors. The evidence still records the palace the star **actually
+   occupies**, not the one it was borrowed into.
+7. **No golden data, so the evidence is home-grown.** iztro has no pattern API, so unlike chart
+   casting there is no field-for-field golden dataset here. In its place, four layers of tests:
+   positive and negative unit tests per rule (around 80 of them); a reproduction of all 32 example
+   charts from the source page on real charts; a bulk sanity and invariant sweep over the 1,560
+   tier-1 charts, including a per-pattern count of how many charts it hits; and output snapshots of
+   4 charts across 6 languages — Rust writes the baseline, Python and Go read the same files back,
+   and all three sides must agree byte for byte.
+
+## What one hit looks like
+
+A hit is a `PatternHit`. The fields have the same names in all three programming languages (casing
+follows each language's convention):
+
+| Field | Meaning |
+| --- | --- |
+| `key` | Language-independent pattern key, e.g. `zi_fu_tong_gong`. Predicate logic uses this |
+| `name` | Pattern name, translated to the chart's language |
+| `scope` | The view it was judged in: `origin` for natal, otherwise the horoscope level (`decadal`, `yearly`, …) |
+| `palace_index` | Slot of the palace where the pattern formed (0-11, Yin palace is 0) |
+| `palace_name` / `palace_name_key` | That palace's name and key **in this view** |
+| `variant` | Which reading matched; absent for single-reading patterns |
+| `broken` | Whether the "spoiled" condition fired. The hit is reported either way; this is only a flag |
+| `stars` | The stars evidencing the pattern with their palaces, each carrying `key`, `name`, `palace_index`, and brightness and mutagen where they exist |
+
+Listing every pattern on a chart:
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let en = Language::EnUS;
+let chart = by_solar("1985-5-3", 9, Gender::Male, true, en, Config::default())?;
+
+for hit in chart.patterns() {
+    println!("{} | {}",
+        translate_pattern(hit.key, en),
+        translate_palace(chart.palaces[hit.palace].name, en));
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("1985-5-3", 9, "male", language="en-US")
+
+for hit in chart.patterns():
+    print(hit.name, "|", hit.palace_name)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, h := range hits {
+    fmt.Println(h.Name, "|", h.PalaceName)
+}
+```
+
+</Tab>
+</Tabs>
+
+**Output**
+
+```text
+General and Wolf Together | surface
+Empress and Minister Facing the Palace | soul
+Marshal, Rebel and Wolf | surface
+Officer and Helper Flanking Life | soul
+Literary Nobility and Brilliance | surface
+Literary Stars Facing Life | soul
+```
+
+This chart's Body palace sits on the Surface (Travel) palace, so the three "Body-or-Soul" patterns
+here record the Surface palace rather than the Soul palace.
+
+`variant` and `broken` come from the same set of hits:
+
+```python
+for hit in chart.patterns():
+    if hit.variant or hit.broken:
+        print(f"{hit.name}: variant={hit.variant} broken={hit.broken}")
+```
+
+```text
+Empress and Minister Facing the Palace: variant=soul_empty broken=False
+Literary Stars Facing Life: variant=None broken=True
+```
+
+`soul_empty` records that this chart's Soul palace really is empty (the classical "no major star in
+the Soul palace" branch, which x-iztro notes rather than requires); `broken` on the literary pattern
+records that malefics or a Ji transformation appear in the surrounded palaces.
+
+## Natal and horoscope run the same rules
+
+Internally the engine abstracts "the natal twelve palaces" and "the composed twelve palaces of one
+horoscope level" into a single view, and the rules only ever see that view. A horoscope view swaps
+three things and then runs every rule again:
+
+- **The Soul palace becomes that level's Soul palace.** Whichever palace the decadal has moved to is
+  the Soul palace of that level, and the twelve palace names are re-derived from it.
+- **That level's flowing stars are merged in.** Flowing stars (运禄/流禄, 运昌/流昌 and the rest)
+  count **as their natal counterparts** during judgement: seeing a flowing Lucun on a horoscope
+  chart is, to the rules, seeing Lucun.
+- **Mutagens become that level's mutagens.** The natal view reads birth-year transformations; the
+  decadal view reads the transformations flown by the decadal stem, and so on.
+
+This is why the sources' "if the natal chart has the arrangement and the decadal then arrives at it,
+its benefit is enjoyed" falls out for free — it is just the natal rules re-run in the decadal view.
+A horoscope view **has no Body palace**, so "Body-or-Soul" patterns are judged only at that level's
+Soul palace there.
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let h = chart.horoscope("2025-6-1", 0)?;
+for hit in h.patterns(Scope::Decadal) {
+    println!("{} {:?}", translate_pattern(hit.key, en), hit.variant);
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+h = chart.horoscope("2025-6-1", 0)
+for hit in h.patterns(Scope.DECADAL):
+    print(hit.name, hit.scope, hit.variant)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+h, _ := chart.Horoscope("2025-6-1", 0)
+hits, _ := h.Patterns(iztro.ScopeDecadal, nil)
+for _, x := range hits {
+    fmt.Printf("%s %s %q\n", x.Name, x.Scope, x.Variant)
+}
+```
+
+</Tab>
+</Tabs>
+
+For the female chart of 2000-8-16, hour index 2, in the decadal view (Python version):
+
+```text
+Marshal, Rebel and Wolf decadal None
+Meeting of Wind and Cloud decadal None
+Meeting of Wind and Cloud decadal yearly
+```
+
+The natal view of that same chart holds only "Empress and Minister Facing the Palace" — the
+Marshal-Rebel-Wolf pattern holds at this level only because the decadal moved the Soul palace.
+
+<Callout type="info" title="Scope.ORIGIN equals the natal chart">
+Asking a horoscope object for the `origin` level gives exactly what calling `patterns()` on the
+astrolabe gives.
+</Callout>
+
+### Two patterns that exist only in horoscope views
+
+Two of the 64 are **transit patterns**: judged only in a horoscope view, never reported on the natal
+chart.
+
+| Pattern | When judged | Notes |
+| --- | --- | --- |
+| 禄衰马困 `lu_shuai_ma_kun` | Any horoscope level | Judged at whichever level the view is: decadal view judges the decadal, yearly view the year |
+| 风云际会 `feng_yun_ji_hui` | Decadal view only | It compares "two limits both meeting fortune and horse", which spans levels, so it is reported once, from the decadal view |
+
+风云际会 has two readings: no `variant` means decadal + minor limit, `"yearly"` means decadal +
+annual (a reading some schools prefer). If both hold, both are reported — as on the chart above.
+
+## Which table decides Sun and Moon brightness
+
+日月并明, 日月反背 and 丹墀桂墀 turn on whether the Sun and the Moon are bright, and there are two
+traditions for deciding that, which do not always agree:
+
+| Reading | Basis | Key |
+| --- | --- | --- |
+| Brightness table (default) | The chart's own brightness: Miao and Wang are bright, Xian and Bu are dim | `table` |
+| Traditional position | Sun bright in Yin–Wu and dim in You–Chou; Moon bright in You–Chou and dim in Mao–Wei | `positional` |
+
+<Callout type="warn" title="The default disagrees with the source page's examples, deliberately">
+x-iztro's brightness table matches iztro **value for value**, which is a hard line for the whole
+library. By that table the Moon in the You palace is Bu, i.e. not bright — and the Moon in both
+example charts on the source page's 日月并明 entry sits in exactly that palace. So under the default
+reading those two examples do **not** form the pattern.
+
+Most traditional brightness tables record the Moon in You as Wang, which is what the page's examples
+rely on. To reproduce the traditional judgement, switch the reading to `positional`: the conclusion
+then matches the page's examples, without touching the brightness table and without affecting chart
+casting's parity with iztro.
+</Callout>
+
+```python
+from x_iztro import Astro, PatternConfig, BrightnessSource
+
+chart = Astro().by_solar("1985-1-5", 11, "female", language="en-US")
+
+print([h.name for h in chart.patterns()])
+print([h.name for h in chart.patterns(
+    PatternConfig(brightness_source=BrightnessSource.POSITIONAL))])
+```
+
+```text
+['Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
+['Sun and Moon Both Bright', 'Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
+```
+
+## The three switches
+
+`PatternConfig` has exactly three fields. Anything that is merely a second *reading* of a pattern
+goes through `variant` instead; only data readings that change the **finding of fact itself** live
+here.
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `brightness_source` | `table` | Basis for Sun and Moon brightness, see above |
+| `borrow` | `true` | Whether an empty palace borrows the opposite palace's majors |
+| `flow_stars` | `true` | Whether flowing stars count as their natal counterparts in horoscope views |
+
+Turn `borrow` off and an empty palace stays empty, so patterns that relied on borrowing stop being
+reported. Turn `flow_stars` off and horoscope views recognise natal auxiliaries only. Neither
+affects chart casting.
+
+## All 64 patterns
+
+In the order of the source page's entries. In the Class column, **transit** means the pattern is
+judged only in horoscope views; everything else is judged in both the natal and the horoscope views.
+
+The condition column gives the gist of the formal condition. Each rule's full reading, its classical
+quotation, and the reasoning behind choosing between competing readings live in the implementation's
+doc comments (`src/pattern/rules/`).
+
+| # | Name | key | Condition | variant | broken | Class |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Sovereign and Ministers Assembly (君臣庆会) | `jun_chen_qing_hui` | Ziwei or Tianfu assembling with the attending stars in one of four forms (see variant) | `zi_po_zuo_you_jia` Ziwei and Pojun in the Soul palace, Zuofu and Youbi flanking; `zi_xiang_chang_qu_axis` Ziwei and Tianxiang in the Soul palace, Wenchang and Wenqu on the Soul-Surface axis; `tian_fu_ji_yin_tong_liang_jia` Tianfu in the Soul palace flanked by Tianji/Taiyin on one side and Tiantong/Tianliang on the other; `zi_zuo_you_tong_gong` Ziwei with Zuofu and Youbi all in the Soul palace | Yes (fourth form only: flagged when malefics or Ji appear in the surrounded palaces; the first three require their absence to form at all) | general |
+| 2 | Emperor and Empress in One Palace (紫府同宫) | `zi_fu_tong_gong` | Ziwei and Tianfu together in the Soul palace (only possible at Yin or Shen) | — | — | general |
+| 3 | Golden Carriage Escort (金舆扶驾) | `jin_yu_fu_jia` | Tianfu in the Soul palace at Chou or Wei, flanked by Taiyang and Taiyin | — | — | general |
+| 4 | Emperor and Empress Flanking Life (紫府夹命) | `zi_fu_jia_ming` | Tianji and Taiyin together in the Soul palace, flanked by Ziwei and Tianfu (only possible at Yin or Shen) | — | — | general |
+| 5 | Emperor Facing Southern Light (极向离明) | `ji_xiang_li_ming` | Ziwei in the Soul palace at Wu, with no malefic or Ji in the surrounded palaces | — | — | general |
+| 6 | Emperor at Mao or You (极居卯酉) | `ji_ju_mao_you` | Ziwei and Tanlang together in the Soul palace at Mao or You | — | — | general |
+| 7 | Advisor, Moon, Fortunate and Sage (机月同梁) | `ji_yue_tong_liang` | Soul palace at Yin or Shen holding Tiantong with Tianliang, or Tianji with Taiyin (an empty palace borrows the opposite palace's majors) | — | — | general |
+| 8 | Benevolent Shelter of the Court (善荫朝纲) | `shan_yin_chao_gang` | Tianji and Tianliang together in the Soul or Body palace (only possible at Chen or Xu) | — | — | general |
+| 9 | Advisor and Advocator Together (机巨同临) | `ji_ju_tong_lin` | Tianji and Jumen together in the Soul palace (only possible at Mao or You) | `you` Soul palace at You (some sources exclude the You placement) | — | general |
+| 10 | Advisor and Advocator at Mao (机巨居卯) | `ji_ju_ju_mao` | Tianji and Jumen together in the Soul palace at Mao | — | — | general |
+| 11 | Sun and Moon in One Palace (日月同宫) | `ri_yue_tong_gong` | Taiyang and Taiyin together in the Soul palace (only possible at Chou or Wei) | — | — | general |
+| 12 | Advocator and Sun in One Palace (巨日同宫) | `ju_ri_tong_gong` | Taiyang and Jumen together in the Soul palace (Yin and Shen both count) | — | — | general |
+| 13 | Sun Shining on Thunder Gate (日照雷门) | `ri_zhao_lei_men` | Taiyang and Tianliang together in the Soul palace at Mao | — | — | general |
+| 14 | Sun and Moon Both Bright (日月并明) | `ri_yue_bing_ming` | Taiyang and Taiyin both bright within the Soul palace's surrounded palaces | — | — | general |
+| 15 | Sun and Moon Both Dim (日月反背) | `ri_yue_fan_bei` | Taiyang and Taiyin both dim within the Soul palace's surrounded palaces | — | — | general |
+| 16 | Sun and Moon Lighting the Wall (日月照璧) | `ri_yue_zhao_bi` | Taiyang and Taiyin together in the Property palace | — | — | general |
+| 17 | Golden Radiance (金灿光辉) | `jin_can_guang_hui` | Taiyang alone in the Soul palace at Wu | — | Yes (malefics or Ji in the surrounded palaces) | general |
+| 18 | Sun and Moon Hiding Their Light (日月藏辉) | `ri_yue_cang_hui` | Sun and Moon both dim, and Jumen also seen in the surrounded palaces | — | — | general |
+| 19 | Cinnabar and Cassia Steps (丹墀桂墀) | `dan_chi_gui_chi` | Sun and Moon both bright, and the Soul palace itself holds the bright Taiyang or the bright Taiyin | — | — | general |
+| 20 | Sun and Moon Flanking Life (日月夹命) | `ri_yue_jia_ming` | Taiyang and Taiyin in the palaces either side of the Soul palace, which holds no void star and does hold an auspicious star | — | — | general |
+| 21 | Sun and Moon Flanking Wealth (日月夹财) | `ri_yue_jia_cai` | As above with the Wealth palace in place of the Soul palace | — | — | general |
+| 22 | Bright Moon at Heaven's Gate (月朗天门) | `yue_lang_tian_men` | Taiyin in the Soul palace at Hai | — | — | general |
+| 23 | Moon Rising over the Sea (月生沧海) | `yue_sheng_cang_hai` | Tiantong and Taiyin together at Zi, in either the Soul or the Property palace | `soul` in the Soul palace (the page's alternative name 水澄桂萼); `property` in the Property palace (the classical wording) | — | general |
+| 24 | Pearl Emerging from the Sea (明珠出海) | `ming_zhu_chu_hai` | Empty Soul palace at Wei, with Tiantong and Jumen in the opposite palace at Chou | — | — | general |
+| 25 | General and Wolf Together (武贪同行) | `wu_tan_tong_xing` | Wuqu and Tanlang together in the Soul or Body palace (only possible at Chou or Wei) | — | — | general |
+| 26 | Bell, Scholar, Tuoluo and General (铃昌陀武) | `ling_chang_tuo_wu` | Lingxing, Wenchang, Tuoluo and Wuqu all present across the Soul palace's surrounded palaces | — | — | general |
+| 27 | Punishment and Prisoner Flanking the Seal (刑囚夹印) | `xing_qiu_jia_yin` | Lianzhen and Tianxiang together with a punishment star (Tianxing or Qingyang) in the Soul or Body palace | — | — | general |
+| 28 | Born at the Wrong Time (生不逢时) | `sheng_bu_feng_shi` | A void star in the Soul palace sharing it with Lianzhen | `pojun` the star sharing it is Pojun (a form other sources add) | — | general |
+| 29 | Heroic Star Facing the Origin (雄宿朝元) | `xiong_su_chao_yuan` | Lianzhen alone in the Soul palace at Yin or Shen | — | Yes (Huoxing, Lingxing, Qingyang, Tuoluo, Dikong or Dijie in the surrounded palaces) | general |
+| 30 | Empress and Minister Facing the Palace (府相朝垣) | `fu_xiang_chao_yuan` | Tianfu in the Career palace and Tianxiang in the Wealth palace, both facing the Soul palace | `soul_empty` the Soul palace really is empty | — | general |
+| 31 | Fire and Wolf (火贪) | `huo_tan` | Tanlang in the Soul palace with Huoxing in the same palace | `surround` Huoxing only in the surrounded palaces | — | general |
+| 32 | Bell and Wolf (铃贪) | `ling_tan` | Tanlang in the Soul palace with Lingxing in the same palace | `surround` Lingxing only in the surrounded palaces | — | general |
+| 33 | Jade Hidden in Stone (石中隐玉) | `shi_zhong_yin_yu` | Jumen in the Soul or Body palace, that palace being at Zi or Wu | — | — | general |
+| 34 | Sage and Horse Drifting (梁马飘荡) | `liang_ma_piao_dang` | Tianliang and Tianma together in the Soul or Body palace | — | — | general |
+| 35 | Sun, Sage, Scholar and Money (阳梁昌禄) | `yang_liang_chang_lu` | Taiyang, Tianliang, Wenchang and Lucun all present across the Soul palace's surrounded palaces | — | — | general |
+| 36 | Marshal, Rebel and Wolf (杀破狼) | `sha_po_lang` | Any of Qisha, Pojun or Tanlang in the Soul or Body palace (the three are always in trine) | — | — | general |
+| 37 | Marshal Facing the Dipper (七杀朝斗) | `qi_sha_chao_dou` | Qisha in the Soul palace, that palace being at Zi, Wu, Yin or Shen | `yang_dou` Soul palace at Yin or Zi; `chao_dou` Soul palace at Wu or Shen | — | general |
+| 38 | Money Waning, Horse Trapped (禄衰马困) | `lu_shuai_ma_kun` | Within the horoscope Soul palace's surrounded palaces, Lucun shares a palace with a void or wasting star while Tianma shares one with a malefic or Ji | — | — | **transit** |
+| 39 | Heroic Star Enthroned (英星入庙) | `ying_xing_ru_miao` | Pojun in the Soul palace at Zi or Wu | — | — | general |
+| 40 | Waters Flowing East (众水朝东) | `zhong_shui_chao_dong` | Pojun and Wenqu together in the Soul palace at Yin or Mao | — | — | general |
+| 41 | Three Wonders Assembly (三奇加会) | `san_qi_jia_hui` | Lu, Quan and Ke transformations all present across the Soul palace's surrounded palaces | `ke_soul_lu_wealth_quan_career` Ke in the Soul palace, Lu in Wealth, Quan in Career | — | general |
+| 42 | Money and Horse Galloping Together (禄马交驰) | `lu_ma_jiao_chi` | Lucun and Tianma in the same palace (any palace; a chart may produce several hits) | — | — | general |
+| 43 | Mandarin Ducks of Fortune (禄合鸳鸯) | `lu_he_yuan_yang` | Lucun and the Lu transformation paired at the Soul palace: same palace, or one in the Soul and one in the Surface palace | `opposite` on the Soul-Surface axis (no variant means same palace) | — | general |
+| 44 | Open and Hidden Fortune (明禄暗禄) | `ming_lu_an_lu` | Lucun (or the Lu transformation) in the Soul palace, with the other in its hidden-harmony palace | — | — | general |
+| 45 | Money and Horse Bearing the Seal (禄马佩印) | `lu_ma_pei_yin` | Lucun, Tianma and Tianxiang all in the Soul palace | — | Yes (a void star in the Soul palace) | general |
+| 46 | Double Canopy (两重华盖) | `liang_chong_hua_gai` | Lucun and the Lu transformation both in the Soul palace, together with Dikong or Dijie | — | — | general |
+| 47 | Meeting of Wind and Cloud (风云际会) | `feng_yun_ji_hui` | The decadal and one other limit each meet Lucun, Tianma or the Lu transformation in their surrounded palaces | `yearly` decadal + annual (no variant means decadal + minor limit) | — | **transit** (decadal view only) |
+| 48 | Qingyang and Tuoluo Flanking Life (羊陀夹命) | `yang_tuo_jia_ming` | Tuoluo and Qingyang in the palaces either side of the Soul palace; the flanked palace necessarily holds Lucun, which is recorded with the evidence | — | — | general |
+| 49 | Arrow at the Horse's Head (马头带箭) | `ma_tou_dai_jian` | Soul palace at Wu with Qingyang in it, and Tiantong with Taiyin in the Soul palace (borrowed from opposite if empty) | `tanlang_lu` the side form: Tanlang with the Lu transformation sharing Wu with Qingyang | — | general |
+| 50 | Officer and Helper in One Palace (左右同宫) | `zuo_you_tong_gong` | Zuofu and Youbi together in the Soul or Body palace (trine only does not count) | — | — | general |
+| 51 | Officer and Helper Flanking Life (左右夹命) | `zuo_you_jia_ming` | Zuofu and Youbi in the palaces either side of the Soul palace | — | — | general |
+| 52 | Officer and Helper Attending the Emperor (辅弼拱主) | `fu_bi_gong_zhu` | Ziwei in the Soul palace, attended or flanked by Zuofu and Youbi | `surround` both in the surrounded palaces; `jia` both flanking | — | general |
+| 53 | Kui and Yue Flanking Life (魁钺夹命) | `kui_yue_jia_ming` | Tiankui and Tianyue in the palaces either side of the Soul palace (same palace or trine does not count) | — | — | general |
+| 54 | Sitting on and Facing Nobility (坐贵向贵) | `zuo_gui_xiang_gui` | Tiankui and Tianyue on the Soul and Surface palaces respectively | — | — | general |
+| 55 | Void and Robbery Flanking Life (劫空夹命) | `jie_kong_jia_ming` | Dijie and Dikong in the palaces either side of the Soul palace | — | — | general |
+| 56 | Fortune Meeting Two Killers (禄逢两杀) | `lu_feng_liang_sha` | Lucun sharing the Soul palace with a void star, plus Dikong or Dijie in the surrounded palaces | — | — | general |
+| 57 | Literary Nobility and Brilliance (文贵文华) | `wen_gui_wen_hua` | Wenchang and Wenqu together in the Soul palace, the Body palace, or any of the Soul palace's surrounded palaces | — | — | general |
+| 58 | Literary Stars Facing Life (文星朝命) | `wen_xing_chao_ming` | Wenchang and Wenqu both present in the Soul palace's surrounded palaces (same palace included) | — | Yes (malefics or Ji in the surrounded palaces) | general |
+| 59 | Scholar and Artist Flanking Life (昌曲夹命) | `chang_qu_jia_ming` | Wenchang and Wenqu in the palaces either side of the Soul palace | — | Yes (malefics or Ji in the surrounded palaces) | general |
+| 60 | Literary Stars in Hidden Support (文星暗拱) | `wen_xing_an_gong` | Wenchang and Wenqu in two palaces supporting the Soul palace from a distance | `opposite` on the Soul-Surface axis; `trine` in the two trine palaces | — | general |
+| 61 | Power and Fortune at Birth (权禄生逢) | `quan_lu_sheng_feng` | The Quan-bearing and Lu-bearing stars together in the Soul palace, both at Miao or Wang | — | — | general |
+| 62 | Fame Open, Fortune Hidden (科明暗禄) | `ke_ming_an_lu` | The Ke transformation in the Soul palace, with Lucun in its hidden-harmony palace | — | — | general |
+| 63 | Fame, Power and Fortune Flanking (科权禄夹) | `ke_quan_lu_jia` | Two of the Lu, Quan and Ke transformations in the palaces either side of the Soul palace | — | — | general |
+| 64 | Top Graduate Appointed (甲第登庸) | `jia_di_deng_yong` | The Ke transformation in the Soul palace, with Quan facing it from the Surface or a trine palace | `complete` the Lu transformation or Lucun is also met | — | general |
+
+<Callout type="info" title="Fire-Wolf and Bell-Wolf count as two">
+The source page teaches 火贪 and 铃贪 as a single entry; x-iztro splits them into two independent
+keys. Hence 63 entries but 64 pattern keys.
+</Callout>
+
+### Easily misread points
+
+<Accordions>
+<Accordion title="Flanking is not the surrounded set">
+Flanking (夹) means two stars in the palaces **immediately either side** of the target (slots -1 and
++1), which never overlaps the surrounded palaces. That is why the three literary patterns are
+disjoint: flanking goes to 昌曲夹命, being met in the surrounded set (same palace included) to
+文星朝命, and distant support to 文星暗拱.
+</Accordion>
+<Accordion title="The hidden-harmony palace is the six-harmony, not the opposite">
+The hidden-harmony palace pairs branches as Zi-Chou, Yin-Hai, Mao-Xu, Chen-You, Si-Shen, Wu-Wei.
+明禄暗禄 and 科明暗禄 use that, not the opposite palace.
+</Accordion>
+<Accordion title="Void stars are four adjective stars, distinct from Dikong and Dijie">
+"Void star" in these conditions means the four adjective stars Xunkong, Kongwang, Jielu and Jiekong;
+"Kong-Jie" means the two minor stars Dikong and Dijie. 两重华盖 and 禄逢两杀 take the latter,
+生不逢时 and 禄马佩印 the former.
+</Accordion>
+<Accordion title="Money and Horse Galloping is not limited to the Soul palace">
+It is "Lucun and Tianma in the same palace", reported for whichever palace qualifies, with that
+palace in `palace_index`; one chart may produce more than one hit. Tianma only ever falls at Yin,
+Shen, Si or Hai, so the palace is always one of those four.
+</Accordion>
+</Accordions>
+
+## API reference
+
+- [Rust — patterns](/en/docs/rust/patterns)
+- [Python — patterns](/en/docs/python/patterns)
+- [Go — Patterns](/en/docs/go/patterns)
+
+## Sources and credit
+
+The pattern entries, example charts and classical quotations come from the 格局 page of
+[iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long); the quotations
+themselves are from 《紫微斗数全书》. The judgement engine, the pattern names in six languages, and
+the choices made between competing readings are x-iztro's own work — iztro itself has no
+corresponding API.

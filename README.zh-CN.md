@@ -189,6 +189,8 @@ func main() {
 - **完整命盘** — 十二宫、身宫、命主身主、五行局，主星辅星杂耀连同亮度与四化。
 - **六个运限层级** — 大限（未起运时为童限）、流年、流月、流日、流时，各自带十二宫与四化。
 - **盘面查询** — 按宫名、地支或索引定位宫位；判断星耀、四化与空宫；三方四正；飞星族。
+- **格局判定** — 64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、
+  多口径标记与证据星。iztro 无此 API。
 - **两个流派** — 默认算法与中州派，按盘选择。
 - **六种语言** — zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN，另有语言无关的标识常量，
   业务判断不依赖显示语言。
@@ -197,6 +199,26 @@ func main() {
   非法输入在 Rust 返回 `Err(IztroError)`，Python 抛 `x_iztro.IztroError`（继承 `ValueError`），
   Go 返回可用 `errors.Is` 匹配的 `error`，C FFI 返回 `{"error":"..."}` JSON。
   每种失败都带机器可读的类别。任何一侧都不 panic。
+
+### 格局判定
+
+```python
+chart = astro.by_solar("1985-5-3", 9, "male")
+
+for hit in chart.patterns():
+    print(hit.name, hit.palace_name, hit.broken)
+```
+
+```text
+武贪同行 迁移 False
+府相朝垣 命宫 False
+杀破狼 迁移 False
+左右夹命 命宫 False
+文贵文华 迁移 False
+文星朝命 命宫 True
+```
+
+判定原则与 64 条格局总表见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/concepts/patterns)。
 
 ## 准确性
 

@@ -1,0 +1,357 @@
+---
+title: Patterns
+description: Pattern hits on natal and horoscope charts, the PatternConfig readings, the PatternKey enum, and the predicate methods.
+---
+
+A pattern (格局) is the recognition of a named star arrangement on a chart. The same 64 rules are
+judged on natal charts and on horoscope views. For what patterns are and each rule's condition and
+source, see the [concept page](/en/docs/guide/concepts/patterns).
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("1985-5-3", 9, "male", language="en-US")
+hits = chart.patterns()
+```
+
+<Callout type="info">
+The examples on this page all start from an `en-US` natal chart, so the display values in the output
+are the English translations.
+</Callout>
+
+## Types
+
+`PatternHit`, `PatternStar` and `PatternConfig` are frozen dataclasses; `PatternKey` and
+`BrightnessSource` are `StrEnum`s. All of them are exported from the `x_iztro` top level.
+
+### PatternHit
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `key` | `str` | Language-independent pattern key; its value domain is `PatternKey` |
+| `name` | `str` | Pattern name, translated to the chart's language |
+| `scope` | `str` | The view it was judged in: `"origin"` for natal, otherwise that level |
+| `palace_index` | `int` | Slot of the palace where the pattern formed (0-11, Yin palace is 0) |
+| `palace_name` | `str` | That palace's name **in this view** |
+| `palace_name_key` | `str` | The palace key; its value domain is `PalaceName` |
+| `variant` | `str \| None` | Which reading matched; `None` for single-reading patterns |
+| `broken` | `bool` | Whether the "spoiled by malefics" condition fired. The hit is reported either way; this is only a flag |
+| `stars` | `list[PatternStar]` | The stars evidencing the pattern, with their palaces |
+
+Three methods:
+
+| Method | Meaning |
+| --- | --- |
+| `is_(key)` | Whether this is the given pattern; takes a `PatternKey` or a string |
+| `in_palace(name)` | Whether the forming palace is the given palace in this view; takes a `PalaceName`, a palace key, or the name in the chart's language |
+| `to_dict()` | The raw DTO the binding returned (camelCase keys) |
+
+### PatternStar
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `key` | `str` | Language-independent star key |
+| `name` | `str` | Star name, translated to the chart's language |
+| `palace_index` | `int` | The slot the star **actually occupies** (when borrowed, not the borrowing palace) |
+| `brightness` / `brightness_key` | `str \| None` | Brightness display text and key; `None` when the star has none |
+| `mutagen` / `mutagen_key` | `str \| None` | The mutagen in this view, and its key; `None` when there is none |
+
+Two methods, `has_brightness(b)` and `has_mutagen(m)`, both comparing keys and therefore independent
+of the chart's language.
+
+### PatternConfig
+
+The reading switches. Anything that is merely a second *form* of the same pattern goes through
+`PatternHit.variant`; only data readings that change the **finding of fact itself** live here, which
+is why there are just three fields.
+
+```python
+from x_iztro import PatternConfig, BrightnessSource
+
+PatternConfig(
+    brightness_source=BrightnessSource.TABLE,  # default
+    borrow=True,                               # default
+    flow_stars=True,                           # default
+)
+```
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `brightness_source` | `BrightnessSource.TABLE` | Basis for Sun and Moon brightness |
+| `borrow` | `True` | Whether an empty palace borrows the opposite palace's majors |
+| `flow_stars` | `True` | Whether flowing stars count as their natal counterparts in horoscope views |
+
+`BrightnessSource` has two members: `TABLE` follows the chart's brightness table (Miao and Wang
+bright, Xian and Bu dim — matching iztro value for value), `POSITIONAL` follows the traditional
+placement (Sun bright Yin–Wu, dim You–Chou; Moon bright You–Chou, dim Mao–Wei). The trade-off is
+explained on the [concept page](/en/docs/guide/concepts/patterns#which-table-decides-sun-and-moon-brightness).
+
+<Callout type="info">
+`PatternConfig` is a frozen dataclass; change one field with `dataclasses.replace`, or just build a
+new one — all three fields have defaults, so name only the one you are changing.
+</Callout>
+
+### PatternKey
+
+The language-independent key of each of the 64 patterns, as a `StrEnum`, so it compares directly
+against `PatternHit.key`:
+
+```python
+from x_iztro import PatternKey
+
+print(len(list(PatternKey)))
+print(PatternKey.SHA_PO_LANG)
+print(PatternKey("sha_po_lang").name)
+```
+
+```text
+64
+sha_po_lang
+SHA_PO_LANG
+```
+
+---
+
+## patterns
+
+**Purpose**　Every pattern hit on the natal chart.
+
+**In Zi Wei terms**　Lists every named star arrangement that holds on this chart, together with the
+palace it formed in and the stars that evidence it.
+
+**Signature**
+
+```python
+def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `config` | `PatternConfig \| None` | no | `None` | The reading; omit for the default |
+
+**Returns**　`list[PatternHit]` in the source page's entry order; an empty list when nothing holds.
+The two transit patterns (禄衰马困, 风云际会) never appear on a natal chart.
+
+**Example**
+
+```python
+chart = Astro().by_solar("1985-5-3", 9, "male", language="en-US")
+
+for hit in chart.patterns():
+    print(f"{hit.name} {hit.palace_index} {hit.palace_name} broken={hit.broken}")
+```
+
+**Output**
+
+```text
+General and Wolf Together 11 surface broken=False
+Empress and Minister Facing the Palace 5 soul broken=False
+Marshal, Rebel and Wolf 11 surface broken=False
+Officer and Helper Flanking Life 5 soul broken=False
+Literary Nobility and Brilliance 11 surface broken=False
+Literary Stars Facing Life 5 soul broken=True
+```
+
+Taking one hit and reading its evidence:
+
+```python
+from x_iztro import PatternKey, PalaceName
+
+hit = next(h for h in chart.patterns() if h.is_(PatternKey.FU_XIANG_CHAO_YUAN))
+
+print(hit.name, hit.variant, hit.in_palace(PalaceName.SOUL))
+for s in hit.stars:
+    print(" ", s.name, s.palace_index, s.brightness, s.brightness_key)
+```
+
+```text
+Empress and Minister Facing the Palace soul_empty True
+  empress 9 [+1] de
+  minister 1 [-3] xian
+```
+
+Judging under an explicit reading:
+
+```python
+from x_iztro import PatternConfig, BrightnessSource
+
+chart = Astro().by_solar("1985-1-5", 11, "female", language="en-US")
+
+print([h.name for h in chart.patterns()])
+print([h.name for h in chart.patterns(
+    PatternConfig(brightness_source=BrightnessSource.POSITIONAL))])
+```
+
+```text
+['Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
+['Sun and Moon Both Bright', 'Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
+```
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="palace_index is not always the Soul palace">
+Most patterns form at the Soul palace, but "Body-or-Soul" patterns (武贪同行, 杀破狼, 石中隐玉 and
+others) are judged at both, and `palace_index` records whichever matched — if both match, two hits
+come back. 禄马交驰 goes further: it is reported for any palace that qualifies, so one chart may
+produce several hits. On the chart above the Body palace sits on the Surface palace, which is why
+three of the hits record it.
+</Accordion>
+<Accordion title="palace_index inside stars is where the star really sits">
+When an empty palace borrows the opposite palace's majors, `PatternStar.palace_index` records the
+palace the star actually occupies (the opposite one), not the borrowing palace. For where the
+pattern formed, read `PatternHit.palace_index`.
+</Accordion>
+<Accordion title="Write predicates against keys, never translations">
+`hit.is_(PatternKey.SHA_PO_LANG)` gives the same answer whatever language the chart was rendered in;
+`hit.name == "杀破狼"` only holds on a Chinese chart. The same goes for stars and palaces: use `key`
+and `palace_name_key` rather than `name` and `palace_name`.
+</Accordion>
+</Accordions>
+
+---
+
+## Horoscope.patterns
+
+**Purpose**　Pattern hits in the view of one horoscope level.
+
+**In Zi Wei terms**　Takes that level's palace as the Soul palace, merges in that level's flowing
+stars and mutagens, and runs every rule again. This is how "if the natal chart has the arrangement
+and the decadal then arrives at it, its benefit is enjoyed" is computed.
+
+**Signature**
+
+```python
+def patterns(
+    self,
+    scope: Scope | ScopeLiteral,
+    config: PatternConfig | None = None,
+    astrolabe: Astrolabe | None = None,
+) -> list[PatternHit]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `scope` | `Scope \| str` | yes | — | The level whose view to judge in |
+| `config` | `PatternConfig \| None` | no | `None` | The reading |
+| `astrolabe` | `Astrolabe \| None` | no | `None` | The chart; omitted, it uses the one this horoscope came from |
+
+**Returns**　`list[PatternHit]`, each carrying the level passed in as its `scope`. Passing
+`Scope.ORIGIN` gives exactly what `patterns()` on the astrolabe gives.
+
+**Raises**　`ValueError` — when no `astrolabe` was passed and this horoscope did not come from a
+chart. A horoscope obtained through `chart.horoscope(...)` never hits this.
+
+**Example**
+
+```python
+from x_iztro import Scope
+
+chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")
+h = chart.horoscope("2025-6-1", 0)
+
+for hit in h.patterns(Scope.DECADAL):
+    print(hit.name, hit.scope, hit.variant)
+
+print(h.patterns("origin") == chart.patterns())
+```
+
+**Output**
+
+```text
+Marshal, Rebel and Wolf decadal None
+Meeting of Wind and Cloud decadal None
+Meeting of Wind and Cloud decadal yearly
+True
+```
+
+The natal view of that same chart holds only "Empress and Minister Facing the Palace" — the
+Marshal-Rebel-Wolf pattern holds at this level only because the decadal moved the Soul palace.
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="Horoscope views have no Body palace">
+The Body palace is a natal concept. In a horoscope view, "Body-or-Soul" patterns are judged only at
+that level's Soul palace.
+</Accordion>
+<Accordion title="The two transit patterns appear only here">
+禄衰马困 is judged at whichever level the current view is (decadal view judges the decadal, yearly
+view the year); 风云际会 compares two limits across levels, so it is judged once, in the
+`Scope.DECADAL` view — `variant` `None` is decadal + minor limit, `"yearly"` is decadal + annual,
+and if both hold, both are reported.
+</Accordion>
+<Accordion title="Flowing stars count as natal auxiliaries">
+Under the default reading a flowing Lucun reads as Lucun, a flowing Wenchang as Wenchang, and so on.
+To turn that off, pass `PatternConfig(flow_stars=False)`.
+</Accordion>
+<Accordion title="The interface is stateless">
+`patterns()` does not compute incrementally on an existing chart object; it sends the charting
+context (birth date, hour, gender, language, config) back into the core and starts a fresh
+judgement. So it neither mutates the chart nor caches — hold onto the returned list yourself if you
+are calling it in a loop.
+</Accordion>
+</Accordions>
+
+---
+
+## to_dict
+
+**Purpose**　The raw DTO the binding returned: camelCase keys, values translated into the chart's
+language, alongside the language-independent keys. Use it to store hits verbatim, ship them to a
+frontend, or feed them to a model.
+
+**Signature**
+
+```python
+def to_dict(self) -> dict[str, Any]
+```
+
+**Example**
+
+```python
+import json
+
+hit = next(h for h in chart.patterns() if h.is_(PatternKey.FU_XIANG_CHAO_YUAN))
+print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
+```
+
+**Output**
+
+```json
+{
+  "broken": false,
+  "key": "fu_xiang_chao_yuan",
+  "name": "Empress and Minister Facing the Palace",
+  "palaceIndex": 5,
+  "palaceName": "soul",
+  "palaceNameKey": "soulPalace",
+  "scope": "origin",
+  "stars": [
+    {
+      "brightness": "[+1]",
+      "brightnessKey": "de",
+      "key": "tianfuMaj",
+      "name": "empress",
+      "palaceIndex": 9
+    },
+    {
+      "brightness": "[-3]",
+      "brightnessKey": "xian",
+      "key": "tianxiangMaj",
+      "name": "minister",
+      "palaceIndex": 1
+    }
+  ],
+  "variant": "soul_empty"
+}
+```
+
+<Callout type="info">
+Optional keys with no value (`variant`, brightness, mutagen) are omitted from the DTO entirely;
+they never come back as `null`.
+</Callout>

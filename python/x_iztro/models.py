@@ -2,7 +2,7 @@
 x-iztro 数据模型的聚合入口。
 
 模型按领域分在 `enums` / `config` / `star_object` / `palace` / `surpalaces` /
-`horoscope` / `astrolabe` 七个模块里（与 Rust 侧 `src/models/` 对应），本模块把它们
+`horoscope` / `pattern` / `astrolabe` 八个模块里（与 Rust 侧 `src/models/` 对应），本模块把它们
 汇总到一个命名空间，`x_iztro.models.Astrolabe` 与 `x_iztro.Astrolabe` 两条路径等价。
 
 从 Rust 返回的星盘数据 1:1 映射为 frozen dataclass，零外部依赖。
@@ -28,6 +28,7 @@ from x_iztro.horoscope import (
     YearlyDecStar,
 )
 from x_iztro.palace import Decadal, Palace
+from x_iztro.pattern import PatternConfig, PatternHit, PatternStar
 from x_iztro.star_object import Star
 from x_iztro.surpalaces import SurroundedPalaces
 from x_iztro.enums import (
@@ -39,6 +40,9 @@ from x_iztro.enums import (
 )
 
 __all__ = [
+    "PatternConfig",
+    "PatternHit",
+    "PatternStar",
     # 类型别名
     "TimeIndexType",
     "GenderType",

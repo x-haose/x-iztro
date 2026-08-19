@@ -688,7 +688,7 @@ impl HoroscopeData {
     }
 
     /// 获取指定运限范围的 HoroscopeItem
-    fn scope_item(&self, scope: Scope) -> Option<&HoroscopeItem> {
+    pub(crate) fn scope_item(&self, scope: Scope) -> Option<&HoroscopeItem> {
         match scope {
             Scope::Decadal => Some(&self.decadal),
             Scope::Yearly => Some(&self.yearly.base),

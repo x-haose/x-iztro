@@ -16,6 +16,7 @@ from x_iztro.config import ChartConfig
 from x_iztro.enums import PalaceName
 from x_iztro.horoscope import Horoscope
 from x_iztro.palace import Palace
+from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
 from x_iztro.surpalaces import SurroundedPalaces
 
@@ -401,7 +402,35 @@ class Astrolabe:
             target_date=target_date,
             target_time_index=target_time_index,
         )
-        return Horoscope._from_dict(data, self)
+        return Horoscope._from_dict(data, self, target_time_index)
+
+    def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]:
+        """
+        本命盘的全部格局命中。
+
+        判定在 Rust 内核完成，规则口径见文档站「格局」一页；
+        多口径格局以 `PatternHit.variant` 区分。
+
+        Args:
+            config: 判定口径；不传取默认（亮度按 iztro 表、借宫、流曜参与）
+
+        Returns:
+            命中列表，按《格局》页条目顺序
+        """
+        from x_iztro._bridge import query
+        from x_iztro.pattern import _pattern_config
+
+        data = query(
+            "patterns",
+            solar_date=self.solar_date,
+            time_index=self.time_index,
+            gender=self.gender_key,
+            fix_leap=self.fix_leap,
+            language=self.language,
+            config=self._config_payload(),
+            pattern_config=_pattern_config(config),
+        )
+        return [PatternHit._from_dict(d) for d in data]
 
     def _link(self, palaces: list[Palace]) -> None:
         """

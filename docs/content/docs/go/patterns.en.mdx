@@ -1,0 +1,330 @@
+---
+title: Patterns
+description: Pattern hits on natal and horoscope charts, the PatternConfig readings, the Pattern constants, and error handling.
+---
+
+A pattern (格局) is the recognition of a named star arrangement on a chart. The same 64 rules are
+judged on natal charts and on horoscope views. For what patterns are and each rule's condition and
+source, see the [concept page](/en/docs/guide/concepts/patterns).
+
+```go
+chart, err := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+hits, err := chart.Patterns(nil)
+```
+
+<Callout type="info">
+The examples on this page all start from an `"en-US"` natal chart, so the display values in the
+output are the English translations.
+</Callout>
+
+## Types
+
+### PatternHit
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Key` | `string` | Language-independent pattern key; its values are the `PatternXxx` constants |
+| `Name` | `string` | Pattern name, translated to the chart's language |
+| `Scope` | `string` | The view it was judged in: `ScopeOrigin` for natal, otherwise that level |
+| `PalaceIndex` | `int` | Slot of the palace where the pattern formed (0-11, Yin palace is 0) |
+| `PalaceName` | `string` | That palace's name **in this view** |
+| `PalaceNameKey` | `string` | The palace key; its values are the `PalaceXxx` constants |
+| `Variant` | `string` | Which reading matched; empty for single-reading patterns |
+| `Broken` | `bool` | Whether the "spoiled by malefics" condition fired. The hit is reported either way; this is only a flag |
+| `Stars` | `[]PatternStar` | The stars evidencing the pattern, with their palaces |
+
+Three methods:
+
+| Method | Meaning |
+| --- | --- |
+| `Is(patternKey string) bool` | Whether this is the given pattern; pass a constant such as `PatternShaPoLang` |
+| `InPalace(nameKeyOrName string) bool` | Whether the forming palace is the given one; pass a palace key or the name in the chart's language |
+| `String() string` | `Name(palace)` or `Name(palace,variant)`, for logs and debugging |
+
+### PatternStar
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Key` | `string` | Language-independent star key |
+| `Name` | `string` | Star name, translated to the chart's language |
+| `PalaceIndex` | `int` | The slot the star **actually occupies** (when borrowed, not the borrowing palace) |
+| `Brightness` / `BrightnessKey` | `string` | Brightness display text and key; empty when the star has none |
+| `Mutagen` / `MutagenKey` | `string` | The mutagen in this view, and its key; empty when there is none |
+
+### PatternConfig
+
+The reading switches. Anything that is merely a second *form* of the same pattern goes through
+`PatternHit.Variant`; only data readings that change the **finding of fact itself** live here, which
+is why there are just three fields.
+
+```go
+type PatternConfig struct {
+    BrightnessSource string // BrightnessSourceTable (default) or BrightnessSourcePositional
+    Borrow           bool   // whether an empty palace borrows the opposite palace's majors
+    FlowStars        bool   // whether flowing stars count as their natal counterparts
+}
+
+func DefaultPatternConfig() *PatternConfig
+```
+
+`DefaultPatternConfig()` returns `{table, true, true}`, which is what passing `nil` does.
+
+`BrightnessSourceTable` follows the chart's brightness table (Miao and Wang bright, Xian and Bu dim —
+matching iztro value for value); `BrightnessSourcePositional` follows the traditional placement (Sun
+bright Yin–Wu, dim You–Chou; Moon bright You–Chou, dim Mao–Wei). The trade-off is explained on the
+[concept page](/en/docs/guide/concepts/patterns#which-table-decides-sun-and-moon-brightness).
+
+<Callout type="warn" title="Do not use a zero-value PatternConfig">
+`&iztro.PatternConfig{}` has `Borrow` and `FlowStars` both `false`, which is not the default
+reading. Start from `DefaultPatternConfig()` instead:
+
+```go
+cfg := iztro.DefaultPatternConfig()
+cfg.BrightnessSource = iztro.BrightnessSourcePositional
+```
+</Callout>
+
+### Pattern constants
+
+Every one of the 64 pattern keys has a named constant, `Pattern` plus the pinyin in camel case:
+`PatternShaPoLang`, `PatternFuXiangChaoYuan`, `PatternFengYunJiHui` and so on, valued exactly as
+`PatternHit.Key`. Always test patterns against the constants, never against `Name` — `Name` follows
+the chart's language, `Key` does not.
+
+---
+
+## Patterns
+
+**Purpose**　Every pattern hit on the natal chart.
+
+**In Zi Wei terms**　Lists every named star arrangement that holds on this chart, together with the
+palace it formed in and the stars that evidence it.
+
+**Signature**
+
+```go
+func (a *Astrolabe) Patterns(config *PatternConfig) ([]PatternHit, error)
+func (a *Astrolabe) PatternsContext(ctx context.Context, config *PatternConfig) ([]PatternHit, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `config` | `*PatternConfig` | yes | — | The reading; pass `nil` for the default |
+| `ctx` | `context.Context` | for the Context form | — | Cancels the wait for a wasm instance |
+
+**Returns**　`[]PatternHit` in the source page's entry order; an empty slice when nothing holds. The
+two transit patterns (禄衰马困, 风云际会) never appear on a natal chart.
+
+**Errors**
+
+| Case | Error |
+| --- | --- |
+| Nil astrolabe | `iztro: patterns: nil astrolabe` |
+| `BrightnessSource` is neither valid value | `iztro: invalid patternConfig: unknown variant ...` |
+
+Both are of the `ErrInvalidArgument` class and match with `errors.Is`.
+
+**Example**
+
+```go
+chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, h := range hits {
+    fmt.Printf("%s %d %s broken=%v\n", h.Name, h.PalaceIndex, h.PalaceName, h.Broken)
+}
+```
+
+**Output**
+
+```text
+General and Wolf Together 11 surface broken=false
+Empress and Minister Facing the Palace 5 soul broken=false
+Marshal, Rebel and Wolf 11 surface broken=false
+Officer and Helper Flanking Life 5 soul broken=false
+Literary Nobility and Brilliance 11 surface broken=false
+Literary Stars Facing Life 5 soul broken=true
+```
+
+Taking one hit and reading its evidence:
+
+```go
+for _, h := range hits {
+    if !h.Is(iztro.PatternFuXiangChaoYuan) {
+        continue
+    }
+    fmt.Println(h, h.Variant, h.InPalace(iztro.PalaceSoul))
+    for _, s := range h.Stars {
+        fmt.Printf("  %s %d %s %s\n", s.Name, s.PalaceIndex, s.Brightness, s.BrightnessKey)
+    }
+}
+```
+
+```text
+Empress and Minister Facing the Palace(soul,soul_empty) soul_empty true
+  empress 9 [+1] de
+  minister 1 [-3] xian
+```
+
+Judging under an explicit reading:
+
+```go
+chart, _ := iztro.BySolar("1985-1-5", 11, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+
+cfg := iztro.DefaultPatternConfig()
+cfg.BrightnessSource = iztro.BrightnessSourcePositional
+
+a, _ := chart.Patterns(nil)
+b, _ := chart.Patterns(cfg)
+fmt.Println(names(a))   // names collects each hit's Name
+fmt.Println(names(b))
+```
+
+```text
+[Money and Horse Galloping Together Officer and Helper Flanking Life Sitting on and Facing Nobility]
+[Sun and Moon Both Bright Money and Horse Galloping Together Officer and Helper Flanking Life Sitting on and Facing Nobility]
+```
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="PalaceIndex is not always the Soul palace">
+Most patterns form at the Soul palace, but "Body-or-Soul" patterns (武贪同行, 杀破狼, 石中隐玉 and
+others) are judged at both, and `PalaceIndex` records whichever matched — if both match, two hits
+come back. 禄马交驰 goes further: it is reported for any palace that qualifies, so one chart may
+produce several hits. On the chart above the Body palace sits on the Surface palace, which is why
+three of the hits record it.
+</Accordion>
+<Accordion title="PalaceIndex inside Stars is where the star really sits">
+When an empty palace borrows the opposite palace's majors, `PatternStar.PalaceIndex` records the
+palace the star actually occupies (the opposite one), not the borrowing palace. For where the
+pattern formed, read `PatternHit.PalaceIndex`.
+</Accordion>
+<Accordion title="Absent optional fields are empty strings">
+`Variant`, `Brightness` and `Mutagen` come back empty rather than missing — the Go side decodes
+from JSON, and optional keys are omitted in the DTO, so they decode to the zero value. Test presence
+with `h.Variant != ""`.
+</Accordion>
+</Accordions>
+
+---
+
+## Horoscope.Patterns
+
+**Purpose**　Pattern hits in the view of one horoscope level.
+
+**In Zi Wei terms**　Takes that level's palace as the Soul palace, merges in that level's flowing
+stars and mutagens, and runs every rule again. This is how "if the natal chart has the arrangement
+and the decadal then arrives at it, its benefit is enjoyed" is computed.
+
+**Signature**
+
+```go
+func (h *Horoscope) Patterns(scope string, config *PatternConfig) ([]PatternHit, error)
+func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *PatternConfig) ([]PatternHit, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `scope` | `string` | yes | — | The level whose view to judge in; pass a constant such as `ScopeDecadal` |
+| `config` | `*PatternConfig` | yes | — | The reading; pass `nil` for the default |
+
+**Returns**　`[]PatternHit`, each carrying the level passed in as its `Scope`. Passing `ScopeOrigin`
+gives exactly what `Patterns(nil)` on the astrolabe gives.
+
+**Errors**　A horoscope not created by `Astrolabe.Horoscope` returns
+`iztro: horoscopePatterns: horoscope must be created by Astrolabe.Horoscope`; an unrecognised
+`scope` returns `unknown scope`.
+
+**Example**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+h, _ := chart.Horoscope("2025-6-1", 0)
+
+hits, _ := h.Patterns(iztro.ScopeDecadal, nil)
+for _, x := range hits {
+    fmt.Printf("%s %s %q\n", x.Name, x.Scope, x.Variant)
+}
+```
+
+**Output**
+
+```text
+Marshal, Rebel and Wolf decadal ""
+Meeting of Wind and Cloud decadal ""
+Meeting of Wind and Cloud decadal "yearly"
+```
+
+The natal view of that same chart holds only "Empress and Minister Facing the Palace" — the
+Marshal-Rebel-Wolf pattern holds at this level only because the decadal moved the Soul palace.
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="Horoscope views have no Body palace">
+The Body palace is a natal concept. In a horoscope view, "Body-or-Soul" patterns are judged only at
+that level's Soul palace.
+</Accordion>
+<Accordion title="The two transit patterns appear only here">
+禄衰马困 is judged at whichever level the current view is (decadal view judges the decadal, yearly
+view the year); 风云际会 compares two limits across levels, so it is judged once, in the
+`ScopeDecadal` view — an empty `Variant` is decadal + minor limit, `"yearly"` is decadal + annual,
+and if both hold, both are reported.
+</Accordion>
+<Accordion title="Flowing stars count as natal auxiliaries">
+Under the default reading a flowing Lucun reads as Lucun, a flowing Wenchang as Wenchang, and so on.
+To turn that off, start from `DefaultPatternConfig()` and set `FlowStars` to `false`.
+</Accordion>
+<Accordion title="The interface is stateless">
+`Patterns` does not compute incrementally on an existing chart object; it sends the charting context
+(birth date, hour, gender, language, config) back into the wasm core and starts a fresh judgement.
+So it neither mutates the chart nor caches — hold onto the returned slice yourself if you are
+calling it in a loop.
+</Accordion>
+</Accordions>
+
+---
+
+## Serialisation
+
+The JSON tags on `PatternHit` and `PatternStar` are the binding DTO's key names, so
+`encoding/json` produces exactly the structure the Rust and Python sides produce:
+
+```go
+b, _ := json.MarshalIndent(hit, "", "  ")
+fmt.Println(string(b))
+```
+
+```json
+{
+  "key": "fu_xiang_chao_yuan",
+  "name": "Empress and Minister Facing the Palace",
+  "scope": "origin",
+  "palaceIndex": 5,
+  "palaceName": "soul",
+  "palaceNameKey": "soulPalace",
+  "variant": "soul_empty",
+  "broken": false,
+  "stars": [
+    {
+      "key": "tianfuMaj",
+      "name": "empress",
+      "palaceIndex": 9,
+      "brightness": "[+1]",
+      "brightnessKey": "de"
+    },
+    {
+      "key": "tianxiangMaj",
+      "name": "minister",
+      "palaceIndex": 1,
+      "brightness": "[-3]",
+      "brightnessKey": "xian"
+    }
+  ]
+}
+```

@@ -190,6 +190,7 @@ func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, tar
 		return nil, internalError("decode horoscope: " + err.Error())
 	}
 	out.astrolabe = a
+	out.targetTimeIndex = targetTimeIndex
 	return &out, nil
 }
 

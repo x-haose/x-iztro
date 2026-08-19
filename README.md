@@ -200,6 +200,9 @@ func main() {
 - **Chart queries** — locate a palace by name, branch or index; test stars,
   transformations and empty palaces; the 三方四正 surrounded-palace group; and the
   flying-star (飞星) family.
+- **Pattern judgement** — 64 named star arrangements (格局), one rule set shared by
+  natal charts and horoscope views, each hit carrying the palace it formed in, the
+  reading that matched, and the evidencing stars. iztro has no such API.
 - **Two schools** — the default school and 中州派 (Zhongzhou), selected per chart.
 - **Six languages** — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN, with
   language-independent key constants so your logic never depends on the display
@@ -211,6 +214,27 @@ func main() {
   `x_iztro.IztroError` (a `ValueError`) in Python, returns an `error` matchable
   with `errors.Is` in Go, and yields `{"error":"..."}` JSON over the C FFI.
   Every failure carries a machine-readable category. Nothing panics.
+
+### Pattern judgement
+
+```python
+chart = astro.by_solar("1985-5-3", 9, "male", language="en-US")
+
+for hit in chart.patterns():
+    print(hit.name, hit.palace_name, hit.broken)
+```
+
+```text
+General and Wolf Together surface False
+Empress and Minister Facing the Palace soul False
+Marshal, Rebel and Wolf surface False
+Officer and Helper Flanking Life soul False
+Literary Nobility and Brilliance surface False
+Literary Stars Facing Life soul True
+```
+
+The judging principles and the full table of 64 patterns are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/concepts/patterns).
 
 ## Accuracy
 

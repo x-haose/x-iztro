@@ -1,0 +1,394 @@
+---
+title: 格局判定
+description: 本命与运限的格局命中、口径开关、格局标识与序列化 DTO。
+---
+
+格局是「盘上某几颗星按特定方式凑在一起」的模式识别。判定在本命盘与运限盘上共用同一套规则，
+共 64 条。什么是格局、每条规则的条件与来源，见[概念页](/zh/docs/guide/concepts/patterns)。
+
+```rust
+let chart = by_solar("1985-5-3", 9, Gender::Male, true, Language::ZhCN, Config::default())?;
+let hits = chart.patterns();
+```
+
+<Callout type="info">
+本页示例统一用 `Language::ZhCN` 的本命盘，因此输出里的展示值都是中文。
+</Callout>
+
+## 类型
+
+四个类型都在 crate 根重导出：`PatternHit`、`StarAt`、`PatternConfig`、`BrightnessSource`、
+`PatternKey`，另有常量 `ALL_PATTERNS` 与模块函数 `patterns_at`。
+
+### PatternHit
+
+一次命中。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `PatternKey` | 格局 |
+| `scope` | `Scope` | 判定视角：本命为 `Scope::Origin`，运限为该层 |
+| `palace` | `usize` | 成格所在的宫位索引（0-11，寅宫为 0） |
+| `variant` | `Option<&'static str>` | 多口径格局命中的是哪个口径；单口径为 `None` |
+| `broken` | `bool` | 「破格 / 加杀平常」条件是否触发。成格照报，这里只作标记 |
+| `stars` | `Vec<StarAt>` | 参与成格的星与落宫 |
+
+`PatternHit` 实现 `Clone`、`PartialEq`、`Eq`、`Serialize`、`Deserialize`。
+
+### StarAt
+
+一颗参与成格的星。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `star` | `StarKey` | 星耀 |
+| `palace` | `usize` | 该星**真正待的**宫位索引（借宫时不是借到的那一宫） |
+| `brightness` | `Option<Brightness>` | 亮度；无亮度表的星为 `None` |
+| `mutagen` | `Option<Mutagen>` | 判定视角下的四化：本命读生年四化，运限读该层四化 |
+
+### PatternConfig
+
+判定口径。凡是「同一格局的多种成立形式」都走 `PatternHit::variant`，这里只放会改变
+**事实判定本身**的数据口径，因此只有三个字段。
+
+```rust
+pub struct PatternConfig {
+    pub brightness_source: BrightnessSource,  // 默认 Table
+    pub borrow: bool,                         // 默认 true
+    pub flow_stars: bool,                     // 默认 true
+}
+```
+
+| 字段 | 默认 | 作用 |
+| --- | --- | --- |
+| `brightness_source` | `BrightnessSource::Table` | 日月明暗的依据 |
+| `borrow` | `true` | 空宫是否借对宫主星参与判定 |
+| `flow_stars` | `true` | 运限视角下流曜（运禄/流禄、运昌/流昌…）是否等同对应本命辅星 |
+
+`BrightnessSource` 两个变体：`Table` 按星盘亮度表（庙旺为明，陷与「不」为暗，与 iztro 逐值一致），
+`Positional` 按传统位置（太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗）。
+两者的取舍见[概念页的说明](/zh/docs/guide/concepts/patterns#日月的明暗按哪张表)。
+
+`PatternConfig` 实现 `Default`，改单项用结构体更新语法：
+
+```rust
+let cfg = PatternConfig {
+    brightness_source: BrightnessSource::Positional,
+    ..Default::default()
+};
+```
+
+### PatternKey
+
+64 个格局的语言无关标识，`Copy` + `Hash`，可直接做 `HashMap` 的键。
+
+| 方法 | 签名 | 说明 |
+| --- | --- | --- |
+| `as_key` | `fn as_key(self) -> &'static str` | snake_case 标识，如 `"sha_po_lang"` |
+| `from_key` | `fn from_key(key: &str) -> Option<Self>` | 由标识反查；未知字符串返回 `None` |
+| `is_horoscope_only` | `fn is_horoscope_only(self) -> bool` | 是否行运格（只在运限视角判定） |
+
+常量 `ALL_PATTERNS: [PatternKey; 64]` 按来源页条目顺序列出全部格局。
+译名用 `translate_pattern(key, lang)`，六种语言都有。
+
+**示例**
+
+```rust
+println!("{}", ALL_PATTERNS.len());
+println!("{}", PatternKey::ShaPoLang.as_key());
+println!("{:?}", PatternKey::from_key("sha_po_lang"));
+println!("{:?}", PatternKey::from_key("nope"));
+println!("{}", PatternKey::FengYunJiHui.is_horoscope_only());
+```
+
+**输出**
+
+```text
+64
+sha_po_lang
+Some(ShaPoLang)
+None
+true
+```
+
+---
+
+## patterns
+
+**用途**　取本命盘的全部格局命中，默认口径。
+
+**斗数含义**　把这张盘上成立的所有有名字的星耀组合列出来，附上成格的宫位与证据星。
+
+**签名**
+
+```rust
+impl Astrolabe {
+    pub fn patterns(&self) -> Vec<PatternHit>
+}
+```
+
+**返回值**　`Vec<PatternHit>`——按来源页条目顺序排列；一条格局也不成立时为空 `Vec`。
+本命盘上两条行运格（禄衰马困、风云际会）永远不出现。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let chart = by_solar("1985-5-3", 9, Gender::Male, true, zh, Config::default())?;
+
+for hit in chart.patterns() {
+    println!("{} {} broken={}", translate_pattern(hit.key, zh), hit.palace, hit.broken);
+}
+```
+
+**输出**
+
+```text
+武贪同行 11 broken=false
+府相朝垣 5 broken=false
+杀破狼 11 broken=false
+左右夹命 5 broken=false
+文贵文华 11 broken=false
+文星朝命 5 broken=true
+```
+
+取一条命中的证据星：
+
+```rust
+let hit = chart.patterns().into_iter()
+    .find(|h| h.key == PatternKey::FuXiangChaoYuan)
+    .unwrap();
+
+println!("{} variant={:?}", translate_pattern(hit.key, zh), hit.variant);
+for s in &hit.stars {
+    println!("  {} 宫位 {} 亮度 {:?}", translate_star(s.star, zh), s.palace, s.brightness);
+}
+```
+
+```text
+府相朝垣 variant=Some("soul_empty")
+  天府 宫位 9 亮度 Some(De)
+  天相 宫位 1 亮度 Some(Xian)
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="palace 未必是命宫">
+多数格局成于命宫，但「身命」类格局（武贪同行、杀破狼、石中隐玉…）命宫身宫各判一次，
+`palace` 记实际成格的那一宫，两宫都成立就返回两条命中。
+禄马交驰更是任一宫成立即报，一张盘上可能有多条。
+</Accordion>
+<Accordion title="stars 里的 palace 是星真正待的宫">
+空宫借对宫主星时，`StarAt::palace` 记的是那颗星实际落的宫（对宫），
+不是借进来的宫。要知道格局成在哪一宫看 `PatternHit::palace`。
+</Accordion>
+<Accordion title="不返回 Result">
+判定在已经排好的盘上做，没有外部输入需要校验，因此不会失败。
+错误只可能来自排盘入口（`by_solar` / `by_lunar`）。
+</Accordion>
+</Accordions>
+
+---
+
+## patterns_with
+
+**用途**　同 `patterns`，指定判定口径。
+
+**签名**
+
+```rust
+impl Astrolabe {
+    pub fn patterns_with(&self, config: &PatternConfig) -> Vec<PatternHit>
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `config` | `&PatternConfig` | 是 | — | 判定口径，`PatternConfig::default()` 即 `patterns()` 的行为 |
+
+**返回值**　同 `patterns`。
+
+**示例**　同一张盘按两种日月明暗口径判：
+
+```rust
+let chart = by_solar("1985-1-5", 11, Gender::Female, true, zh, Config::default())?;
+let cfg = PatternConfig {
+    brightness_source: BrightnessSource::Positional,
+    ..Default::default()
+};
+
+println!("{:?}", chart.patterns().iter()
+    .map(|h| translate_pattern(h.key, zh)).collect::<Vec<_>>());
+println!("{:?}", chart.patterns_with(&cfg).iter()
+    .map(|h| translate_pattern(h.key, zh)).collect::<Vec<_>>());
+```
+
+**输出**
+
+```text
+["禄马交驰", "左右夹命", "坐贵向贵"]
+["日月并明", "禄马交驰", "左右夹命", "坐贵向贵"]
+```
+
+---
+
+## HoroscopeRef::patterns
+
+**用途**　取某个运限层级视角下的格局命中。
+
+**斗数含义**　以该层的命宫为命宫、合并该层的流曜与四化之后重跑全部规则。
+「本命有此组合，大限又走到即享其益」就是这么算出来的。
+
+**签名**
+
+```rust
+impl<'a> HoroscopeRef<'a> {
+    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit>
+    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit>
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `scope` | `Scope` | 是 | — | 判定视角所在的层级 |
+| `config` | `&PatternConfig` | `patterns_with` 必填 | — | 判定口径 |
+
+**返回值**　`Vec<PatternHit>`，每条的 `scope` 即传入的层级。
+传 `Scope::Origin` 时结果与本命盘上直接调 `patterns()` 完全一致。
+
+**示例**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, zh, Config::default())?;
+let h = chart.horoscope("2025-6-1", 0)?;
+
+for hit in h.patterns(Scope::Decadal) {
+    println!("{} {:?} {:?}", translate_pattern(hit.key, zh), hit.scope, hit.variant);
+}
+```
+
+**输出**
+
+```text
+杀破狼 Decadal None
+风云际会 Decadal None
+风云际会 Decadal Some("yearly")
+```
+
+同一张盘的本命视角只有一条「府相朝垣」——大限换了命宫，杀破狼才在这一层成立。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="运限视角没有身宫">
+身宫是本命概念。运限视角下「身命」类格局只判该层命宫。
+</Accordion>
+<Accordion title="两条行运格只在运限出现">
+禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年）；
+风云际会跨层比较「两限同时逢禄马」，只在 `Scope::Decadal` 视角判一次，
+`variant` 为 `None` 是大限 + 小限，`Some("yearly")` 是大限 + 流年，两者都成立就报两条。
+</Accordion>
+<Accordion title="流曜等同本命辅星">
+默认口径下运禄/流禄当禄存看、运昌/流昌当文昌看，其余同理。
+不想要这个行为，用 `patterns_with` 传 `flow_stars: false`。
+</Accordion>
+</Accordions>
+
+---
+
+## patterns_at
+
+**用途**　在某运限层视角上判定格局的自由函数版，收 `HoroscopeData` 而非 `HoroscopeRef`。
+
+**签名**
+
+```rust
+pub fn patterns_at(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    scope: Scope,
+    config: &PatternConfig,
+) -> Vec<PatternHit>
+```
+
+**返回值**　同 `HoroscopeRef::patterns_with`。
+
+手里只有 `HoroscopeData`（例如从别处反序列化得到）时用它；
+有 `HoroscopeRef` 的场合用方法版更短。
+
+---
+
+## patterns_dto
+
+**用途**　取序列化用的命中列表：键为 camelCase，值按排盘语言翻译，同时给出语言无关标识。
+三语言绑定与 FFI 都走这一层。
+
+**签名**
+
+```rust
+impl Astrolabe {
+    pub fn patterns_dto(&self, config: &PatternConfig) -> Vec<PatternHitDto>
+}
+
+impl HoroscopeData {
+    pub fn patterns_dto(
+        &self,
+        astrolabe: &Astrolabe,
+        scope: Scope,
+        config: &PatternConfig,
+    ) -> Vec<PatternHitDto>
+}
+```
+
+**返回值**　`Vec<PatternHitDto>`。相对 `PatternHit` 多出四项：
+每条带 `name`（译名）与 `palaceName` / `palaceNameKey`（成格宫在该视角下的宫名），
+每颗证据星带 `name` 与 `brightnessKey` / `mutagenKey`。
+无值的可选键在序列化时省略。
+
+**示例**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, zh, Config::default())?;
+let dto = chart.patterns_dto(&PatternConfig::default());
+println!("{}", serde_json::to_string_pretty(&dto[0]).unwrap());
+```
+
+**输出**
+
+```json
+{
+  "key": "fu_xiang_chao_yuan",
+  "name": "府相朝垣",
+  "scope": "origin",
+  "palaceIndex": 4,
+  "palaceName": "命宫",
+  "palaceNameKey": "soulPalace",
+  "broken": false,
+  "stars": [
+    {
+      "key": "tianfuMaj",
+      "name": "天府",
+      "palaceIndex": 8,
+      "brightness": "庙",
+      "brightnessKey": "miao"
+    },
+    {
+      "key": "tianxiangMaj",
+      "name": "天相",
+      "palaceIndex": 0,
+      "brightness": "庙",
+      "brightnessKey": "miao"
+    }
+  ]
+}
+```
+
+<Callout type="info">
+`PatternHitDto` 里的字段叫 `palaceIndex`，Rust 结构体里叫 `palace`——
+DTO 的键名与 JS 侧的命名习惯对齐，Rust 侧用更短的名字。
+</Callout>

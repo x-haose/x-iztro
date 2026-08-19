@@ -755,6 +755,8 @@ type Horoscope struct {
 	// astrolabe 为发起这次运限查询的本命盘。
 	// 运限依附于某一张盘，宫位与流耀查询都要落回盘上，因此运限随身携带它。
 	astrolabe *Astrolabe
+	// targetTimeIndex 为发起这次查询的目标时辰索引；再次发起运限层计算（如格局）时用。
+	targetTimeIndex uint8
 }
 
 // Astrolabe 返回发起这次运限查询的本命盘。

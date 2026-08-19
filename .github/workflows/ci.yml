@@ -35,6 +35,16 @@ jobs:
           name: wasm
           path: target/wasm32-wasip1/release/x_iztro.wasm
 
+  # 最低支持版本（Cargo.toml 的 rust-version）真能编译：防止代码用了更新的语法而声明没跟上。
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.88
+      - uses: Swatinem/rust-cache@v2
+      - name: MSRV 编译检查
+        run: cargo check --all-targets
+
   go:
     needs: rust
     runs-on: ubuntu-latest

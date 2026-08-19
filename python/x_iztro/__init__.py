@@ -55,6 +55,9 @@ from x_iztro.models import (
     RawLunarDate,
     RawChineseDate,
     ChartConfig,
+    PatternConfig,
+    PatternHit,
+    PatternStar,
 )
 
 # 枚举与常量
@@ -83,6 +86,8 @@ from x_iztro.enums import (
     Suiqian12,
     Jiangqian12,
     HoroscopeStar,
+    PatternKey,
+    BrightnessSource,
 )
 
 # 主类
@@ -124,6 +129,9 @@ __all__ = [
     "RawLunarDate",
     "RawChineseDate",
     "ChartConfig",
+    "PatternConfig",
+    "PatternHit",
+    "PatternStar",
     # 枚举
     "Gender",
     "Language",
@@ -149,6 +157,8 @@ __all__ = [
     "Suiqian12",
     "Jiangqian12",
     "HoroscopeStar",
+    "PatternKey",
+    "BrightnessSource",
     # 子模块：安星、数据表、翻译
     "star",
     "data",

@@ -18,6 +18,7 @@ from x_iztro.star_object import Star, _star_identifiers
 if TYPE_CHECKING:
     from x_iztro.astrolabe import Astrolabe
     from x_iztro.palace import Palace
+    from x_iztro.pattern import PatternConfig, PatternHit
     from x_iztro.surpalaces import SurroundedPalaces
 
 
@@ -209,6 +210,9 @@ class Horoscope:
     _raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
     """绑定层返回的原始 DTO，供 `to_dict` / `to_json` 导出"""
 
+    _target_time_index: int = field(default=0, compare=False, repr=False)
+    """发起本次查询的目标时辰索引；再次发起运限层计算（如格局）时用"""
+
     def to_dict(self) -> dict[str, Any]:
         """
         运限的 JS iztro 兼容 DTO（camelCase 键，值按排盘语言翻译）的深拷贝。
@@ -369,6 +373,50 @@ class Horoscope:
         identifiers = self._collect_horoscope_star_identifiers(p.index)
         return all(s not in identifiers for s in stars)
 
+    def patterns(
+        self,
+        scope: Scope | ScopeLiteral,
+        config: PatternConfig | None = None,
+        astrolabe: Astrolabe | None = None,
+    ) -> list[PatternHit]:
+        """
+        某运限层视角的格局命中。
+
+        以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，另加两条行运格
+        （禄衰马困、风云际会）；`Scope.ORIGIN` 等同本命盘。
+
+        Args:
+            scope: 运限层级
+            config: 判定口径；不传取默认
+            astrolabe: 星盘；省略时取发起本次运限查询的那张盘
+
+        Returns:
+            命中列表，`PatternHit.scope` 即该层
+
+        Raises:
+            ValueError: 既未传星盘、本运限也不是由星盘发起
+        """
+        from x_iztro._bridge import query
+        from x_iztro.pattern import PatternHit, _pattern_config, _scope_key
+
+        chart = self._chart(astrolabe)
+        if chart is None:
+            raise ValueError("patterns() 需要星盘：传入 astrolabe，或由 Astrolabe.horoscope 发起运限")
+        data = query(
+            "horoscopePatterns",
+            solar_date=chart.solar_date,
+            time_index=chart.time_index,
+            gender=chart.gender_key,
+            fix_leap=chart.fix_leap,
+            language=chart.language,
+            config=chart._config_payload(),
+            target_date=self.solar_date,
+            target_time_index=self._target_time_index,
+            scope=_scope_key(scope),
+            pattern_config=_pattern_config(config),
+        )
+        return [PatternHit._from_dict(d) for d in data]
+
     def _collect_horoscope_star_identifiers(self, palace_idx: int) -> set[str]:
         """收集大限和流年在指定宫位的所有流耀标识"""
         out: set[str] = set()
@@ -379,9 +427,12 @@ class Horoscope:
         return out
 
     @classmethod
-    def _from_dict(cls, d: dict, astrolabe: Astrolabe | None = None) -> Horoscope:
+    def _from_dict(
+        cls, d: dict, astrolabe: Astrolabe | None = None, target_time_index: int = 0
+    ) -> Horoscope:
         return cls(
             _raw=d,
+            _target_time_index=target_time_index,
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],
             decadal=HoroscopeItem._from_dict(d["decadal"]),
