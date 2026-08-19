@@ -224,6 +224,9 @@ impl KnowledgePack {
     pub fn from_json(json: &str) -> Result<KnowledgePack, String> {
         let pack: KnowledgePack =
             serde_json::from_str(json).map_err(|e| format!("invalid knowledge pack: {e}"))?;
+        if pack.schema == 0 {
+            return Err("knowledge pack must declare \"schema\" (currently 1)".to_string());
+        }
         if pack.schema > SCHEMA_VERSION {
             return Err(format!(
                 "knowledge pack schema {} is newer than supported {SCHEMA_VERSION}",
@@ -402,9 +405,44 @@ mod tests {
         assert_eq!(base.star_intro(StarKey::ZiweiMaj), Some("底"));
     }
 
+    /// SCHEMA.md §2/§3/§6 的实现行为承诺：未知顶层字段静默丢弃、未知条目键保留但查询不到、
+    /// 覆盖包可新增条目、空字符串视为有值参与覆盖。
+    #[test]
+    fn schema_documented_behaviors_hold() {
+        let p = KnowledgePack::from_json(
+            r#"{"schema":1,"id":"x","version":"1","language":"zh-CN","futureField":{"a":1},
+                "stars":{"notAStar":{"intro":"未知键"},"ziweiMaj":{"intro":"已知键"}}}"#,
+        )
+        .unwrap();
+        assert!(!p.to_json().contains("futureField"), "未知顶层字段应被丢弃");
+        assert!(p.stars.contains_key("notAStar"), "未知条目键应被保留");
+        assert_eq!(p.star_intro(StarKey::ZiweiMaj), Some("已知键"));
+        let overlay = KnowledgePack::from_json(
+            r#"{"schema":1,"id":"o","version":"1","language":"zh-CN",
+                "stars":{"tianjiMaj":{"intro":"新增条目"},"ziweiMaj":{"intro":""}}}"#,
+        )
+        .unwrap();
+        let m = p.merged(&[&overlay]);
+        assert_eq!(
+            m.star_intro(StarKey::TianjiMaj),
+            Some("新增条目"),
+            "覆盖包可新增条目"
+        );
+        assert_eq!(
+            m.star_intro(StarKey::ZiweiMaj),
+            Some(""),
+            "空串视为有值并覆盖"
+        );
+        assert!(m.stars.contains_key("notAStar"), "未知键参与合并后仍保留");
+    }
+
     #[test]
     fn newer_schema_is_rejected_and_bad_json_is_error() {
         assert!(KnowledgePack::from_json(r#"{"schema":99}"#).is_err());
+        assert!(
+            KnowledgePack::from_json(r#"{"id":"x"}"#).is_err(),
+            "schema 缺失必须拒绝"
+        );
         assert!(KnowledgePack::from_json("nope").is_err());
         let p =
             KnowledgePack::from_json(r#"{"schema":1,"id":"x","version":"1","language":"zh-CN"}"#)

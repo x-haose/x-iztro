@@ -39,7 +39,7 @@ x-iztro 把这两件事分开：内核只做事实判定（排盘、运限、格
 | `concepts` | 38 | 术语与基础概念（同宫、本宫、地支六合、三方四正…） |
 
 内容取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
-（MIT License，作者 Sylar Long），生成器锁定来源 commit，
+（MIT License，作者 Sylar Long），锁定来源 commit（`source.commit`），文本经 x-iztro 整理改写为第三人称释义口吻（`source.adapted` 注明），
 包的 `source` 段完整记录来源、commit、许可与作者。文本字段是 Markdown。
 
 <Callout type="warn" title="默认包目前只有 zh-CN">
@@ -54,7 +54,7 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
 
 ## 包长什么样
 
-完整字段表见仓库的 [`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md)。
+权威格式规范（字段表、标识值域、合并算法、校验与版本兼容、覆盖包完整示例）见仓库的 [`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md)。
 所有条目与字段都可选——缺什么就是没写：
 
 ```json
@@ -356,4 +356,4 @@ iztro-docs 星耀卡片本身就对不上：
 ## 来源与署名
 
 默认包的全部文本取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
-MIT License，作者 Sylar Long。知识包协议、生成器与三语言 API 是 x-iztro 的实现。
+MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写与三语言 API 是 x-iztro 的实现。

@@ -203,7 +203,7 @@ Err("knowledge pack schema 99 is newer than supported 1")
 </Accordion>
 <Accordion title="未知的键不报错">
 `stars` 里出现不是星耀标识的键、`patterns` 里出现未知格局标识，都会照原样留在包里。
-校验键的有效性是生成器与测试的事，解析器只管格式。
+校验键的有效性是写包者与测试的事，解析器只管格式（未知键被保留但查询不到）。
 </Accordion>
 </Accordions>
 
