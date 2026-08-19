@@ -94,6 +94,91 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
     assert!(KnowledgePack::builtin(Language::EnUS).is_none());
 }
 
+/// 默认包文本的口吻红线：教学博客式的对话残留、页面布局引用与站点功能引用一律不许出现。
+/// 默认包是手工维护的释义文本，此断言防止后续编辑（尤其同步上游时）把原文口吻带回来。
+#[test]
+fn builtin_texts_keep_reference_tone() {
+    const BANNED: &[&str] = &[
+        "读者",
+        "大家肯定",
+        "大家可能",
+        "大家仔细",
+        "你妈妈",
+        "我们看到",
+        "上面的名片表",
+        "见上表",
+        "上表中",
+        "如上表",
+        "见下表",
+        "下表中",
+        "从上面",
+        "前面说的",
+        "前面的逻辑",
+        "前面提到",
+        "详细介绍见",
+        "详见",
+        "参见",
+        "本站",
+        "点击",
+        "小编",
+        "单车变摩托",
+        "宝马变奥拓",
+        "韭菜",
+        "摆烂",
+        "C位",
+        "小透明",
+    ];
+    let p = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    let mut texts: Vec<(String, &str)> = Vec::new();
+    for (k, e) in &p.stars {
+        if let Some(t) = e.intro.as_deref() {
+            texts.push((format!("stars.{k}.intro"), t));
+        }
+        for (ck, cv) in &e.combinations {
+            texts.push((format!("stars.{k}.combinations.{ck}"), cv));
+        }
+    }
+    for (k, e) in &p.patterns {
+        if let Some(t) = e.intro.as_deref() {
+            texts.push((format!("patterns.{k}.intro"), t));
+        }
+        if let Some(t) = e.conditions.as_deref() {
+            texts.push((format!("patterns.{k}.conditions"), t));
+        }
+    }
+    for (k, e) in p.palaces.iter().chain(p.mutagens.iter()) {
+        if let Some(t) = e.intro.as_deref() {
+            texts.push((format!("{k}.intro"), t));
+        }
+    }
+    for (k, e) in &p.concepts {
+        if let Some(t) = e.intro.as_deref() {
+            texts.push((format!("concepts.{k}.intro"), t));
+        }
+    }
+    let mut violations = Vec::new();
+    for (loc, t) in &texts {
+        for w in BANNED {
+            if t.contains(w) {
+                violations.push(format!("{loc}: {w}"));
+            }
+        }
+    }
+    assert!(
+        violations.is_empty(),
+        "口吻红线违例:
+{}",
+        violations.join(
+            "
+"
+        )
+    );
+    assert!(
+        p.source.adapted.as_deref().is_some_and(|a| !a.is_empty()),
+        "默认包文本经改写，source.adapted 必须注明"
+    );
+}
+
 #[test]
 fn ffi_returns_builtin_and_merges_overlays() {
     let builtin = query(json!({"kind": "knowledgePack", "language": "zh-CN"})).unwrap();

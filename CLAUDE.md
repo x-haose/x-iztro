@@ -58,8 +58,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro/` — Go FFI 绑定包
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
-- `knowledge/` — 知识包格式规范 `SCHEMA.md` 与默认包生成器 `generate.py`（锁定 iztro-docs commit，
-  输出 `src/data/knowledge/iztro_docs.zh-CN.json`；来源缓存 `knowledge/source/` 已 gitignore）
+- `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
 
 ## 关键约定
 
@@ -138,8 +137,12 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 协议：语言无关 key（`StarKey`/`PatternKey`/`Palace`/`Mutagen` 的 `as_key`）→ 文本/属性，格式 `knowledge/SCHEMA.md`；
   合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
   `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
-- 默认包只有 zh-CN；同步上游：改 `knowledge/generate.py` 的 `COMMIT` 常量重新生成，跑 `tests/knowledge_pack.rs`
-  与三侧知识包测试；映射类字段允许写 `null`（Go nil map 默认序列化）
+- 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
+  只换表达不加减命理内容），JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
+  `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见」等残留）
+- 同步上游：人工 diff iztro-docs 新旧 commit 的 learn 页差异，把变化条目改写后写回 JSON 并更新
+  `source.commit`；一次性提取脚手架存于 docs/plan/knowledge-scaffold（gitignore，不进仓库）
+- 映射类字段允许写 `null`（Go nil map 默认序列化）
 
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异

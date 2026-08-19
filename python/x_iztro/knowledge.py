@@ -29,6 +29,7 @@ class Source:
     license: str | None = None
     author: str | None = None
     retrieved_at: str | None = None
+    adapted: str | None = None
 
     @classmethod
     def _from_dict(cls, d: dict | None) -> Source:
@@ -40,6 +41,7 @@ class Source:
             license=d.get("license"),
             author=d.get("author"),
             retrieved_at=d.get("retrievedAt"),
+            adapted=d.get("adapted"),
         )
 
 

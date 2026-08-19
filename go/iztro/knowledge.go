@@ -19,6 +19,8 @@ type KnowledgeSource struct {
 	License     string `json:"license,omitempty"`
 	Author      string `json:"author,omitempty"`
 	RetrievedAt string `json:"retrievedAt,omitempty"`
+	// Adapted 为改写说明：文本经过整理改写时注明
+	Adapted string `json:"adapted,omitempty"`
 }
 
 // StarAttributes 为星耀的门派属性（全部可选，缺省为空）。

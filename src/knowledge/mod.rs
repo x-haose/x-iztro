@@ -41,6 +41,9 @@ pub struct Source {
     /// 取得日期
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retrieved_at: Option<String>,
+    /// 改写说明：文本经过整理改写时注明（如「文本由 x-iztro 在原文基础上整理改写」）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub adapted: Option<String>,
 }
 
 /// 星耀的门派属性（全部可选）。

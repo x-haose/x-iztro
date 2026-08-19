@@ -17,7 +17,8 @@
   "extends": null,                   // 覆盖包写被覆盖包的 id；独立包为 null
   "source": {                        // 来源与许可（可选）
     "name": "iztro-docs", "url": "https://github.com/SylarLong/iztro-docs",
-    "commit": "a1b2c3d", "license": "MIT", "author": "Sylar Long", "retrievedAt": "2026-08-19"
+    "commit": "a1b2c3d", "license": "MIT", "author": "Sylar Long", "retrievedAt": "2026-08-19",
+    "adapted": "文本由 x-iztro 在原文基础上整理改写"   // 文本非逐字转载时注明
   },
   "stars": {
     "ziweiMaj": {
@@ -65,3 +66,11 @@
 覆盖包里出现的条目，其**非 null 字段**覆盖底包同键条目的对应字段，未出现的字段保留；
 `attributes`、`combinations` 同样按字段/子键合并；数组字段（`aliases`、`quotes`）整体替换。
 把某字段显式写成 `null` 不删除底包内容（缺省与 null 同义）；要删除请整包替换。
+
+## 默认包的维护方式
+
+内嵌默认包 `src/data/knowledge/iztro_docs.zh-CN.json` 以 iztro-docs 锁定 commit
+（`source.commit`）的《学习》页为底本，文本经 x-iztro 整理改写为第三人称释义口吻
+（`source.adapted` 注明；命理内容一仍其旧，只换表达）。该 JSON 是手工维护的源文件：
+修改内容就是直接编辑它，格式与完整性由 `tests/knowledge_pack.rs`（含口吻红线断言）守护。
+同步上游：对照 iztro-docs 新旧 commit 的页面差异，把变化的条目改写后写回，更新 `source.commit`。
