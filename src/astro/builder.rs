@@ -477,6 +477,36 @@ fn build_pillars(
     })
 }
 
+/// 一次生辰的完整四柱 [年, 月, 日, 时]（按 `config` 的分界口径，与排盘 `raw_dates` 一致）。
+///
+/// 反推的终验入口：枚举出的候选生辰经此函数算出四柱后与目标比对。
+///
+/// # Errors
+/// 日期非法或时辰越界时返回 [`IztroError`]。
+pub(crate) fn four_pillars(
+    solar_date: &str,
+    time_index: u8,
+    config: &Config,
+) -> Result<[(HeavenlyStem, EarthlyBranch); 4], IztroError> {
+    let ctx = context::derive(solar_date, time_index, true, config)?;
+    let (year, month, day) = parse_solar_date(solar_date)?;
+    let lunar_ref = lunar::from_solar(&solar::from_ymdhms(
+        year,
+        month,
+        day,
+        time_index_to_hour(ctx.effective_time_index),
+        0,
+        0,
+    ));
+    let pillars = build_pillars(&ctx, &lunar_ref, config)?;
+    Ok([
+        (ctx.yearly_stem, ctx.yearly_branch),
+        pillars.monthly,
+        pillars.daily,
+        pillars.hourly,
+    ])
+}
+
 /// 通过阳历日期排盘
 ///
 /// # 参数

@@ -1,0 +1,178 @@
+---
+title: Reverse lookup
+description: solar_dates_by_bazi and reverse_chart - the functions and dataclasses for recovering candidate birth dates from BaZi pillars or chart features.
+---
+
+Recover candidate birth dates from four BaZi pillars or from chart features.
+All computation runs in the Rust core (pruned enumeration + full re-charting,
+zero divergence from forward charting); the Python side is a typed wrapper.
+Concepts, how pillars follow the Config boundaries, and the multi-solution /
+truncation semantics are on the
+[reverse lookup guide](/en/docs/guide/guides/reverse).
+
+```python
+from x_iztro import solar_dates_by_bazi
+from x_iztro.enums import EarthlyBranch as B, HeavenlyStem as S
+
+cands = solar_dates_by_bazi(
+    (S.GENG, B.CHEN), (S.JIA, B.SHEN), (S.BING, B.WU), (S.GENG, B.YIN),
+)
+```
+
+Everything is defined in `x_iztro.reverse` and re-exported at the package root.
+Stems, branches, classes and stars all take language-independent keys: members
+of the `x_iztro.enums` enums or the equivalent strings.
+
+## Types
+
+### Type alias Pillar
+
+```python
+Pillar = tuple[HeavenlyStem | str, EarthlyBranch | str]
+```
+
+One pillar: (stem key, branch key), e.g. `(HeavenlyStem.GENG, EarthlyBranch.CHEN)`.
+
+### BirthCandidate
+
+Frozen dataclass. One candidate birth moment, ready to hand to
+[`Astro.by_solar`](/en/docs/python/astro).
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `solar_date` | `str` | solar date, `YYYY-M-D` |
+| `time_index` | `int` | hour index 0–12 (0 = early Zi hour, 12 = late Zi hour) |
+
+### StarPosition
+
+Frozen dataclass. A star and the branch of the palace it sits in: the atomic
+condition of a feature lookup.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `star` | `str` | star key (natal chart stars only; horoscope-scope flow stars are rejected) |
+| `branch` | `EarthlyBranch \| str` | branch key of its palace |
+
+### ReverseCriteria
+
+Frozen dataclass. The condition set of a feature lookup; every field is
+optional, but at least one must be given.
+
+| Field | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `soul_branch` | `EarthlyBranch \| str \| None` | `None` | soul palace branch |
+| `body_branch` | `EarthlyBranch \| str \| None` | `None` | body palace branch |
+| `five_elements_class` | `FiveElementsClass \| str \| None` | `None` | five elements class |
+| `stars` | `list[StarPosition]` | `[]` | star placements, all of which must hold |
+| `mutagens` | 4-tuple of `str \| None` | all `None` | which star carries each birth-year mutagen [Lu, Quan, Ke, Ji] |
+| `year_range` | `tuple[int, int]` | `(1900, 2100)` | inclusive solar year range, within 1583–9999 |
+| `fix_leap` | `bool` | `True` | leap month correction, same meaning as the charting parameter |
+| `limit` | `int` | `0` | candidate cap; `0` takes the core default (512) |
+
+### ReverseResult
+
+Frozen dataclass.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `candidates` | `list[BirthCandidate]` | the birth candidates satisfying every condition |
+| `truncated` | `bool` | whether the search stopped early at the candidate cap; later solutions were never searched |
+
+---
+
+## solar_dates_by_bazi
+
+Recover solar birth dates from four BaZi pillars.
+
+```python
+def solar_dates_by_bazi(
+    yearly: Pillar,
+    monthly: Pillar,
+    daily: Pillar,
+    hourly: Pillar,
+    *,
+    year_range: tuple[int, int] = (1900, 2100),
+    config: ChartConfig | None = None,
+) -> list[BirthCandidate]
+```
+
+The pillars are interpreted under the boundary readings of `config`
+(`year_divide` for the year pillar, `horoscope_divide` for the month pillar,
+`day_divide` for the late Zi hour) — the same semantics as the
+`raw_dates.chinese_date` a charted astrolabe reports, so reversing any chart's
+pillars always includes that chart's birth moment. A set of pillars recurs
+roughly every 60 years within the range; an hour branch of Zi may yield two
+candidates on adjacent days because of the early/late Zi hour split.
+
+**Example**
+
+```python
+from x_iztro import Astro, solar_dates_by_bazi
+
+a = Astro().by_solar("2000-8-16", 2, "female")
+p = a.raw_dates.chinese_date
+
+for c in solar_dates_by_bazi(p.yearly_keys, p.monthly_keys, p.daily_keys, p.hourly_keys):
+    print(c.solar_date, c.time_index)
+```
+
+**Output**
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+**Raises** `IztroError` with `code` `invalid_argument` for a pillar with
+mismatched stem/branch polarity (such as 甲丑) or a year range that is reversed
+or outside 1583–9999. See [Error handling](/en/docs/python/errors).
+
+---
+
+## reverse_chart
+
+Recover candidate birth dates from chart features.
+
+```python
+def reverse_chart(
+    criteria: ReverseCriteria,
+    config: ChartConfig | None = None,
+) -> ReverseResult
+```
+
+Judgement runs entirely under `config`: the mutagen table, the school and every
+boundary follow it, so charting a candidate with the same `config` is
+guaranteed to satisfy every condition. Chart layout does not depend on gender
+(gender only affects the direction the decadal horoscope advances), so the
+criteria carry no gender.
+
+**Example**
+
+```python
+from x_iztro import ReverseCriteria, StarPosition, reverse_chart
+from x_iztro.enums import EarthlyBranch, FiveElementsClass, MajorStar
+
+r = reverse_chart(ReverseCriteria(
+    soul_branch=EarthlyBranch.WU,
+    five_elements_class=FiveElementsClass.WOOD_3,
+    stars=[StarPosition(star=MajorStar.ZIWEI, branch=EarthlyBranch.WU)],
+    mutagens=(MajorStar.TAIYANG, None, None, None),
+    year_range=(1998, 2002),
+))
+print(len(r.candidates), r.truncated)
+```
+
+**Output**
+
+```text
+39 False
+```
+
+**Raises** `IztroError` with `code` `invalid_argument` for empty criteria, a
+horoscope-scope flow star in `stars`, or an invalid year range.
+
+<Callout type="info" title="truncated means truncation, not sampling">
+Reaching `limit` stops the search; later solutions never appear in the result.
+On `truncated = True`, narrow `year_range` or add conditions and query again.
+</Callout>

@@ -15,6 +15,28 @@
 
 ### 新增
 
+- **生辰反推**：由八字四柱或星盘特征反查候选生辰，iztro 无对应 API。
+  `solar_dates_by_bazi` 收四柱干支与公历年范围，四柱按传入 `Config` 的分界口径解释
+  （`year_divide` 年柱、`horoscope_divide` 月柱、`day_divide` 晚子归属，
+  与 `raw_dates.chinese_date` 同一套语义）；一组四柱约每 60 年重复一次故天然多解，
+  时柱为子时因早晚子之分可能给出相邻两天的两个候选。
+  `reverse_chart` 收条件集（命宫身宫地支、五行局、星耀落宫、生年四化、年份范围、
+  闰月修正、候选数上限，条件至少给一个且只收本命盘星耀），
+  达到上限（默认 512）即停止搜索并置 `truncated`。
+  两者都是「剪枝枚举 + 正排终验」，每个候选用同一 `Config` 正排必满足条件，
+  与正向排盘零分歧；星盘布局与性别无关，故不收性别。
+- **反推三语言 API**：Rust 的 `solar_dates_by_bazi` / `reverse_chart`
+  （类型 `BirthCandidate` / `StarPosition` / `ReverseCriteria` / `ReverseResult`，
+  常量 `DEFAULT_REVERSE_LIMIT`）、Python 的同名函数与对应 frozen dataclass、
+  Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）与 `Pillar` 类型。
+  bridge 新增 `solarDatesByBazi` 与 `reverseChart` 两个 kind，入参一律语言无关标识。
+- **`IztroError::InvalidArgument` 新变体**（code 沿用 `invalid_argument`）：
+  反推入口的干支阴阳不配、条件为空或含流耀、年份范围非法在核心层报错；
+  此前该分类只在绑定层（`BridgeError`）出现。
+- **反推的文档与测试**：使用指南《反推》与三语言 API 参考页（中英各一份）；
+  往返一致性（任一盘的四柱/特征反查必含原生辰、每个候选正排必满足条件）、
+  节气分界与中州派口径下的闭环、60 年周期多解、截断语义与入参校验由
+  `tests/reverse.rs`、`python/tests/test_reverse.py`、`go/iztro/reverse_test.go` 守着。
 - **知识包协议与内嵌默认包**：解读文本与星耀的门派属性从内核里分出来，
   做成「语言无关标识 → 文本与属性」的 JSON（格式 v1，规范见 `knowledge/SCHEMA.md`）。
   内核只做事实判定，怎么解读是门派观点，因此可整包替换或用覆盖包逐条合并。

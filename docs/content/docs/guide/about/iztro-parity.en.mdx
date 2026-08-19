@@ -182,6 +182,22 @@ rather than the core tables — the core `StarInfo` stays value-for-value identi
 those attributes are a school's reading. See
 [Knowledge packs](/en/docs/guide/guides/knowledge-pack).
 
+### Reverse lookup (no iztro equivalent)
+
+iztro goes one way only: birth moment → chart. x-iztro adds the reverse
+direction: `solar_dates_by_bazi` recovers solar birth dates from four BaZi
+pillars — interpreted under the boundary readings of the `Config` you pass, the
+same semantics as `raw_dates.chinese_date` — and `reverse_chart` recovers birth
+candidates from chart features (soul/body palace branches, five elements class,
+star placements, birth-year mutagens). Both are pruned enumeration followed by
+full re-charting, so results have zero divergence from forward charting. A set
+of pillars recurs roughly every 60 years, so multiple solutions are inherent;
+chart any candidate to reproduce the target.
+
+The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
+`SolarDatesByBazi` / `ReverseChart` in Go (each with a Context variant). See
+[Reverse lookup](/en/docs/guide/guides/reverse).
+
 ### Everything else
 
 - **Language-independent keys**: every field on the astrolabe carries a `*key` / `*Key` alongside

@@ -207,6 +207,11 @@ func main() {
   swappable JSON pack, not in the core. A default pack ships inside (107 stars, 64
   patterns, 12 palaces, 4 transformations, 38 glossary entries, zh-CN, from
   iztro-docs by Sylar Long, MIT); write an overlay to replace any entry.
+- **Reverse lookup** — `solar_dates_by_bazi` recovers solar birth dates from four
+  BaZi pillars (interpreted under the chart Config), and `reverse_chart` recovers
+  them from chart features — soul/body palace branches, five elements class, star
+  placements, birth-year mutagens. Pruned enumeration verified by full
+  re-charting: zero divergence from forward casting. iztro has no such API.
 - **Two schools** — the default school and 中州派 (Zhongzhou), selected per chart.
 - **Six languages** — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN, with
   language-independent key constants so your logic never depends on the display
@@ -261,6 +266,29 @@ Empress and Minister Facing the Palace | 府相朝垣命必荣
 
 The pack format, the merge rules and how to write an overlay are on the
 [documentation site](https://ziwei.x-hoase.com/en/docs/guide/guides/knowledge-pack).
+
+### Reverse lookup
+
+```python
+from x_iztro import solar_dates_by_bazi
+
+# every solar birth moment in 1900-2100 with the pillars 庚辰 甲申 丙午 庚寅
+for c in solar_dates_by_bazi(
+    ("gengHeavenly", "chenEarthly"), ("jiaHeavenly", "shenEarthly"),
+    ("bingHeavenly", "wuEarthly"), ("gengHeavenly", "yinEarthly"),
+):
+    print(c.solar_date, c.time_index)
+```
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+Chart-feature lookup, how the pillars follow the Config boundaries, and the
+truncation semantics are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/guides/reverse).
 
 ## Accuracy
 

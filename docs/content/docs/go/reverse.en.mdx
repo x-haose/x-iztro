@@ -1,0 +1,183 @@
+---
+title: Reverse lookup
+description: SolarDatesByBazi and ReverseChart - the functions and types for recovering candidate birth dates from BaZi pillars or chart features.
+---
+
+Recover candidate birth dates from four BaZi pillars or from chart features.
+All computation runs in the wasm core (pruned enumeration + full re-charting,
+zero divergence from forward charting); the Go side is a typed wrapper.
+Concepts, how pillars follow the Config boundaries, and the multi-solution /
+truncation semantics are on the
+[reverse lookup guide](/en/docs/guide/guides/reverse).
+
+```go
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar{iztro.StemGeng, iztro.BranchChen},
+    iztro.Pillar{iztro.StemJia, iztro.BranchShen},
+    iztro.Pillar{iztro.StemBing, iztro.BranchWu},
+    iztro.Pillar{iztro.StemGeng, iztro.BranchYin},
+    1900, 2100, nil)
+```
+
+Stems, branches, classes and stars all take language-independent keys (the
+`StemGeng`, `BranchChen`, `ClassWood3rd`, `StarZiweiMaj` constants and family).
+Both entry points have `Context` variants; `ctx` cancels the wait for a wasm
+instance.
+
+## Types
+
+### Pillar
+
+```go
+type Pillar [2]string
+```
+
+One pillar: [stem key, branch key]. The `RawDates.ChineseDate.YearlyKeys`
+family on an astrolabe converts directly: `iztro.Pillar(cd.YearlyKeys)`.
+
+### BirthCandidate
+
+One candidate birth moment, ready to hand to [`BySolar`](/en/docs/go/astro).
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `SolarDate` | `string` | solar date, `YYYY-M-D` |
+| `TimeIndex` | `uint8` | hour index 0–12 (0 = early Zi hour, 12 = late Zi hour) |
+
+### StarPosition
+
+A star and the branch of the palace it sits in: the atomic condition of a
+feature lookup.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Star` | `string` | star key (natal chart stars only; horoscope-scope flow stars are rejected) |
+| `Branch` | `string` | branch key of its palace |
+
+### ReverseCriteria
+
+The condition set of a feature lookup. Zero values mean "unconstrained": an
+empty string leaves that condition unset, a zero `YearRange` takes
+`[1900, 2100]`, and a `Limit` of 0 takes the core default (512). Every
+condition is optional, but at least one must be given.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `SoulBranch` | `string` | soul palace branch key, empty = unconstrained |
+| `BodyBranch` | `string` | body palace branch key, empty = unconstrained |
+| `FiveElementsClass` | `string` | five elements class key, empty = unconstrained |
+| `Stars` | `[]StarPosition` | star placements, all of which must hold |
+| `Mutagens` | `[4]string` | star key carrying each birth-year mutagen [Lu, Quan, Ke, Ji]; empty = unconstrained |
+| `YearRange` | `[2]int` | inclusive solar year range, within 1583–9999 |
+| `FixLeap` | `bool` | leap month correction, same meaning as the charting parameter |
+| `Limit` | `int` | candidate cap |
+
+### ReverseResult
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Candidates` | `[]BirthCandidate` | the birth candidates satisfying every condition |
+| `Truncated` | `bool` | whether the search stopped early at the candidate cap; later solutions were never searched |
+
+---
+
+## SolarDatesByBazi
+
+Recover solar birth dates from four BaZi pillars.
+
+```go
+func SolarDatesByBazi(yearly, monthly, daily, hourly Pillar,
+    startYear, endYear int, config *Config) ([]BirthCandidate, error)
+
+func SolarDatesByBaziContext(ctx context.Context, yearly, monthly, daily, hourly Pillar,
+    startYear, endYear int, config *Config) ([]BirthCandidate, error)
+```
+
+The pillars are interpreted under the boundary readings of `config`
+(`YearDivide` for the year pillar, `HoroscopeDivide` for the month pillar,
+`DayDivide` for the late Zi hour) — the same semantics as the
+`RawDates.ChineseDate` a charted astrolabe reports, so reversing any chart's
+pillars always includes that chart's birth moment. A set of pillars recurs
+roughly every 60 years within the range; an hour branch of Zi may yield two
+candidates on adjacent days because of the early/late Zi hour split.
+
+**Example**
+
+```go
+a, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+cd := a.RawDates.ChineseDate
+
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar(cd.YearlyKeys), iztro.Pillar(cd.MonthlyKeys),
+    iztro.Pillar(cd.DailyKeys), iztro.Pillar(cd.HourlyKeys),
+    1900, 2100, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, c := range cands {
+    fmt.Println(c.SolarDate, c.TimeIndex)
+}
+```
+
+**Output**
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+**Errors** A pillar with mismatched stem/branch polarity (such as 甲丑), or a
+year range that is reversed or outside 1583–9999, returns an
+`ErrInvalidArgument`-class error (matchable with `errors.Is`). See
+[Error handling](/en/docs/go/errors).
+
+---
+
+## ReverseChart
+
+Recover candidate birth dates from chart features.
+
+```go
+func ReverseChart(criteria *ReverseCriteria, config *Config) (*ReverseResult, error)
+
+func ReverseChartContext(ctx context.Context, criteria *ReverseCriteria,
+    config *Config) (*ReverseResult, error)
+```
+
+Judgement runs entirely under `config`: the mutagen table, the school and every
+boundary follow it, so charting a candidate with the same `config` is
+guaranteed to satisfy every condition. Chart layout does not depend on gender
+(gender only affects the direction the decadal horoscope advances), so the
+criteria carry no gender.
+
+**Example**
+
+```go
+r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
+    SoulBranch:        iztro.BranchWu,
+    FiveElementsClass: iztro.ClassWood3rd,
+    Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
+    Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""},
+    YearRange:         [2]int{1998, 2002},
+    FixLeap:           true,
+}, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(r.Candidates), r.Truncated)
+```
+
+**Output**
+
+```text
+39 false
+```
+
+**Errors** A `nil` criteria, empty criteria, a horoscope-scope flow star in
+`Stars`, or an invalid year range returns an `ErrInvalidArgument`-class error.
+
+<Callout type="info" title="Truncated means truncation, not sampling">
+Reaching `Limit` stops the search; later solutions never appear in the result.
+On `Truncated = true`, narrow `YearRange` or add conditions and query again.
+</Callout>

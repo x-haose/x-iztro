@@ -1,0 +1,170 @@
+---
+title: 反推
+description: SolarDatesByBazi 与 ReverseChart：由八字四柱或星盘特征反查候选生辰的函数与类型。
+---
+
+由八字四柱或星盘特征反查候选生辰。计算全部在 wasm 内核完成
+（剪枝枚举 + 正排终验，与正向排盘零分歧），Go 侧是类型化封装。
+概念、四柱口径与 Config 的关系、多解与截断语义见
+[反推指南](/zh/docs/guide/guides/reverse)。
+
+```go
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar{iztro.StemGeng, iztro.BranchChen},
+    iztro.Pillar{iztro.StemJia, iztro.BranchShen},
+    iztro.Pillar{iztro.StemBing, iztro.BranchWu},
+    iztro.Pillar{iztro.StemGeng, iztro.BranchYin},
+    1900, 2100, nil)
+```
+
+干支、五行局、星耀都收语言无关标识（`StemGeng`、`BranchChen`、`ClassWood3rd`、
+`StarZiweiMaj` 等常量）。两个入口都有 `Context` 变体，`ctx` 用于取消等待 wasm 实例。
+
+## 类型
+
+### Pillar
+
+```go
+type Pillar [2]string
+```
+
+一柱干支：[天干标识, 地支标识]。星盘上的 `RawDates.ChineseDate.YearlyKeys` 等
+字段可直接转换：`iztro.Pillar(cd.YearlyKeys)`。
+
+### BirthCandidate
+
+一个候选生辰，可直接交给 [`BySolar`](/zh/docs/go/astro) 排盘。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `SolarDate` | `string` | 公历日期，`YYYY-M-D` |
+| `TimeIndex` | `uint8` | 时辰索引 0–12（0 为早子时，12 为晚子时） |
+
+### StarPosition
+
+一颗星与其落宫地支：星盘特征反推的原子条件。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Star` | `string` | 星耀标识（须为本命盘星耀，运限流曜不接受） |
+| `Branch` | `string` | 落宫地支标识 |
+
+### ReverseCriteria
+
+星盘特征反推的条件集。字段的零值即「不限」：空串不设该条件、
+`YearRange` 零值取 `[1900, 2100]`、`Limit` 为 0 取内核默认（512）。
+全部条件可选，但至少要给一个。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `SoulBranch` | `string` | 命宫地支标识，空串不限 |
+| `BodyBranch` | `string` | 身宫地支标识，空串不限 |
+| `FiveElementsClass` | `string` | 五行局标识，空串不限 |
+| `Stars` | `[]StarPosition` | 星耀落宫条件，全部须同时满足 |
+| `Mutagens` | `[4]string` | 生年四化 [禄, 权, 科, 忌] 各自的星耀标识，空串表示该位不限 |
+| `YearRange` | `[2]int` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `FixLeap` | `bool` | 是否修正闰月，与排盘入参同义 |
+| `Limit` | `int` | 候选数上限 |
+
+### ReverseResult
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Candidates` | `[]BirthCandidate` | 满足全部条件的候选生辰 |
+| `Truncated` | `bool` | 是否因达到候选数上限而提前截断；截断时更晚的解未被搜索 |
+
+---
+
+## SolarDatesByBazi
+
+由八字四柱反查公历生辰。
+
+```go
+func SolarDatesByBazi(yearly, monthly, daily, hourly Pillar,
+    startYear, endYear int, config *Config) ([]BirthCandidate, error)
+
+func SolarDatesByBaziContext(ctx context.Context, yearly, monthly, daily, hourly Pillar,
+    startYear, endYear int, config *Config) ([]BirthCandidate, error)
+```
+
+四柱按 `config` 的分界口径解释（`YearDivide` 年柱、`HoroscopeDivide` 月柱、
+`DayDivide` 晚子归属），与排盘输出的 `RawDates.ChineseDate` 同一套语义，
+因此任何盘的四柱反查结果必包含该盘的生辰。一组四柱在范围内通常每约 60 年
+出现一次；时柱为子时因早晚子之分可能给出相邻两天的两个候选。
+
+**示例**
+
+```go
+a, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+cd := a.RawDates.ChineseDate
+
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar(cd.YearlyKeys), iztro.Pillar(cd.MonthlyKeys),
+    iztro.Pillar(cd.DailyKeys), iztro.Pillar(cd.HourlyKeys),
+    1900, 2100, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, c := range cands {
+    fmt.Println(c.SolarDate, c.TimeIndex)
+}
+```
+
+**输出**
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时返回
+`ErrInvalidArgument` 类错误（`errors.Is` 可匹配），见[错误处理](/zh/docs/go/errors)。
+
+---
+
+## ReverseChart
+
+由星盘特征反查候选生辰。
+
+```go
+func ReverseChart(criteria *ReverseCriteria, config *Config) (*ReverseResult, error)
+
+func ReverseChartContext(ctx context.Context, criteria *ReverseCriteria,
+    config *Config) (*ReverseResult, error)
+```
+
+判定贯穿 `config`：四化表、算法派别、各分界口径都按它算，
+候选用同一 `config` 排盘必满足全部条件。星盘布局与性别无关
+（性别只影响大限行进方向），因此条件不含性别。
+
+**示例**
+
+```go
+r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
+    SoulBranch:        iztro.BranchWu,
+    FiveElementsClass: iztro.ClassWood3rd,
+    Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
+    Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""},
+    YearRange:         [2]int{1998, 2002},
+    FixLeap:           true,
+}, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(r.Candidates), r.Truncated)
+```
+
+**输出**
+
+```text
+39 false
+```
+
+**错误**　`criteria` 为 `nil`、条件为空、`Stars` 含运限流曜、年份范围非法时返回
+`ErrInvalidArgument` 类错误。
+
+<Callout type="info" title="Truncated 是截断不是抽样">
+达到 `Limit` 即停止搜索，更晚的解不会出现在结果里。
+`Truncated` 为 `true` 时应收窄 `YearRange` 或补条件后重查。
+</Callout>

@@ -7,6 +7,7 @@
     "ai-prompt",
     "llm",
     "knowledge-pack",
+    "reverse",
     "config",
     "keys",
     "i18n",

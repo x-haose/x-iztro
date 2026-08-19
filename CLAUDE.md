@@ -44,7 +44,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `src/` — Rust 核心库
   - `data/` — 枚举、常量、天干地支、星耀数据表
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
-  - `astro/` — 排盘、运限、三方四正算法
+  - `astro/` — 排盘、运限、三方四正算法；`reverse.rs` 反推（八字四柱/星盘特征 → 候选生辰）
   - `knowledge/` — 知识包（`KnowledgePack`：解析/合并/查询），内嵌默认包 `data/knowledge/iztro_docs.zh-CN.json`
   - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
     `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
@@ -131,6 +131,15 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
   规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
 
+### 反推（x-iztro 扩展）
+- 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
+  与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢
+- 无外部金标，正确性由往返测试定义（`tests/reverse.rs`）：任取一盘，四柱/特征反查必含原生辰，
+  且每个候选正排后必须真的得出目标
+- 四柱按传入 `Config` 的分界口径解释（与 `raw_dates.chinese_date` 同语义）；星盘布局与性别无关，
+  反推不收性别；`reverse_chart` 条件为空或含流耀报 `InvalidArgument`，`limit`（默认 512）截断兜住宽条件
+- 日柱用「lunar_rust 锚点校准 + 儒略日纯算术」推 60 周期，避免逐日构造农历对象
+
 ### 知识包（x-iztro 扩展）
 - 边界：内核只做事实判定，星耀解读、格局释义、宫位/四化含义、门派属性（阴阳五行化气别号等）全在知识包；
   核心 `StarInfo` 保持与 iztro 一致，不把卡片属性并进去（卡片与 iztro 表本身有冲突，说明也是观点）
@@ -171,6 +180,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
+  - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
     + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，Python `test_patterns.py` 与

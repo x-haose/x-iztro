@@ -167,6 +167,20 @@ Go 的 `BuiltinKnowledgePack` / `Merged`，合并只在 Rust 内核实现一处�
 核心的 `StarInfo` 与 iztro 逐值一致，属性是门派说法。
 见[知识包](/zh/docs/guide/guides/knowledge-pack)。
 
+### 反推（iztro 无对应 API）
+
+iztro 只有「生辰 → 盘」一个方向。x-iztro 加上了反方向：`solar_dates_by_bazi`
+由八字四柱反查公历生辰——四柱按传入 `Config` 的分界口径解释，
+与 `raw_dates.chinese_date` 同一套语义；`reverse_chart` 由星盘特征
+（命宫身宫地支、五行局、星耀落宫、生年四化）反查候选生辰。
+两者都是「剪枝枚举 + 正排终验」，结果与正向排盘零分歧。
+一组四柱约每 60 年重复一次，因此天然多解，候选拿去正排即可复现目标。
+
+三侧的入口：Rust 的 `solar_dates_by_bazi` / `reverse_chart`、
+Python 的 `solar_dates_by_bazi` / `reverse_chart`、
+Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）。
+见[反推](/zh/docs/guide/guides/reverse)。
+
 ### 其余增补
 
 - **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，

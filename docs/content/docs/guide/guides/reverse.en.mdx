@@ -1,0 +1,287 @@
+---
+title: Reverse lookup
+description: Recover candidate birth dates from four BaZi pillars or from chart features - what each entry point means, how pillars follow the Config boundaries, the 60-year cycle, and truncation semantics.
+---
+
+*For: people who remember the chart but not the birthday; people who need to turn a BaZi into a Zi Wei chart*
+
+Charting goes "birth moment → chart". The reverse need comes up all the time:
+
+- you hold an old chart or a set of BaZi pillars, but the birthday is lost;
+- someone gives you their BaZi but not a solar birth date, and casting a Zi Wei chart needs the solar date and hour;
+- all you remember is "soul palace in Wu, Wood 3rd class, Ziwei in the soul palace" and you want the day back.
+
+x-iztro provides two reverse entry points. Both return **birth candidates**
+(solar date + hour index) that you can feed straight back into charting:
+
+| Entry point | Input | Meaning |
+| --- | --- | --- |
+| `solar_dates_by_bazi` | the four BaZi pillars | every birth moment in range whose pillars are exactly these |
+| `reverse_chart` | soul/body palace branches, five elements class, star placements, birth-year mutagens | every birth moment in range whose chart satisfies all the conditions |
+
+Both are implemented as "pruned enumeration + full re-charting": cheap table
+lookups discard impossible days wholesale, and each survivor is verified with
+the very same code the forward charting uses. **Reverse results therefore have
+zero divergence from forward charting** — every candidate really does satisfy
+the conditions when charted, and the target birth moment is always among the
+candidates.
+
+## From BaZi pillars to birth dates
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+// 庚辰 甲申 丙午 庚寅
+let cands = solar_dates_by_bazi(
+    (HeavenlyStem::Geng, EarthlyBranch::Chen),
+    (HeavenlyStem::Jia, EarthlyBranch::Shen),
+    (HeavenlyStem::Bing, EarthlyBranch::Wu),
+    (HeavenlyStem::Geng, EarthlyBranch::Yin),
+    (1900, 2100),
+    &Config::default(),
+)?;
+for c in &cands {
+    println!("{} {}", c.solar_date, c.time_index);
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import solar_dates_by_bazi
+from x_iztro.enums import EarthlyBranch as B, HeavenlyStem as S
+
+# 庚辰 甲申 丙午 庚寅
+cands = solar_dates_by_bazi(
+    (S.GENG, B.CHEN), (S.JIA, B.SHEN), (S.BING, B.WU), (S.GENG, B.YIN),
+    year_range=(1900, 2100),
+)
+for c in cands:
+    print(c.solar_date, c.time_index)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar{iztro.StemGeng, iztro.BranchChen}, // 庚辰
+    iztro.Pillar{iztro.StemJia, iztro.BranchShen},  // 甲申
+    iztro.Pillar{iztro.StemBing, iztro.BranchWu},   // 丙午
+    iztro.Pillar{iztro.StemGeng, iztro.BranchYin},  // 庚寅
+    1900, 2100, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, c := range cands {
+    fmt.Println(c.SolarDate, c.TimeIndex)
+}
+```
+
+</Tab>
+</Tabs>
+
+**Output** (identical in all three languages)
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+### Multiple solutions and the 60-year cycle
+
+The sexagenary year cycle repeats every 60 years, so the same four pillars
+recur roughly every 60 years apart — a set of pillars over a wide range is
+**inherently multi-solution**. The example above has three hits in 1900–2100.
+Narrow the year range to within one cycle (60 years) and usually a single
+solution remains; with a wide range, common sense about the person's age picks
+the right candidate.
+
+### Two candidates around the Zi hour
+
+The Zi hour straddles midnight and splits into the early Zi hour (index 0,
+0:00–1:00 of the day) and the late Zi hour (index 12, 23:00–24:00), and under
+the default `day_divide` reading the late Zi hour takes the **next** day's day
+pillar. A set of pillars whose hour branch is Zi can therefore yield two
+candidates on adjacent days: the early Zi hour of one day and the late Zi hour
+of the day before. This is not an error — both candidates chart back to exactly
+the same four pillars; the BaZi alone cannot tell them apart.
+
+## Which reading of the pillars? It follows Config
+
+The four pillars are not absolute: when the year changes (lunar new year or
+立春), when the month changes (the 1st or the solar term), and which day the
+late Zi hour belongs to all differ between schools. In x-iztro these
+boundaries live on [`Config`](/en/docs/guide/guides/config): `year_divide`
+governs the year pillar, `horoscope_divide` the month pillar, `day_divide` the
+late-Zi-hour day pillar.
+
+`solar_dates_by_bazi` interprets the pillars **under the config you pass** —
+the same semantics as the `raw_dates.chinese_date` a charted astrolabe reports.
+The same birth moment can carry different pillars under different readings.
+Take 2001-2-1 in the Mao hour, which falls after the lunar new year (Jan 24)
+but before 立春 (Feb 4):
+
+| Reading | Pillars |
+| --- | --- |
+| Default (year at lunar new year, month at the 1st) | 辛巳 庚寅 乙未 己卯 |
+| `Exact` (year at 立春, month at solar terms) | 庚辰 己丑 乙未 己卯 |
+
+So before reversing a BaZi, find out which reading produced it and pass the
+matching config. Chart with a config, reverse with the same config, and the
+round trip always closes:
+
+```rust
+let cfg = Config {
+    year_divide: YearDivide::Exact,
+    horoscope_divide: HoroscopeDivide::Exact,
+    ..Config::default()
+};
+let chart = by_solar("2001-2-1", 3, Gender::Female, true, Language::EnUS, cfg.clone())?;
+let p = chart.raw_dates.chinese_date;
+
+let cands = solar_dates_by_bazi(p.yearly, p.monthly, p.daily, p.hourly, (1980, 2020), &cfg)?;
+assert!(cands.iter().any(|c| c.solar_date == "2001-2-1" && c.time_index == 3));
+```
+
+## From chart features to birth dates
+
+When you remember the chart but cannot produce a full BaZi, use
+`reverse_chart`. Every condition is optional, but at least one must be given;
+all given conditions must hold **simultaneously**:
+
+| Condition | Meaning |
+| --- | --- |
+| `soul_branch` / `body_branch` | earthly branch of the soul / body palace |
+| `five_elements_class` | five elements class |
+| `stars` | star placements (star + branch), any number of them |
+| `mutagens` | which star carries each birth-year mutagen [Lu, Quan, Ke, Ji]; give any subset |
+| `year_range` | inclusive solar year range, default 1900–2100 |
+| `fix_leap` | leap month correction, same meaning as the charting parameter |
+| `limit` | candidate cap, 0 takes the default of 512 |
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+let r = reverse_chart(
+    &ReverseCriteria {
+        soul_branch: Some(EarthlyBranch::Wu),
+        five_elements_class: Some(FiveElementsClass::Wood3rd),
+        stars: vec![StarPosition { star: StarKey::ZiweiMaj, branch: EarthlyBranch::Wu }],
+        mutagens: [Some(StarKey::TaiyangMaj), None, None, None], // Taiyang carries Lu
+        year_range: (1998, 2002),
+        ..Default::default()
+    },
+    &Config::default(),
+)?;
+println!("{} candidates, truncated={}", r.candidates.len(), r.truncated);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import ReverseCriteria, StarPosition, reverse_chart
+from x_iztro.enums import EarthlyBranch, FiveElementsClass, MajorStar
+
+r = reverse_chart(ReverseCriteria(
+    soul_branch=EarthlyBranch.WU,
+    five_elements_class=FiveElementsClass.WOOD_3,
+    stars=[StarPosition(star=MajorStar.ZIWEI, branch=EarthlyBranch.WU)],
+    mutagens=(MajorStar.TAIYANG, None, None, None),  # Taiyang carries Lu
+    year_range=(1998, 2002),
+))
+print(len(r.candidates), "candidates, truncated =", r.truncated)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
+    SoulBranch:        iztro.BranchWu,
+    FiveElementsClass: iztro.ClassWood3rd,
+    Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
+    Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""}, // Taiyang carries Lu
+    YearRange:         [2]int{1998, 2002},
+    FixLeap:           true,
+}, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(r.Candidates), "candidates, truncated =", r.Truncated)
+```
+
+</Tab>
+</Tabs>
+
+**Output**
+
+```text
+39 candidates, truncated = false
+```
+
+All 39 candidates fall in the 庚辰 year (2000-2-11 through 2001-1-11), the real
+birth moment 2000-8-16 hour index 2 among them. Chart any of them and every
+condition holds — soul palace in Wu, Wood 3rd class, Ziwei in the Wu palace,
+Taiyang carrying Lu.
+
+`reverse_chart` judgement also runs entirely under the config: the mutagen
+table, the school and every boundary follow the config you pass, so charting a
+candidate with the same config is guaranteed to satisfy the conditions.
+
+<Callout type="info" title="Why gender is not a parameter">
+Chart layout (star placement, brightness, mutagens) does not depend on gender —
+gender only affects the direction the decadal horoscope advances. The target of
+a reverse lookup is the birth moment, so the criteria carry no gender; chart the
+recovered candidates with whichever gender applies.
+</Callout>
+
+Conditions can only be **natal chart** features: horoscope-scope flow stars
+(運魁, 流昌 and family) never appear on a natal chart, and passing one is an
+error.
+
+## Performance and truncation
+
+The cost is driven by how selective the conditions are: a soul palace branch,
+the five elements class, major star placements and birth-year mutagens each
+prune whole months or years of the search space — **the more specific the
+conditions and the narrower the year range, the faster**. Order-of-magnitude
+figures (Apple Silicon, release build): the 5-year feature lookup above takes a
+few milliseconds, the same conditions over 1900–2100 about half a second, and a
+200-year BaZi lookup about 0.2 seconds.
+
+Loose conditions have very many solutions (a single soul palace branch matches
+tens of thousands over the full range). When `limit` (default 512) is reached
+the search **stops** and the result's `truncated` flag is set — later solutions
+were never searched. This is truncation, not sampling. On `truncated = true`,
+narrow `year_range` or add conditions and query again rather than raising
+`limit` and brute-forcing.
+
+## Error cases
+
+These return an `invalid_argument` error (`IztroError::InvalidArgument` in
+Rust):
+
+- a pillar whose stem and branch have mismatched polarity, such as 甲丑 — 甲 is
+  a yang stem and 丑 a yin branch, and no such pillar exists in the sexagenary
+  cycle;
+- empty reverse criteria, or criteria containing a horoscope-scope flow star;
+- a reversed year range, or one outside the supported span (solar 1583–9999).
+
+Error classes and each language's error type are on
+[Error handling](/en/docs/guide/guides/errors).
+
+## API reference
+
+- Rust: [Reverse lookup](/en/docs/rust/reverse)
+- Python: [Reverse lookup](/en/docs/python/reverse)
+- Go: [Reverse lookup](/en/docs/go/reverse)

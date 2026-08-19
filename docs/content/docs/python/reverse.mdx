@@ -1,0 +1,166 @@
+---
+title: 反推
+description: solar_dates_by_bazi 与 reverse_chart：由八字四柱或星盘特征反查候选生辰的函数与 dataclass。
+---
+
+由八字四柱或星盘特征反查候选生辰。计算全部在 Rust 内核完成
+（剪枝枚举 + 正排终验，与正向排盘零分歧），Python 侧是类型化封装。
+概念、四柱口径与 Config 的关系、多解与截断语义见
+[反推指南](/zh/docs/guide/guides/reverse)。
+
+```python
+from x_iztro import solar_dates_by_bazi
+from x_iztro.enums import EarthlyBranch as B, HeavenlyStem as S
+
+cands = solar_dates_by_bazi(
+    (S.GENG, B.CHEN), (S.JIA, B.SHEN), (S.BING, B.WU), (S.GENG, B.YIN),
+)
+```
+
+全部定义在 `x_iztro.reverse`，并在包根重导出。
+干支、五行局、星耀都收语言无关标识：`x_iztro.enums` 的枚举成员或等值字符串皆可。
+
+## 类型
+
+### 类型别名 Pillar
+
+```python
+Pillar = tuple[HeavenlyStem | str, EarthlyBranch | str]
+```
+
+一柱干支：(天干标识, 地支标识)，如 `(HeavenlyStem.GENG, EarthlyBranch.CHEN)`。
+
+### BirthCandidate
+
+frozen dataclass。一个候选生辰，可直接交给 [`Astro.by_solar`](/zh/docs/python/astro) 排盘。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solar_date` | `str` | 公历日期，`YYYY-M-D` |
+| `time_index` | `int` | 时辰索引 0–12（0 为早子时，12 为晚子时） |
+
+### StarPosition
+
+frozen dataclass。一颗星与其落宫地支：星盘特征反推的原子条件。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `star` | `str` | 星耀标识（须为本命盘星耀，运限流曜不接受） |
+| `branch` | `EarthlyBranch \| str` | 落宫地支标识 |
+
+### ReverseCriteria
+
+frozen dataclass。星盘特征反推的条件集，全部字段可选，但至少要给一个。
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `soul_branch` | `EarthlyBranch \| str \| None` | `None` | 命宫地支 |
+| `body_branch` | `EarthlyBranch \| str \| None` | `None` | 身宫地支 |
+| `five_elements_class` | `FiveElementsClass \| str \| None` | `None` | 五行局 |
+| `stars` | `list[StarPosition]` | `[]` | 星耀落宫条件，全部须同时满足 |
+| `mutagens` | 四元组，各项 `str \| None` | 全 `None` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星 |
+| `year_range` | `tuple[int, int]` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `fix_leap` | `bool` | `True` | 是否修正闰月，与排盘入参同义 |
+| `limit` | `int` | `0` | 候选数上限；`0` 取内核默认（512） |
+
+### ReverseResult
+
+frozen dataclass。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `candidates` | `list[BirthCandidate]` | 满足全部条件的候选生辰 |
+| `truncated` | `bool` | 是否因达到候选数上限而提前截断；截断时更晚的解未被搜索 |
+
+---
+
+## solar_dates_by_bazi
+
+由八字四柱反查公历生辰。
+
+```python
+def solar_dates_by_bazi(
+    yearly: Pillar,
+    monthly: Pillar,
+    daily: Pillar,
+    hourly: Pillar,
+    *,
+    year_range: tuple[int, int] = (1900, 2100),
+    config: ChartConfig | None = None,
+) -> list[BirthCandidate]
+```
+
+四柱按 `config` 的分界口径解释（`year_divide` 年柱、`horoscope_divide` 月柱、
+`day_divide` 晚子归属），与排盘输出的 `raw_dates.chinese_date` 同一套语义，
+因此任何盘的四柱反查结果必包含该盘的生辰。一组四柱在范围内通常每约 60 年
+出现一次；时柱为子时因早晚子之分可能给出相邻两天的两个候选。
+
+**示例**
+
+```python
+from x_iztro import Astro, solar_dates_by_bazi
+
+a = Astro().by_solar("2000-8-16", 2, "female")
+p = a.raw_dates.chinese_date
+
+for c in solar_dates_by_bazi(p.yearly_keys, p.monthly_keys, p.daily_keys, p.hourly_keys):
+    print(c.solar_date, c.time_index)
+```
+
+**输出**
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+**异常**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时抛
+`IztroError`（`code` 为 `invalid_argument`），见[错误处理](/zh/docs/python/errors)。
+
+---
+
+## reverse_chart
+
+由星盘特征反查候选生辰。
+
+```python
+def reverse_chart(
+    criteria: ReverseCriteria,
+    config: ChartConfig | None = None,
+) -> ReverseResult
+```
+
+判定贯穿 `config`：四化表、算法派别、各分界口径都按它算，
+候选用同一 `config` 排盘必满足全部条件。星盘布局与性别无关
+（性别只影响大限行进方向），因此条件不含性别。
+
+**示例**
+
+```python
+from x_iztro import ReverseCriteria, StarPosition, reverse_chart
+from x_iztro.enums import EarthlyBranch, FiveElementsClass, MajorStar
+
+r = reverse_chart(ReverseCriteria(
+    soul_branch=EarthlyBranch.WU,
+    five_elements_class=FiveElementsClass.WOOD_3,
+    stars=[StarPosition(star=MajorStar.ZIWEI, branch=EarthlyBranch.WU)],
+    mutagens=(MajorStar.TAIYANG, None, None, None),
+    year_range=(1998, 2002),
+))
+print(len(r.candidates), r.truncated)
+```
+
+**输出**
+
+```text
+39 False
+```
+
+**异常**　条件为空、`stars` 含运限流曜、年份范围非法时抛
+`IztroError`（`code` 为 `invalid_argument`）。
+
+<Callout type="info" title="truncated 是截断不是抽样">
+达到 `limit` 即停止搜索，更晚的解不会出现在结果里。
+`truncated` 为 `True` 时应收窄 `year_range` 或补条件后重查。
+</Callout>

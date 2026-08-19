@@ -1,11 +1,11 @@
 ---
 title: Error handling
-description: The three variants of IztroError, the code() classifier, BridgeError, and how to diagnose.
+description: The four variants of IztroError, the code() classifier, BridgeError, and how to diagnose.
 ---
 
-Every entry point taking external input returns a `Result`. Date format, date existence, year range
-and hour index are all validated up front in the core, so invalid input yields an error value rather
-than a panic.
+Every entry point taking external input returns a `Result`. Date format, date existence, year
+range, hour index and the reverse-lookup inputs are all validated up front in the core, so invalid
+input yields an error value rather than a panic.
 
 ```rust
 #[non_exhaustive]
@@ -14,6 +14,8 @@ pub enum IztroError {
     InvalidDate(String),
     /// Hour index outside 0–12
     InvalidTimeIndex(u8),
+    /// Invalid reverse-lookup input: mismatched pillar polarity, empty criteria, bad year range
+    InvalidArgument(String),
     /// The calendar library did not return a pillar or sign value that should exist
     Internal(String),
 }
@@ -36,9 +38,10 @@ code:
 | --- | --- | --- |
 | `InvalidDate` | `invalid_date` | The date is invalid |
 | `InvalidTimeIndex` | `invalid_time_index` | The hour index is out of range |
+| `InvalidArgument` | `invalid_argument` | Invalid input to the reverse-lookup entry points |
 | `Internal` | `internal` | A defect inside the library |
 
-These three values are the same set as Python's `IztroError.code` and Go's `iztro.Error.Code`, so
+These four values are the same set as Python's `IztroError.code` and Go's `iztro.Error.Code`, so
 branching logic carries across languages verbatim.
 
 ```rust
@@ -155,6 +158,42 @@ guaranteed to land in the legal range.
 
 ---
 
+## InvalidArgument
+
+**Triggers** Caller mistakes at the reverse-lookup entry points:
+
+| Situation | Example | Message |
+| --- | --- | --- |
+| Pillar stem/branch polarity mismatch | 甲丑 (yang stem, yin branch) | `invalid yearly pillar: stem and branch must have the same polarity` |
+| Empty reverse criteria | `ReverseCriteria::default()` | `reverse criteria must contain at least one condition` |
+| A horoscope-scope flow star among the criteria | 流禄 | `star 'liulu' is a horoscope-scope star and never appears on the natal chart` |
+| Invalid year range | `(2100, 1900)` | `invalid year range 2100-1900: expected 1583-9999 with start <= end` |
+
+**Example**
+
+```rust
+let jia_zi = (HeavenlyStem::Jia, EarthlyBranch::Zi);
+let err = solar_dates_by_bazi(
+    (HeavenlyStem::Jia, EarthlyBranch::Chou), // 甲丑: mismatched polarity
+    jia_zi, jia_zi, jia_zi,
+    (1900, 2100),
+    &Config::default(),
+)
+.unwrap_err();
+println!("{} / {}", err.code(), err);
+```
+
+**Output**
+
+```text
+invalid_argument / invalid yearly pillar: stem and branch must have the same polarity
+```
+
+The semantics of the reverse-lookup entry points are on
+[Reverse lookup](/en/docs/rust/reverse).
+
+---
+
 ## Internal
 
 **Trigger** The calendar library `lunar_rust` did not hand back a pillar or zodiac-sign value that
@@ -194,9 +233,9 @@ impl BridgeError {
 impl From<IztroError> for BridgeError { /* code and message carry straight over */ }
 ```
 
-It has one class more than `IztroError`: `invalid_argument`. The bindings receive strings rather than
+Its four classes are the same set as `IztroError`'s. The bindings receive strings rather than
 enums, so the validity of a gender, language, palace name, mutagen or config JSON can only be checked
-at that layer, and lands in this class.
+at that layer; those cases land in the `invalid_argument` class as well.
 
 All three exits serialize it into the same JSON:
 

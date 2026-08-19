@@ -9,6 +9,8 @@ pub mod horoscope;
 pub mod palace;
 /// 生肖、星座、命宫主星等轻量查询
 pub mod query;
+/// 反推：由八字或星盘特征反查候选生辰
+pub mod reverse;
 
 /// 按指定干支重排星盘（中州派地盘、人盘）
 pub mod rearrange;

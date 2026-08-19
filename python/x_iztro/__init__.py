@@ -91,8 +91,16 @@ from x_iztro.enums import (
 )
 
 # 主类
-from x_iztro import data, i18n, knowledge, plugin, query, star, utils
+from x_iztro import data, i18n, knowledge, plugin, query, reverse, star, utils
 from x_iztro.knowledge import KnowledgePack
+from x_iztro.reverse import (
+    BirthCandidate,
+    ReverseCriteria,
+    ReverseResult,
+    StarPosition,
+    reverse_chart,
+    solar_dates_by_bazi,
+)
 from x_iztro.astro import Astro
 
 # 轻量查询
@@ -134,6 +142,12 @@ __all__ = [
     "PatternHit",
     "PatternStar",
     "KnowledgePack",
+    "BirthCandidate",
+    "ReverseCriteria",
+    "ReverseResult",
+    "StarPosition",
+    "reverse_chart",
+    "solar_dates_by_bazi",
     # 枚举
     "Gender",
     "Language",
@@ -169,4 +183,5 @@ __all__ = [
     "query",
     "plugin",
     "knowledge",
+    "reverse",
 ]

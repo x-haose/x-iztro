@@ -55,6 +55,10 @@ pub use astro::query::{
     get_major_star_by_lunar_date, get_major_star_by_solar_date, get_sign_by_lunar_date,
     get_sign_by_solar_date, get_zodiac_by_solar_date,
 };
+pub use astro::reverse::{
+    BirthCandidate, DEFAULT_REVERSE_LIMIT, ReverseCriteria, ReverseResult, StarPosition,
+    reverse_chart, solar_dates_by_bazi,
+};
 pub use data::stars::StarKey;
 pub use data::types::*;
 pub use error::{BridgeError, IztroError};

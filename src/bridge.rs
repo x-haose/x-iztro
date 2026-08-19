@@ -179,6 +179,14 @@ pub struct QueryInput {
     // 知识包用
     /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
     pub knowledge_packs: Vec<Value>,
+
+    // 反推用
+    /// 反推范围起始公历年（含）
+    pub start_year: i64,
+    /// 反推范围截止公历年（含）
+    pub end_year: i64,
+    /// 星盘特征反推的条件对象（camelCase 键，含 yearRange/limit 等）
+    pub reverse_criteria: Option<Value>,
 }
 
 /// `fixIndex` 的 max 默认值，与 iztro 一致
@@ -229,6 +237,90 @@ fn parse_config(v: &Option<Value>) -> Result<Config, BridgeError> {
         Some(Value::Null) => Ok(Config::default()),
         Some(value) => parse_config_value(value),
     }
+}
+
+/// 星盘特征反推条件：标识字段一律收语言无关 key，未知键报错（拼写错误立即暴露而不是被当缺省）。
+fn parse_reverse_criteria(
+    v: &Value,
+) -> Result<crate::astro::reverse::ReverseCriteria, BridgeError> {
+    use crate::astro::reverse::{ReverseCriteria, StarPosition};
+    let obj = v.as_object().ok_or_else(|| {
+        BridgeError::invalid_argument("reverseCriteria must be an object".to_string())
+    })?;
+    const KNOWN: [&str; 8] = [
+        "soulBranch",
+        "bodyBranch",
+        "fiveElementsClass",
+        "stars",
+        "mutagens",
+        "yearRange",
+        "fixLeap",
+        "limit",
+    ];
+    if let Some(unknown) = obj.keys().find(|k| !KNOWN.contains(&k.as_str())) {
+        return Err(BridgeError::invalid_argument(format!(
+            "unknown reverseCriteria key '{unknown}'"
+        )));
+    }
+    let mut criteria = ReverseCriteria::default();
+    let branch = |v: &Value, name: &str| -> Result<EarthlyBranch, BridgeError> {
+        parse_branch_key(v.as_str().unwrap_or_default())
+            .map_err(|e| BridgeError::invalid_argument(format!("{name}: {e}")))
+    };
+    if let Some(v) = obj.get("soulBranch").filter(|v| !v.is_null()) {
+        criteria.soul_branch = Some(branch(v, "soulBranch")?);
+    }
+    if let Some(v) = obj.get("bodyBranch").filter(|v| !v.is_null()) {
+        criteria.body_branch = Some(branch(v, "bodyBranch")?);
+    }
+    if let Some(v) = obj.get("fiveElementsClass").filter(|v| !v.is_null()) {
+        let key = v.as_str().unwrap_or_default();
+        criteria.five_elements_class = Some(FiveElementsClass::from_key(key).ok_or_else(|| {
+            BridgeError::invalid_argument(format!("unknown five elements class key '{key}'"))
+        })?);
+    }
+    if let Some(v) = obj.get("stars").filter(|v| !v.is_null()) {
+        for item in v
+            .as_array()
+            .ok_or_else(|| BridgeError::invalid_argument("stars must be an array".to_string()))?
+        {
+            criteria.stars.push(StarPosition {
+                star: parse_star_key(item["star"].as_str().unwrap_or_default())?,
+                branch: branch(&item["branch"], "stars.branch")?,
+            });
+        }
+    }
+    if let Some(v) = obj.get("mutagens").filter(|v| !v.is_null()) {
+        let arr = v.as_array().ok_or_else(|| {
+            BridgeError::invalid_argument("mutagens must be an array of 4".to_string())
+        })?;
+        if arr.len() != 4 {
+            return Err(BridgeError::invalid_argument(
+                "mutagens must have exactly 4 entries (lu, quan, ke, ji)".to_string(),
+            ));
+        }
+        for (slot, item) in criteria.mutagens.iter_mut().zip(arr) {
+            if !item.is_null() {
+                *slot = Some(parse_star_key(item.as_str().unwrap_or_default())?);
+            }
+        }
+    }
+    if let Some(v) = obj.get("yearRange").filter(|v| !v.is_null()) {
+        let arr = v.as_array().filter(|a| a.len() == 2).ok_or_else(|| {
+            BridgeError::invalid_argument("yearRange must be [startYear, endYear]".to_string())
+        })?;
+        criteria.year_range = (
+            arr[0].as_i64().unwrap_or_default(),
+            arr[1].as_i64().unwrap_or_default(),
+        );
+    }
+    if let Some(v) = obj.get("fixLeap").filter(|v| !v.is_null()) {
+        criteria.fix_leap = v.as_bool().unwrap_or(true);
+    }
+    if let Some(v) = obj.get("limit").filter(|v| !v.is_null()) {
+        criteria.limit = v.as_u64().unwrap_or_default() as usize;
+    }
+    Ok(criteria)
 }
 
 /// 格局判定口径：省略或 null 取默认；对象按 camelCase 部分键解析，未知键报错。
@@ -391,6 +483,32 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
 
         // ---- 格局 ----
         "patterns" | "horoscopePatterns" => patterns(input),
+
+        // ---- 反推 ----
+        "solarDatesByBazi" => {
+            let config = parse_config(&input.config)?;
+            let p = parse_pillars(&input.pillars)?;
+            let got = crate::astro::reverse::solar_dates_by_bazi(
+                p[0],
+                p[1],
+                p[2],
+                p[3],
+                (input.start_year, input.end_year),
+                &config,
+            )?;
+            serde_json::to_value(got).map_err(serialize_failed)
+        }
+        "reverseChart" => {
+            let config = parse_config(&input.config)?;
+            let criteria = match &input.reverse_criteria {
+                Some(v) => parse_reverse_criteria(v)?,
+                None => {
+                    return Err(BridgeError::invalid_argument("reverseCriteria is required"));
+                }
+            };
+            let got = crate::astro::reverse::reverse_chart(&criteria, &config)?;
+            serde_json::to_value(got).map_err(serialize_failed)
+        }
 
         // ---- 知识包 ----
         "knowledgePack" => {
