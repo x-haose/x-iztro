@@ -13,6 +13,7 @@ from x_iztro import (
     solar_dates_by_bazi,
 )
 from x_iztro.enums import EarthlyBranch, HeavenlyStem, MajorStar, MinorStar
+from x_iztro.utils import get_mutagens_by_heavenly_stem
 
 
 def test_bazi_roundtrip():
@@ -37,9 +38,14 @@ def test_bazi_rejects_mismatched_polarity():
 def test_reverse_chart_roundtrip():
     a = Astro().by_solar("2000-8-16", 2, "female")
     ziwei = a.star(MajorStar.ZIWEI)
+    # 生年四化条件取自该盘年干实际四化（禄位与忌位），身宫地支取自该盘：
+    # 条件都是原盘事实，只会收窄候选、不会排除原生辰，借此走通
+    # mutagens 与 body_branch 两维的绑定转换（非空值路径）
+    mutagens = get_mutagens_by_heavenly_stem(a.raw_dates.chinese_date.yearly_keys[0])
     r = reverse_chart(
         ReverseCriteria(
             soul_branch=a.earthly_branch_of_soul_palace_key,
+            body_branch=a.earthly_branch_of_body_palace_key,
             five_elements_class=a.five_elements_class_key,
             stars=[
                 StarPosition(star=MajorStar.ZIWEI, branch=ziwei.palace().earthly_branch_key),
@@ -48,15 +54,19 @@ def test_reverse_chart_roundtrip():
                     branch=a.star(MinorStar.LUCUN).palace().earthly_branch_key,
                 ),
             ],
+            mutagens=(mutagens[0], None, None, mutagens[3]),
             year_range=(1999, 2001),
         )
     )
     assert any(c.solar_date == "2000-8-16" and c.time_index == 2 for c in r.candidates)
     assert not r.truncated
-    # 每个候选正排后须满足条件
+    # 每个候选正排后须满足条件（含身宫与生年四化两维）
     for c in r.candidates[:5]:
         b = Astro().by_solar(c.solar_date, c.time_index, "female")
         assert b.earthly_branch_of_soul_palace_key == a.earthly_branch_of_soul_palace_key
+        assert b.earthly_branch_of_body_palace_key == a.earthly_branch_of_body_palace_key
+        bm = get_mutagens_by_heavenly_stem(b.raw_dates.chinese_date.yearly_keys[0])
+        assert (bm[0], bm[3]) == (mutagens[0], mutagens[3])
         assert b.star(MajorStar.ZIWEI).palace().earthly_branch_key == ziwei.palace().earthly_branch_key
 
 

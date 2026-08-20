@@ -177,14 +177,16 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
   - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
-    快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
+    缺失即失败；有意改动后用 `UPDATE_PROMPT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
-    + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，Python `test_patterns.py` 与
-    Go `pattern_golden_test.go` 读同一批快照；有意改口径后删掉快照重建）
+    + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，
+    Python `test_patterns.py` 与 Go `pattern_golden_test.go` 读同一批快照；缺失即失败，
+    有意改口径后用 `UPDATE_PATTERN_SNAPSHOTS=1` 重跑该测试重建基线，`pattern_distribution`
+    的 tally 金标随之更新）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
   - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`

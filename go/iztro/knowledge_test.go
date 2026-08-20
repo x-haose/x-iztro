@@ -26,6 +26,10 @@ func TestBuiltinKnowledgePack(t *testing.T) {
 	if len(p.Patterns) != 64 {
 		t.Fatalf("patterns: %d", len(p.Patterns))
 	}
+	// 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
+	if len(p.Concepts) != 49 {
+		t.Fatalf("concepts: %d", len(p.Concepts))
+	}
 	if p.Star("nope") != nil || p.StarIntro("nope") != "" {
 		t.Fatal("unknown key should be nil/empty")
 	}

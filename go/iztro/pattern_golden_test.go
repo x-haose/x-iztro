@@ -1,6 +1,7 @@
 package iztro
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 
 // 格局的端到端金标测试：直接读 tests/golden/pattern_snapshots/*.json
 // （由 Rust 的 tests/pattern_snapshot.rs 写出，Python 侧的 test_patterns.py 读同一批文件）。
-// 每份快照含一张盘的排盘入参与本命、大限、流年三层的命中 DTO，
+// 每份快照含一张盘的排盘入参与本命、大限、流年、流月、流日、流时六层的命中 DTO，
 // 本测试按入参重新排盘取命中，与文件逐字段比对，三侧因此断言在同一组取值上。
 
 // patternSnapshot 为一份快照文件的结构。
@@ -30,6 +31,9 @@ type patternSnapshot struct {
 	Origin  []PatternHit `json:"origin"`
 	Decadal []PatternHit `json:"decadal"`
 	Yearly  []PatternHit `json:"yearly"`
+	Monthly []PatternHit `json:"monthly"`
+	Daily   []PatternHit `json:"daily"`
+	Hourly  []PatternHit `json:"hourly"`
 }
 
 // loadPatternSnapshots 读入全部快照文件，按文件名排序。
@@ -40,8 +44,9 @@ func loadPatternSnapshots(t *testing.T) map[string]patternSnapshot {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) == 0 {
-		t.Fatalf("快照目录为空：%s（先跑 cargo test --test pattern_snapshot）", dir)
+	// 4 张盘 × 6 种语言：数量钉死，缺文件（写端漏跑）与多文件（孤儿快照）都在这里报
+	if len(files) != 24 {
+		t.Fatalf("快照应恰有 24 份，实际 %d：%s（UPDATE_PATTERN_SNAPSHOTS=1 cargo test --test pattern_snapshot 重建）", len(files), dir)
 	}
 	out := make(map[string]patternSnapshot, len(files))
 	for _, file := range files {
@@ -50,7 +55,10 @@ func loadPatternSnapshots(t *testing.T) map[string]patternSnapshot {
 			t.Fatal(err)
 		}
 		var snapshot patternSnapshot
-		if err := json.Unmarshal(raw, &snapshot); err != nil {
+		// 拒绝未知字段：DTO 新增字段时这里立即报错，而非两侧同时静默丢弃照绿
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&snapshot); err != nil {
 			t.Fatalf("解析 %s：%v", file, err)
 		}
 		out[strings.TrimSuffix(filepath.Base(file), ".json")] = snapshot
@@ -83,26 +91,29 @@ func TestPatternsMatchSnapshots(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			decadal, err := horoscope.Patterns(ScopeDecadal, p.PatternConfig)
-			if err != nil {
-				t.Fatal(err)
-			}
-			yearly, err := horoscope.Patterns(ScopeYearly, p.PatternConfig)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			for _, layer := range []struct {
-				name string
-				got  []PatternHit
-				want []PatternHit
+				name  string
+				scope string
+				want  []PatternHit
 			}{
-				{"本命", origin, snapshot.Origin},
-				{"大限", decadal, snapshot.Decadal},
-				{"流年", yearly, snapshot.Yearly},
+				{"本命", ScopeOrigin, snapshot.Origin},
+				{"大限", ScopeDecadal, snapshot.Decadal},
+				{"流年", ScopeYearly, snapshot.Yearly},
+				{"流月", ScopeMonthly, snapshot.Monthly},
+				{"流日", ScopeDaily, snapshot.Daily},
+				{"流时", ScopeHourly, snapshot.Hourly},
 			} {
-				if !samePatternHits(layer.got, layer.want) {
-					t.Fatalf("%s 层与快照不一致：\n实际 %+v\n快照 %+v", layer.name, layer.got, layer.want)
+				var got []PatternHit
+				if layer.scope == ScopeOrigin {
+					got = origin
+				} else {
+					got, err = horoscope.Patterns(layer.scope, p.PatternConfig)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				if !samePatternHits(got, layer.want) {
+					t.Fatalf("%s 层与快照不一致：\n实际 %+v\n快照 %+v", layer.name, got, layer.want)
 				}
 			}
 		})
@@ -199,8 +210,8 @@ func TestPatternConfigReachesKernel(t *testing.T) {
 	}
 	positional, err := chart.Patterns(&PatternConfig{
 		BrightnessSource: BrightnessSourcePositional,
-		Borrow:           true,
-		FlowStars:        true,
+		Borrow:           Bool(true),
+		FlowStars:        Bool(true),
 	})
 	if err != nil {
 		t.Fatal(err)

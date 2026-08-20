@@ -28,6 +28,8 @@ def test_builtin_metadata_and_entries(pack):
     assert pack.palace(PalaceName.SOUL).name == "命宫"
     assert pack.mutagen(Mutagen.JI).intro
     assert pack.concept("tong-gong") is not None
+    # 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
+    assert len(pack.to_dict()["concepts"]) == 49
     assert len(pack.patterns()) == 64
     assert pack.star("nope") is None
     with pytest.raises(IztroError):

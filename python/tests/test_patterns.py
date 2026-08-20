@@ -1,7 +1,8 @@
 """格局的端到端测试。
 
 金标是 `tests/golden/pattern_snapshots/*.json`（由 Rust 的 `tests/pattern_snapshot.rs` 写出）：
-每份含一张盘的排盘入参与本命、大限、流年三层的命中 DTO。本测试按文件里的入参重新排盘，
+每份含一张盘的排盘入参与本命、大限、流年、流月、流日、流时六层的命中 DTO。
+本测试按文件里的入参重新排盘，
 用同样的口径取命中，与文件逐键逐值比对——Go 侧的 `pattern_golden_test.go` 读同一批文件，
 三侧因此断言在同一组取值上。
 
@@ -29,7 +30,11 @@ astro = Astro()
 
 def _snapshot_files() -> list[Path]:
     files = sorted(SNAPSHOTS.glob("*.json"))
-    assert files, f"快照目录为空：{SNAPSHOTS}（先跑 cargo test --test pattern_snapshot）"
+    # 4 张盘 × 6 种语言：数量钉死，缺文件（写端漏跑）与多文件（孤儿快照）都在这里报
+    assert len(files) == 24, (
+        f"快照应恰有 24 份，实际 {len(files)}：{SNAPSHOTS}"
+        "（UPDATE_PATTERN_SNAPSHOTS=1 cargo test --test pattern_snapshot 重建）"
+    )
     return files
 
 
@@ -78,6 +83,9 @@ def test_patterns_match_snapshot(path: Path):
         "origin": chart.patterns(config),
         "decadal": horoscope.patterns(Scope.DECADAL, config),
         "yearly": horoscope.patterns(Scope.YEARLY, config),
+        "monthly": horoscope.patterns(Scope.MONTHLY, config),
+        "daily": horoscope.patterns(Scope.DAILY, config),
+        "hourly": horoscope.patterns(Scope.HOURLY, config),
     }
 
     for layer, hits in actual.items():
