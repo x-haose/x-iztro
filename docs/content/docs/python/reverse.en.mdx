@@ -124,8 +124,12 @@ for c in solar_dates_by_bazi(p.yearly_keys, p.monthly_keys, p.daily_keys, p.hour
 2060-8-1 2
 ```
 
+Note that these are the key fields (`yearly_keys` and friends), not the display
+fields (`yearly` and friends) — the latter hold translated text, and passing
+one raises `unknown heavenly stem key '庚'`.
+
 **Raises** `IztroError` with `code` `invalid_argument` for a pillar with
-mismatched stem/branch polarity (such as 甲丑) or a year range that is reversed
+mismatched stem/branch polarity (such as 甲丑 Jia-Chou — a yang stem on a yin branch) or a year range that is reversed
 or outside 1583–9999. See [Error handling](/en/docs/python/errors).
 
 ---

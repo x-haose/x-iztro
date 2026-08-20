@@ -38,7 +38,7 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 
 ### KnowledgeSource
 
-`Name`、`URL`、`Commit`、`License`、`Author`、`RetrievedAt`，都是 `string`，缺省为空串。
+`Name`、`URL`、`Commit`、`License`、`Author`、`RetrievedAt`、`Adapted`（改编说明），都是 `string`，缺省为空串。
 
 ### StarEntry
 
@@ -118,7 +118,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-107 64 12 4 38
+107 64 12 4 49
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -134,8 +134,9 @@ iztro: no builtin knowledge pack for language 'en-US' true
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 ```
 
-**返回值**　`(*KnowledgePack, error)`。JSON 不合法时返回
-`ErrInvalidArgument` 类的错误。**不校验格式版本**——`schema` 由内核在 `Merged` 时校验。
+**返回值**　`(*KnowledgePack, error)`。JSON 不合法、`schema` 缺失或为 0、
+`schema` 高于本库支持的版本，都返回 `ErrInvalidArgument` 类的错误——
+与 Rust 内核解析（`KnowledgePack::from_json`）同语义。
 
 序列化直接用 `encoding/json`：
 
@@ -157,6 +158,8 @@ fmt.Println(overlay.ID, overlay.Extends)
 
 _, err = iztro.ParseKnowledgePack([]byte("nope"))
 fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+fmt.Println(err)
 ```
 
 **输出**
@@ -164,6 +167,7 @@ fmt.Println(err)
 ```text
 my-school iztro-docs
 iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
+iztro: knowledge pack schema 99 is newer than supported 1
 ```
 
 ---
@@ -187,8 +191,8 @@ func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*Knowledg
 | `overlays` | `...*KnowledgePack` | 覆盖包，按传入顺序依次叠加，后面的覆盖前面的 |
 
 **返回值**　新的 `*KnowledgePack`，本包与覆盖包都不变。
-接收者为 `nil`、某个覆盖包为 `nil`、或某个包的 `schema` 高于本库支持的版本，都返回
-`ErrInvalidArgument` 类的错误。
+接收者为 `nil`、某个覆盖包为 `nil`、或某个包的 `schema` 不合法
+（手工构造的结构体也在这里被内核校验），都返回 `ErrInvalidArgument` 类的错误。
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`Attributes` 与 `Combinations` 逐字段合并，
@@ -209,8 +213,7 @@ fmt.Println(merged.PatternIntro(iztro.PatternZiFuTongGong),
     merged.Pattern(iztro.PatternZiFuTongGong).Quotes)
 fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:5]))
 
-bad, _ := iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
-_, err = pack.Merged(bad)
+_, err = pack.Merged(nil)
 fmt.Println(err)
 ```
 
@@ -219,8 +222,8 @@ fmt.Println(err)
 ```text
 my-school 紫微 [帝座] 尊贵 我的紫微
 我的紫府同宫 [紫府同宫终身福厚。]
-看到紫微星
-iztro: knowledge pack schema 99 is newer than supported 1
+紫微星号称
+iztro: mergeKnowledgePacks: nil overlay pack
 ```
 
 ---
@@ -297,5 +300,5 @@ for _, hit := range hits {
 
 ```text
 府相朝垣 | 府相朝垣命必荣
-不难看出，这是个备受
+“食禄千锺”的断语使
 ```

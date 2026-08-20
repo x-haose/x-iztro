@@ -188,6 +188,9 @@ pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) ->
 **返回值**　新的 `Astrolabe`。重算：命宫身宫、五行局、十四主星、十二宫名、长生十二神、大限小限，
 以及随命宫挪位的天伤、天使、天才。沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神。
 
+重排返回的盘上，`patterns() / patterns_with()`、运限查询与 Prompt 生成都按**重排后的布局**
+计算——五行局、命宫与大限随重排起点变化；出生数据（日期与四柱）保持不变。
+
 **示例**
 
 ```rust

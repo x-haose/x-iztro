@@ -33,7 +33,8 @@ principles this engine follows:
    reading adopted, and why that reading was chosen over the alternative.
 3. **Multiple readings are reported as a `variant`, not hidden behind a switch.** When a pattern has
    several forms, the engine records which one matched in the `variant` field and lets you decide
-   whether to accept it. 机巨同临 in the You palace, for instance, reports `variant` `"you"`,
+   whether to accept it. 机巨同临 (Advisor and Advocator Together, `ji_ju_tong_lin`) in the You
+   palace, for instance, reports `variant` `"you"`,
    because some sources hold that the You placement does not count — the engine reports it and
    labels it.
 4. **"Broken" is a flag, not a veto.** When a source's "spoiled by malefics" condition fires, the
@@ -56,7 +57,8 @@ principles this engine follows:
 ## What one hit looks like
 
 A hit is a `PatternHit`. The fields have the same names in all three programming languages (casing
-follows each language's convention):
+follows each language's convention; the one exception is Rust, whose struct calls `palace_index`
+simply `palace` — the serialized DTO key is `palaceIndex` everywhere):
 
 | Field | Meaning |
 | --- | --- |
@@ -118,13 +120,17 @@ for _, h := range hits {
 General and Wolf Together | surface
 Empress and Minister Facing the Palace | soul
 Marshal, Rebel and Wolf | surface
+Money and Horse Galloping Together | soul
 Officer and Helper Flanking Life | soul
 Literary Nobility and Brilliance | surface
 Literary Stars Facing Life | soul
+Literary Stars in Hidden Support | soul
+Literary Stars in Hidden Support | soul
 ```
 
 This chart's Body palace sits on the Surface (Travel) palace, so the three "Body-or-Soul" patterns
-here record the Surface palace rather than the Soul palace.
+here (General and Wolf Together, Marshal-Rebel-Wolf, Literary Nobility and Brilliance) record the
+Surface palace rather than the Soul palace.
 
 `variant` and `broken` come from the same set of hits:
 
@@ -136,12 +142,17 @@ for hit in chart.patterns():
 
 ```text
 Empress and Minister Facing the Palace: variant=soul_empty broken=False
+Money and Horse Galloping Together: variant=surround broken=False
 Literary Stars Facing Life: variant=None broken=True
+Literary Stars in Hidden Support: variant=opposite broken=False
+Literary Stars in Hidden Support: variant=surround broken=False
 ```
 
 `soul_empty` records that this chart's Soul palace really is empty (the classical "no major star in
-the Soul palace" branch, which x-iztro notes rather than requires); `broken` on the literary pattern
-records that malefics or a Ji transformation appear in the surrounded palaces.
+the Soul palace" branch, which x-iztro notes rather than requires); `broken` on Literary Stars
+Facing Life records that malefics or a Ji transformation appear in the surrounded palaces; the
+`surround` on the galloping pattern and the `opposite` / `surround` on Hidden Support are each one
+reading of that pattern — see the full table at the end of the page.
 
 ## Natal and horoscope run the same rules
 
@@ -151,7 +162,8 @@ three things and then runs every rule again:
 
 - **The Soul palace becomes that level's Soul palace.** Whichever palace the decadal has moved to is
   the Soul palace of that level, and the twelve palace names are re-derived from it.
-- **That level's flowing stars are merged in.** Flowing stars (运禄/流禄, 运昌/流昌 and the rest)
+- **That level's flowing stars are merged in.** Flowing stars (the decadal/annual Lucun 运禄/流禄,
+  the decadal/annual Wenchang 运昌/流昌 and the rest)
   count **as their natal counterparts** during judgement: seeing a flowing Lucun on a horoscope
   chart is, to the rules, seeing Lucun.
 - **Mutagens become that level's mutagens.** The natal view reads birth-year transformations; the
@@ -221,12 +233,16 @@ chart.
 | 禄衰马困 `lu_shuai_ma_kun` | Any horoscope level | Judged at whichever level the view is: decadal view judges the decadal, yearly view the year |
 | 风云际会 `feng_yun_ji_hui` | Decadal view only | It compares "two limits both meeting fortune and horse", which spans levels, so it is reported once, from the decadal view |
 
-风云际会 has two readings: no `variant` means decadal + minor limit, `"yearly"` means decadal +
-annual (a reading some schools prefer). If both hold, both are reported — as on the chart above.
+风云际会's `variant` records both the pair of limits and how strictly they "meet": no `variant` or
+`same_palace` takes decadal + minor limit, `yearly` or `yearly_same_palace` takes decadal + annual
+(a reading some schools prefer); the `same_palace` forms are the strict reading — both limits' Soul
+palaces hold Lucun, Tianma or the Lu transformation in-palace — while the plain forms accept the
+surrounded set. Each pair reports one hit, two at most; on the chart above both pairs hold.
 
 ## Which table decides Sun and Moon brightness
 
-日月并明, 日月反背 and 丹墀桂墀 turn on whether the Sun and the Moon are bright, and there are two
+日月并明 (Sun and Moon Both Bright), 日月反背 (Sun and Moon Both Dim) and 丹墀桂墀 (Cinnabar and
+Cassia Steps) turn on whether the Sun and the Moon are bright, and there are two
 traditions for deciding that, which do not always agree:
 
 | Reading | Basis | Key |
@@ -288,19 +304,19 @@ doc comments (`src/pattern/rules/`).
 
 | # | Name | key | Condition | variant | broken | Class |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Sovereign and Ministers Assembly (君臣庆会) | `jun_chen_qing_hui` | Ziwei or Tianfu assembling with the attending stars in one of four forms (see variant) | `zi_po_zuo_you_jia` Ziwei and Pojun in the Soul palace, Zuofu and Youbi flanking; `zi_xiang_chang_qu_axis` Ziwei and Tianxiang in the Soul palace, Wenchang and Wenqu on the Soul-Surface axis; `tian_fu_ji_yin_tong_liang_jia` Tianfu in the Soul palace flanked by Tianji/Taiyin on one side and Tiantong/Tianliang on the other; `zi_zuo_you_tong_gong` Ziwei with Zuofu and Youbi all in the Soul palace | Yes (fourth form only: flagged when malefics or Ji appear in the surrounded palaces; the first three require their absence to form at all) | general |
+| 1 | Sovereign and Ministers Assembly (君臣庆会) | `jun_chen_qing_hui` | Ziwei or Tianfu assembling with the attending stars in one of four forms (see variant) | `zi_po_zuo_you_jia` Ziwei and Pojun in the Soul palace, Zuofu and Youbi flanking; `zi_xiang_chang_qu_axis` Ziwei and Tianxiang in the Soul palace, Wenchang and Wenqu on the Soul-Surface axis; `tian_fu_ji_yin_tong_liang_jia` Tianfu in the Soul palace with all four of Tianji, Taiyin, Tiantong and Tianliang spread over the two flanking palaces (an empty flank borrows the opposite palace's majors); `zi_zuo_you_tong_gong` Ziwei with Zuofu and Youbi all in the Soul palace | Yes (fourth form only: flagged when malefics or Ji appear in the surrounded palaces; the first three require their absence to form at all) | general |
 | 2 | Emperor and Empress in One Palace (紫府同宫) | `zi_fu_tong_gong` | Ziwei and Tianfu together in the Soul palace (only possible at Yin or Shen) | — | — | general |
 | 3 | Golden Carriage Escort (金舆扶驾) | `jin_yu_fu_jia` | Tianfu in the Soul palace at Chou or Wei, flanked by Taiyang and Taiyin | — | — | general |
 | 4 | Emperor and Empress Flanking Life (紫府夹命) | `zi_fu_jia_ming` | Tianji and Taiyin together in the Soul palace, flanked by Ziwei and Tianfu (only possible at Yin or Shen) | — | — | general |
 | 5 | Emperor Facing Southern Light (极向离明) | `ji_xiang_li_ming` | Ziwei in the Soul palace at Wu, with no malefic or Ji in the surrounded palaces | — | — | general |
 | 6 | Emperor at Mao or You (极居卯酉) | `ji_ju_mao_you` | Ziwei and Tanlang together in the Soul palace at Mao or You | — | — | general |
-| 7 | Advisor, Moon, Fortunate and Sage (机月同梁) | `ji_yue_tong_liang` | Soul palace at Yin or Shen holding Tiantong with Tianliang, or Tianji with Taiyin (an empty palace borrows the opposite palace's majors) | — | — | general |
+| 7 | Advisor, Moon, Fortunate and Sage (机月同梁) | `ji_yue_tong_liang` | Soul palace at Yin or Shen holding Tiantong with Tianliang, or Tianji with Taiyin (an empty palace borrows the opposite palace's majors) | `surround` the loose reading: all four of the stars present across the Soul palace's surrounded palaces (borrowing included) | — | general |
 | 8 | Benevolent Shelter of the Court (善荫朝纲) | `shan_yin_chao_gang` | Tianji and Tianliang together in the Soul or Body palace (only possible at Chen or Xu) | — | — | general |
 | 9 | Advisor and Advocator Together (机巨同临) | `ji_ju_tong_lin` | Tianji and Jumen together in the Soul palace (only possible at Mao or You) | `you` Soul palace at You (some sources exclude the You placement) | — | general |
 | 10 | Advisor and Advocator at Mao (机巨居卯) | `ji_ju_ju_mao` | Tianji and Jumen together in the Soul palace at Mao | — | — | general |
 | 11 | Sun and Moon in One Palace (日月同宫) | `ri_yue_tong_gong` | Taiyang and Taiyin together in the Soul palace (only possible at Chou or Wei) | — | — | general |
 | 12 | Advocator and Sun in One Palace (巨日同宫) | `ju_ri_tong_gong` | Taiyang and Jumen together in the Soul palace (Yin and Shen both count) | — | — | general |
-| 13 | Sun Shining on Thunder Gate (日照雷门) | `ri_zhao_lei_men` | Taiyang and Tianliang together in the Soul palace at Mao | — | — | general |
+| 13 | Sun Shining on Thunder Gate (日照雷门) | `ri_zhao_lei_men` | Taiyang and Tianliang together at Mao, that palace being the Soul or the Career palace | `career` in the Career palace (the classical "in the Career palace likewise"; no variant means the Soul palace) | — | general |
 | 14 | Sun and Moon Both Bright (日月并明) | `ri_yue_bing_ming` | Taiyang and Taiyin both bright within the Soul palace's surrounded palaces | — | — | general |
 | 15 | Sun and Moon Both Dim (日月反背) | `ri_yue_fan_bei` | Taiyang and Taiyin both dim within the Soul palace's surrounded palaces | — | — | general |
 | 16 | Sun and Moon Lighting the Wall (日月照璧) | `ri_yue_zhao_bi` | Taiyang and Taiyin together in the Property palace | — | — | general |
@@ -310,7 +326,7 @@ doc comments (`src/pattern/rules/`).
 | 20 | Sun and Moon Flanking Life (日月夹命) | `ri_yue_jia_ming` | Taiyang and Taiyin in the palaces either side of the Soul palace, which holds no void star and does hold an auspicious star | — | — | general |
 | 21 | Sun and Moon Flanking Wealth (日月夹财) | `ri_yue_jia_cai` | As above with the Wealth palace in place of the Soul palace | — | — | general |
 | 22 | Bright Moon at Heaven's Gate (月朗天门) | `yue_lang_tian_men` | Taiyin in the Soul palace at Hai | — | — | general |
-| 23 | Moon Rising over the Sea (月生沧海) | `yue_sheng_cang_hai` | Tiantong and Taiyin together at Zi, in either the Soul or the Property palace | `soul` in the Soul palace (the page's alternative name 水澄桂萼); `property` in the Property palace (the classical wording) | — | general |
+| 23 | Moon Rising over the Sea (月生沧海) | `yue_sheng_cang_hai` | Tiantong and Taiyin together at Zi, in either the Soul or the Property palace | `soul` in the Soul palace (the page's alternative name 水澄桂萼, "clear water, cassia blossom"); `property` in the Property palace (the classical wording) | — | general |
 | 24 | Pearl Emerging from the Sea (明珠出海) | `ming_zhu_chu_hai` | Empty Soul palace at Wei, with Tiantong and Jumen in the opposite palace at Chou | — | — | general |
 | 25 | General and Wolf Together (武贪同行) | `wu_tan_tong_xing` | Wuqu and Tanlang together in the Soul or Body palace (only possible at Chou or Wei) | — | — | general |
 | 26 | Bell, Scholar, Tuoluo and General (铃昌陀武) | `ling_chang_tuo_wu` | Lingxing, Wenchang, Tuoluo and Wuqu all present across the Soul palace's surrounded palaces | — | — | general |
@@ -325,16 +341,16 @@ doc comments (`src/pattern/rules/`).
 | 35 | Sun, Sage, Scholar and Money (阳梁昌禄) | `yang_liang_chang_lu` | Taiyang, Tianliang, Wenchang and Lucun all present across the Soul palace's surrounded palaces | — | — | general |
 | 36 | Marshal, Rebel and Wolf (杀破狼) | `sha_po_lang` | Any of Qisha, Pojun or Tanlang in the Soul or Body palace (the three are always in trine) | — | — | general |
 | 37 | Marshal Facing the Dipper (七杀朝斗) | `qi_sha_chao_dou` | Qisha in the Soul palace, that palace being at Zi, Wu, Yin or Shen | `yang_dou` Soul palace at Yin or Zi; `chao_dou` Soul palace at Wu or Shen | — | general |
-| 38 | Money Waning, Horse Trapped (禄衰马困) | `lu_shuai_ma_kun` | Within the horoscope Soul palace's surrounded palaces, Lucun shares a palace with a void or wasting star while Tianma shares one with a malefic or Ji | — | — | **transit** |
+| 38 | Money Waning, Horse Trapped (禄衰马困) | `lu_shuai_ma_kun` | Within the horoscope Soul palace's surrounded palaces, Lucun shares a palace with a void or wasting star while Tianma shares one with a malefic or Ji | `qisha` Qisha also present in the limit's surrounded palaces (the classical strict reading holds too) | — | **transit** |
 | 39 | Heroic Star Enthroned (英星入庙) | `ying_xing_ru_miao` | Pojun in the Soul palace at Zi or Wu | — | — | general |
 | 40 | Waters Flowing East (众水朝东) | `zhong_shui_chao_dong` | Pojun and Wenqu together in the Soul palace at Yin or Mao | — | — | general |
 | 41 | Three Wonders Assembly (三奇加会) | `san_qi_jia_hui` | Lu, Quan and Ke transformations all present across the Soul palace's surrounded palaces | `ke_soul_lu_wealth_quan_career` Ke in the Soul palace, Lu in Wealth, Quan in Career | — | general |
-| 42 | Money and Horse Galloping Together (禄马交驰) | `lu_ma_jiao_chi` | Lucun and Tianma in the same palace (any palace; a chart may produce several hits) | — | — | general |
+| 42 | Money and Horse Galloping Together (禄马交驰) | `lu_ma_jiao_chi` | Lucun and Tianma in the same palace (any palace; a chart may produce several hits) | `surround` both present across the Soul palace's surrounded palaces without sharing one (recorded at the Soul palace) | — | general |
 | 43 | Mandarin Ducks of Fortune (禄合鸳鸯) | `lu_he_yuan_yang` | Lucun and the Lu transformation paired at the Soul palace: same palace, or one in the Soul and one in the Surface palace | `opposite` on the Soul-Surface axis (no variant means same palace) | — | general |
 | 44 | Open and Hidden Fortune (明禄暗禄) | `ming_lu_an_lu` | Lucun (or the Lu transformation) in the Soul palace, with the other in its hidden-harmony palace | — | — | general |
-| 45 | Money and Horse Bearing the Seal (禄马佩印) | `lu_ma_pei_yin` | Lucun, Tianma and Tianxiang all in the Soul palace | — | Yes (a void star in the Soul palace) | general |
-| 46 | Double Canopy (两重华盖) | `liang_chong_hua_gai` | Lucun and the Lu transformation both in the Soul palace, together with Dikong or Dijie | — | — | general |
-| 47 | Meeting of Wind and Cloud (风云际会) | `feng_yun_ji_hui` | The decadal and one other limit each meet Lucun, Tianma or the Lu transformation in their surrounded palaces | `yearly` decadal + annual (no variant means decadal + minor limit) | — | **transit** (decadal view only) |
+| 45 | Money and Horse Bearing the Seal (禄马佩印) | `lu_ma_pei_yin` | Lucun, Tianma and Tianxiang all in one palace (any palace qualifies and is recorded) | — | Yes (a void star in that palace) | general |
+| 46 | Double Canopy (两重华盖) | `liang_chong_hua_gai` | Lucun and the Lu transformation both in the Soul palace, together with a void-family star | `kong_yao` the loose reading taking Tiankong, Jiekong or Xunkong (no variant means the classical Dikong / Dijie) | — | general |
+| 47 | Meeting of Wind and Cloud (风云际会) | `feng_yun_ji_hui` | The decadal and one other limit each meet Lucun, Tianma or the Lu transformation in their surrounded palaces | `yearly` / `yearly_same_palace` decadal + annual (no variant / `same_palace` means decadal + minor limit); the `same_palace` forms are the strict reading with the stars in-palace at both limits' Soul palaces | — | **transit** (decadal view only) |
 | 48 | Qingyang and Tuoluo Flanking Life (羊陀夹命) | `yang_tuo_jia_ming` | Tuoluo and Qingyang in the palaces either side of the Soul palace; the flanked palace necessarily holds Lucun, which is recorded with the evidence | — | — | general |
 | 49 | Arrow at the Horse's Head (马头带箭) | `ma_tou_dai_jian` | Soul palace at Wu with Qingyang in it, and Tiantong with Taiyin in the Soul palace (borrowed from opposite if empty) | `tanlang_lu` the side form: Tanlang with the Lu transformation sharing Wu with Qingyang | — | general |
 | 50 | Officer and Helper in One Palace (左右同宫) | `zuo_you_tong_gong` | Zuofu and Youbi together in the Soul or Body palace (trine only does not count) | — | — | general |
@@ -347,9 +363,9 @@ doc comments (`src/pattern/rules/`).
 | 57 | Literary Nobility and Brilliance (文贵文华) | `wen_gui_wen_hua` | Wenchang and Wenqu together in the Soul palace, the Body palace, or any of the Soul palace's surrounded palaces | — | — | general |
 | 58 | Literary Stars Facing Life (文星朝命) | `wen_xing_chao_ming` | Wenchang and Wenqu both present in the Soul palace's surrounded palaces (same palace included) | — | Yes (malefics or Ji in the surrounded palaces) | general |
 | 59 | Scholar and Artist Flanking Life (昌曲夹命) | `chang_qu_jia_ming` | Wenchang and Wenqu in the palaces either side of the Soul palace | — | Yes (malefics or Ji in the surrounded palaces) | general |
-| 60 | Literary Stars in Hidden Support (文星暗拱) | `wen_xing_an_gong` | Wenchang and Wenqu in two palaces supporting the Soul palace from a distance | `opposite` on the Soul-Surface axis; `trine` in the two trine palaces | — | general |
+| 60 | Literary Stars in Hidden Support (文星暗拱) | `wen_xing_an_gong` | Wenchang and Wenqu supporting the Soul palace by flanking it, facing it from the Surface palace, or meeting it in the surrounded set (three readings judged independently) | `jia` the two flanking the Soul palace; `opposite` both in the Surface palace facing it; `surround` both present across the Soul palace's surrounded palaces | — | general |
 | 61 | Power and Fortune at Birth (权禄生逢) | `quan_lu_sheng_feng` | The Quan-bearing and Lu-bearing stars together in the Soul palace, both at Miao or Wang | — | — | general |
-| 62 | Fame Open, Fortune Hidden (科明暗禄) | `ke_ming_an_lu` | The Ke transformation in the Soul palace, with Lucun in its hidden-harmony palace | — | — | general |
+| 62 | Fame Open, Fortune Hidden (科明暗禄) | `ke_ming_an_lu` | The Ke transformation in the Soul palace, with Lucun or the Lu transformation in its hidden-harmony palace | `hua_lu` the hidden-harmony palace holds the Lu transformation (a reading of some schools; no variant means Lucun) | — | general |
 | 63 | Fame, Power and Fortune Flanking (科权禄夹) | `ke_quan_lu_jia` | Two of the Lu, Quan and Ke transformations in the palaces either side of the Soul palace | — | — | general |
 | 64 | Top Graduate Appointed (甲第登庸) | `jia_di_deng_yong` | The Ke transformation in the Soul palace, with Quan facing it from the Surface or a trine palace | `complete` the Lu transformation or Lucun is also met | — | general |
 
@@ -363,9 +379,13 @@ keys. Hence 63 entries but 64 pattern keys.
 <Accordions>
 <Accordion title="Flanking is not the surrounded set">
 Flanking (夹) means two stars in the palaces **immediately either side** of the target (slots -1 and
-+1), which never overlaps the surrounded palaces. That is why the three literary patterns are
-disjoint: flanking goes to 昌曲夹命, being met in the surrounded set (same palace included) to
-文星朝命, and distant support to 文星暗拱.
++1), which never overlaps the surrounded palaces. 昌曲夹命 (Scholar and Artist Flanking Life) and
+文星朝命 (Literary Stars Facing Life) each take one of those: flanking goes to the former, being met
+in the surrounded set (same palace included) to the latter. 文星暗拱 (Literary Stars in Hidden
+Support) instead reports all three readings — flanking (`jia`), facing from the Surface palace
+(`opposite`) and the surrounded set (`surround`) — because the source page's author notes the
+pattern's "name and reading do not quite agree"; the choice is left to the caller, so on one chart
+it can hit alongside either of the other two.
 </Accordion>
 <Accordion title="The hidden-harmony palace is the six-harmony, not the opposite">
 The hidden-harmony palace pairs branches as Zi-Chou, Yin-Hai, Mao-Xu, Chen-You, Si-Shen, Wu-Wei.
@@ -373,8 +393,9 @@ The hidden-harmony palace pairs branches as Zi-Chou, Yin-Hai, Mao-Xu, Chen-You, 
 </Accordion>
 <Accordion title="Void stars are four adjective stars, distinct from Dikong and Dijie">
 "Void star" in these conditions means the four adjective stars Xunkong, Kongwang, Jielu and Jiekong;
-"Kong-Jie" means the two minor stars Dikong and Dijie. 两重华盖 and 禄逢两杀 take the latter,
-生不逢时 and 禄马佩印 the former.
+"Kong-Jie" means the two minor stars Dikong and Dijie. Double Canopy (两重华盖) and Fortune Meeting
+Two Killers (禄逢两杀) take the latter, Born at the Wrong Time (生不逢时) and Money and Horse
+Bearing the Seal (禄马佩印) the former.
 </Accordion>
 <Accordion title="Money and Horse Galloping is not limited to the Soul palace">
 It is "Lucun and Tianma in the same palace", reported for whichever palace qualifies, with that
@@ -410,8 +431,9 @@ Disagree with a reading? Write an overlay pack replacing those entries; the judg
 
 ## Sources and credit
 
-The pattern entries, example charts and classical quotations come from the 格局 page of
+The pattern entries, example charts and classical quotations come from the 格局 (Patterns) page of
 [iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long); the quotations
-themselves are from 《紫微斗数全书》. The judgement engine, the pattern names in six languages, and
+themselves are from 《紫微斗数全书》 (the Complete Book of Ziwei Doushu). The judgement engine, the
+pattern names in six languages, and
 the choices made between competing readings are x-iztro's own work — iztro itself has no
 corresponding API.

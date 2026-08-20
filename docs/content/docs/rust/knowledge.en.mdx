@@ -52,6 +52,7 @@ Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deseria
 | `license` | `Option<String>` | Licence |
 | `author` | `Option<String>` | Author |
 | `retrieved_at` | `Option<String>` | Retrieval date |
+| `adapted` | `Option<String>` | Adaptation note: how the text was edited relative to the source |
 
 ### StarEntry
 
@@ -172,9 +173,10 @@ impl KnowledgePack {
 }
 ```
 
-**Returns**　`Result<KnowledgePack, String>`. The error is a human-readable string, for two cases:
-JSON that does not fit the format (`invalid knowledge pack: ...`), and a `schema` higher than
-`SCHEMA_VERSION` (no best-effort downgrade).
+**Returns**　`Result<KnowledgePack, String>`. The error is a human-readable string, for three
+cases: JSON that does not fit the format (`invalid knowledge pack: ...`), a missing or zero
+`schema` (a pack must declare its format version), and a `schema` higher than `SCHEMA_VERSION`
+(no best-effort downgrade).
 
 <Callout type="info">
 This returns `String` rather than [`IztroError`](/en/docs/rust/errors): a knowledge pack is data the
@@ -191,6 +193,7 @@ let pack = KnowledgePack::from_json(r#"{
 }"#)?;
 println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
 println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"id": "x"}"#));
 ```
 
 **Output**
@@ -198,6 +201,7 @@ println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
 ```text
 Some("我的紫微")
 Err("knowledge pack schema 99 is newer than supported 1")
+Err("knowledge pack must declare \"schema\" (currently 1)")
 ```
 
 **Edges and traps**
@@ -272,7 +276,7 @@ let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
 println!("{:?} {:?} {:?}", ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
 println!("{:?}", pack.pattern_intro(PatternKey::ZiFuTongGong));
 println!("{:?}", pack.pattern(PatternKey::ZiFuTongGong).unwrap().quotes);
-println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| &s[..15]));
+println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| s.chars().take(5).collect::<String>()));
 ```
 
 **Output**
@@ -281,7 +285,7 @@ println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| &s[..15]
 Some("紫微") Some(["帝座"]) Some("尊贵")
 Some("我的紫府同宫")
 Some(["紫府同宫终身福厚。"])
-my-school Some("看到紫微星")
+my-school Some("紫微星号称")
 ```
 
 ---
@@ -378,5 +382,5 @@ for hit in chart.patterns() {
 **Output**
 
 ```text
-府相朝垣 不难看出，这是个备受
+府相朝垣 “食禄千锺”的断语使
 ```

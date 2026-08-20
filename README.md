@@ -62,9 +62,26 @@ print(astro.astrolabe_to_prompt(chart))
 ... (all twelve palaces)
 ```
 
-The same text is available in six languages — pass `language="en-US"` and the
-stars, palaces and brightness levels come out as `general([+1])[B]`,
-`wealth`, `Tiger hour`, `Twelve Gods: dissipated, gossip, …` and so on.
+The same text is available in six languages. Pass `language="en-US"` and the
+same chart renders as:
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Time: Tiger hour (03:00~05:00)
+Soul Star: rebel
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+--- wealth ---
+Decadal: 43-52
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+...
+```
+
 `horoscope_to_prompt` does the same for a horoscope at a given date.
 
 ## Why not just ask the LLM to cast the chart?
@@ -205,7 +222,7 @@ func main() {
   reading that matched, and the evidencing stars. iztro has no such API.
 - **Knowledge packs** — reading texts and school-specific star attributes live in a
   swappable JSON pack, not in the core. A default pack ships inside (107 stars, 64
-  patterns, 12 palaces, 4 transformations, 38 glossary entries, zh-CN, from
+  patterns, 12 palaces, 4 transformations, 49 glossary entries, zh-CN, from
   iztro-docs by Sylar Long, MIT); write an overlay to replace any entry.
 - **Reverse lookup** — `solar_dates_by_bazi` recovers solar birth dates from four
   BaZi pillars (interpreted under the chart Config), and `reverse_chart` recovers
@@ -237,9 +254,12 @@ for hit in chart.patterns():
 General and Wolf Together surface False
 Empress and Minister Facing the Palace soul False
 Marshal, Rebel and Wolf surface False
+Money and Horse Galloping Together soul False
 Officer and Helper Flanking Life soul False
 Literary Nobility and Brilliance surface False
 Literary Stars Facing Life soul True
+Literary Stars in Hidden Support soul False
+Literary Stars in Hidden Support soul False
 ```
 
 The judging principles and the full table of 64 patterns are on the

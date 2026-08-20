@@ -49,6 +49,7 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `license` | `Option<String>` | 许可证 |
 | `author` | `Option<String>` | 作者 |
 | `retrieved_at` | `Option<String>` | 取得日期 |
+| `adapted` | `Option<String>` | 改编说明：文本相对来源做了何种整理改写 |
 
 ### StarEntry
 
@@ -167,8 +168,9 @@ impl KnowledgePack {
 }
 ```
 
-**返回值**　`Result<KnowledgePack, String>`。错误是给人看的字符串，两种情况：
-JSON 语法或类型不合格式（`invalid knowledge pack: ...`），
+**返回值**　`Result<KnowledgePack, String>`。错误是给人看的字符串，三种情况：
+JSON 语法或类型不合格式（`invalid knowledge pack: ...`）、
+`schema` 缺失或为 0（包必须声明格式版本）、
 以及 `schema` 高于 `SCHEMA_VERSION`（不做降级解析）。
 
 <Callout type="info">
@@ -185,6 +187,7 @@ let pack = KnowledgePack::from_json(r#"{
 }"#)?;
 println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
 println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"id": "x"}"#));
 ```
 
 **输出**
@@ -192,6 +195,7 @@ println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
 ```text
 Some("我的紫微")
 Err("knowledge pack schema 99 is newer than supported 1")
+Err("knowledge pack must declare \"schema\" (currently 1)")
 ```
 
 **边界与陷阱**
@@ -265,7 +269,7 @@ let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
 println!("{:?} {:?} {:?}", ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
 println!("{:?}", pack.pattern_intro(PatternKey::ZiFuTongGong));
 println!("{:?}", pack.pattern(PatternKey::ZiFuTongGong).unwrap().quotes);
-println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| &s[..15]));
+println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| s.chars().take(5).collect::<String>()));
 ```
 
 **输出**
@@ -274,7 +278,7 @@ println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| &s[..15]
 Some("紫微") Some(["帝座"]) Some("尊贵")
 Some("我的紫府同宫")
 Some(["紫府同宫终身福厚。"])
-my-school Some("看到紫微星")
+my-school Some("紫微星号称")
 ```
 
 ---
@@ -371,5 +375,5 @@ for hit in chart.patterns() {
 **输出**
 
 ```text
-府相朝垣 不难看出，这是个备受
+府相朝垣 “食禄千锺”的断语使
 ```

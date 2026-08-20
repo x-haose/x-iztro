@@ -60,27 +60,31 @@ is why there are just three fields.
 ```go
 type PatternConfig struct {
     BrightnessSource string // BrightnessSourceTable (default) or BrightnessSourcePositional
-    Borrow           bool   // whether an empty palace borrows the opposite palace's majors
-    FlowStars        bool   // whether flowing stars count as their natal counterparts
+    Borrow           *bool  // whether an empty palace borrows the opposite palace's majors; nil takes the core default true
+    FlowStars        *bool  // whether flowing stars count as their natal counterparts; nil takes the core default true
 }
 
-func DefaultPatternConfig() *PatternConfig
+func Bool(v bool) *bool                    // convenience: a bool literal's address
+func DefaultPatternConfig() *PatternConfig // the default reading with every field explicit
 ```
 
-`DefaultPatternConfig()` returns `{table, true, true}`, which is what passing `nil` does.
+The two booleans are `*bool`: `nil` means "not stated" and the core takes its default `true`;
+switch one off explicitly with `iztro.Bool(false)`. `DefaultPatternConfig()` returns
+`{BrightnessSourceTable, Bool(true), Bool(true)}`, which means the same as passing `nil`.
 
 `BrightnessSourceTable` follows the chart's brightness table (Miao and Wang bright, Xian and Bu dim —
 matching iztro value for value); `BrightnessSourcePositional` follows the traditional placement (Sun
 bright Yin–Wu, dim You–Chou; Moon bright You–Chou, dim Mao–Wei). The trade-off is explained on the
 [concept page](/en/docs/guide/concepts/patterns#which-table-decides-sun-and-moon-brightness).
 
-<Callout type="warn" title="Do not use a zero-value PatternConfig">
-`&iztro.PatternConfig{}` has `Borrow` and `FlowStars` both `false`, which is not the default
-reading. Start from `DefaultPatternConfig()` instead:
+<Callout type="info" title="The zero value is the default reading">
+All three fields of `&iztro.PatternConfig{}` are zero values (empty string and `nil`), which means
+exactly what passing `nil` means. To change one thing, write a literal — whatever you leave out
+keeps the core default:
 
 ```go
-cfg := iztro.DefaultPatternConfig()
-cfg.BrightnessSource = iztro.BrightnessSourcePositional
+cfg := &iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
+onlyNatal := &iztro.PatternConfig{FlowStars: iztro.Bool(false)}
 ```
 </Callout>
 
@@ -115,14 +119,14 @@ func (a *Astrolabe) PatternsContext(ctx context.Context, config *PatternConfig) 
 | `ctx` | `context.Context` | for the Context form | — | Cancels the wait for a wasm instance |
 
 **Returns**　`[]PatternHit` in the source page's entry order; an empty slice when nothing holds. The
-two transit patterns (禄衰马困, 风云际会) never appear on a natal chart.
+two transit patterns (禄衰马困 `lu_shuai_ma_kun`, 风云际会 `feng_yun_ji_hui`) never appear on a natal chart.
 
 **Errors**
 
 | Case | Error |
 | --- | --- |
 | Nil astrolabe | `iztro: patterns: nil astrolabe` |
-| `BrightnessSource` is neither valid value | `iztro: invalid patternConfig: unknown variant ...` |
+| `BrightnessSource` is neither of the valid values | `iztro: invalid patternConfig: unknown variant ...` |
 
 Both are of the `ErrInvalidArgument` class and match with `errors.Is`.
 
@@ -143,9 +147,12 @@ for _, h := range hits {
 General and Wolf Together 11 surface broken=false
 Empress and Minister Facing the Palace 5 soul broken=false
 Marshal, Rebel and Wolf 11 surface broken=false
+Money and Horse Galloping Together 5 soul broken=false
 Officer and Helper Flanking Life 5 soul broken=false
 Literary Nobility and Brilliance 11 surface broken=false
 Literary Stars Facing Life 5 soul broken=true
+Literary Stars in Hidden Support 5 soul broken=false
+Literary Stars in Hidden Support 5 soul broken=false
 ```
 
 Taking one hit and reading its evidence:
@@ -173,8 +180,7 @@ Judging under an explicit reading:
 ```go
 chart, _ := iztro.BySolar("1985-1-5", 11, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 
-cfg := iztro.DefaultPatternConfig()
-cfg.BrightnessSource = iztro.BrightnessSourcePositional
+cfg := &iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
 
 a, _ := chart.Patterns(nil)
 b, _ := chart.Patterns(cfg)
@@ -191,9 +197,10 @@ fmt.Println(names(b))
 
 <Accordions>
 <Accordion title="PalaceIndex is not always the Soul palace">
-Most patterns form at the Soul palace, but "Body-or-Soul" patterns (武贪同行, 杀破狼, 石中隐玉 and
-others) are judged at both, and `PalaceIndex` records whichever matched — if both match, two hits
-come back. 禄马交驰 goes further: it is reported for any palace that qualifies, so one chart may
+Most patterns form at the Soul palace, but "Body-or-Soul" patterns (武贪同行 `wu_tan_tong_xing`,
+杀破狼 `sha_po_lang`, 石中隐玉 `shi_zhong_yin_yu` and others) are judged at both, and
+`PalaceIndex` records whichever matched — if both match, two hits come back. 禄马交驰
+`lu_ma_jiao_chi` goes further: it is reported for any palace that qualifies, so one chart may
 produce several hits. On the chart above the Body palace sits on the Surface palace, which is why
 three of the hits record it.
 </Accordion>
@@ -271,14 +278,18 @@ The Body palace is a natal concept. In a horoscope view, "Body-or-Soul" patterns
 that level's Soul palace.
 </Accordion>
 <Accordion title="The two transit patterns appear only here">
-禄衰马困 is judged at whichever level the current view is (decadal view judges the decadal, yearly
-view the year); 风云际会 compares two limits across levels, so it is judged once, in the
-`ScopeDecadal` view — an empty `Variant` is decadal + minor limit, `"yearly"` is decadal + annual,
-and if both hold, both are reported.
+禄衰马困 `lu_shuai_ma_kun` is judged at whichever level the current view is (decadal view judges
+the decadal, yearly view the year); when the limit's Soul-palace trine set also holds Qisha (the
+classical strict reading holds too), `Variant` is `"qisha"`. 风云际会 `feng_yun_ji_hui` compares
+two limits across levels, so it is judged once, in the `ScopeDecadal` view. Its `Variant` records
+both the pair of limits and how strictly they "meet" Lu and the Horse: a decadal + minor-limit hit
+is empty (trine-set meeting) or `"same_palace"` (the strict reading — both limits' Soul palaces
+hold the stars in-palace); a decadal + annual hit is `"yearly"` or `"yearly_same_palace"`. Each
+pair reports one hit, two at most.
 </Accordion>
 <Accordion title="Flowing stars count as natal auxiliaries">
 Under the default reading a flowing Lucun reads as Lucun, a flowing Wenchang as Wenchang, and so on.
-To turn that off, start from `DefaultPatternConfig()` and set `FlowStars` to `false`.
+To turn that off, pass `&iztro.PatternConfig{FlowStars: iztro.Bool(false)}`.
 </Accordion>
 <Accordion title="The interface is stateless">
 `Patterns` does not compute incrementally on an existing chart object; it sends the charting context
@@ -296,8 +307,16 @@ The JSON tags on `PatternHit` and `PatternStar` are the binding DTO's key names,
 `encoding/json` produces exactly the structure the Rust and Python sides produce:
 
 ```go
-b, _ := json.MarshalIndent(hit, "", "  ")
-fmt.Println(string(b))
+chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageEnUS, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, hit := range hits {
+    if !hit.Is(iztro.PatternFuXiangChaoYuan) {
+        continue
+    }
+    b, _ := json.MarshalIndent(hit, "", "  ")
+    fmt.Println(string(b))
+}
 ```
 
 ```json

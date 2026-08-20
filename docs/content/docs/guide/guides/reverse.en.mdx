@@ -115,7 +115,8 @@ the same four pillars; the BaZi alone cannot tell them apart.
 ## Which reading of the pillars? It follows Config
 
 The four pillars are not absolute: when the year changes (lunar new year or
-立春), when the month changes (the 1st or the solar term), and which day the
+the Beginning of Spring, 立春), when the month changes (the 1st or the solar
+term), and which day the
 late Zi hour belongs to all differ between schools. In x-iztro these
 boundaries live on [`Config`](/en/docs/guide/guides/config): `year_divide`
 governs the year pillar, `horoscope_divide` the month pillar, `day_divide` the
@@ -125,12 +126,15 @@ late-Zi-hour day pillar.
 the same semantics as the `raw_dates.chinese_date` a charted astrolabe reports.
 The same birth moment can carry different pillars under different readings.
 Take 2001-2-1 in the Mao hour, which falls after the lunar new year (Jan 24)
-but before 立春 (Feb 4):
+but before the Beginning of Spring (立春, Feb 4):
 
-| Reading | Pillars |
+| Reading | Pillars (year, month, day, hour) |
 | --- | --- |
-| Default (year at lunar new year, month at the 1st) | 辛巳 庚寅 乙未 己卯 |
-| `Exact` (year at 立春, month at solar terms) | 庚辰 己丑 乙未 己卯 |
+| Default (year at lunar new year, month at the 1st) | 辛巳 Xin-Si · 庚寅 Geng-Yin · 乙未 Yi-Wei · 己卯 Ji-Mao |
+| `Exact` (year at the Beginning of Spring, month at solar terms) | 庚辰 Geng-Chen · 己丑 Ji-Chou · 乙未 Yi-Wei · 己卯 Ji-Mao |
+
+The year pillar (辛巳 → 庚辰) and the month pillar (庚寅 → 己丑) both change between the two
+readings; the day and hour pillars stay the same.
 
 So before reversing a BaZi, find out which reading produced it and pass the
 matching config. Chart with a config, reverse with the same config, and the
@@ -162,7 +166,7 @@ all given conditions must hold **simultaneously**:
 | `stars` | star placements (star + branch), any number of them |
 | `mutagens` | which star carries each birth-year mutagen [Lu, Quan, Ke, Ji]; give any subset |
 | `year_range` | inclusive solar year range, default 1900–2100 |
-| `fix_leap` | leap month correction, same meaning as the charting parameter |
+| `fix_leap` | leap month correction, same meaning as the charting parameter; defaults to `true` when absent (a `*bool` on the Go side, `nil` meaning absent) |
 | `limit` | candidate cap, 0 takes the default of 512 |
 
 <Tabs items={['Rust', 'Python', 'Go']}>
@@ -182,7 +186,7 @@ let r = reverse_chart(
     },
     &Config::default(),
 )?;
-println!("{} candidates, truncated={}", r.candidates.len(), r.truncated);
+println!("{} candidates, truncated = {}", r.candidates.len(), r.truncated);
 ```
 
 </Tab>
@@ -212,7 +216,6 @@ r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
     Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
     Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""}, // Taiyang carries Lu
     YearRange:         [2]int{1998, 2002},
-    FixLeap:           true,
 }, nil)
 if err != nil {
     log.Fatal(err)
@@ -246,7 +249,7 @@ recovered candidates with whichever gender applies.
 </Callout>
 
 Conditions can only be **natal chart** features: horoscope-scope flow stars
-(運魁, 流昌 and family) never appear on a natal chart, and passing one is an
+(运魁, 流昌 and the like) never appear on a natal chart, and passing one is an
 error.
 
 ## Performance and truncation
@@ -255,9 +258,11 @@ The cost is driven by how selective the conditions are: a soul palace branch,
 the five elements class, major star placements and birth-year mutagens each
 prune whole months or years of the search space — **the more specific the
 conditions and the narrower the year range, the faster**. Order-of-magnitude
-figures (Apple Silicon, release build): the 5-year feature lookup above takes a
-few milliseconds, the same conditions over 1900–2100 about half a second, and a
-200-year BaZi lookup about 0.2 seconds.
+figures (Apple Silicon, release build, first call in a process): the 5-year feature lookup above
+takes about 30 ms (including one-off table initialisation; repeat queries in the same process run
+in about 1–2 ms); the same conditions over 1900–2100 hit the default candidate cap of 512 and
+truncate after about 0.4 s (raising the cap, the full sweep of all 843 solutions takes about
+0.7 s); a 200-year BaZi lookup takes about 0.1 s.
 
 Loose conditions have very many solutions (a single soul palace branch matches
 tens of thousands over the full range). When `limit` (default 512) is reached

@@ -56,10 +56,12 @@ feature lookup.
 
 ### ReverseCriteria
 
-The condition set of a feature lookup. Zero values mean "unconstrained": an
+The condition set of a feature lookup. Zero values mean "not stated": an
 empty string leaves that condition unset, a zero `YearRange` takes
-`[1900, 2100]`, and a `Limit` of 0 takes the core default (512). Every
-condition is optional, but at least one must be given.
+`[1900, 2100]`, a `Limit` of 0 takes the core default (512), and a `nil`
+`FixLeap` takes the core default `true` (it is a `*bool`; switch it off
+explicitly with `iztro.Bool(false)`). Every condition is optional, but at
+least one must be given.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -69,7 +71,7 @@ condition is optional, but at least one must be given.
 | `Stars` | `[]StarPosition` | star placements, all of which must hold |
 | `Mutagens` | `[4]string` | star key carrying each birth-year mutagen [Lu, Quan, Ke, Ji]; empty = unconstrained |
 | `YearRange` | `[2]int` | inclusive solar year range, within 1583–9999 |
-| `FixLeap` | `bool` | leap month correction, same meaning as the charting parameter |
+| `FixLeap` | `*bool` | leap month correction, same meaning as the charting parameter; `nil` takes the core default `true` |
 | `Limit` | `int` | candidate cap |
 
 ### ReverseResult
@@ -127,7 +129,7 @@ for _, c := range cands {
 2060-8-1 2
 ```
 
-**Errors** A pillar with mismatched stem/branch polarity (such as 甲丑), or a
+**Errors** A pillar with mismatched stem/branch polarity (such as 甲丑 Jia-Chou — a yang stem on a yin branch), or a
 year range that is reversed or outside 1583–9999, returns an
 `ErrInvalidArgument`-class error (matchable with `errors.Is`). See
 [Error handling](/en/docs/go/errors).
@@ -160,7 +162,6 @@ r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
     Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
     Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""},
     YearRange:         [2]int{1998, 2002},
-    FixLeap:           true,
 }, nil)
 if err != nil {
     log.Fatal(err)

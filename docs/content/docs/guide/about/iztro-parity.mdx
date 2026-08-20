@@ -94,7 +94,7 @@ iztro 的 `loadPlugin` / `use(plugin)` 是运行期往星盘对象上挂函数 �
 
 `kot(value, k)` 的第二个参数在三侧是独立入口：
 `key_of_in`（Rust）、`key_of(text, key_filter)`（Python）、`KeyOfIn`（Go）。
-取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시` 这类同形译名落到哪个标识。
+取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시`（韩语的酉时）这类同形译名落到哪个标识。
 
 <Callout type="warn" title="查不到时返回空，不是原样返回">
 iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
@@ -156,7 +156,7 @@ Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`，
 
 iztro 只给事实，星耀与格局的解读文本在它的文档站上、不在库里。
 x-iztro 把解读做成一份协议化的数据：知识包是「语言无关标识 → 文本与属性」的 JSON，
-库里内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、38 条术语，
+库里内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、49 条术语，
 取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
 不认同其中说法可以写覆盖包按字段合并。
 

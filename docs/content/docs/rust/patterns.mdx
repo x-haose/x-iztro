@@ -17,7 +17,7 @@ let hits = chart.patterns();
 
 ## 类型
 
-四个类型都在 crate 根重导出：`PatternHit`、`StarAt`、`PatternConfig`、`BrightnessSource`、
+五个类型都在 crate 根重导出：`PatternHit`、`StarAt`、`PatternConfig`、`BrightnessSource`、
 `PatternKey`，另有常量 `ALL_PATTERNS` 与模块函数 `patterns_at`。
 
 ### PatternHit
@@ -147,9 +147,12 @@ for hit in chart.patterns() {
 武贪同行 11 broken=false
 府相朝垣 5 broken=false
 杀破狼 11 broken=false
+禄马交驰 5 broken=false
 左右夹命 5 broken=false
 文贵文华 11 broken=false
 文星朝命 5 broken=true
+文星暗拱 5 broken=false
+文星暗拱 5 broken=false
 ```
 
 取一条命中的证据星：
@@ -289,9 +292,12 @@ for hit in h.patterns(Scope::Decadal) {
 身宫是本命概念。运限视角下「身命」类格局只判该层命宫。
 </Accordion>
 <Accordion title="两条行运格只在运限出现">
-禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年）；
+禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年），
+限命宫三方四正又见七杀（古书严口径同时满足）时 `variant` 为 `Some("qisha")`；
 风云际会跨层比较「两限同时逢禄马」，只在 `Scope::Decadal` 视角判一次，
-`variant` 为 `None` 是大限 + 小限，`Some("yearly")` 是大限 + 流年，两者都成立就报两条。
+`variant` 同时记二限组合与「逢」的松紧：大限 + 小限命中为 `None`（三方四正会照）或
+`Some("same_palace")`（两限命宫皆本宫坐禄马的严口径），大限 + 流年命中为
+`Some("yearly")` 或 `Some("yearly_same_palace")`。两种组合各报一条，最多两条。
 </Accordion>
 <Accordion title="流曜等同本命辅星">
 默认口径下运禄/流禄当禄存看、运昌/流昌当文昌看，其余同理。

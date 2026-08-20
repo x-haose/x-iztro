@@ -102,7 +102,7 @@ For the syntax, see [Extending the astrolabe](/en/docs/guide/guides/plugins).
 
 The second parameter of `kot(value, k)` is a separate entry point in each binding: `key_of_in`
 (Rust), `key_of(text, key_filter)` (Python), `KeyOfIn` (Go). The values match iztro case for case,
-including which key homographic names such as `horse`, `dragon` and `유시` resolve to.
+including which key homographic names such as `horse`, `dragon` and `유시` (Korean for the You hour) resolve to.
 
 <Callout type="warn" title="A miss returns empty, not the input">
 iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust and Python) or an
@@ -151,7 +151,7 @@ empty — keep your own copy if you need a record.
 iztro has no pattern API at all. On top of chart casting, x-iztro adds a pattern engine: 64 patterns,
 one rule set shared by natal charts and horoscope views, each hit carrying the palace it formed in,
 the reading that matched (`variant`), a "spoiled" flag (`broken`), and the evidencing stars. The
-entries, example charts and classical quotations come from the 格局 page of iztro-docs (MIT License,
+entries, example charts and classical quotations come from the 格局 (Patterns) page of iztro-docs (MIT License,
 by Sylar Long); the judgement implementation, the pattern names in six languages, and the choices
 between competing readings are x-iztro's own work.
 
@@ -171,8 +171,8 @@ three bindings read back from the same files.
 iztro ships facts only; the reading texts for stars and patterns live on its documentation site, not
 in the library. x-iztro turns interpretation into data behind a protocol: a knowledge pack is JSON
 mapping "language-independent key → text and attributes", and one default pack ships inside the
-library (107 stars, 64 patterns, 12 palaces, 4 transformations, 38 glossary entries, taken from the
-学习 pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
+library (107 stars, 64 patterns, 12 palaces, 4 transformations, 49 glossary entries, taken from the
+学习 (Learn) pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
 pack that merges field by field.
 
 The entry points: Rust's `KnowledgePack::builtin` / `merged`, Python's `KnowledgePack.builtin` /

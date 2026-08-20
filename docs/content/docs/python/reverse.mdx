@@ -115,6 +115,9 @@ for c in solar_dates_by_bazi(p.yearly_keys, p.monthly_keys, p.daily_keys, p.hour
 2060-8-1 2
 ```
 
+注意传的是标识（`yearly_keys` 等）而不是译名（`yearly` 等）——
+译名是显示文本，直接传会报 `unknown heavenly stem key '庚'`。
+
 **异常**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时抛
 `IztroError`（`code` 为 `invalid_argument`），见[错误处理](/zh/docs/python/errors)。
 

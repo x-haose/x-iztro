@@ -51,8 +51,9 @@ type Pillar [2]string
 
 ### ReverseCriteria
 
-星盘特征反推的条件集。字段的零值即「不限」：空串不设该条件、
-`YearRange` 零值取 `[1900, 2100]`、`Limit` 为 0 取内核默认（512）。
+星盘特征反推的条件集。字段的零值即「缺省」：空串不设该条件、
+`YearRange` 零值取 `[1900, 2100]`、`Limit` 为 0 取内核默认（512）、
+`FixLeap` 为 `nil` 取内核默认 `true`（`*bool`，显式关掉写 `iztro.Bool(false)`）。
 全部条件可选，但至少要给一个。
 
 | 字段 | 类型 | 说明 |
@@ -63,7 +64,7 @@ type Pillar [2]string
 | `Stars` | `[]StarPosition` | 星耀落宫条件，全部须同时满足 |
 | `Mutagens` | `[4]string` | 生年四化 [禄, 权, 科, 忌] 各自的星耀标识，空串表示该位不限 |
 | `YearRange` | `[2]int` | 公历年闭区间（含两端），须落在 1583–9999 内 |
-| `FixLeap` | `bool` | 是否修正闰月，与排盘入参同义 |
+| `FixLeap` | `*bool` | 是否修正闰月，与排盘入参同义；`nil` 取内核默认 `true` |
 | `Limit` | `int` | 候选数上限 |
 
 ### ReverseResult
@@ -147,7 +148,6 @@ r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
     Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
     Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""},
     YearRange:         [2]int{1998, 2002},
-    FixLeap:           true,
 }, nil)
 if err != nil {
     log.Fatal(err)

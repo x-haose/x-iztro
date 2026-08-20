@@ -192,7 +192,7 @@ func main() {
 - **格局判定** — 64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、
   多口径标记与证据星。iztro 无此 API。
 - **知识包** — 星耀与格局的解读文本、星耀的门派属性放在可替换的 JSON 包里，不进内核。
-  库内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、38 条术语，zh-CN，
+  库内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、49 条术语，zh-CN，
   取自 Sylar Long 的 iztro-docs，MIT），不认同的条目写覆盖包换掉。
 - **生辰反推** — `solar_dates_by_bazi` 由八字四柱反查公历生辰（四柱口径随排盘 Config），
   `reverse_chart` 由命宫身宫、五行局、星耀落宫、生年四化等盘面特征反查。
@@ -219,9 +219,12 @@ for hit in chart.patterns():
 武贪同行 迁移 False
 府相朝垣 命宫 False
 杀破狼 迁移 False
+禄马交驰 命宫 False
 左右夹命 命宫 False
 文贵文华 迁移 False
 文星朝命 命宫 True
+文星暗拱 命宫 False
+文星暗拱 命宫 False
 ```
 
 判定原则与 64 条格局总表见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/concepts/patterns)。
@@ -241,7 +244,7 @@ for hit in chart.patterns():
 
 ```text
 府相朝垣 | 府相朝垣命必荣
-不难看出，这是个备受
+“食禄千锺”的断语使
 ```
 
 包的格式、合并规则与覆盖包写法见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/guides/knowledge-pack)。

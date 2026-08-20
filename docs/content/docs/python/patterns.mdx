@@ -142,9 +142,12 @@ for hit in chart.patterns():
 武贪同行 11 迁移 broken=False
 府相朝垣 5 命宫 broken=False
 杀破狼 11 迁移 broken=False
+禄马交驰 5 命宫 broken=False
 左右夹命 5 命宫 broken=False
 文贵文华 11 迁移 broken=False
 文星朝命 5 命宫 broken=True
+文星暗拱 5 命宫 broken=False
+文星暗拱 5 命宫 broken=False
 ```
 
 取一条命中并读它的证据星：
@@ -268,9 +271,12 @@ True
 身宫是本命概念。运限视角下「身命」类格局只判该层命宫。
 </Accordion>
 <Accordion title="两条行运格只在运限出现">
-禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年）；
+禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年），
+限命宫三方四正又见七杀（古书严口径同时满足）时 `variant` 为 `"qisha"`；
 风云际会跨层比较「两限同时逢禄马」，只在 `Scope.DECADAL` 视角判一次，
-`variant` 为 `None` 是大限 + 小限，`"yearly"` 是大限 + 流年，两者都成立就报两条。
+`variant` 同时记二限组合与「逢」的松紧：大限 + 小限命中为 `None`（三方四正会照）或
+`"same_palace"`（两限命宫皆本宫坐禄马的严口径），大限 + 流年命中为
+`"yearly"` 或 `"yearly_same_palace"`。两种组合各报一条，最多两条。
 </Accordion>
 <Accordion title="流曜等同本命辅星">
 默认口径下运禄/流禄当禄存看、运昌/流昌当文昌看，其余同理。
@@ -301,6 +307,7 @@ def to_dict(self) -> dict[str, Any]
 ```python
 import json
 
+chart = Astro().by_solar("1985-5-3", 9, "male")
 hit = next(h for h in chart.patterns() if h.is_(PatternKey.FU_XIANG_CHAO_YUAN))
 print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
 ```

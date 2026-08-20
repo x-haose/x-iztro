@@ -41,7 +41,7 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 
 ### KnowledgeSource
 
-`Name`, `URL`, `Commit`, `License`, `Author`, `RetrievedAt`, all `string`, empty when absent.
+`Name`, `URL`, `Commit`, `License`, `Author`, `RetrievedAt`, `Adapted` (adaptation note), all `string`, empty when absent.
 
 ### StarEntry
 
@@ -123,7 +123,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-107 64 12 4 38
+107 64 12 4 49
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -139,8 +139,9 @@ iztro: no builtin knowledge pack for language 'en-US' true
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 ```
 
-**Returns**　`(*KnowledgePack, error)`; invalid JSON returns an `ErrInvalidArgument`-class error.
-It does **not** check the format version — `schema` is validated by the core during `Merged`.
+**Returns**　`(*KnowledgePack, error)`. Invalid JSON, a missing or zero `schema`, and a `schema`
+newer than this library supports all return an `ErrInvalidArgument`-class error — the same
+semantics as the Rust core's parser (`KnowledgePack::from_json`).
 
 Serializing is plain `encoding/json`:
 
@@ -162,6 +163,8 @@ fmt.Println(overlay.ID, overlay.Extends)
 
 _, err = iztro.ParseKnowledgePack([]byte("nope"))
 fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+fmt.Println(err)
 ```
 
 **Output**
@@ -169,6 +172,7 @@ fmt.Println(err)
 ```text
 my-school iztro-docs
 iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
+iztro: knowledge pack schema 99 is newer than supported 1
 ```
 
 ---
@@ -192,8 +196,8 @@ func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*Knowledg
 | `overlays` | `...*KnowledgePack` | Overlays applied in argument order; later ones win |
 
 **Returns**　A new `*KnowledgePack`; neither this pack nor the overlays change. A nil receiver, a
-nil overlay, or a pack whose `schema` is newer than this library supports all return an
-`ErrInvalidArgument`-class error.
+nil overlay, or a pack whose `schema` is invalid (hand-built structs are validated by the core
+here) all return an `ErrInvalidArgument`-class error.
 
 The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
 key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `Attributes` and
@@ -215,8 +219,7 @@ fmt.Println(merged.PatternIntro(iztro.PatternZiFuTongGong),
     merged.Pattern(iztro.PatternZiFuTongGong).Quotes)
 fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:5]))
 
-bad, _ := iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
-_, err = pack.Merged(bad)
+_, err = pack.Merged(nil)
 fmt.Println(err)
 ```
 
@@ -225,8 +228,8 @@ fmt.Println(err)
 ```text
 my-school 紫微 [帝座] 尊贵 我的紫微
 我的紫府同宫 [紫府同宫终身福厚。]
-看到紫微星
-iztro: knowledge pack schema 99 is newer than supported 1
+紫微星号称
+iztro: mergeKnowledgePacks: nil overlay pack
 ```
 
 ---
@@ -303,5 +306,5 @@ for _, hit := range hits {
 
 ```text
 府相朝垣 | 府相朝垣命必荣
-不难看出，这是个备受
+“食禄千锺”的断语使
 ```

@@ -39,9 +39,9 @@ enters into it.
 | `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
-| `concepts` | 38 | Glossary and basic concepts (same palace, the palace in question, six-harmony branches, the surrounded set …) |
+| `concepts` | 49 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
 
-The content comes from the 学习 pages of
+The content comes from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long), pinned to a
 source commit; the pack's `source` section records the origin, commit, licence and author in full.
 The text has been edited by x-iztro into third-person reference prose (declared in
@@ -77,7 +77,8 @@ repository. Every entry and every field is optional — what is missing simply w
     "commit": "ec2d58bb8b2a0d243d91212a1e3c87ab866858ee",
     "license": "MIT",
     "author": "Sylar Long",
-    "retrievedAt": "2026-08-19"
+    "retrievedAt": "2026-08-19",
+    "adapted": "文本由 x-iztro 在 iztro-docs 原文基础上整理改写为第三人称释义口吻……"
   },
   "stars": {
     "ziweiMaj": {
@@ -96,7 +97,7 @@ repository. Every entry and every field is optional — what is missing simply w
         "elementColor": "黄色",
         "energyColor": "紫光"
       },
-      "intro": "看到紫微星，相信很多读者都知道他是一颗 `帝王星`……",
+      "intro": "紫微星号称 `帝王星`，并非指紫微坐命者能成帝王……",
       "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
     }
   },
@@ -104,12 +105,12 @@ repository. Every entry and every field is optional — what is missing simply w
     "zi_fu_tong_gong": {
       "name": "紫府同宫",
       "quotes": ["紫府同宫终身福厚。"],
-      "conditions": "紫府同宫的详细介绍见 紫微天府。这两颗星只会在寅宫和申宫同宫。",
-      "intro": "福厚不厚其实是不一定的……"
+      "conditions": "指紫微星和天府星同宫，这两颗星只会在寅宫和申宫同宫；其组合特质与紫微天府星曜组合一致。",
+      "intro": "“终身福厚”并非定数，但紫府同宫格的人一定无法接受平凡的人生……"
     }
   },
   "palaces": { "soulPalace": { "name": "命宫", "intro": "命宫是决定星盘主人属性的宫位……" } },
-  "mutagens": { "sihuaLu": { "name": "化禄", "intro": "化禄星简称 `禄`……" } },
+  "mutagens": { "sihuaLu": { "name": "化禄", "intro": "**五行**：土；**意象**：开心、忙碌、增加、包容、多\n\n化禄星简称 `禄`……" } },
   "concepts": { "tong-gong": { "title": "遇、加、逢、同宫、同度", "intro": "指星曜在同一个宫位里面……" } }
 }
 ```
@@ -129,12 +130,13 @@ let pack = KnowledgePack::builtin(Language::ZhCN).expect("zh-CN has a builtin pa
 let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
 
 println!("{:?} {:?}", ziwei.name, ziwei.attributes.aliases);
-println!("{}", &pack.star_intro(StarKey::ZiweiMaj).unwrap()[..30]);
+let head: String = pack.star_intro(StarKey::ZiweiMaj).unwrap().chars().take(12).collect();
+println!("{head}");
 ```
 
 ```text
 Some("紫微") Some(["帝王星", "老板星", "俸禄星"])
-看到紫微星，相信很多
+紫微星号称 `帝王星`，
 ```
 
 </Tab>
@@ -148,12 +150,12 @@ pack = KnowledgePack.builtin()
 ziwei = pack.star(MajorStar.ZIWEI)
 
 print(ziwei.name, ziwei.attributes.aliases)
-print(pack.star_intro(MajorStar.ZIWEI)[:10])
+print(pack.star_intro(MajorStar.ZIWEI)[:12])
 ```
 
 ```text
 紫微 ['帝王星', '老板星', '俸禄星']
-看到紫微星，相信很多
+紫微星号称 `帝王星`，
 ```
 
 </Tab>
@@ -167,12 +169,12 @@ if err != nil {
 ziwei := pack.Star(iztro.StarZiweiMaj)
 
 fmt.Println(ziwei.Name, ziwei.Attributes.Aliases)
-fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:10]))
+fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 ```text
 紫微 [帝王星 老板星 俸禄星]
-看到紫微星，相信很多
+紫微星号称 `帝王星`，
 ```
 
 </Tab>
@@ -353,8 +355,8 @@ table and the iztro-docs star cards already disagree with each other:
 
 | Star | iztro `starsInfo` | iztro-docs card |
 | --- | --- | --- |
-| 贪狼 | Water | 甲 Wood (qi is Water) |
-| 巨门 | yin Earth | 癸 Water and 己 Earth (holding Metal and Wood) |
+| 贪狼 (Tanlang) | Water | 甲 (Jia) Wood — qi is Water |
+| 巨门 (Jumen) | yin Earth | 癸 (Gui) Water and 己 (Ji) Earth (holding Metal and Wood) |
 
 Two data sets by the same author disagreeing is the clearest sign that these attributes are a
 school's reading, not a single answer. So x-iztro's core `StarInfo` stays value-for-value identical
@@ -374,6 +376,6 @@ along with the chart. That belongs to the application layer, not to this library
 
 ## Sources and credit
 
-Every text in the default pack comes from the 学习 pages of
+Every text in the default pack comes from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
 protocol, the editorial rewrite of the default pack and the three-language API are x-iztro's own work.

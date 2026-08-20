@@ -45,9 +45,10 @@
   做成「语言无关标识 → 文本与属性」的 JSON（格式 v1，规范见 `knowledge/SCHEMA.md`）。
   内核只做事实判定，怎么解读是门派观点，因此可整包替换或用覆盖包逐条合并。
   内嵌的 zh-CN 默认包有 107 颗星（主星 14、辅星 14、杂耀 34、神煞 45，含卡片属性、
-  特性正文与主星双星组合解读）、64 条格局（引文、成立条件、解读）、12 宫、4 化与 38 条术语，
-  由 `knowledge/generate.py` 从锁定 commit 的 iztro-docs《学习》各页生成
-  （MIT License，作者 Sylar Long）。其余五种语言暂无默认包。
+  特性正文与主星双星组合解读）、64 条格局（引文、成立条件、解读）、12 宫、4 化与 49 条术语，
+  条目自锁定 commit 的 iztro-docs《学习》各页一次性提取（MIT License，作者 Sylar Long），
+  文本整理改写为第三人称释义口吻（`source.adapted` 注明）；此后该 JSON 即手工维护的源文件，
+  同步上游靠人工对照页面差异改写回填。其余五种语言暂无默认包。
 - **知识包三语言 API**：Rust 的 `KnowledgePack`（`builtin` / `builtin_json` / `from_json` /
   `to_json` / `merge` / `merged` / `star` / `pattern` / `palace` / `mutagen` /
   `star_intro` / `pattern_intro`）、Python 的 `KnowledgePack`（另有 `from_dict` / `to_dict` /

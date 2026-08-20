@@ -57,26 +57,29 @@ hits, err := chart.Patterns(nil)
 ```go
 type PatternConfig struct {
     BrightnessSource string // BrightnessSourceTable（默认）或 BrightnessSourcePositional
-    Borrow           bool   // 空宫是否借对宫主星参与判定
-    FlowStars        bool   // 运限视角下流曜是否等同对应本命辅星
+    Borrow           *bool  // 空宫是否借对宫主星参与判定；nil 取内核默认 true
+    FlowStars        *bool  // 运限视角下流曜是否等同对应本命辅星；nil 取内核默认 true
 }
 
-func DefaultPatternConfig() *PatternConfig
+func Bool(v bool) *bool                    // 布尔字面量取地址的便捷构造
+func DefaultPatternConfig() *PatternConfig // 三项全显式的默认口径
 ```
 
-`DefaultPatternConfig()` 返回 `{table, true, true}`，即传 `nil` 时的行为。
+布尔两项是 `*bool`：`nil` 表示「没说」，由内核取默认值 `true`，
+显式关掉写 `iztro.Bool(false)`。`DefaultPatternConfig()` 返回
+`{BrightnessSourceTable, Bool(true), Bool(true)}`，与传 `nil` 同义。
 
 `BrightnessSourceTable` 按星盘亮度表（庙旺为明，陷与「不」为暗，与 iztro 逐值一致），
 `BrightnessSourcePositional` 按传统位置（太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗）。
 两者的取舍见[概念页的说明](/zh/docs/guide/concepts/patterns#日月的明暗按哪张表)。
 
-<Callout type="warn" title="不要用零值 PatternConfig">
-`&iztro.PatternConfig{}` 的 `Borrow` 与 `FlowStars` 都是 `false`，
-与默认口径不同。改口径请从 `DefaultPatternConfig()` 起手：
+<Callout type="info" title="零值即默认口径">
+`&iztro.PatternConfig{}` 的三个字段都是零值（空串与 `nil`），语义与传 `nil` 完全一致。
+只改一项直接写字面量，没写的仍取内核默认：
 
 ```go
-cfg := iztro.DefaultPatternConfig()
-cfg.BrightnessSource = iztro.BrightnessSourcePositional
+cfg := &iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
+onlyNatal := &iztro.PatternConfig{FlowStars: iztro.Bool(false)}
 ```
 </Callout>
 
@@ -138,9 +141,12 @@ for _, h := range hits {
 武贪同行 11 迁移 broken=false
 府相朝垣 5 命宫 broken=false
 杀破狼 11 迁移 broken=false
+禄马交驰 5 命宫 broken=false
 左右夹命 5 命宫 broken=false
 文贵文华 11 迁移 broken=false
 文星朝命 5 命宫 broken=true
+文星暗拱 5 命宫 broken=false
+文星暗拱 5 命宫 broken=false
 ```
 
 取一条命中并读它的证据星：
@@ -168,8 +174,7 @@ for _, h := range hits {
 ```go
 chart, _ := iztro.BySolar("1985-1-5", 11, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 
-cfg := iztro.DefaultPatternConfig()
-cfg.BrightnessSource = iztro.BrightnessSourcePositional
+cfg := &iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
 
 a, _ := chart.Patterns(nil)
 b, _ := chart.Patterns(cfg)
@@ -261,13 +266,16 @@ for _, x := range hits {
 身宫是本命概念。运限视角下「身命」类格局只判该层命宫。
 </Accordion>
 <Accordion title="两条行运格只在运限出现">
-禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年）；
+禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年），
+限命宫三方四正又见七杀（古书严口径同时满足）时 `Variant` 为 `"qisha"`；
 风云际会跨层比较「两限同时逢禄马」，只在 `ScopeDecadal` 视角判一次，
-`Variant` 为空串是大限 + 小限，`"yearly"` 是大限 + 流年，两者都成立就报两条。
+`Variant` 同时记二限组合与「逢」的松紧：大限 + 小限命中为空串（三方四正会照）或
+`"same_palace"`（两限命宫皆本宫坐禄马的严口径），大限 + 流年命中为
+`"yearly"` 或 `"yearly_same_palace"`。两种组合各报一条，最多两条。
 </Accordion>
 <Accordion title="流曜等同本命辅星">
 默认口径下运禄/流禄当禄存看、运昌/流昌当文昌看，其余同理。
-不想要这个行为，从 `DefaultPatternConfig()` 起手把 `FlowStars` 置为 `false`。
+不想要这个行为，传 `&iztro.PatternConfig{FlowStars: iztro.Bool(false)}`。
 </Accordion>
 <Accordion title="接口无状态">
 `Patterns` 不是在已有的星盘对象上做增量计算，而是把排盘上下文（生日、时辰、性别、
@@ -284,8 +292,16 @@ for _, x := range hits {
 `encoding/json` 直接序列化即得与 Rust、Python 两侧一致的结构：
 
 ```go
-b, _ := json.MarshalIndent(hit, "", "  ")
-fmt.Println(string(b))
+chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageZhCN, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, hit := range hits {
+    if !hit.Is(iztro.PatternFuXiangChaoYuan) {
+        continue
+    }
+    b, _ := json.MarshalIndent(hit, "", "  ")
+    fmt.Println(string(b))
+}
 ```
 
 ```json

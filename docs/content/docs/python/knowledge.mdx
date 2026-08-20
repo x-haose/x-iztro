@@ -78,7 +78,7 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 `TextEntry`（宫位、四化）：`key`、`name`、`intro`。
 `ConceptEntry`（术语）：`slug`、`title`、`intro`。
 
-`Source`：`name`、`url`、`commit`、`license`、`author`、`retrieved_at`。
+`Source`：`name`、`url`、`commit`、`license`、`author`、`retrieved_at`、`adapted`（改编说明）。
 
 <Callout type="info">
 `StarAttributes` 的 `five_elements` 与 `yin_yang` 是知识包来源的说法，
@@ -113,6 +113,8 @@ def builtin(cls, language: LanguageType = "zh-CN") -> KnowledgePack
 **示例**
 
 ```python
+from x_iztro import IztroError, KnowledgePack
+
 pack = KnowledgePack.builtin()
 
 print(pack)
@@ -162,12 +164,16 @@ def to_json(self, **kwargs: Any) -> str
 - `to_dict` 返回深拷贝，怎么改都不影响原包。
 - `to_json` 的 `ensure_ascii` 默认为 `False`（中文原样输出），
   其余 `kwargs` 原样传给 `json.dumps`，例如 `pack.to_json(indent=2)`。
-- 两个构造方法都**不校验格式**：格式版本与结构由内核在 `merged` 时校验。
-  只读不合并的包，字段不认识就是取不到值。
+- 两个构造方法都**校验格式版本**，与 Rust 内核解析同语义：非对象、`schema` 缺失或为 0、
+  `schema` 高于本库支持的版本都抛 `IztroError`（`invalid_argument`）。
+  结构不做深校验：字段不认识就是取不到值。
 
-**示例**
+**示例**　`my-school.json` 是一份覆盖包，完整样例见
+[知识包指南](/zh/docs/guide/guides/knowledge-pack#写一份覆盖包)：
 
 ```python
+from x_iztro import KnowledgePack
+
 overlay = KnowledgePack.from_json(open("my-school.json", encoding="utf-8").read())
 print(overlay.id, overlay.extends)
 
@@ -206,6 +212,9 @@ def merged(self, *overlays: KnowledgePack | dict[str, Any]) -> KnowledgePack
 **示例**
 
 ```python
+from x_iztro import IztroError, KnowledgePack, PatternKey
+from x_iztro.enums import MajorStar
+
 pack = KnowledgePack.builtin()
 overlay = KnowledgePack.from_dict({
     "schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
@@ -231,7 +240,7 @@ except IztroError as e:
 ```text
 my-school 紫微 ['帝座'] 尊贵 我的紫微
 我的紫府同宫 ['紫府同宫终身福厚。']
-看到紫微星
+紫微星号称
 invalid_argument knowledge pack schema 99 is newer than supported 1
 ```
 
@@ -256,6 +265,9 @@ def concept(self, slug: str) -> ConceptEntry | None
 **示例**
 
 ```python
+from x_iztro import KnowledgePack, Mutagen, PalaceName
+from x_iztro.enums import MajorStar
+
 pack = KnowledgePack.builtin()
 ziwei = pack.star(MajorStar.ZIWEI)
 
@@ -312,6 +324,8 @@ def pattern_intro(self, key: str) -> str | None
 **示例**　把本命格局连同引文列出来：
 
 ```python
+from x_iztro import Astro, KnowledgePack
+
 pack = KnowledgePack.builtin()
 chart = Astro().by_solar("2000-8-16", 2, "female")
 
@@ -324,5 +338,5 @@ for hit in chart.patterns():
 
 ```text
 府相朝垣 | 府相朝垣命必荣
-不难看出，这是个备受
+“食禄千锺”的断语使
 ```

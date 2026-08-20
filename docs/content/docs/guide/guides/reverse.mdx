@@ -149,7 +149,7 @@ assert!(cands.iter().any(|c| c.solar_date == "2001-2-1" && c.time_index == 3));
 | `stars` | 星耀落宫（星 + 地支），可给多条 |
 | `mutagens` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个 |
 | `year_range` | 公历年闭区间（含两端），默认 1900–2100 |
-| `fix_leap` | 闰月修正，与排盘入参同义 |
+| `fix_leap` | 闰月修正，与排盘入参同义；缺省取 `true`（Go 侧为 `*bool`，`nil` 即缺省） |
 | `limit` | 候选数上限，0 取默认值 512 |
 
 <Tabs items={['Rust', 'Python', 'Go']}>
@@ -169,7 +169,7 @@ let r = reverse_chart(
     },
     &Config::default(),
 )?;
-println!("{} 个候选, truncated={}", r.candidates.len(), r.truncated);
+println!("{} 个候选, truncated = {}", r.candidates.len(), r.truncated);
 ```
 
 </Tab>
@@ -199,7 +199,6 @@ r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
     Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
     Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""}, // 太阳化禄
     YearRange:         [2]int{1998, 2002},
-    FixLeap:           true,
 }, nil)
 if err != nil {
     log.Fatal(err)
@@ -233,8 +232,10 @@ fmt.Println(len(r.Candidates), "个候选, truncated =", r.Truncated)
 
 代价主要取决于条件的「筛选力」：命宫地支、五行局、主星落宫、生年四化
 都能整年整月地剪掉搜索空间，**条件越具体越快，年份范围越窄越快**。
-量级参考（Apple Silicon，release 构建）：上面 5 年范围的特征反查约几毫秒，
-同样条件放宽到 1900–2100 约半秒，八字反查 200 年约 0.2 秒。
+量级参考（Apple Silicon，release 构建，进程内首次调用）：上面 5 年范围的特征反查约 30 毫秒
+（含一次性表初始化，同进程再查约 1–2 毫秒）；同样条件放宽到 1900–2100，
+约 0.4 秒后即达到默认候选上限 512 而截断（调高上限扫完全部 843 个解约 0.7 秒）；
+八字反查 200 年约 0.1 秒。
 
 宽条件的解非常多（只给一个命宫地支，全范围有上万个解）。
 `limit`（默认 512）达到即停止搜索，结果的 `truncated` 置 `true`，
