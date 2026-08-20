@@ -6,8 +6,7 @@
 //!
 //! 本模块提供的重排以任意干支为命宫重来一遍这几步，其余星耀沿用原盘。
 
-use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
-
+use crate::astro::lunar_table;
 use crate::astro::palace::{get_decadals_and_ages, get_five_elements_class, get_palace_names};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
@@ -58,8 +57,9 @@ impl Astrolabe {
         } else {
             lunar.lunar_month as i64
         };
-        let month_day_count =
-            lunar_month::from_ym(lunar.lunar_year, signed_month).get_day_count() as u32;
+        let month_day_count = lunar_table::month_day_count(lunar.lunar_year, signed_month)
+            .expect("已排盘星盘的 raw_dates 农历月必然存在于月表")
+            as u32;
         let start_idx = get_start_index(
             lunar.lunar_day,
             effective_ti,

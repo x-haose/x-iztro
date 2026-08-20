@@ -5,10 +5,10 @@
 //! 排盘主流程与 `star` 模块的各安星入口都从这一步出发，因此单独成型。
 
 use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_month::{self, LunarMonthRefHelper};
 use lunar_rust::{lunar, solar};
 
 use crate::astro::builder::{branch_of, fix_lunar_month_index, stem_of};
+use crate::astro::lunar_table;
 use crate::astro::palace::{SoulAndBody, get_five_elements_class, get_soul_and_body};
 use crate::data::types::*;
 use crate::error::IztroError;
@@ -63,10 +63,10 @@ pub fn derive(
     let solar_with_time = solar::from_ymdhms(year, month, day, hour, 0, 0);
     let lunar_ref = lunar::from_solar(&solar_with_time);
 
-    let lunar_month_raw = lunar_ref.get_month(); // 负值表示闰月
-    let is_leap = lunar_month_raw < 0;
-    let lunar_month = lunar_month_raw.unsigned_abs() as u32;
-    let lunar_day = lunar_ref.get_day() as u32;
+    let lunar_ymd = lunar_table::ymd_of(&lunar_ref)?;
+    let is_leap = lunar_ymd.month < 0; // 负值表示闰月
+    let lunar_month = lunar_ymd.month.unsigned_abs() as u32;
+    let lunar_day = lunar_ymd.day as u32;
 
     let (yearly_stem_str, yearly_branch_str) = match config.year_divide {
         YearDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
@@ -103,7 +103,12 @@ pub fn derive(
     );
 
     let month_day_count =
-        lunar_month::from_ym(lunar_ref.get_year(), lunar_month_raw).get_day_count() as u32;
+        lunar_table::month_day_count(lunar_ymd.year, lunar_ymd.month).ok_or_else(|| {
+            IztroError::Internal(format!(
+                "lunar month {} does not exist in lunar year {}",
+                lunar_ymd.month, lunar_ymd.year
+            ))
+        })? as u32;
 
     Ok(AstroContext {
         effective_time_index,

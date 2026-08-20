@@ -3,12 +3,12 @@
 //! 提供 `by_solar` 和 `by_lunar` 两个入口函数，从阳历或阴历日期生成完整的紫微斗数星盘。
 
 use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_month::LunarMonthRefHelper;
 use lunar_rust::lunar_year::{self, LunarYearRefHelper};
 use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 
 use crate::astro::context::{self, AstroContext};
+use crate::astro::lunar_table;
 use crate::astro::palace::{get_decadals_and_ages, get_palace_names};
 use crate::data::constants::{TIGER_RULE, TIME_RANGES};
 use crate::data::earthly_branches::get_earthly_branch_info;
@@ -124,7 +124,8 @@ pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), Iztr
 
 /// 解析并校验 "YYYY-M-D" 农历日期串，返回 (年, 带符号月, 日)。
 /// 月为负值表示闰月；该年该月并非闰月时 `is_leap_month` 不生效，
-/// 与 JS iztro 行为一致。日按 lunar_rust 月表校验（大月 30 / 小月 29）。
+/// 与 JS iztro 行为一致。日按修正后的农历月表校验（大月 30 / 小月 29，
+/// 见 [`lunar_table`]）。
 fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, i64), IztroError> {
     let err = |detail: &str| {
         IztroError::InvalidDate(format!("invalid lunar date '{lunar_date}': {detail}"))
@@ -155,9 +156,7 @@ fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, 
     } else {
         month
     };
-    let day_count = lunar_year::LunarYear::from_lunar_year(year)
-        .get_month(signed_month)
-        .map(|m| m.get_day_count())
+    let day_count = lunar_table::month_day_count(year, signed_month)
         .ok_or_else(|| err("month does not exist in that lunar year"))?;
     if day < 1 || day > day_count {
         return Err(err("day is out of range for that lunar month"));
@@ -571,15 +570,15 @@ pub fn by_solar(
     );
 
     // 5. 展示字段：星座、生肖、时辰、农历日期串
-    //    （lunar_rust 的月份中文名对闰月自带「闰」前缀）
+    //    （月/日名取修正后的农历日期，闰月带「闰」前缀；年名不经月表，直接取）
     let chart = Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
         lunar_date: format!(
             "{}年{}月{}",
             lunar_ref.get_year_in_chinese(),
-            lunar_ref.get_month_in_chinese(),
-            lunar_ref.get_day_in_chinese(),
+            lunar_table::month_in_chinese(ctx.lunar_month, ctx.is_leap),
+            lunar_table::day_in_chinese(ctx.lunar_day),
         ),
         chinese_date,
         time: translate_time(time_index, language).to_string(),
@@ -649,20 +648,13 @@ pub fn by_lunar(
 ) -> Result<Astrolabe, IztroError> {
     validate_time_index(time_index)?;
 
-    // 1. 解析并校验农历日期（闰月在 lunar_rust 中用负数月号表示）
+    // 1. 解析并校验农历日期（闰月用负数月号表示）
     let (year, lunar_month, day) = parse_lunar_date(lunar_date, leap.is_leap_month())?;
-    let lunar_ref = lunar::from_ymd(year, lunar_month, day);
 
-    // 3. 转换为阳历（日期串不带前导零）
-    let solar_ref = lunar_ref.get_solar();
-    let solar_date = format!(
-        "{}-{}-{}",
-        solar_ref.get_year(),
-        solar_ref.get_month(),
-        solar_ref.get_day(),
-    );
+    // 2. 转换为阳历（日期串不带前导零）
+    let solar_date = lunar_table::solar_date_of(year, lunar_month, day);
 
-    // 4. 用阳历日期排盘
+    // 3. 用阳历日期排盘
     by_solar(
         &solar_date,
         time_index,

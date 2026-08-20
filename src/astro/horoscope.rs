@@ -6,6 +6,7 @@ use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
 use crate::astro::builder::{branch_of, parse_solar_date, stem_of, validate_time_index};
+use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
 use crate::data::constants::TIGER_RULE;
 use crate::data::stars::StarKey;
@@ -229,10 +230,11 @@ pub fn get_horoscope(
     let birth_solar = solar::from_ymdhms(birth_year, birth_month, birth_day, birth_hour, 0, 0);
     let birth_lunar = lunar::from_solar(&birth_solar);
 
-    let birthday_lunar_year = birth_lunar.get_year();
-    let birthday_lunar_month = birth_lunar.get_month().unsigned_abs() as i32;
-    let birthday_lunar_day = birth_lunar.get_day() as u32;
-    let birthday_is_leap = birth_lunar.get_month() < 0;
+    let birth_ymd = lunar_table::ymd_of(&birth_lunar)?;
+    let birthday_lunar_year = birth_ymd.year;
+    let birthday_lunar_month = birth_ymd.month.unsigned_abs() as i32;
+    let birthday_lunar_day = birth_ymd.day as u32;
+    let birthday_is_leap = birth_ymd.month < 0;
 
     // ---- 2. 解析目标日期的农历信息 ----
     let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
@@ -241,11 +243,11 @@ pub fn get_horoscope(
     let target_solar = solar::from_ymdhms(target_year, target_month, target_day, target_hour, 0, 0);
     let target_lunar = lunar::from_solar(&target_solar);
 
-    let target_lunar_year = target_lunar.get_year();
-    let target_lunar_month_raw = target_lunar.get_month();
-    let target_is_leap = target_lunar_month_raw < 0;
-    let target_lunar_month = target_lunar_month_raw.unsigned_abs() as i32;
-    let target_lunar_day = target_lunar.get_day() as u32;
+    let target_ymd = lunar_table::ymd_of(&target_lunar)?;
+    let target_lunar_year = target_ymd.year;
+    let target_is_leap = target_ymd.month < 0;
+    let target_lunar_month = target_ymd.month.unsigned_abs() as i32;
+    let target_lunar_day = target_ymd.day as u32;
 
     // ---- 3. 计算虚岁（分界点由配置决定） ----
     //     自然年分界：跨农历年即加一岁；生日分界：过了农历生日才加一岁
@@ -477,12 +479,12 @@ pub fn get_horoscope(
         stars: Some(hourly_stars.to_vec()),
     };
 
-    // ---- 11. 农历日期字符串（lunar_rust 的月份中文名对闰月自带「闰」前缀） ----
+    // ---- 11. 农历日期字符串（月/日名取修正后的农历日期，闰月带「闰」前缀） ----
     let lunar_date_str = format!(
         "{}年{}月{}",
         target_lunar.get_year_in_chinese(),
-        target_lunar.get_month_in_chinese(),
-        target_lunar.get_day_in_chinese(),
+        lunar_table::month_in_chinese(target_lunar_month as u32, target_is_leap),
+        lunar_table::day_in_chinese(target_lunar_day),
     );
 
     Ok(HoroscopeData {
