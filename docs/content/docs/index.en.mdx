@@ -1,13 +1,15 @@
 ---
 title: Documentation
-description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python and Go.
+description: A Zi Wei Dou Shu chart engine, field-for-field identical to JS iztro, plus pattern judgement, knowledge packs and reverse birth-date lookup — with LLM-ready text output. A Rust core, callable from Rust, Python and Go.
 icon: Star
 ---
 
-Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can
-read in one call — **let the library get the chart right, let the AI do the reading**.
+Zi Wei Dou Shu — Chinese "Purple Star" astrology — charts a life from a birth date and hour.
+This library turns that birth moment into a complete chart, and into text a language model can
+read in one call — **let the library get the chart right; let the AI do the reading**.
 
-One call produces the text below. Paste it into any language model and start asking questions:
+One call produces the text below — the full basic info and the first palace, with the other eleven
+palaces following in the same shape. Paste it into any language model and start asking questions:
 
 ```text
 === Basic Info ===
@@ -36,19 +38,22 @@ Major Stars: general([+1])[B], minister([+3])
 Minor Stars: horse
 Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
 
-(the other eleven palaces omitted)
+… (the other eleven palaces)
 ```
 
 <Callout title="Reading the sample">
 `Lunar Date` is the only field that stays in Chinese in an English chart — the lunar date is
 rendered with Chinese numerals (`二〇〇〇年七月十七` = the 17th day of the 7th lunar month, 2000).
-`Chinese Date` is the four pillars romanized in pinyin. Bracket notation: `([+3])` is brightness on
-a −2…+3 scale, `[A]`/`[B]`/`[C]`/`[D]` are the four mutagens.
+`Chinese Date` is the four pillars in iztro's own romanization — close to pinyin, but note 午
+renders as `woo` to avoid clashing with 戊 `wu`. Bracket notation: `([+3])` is brightness on a
+-3…+3 scale, `[A]`/`[B]`/`[C]`/`[D]` are the four mutagens.
 </Callout>
 
 Whether a chart is *correct* has one hard standard here: **zero field-level divergence from JS
-[iztro](https://github.com/SylarLong/iztro) v2.5.8**, held by roughly 710,000 golden test cases.
-See [Accuracy](/en/docs/guide/about/accuracy).
+[iztro](https://github.com/SylarLong/iztro) v2.5.8**, held by 716,314 golden test cases — see
+[Accuracy](/en/docs/guide/about/accuracy). Defaults match iztro exactly; the Zhongzhou school and
+every boundary convention are [switchable](/en/docs/guide/guides/config), because parity with iztro
+is an engineering standard, not a claim that any one school is the only correct one.
 
 ## Where to start
 
@@ -56,7 +61,7 @@ See [Accuracy](/en/docs/guide/about/accuracy).
   <Card
     title="x-iztro Guide"
     href="/en/docs/guide"
-    description="Installation, your first chart, Zi Wei concepts, configuration and data model. Language-neutral material."
+    description="Installation, your first chart, Zi Wei concepts, configuration and data model. Applies to all three bindings."
   />
   <Card
     title="Using it without writing code"
@@ -85,11 +90,40 @@ See [Accuracy](/en/docs/guide/about/accuracy).
   />
 </Cards>
 
+## Three things iztro doesn't have
+
+These are the semantic layers above the raw chart — the part an AI pipeline actually consumes —
+and upstream iztro has no equivalent API for any of them:
+
+<Cards>
+  <Card
+    title="Pattern judgement (64 rules)"
+    href="/en/docs/guide/concepts/patterns"
+    description="One rule set shared by natal charts and horoscopes; every hit names its palace, variant and evidencing stars."
+  />
+  <Card
+    title="Knowledge packs"
+    href="/en/docs/guide/guides/knowledge-pack"
+    description="Reading texts and school attributes in swappable JSON, default pack included — doubles as RAG corpus."
+  />
+  <Card
+    title="Reverse lookup"
+    href="/en/docs/guide/guides/reverse"
+    description="From BaZi pillars or chart features back to candidate birth dates, each verified by re-charting."
+  />
+</Cards>
+
+## Find your path
+
+- **A practitioner, not a programmer** → [Using it without writing code](/en/docs/guide/guides/for-non-developers)
+- **Backend / AI application engineer** → [Getting started](/en/docs/guide/getting-started), then the [LLM guide](/en/docs/guide/guides/llm)
+- **New to Zi Wei Dou Shu** → [the concepts](/en/docs/guide/concepts), starting from stems, branches and the twelve palaces
+
 ## Three programming languages, one result
 
 All three bindings call the same Rust core, so charts come out identical field for field.
-The predicate methods are built on language-independent keys, so a single analysis rule written in
-any of the three languages yields the same answer.
+The predicate methods are built on language-independent keys, so one analysis rule — written in
+Rust, Python or Go — yields the same answer on a chart rendered in any output language.
 
 <Tabs items={['Rust', 'Python', 'Go']}>
 <Tab value="Rust">
@@ -128,4 +162,7 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 </Tab>
 </Tabs>
 
-All three print `true`: the Soul palace of this chart holds Ziwei, the Emperor star.
+All three report the same answer — the Soul palace of this chart holds Ziwei, the Emperor star
+(Python prints `True`; Rust and Go print `true`). All three use the language-independent key
+`ziweiMaj`: render the same chart in English or Japanese and the answer doesn't change.
+

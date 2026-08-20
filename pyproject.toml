@@ -29,7 +29,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/x-haose/x-iztro"
 Repository = "https://github.com/x-haose/x-iztro"
-Documentation = "https://ziwei.x-hoase.com/en/docs/python"
+Documentation = "https://ziwei.x-haose.com/en/docs/python"
 Issues = "https://github.com/x-haose/x-iztro/issues"
 
 [tool.maturin]

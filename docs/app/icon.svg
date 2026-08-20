@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    站点图标：深靛夜空上的紫微（北极）星。
+    星形与导航栏 Logo（components/logo.tsx）同一 path，星金主星 + 紫微紫伴星；
+    颜色为 global.css 品牌 oklch 令牌的 sRGB 值（favicon 消费方未必支持 oklch）。
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1630"/>
+      <stop offset=".55" stop-color="#090d17"/>
+      <stop offset="1" stop-color="#03060d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <path transform="translate(8 10) scale(2)" fill="#ebbd57"
+    d="M12 2.5 13.9 9.2 20.5 11 13.9 12.8 12 19.5 10.1 12.8 3.5 11 10.1 9.2Z"/>
+  <circle cx="47" cy="15" r="2.2" fill="#b48df4" opacity=".9"/>
+  <circle cx="15" cy="49" r="1.6" fill="#e5e8ed" opacity=".55"/>
+</svg>

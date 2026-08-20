@@ -1,13 +1,14 @@
 ---
 title: 文档
-description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go 调用。
+description: 紫微斗数排盘引擎：与 JS iztro 逐字段零差异，附格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go 直接调用。
 icon: Star
 ---
 
 把出生时间算成一张完整的紫微斗数命盘，并能一键转成大模型读得懂的文字 ——
-**排盘交给它算准，解读交给 AI**。
+**排盘归它算，解读归 AI**。
 
-一行调用得到的就是下面这段文字，直接贴进任何大模型就能开始问：
+一次调用得到的就是这样一段文字——下面是完整的基本信息与第一宫，
+其余十一宫同款列全，直接贴进任何大模型就能开始问：
 
 ```text
 === 基本信息 ===
@@ -36,11 +37,13 @@ icon: Star
 辅星: 天马
 杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
 
-（其余十一宫略）
+…（其余十一宫依次列全）
 ```
 
-排出来的盘准不准，有一条硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8 逐字段零差异**，
-由约 71 万例金标测试守着。见[准确性保证](/zh/docs/guide/about/accuracy)。
+排盘结果对不对，有一条可验证的硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro)
+v2.5.8 逐字段零差异**——这是复现口径，不是流派裁决——由 716,314 例金标测试守着，
+见[准确性保证](/zh/docs/guide/about/accuracy)。默认口径与 iztro 一致，
+中州派与各分界点[可切换](/zh/docs/guide/guides/config)。
 
 ## 从哪开始
 
@@ -77,10 +80,38 @@ icon: Star
   />
 </Cards>
 
+## iztro 没有的三件事
+
+排盘之上的语义层，也是 AI 管线真正要用的部分——上游 iztro 没有对应 API：
+
+<Cards>
+  <Card
+    title="格局判定（64 条）"
+    href="/zh/docs/guide/concepts/patterns"
+    description="本命与运限共用一套规则，命中带成格宫位、口径与证据星，可审计。"
+  />
+  <Card
+    title="知识包"
+    href="/zh/docs/guide/guides/knowledge-pack"
+    description="解读文本与门派属性外置成可替换 JSON，内嵌默认包，可当 RAG 语料。"
+  />
+  <Card
+    title="生辰反推"
+    href="/zh/docs/guide/guides/reverse"
+    description="由八字四柱或盘面特征反查候选生辰，每个候选经正排验证。"
+  />
+</Cards>
+
+## 按身份找路
+
+- **懂命理、不写代码** → [不写代码怎么用它](/zh/docs/guide/guides/for-non-developers)
+- **后端 / AI 应用工程师** → [快速开始](/zh/docs/guide/getting-started)，然后看 [LLM 接入](/zh/docs/guide/guides/llm)
+- **不了解紫微斗数** → [紫微斗数概念](/zh/docs/guide/concepts)，从干支与十二宫讲起
+
 ## 三种编程语言，同一套结果
 
 三套绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
-判断方法基于语言无关标识，同一条分析规则在三种编程语言上写出来、结果也一致。
+判断方法基于语言无关标识，同一条分析规则用三种编程语言写出来，结果也一致。
 
 <Tabs items={['Rust', 'Python', 'Go']}>
 <Tab value="Rust">
@@ -119,4 +150,6 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 </Tab>
 </Tabs>
 
-三段代码的输出都是 `true`：这张盘的命宫里有紫微星。
+三段代码给出同一个判断：这张盘的命宫里有紫微星（Python 打印 `True`，
+Rust 与 Go 打印 `true`）。三段用的都是语言无关标识 `ziweiMaj`——
+就算把盘换成英文或日文输出，判断结果也不变。

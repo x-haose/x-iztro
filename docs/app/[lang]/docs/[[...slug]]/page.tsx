@@ -32,7 +32,7 @@ export default async function Page(props: PageProps<'/[lang]/docs/[[...slug]]'>)
         <MarkdownCopyButton markdownUrl={`${page.url}.md`} />
         <ViewOptionsPopover
           markdownUrl={`${page.url}.md`}
-          githubUrl={`${REPO_URL}/blob/master/docs/content/docs/${page.path}`}
+          githubUrl={`${REPO_URL}/blob/main/docs/content/docs/${page.path}`}
         />
       </div>
       <DocsBody>
@@ -56,6 +56,13 @@ export async function generateMetadata(
   return {
     title: page.data.title,
     description: page.data.description,
+    // 分享卡按页面语言取对应的社交图（docs/public/og*.png）。
+    openGraph: {
+      title: page.data.title,
+      description: page.data.description,
+      images: [{ url: params.lang === 'en' ? '/og-en.png' : '/og.png', width: 2400, height: 1260 }],
+    },
+    twitter: { card: 'summary_large_image' },
     alternates: {
       canonical: `${SITE_URL}${page.url}`,
       // 本页在各语言下的地址，与 sitemap 的 hreflang 同源。
