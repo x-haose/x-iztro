@@ -3,6 +3,10 @@
 //! These functions expose the core astrolabe functionality via a C-compatible ABI,
 //! allowing the library to be called from Go, C, and any other C-compatible language.
 
+// C ABI 导出与裸指针操作必须 unsafe；crate 级 #![deny(unsafe_code)] 在此豁免，
+// 使边界之外的核心代码保持零 unsafe。
+#![allow(unsafe_code)]
+
 use std::ffi::{CStr, CString, c_char};
 
 use crate::data::types::{Gender, Language, LeapMonth};

@@ -18,6 +18,10 @@
 //! - by_solar / by_lunar / horoscope：各自的排盘参数
 //! - query：`{kind, ...}` 统一入口，返回 `{"value": <JSON>}`
 
+// wasm 导出符号用 #[unsafe(no_mangle)]，属 unsafe 属性；crate 级
+// #![deny(unsafe_code)] 在此豁免，使边界之外的核心代码保持零 unsafe。
+#![allow(unsafe_code)]
+
 use serde::de::DeserializeOwned;
 
 use crate::bridge::{self, HoroscopeInput, LunarChartInput, QueryInput, SolarChartInput};
