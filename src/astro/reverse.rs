@@ -12,13 +12,12 @@
 use std::sync::OnceLock;
 
 use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_month::LunarMonthRefHelper;
 use lunar_rust::lunar_year::{self, LunarYearRefHelper};
-use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 use serde::{Deserialize, Serialize};
 
 use crate::astro::builder::{by_solar, four_pillars};
+use crate::astro::lunar_table;
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
 use crate::data::stars::StarKey;
 use crate::data::types::*;
@@ -96,16 +95,28 @@ pub fn solar_dates_by_bazi(
         }
         for month in 1..=12u32 {
             for day in 1..=days_in_month(year, month) {
-                // 日柱粗筛（纯算术 60 周期）：匹配当日（普通时辰与早子）或次日（晚子归次日）才细验。
+                // 日柱粗筛（纯算术 60 周期）。子时的日柱归属随 `day_divide`：
+                // 晚子归次日（Forward）时 t=12 的日柱取次日干支；晚子归当天（Current）时
+                // 正排把 t>=12 归一为早子，(D,0) 与 (D,12) 四柱完全相同，日柱匹配当日即
+                // 同时给出两个时辰。非子时只匹配当日。
                 let day60 = day_sexagenary_index(year, month, day);
                 let hour_branch = hourly.1;
                 let mut candidates: [Option<u8>; 2] = [None, None];
                 if hour_branch == EarthlyBranch::Zi {
-                    if day60 == target_day60 {
-                        candidates[0] = Some(0);
-                    }
-                    if (day60 + 1) % 60 == target_day60 {
-                        candidates[1] = Some(12);
+                    match config.day_divide {
+                        DayDivide::Current => {
+                            if day60 == target_day60 {
+                                candidates = [Some(0), Some(12)];
+                            }
+                        }
+                        DayDivide::Forward => {
+                            if day60 == target_day60 {
+                                candidates[0] = Some(0);
+                            }
+                            if (day60 + 1) % 60 == target_day60 {
+                                candidates[1] = Some(12);
+                            }
+                        }
                     }
                 } else if day60 == target_day60 {
                     candidates[0] = Some(hour_branch.index() as u8);
@@ -218,7 +229,7 @@ pub struct ReverseCriteria {
     pub stars: Vec<StarPosition>,
     /// 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个
     pub mutagens: [Option<StarKey>; 4],
-    /// 公历年闭区间（含两端），须落在 1583-9999 内
+    /// 候选公历日期所属年份的闭区间（含两端），须落在 1583-9999 内
     pub year_range: (i64, i64),
     /// 是否修正闰月（与排盘入参同义）
     pub fix_leap: bool,
@@ -245,9 +256,11 @@ impl Default for ReverseCriteria {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReverseResult {
-    /// 满足全部条件的候选生辰，按日期升序
+    /// 满足全部条件的候选生辰，按枚举序排列：农历年升序，年内依 月→时辰→日；
+    /// 同一年内不保证公历日期升序
     pub candidates: Vec<BirthCandidate>,
-    /// 是否因达到候选数上限而提前截断（截断时更晚的解未被搜索）
+    /// 是否因达到候选数上限而提前截断；截断时枚举序更靠后的解未被搜索，
+    /// 其中可能包含公历日期更早的解
     pub truncated: bool,
 }
 
@@ -280,9 +293,13 @@ pub fn reverse_chart(
         });
     }
 
-    'year: for year in criteria.year_range.0..=criteria.year_range.1 {
-        // 农历年与公历年同号枚举；候选的安星年干支按分界口径可能取本年或上一年干支，
-        // 年层剪枝对两者都放行（保守），归属差异由终验兜住。
+    // 公历闭区间 [start, end] 的日子分布在农历年 [start-1, end]：公历年 Y 的年初
+    // （元旦到春节前）属农历年 Y-1，而农历年 end+1 的首日（春节）恒落在公历 end+1 年内。
+    // 按农历年枚举并在首端扩一年即覆盖全区间，候选再逐个按公历年份过滤，结果严格落在区间内。
+    let (start_year, end_year) = criteria.year_range;
+    'year: for year in (start_year - 1)..=end_year {
+        // 候选的安星年干支按分界口径可能取相邻年份干支，
+        // 年层剪枝对全部候选干支放行（保守），归属差异由终验兜住。
         let stems: Vec<(HeavenlyStem, EarthlyBranch)> = year_stem_candidates(year, config)
             .into_iter()
             .filter(|(s, b)| domains.admits_year(*s, *b))
@@ -304,12 +321,12 @@ pub fn reverse_chart(
                     continue;
                 }
                 let signed_month = if is_leap { -month } else { month };
-                let Some(month_ref) =
-                    lunar_year::LunarYear::from_lunar_year(year).get_month(signed_month)
-                else {
+                // 月天数走 lunar_table 修正视图（lunar_rust 的 1602 闰二月月界缺陷在
+                // 那里归位），枚举的农历日标签与正排上下文完全同源
+                let Some(month_day_count) = lunar_table::month_day_count(year, signed_month) else {
                     continue;
                 };
-                let month_day_count = month_ref.get_day_count() as u32;
+                let month_day_count = month_day_count as u32;
                 for time_index in 0..=12u8 {
                     if let Some(times) = &domains.times
                         && !times.contains(&time_index)
@@ -325,16 +342,25 @@ pub fn reverse_chart(
                     if fecs.is_empty() {
                         continue;
                     }
+                    // 紫微起宫与日系杂耀区分早晚子，日层剪枝须收与正排一致的生效时辰
+                    let eff_t = effective_time_index(config.day_divide, time_index);
                     for day in 1..=month_day_count {
-                        if !day_prefilter(&domains, day, time_index, month_day_count, &fecs)
-                            || !daily_star_prefilter(criteria, month as usize - 1, day, time_index)
+                        if !day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
+                            || !daily_star_prefilter(criteria, month as usize - 1, day, eff_t)
                         {
                             continue;
                         }
+                        // 日已在 1..=month_day_count 内，满足 solar_date_of 的调用前提
+                        let date = lunar_table::solar_date_of(year, signed_month, day as i64);
+                        let solar_year: i64 = date
+                            .split('-')
+                            .next()
+                            .and_then(|y| y.parse().ok())
+                            .expect("solar_date_of 返回自产 Y-M-D 格式，首段恒为年份数字");
+                        if solar_year < start_year || solar_year > end_year {
+                            continue;
+                        }
                         // 终验：农历转公历后完整排盘，逐条核对全部条件
-                        let l = lunar::from_ymd(year, signed_month, day as i64);
-                        let s = l.get_solar();
-                        let date = format!("{}-{}-{}", s.get_year(), s.get_month(), s.get_day());
                         let Ok(chart) = by_solar(
                             &date,
                             time_index,
@@ -398,11 +424,31 @@ fn matches_criteria(chart: &Astrolabe, criteria: &ReverseCriteria, config: &Conf
     })
 }
 
-/// 该公历/农历年编号下，候选的安星年干支：`Exact` 分界时年初日子可能沿用上一年干支。
+/// 参与日敏感安星的生效时辰，与正排上下文派生的 `effective_time_index` 同一语义：
+/// `Current` 分界下晚子（>=12）按早子（0）参与推算。紫微起宫（`get_start_index`）与
+/// 日系杂耀（`get_daily_star_index`）区分 t=12 与 t=0，日层剪枝必须收归一后的值；
+/// 其余安星函数对时辰做模 12 处理、早晚子同位，收原始时辰即可。
+fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 {
+    if day_divide == DayDivide::Current && time_index >= 12 {
+        0
+    } else {
+        time_index
+    }
+}
+
+/// 农历年编号 `year` 下，候选的安星年干支。
+///
+/// `Exact`（立春分界）时同一农历年横跨两个立春：正月里立春前的日子沿用上一年干支；
+/// 春节晚于立春的年份，腊月里下一个立春之后的日子已属下一年干支。三个候选都放行
+/// （保守，归属差异由终验兜住）。`Normal`（正月初一分界）与农历年一致，只有本年。
 fn year_stem_candidates(year: i64, config: &Config) -> Vec<(HeavenlyStem, EarthlyBranch)> {
     match config.year_divide {
         YearDivide::Normal => vec![year_pillar(year)],
-        YearDivide::Exact => vec![year_pillar(year), year_pillar(year - 1)],
+        YearDivide::Exact => vec![
+            year_pillar(year),
+            year_pillar(year - 1),
+            year_pillar(year + 1),
+        ],
     }
 }
 
@@ -661,10 +707,11 @@ const MAJOR_OFFSETS: [(StarKey, i32, bool); 14] = [
 ];
 
 /// 日层剪枝：主星条件已归一化为紫微落宫，任一可行五行局下紫微落到该宫才保留该日。
+/// `effective_ti` 是 [`effective_time_index`] 归一后的生效时辰（`get_start_index` 区分早晚子）。
 fn day_prefilter(
     domains: &Domains,
     day: u32,
-    time_index: u8,
+    effective_ti: u8,
     month_day_count: u32,
     fecs: &[u32],
 ) -> bool {
@@ -672,17 +719,18 @@ fn day_prefilter(
         return true;
     };
     fecs.iter()
-        .any(|fec| get_start_index(day, time_index, month_day_count, *fec).ziwei == ziwei)
+        .any(|fec| get_start_index(day, effective_ti, month_day_count, *fec).ziwei == ziwei)
 }
 
 /// 日层剪枝（日系杂耀）：三台/八座随左辅右弼逐日行、恩光/天贵随文昌文曲逐日行，
 /// 条件涉及这四颗时按（月, 日, 时）现算落宫比对。安星月与真实农历月可能差 1（闰月修正），
 /// 两种月索引任一成立即放行（保守）。
+/// `effective_ti` 是 [`effective_time_index`] 归一后的生效时辰（`get_daily_star_index` 区分早晚子）。
 fn daily_star_prefilter(
     criteria: &ReverseCriteria,
     month_index: usize,
     day: u32,
-    time_index: u8,
+    effective_ti: u8,
 ) -> bool {
     let involved = criteria.stars.iter().any(|p| {
         matches!(
@@ -695,9 +743,14 @@ fn daily_star_prefilter(
     }
     [month_index, month_index + 1].iter().any(|mi| {
         let zy = get_zuo_you_index(fix_index(*mi as i32, 12) as u32 + 1);
-        let cq = get_chang_qu_index(time_index);
+        let cq = get_chang_qu_index(effective_ti);
         let daily = crate::star::location::get_daily_star_index(
-            day, time_index, zy.zuo, zy.you, cq.chang, cq.qu,
+            day,
+            effective_ti,
+            zy.zuo,
+            zy.you,
+            cq.chang,
+            cq.qu,
         );
         criteria.stars.iter().all(|p| {
             let want = branch_to_palace(p.branch);
@@ -736,8 +789,37 @@ fn validate_criteria(criteria: &ReverseCriteria) -> Result<(), IztroError> {
                 p.star.as_key()
             )));
         }
+        if is_twelve_gods_star(p.star) {
+            return Err(IztroError::InvalidArgument(format!(
+                "star '{}' belongs to a per-palace twelve-gods cycle (changsheng12/boshi12/jiangqian12/suiqian12) and cannot be used as a reverse criterion",
+                p.star.as_key()
+            )));
+        }
     }
     Ok(())
+}
+
+/// 是否只作十二神出现的标识（长生12神、博士12神、岁前12神、将前12神中
+/// 不与宫内杂耀共用 key 的 41 个）。
+/// 十二神以每宫单值字段（`changsheng12` 等）挂在宫位上，不进入宫内星耀列表，
+/// [`Astrolabe::star`] 查不到，作为落宫条件恒不可满足，故在校验层拒绝。
+/// 五个共用 key 不在此列：咸池/华盖/天德（每盘安放）与龙德/大耗（中州派盘
+/// 安放）同时是宫内杂耀，[`Astrolabe::star`] 可查到，按杂耀落宫正常终验。
+fn is_twelve_gods_star(key: StarKey) -> bool {
+    use StarKey::*;
+    matches!(
+        key,
+        // 长生12神
+        Changsheng | Muyu | Guandai | Linguan | Diwang | Shuai | Bing | Si | Mu | Jue | Tai | Yang
+            // 博士12神（含与岁前12共用的小耗/病符/岁破；大耗兼宫内杂耀，不拒）
+            | Boshi | Lishi | Qinglong | Xiaohao | Jiangjun | Zhoushu | Faylian | Xishen
+            | Bingfu | Suipo | Fubing | Guanfu
+            // 岁前12神（龙德/天德兼宫内杂耀，不拒）
+            | Suijian | Huiqi | Sangmen | Guansuo | Gwanfu | Baihu | Diaoke
+            // 将前12神（华盖/咸池兼宫内杂耀，不拒）
+            | Jiangxing | Panan | Suiyi | Xiishen | Jiesha | Zhaisha | Tiansha
+            | Zhibei | Yuesha | Wangshen
+    )
 }
 
 /// 是否运限流曜（大限运曜、流年流曜、小限流曜）：它们不出现在本命盘上。
@@ -776,4 +858,33 @@ fn is_flow_star(key: StarKey) -> bool {
             | Shituo
             | Shima
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn year_stem_candidates_by_divide() {
+        let normal = Config::default();
+        assert_eq!(year_stem_candidates(2000, &normal), vec![year_pillar(2000)]);
+        let exact = Config {
+            year_divide: YearDivide::Exact,
+            ..Config::default()
+        };
+        // 立春分界下同一农历年横跨两个立春：本年、上一年（正月头）、下一年（腊月尾）
+        assert_eq!(
+            year_stem_candidates(2014, &exact),
+            vec![year_pillar(2014), year_pillar(2013), year_pillar(2015)]
+        );
+    }
+
+    #[test]
+    fn effective_time_index_normalizes_late_zi_only_under_current() {
+        assert_eq!(effective_time_index(DayDivide::Current, 12), 0);
+        assert_eq!(effective_time_index(DayDivide::Current, 0), 0);
+        assert_eq!(effective_time_index(DayDivide::Current, 6), 6);
+        assert_eq!(effective_time_index(DayDivide::Forward, 12), 12);
+        assert_eq!(effective_time_index(DayDivide::Forward, 6), 6);
+    }
 }
