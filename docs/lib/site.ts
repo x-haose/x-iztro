@@ -1,7 +1,7 @@
 import { i18n, type Language } from '@/lib/i18n';
 
 /** 正式站域名。 */
-const PRODUCTION_URL = 'https://ziwei.x-hoase.com';
+const PRODUCTION_URL = 'https://ziwei.x-haose.com';
 
 /**
  * 站点绝对地址。

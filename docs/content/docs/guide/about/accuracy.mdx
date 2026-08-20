@@ -1,6 +1,6 @@
 ---
 title: 准确性保证
-description: 约 71 万例金标测试如何保证 x-iztro 与 JS iztro 零差异，以及这个「准」的边界在哪。
+description: 716,314 例金标测试如何保证 x-iztro 与 JS iztro 零差异，以及这个「准」的边界在哪。
 ---
 
 *适合：所有人。「哈希比对怎么做」一节给开发者*
@@ -50,7 +50,7 @@ x-iztro 本身支持公历 1583–9999 年，区间之外的年份能排出盘�
 
 ## 覆盖矩阵
 
-全部基准数据由锁定版本的 JS iztro 生成，共约 71 万例：
+全部基准数据由锁定版本的 JS iztro 生成，共 716,314 例：
 
 | 层级 | 用例数 | 覆盖范围 | 数据格式 |
 | --- | --- | --- | --- |
@@ -62,13 +62,14 @@ x-iztro 本身支持公历 1583–9999 年，区间之外的年份能排出盘�
 | Variants | 14,268 | by_lunar 闰月逐日、中州派、六种盘面语言 | CSV / JSON |
 | Config | 9,696 | 四个分界开关的非默认取值，含排盘层与运限层的组合 | CSV / JSON |
 | 中州派盘型 | 12,488 | 天盘 / 地盘 / 人盘 | SHA-256 CSV |
-| **合计** | **713,870** | | |
+| 1602 窗口 | 2,444 | 1602-2-20 至 4-25 逐日 × 13 时辰 × 男女（闰月日期含 fix_leap 双份），锁定闰二月修正层 | SHA-256 CSV |
+| **合计** | **716,314** | | |
 
 以下不计入上表：
 
 - **翻译反查 1,559 例**：逐条对照 iztro `kot` 的实际取值，守的是同形译名的消歧顺序
 - **绑定契约 13 例**：把 DTO 与 iztro 的 `JSON.stringify` 输出逐键逐值对照
-- **Python 端到端 172 例**（含自定义四化表与亮度表、全时辰覆盖）
+- **Python 端到端 209 例**（含自定义四化表与亮度表、全时辰覆盖、格局与知识包）
 - **Go 端到端测试**：金标对照、星耀落宫、并发正确性、覆盖表、非法输入轰炸
 - **C FFI 边界安全测试**：任何非法输入都必须返回错误 JSON 而非崩溃
 - **Prompt 快照测试**：中英两种语言的本命与运限 prompt 逐字节比对
@@ -94,6 +95,12 @@ x-iztro 本身支持公历 1583–9999 年，区间之外的年份能排出盘�
 **Config** 与**中州派盘型**抓分界点与盘型。立春窗口逐日、晚子时、生日前后 ——
 每个开关都在它会产生分歧的窗口里逐日验证。
 
+**1602 窗口**抓农历依赖本身的缺陷。Rust 侧农历库的月表在 1602 年自相矛盾
+（二月 31 天），x-iztro 在月表唯一读取入口按真值修正——真值经 lunar-typescript、
+寿星天文历（sxtwl）与韩国天文研究院历表三个独立来源交叉确认——这一层把修正窗口
+逐日锁死；另有 1583–9999 全域逐日扫描（约 614 万盘，标 `#[ignore]`）未发现
+第二个同类窗口。
+
 ## 哈希比对怎么做的
 
 <small>给开发者</small>
@@ -102,7 +109,7 @@ Tier 3 有 58 万例，存完整 JSON 会有几十 GB。所以这几层比对的
 
 JS 侧的 `tests/golden/canonical.mjs` 与 Rust 侧的 `tests/common/mod.rs`
 实现同一套序列化规则，**逐字节同构**。两边各自把排盘结果压成同一个规范化串，
-比对哈希即可 —— 存的是 64 个十六进制字符，而不是几十 KB 的 JSON。
+比对哈希即可 —— 存的是 SHA-256 的前 32 个十六进制字符，而不是几十 KB 的 JSON。
 
 哈希不一致时，用生成器的 `--inspect` 系列参数重放该例的 JS 输出，
 与 Rust 的规范化串做 diff，直接定位到出错字段。
@@ -110,10 +117,10 @@ JS 侧的 `tests/golden/canonical.mjs` 与 Rust 侧的 `tests/common/mod.rs`
 ## 跑测试
 
 ```bash
-# 常规层：单元 + Tier 1/2 + 运限 + 变体 + 配置 + 契约，约 15 秒
+# 常规层：单元 + Tier 1/2 + 运限 + 变体 + 配置 + 契约 + 1602 窗口，约 1 分钟
 cargo test
 
-# Tier 3 全量：586,430 例，约 20 秒
+# Tier 3 全量：586,430 例，约 70 秒
 cargo test --release --test golden_tier3 -- --ignored
 
 # 绑定端到端
@@ -127,14 +134,12 @@ cd go/iztro && go test ./...
 
 ```bash
 cd tests/golden
-npm install
-node generate_tier1.mjs      # → tier1_data.json
-node generate_tier2.mjs      # → tier2/year_*.json（60 个文件）
-node generate_tier3.mjs      # → tier3/year_*.csv（60 个文件，约 30 分钟）
-node generate_horoscope.mjs  # → horoscope_data.json
-node generate_variants.mjs
-node generate_config.mjs
+npm ci
+npm run gen:all   # 全部层级；逐个生成器见 package.json 的 gen:* 脚本
 ```
+
+tier3 与边界年代层按年跳过已存在的文件，便于断点续跑；tier3 另支持
+`node generate_tier3.mjs --range <起> <止>` 分段，多进程并行可跑满 CPU（全量约 30 分钟）。
 
 ## 跟进 iztro 新版本
 

@@ -77,7 +77,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   语言无关标识（星/宫/干支/四化/亮度/五行局的 `*key`/`*Key(s)`，取值为 iztro i18n key）
 - 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
   判断方法在任何输出语言的星盘上结果一致
-- 绑定接口无状态：运限/Prompt/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
+- 绑定接口无状态：运限/Prompt/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
+  重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/两类 Prompt 的
+  payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 
 ### Python 绑定架构
@@ -92,6 +94,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
 - 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
+- 布尔开关字段一律 `*bool` + omitempty（`PatternConfig.Borrow/FlowStars`、
+  `ReverseCriteria.FixLeap` 先例）：nil＝省略键让内核取默认；裸 `bool` 的零值会静默
+  翻转内核默认开关。便捷构造用 `Bool(v)`，新增此类字段沿用此约定
 
 ### 与 iztro 的 API 对齐
 - 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
@@ -131,13 +136,25 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
   规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
 
+### 农历换算
+- `src/astro/lunar_table.rs` 是仓库读取农历月结构（公历↔农历、月天数、中文月/日名）的
+  **唯一入口**——lunar_rust 1.0.1 的 1602 年闰二月合朔晚一天（月表自相矛盾：二月 31 天），
+  该层按权威历表真值修正并带在场探测（依赖将来修好即自动停用）。新代码不许绕过它
+  直读 lunar_rust 的月表；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
+- 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
+  （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
+
 ### 反推（x-iztro 扩展）
 - 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
-  与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢
+  与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢——
+  日层剪枝对时辰敏感，`day_divide=Current` 时须以归一时辰（晚子归 0）参与，八字入口
+  晚子同日给 t=0/t=12 双候选；年干候选 Exact 口径含 `year+1`（春节晚于立春年份的立春后段）
 - 无外部金标，正确性由往返测试定义（`tests/reverse.rs`）：任取一盘，四柱/特征反查必含原生辰，
-  且每个候选正排后必须真的得出目标
+  且每个候选正排后必须真的得出目标；全星环测逐类星耀条件核「任何剪枝臂不错杀」
 - 四柱按传入 `Config` 的分界口径解释（与 `raw_dates.chinese_date` 同语义）；星盘布局与性别无关，
-  反推不收性别；`reverse_chart` 条件为空或含流耀报 `InvalidArgument`，`limit`（默认 512）截断兜住宽条件
+  反推不收性别；`year_range` 是候选公历日期所属年份的闭区间；`reverse_chart` 条件为空、
+  含流耀或含纯十二神 key 报 `InvalidArgument`（咸池/华盖/天德/龙德/大耗兼作宫内杂耀，
+  不在拒绝之列），`limit`（默认 512）截断兜住宽条件
 - 日柱用「lunar_rust 锚点校准 + 儒略日纯算术」推 60 周期，避免逐日构造农历对象
 
 ### 知识包（x-iztro 扩展）
@@ -147,7 +164,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
   `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
-  只换表达不加减命理内容），JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
+  只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
+  JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
   `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见」等残留）
 - 同步上游：人工 diff iztro-docs 新旧 commit 的 learn 页差异，把变化条目改写后写回 JSON 并更新
   `source.commit`；一次性提取脚手架存于 docs/plan/knowledge-scaffold（gitignore，不进仓库）
@@ -155,11 +173,12 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 覆盖矩阵（八层合计 713,870 例，约 71 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
+- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
-  Config 开关（四个非默认取值 + 排盘层与运限层的组合）9,696 / 中州派盘型 12,488
+  Config 开关（四个非默认取值 + 排盘层与运限层的组合）9,696 / 中州派盘型 12,488 /
+  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）
 - tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
   （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；
   条目含星名/类型/范围/亮度/四化，排序等价性只在 BMP 内成立，注释里写了这个前提）；
@@ -168,7 +187,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `cargo test --release --test golden_tier3 -- --ignored`（~70s）
 - 哪条结论由哪个测试守着：
   - 排盘数值 → `golden_tier1/2/3`、`golden_edge`（1583-1983 / 2044-2100 抽样）、
-    `golden_variants`、`golden_horoscope`
+    `golden_variants`、`golden_horoscope`；农历换算修正层 → `golden_1602` + `lunar_table`
   - 序列化契约 → `golden_contract`（对 JS 的 `JSON.stringify` 逐键逐值；
     扩展键白名单按 DTO 路径限定，多在别处的键即判为契约偏离）
   - 单盘全接口面 → `regression`（工具函数、十二宫、三方四正、运限查询方法，
@@ -180,7 +199,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     缺失即失败；有意改动后用 `UPDATE_PROMPT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
-  - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、limit 截断、错误路径、FFI kind）
+  - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、
+    全星环测 34 剪枝臂、共享 key 十二神可用、1602 窗口、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
     + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，

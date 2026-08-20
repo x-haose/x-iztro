@@ -6,12 +6,12 @@ edition = "2024"
 description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"
 license = "MIT"
 repository = "https://github.com/x-haose/x-iztro"
-homepage = "https://ziwei.x-hoase.com"
-documentation = "https://ziwei.x-hoase.com/en/docs/rust"
+homepage = "https://ziwei.x-haose.com"
+documentation = "https://ziwei.x-haose.com/en/docs/rust"
 readme = "README.md"
 keywords = ["ziwei", "iztro", "astrology", "horoscope", "chinese"]
 categories = ["date-and-time", "science"]
-# edition 2024 的下限；写明后低版本工具链报的是「需要 1.85」而不是一串语法错误
+# let-chains 语法的下限；写明后低版本工具链报的是「需要 1.88」而不是一串语法错误
 rust-version = "1.88"
 # crates.io 发布只含核心库（金标数据与各语言绑定包不随 crate 分发）。
 # 路径一律加前导斜杠锚到仓库根：include 用的是 gitignore 语义，

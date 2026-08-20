@@ -5,6 +5,9 @@
 //! 排盘行为由 [`Config`] 的六个开关控制，默认与 JS iztro 一致。
 
 #![warn(missing_docs)]
+// 核心库不写 unsafe；FFI 与 wasm 边界模块各自以 #![allow(unsafe_code)] 豁免，
+// 「unsafe 只出现在边界」由编译期保证而非约定。
+#![deny(unsafe_code)]
 
 /// 绑定层共用的编组与分派。
 ///

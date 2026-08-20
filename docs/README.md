@@ -1,7 +1,7 @@
 # x-iztro 文档站
 
 基于 [Fumadocs](https://fumadocs.dev)（Next.js App Router）构建，中英双语，
-部署在 Vercel：<https://ziwei.x-hoase.com>。
+部署在 Vercel：<https://ziwei.x-haose.com>。
 
 ## 安装
 

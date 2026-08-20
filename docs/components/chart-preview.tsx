@@ -39,10 +39,10 @@ const CELLS: Cell[] = [
 
 /** 四化各自的着色，与文档正文的约定一致。 */
 const MUTAGEN_TONE: Record<string, string> = {
-  禄: 'text-emerald-600 dark:text-emerald-400',
-  权: 'text-blue-600 dark:text-blue-400',
-  科: 'text-amber-600 dark:text-amber-400',
-  忌: 'text-rose-600 dark:text-rose-400',
+  禄: 'text-emerald-700 dark:text-emerald-400',
+  权: 'text-blue-700 dark:text-blue-400',
+  科: 'text-amber-700 dark:text-amber-400',
+  忌: 'text-rose-700 dark:text-rose-400',
 };
 
 /** 十二格在 4×4 网格中的位置，中间 2×2 空出给中宫。 */
@@ -67,7 +67,7 @@ function PalaceCell({ cell, position }: { cell: Cell; position: string }) {
       className={`${position} relative flex flex-col justify-between overflow-hidden rounded-lg border p-2 transition-colors ${
         cell.soul
           ? 'border-fd-primary/60 bg-fd-primary/5'
-          : 'border-fd-border/70 bg-fd-card/40 hover:border-fd-border'
+          : 'border-fd-border/70 bg-fd-card/40'
       }`}
     >
       <div className="flex flex-wrap gap-x-1 gap-y-0.5 font-serif-cjk text-sm leading-tight">
@@ -83,7 +83,7 @@ function PalaceCell({ cell, position }: { cell: Cell; position: string }) {
             </span>
           ))
         ) : (
-          <span className="text-fd-muted-foreground/50 text-xs">—</span>
+          <span className="text-fd-muted-foreground/70 text-xs">—</span>
         )}
       </div>
 
@@ -96,7 +96,7 @@ function PalaceCell({ cell, position }: { cell: Cell; position: string }) {
           {cell.palace}
           {cell.body && <span className="ml-1 text-fd-muted-foreground/70">身</span>}
         </span>
-        <span className="text-fd-muted-foreground/60 tabular-nums">
+        <span className="text-fd-muted-foreground tabular-nums">
           {cell.stem}
           {cell.branch}
         </span>
