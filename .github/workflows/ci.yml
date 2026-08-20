@@ -68,7 +68,7 @@ jobs:
   # 两端各测一次：3.10 是 pyproject 声明的下限，也是 abi3 轮子的目标下限，
   # 语法与标准库用法一旦越界（如 3.11 才有的 StrEnum）只有它能拦住；
   # 3.12 代表当前主流。中间版本由 abi3 的兼容承诺覆盖。
-  python:
+  python-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -90,6 +90,15 @@ jobs:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
       - name: Python 端到端金标测试
         run: .venv/bin/pytest python/tests/ -q
+
+  # 矩阵作业上报的检查名带版本号（python-tests (3.10) 等），分支保护没法按固定名
+  # 等待它们；这个聚合门以固定名 python 汇总矩阵结果，矩阵扩缩不需要再动保护规则。
+  python:
+    needs: python-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 矩阵全部通过
+        run: echo "python matrix passed"
 
   # 文档站与三语言代码无依赖，独立跑。类型检查拦 MDX 组件用错，
   # 构建拦坏链接与坏 frontmatter——两者本地不跑就发现不了。
