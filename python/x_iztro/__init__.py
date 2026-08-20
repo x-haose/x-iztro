@@ -36,8 +36,16 @@ x-iztro: 紫微斗数 Rust 核心库 Python 绑定
         print(e.code)          # invalid_date
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 # 原生扩展模块抛出的异常类型
 from x_iztro._x_iztro import IztroError
+
+try:
+    # 包版本，与 pyproject.toml 的 version 一致；安装元数据缺失（如源码树直跑）时为 "0.0.0"
+    __version__ = version("x-iztro")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 # 数据模型
 from x_iztro.models import (
@@ -55,6 +63,9 @@ from x_iztro.models import (
     RawLunarDate,
     RawChineseDate,
     ChartConfig,
+    PatternConfig,
+    PatternHit,
+    PatternStar,
 )
 
 # 枚举与常量
@@ -83,10 +94,21 @@ from x_iztro.enums import (
     Suiqian12,
     Jiangqian12,
     HoroscopeStar,
+    PatternKey,
+    BrightnessSource,
 )
 
 # 主类
-from x_iztro import data, i18n, plugin, query, star, utils
+from x_iztro import data, i18n, knowledge, plugin, query, reverse, star, utils
+from x_iztro.knowledge import KnowledgePack
+from x_iztro.reverse import (
+    BirthCandidate,
+    ReverseCriteria,
+    ReverseResult,
+    StarPosition,
+    reverse_chart,
+    solar_dates_by_bazi,
+)
 from x_iztro.astro import Astro
 
 # 轻量查询
@@ -124,6 +146,16 @@ __all__ = [
     "RawLunarDate",
     "RawChineseDate",
     "ChartConfig",
+    "PatternConfig",
+    "PatternHit",
+    "PatternStar",
+    "KnowledgePack",
+    "BirthCandidate",
+    "ReverseCriteria",
+    "ReverseResult",
+    "StarPosition",
+    "reverse_chart",
+    "solar_dates_by_bazi",
     # 枚举
     "Gender",
     "Language",
@@ -149,6 +181,8 @@ __all__ = [
     "Suiqian12",
     "Jiangqian12",
     "HoroscopeStar",
+    "PatternKey",
+    "BrightnessSource",
     # 子模块：安星、数据表、翻译
     "star",
     "data",
@@ -156,4 +190,6 @@ __all__ = [
     "utils",
     "query",
     "plugin",
+    "knowledge",
+    "reverse",
 ]

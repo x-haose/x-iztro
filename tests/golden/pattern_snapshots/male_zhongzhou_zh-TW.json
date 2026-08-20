@@ -1,0 +1,706 @@
+{
+  "daily": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "殺破狼",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破軍",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "貪狼",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "qi_sha_chao_dou",
+      "name": "七殺朝斗",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yang_dou"
+    },
+    {
+      "broken": false,
+      "key": "lu_shuai_ma_kun",
+      "name": "祿衰馬困",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "運祿",
+          "palaceIndex": 4
+        },
+        {
+          "key": "dahao",
+          "name": "大耗",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "流馬",
+          "palaceIndex": 6
+        },
+        {
+          "key": "yinsha",
+          "name": "陰煞",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "qisha"
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 3,
+      "palaceName": "田宅",
+      "palaceNameKey": "propertyPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "運馬",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "運祿",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "流馬",
+          "palaceIndex": 6
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "流昌",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "流曲",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 0,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "流昌",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "流曲",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "decadal": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 1
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天馬",
+          "palaceIndex": 9
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "風雲際會",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "運祿",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "風雲際會",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "運祿",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "yearly_same_palace"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "羊陀夾命",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "祿存",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "陷",
+          "brightnessKey": "xian",
+          "key": "tuoluoMin",
+          "name": "陀羅",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qingyangMin",
+          "name": "擎羊",
+          "palaceIndex": 2
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "運昌",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "忌",
+          "mutagenKey": "sihuaJi",
+          "name": "文曲",
+          "palaceIndex": 1
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 1,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "運昌",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "忌",
+          "mutagenKey": "sihuaJi",
+          "name": "文曲",
+          "palaceIndex": 1
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "hourly": [
+    {
+      "broken": false,
+      "key": "yang_liang_chang_lu",
+      "name": "陽梁昌祿",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太陽",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "tianliangMaj",
+          "mutagen": "科",
+          "mutagenKey": "sihuaKe",
+          "name": "天梁",
+          "palaceIndex": 11
+        },
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 9
+        },
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "運馬",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "運馬",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "羊陀夾命",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "liutuo",
+          "name": "流陀",
+          "palaceIndex": 2
+        },
+        {
+          "key": "liuyang",
+          "name": "流羊",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "運曲",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 3,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "運曲",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "monthly": [
+    {
+      "broken": false,
+      "key": "zi_fu_tong_gong",
+      "name": "紫府同宮",
+      "palaceIndex": 6,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "ziweiMaj",
+          "name": "紫微",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "得",
+          "brightnessKey": "de",
+          "key": "tianfuMaj",
+          "name": "天府",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 3,
+      "palaceName": "子女",
+      "palaceNameKey": "childrenPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "運馬",
+          "palaceIndex": 3
+        }
+      ]
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "殺破狼",
+      "palaceIndex": 4,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破軍",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "貪狼",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "英星入廟",
+      "palaceIndex": 4,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破軍",
+          "palaceIndex": 4
+        }
+      ]
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "zhongzhou",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "male",
+    "language": "zh-TW",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "1985-6-11",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 11
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "殺破狼",
+      "palaceIndex": 4,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七殺",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破軍",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "貪狼",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "英星入廟",
+      "palaceIndex": 4,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "廟",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破軍",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "祿馬交馳",
+      "palaceIndex": 3,
+      "palaceName": "兄弟",
+      "palaceNameKey": "siblingsPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "流祿",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "運馬",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "羊陀夾命",
+      "palaceIndex": 4,
+      "palaceName": "命宮",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "運祿",
+          "palaceIndex": 4
+        },
+        {
+          "key": "yuntuo",
+          "name": "運陀",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunyang",
+          "name": "運羊",
+          "palaceIndex": 5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,706 @@
+{
+  "daily": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Sát Phá Lang",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "Tham Lang",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "qi_sha_chao_dou",
+      "name": "Thất Sát Triều Đẩu",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yang_dou"
+    },
+    {
+      "broken": false,
+      "key": "lu_shuai_ma_kun",
+      "name": "Lộc Suy Mã Khốn",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "Vận Lộc",
+          "palaceIndex": 4
+        },
+        {
+          "key": "dahao",
+          "name": "Đại Hao",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "Lưu Mã",
+          "palaceIndex": 6
+        },
+        {
+          "key": "yinsha",
+          "name": "Âm Sát",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "qisha"
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 3,
+      "palaceName": "Điền Trạch",
+      "palaceNameKey": "propertyPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "Vận Mã",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "Vận Lộc",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "Lưu Mã",
+          "palaceIndex": 6
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Văn Tinh Triều Mệnh",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "Lưu Xương",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "Lưu Khúc",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Văn Tinh Ám Củng",
+      "palaceIndex": 0,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "Lưu Xương",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "Lưu Khúc",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "decadal": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 1
+        },
+        {
+          "key": "tianmaMin",
+          "name": "Thiên Mã",
+          "palaceIndex": 9
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Phong Vân Tế Hội",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "Vận Lộc",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Phong Vân Tế Hội",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "Vận Lộc",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "yearly_same_palace"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Dương Đà Giáp Mệnh",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "Lộc Tồn",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "Hạn",
+          "brightnessKey": "xian",
+          "key": "tuoluoMin",
+          "name": "Đà La",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qingyangMin",
+          "name": "Kình Dương",
+          "palaceIndex": 2
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Văn Tinh Triều Mệnh",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "Vận Xương",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "Kỵ",
+          "mutagenKey": "sihuaJi",
+          "name": "Văn Khúc",
+          "palaceIndex": 1
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Văn Tinh Ám Củng",
+      "palaceIndex": 1,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "Vận Xương",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "Kỵ",
+          "mutagenKey": "sihuaJi",
+          "name": "Văn Khúc",
+          "palaceIndex": 1
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "hourly": [
+    {
+      "broken": false,
+      "key": "yang_liang_chang_lu",
+      "name": "Dương Lương Xương Lộc",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "Thái Dương",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "tianliangMaj",
+          "mutagen": "Khoa",
+          "mutagenKey": "sihuaKe",
+          "name": "Thiên Lương",
+          "palaceIndex": 11
+        },
+        {
+          "brightness": "Lợi",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "Văn Xương",
+          "palaceIndex": 9
+        },
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "Vận Mã",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "Vận Mã",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Dương Đà Giáp Mệnh",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "liutuo",
+          "name": "Lưu Đà",
+          "palaceIndex": 2
+        },
+        {
+          "key": "liuyang",
+          "name": "Lưu Dương",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Văn Tinh Triều Mệnh",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "Lợi",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "Văn Xương",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "Vận Khúc",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Văn Tinh Ám Củng",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "Lợi",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "Văn Xương",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "Vận Khúc",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "monthly": [
+    {
+      "broken": false,
+      "key": "zi_fu_tong_gong",
+      "name": "Tử Phủ Đồng Cung",
+      "palaceIndex": 6,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "ziweiMaj",
+          "name": "Tử Vi",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "Đắc",
+          "brightnessKey": "de",
+          "key": "tianfuMaj",
+          "name": "Thiên Phủ",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 3,
+      "palaceName": "Tử Nữ",
+      "palaceNameKey": "childrenPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "Vận Mã",
+          "palaceIndex": 3
+        }
+      ]
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Sát Phá Lang",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "Tham Lang",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "Anh Tinh Nhập Miếu",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 4
+        }
+      ]
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "zhongzhou",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "male",
+    "language": "vi-VN",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "1985-6-11",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 11
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Sát Phá Lang",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "Thất Sát",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "Tham Lang",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "Anh Tinh Nhập Miếu",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "Miếu",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "Phá Quân",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Lộc Mã Giao Trì",
+      "palaceIndex": 3,
+      "palaceName": "Huynh Đệ",
+      "palaceNameKey": "siblingsPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "Lưu Lộc",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "Vận Mã",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Dương Đà Giáp Mệnh",
+      "palaceIndex": 4,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "Vận Lộc",
+          "palaceIndex": 4
+        },
+        {
+          "key": "yuntuo",
+          "name": "Vận Đà",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunyang",
+          "name": "Vận Dương",
+          "palaceIndex": 5
+        }
+      ]
+    }
+  ]
+}

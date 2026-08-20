@@ -1,0 +1,259 @@
+---
+title: 反推
+description: 由八字四柱或星盘特征反查候选生辰：两个入口各自的语义、四柱口径与 Config 的关系、多解与 60 年周期、截断语义。
+---
+
+*适合：只记得盘、不记得生日的人；要把八字转成紫微盘的人*
+
+正排是「生辰 → 盘」。但常有反着来的需求：
+
+- 手里有一张旧盘或一组八字，生日却记不清了；
+- 对方只报八字不报公历生日，而排紫微盘需要公历日期与时辰；
+- 只记得「命宫在午、木三局、紫微坐命」这类盘面特征，想找回是哪天生的。
+
+x-iztro 给了两个反推入口，都返回**候选生辰**（公历日期 + 时辰索引），
+拿去正排即可复现目标：
+
+| 入口 | 输入 | 语义 |
+| --- | --- | --- |
+| `solar_dates_by_bazi` | 八字四柱干支 | 找出范围内四柱恰好如此的全部生辰 |
+| `reverse_chart` | 命宫身宫地支、五行局、星耀落宫、生年四化 | 找出范围内排出的盘满足全部条件的生辰 |
+
+两者的实现都是「剪枝枚举 + 正排终验」：先用便宜的查表把明显不可能的日子整批剪掉，
+幸存者再用与正排完全相同的代码验证。因此**反推结果与正向排盘零分歧**——
+每个候选正排出来必然真的满足条件，目标生辰也必然在候选里。
+
+## 由八字反查生辰
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+// 庚辰 甲申 丙午 庚寅
+let cands = solar_dates_by_bazi(
+    (HeavenlyStem::Geng, EarthlyBranch::Chen),
+    (HeavenlyStem::Jia, EarthlyBranch::Shen),
+    (HeavenlyStem::Bing, EarthlyBranch::Wu),
+    (HeavenlyStem::Geng, EarthlyBranch::Yin),
+    (1900, 2100),
+    &Config::default(),
+)?;
+for c in &cands {
+    println!("{} {}", c.solar_date, c.time_index);
+}
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import solar_dates_by_bazi
+from x_iztro.enums import EarthlyBranch as B, HeavenlyStem as S
+
+# 庚辰 甲申 丙午 庚寅
+cands = solar_dates_by_bazi(
+    (S.GENG, B.CHEN), (S.JIA, B.SHEN), (S.BING, B.WU), (S.GENG, B.YIN),
+    year_range=(1900, 2100),
+)
+for c in cands:
+    print(c.solar_date, c.time_index)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+cands, err := iztro.SolarDatesByBazi(
+    iztro.Pillar{iztro.StemGeng, iztro.BranchChen}, // 庚辰
+    iztro.Pillar{iztro.StemJia, iztro.BranchShen},  // 甲申
+    iztro.Pillar{iztro.StemBing, iztro.BranchWu},   // 丙午
+    iztro.Pillar{iztro.StemGeng, iztro.BranchYin},  // 庚寅
+    1900, 2100, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, c := range cands {
+    fmt.Println(c.SolarDate, c.TimeIndex)
+}
+```
+
+</Tab>
+</Tabs>
+
+**输出**（三种语言相同）
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+### 多解与 60 年周期
+
+干支纪年 60 年一轮回，同一组四柱在相隔约 60 年的位置重复出现，
+因此一组四柱在大范围内**注定多解**——上例 1900–2100 里出现三次。
+年份范围收窄到一个甲子（60 年）内通常只剩一个解；
+范围给宽时，靠年龄常识从候选里挑出正确的那个。
+
+### 子时的双候选
+
+子时跨午夜，拆成早子时（索引 0，当日 0:00–1:00）与晚子时（索引 12，当日 23:00–24:00），
+而晚子时的日柱按 `day_divide` 的默认口径归**次日**。
+所以时柱为子的一组四柱可能给出相邻两天的两个候选：某日的早子时、其前一日的晚子时——
+这不是误差，两个候选正排出来的四柱确实完全相同，八字本身分不出它们。
+
+## 四柱按哪套口径解释——随 Config
+
+四柱不是绝对的：年柱几时换（春节还是立春）、月柱几时换（初一还是节气）、
+晚子时的日柱归谁，不同流派口径不同。这些口径都在
+[`Config`](/zh/docs/guide/guides/config) 上：`year_divide` 管年柱、
+`horoscope_divide` 管月柱、`day_divide` 管晚子归属。
+
+`solar_dates_by_bazi` 按**传入的 config** 解释四柱，
+与正排输出的 `raw_dates.chinese_date` 是同一套语义。
+同一个生辰，两种口径下的四柱可能不同——以 2001-2-1 卯时为例，
+它落在春节（1 月 24 日）之后、立春（2 月 4 日）之前：
+
+| 口径 | 四柱 |
+| --- | --- |
+| 默认（春节换年、初一换月） | 辛巳 庚寅 乙未 己卯 |
+| `Exact`（立春换年、节气换月） | 庚辰 己丑 乙未 己卯 |
+
+所以拿到一组八字，先弄清它是按哪套口径排的，再传对应的 config。
+用哪套 config 排的盘，就用哪套 config 反查，往返必然闭环：
+
+```rust
+let cfg = Config {
+    year_divide: YearDivide::Exact,
+    horoscope_divide: HoroscopeDivide::Exact,
+    ..Config::default()
+};
+let chart = by_solar("2001-2-1", 3, Gender::Female, true, Language::ZhCN, cfg.clone())?;
+let p = chart.raw_dates.chinese_date;
+
+let cands = solar_dates_by_bazi(p.yearly, p.monthly, p.daily, p.hourly, (1980, 2020), &cfg)?;
+assert!(cands.iter().any(|c| c.solar_date == "2001-2-1" && c.time_index == 3));
+```
+
+## 由星盘特征反查生辰
+
+只记得盘面、给不出完整八字时用 `reverse_chart`。条件全部可选，
+但至少要给一个；给了的条件须**同时满足**：
+
+| 条件 | 说明 |
+| --- | --- |
+| `soul_branch` / `body_branch` | 命宫、身宫地支 |
+| `five_elements_class` | 五行局 |
+| `stars` | 星耀落宫（星 + 地支），可给多条 |
+| `mutagens` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个 |
+| `year_range` | 公历年闭区间（含两端），默认 1900–2100 |
+| `fix_leap` | 闰月修正，与排盘入参同义；缺省取 `true`（Go 侧为 `*bool`，`nil` 即缺省） |
+| `limit` | 候选数上限，0 取默认值 512 |
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::*;
+
+let r = reverse_chart(
+    &ReverseCriteria {
+        soul_branch: Some(EarthlyBranch::Wu),
+        five_elements_class: Some(FiveElementsClass::Wood3rd),
+        stars: vec![StarPosition { star: StarKey::ZiweiMaj, branch: EarthlyBranch::Wu }],
+        mutagens: [Some(StarKey::TaiyangMaj), None, None, None], // 太阳化禄
+        year_range: (1998, 2002),
+        ..Default::default()
+    },
+    &Config::default(),
+)?;
+println!("{} 个候选, truncated = {}", r.candidates.len(), r.truncated);
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+from x_iztro import ReverseCriteria, StarPosition, reverse_chart
+from x_iztro.enums import EarthlyBranch, FiveElementsClass, MajorStar
+
+r = reverse_chart(ReverseCriteria(
+    soul_branch=EarthlyBranch.WU,
+    five_elements_class=FiveElementsClass.WOOD_3,
+    stars=[StarPosition(star=MajorStar.ZIWEI, branch=EarthlyBranch.WU)],
+    mutagens=(MajorStar.TAIYANG, None, None, None),  # 太阳化禄
+    year_range=(1998, 2002),
+))
+print(len(r.candidates), "个候选, truncated =", r.truncated)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+r, err := iztro.ReverseChart(&iztro.ReverseCriteria{
+    SoulBranch:        iztro.BranchWu,
+    FiveElementsClass: iztro.ClassWood3rd,
+    Stars:             []iztro.StarPosition{{Star: iztro.StarZiweiMaj, Branch: iztro.BranchWu}},
+    Mutagens:          [4]string{iztro.StarTaiyangMaj, "", "", ""}, // 太阳化禄
+    YearRange:         [2]int{1998, 2002},
+}, nil)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(r.Candidates), "个候选, truncated =", r.Truncated)
+```
+
+</Tab>
+</Tabs>
+
+**输出**
+
+```text
+39 个候选, truncated = false
+```
+
+39 个候选全部落在庚辰年（2000-2-11 至 2001-1-11），其中就有真实生辰 2000-8-16 时辰 2。
+每个候选拿去正排都满足全部条件——命宫都在午、都是木三局、紫微都坐午宫、太阳都化禄。
+
+`reverse_chart` 的判定同样贯穿 config：四化表、算法派别、各分界口径都按传入的 config 算，
+候选用同一 config 排盘必满足条件。
+
+<Callout type="info" title="为什么不收性别">
+星盘布局（星耀落宫、亮度、四化）与性别无关——性别只影响大限的行进方向。
+反推的目标是生辰，因此条件里没有性别；反查出生辰后自行配上性别正排。
+</Callout>
+
+条件只能是**本命盘**特征：运限流曜（运魁流昌之类）不出现在本命盘上，传入直接报错。
+
+## 性能与截断
+
+代价主要取决于条件的「筛选力」：命宫地支、五行局、主星落宫、生年四化
+都能整年整月地剪掉搜索空间，**条件越具体越快，年份范围越窄越快**。
+量级参考（Apple Silicon，release 构建，进程内首次调用）：上面 5 年范围的特征反查约 30 毫秒
+（含一次性表初始化，同进程再查约 1–2 毫秒）；同样条件放宽到 1900–2100，
+约 0.4 秒后即达到默认候选上限 512 而截断（调高上限扫完全部 843 个解约 0.7 秒）；
+八字反查 200 年约 0.1 秒。
+
+宽条件的解非常多（只给一个命宫地支，全范围有上万个解）。
+`limit`（默认 512）达到即停止搜索，结果的 `truncated` 置 `true`，
+**更晚的解未被搜索**——这是截断，不是抽样。看到 `truncated = true` 时，
+正确的做法是收窄 `year_range` 或补条件后重查，而不是调大 `limit` 硬扫。
+
+## 出错的情况
+
+以下情形返回 `invalid_argument` 错误（Rust 为 `IztroError::InvalidArgument`）：
+
+- 四柱干支阴阳不配：如「甲丑」——甲是阳干、丑是阴支，六十甲子里不存在这一柱；
+- 反推条件为空，或条件里含运限流曜；
+- 年份范围颠倒，或超出支持范围（公历 1583–9999）。
+
+错误分类与各语言的错误类型见[错误处理](/zh/docs/guide/guides/errors)。
+
+## API 参考
+
+- Rust：[反推](/zh/docs/rust/reverse)
+- Python：[反推](/zh/docs/python/reverse)
+- Go：[反推](/zh/docs/go/reverse)

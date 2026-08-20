@@ -1,0 +1,628 @@
+{
+  "daily": [
+    {
+      "broken": false,
+      "key": "lu_shuai_ma_kun",
+      "name": "녹쇠마곤",
+      "palaceIndex": 0,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "xunkong",
+          "name": "순공",
+          "palaceIndex": 6
+        },
+        {
+          "key": "tianmaMin",
+          "name": "천마",
+          "palaceIndex": 0
+        },
+        {
+          "key": "yinsha",
+          "name": "음살",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 6,
+      "palaceName": "천이",
+      "palaceNameKey": "surfacePalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "천마(년)",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 0,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "tianmaMin",
+          "name": "천마",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "문성조명",
+      "palaceIndex": 0,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "wenchangMin",
+          "name": "문창",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[-3]",
+          "brightnessKey": "xian",
+          "key": "wenquMin",
+          "name": "문곡",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "문성암공",
+      "palaceIndex": 0,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "wenchangMin",
+          "name": "문창",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[-3]",
+          "brightnessKey": "xian",
+          "key": "wenquMin",
+          "name": "문곡",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "decadal": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "살파랑",
+      "palaceIndex": 2,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "칠살",
+          "palaceIndex": 2
+        },
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "pojunMaj",
+          "name": "파군",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "tanlangMaj",
+          "name": "탐랑",
+          "palaceIndex": 10
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "풍운제회",
+      "palaceIndex": 2,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "풍운제회",
+      "palaceIndex": 2,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "tianmaMin",
+          "name": "천마",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yearly"
+    }
+  ],
+  "hourly": [
+    {
+      "broken": false,
+      "key": "ji_yue_tong_liang",
+      "name": "기월동량",
+      "palaceIndex": 3,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[-1]",
+          "brightnessKey": "ping",
+          "key": "tianjiMaj",
+          "name": "천기",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "taiyinMaj",
+          "name": "태음",
+          "palaceIndex": 9
+        },
+        {
+          "brightness": "[-2]",
+          "brightnessKey": "bu",
+          "key": "tiantongMaj",
+          "name": "천동",
+          "palaceIndex": 11
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tianliangMaj",
+          "mutagen": "과",
+          "mutagenKey": "sihuaKe",
+          "name": "천량",
+          "palaceIndex": 1
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 6,
+      "palaceName": "전택",
+      "palaceNameKey": "propertyPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "천마(년)",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "양타협명",
+      "palaceIndex": 3,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "록존(년)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "liutuo",
+          "name": "타라(년)",
+          "palaceIndex": 2
+        },
+        {
+          "key": "liuyang",
+          "name": "경양(년)",
+          "palaceIndex": 4
+        }
+      ]
+    }
+  ],
+  "monthly": [
+    {
+      "broken": false,
+      "key": "ling_chang_tuo_wu",
+      "name": "영창타무",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "[-3]",
+          "brightnessKey": "xian",
+          "key": "lingxingMin",
+          "name": "령성",
+          "palaceIndex": 10
+        },
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "wenchangMin",
+          "mutagen": "과",
+          "mutagenKey": "sihuaKe",
+          "name": "문창",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liutuo",
+          "name": "타라(년)",
+          "palaceIndex": 2
+        },
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "wuquMaj",
+          "name": "무곡",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "sheng_bu_feng_shi",
+      "name": "생불봉시",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "pojunMaj",
+          "name": "파군",
+          "palaceIndex": 6
+        },
+        {
+          "key": "xunkong",
+          "name": "순공",
+          "palaceIndex": 6
+        }
+      ],
+      "variant": "pojun"
+    },
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "살파랑",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "칠살",
+          "palaceIndex": 2
+        },
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "pojunMaj",
+          "name": "파군",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "tanlangMaj",
+          "name": "탐랑",
+          "palaceIndex": 10
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_shuai_ma_kun",
+      "name": "녹쇠마곤",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "xunkong",
+          "name": "순공",
+          "palaceIndex": 6
+        },
+        {
+          "key": "tianmaMin",
+          "name": "천마",
+          "palaceIndex": 0
+        },
+        {
+          "key": "yinsha",
+          "name": "음살",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "칠살",
+          "palaceIndex": 2
+        }
+      ],
+      "variant": "qisha"
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "천마(년)",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "천마(년)",
+          "palaceIndex": 6
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "양타협명",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tuoluoMin",
+          "name": "타라",
+          "palaceIndex": 5
+        },
+        {
+          "brightness": "[-3]",
+          "brightnessKey": "xian",
+          "key": "qingyangMin",
+          "name": "경양",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ke_ming_an_lu",
+      "name": "과명암록",
+      "palaceIndex": 6,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "wenchangMin",
+          "mutagen": "과",
+          "mutagenKey": "sihuaKe",
+          "name": "문창",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liulu",
+          "name": "록존(년)",
+          "palaceIndex": 3
+        }
+      ]
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "fu_xiang_chao_yuan",
+      "name": "부상조원",
+      "palaceIndex": 4,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tianfuMaj",
+          "name": "천부",
+          "palaceIndex": 8
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tianxiangMaj",
+          "name": "천상",
+          "palaceIndex": 0
+        }
+      ]
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "default",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "female",
+    "language": "ko-KR",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "2000-8-16",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 2
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "fu_xiang_chao_yuan",
+      "name": "부상조원",
+      "palaceIndex": 4,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tianfuMaj",
+          "name": "천부",
+          "palaceIndex": 8
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tianxiangMaj",
+          "name": "천상",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "녹마교치",
+      "palaceIndex": 6,
+      "palaceName": "복덕",
+      "palaceNameKey": "spiritPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "록존",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuma",
+          "name": "천마(년)",
+          "palaceIndex": 6
+        }
+      ]
+    }
+  ]
+}

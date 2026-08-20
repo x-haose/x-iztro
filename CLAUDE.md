@@ -44,7 +44,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `src/` — Rust 核心库
   - `data/` — 枚举、常量、天干地支、星耀数据表
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
-  - `astro/` — 排盘、运限、三方四正算法
+  - `astro/` — 排盘、运限、三方四正算法；`reverse.rs` 反推（八字四柱/星盘特征 → 候选生辰）
+  - `knowledge/` — 知识包（`KnowledgePack`：解析/合并/查询），内嵌默认包 `data/knowledge/iztro_docs.zh-CN.json`
+  - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
+    `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
   - `i18n/` — 多语言翻译
   - `error.rs` — IztroError（入口前置校验的错误类型）
   - `dto.rs` — JS 兼容序列化 DTO（三语言绑定共用）
@@ -55,6 +58,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro/` — Go FFI 绑定包
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
+- `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
 
 ## 关键约定
 
@@ -73,7 +77,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   语言无关标识（星/宫/干支/四化/亮度/五行局的 `*key`/`*Key(s)`，取值为 iztro i18n key）
 - 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
   判断方法在任何输出语言的星盘上结果一致
-- 绑定接口无状态：运限/Prompt 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
+- 绑定接口无状态：运限/Prompt/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 
 ### Python 绑定架构
@@ -114,6 +118,41 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   iztro 在本命层级把红鸾误写为 `hongluanMin`，x-iztro 用正确的 `hongluan`
 - 用户视角的对应关系写在文档站「关于 → 与 iztro 的对应」一页
 
+### 格局引擎（x-iztro 扩展，iztro 无对应 API）
+- 规则来源 iztro-docs《格局》页（MIT）63 条，火贪/铃贪分列为 64 个 `PatternKey`；无金标，口径自守：
+  每条规则函数的文档注释就是口径与出处，多口径一律以 `PatternHit.variant` 报出、不设 strict/loose 开关，
+  「破格/加杀平常」只置 `broken` 不否决，「身命」类命宫身宫各判、命中哪宫 `palace` 记哪宫
+- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），页面《日月并明》示例太阴在酉、
+  表为「不」故按表不成格；`Positional` 口径复现传统位置判法。`PatternConfig` 只放会改变事实判定的开关
+- 本命与运限共用同一套规则：`ChartView::at` 以该层命宫为命宫、合并该层流曜（流曜等同对应本命辅星）
+  与该层四化；`Scope::Origin` 等同本命；两条行运格（禄衰马困、风云际会）只在运限视角报，
+  风云际会只在大限视角报一次
+- 新增/修改规则：改 `src/pattern/rules/<组>.rs` 并加入该组 `RULES`（`rules_cover_every_pattern_key_once`
+  强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
+  规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
+
+### 反推（x-iztro 扩展）
+- 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
+  与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢
+- 无外部金标，正确性由往返测试定义（`tests/reverse.rs`）：任取一盘，四柱/特征反查必含原生辰，
+  且每个候选正排后必须真的得出目标
+- 四柱按传入 `Config` 的分界口径解释（与 `raw_dates.chinese_date` 同语义）；星盘布局与性别无关，
+  反推不收性别；`reverse_chart` 条件为空或含流耀报 `InvalidArgument`，`limit`（默认 512）截断兜住宽条件
+- 日柱用「lunar_rust 锚点校准 + 儒略日纯算术」推 60 周期，避免逐日构造农历对象
+
+### 知识包（x-iztro 扩展）
+- 边界：内核只做事实判定，星耀解读、格局释义、宫位/四化含义、门派属性（阴阳五行化气别号等）全在知识包；
+  核心 `StarInfo` 保持与 iztro 一致，不把卡片属性并进去（卡片与 iztro 表本身有冲突，说明也是观点）
+- 协议：语言无关 key（`StarKey`/`PatternKey`/`Palace`/`Mutagen` 的 `as_key`）→ 文本/属性，格式 `knowledge/SCHEMA.md`；
+  合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
+  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
+- 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
+  只换表达不加减命理内容），JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
+  `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见」等残留）
+- 同步上游：人工 diff iztro-docs 新旧 commit 的 learn 页差异，把变化条目改写后写回 JSON 并更新
+  `source.commit`；一次性提取脚手架存于 docs/plan/knowledge-scaffold（gitignore，不进仓库）
+- 映射类字段允许写 `null`（Go nil map 默认序列化）
+
 ### 测试
 - 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（八层合计 713,870 例，约 71 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
@@ -138,7 +177,16 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
   - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
-    快照缺失时自动写入基线，有意改动后删掉 `tests/golden/prompt_snapshots/` 重建）
+    缺失即失败；有意改动后用 `UPDATE_PROMPT_SNAPSHOTS=1` 重跑该测试重建基线）
+  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
+    + Go `knowledge_test.go`
+  - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、limit 截断、错误路径、FFI kind）
+  - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
+    + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
+    + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，
+    Python `test_patterns.py` 与 Go `pattern_golden_test.go` 读同一批快照；缺失即失败，
+    有意改口径后用 `UPDATE_PATTERN_SNAPSHOTS=1` 重跑该测试重建基线，`pattern_distribution`
+    的 tally 金标随之更新）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
   - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`
@@ -151,6 +199,19 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### 多语言
 - 支持 6 种语言：zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN
 - 翻译在 `src/i18n/` 下，serde 序列化时自动应用
+
+## 发版
+
+1. `git cliff --unreleased --tag v<版本>` 生成草稿（配置在 `cliff.toml`，按 conventional
+   commits 归类为中文节名），逐条润色成带背景说明的条目并入 CHANGELOG.md——
+   未发布功能的开发期修正并进该功能条目的最终描述，只有对已发布版本的行为修正才单列；
+   `[Unreleased]` 下插入版本节，文件尾链接行同步更新。
+2. `Cargo.toml` 与 `pyproject.toml` 版本号同改（release.yml 开头断言两者相等），
+   `cargo check` 刷新 Cargo.lock——发版走 `cargo publish --locked`，
+   lock 里本包版本不同步会挂。
+3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
+   合并即自动发版：金标门禁 → crates.io（OIDC）→ `v*` 与 `go/iztro/v*` 双标签
+   → GitHub Release → 派发 wheels.yml 发 PyPI。
 
 ## 常用命令速查
 

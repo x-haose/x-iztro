@@ -1,0 +1,167 @@
+---
+title: 反推
+description: solar_dates_by_bazi 与 reverse_chart：由八字四柱或星盘特征反查候选生辰的函数与类型。
+---
+
+由八字四柱或星盘特征反查候选生辰。两个入口都是「剪枝枚举 + 正排终验」，
+结果与正向排盘零分歧。概念、四柱口径与 Config 的关系、多解与截断语义见
+[反推指南](/zh/docs/guide/guides/reverse)。
+
+```rust
+use x_iztro::*;
+
+let cands = solar_dates_by_bazi(
+    (HeavenlyStem::Geng, EarthlyBranch::Chen),
+    (HeavenlyStem::Jia, EarthlyBranch::Shen),
+    (HeavenlyStem::Bing, EarthlyBranch::Wu),
+    (HeavenlyStem::Geng, EarthlyBranch::Yin),
+    (1900, 2100),
+    &Config::default(),
+)?;
+```
+
+全部函数与类型定义在 `x_iztro::astro::reverse`，并在 crate 根重导出。
+
+## 类型
+
+### BirthCandidate
+
+一个候选生辰，可直接交给 [`by_solar`](/zh/docs/rust/astro) 排盘。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solar_date` | `String` | 公历日期，`YYYY-M-D` |
+| `time_index` | `u8` | 时辰索引 0–12（0 为早子时，12 为晚子时） |
+
+### StarPosition
+
+一颗星与其落宫地支：星盘特征反推的原子条件。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `star` | `StarKey` | 星耀（须为本命盘星耀，运限流曜不接受） |
+| `branch` | `EarthlyBranch` | 落宫地支 |
+
+### ReverseCriteria
+
+星盘特征反推的条件集。实现 `Default`，惯用写法是给出条件后 `..Default::default()`。
+全部条件可选，但至少要给一个。
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `soul_branch` | `Option<EarthlyBranch>` | `None` | 命宫地支 |
+| `body_branch` | `Option<EarthlyBranch>` | `None` | 身宫地支 |
+| `five_elements_class` | `Option<FiveElementsClass>` | `None` | 五行局 |
+| `stars` | `Vec<StarPosition>` | 空 | 星耀落宫条件，全部须同时满足 |
+| `mutagens` | `[Option<StarKey>; 4]` | 全 `None` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星 |
+| `year_range` | `(i64, i64)` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `fix_leap` | `bool` | `true` | 是否修正闰月，与排盘入参同义 |
+| `limit` | `usize` | `0` | 候选数上限；`0` 取 `DEFAULT_REVERSE_LIMIT` |
+
+### ReverseResult
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `candidates` | `Vec<BirthCandidate>` | 满足全部条件的候选生辰 |
+| `truncated` | `bool` | 是否因达到候选数上限而提前截断；截断时更晚的解未被搜索 |
+
+### DEFAULT_REVERSE_LIMIT
+
+```rust
+pub const DEFAULT_REVERSE_LIMIT: usize = 512;
+```
+
+`ReverseCriteria::limit` 为 0 时采用的候选数上限。
+
+---
+
+## solar_dates_by_bazi
+
+由八字四柱反查公历生辰。
+
+```rust
+pub fn solar_dates_by_bazi(
+    yearly: (HeavenlyStem, EarthlyBranch),
+    monthly: (HeavenlyStem, EarthlyBranch),
+    daily: (HeavenlyStem, EarthlyBranch),
+    hourly: (HeavenlyStem, EarthlyBranch),
+    year_range: (i64, i64),
+    config: &Config,
+) -> Result<Vec<BirthCandidate>, IztroError>
+```
+
+四柱按 `config` 的分界口径解释（`year_divide` 年柱、`horoscope_divide` 月柱、
+`day_divide` 晚子归属），与排盘输出的 `raw_dates.chinese_date` 同一套语义，
+因此任何盘的四柱反查结果必包含该盘的生辰。一组四柱在范围内通常每约 60 年
+出现一次；时柱为子时因早晚子之分可能给出相邻两天的两个候选。
+
+**示例**
+
+```rust
+let a = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+let p = a.raw_dates.chinese_date;
+
+let cands = solar_dates_by_bazi(p.yearly, p.monthly, p.daily, p.hourly, (1900, 2100), &Config::default())?;
+for c in &cands {
+    println!("{} {}", c.solar_date, c.time_index);
+}
+```
+
+**输出**
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时返回
+[`IztroError::InvalidArgument`](/zh/docs/rust/errors#invalidargument)。
+
+---
+
+## reverse_chart
+
+由星盘特征反查候选生辰。
+
+```rust
+pub fn reverse_chart(
+    criteria: &ReverseCriteria,
+    config: &Config,
+) -> Result<ReverseResult, IztroError>
+```
+
+判定贯穿 `config`：四化表、算法派别、各分界口径都按它算，
+候选用同一 `config` 排盘必满足全部条件。星盘布局与性别无关
+（性别只影响大限行进方向），因此条件不含性别。
+
+**示例**
+
+```rust
+let r = reverse_chart(
+    &ReverseCriteria {
+        soul_branch: Some(EarthlyBranch::Wu),
+        five_elements_class: Some(FiveElementsClass::Wood3rd),
+        stars: vec![StarPosition { star: StarKey::ZiweiMaj, branch: EarthlyBranch::Wu }],
+        mutagens: [Some(StarKey::TaiyangMaj), None, None, None],
+        year_range: (1998, 2002),
+        ..Default::default()
+    },
+    &Config::default(),
+)?;
+println!("{} {}", r.candidates.len(), r.truncated);
+```
+
+**输出**
+
+```text
+39 false
+```
+
+**错误**　条件为空、`stars` 含运限流曜、年份范围非法时返回
+[`IztroError::InvalidArgument`](/zh/docs/rust/errors#invalidargument)。
+
+<Callout type="info" title="truncated 是截断不是抽样">
+达到 `limit` 即停止搜索，更晚的解不会出现在结果里。
+`truncated` 为 `true` 时应收窄 `year_range` 或补条件后重查。
+</Callout>

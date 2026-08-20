@@ -102,7 +102,7 @@ For the syntax, see [Extending the astrolabe](/en/docs/guide/guides/plugins).
 
 The second parameter of `kot(value, k)` is a separate entry point in each binding: `key_of_in`
 (Rust), `key_of(text, key_filter)` (Python), `KeyOfIn` (Go). The values match iztro case for case,
-including which key homographic names such as `horse`, `dragon` and `유시` resolve to.
+including which key homographic names such as `horse`, `dragon` and `유시` (Korean for the You hour) resolve to.
 
 <Callout type="warn" title="A miss returns empty, not the input">
 iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust and Python) or an
@@ -145,6 +145,60 @@ input, and putting them into the DTO would break the field contract with iztro, 
 empty — keep your own copy if you need a record.
 
 ## What x-iztro adds
+
+### Pattern judgement (no iztro equivalent)
+
+iztro has no pattern API at all. On top of chart casting, x-iztro adds a pattern engine: 64 patterns,
+one rule set shared by natal charts and horoscope views, each hit carrying the palace it formed in,
+the reading that matched (`variant`), a "spoiled" flag (`broken`), and the evidencing stars. The
+entries, example charts and classical quotations come from the 格局 (Patterns) page of iztro-docs (MIT License,
+by Sylar Long); the judgement implementation, the pattern names in six languages, and the choices
+between competing readings are x-iztro's own work.
+
+The entry points on each side: `Astrolabe::patterns` / `HoroscopeRef::patterns` in Rust,
+`Astrolabe.patterns` / `Horoscope.patterns` in Python, `Astrolabe.Patterns` / `Horoscope.Patterns`
+in Go, plus the language-independent pattern keys (`PatternKey` in Rust and Python, the `PatternXxx`
+constants in Go). The concepts and the full table of 64 are on
+[Patterns](/en/docs/guide/concepts/patterns).
+
+Since iztro has nothing to compare against, this area has no golden data; its correctness is held by
+four layers of tests: a unit test per rule, a reproduction of the source page's 32 example charts on
+real charts, a bulk invariant sweep over the 1,560 tier-1 charts, and output snapshots that all
+three bindings read back from the same files.
+
+### Knowledge packs (no iztro equivalent)
+
+iztro ships facts only; the reading texts for stars and patterns live on its documentation site, not
+in the library. x-iztro turns interpretation into data behind a protocol: a knowledge pack is JSON
+mapping "language-independent key → text and attributes", and one default pack ships inside the
+library (107 stars, 64 patterns, 12 palaces, 4 transformations, 49 glossary entries, taken from the
+学习 (Learn) pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
+pack that merges field by field.
+
+The entry points: Rust's `KnowledgePack::builtin` / `merged`, Python's `KnowledgePack.builtin` /
+`merged`, Go's `BuiltinKnowledgePack` / `Merged`, with the merge implemented once in the Rust core.
+A star's yin-yang, five elements, dipper and chemistry are **attributes** that live in the pack
+rather than the core tables — the core `StarInfo` stays value-for-value identical to iztro's, while
+those attributes are a school's reading. See
+[Knowledge packs](/en/docs/guide/guides/knowledge-pack).
+
+### Reverse lookup (no iztro equivalent)
+
+iztro goes one way only: birth moment → chart. x-iztro adds the reverse
+direction: `solar_dates_by_bazi` recovers solar birth dates from four BaZi
+pillars — interpreted under the boundary readings of the `Config` you pass, the
+same semantics as `raw_dates.chinese_date` — and `reverse_chart` recovers birth
+candidates from chart features (soul/body palace branches, five elements class,
+star placements, birth-year mutagens). Both are pruned enumeration followed by
+full re-charting, so results have zero divergence from forward charting. A set
+of pillars recurs roughly every 60 years, so multiple solutions are inherent;
+chart any candidate to reproduce the target.
+
+The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
+`SolarDatesByBazi` / `ReverseChart` in Go (each with a Context variant). See
+[Reverse lookup](/en/docs/guide/guides/reverse).
+
+### Everything else
 
 - **Language-independent keys**: every field on the astrolabe carries a `*key` / `*Key` alongside
   its translated name, valued with iztro's i18n keys. Predicate logic is therefore unaffected by the

@@ -62,9 +62,26 @@ print(astro.astrolabe_to_prompt(chart))
 ... (all twelve palaces)
 ```
 
-The same text is available in six languages — pass `language="en-US"` and the
-stars, palaces and brightness levels come out as `general([+1])[B]`,
-`wealth`, `Tiger hour`, `Twelve Gods: dissipated, gossip, …` and so on.
+The same text is available in six languages. Pass `language="en-US"` and the
+same chart renders as:
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Time: Tiger hour (03:00~05:00)
+Soul Star: rebel
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+--- wealth ---
+Decadal: 43-52
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+...
+```
+
 `horoscope_to_prompt` does the same for a horoscope at a given date.
 
 ## Why not just ask the LLM to cast the chart?
@@ -200,6 +217,18 @@ func main() {
 - **Chart queries** — locate a palace by name, branch or index; test stars,
   transformations and empty palaces; the 三方四正 surrounded-palace group; and the
   flying-star (飞星) family.
+- **Pattern judgement** — 64 named star arrangements (格局), one rule set shared by
+  natal charts and horoscope views, each hit carrying the palace it formed in, the
+  reading that matched, and the evidencing stars. iztro has no such API.
+- **Knowledge packs** — reading texts and school-specific star attributes live in a
+  swappable JSON pack, not in the core. A default pack ships inside (107 stars, 64
+  patterns, 12 palaces, 4 transformations, 49 glossary entries, zh-CN, from
+  iztro-docs by Sylar Long, MIT); write an overlay to replace any entry.
+- **Reverse lookup** — `solar_dates_by_bazi` recovers solar birth dates from four
+  BaZi pillars (interpreted under the chart Config), and `reverse_chart` recovers
+  them from chart features — soul/body palace branches, five elements class, star
+  placements, birth-year mutagens. Pruned enumeration verified by full
+  re-charting: zero divergence from forward casting. iztro has no such API.
 - **Two schools** — the default school and 中州派 (Zhongzhou), selected per chart.
 - **Six languages** — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN, with
   language-independent key constants so your logic never depends on the display
@@ -211,6 +240,75 @@ func main() {
   `x_iztro.IztroError` (a `ValueError`) in Python, returns an `error` matchable
   with `errors.Is` in Go, and yields `{"error":"..."}` JSON over the C FFI.
   Every failure carries a machine-readable category. Nothing panics.
+
+### Pattern judgement
+
+```python
+chart = astro.by_solar("1985-5-3", 9, "male", language="en-US")
+
+for hit in chart.patterns():
+    print(hit.name, hit.palace_name, hit.broken)
+```
+
+```text
+General and Wolf Together surface False
+Empress and Minister Facing the Palace soul False
+Marshal, Rebel and Wolf surface False
+Money and Horse Galloping Together soul False
+Officer and Helper Flanking Life soul False
+Literary Nobility and Brilliance surface False
+Literary Stars Facing Life soul True
+Literary Stars in Hidden Support soul False
+Literary Stars in Hidden Support soul False
+```
+
+The judging principles and the full table of 64 patterns are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/concepts/patterns).
+
+### Knowledge packs
+
+The default pack is Chinese, so pair it with a hit's language-independent `key`
+rather than its translated name:
+
+```python
+from x_iztro import KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+```
+
+```text
+Empress and Minister Facing the Palace | 府相朝垣命必荣
+```
+
+The pack format, the merge rules and how to write an overlay are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/guides/knowledge-pack).
+
+### Reverse lookup
+
+```python
+from x_iztro import solar_dates_by_bazi
+
+# every solar birth moment in 1900-2100 with the pillars 庚辰 甲申 丙午 庚寅
+for c in solar_dates_by_bazi(
+    ("gengHeavenly", "chenEarthly"), ("jiaHeavenly", "shenEarthly"),
+    ("bingHeavenly", "wuEarthly"), ("gengHeavenly", "yinEarthly"),
+):
+    print(c.solar_date, c.time_index)
+```
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+Chart-feature lookup, how the pillars follow the Config boundaries, and the
+truncation semantics are on the
+[documentation site](https://ziwei.x-hoase.com/en/docs/guide/guides/reverse).
 
 ## Accuracy
 

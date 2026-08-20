@@ -1,0 +1,310 @@
+---
+title: Knowledge packs
+description: KnowledgePack and its entry structs, the bundled default pack, JSON parsing, overlay merging and error handling.
+---
+
+A knowledge pack is JSON mapping "language-independent key → reading text and school attributes".
+The core only judges facts; reading texts and the school-specific star attributes live here. For the
+concept, the format and how to write an overlay, see the
+[knowledge pack guide](/en/docs/guide/guides/knowledge-pack); the full field reference is
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md) in the
+repository.
+
+```go
+pack, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+intro := pack.StarIntro(iztro.StarZiweiMaj)
+```
+
+Every lookup takes a `string`; pass the `StarXxx` / `PatternXxx` / `PalaceXxx` / `MutagenXxx`
+constants. The default pack and the merge both live in the embedded wasm core; this package only
+encodes and decodes JSON.
+
+## Types
+
+### KnowledgePack
+
+All fields are exported and tagged, so `encoding/json` works on them directly.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Schema` | `int` | Format version, currently 1 |
+| `ID` | `string` | Pack identifier; `"iztro-docs"` for the default pack |
+| `Version` | `string` | Pack version; for the default pack, retrieval date + short source commit |
+| `Language` | `string` | Language code of the texts, e.g. `LanguageZhCN` |
+| `Extends` | `string` | The pack this overlay overlays; empty for a standalone pack |
+| `Source` | `KnowledgeSource` | Origin and licence |
+| `Stars` | `map[string]StarEntry` | Star entries, keyed by star key |
+| `Patterns` | `map[string]PatternEntry` | Pattern entries, keyed by pattern key |
+| `Palaces` | `map[string]TextEntry` | Palace entries, keyed by palace key |
+| `Mutagens` | `map[string]TextEntry` | Transformation entries, keyed by transformation key |
+| `Concepts` | `map[string]ConceptEntry` | Glossary entries, keyed by slug |
+
+### KnowledgeSource
+
+`Name`, `URL`, `Commit`, `License`, `Author`, `RetrievedAt`, `Adapted` (adaptation note), all `string`, empty when absent.
+
+### StarEntry
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `Name` | `string` | Display name in this pack's language |
+| `Category` | `string` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `Group` | `string` | Grouping: the adjective star's category, the decorative star's group |
+| `Attributes` | `StarAttributes` | School attributes |
+| `Intro` | `string` | Reading (Markdown) |
+| `Combinations` | `map[string]string` | Reading for sharing a palace with another major star, keyed by that star |
+
+### StarAttributes
+
+`YinYang` (`yin` / `yang`), `FiveElements` (`wood` / `fire` / `earth` / `metal` / `water`), `Stem`
+(`jia`…`gui`), `FiveElementsNote`, `Dipper`, `Chemistry`, `Career`, `Duty`, `Aliases` (`[]string`),
+`ElementColor`, `EnergyColor`.
+
+<Callout type="info">
+`FiveElements` and `YinYang` are what the pack's source says, and may differ from the core star
+data, which is value-for-value identical to iztro's. The reason is in the
+[guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-here).
+</Callout>
+
+### PatternEntry
+
+`Name`, `Quotes` (`[]string`), `Conditions`, `Intro`.
+
+### TextEntry / ConceptEntry
+
+`TextEntry` (palaces, transformations) has `Name` and `Intro`; `ConceptEntry` (glossary) has `Title`
+and `Intro`.
+
+<Callout type="warn" title="Absent means the zero value">
+The Go side does not use pointers to separate "not written" from "written as empty". An absent field
+is the empty string or nil, so compare against the empty string to tell whether an entry carries
+text.
+</Callout>
+
+---
+
+## BuiltinKnowledgePack
+
+**Purpose**　Get the bundled default knowledge pack.
+
+**Signature**
+
+```go
+func BuiltinKnowledgePack(language Language) (*KnowledgePack, error)
+func BuiltinKnowledgePackContext(ctx context.Context, language Language) (*KnowledgePack, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `ctx` | `context.Context` | Context variant only; cancels waiting for a wasm instance |
+| `language` | `Language` | Text language |
+
+**Returns**　`(*KnowledgePack, error)`. Languages without a bundled pack return an error, matchable
+with `errors.Is(err, iztro.ErrInvalidArgument)`. Only `LanguageZhCN` has one today.
+
+**Example**
+
+```go
+pack, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(pack.ID, pack.Version, pack.Language, pack.Source.License)
+fmt.Println(len(pack.Stars), len(pack.Patterns), len(pack.Palaces), len(pack.Mutagens), len(pack.Concepts))
+
+_, err = iztro.BuiltinKnowledgePack(iztro.LanguageEnUS)
+fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
+```
+
+**Output**
+
+```text
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT
+107 64 12 4 49
+iztro: no builtin knowledge pack for language 'en-US' true
+```
+
+---
+
+## ParseKnowledgePack
+
+**Purpose**　Parse a pack from JSON text.
+
+**Signature**
+
+```go
+func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
+```
+
+**Returns**　`(*KnowledgePack, error)`. Invalid JSON, a missing or zero `schema`, and a `schema`
+newer than this library supports all return an `ErrInvalidArgument`-class error — the same
+semantics as the Rust core's parser (`KnowledgePack::from_json`).
+
+Serializing is plain `encoding/json`:
+
+```go
+data, err := json.Marshal(pack)
+```
+
+**Example**
+
+```go
+overlay, err := iztro.ParseKnowledgePack([]byte(`{"schema":1,"id":"my-school","version":"1",
+    "language":"zh-CN","extends":"iztro-docs",
+    "stars":{"ziweiMaj":{"intro":"我的紫微","attributes":{"aliases":["帝座"]}}},
+    "patterns":{"zi_fu_tong_gong":{"intro":"我的紫府同宫"}}}`))
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(overlay.ID, overlay.Extends)
+
+_, err = iztro.ParseKnowledgePack([]byte("nope"))
+fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+my-school iztro-docs
+iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
+iztro: knowledge pack schema 99 is newer than supported 1
+```
+
+---
+
+## Merged
+
+**Purpose**　Layer overlay packs onto this one and return a new pack.
+
+**Signature**
+
+```go
+func (p *KnowledgePack) Merged(overlays ...*KnowledgePack) (*KnowledgePack, error)
+func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*KnowledgePack) (*KnowledgePack, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `ctx` | `context.Context` | Context variant only; cancels waiting for a wasm instance |
+| `overlays` | `...*KnowledgePack` | Overlays applied in argument order; later ones win |
+
+**Returns**　A new `*KnowledgePack`; neither this pack nor the overlays change. A nil receiver, a
+nil overlay, or a pack whose `schema` is invalid (hand-built structs are validated by the core
+here) all return an `ErrInvalidArgument`-class error.
+
+The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
+key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `Attributes` and
+`Combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
+the wasm core, so all three languages agree.
+
+**Example**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+merged, err := pack.Merged(overlay)
+if err != nil {
+    log.Fatal(err)
+}
+
+zi := merged.Star(iztro.StarZiweiMaj)
+fmt.Println(merged.ID, zi.Name, zi.Attributes.Aliases, zi.Attributes.Chemistry, zi.Intro)
+fmt.Println(merged.PatternIntro(iztro.PatternZiFuTongGong),
+    merged.Pattern(iztro.PatternZiFuTongGong).Quotes)
+fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:5]))
+
+_, err = pack.Merged(nil)
+fmt.Println(err)
+```
+
+**Output**
+
+```text
+my-school 紫微 [帝座] 尊贵 我的紫微
+我的紫府同宫 [紫府同宫终身福厚。]
+紫微星号称
+iztro: mergeKnowledgePacks: nil overlay pack
+```
+
+---
+
+## Star / Pattern / Palace / Mutagen / Concept
+
+**Purpose**　Look up an entry by language-independent key.
+
+**Signature**
+
+```go
+func (p *KnowledgePack) Star(starKey string) *StarEntry
+func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
+func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
+func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
+func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+```
+
+**Returns**　`nil` when the pack has no such entry, and `nil` for a nil receiver rather than a
+panic. The pointer is to a copy of the entry, so writing through it does not change the pack.
+
+**Example**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+zi := pack.Star(iztro.StarZiweiMaj)
+
+fmt.Println(zi.Name, zi.Category, zi.Attributes.Dipper, zi.Attributes.Aliases)
+fmt.Println(zi.Combinations[iztro.StarTianfuMaj] != "")
+fmt.Println(pack.Palace(iztro.PalaceSoul).Name, pack.Mutagen(iztro.MutagenLu).Name)
+fmt.Println(pack.Concept("tong-gong").Title)
+fmt.Println(pack.Star("nope") == nil)
+```
+
+**Output**
+
+```text
+紫微 major 中天星系 [帝王星 老板星 俸禄星]
+true
+命宫 化禄
+遇、加、逢、同宫、同度
+true
+```
+
+---
+
+## StarIntro / PatternIntro
+
+**Purpose**　Get the reading text directly.
+
+**Signature**
+
+```go
+func (p *KnowledgePack) StarIntro(starKey string) string
+func (p *KnowledgePack) PatternIntro(patternKey string) string
+```
+
+**Returns**　The empty string both when the entry is missing and when it exists without a reading.
+
+**Example**　List the natal patterns with their quotations:
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, hit := range hits {
+    fmt.Println(hit.Name, "|", pack.Pattern(hit.Key).Quotes[0])
+    fmt.Println(string([]rune(pack.PatternIntro(hit.Key))[:10]))
+}
+```
+
+**Output**
+
+```text
+府相朝垣 | 府相朝垣命必荣
+“食禄千锺”的断语使
+```

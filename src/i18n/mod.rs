@@ -2,6 +2,8 @@
 
 /// 标识与译名的双向查找
 pub mod lookup;
+/// 格局名称词表
+pub mod patterns;
 
 /// 英文词表
 pub mod en_us;
@@ -161,4 +163,9 @@ pub fn translate_zodiac(branch: EarthlyBranch, lang: Language) -> &'static str {
         Language::KoKR => ko_kr::zodiac_name(branch),
         Language::ViVN => vi_vn::zodiac_name(branch),
     }
+}
+
+/// 格局名称（按语言）
+pub fn translate_pattern(key: crate::pattern::PatternKey, lang: Language) -> &'static str {
+    patterns::pattern_name(key, lang)
 }

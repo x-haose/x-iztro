@@ -459,6 +459,11 @@ type Astrolabe struct {
 
 	// reqConfig 为发起排盘时传入的原始配置，不参与序列化。
 	reqConfig *Config
+	// fromStem / fromBranch 为 Rearranged 的重排起点干支标识，不参与序列化；
+	// 空串即本盘不是重排盘。wasm 侧调用无状态，格局判定等再次发起计算的
+	// 接口必须带上它们，让内核先重排再判——否则判的是原盘。
+	fromStem   string
+	fromBranch string
 }
 
 // requestConfig 返回发起排盘时传入的原始配置，供运限、重排与 prompt 等
@@ -472,6 +477,14 @@ func (a *Astrolabe) requestConfig() *Config {
 		return a.reqConfig
 	}
 	return &a.Config
+}
+
+// addRearrange 把本盘的重排起点干支写进查询入参；本盘不是重排盘时不加键。
+func (a *Astrolabe) addRearrange(payload map[string]any) {
+	if a.fromStem != "" && a.fromBranch != "" {
+		payload["fromStem"] = a.fromStem
+		payload["fromBranch"] = a.fromBranch
+	}
 }
 
 // Palace 通过宫位标识（PalaceSoul 等常量）或当前语言宫名获取宫位；未找到返回 nil。
@@ -755,6 +768,8 @@ type Horoscope struct {
 	// astrolabe 为发起这次运限查询的本命盘。
 	// 运限依附于某一张盘，宫位与流耀查询都要落回盘上，因此运限随身携带它。
 	astrolabe *Astrolabe
+	// targetTimeIndex 为发起这次查询的目标时辰索引；再次发起运限层计算（如格局）时用。
+	targetTimeIndex uint8
 }
 
 // Astrolabe 返回发起这次运限查询的本命盘。

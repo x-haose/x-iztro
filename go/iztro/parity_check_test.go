@@ -1,6 +1,7 @@
 package iztro
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -446,6 +447,63 @@ func TestAstroTypeParity(t *testing.T) {
 	// 非法干支标识报错而不是静默取默认
 	if _, err := heaven.Rearranged("notAStem", BranchZi); err == nil {
 		t.Fatal("非法天干标识应报错")
+	}
+}
+
+// TestRearrangedCarriesIntoHoroscopeAndPrompt 校验重排盘上的运限与 Prompt
+// 按重排后的布局计算，而不是静默退回原盘。
+func TestRearrangedCarriesIntoHoroscopeAndPrompt(t *testing.T) {
+	chart, err := BySolar("1990-4-23", 2, GenderMale, false, LanguageZhCN, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	re, err := chart.Rearranged(StemGeng, BranchChen)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plainH, err := chart.Horoscope("2024-6-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reH, err := re.Horoscope("2024-6-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plainJSON, err := json.Marshal(plainH)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reJSON, err := json.Marshal(reH)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(plainJSON) == string(reJSON) {
+		t.Fatal("重排盘的运限应与原盘不同")
+	}
+
+	plainPrompt, err := chart.AstrolabeToPrompt()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rePrompt, err := re.AstrolabeToPrompt()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plainPrompt == rePrompt {
+		t.Fatal("重排盘的本命 Prompt 应与原盘不同")
+	}
+
+	plainHP, err := chart.HoroscopeToPrompt("2024-6-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reHP, err := re.HoroscopeToPrompt("2024-6-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plainHP == reHP {
+		t.Fatal("重排盘的运限 Prompt 应与原盘不同")
 	}
 }
 

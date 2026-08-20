@@ -1,0 +1,304 @@
+---
+title: 知识包
+description: KnowledgePack 与各条目结构体、内嵌默认包、JSON 解析、覆盖包合并与错误处理。
+---
+
+知识包是「语言无关标识 → 解读文本与门派属性」的 JSON。内核只判事实，
+解读文本与星耀的门派属性放在这里。概念、格式与写覆盖包的方法见
+[知识包指南](/zh/docs/guide/guides/knowledge-pack)，完整字段表见仓库的
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md)。
+
+```go
+pack, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+intro := pack.StarIntro(iztro.StarZiweiMaj)
+```
+
+取键的方法都收 `string`，传 `StarXxx` / `PatternXxx` / `PalaceXxx` / `MutagenXxx` 常量即可。
+默认包与合并都在内嵌的 wasm 内核里，本包只做 JSON 编解码。
+
+## 类型
+
+### KnowledgePack
+
+字段全部导出，带 `json` 标签，可直接用 `encoding/json` 编解码。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Schema` | `int` | 格式版本，当前为 1 |
+| `ID` | `string` | 包标识，默认包为 `"iztro-docs"` |
+| `Version` | `string` | 包版本，默认包为「抓取日期+来源 commit 短号」 |
+| `Language` | `string` | 文本语言的语言码，如 `LanguageZhCN` |
+| `Extends` | `string` | 覆盖包所覆盖的包标识；独立包为空串 |
+| `Source` | `KnowledgeSource` | 来源与许可 |
+| `Stars` | `map[string]StarEntry` | 星耀条目，键为星耀标识 |
+| `Patterns` | `map[string]PatternEntry` | 格局条目，键为格局标识 |
+| `Palaces` | `map[string]TextEntry` | 宫位条目，键为宫位标识 |
+| `Mutagens` | `map[string]TextEntry` | 四化条目，键为四化标识 |
+| `Concepts` | `map[string]ConceptEntry` | 术语条目，键为 slug |
+
+### KnowledgeSource
+
+`Name`、`URL`、`Commit`、`License`、`Author`、`RetrievedAt`、`Adapted`（改编说明），都是 `string`，缺省为空串。
+
+### StarEntry
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Name` | `string` | 该语言的显示名 |
+| `Category` | `string` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `Group` | `string` | 分组：杂耀的分类、神煞的组别 |
+| `Attributes` | `StarAttributes` | 门派属性 |
+| `Intro` | `string` | 解读正文（Markdown） |
+| `Combinations` | `map[string]string` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+
+### StarAttributes
+
+`YinYang`（`yin` / `yang`）、`FiveElements`（`wood` / `fire` / `earth` / `metal` / `water`）、
+`Stem`（`jia`…`gui`）、`FiveElementsNote`、`Dipper`、`Chemistry`、`Career`、`Duty`、
+`Aliases`（`[]string`）、`ElementColor`、`EnergyColor`。
+
+<Callout type="info">
+`FiveElements` 与 `YinYang` 是知识包来源的说法，与核心星耀数据的取值可能不同——
+核心那份与 iztro 逐值一致。
+原因见[指南](/zh/docs/guide/guides/knowledge-pack#为什么星耀的阴阳五行放在这里)。
+</Callout>
+
+### PatternEntry
+
+`Name`、`Quotes`（`[]string`）、`Conditions`、`Intro`。
+
+### TextEntry / ConceptEntry
+
+`TextEntry`（宫位、四化）有 `Name` 与 `Intro`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
+
+<Callout type="warn" title="缺省一律是零值">
+Go 侧不用指针区分「没写」与「写了空串」，字段缺省即空串 / nil。
+要判断某条到底有没有正文，比空串即可。
+</Callout>
+
+---
+
+## BuiltinKnowledgePack
+
+**用途**　取内嵌的默认知识包。
+
+**签名**
+
+```go
+func BuiltinKnowledgePack(language Language) (*KnowledgePack, error)
+func BuiltinKnowledgePackContext(ctx context.Context, language Language) (*KnowledgePack, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `ctx` | `context.Context` | Context 变体专有，用于取消等待 wasm 实例 |
+| `language` | `Language` | 文本语言 |
+
+**返回值**　`(*KnowledgePack, error)`。该语言没有内嵌默认包时返回错误
+（可用 `errors.Is(err, iztro.ErrInvalidArgument)` 匹配）。目前只有 `LanguageZhCN` 有。
+
+**示例**
+
+```go
+pack, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(pack.ID, pack.Version, pack.Language, pack.Source.License)
+fmt.Println(len(pack.Stars), len(pack.Patterns), len(pack.Palaces), len(pack.Mutagens), len(pack.Concepts))
+
+_, err = iztro.BuiltinKnowledgePack(iztro.LanguageEnUS)
+fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
+```
+
+**输出**
+
+```text
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT
+107 64 12 4 49
+iztro: no builtin knowledge pack for language 'en-US' true
+```
+
+---
+
+## ParseKnowledgePack
+
+**用途**　由 JSON 文本解析一份包。
+
+**签名**
+
+```go
+func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
+```
+
+**返回值**　`(*KnowledgePack, error)`。JSON 不合法、`schema` 缺失或为 0、
+`schema` 高于本库支持的版本，都返回 `ErrInvalidArgument` 类的错误——
+与 Rust 内核解析（`KnowledgePack::from_json`）同语义。
+
+序列化直接用 `encoding/json`：
+
+```go
+data, err := json.Marshal(pack)
+```
+
+**示例**
+
+```go
+overlay, err := iztro.ParseKnowledgePack([]byte(`{"schema":1,"id":"my-school","version":"1",
+    "language":"zh-CN","extends":"iztro-docs",
+    "stars":{"ziweiMaj":{"intro":"我的紫微","attributes":{"aliases":["帝座"]}}},
+    "patterns":{"zi_fu_tong_gong":{"intro":"我的紫府同宫"}}}`))
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(overlay.ID, overlay.Extends)
+
+_, err = iztro.ParseKnowledgePack([]byte("nope"))
+fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+fmt.Println(err)
+```
+
+**输出**
+
+```text
+my-school iztro-docs
+iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
+iztro: knowledge pack schema 99 is newer than supported 1
+```
+
+---
+
+## Merged
+
+**用途**　把若干覆盖包依次叠加到本包上，返回新包。
+
+**签名**
+
+```go
+func (p *KnowledgePack) Merged(overlays ...*KnowledgePack) (*KnowledgePack, error)
+func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*KnowledgePack) (*KnowledgePack, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `ctx` | `context.Context` | Context 变体专有，用于取消等待 wasm 实例 |
+| `overlays` | `...*KnowledgePack` | 覆盖包，按传入顺序依次叠加，后面的覆盖前面的 |
+
+**返回值**　新的 `*KnowledgePack`，本包与覆盖包都不变。
+接收者为 `nil`、某个覆盖包为 `nil`、或某个包的 `schema` 不合法
+（手工构造的结构体也在这里被内核校验），都返回 `ErrInvalidArgument` 类的错误。
+
+合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
+覆盖包的非空字段覆盖同键条目的对应字段，`Attributes` 与 `Combinations` 逐字段合并，
+数组字段整体替换。合并本身在 wasm 内核里算，三语言结果一致。
+
+**示例**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+merged, err := pack.Merged(overlay)
+if err != nil {
+    log.Fatal(err)
+}
+
+zi := merged.Star(iztro.StarZiweiMaj)
+fmt.Println(merged.ID, zi.Name, zi.Attributes.Aliases, zi.Attributes.Chemistry, zi.Intro)
+fmt.Println(merged.PatternIntro(iztro.PatternZiFuTongGong),
+    merged.Pattern(iztro.PatternZiFuTongGong).Quotes)
+fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:5]))
+
+_, err = pack.Merged(nil)
+fmt.Println(err)
+```
+
+**输出**
+
+```text
+my-school 紫微 [帝座] 尊贵 我的紫微
+我的紫府同宫 [紫府同宫终身福厚。]
+紫微星号称
+iztro: mergeKnowledgePacks: nil overlay pack
+```
+
+---
+
+## Star / Pattern / Palace / Mutagen / Concept
+
+**用途**　按语言无关标识取条目。
+
+**签名**
+
+```go
+func (p *KnowledgePack) Star(starKey string) *StarEntry
+func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
+func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
+func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
+func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+```
+
+**返回值**　包里没有该条目时返回 `nil`；接收者为 `nil` 时同样返回 `nil`，不会 panic。
+返回的是条目的副本地址，改它不影响包本身。
+
+**示例**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+zi := pack.Star(iztro.StarZiweiMaj)
+
+fmt.Println(zi.Name, zi.Category, zi.Attributes.Dipper, zi.Attributes.Aliases)
+fmt.Println(zi.Combinations[iztro.StarTianfuMaj] != "")
+fmt.Println(pack.Palace(iztro.PalaceSoul).Name, pack.Mutagen(iztro.MutagenLu).Name)
+fmt.Println(pack.Concept("tong-gong").Title)
+fmt.Println(pack.Star("nope") == nil)
+```
+
+**输出**
+
+```text
+紫微 major 中天星系 [帝王星 老板星 俸禄星]
+true
+命宫 化禄
+遇、加、逢、同宫、同度
+true
+```
+
+---
+
+## StarIntro / PatternIntro
+
+**用途**　直接取解读正文。
+
+**签名**
+
+```go
+func (p *KnowledgePack) StarIntro(starKey string) string
+func (p *KnowledgePack) PatternIntro(patternKey string) string
+```
+
+**返回值**　条目不存在、或条目存在但没写正文，都返回空串。
+
+**示例**　把本命格局连同引文列出来：
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+hits, _ := chart.Patterns(nil)
+
+for _, hit := range hits {
+    fmt.Println(hit.Name, "|", pack.Pattern(hit.Key).Quotes[0])
+    fmt.Println(string([]rune(pack.PatternIntro(hit.Key))[:10]))
+}
+```
+
+**输出**
+
+```text
+府相朝垣 | 府相朝垣命必荣
+“食禄千锺”的断语使
+```

@@ -15,6 +15,9 @@ pub enum IztroError {
     InvalidDate(String),
     /// 时辰索引超出 0-12（0=早子时，12=晚子时）。
     InvalidTimeIndex(u8),
+    /// 入参不合法：干支阴阳不配、反推条件为空或包含流耀、年份范围颠倒等
+    /// 无法归入日期与时辰两类的调用方错误。
+    InvalidArgument(String),
     /// 依赖的历法库未能给出本应存在的干支或星座取值。
     /// 属于库内部缺陷而非调用方过错，以错误返回而非 panic——
     /// wasm 上 panic 会 trap 并损耗实例栈空间。
@@ -27,6 +30,7 @@ impl IztroError {
         match self {
             Self::InvalidDate(_) => "invalid_date",
             Self::InvalidTimeIndex(_) => "invalid_time_index",
+            Self::InvalidArgument(_) => "invalid_argument",
             Self::Internal(_) => "internal",
         }
     }
@@ -37,6 +41,7 @@ impl fmt::Display for IztroError {
         match self {
             Self::InvalidDate(msg) => f.write_str(msg),
             Self::InvalidTimeIndex(t) => write!(f, "time_index must be 0-12, got {t}"),
+            Self::InvalidArgument(msg) => f.write_str(msg),
             Self::Internal(msg) => write!(f, "internal error: {msg}"),
         }
     }

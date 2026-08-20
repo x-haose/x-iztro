@@ -1,0 +1,342 @@
+---
+title: 知识包
+description: KnowledgePack 与各条目 dataclass、内嵌默认包、dict/JSON 互转、覆盖包合并。
+---
+
+知识包是「语言无关标识 → 解读文本与门派属性」的 JSON。内核只判事实，
+解读文本与星耀的门派属性放在这里。概念、格式与写覆盖包的方法见
+[知识包指南](/zh/docs/guide/guides/knowledge-pack)，完整字段表见仓库的
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md)。
+
+```python
+from x_iztro import KnowledgePack
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+intro = pack.star_intro(MajorStar.ZIWEI)
+```
+
+`KnowledgePack` 从 `x_iztro` 顶层导出，条目 dataclass 在 `x_iztro.knowledge` 下。
+所有取键的方法都收字符串，枚举（`MajorStar`、`PatternKey`、`PalaceName`、`Mutagen`…）
+是 `StrEnum`，可以直接传。
+
+## 类型
+
+### KnowledgePack
+
+持有原始包对象（dict），查询方法返回类型化条目。
+
+**元信息（只读属性）**
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `schema` | `int` | 格式版本，当前为 1 |
+| `id` | `str` | 包标识，默认包为 `"iztro-docs"` |
+| `version` | `str` | 包版本，默认包为「抓取日期+来源 commit 短号」 |
+| `language` | `str` | 文本语言的语言码 |
+| `extends` | `str \| None` | 覆盖包所覆盖的包标识；独立包为 `None` |
+| `source` | `Source` | 来源与许可 |
+
+**方法**
+
+| 方法 | 说明 |
+| --- | --- |
+| `KnowledgePack.builtin(language="zh-CN")` | 内嵌默认包 |
+| `KnowledgePack.from_dict(d)` | 由包对象构造（保留引用，不复制） |
+| `KnowledgePack.from_json(text)` | 由 JSON 文本构造 |
+| `to_dict()` | 包对象的深拷贝 |
+| `to_json(**kwargs)` | JSON 文本，`kwargs` 透传给 `json.dumps` |
+| `merged(*overlays)` | 叠加覆盖包，返回新包 |
+| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | 取单条条目，没有返回 `None` |
+| `stars()` / `patterns()` | 全部星耀 / 格局条目 |
+| `star_intro(key)` / `pattern_intro(key)` | 直接取解读正文 |
+
+### 条目 dataclass
+
+`StarEntry`、`PatternEntry`、`TextEntry`、`ConceptEntry`、`StarAttributes`、`Source`
+都是 `frozen=True, slots=True` 的 dataclass，字段缺省即 `None`。
+
+`StarEntry`
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `str` | 星耀标识 |
+| `name` | `str \| None` | 该语言的显示名 |
+| `category` | `str \| None` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `group` | `str \| None` | 分组：杂耀的分类、神煞的组别 |
+| `attributes` | `StarAttributes` | 门派属性 |
+| `intro` | `str \| None` | 解读正文（Markdown） |
+| `combinations` | `dict[str, str]` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+
+`StarAttributes`：`yin_yang`（`yin` / `yang`）、
+`five_elements`（`wood` / `fire` / `earth` / `metal` / `water`）、`stem`（`jia`…`gui`）、
+`five_elements_note`、`dipper`、`chemistry`、`career`、`duty`、`aliases`（`list[str] | None`）、
+`element_color`、`energy_color`。
+
+`PatternEntry`：`key`、`name`、`quotes`（`list[str] | None`）、`conditions`、`intro`。
+
+`TextEntry`（宫位、四化）：`key`、`name`、`intro`。
+`ConceptEntry`（术语）：`slug`、`title`、`intro`。
+
+`Source`：`name`、`url`、`commit`、`license`、`author`、`retrieved_at`、`adapted`（改编说明）。
+
+<Callout type="info">
+`StarAttributes` 的 `five_elements` 与 `yin_yang` 是知识包来源的说法，
+与核心星耀数据的取值可能不同——核心那份与 iztro 逐值一致。
+原因见[指南](/zh/docs/guide/guides/knowledge-pack#为什么星耀的阴阳五行放在这里)。
+</Callout>
+
+---
+
+## builtin
+
+**用途**　取内嵌的默认知识包。
+
+**签名**
+
+```python
+@classmethod
+def builtin(cls, language: LanguageType = "zh-CN") -> KnowledgePack
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `language` | `LanguageType` | 否 | `"zh-CN"` | 文本语言 |
+
+**返回值**　`KnowledgePack`。
+
+**异常**　`IztroError`（`code` 为 `invalid_argument`）——该语言没有内嵌默认包。
+目前只有 `zh-CN` 有。
+
+**示例**
+
+```python
+from x_iztro import IztroError, KnowledgePack
+
+pack = KnowledgePack.builtin()
+
+print(pack)
+print(pack.schema, pack.id, pack.version, pack.language, pack.extends)
+print(pack.source.license, pack.source.author)
+print(len(pack.stars()), len(pack.patterns()))
+
+try:
+    KnowledgePack.builtin("en-US")
+except IztroError as e:
+    print(e.code, e)
+```
+
+**输出**
+
+```text
+KnowledgePack(id='iztro-docs', version='2026-08-19+ec2d58b', language='zh-CN')
+1 iztro-docs 2026-08-19+ec2d58b zh-CN None
+MIT Sylar Long
+107 64
+invalid_argument no builtin knowledge pack for language 'en-US'
+```
+
+---
+
+## from_dict / from_json / to_dict / to_json
+
+**用途**　自带的包与 x-iztro 之间的互转。
+
+**签名**
+
+```python
+@classmethod
+def from_dict(cls, d: dict[str, Any]) -> KnowledgePack
+
+@classmethod
+def from_json(cls, text: str) -> KnowledgePack
+
+def to_dict(self) -> dict[str, Any]
+def to_json(self, **kwargs: Any) -> str
+```
+
+**说明**
+
+- `from_dict` 直接持有传入的 dict，不复制：之后改动那个 dict 会影响这份包。
+  要隔离，先 `copy.deepcopy` 或走 `from_json`。
+- `to_dict` 返回深拷贝，怎么改都不影响原包。
+- `to_json` 的 `ensure_ascii` 默认为 `False`（中文原样输出），
+  其余 `kwargs` 原样传给 `json.dumps`，例如 `pack.to_json(indent=2)`。
+- 两个构造方法都**校验格式版本**，与 Rust 内核解析同语义：非对象、`schema` 缺失或为 0、
+  `schema` 高于本库支持的版本都抛 `IztroError`（`invalid_argument`）。
+  结构不做深校验：字段不认识就是取不到值。
+
+**示例**　`my-school.json` 是一份覆盖包，完整样例见
+[知识包指南](/zh/docs/guide/guides/knowledge-pack#写一份覆盖包)：
+
+```python
+from x_iztro import KnowledgePack
+
+overlay = KnowledgePack.from_json(open("my-school.json", encoding="utf-8").read())
+print(overlay.id, overlay.extends)
+
+raw = overlay.to_dict()
+raw["stars"]["ziweiMaj"]["intro"] = "再改一次"
+print(overlay.star_intro("ziweiMaj"))  # to_dict 是深拷贝，原包不受影响
+```
+
+---
+
+## merged
+
+**用途**　把若干覆盖包依次叠加到本包上，返回新包。
+
+**签名**
+
+```python
+def merged(self, *overlays: KnowledgePack | dict[str, Any]) -> KnowledgePack
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `*overlays` | `KnowledgePack \| dict` | 覆盖包，按传入顺序依次叠加，后面的覆盖前面的 |
+
+**返回值**　新的 `KnowledgePack`，本包与覆盖包都不变。
+
+**异常**　`IztroError`（`invalid_argument`）——某个包不符合格式，
+或 `schema` 高于本库支持的版本。
+
+合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
+覆盖包的非空字段覆盖同键条目的对应字段，`attributes` 与 `combinations` 逐字段合并，
+数组字段整体替换。合并本身在 Rust 内核里算，三语言结果一致。
+
+**示例**
+
+```python
+from x_iztro import IztroError, KnowledgePack, PatternKey
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+overlay = KnowledgePack.from_dict({
+    "schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMaj": {"intro": "我的紫微", "attributes": {"aliases": ["帝座"]}}},
+    "patterns": {"zi_fu_tong_gong": {"intro": "我的紫府同宫"}},
+})
+merged = pack.merged(overlay)
+
+ziwei = merged.star(MajorStar.ZIWEI)
+print(merged.id, ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry, ziwei.intro)
+print(merged.pattern_intro(PatternKey.ZI_FU_TONG_GONG),
+      merged.pattern(PatternKey.ZI_FU_TONG_GONG).quotes)
+print(pack.star_intro(MajorStar.ZIWEI)[:5])
+
+try:
+    pack.merged({"schema": 99})
+except IztroError as e:
+    print(e.code, e)
+```
+
+**输出**
+
+```text
+my-school 紫微 ['帝座'] 尊贵 我的紫微
+我的紫府同宫 ['紫府同宫终身福厚。']
+紫微星号称
+invalid_argument knowledge pack schema 99 is newer than supported 1
+```
+
+---
+
+## star / pattern / palace / mutagen / concept
+
+**用途**　按语言无关标识取条目。
+
+**签名**
+
+```python
+def star(self, key: str) -> StarEntry | None
+def pattern(self, key: str) -> PatternEntry | None
+def palace(self, key: str) -> TextEntry | None
+def mutagen(self, key: str) -> TextEntry | None
+def concept(self, slug: str) -> ConceptEntry | None
+```
+
+**返回值**　包里没有该条目时为 `None`。
+
+**示例**
+
+```python
+from x_iztro import KnowledgePack, Mutagen, PalaceName
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+ziwei = pack.star(MajorStar.ZIWEI)
+
+print(ziwei.key, ziwei.name, ziwei.category, ziwei.attributes.dipper)
+print(ziwei.attributes.aliases)
+print(sorted(ziwei.combinations)[:5])
+print(pack.palace(PalaceName.SOUL).name, pack.mutagen(Mutagen.LU).name)
+print(pack.concept("tong-gong").title)
+print(pack.star("nope"))
+```
+
+**输出**
+
+```text
+ziweiMaj 紫微 major 中天星系
+['帝王星', '老板星', '俸禄星']
+['pojunMaj', 'qishaMaj', 'tanlangMaj', 'tianfuMaj', 'tianxiangMaj']
+命宫 化禄
+遇、加、逢、同宫、同度
+None
+```
+
+---
+
+## stars / patterns
+
+**用途**　列出包里全部星耀 / 格局条目。
+
+**签名**
+
+```python
+def stars(self) -> list[StarEntry]
+def patterns(self) -> list[PatternEntry]
+```
+
+**返回值**　按键的字典序排列，每条带自己的 `key`。默认包是 107 与 64。
+遍历整包（做检索、导出、喂给大模型）时用它，比自己翻 `to_dict()` 省事。
+
+---
+
+## star_intro / pattern_intro
+
+**用途**　直接取解读正文。
+
+**签名**
+
+```python
+def star_intro(self, key: str) -> str | None
+def pattern_intro(self, key: str) -> str | None
+```
+
+**返回值**　条目不存在、或条目存在但没写正文，都是 `None`。
+
+**示例**　把本命格局连同引文列出来：
+
+```python
+from x_iztro import Astro, KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+    print(pack.pattern_intro(hit.key)[:10])
+```
+
+**输出**
+
+```text
+府相朝垣 | 府相朝垣命必荣
+“食禄千锺”的断语使
+```

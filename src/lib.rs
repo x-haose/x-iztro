@@ -23,8 +23,12 @@ pub mod dto;
 pub mod error;
 /// 六语言词表与翻译入口
 pub mod i18n;
+/// 知识包：解读文本与门派属性
+pub mod knowledge;
 /// 星盘、宫位、星耀与运限的数据结构
 pub mod models;
+/// 格局判定引擎
+pub mod pattern;
 /// AI 分析 Prompt 生成
 pub mod prompt;
 /// 安星算法
@@ -51,6 +55,10 @@ pub use astro::query::{
     get_major_star_by_lunar_date, get_major_star_by_solar_date, get_sign_by_lunar_date,
     get_sign_by_solar_date, get_zodiac_by_solar_date,
 };
+pub use astro::reverse::{
+    BirthCandidate, DEFAULT_REVERSE_LIMIT, ReverseCriteria, ReverseResult, StarPosition,
+    reverse_chart, solar_dates_by_bazi,
+};
 pub use data::stars::StarKey;
 pub use data::types::*;
 pub use error::{BridgeError, IztroError};
@@ -58,8 +66,10 @@ pub use i18n::lookup::{key_of, key_of_in, translate_key};
 pub use i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_gender, translate_heavenly_stem, translate_horoscope_name, translate_mutagen,
-    translate_palace, translate_sign, translate_star, translate_time, translate_zodiac,
+    translate_palace, translate_pattern, translate_sign, translate_star, translate_time,
+    translate_zodiac,
 };
+pub use knowledge::KnowledgePack;
 pub use models::astrolabe::{
     Astrolabe, PalaceRef, PalaceTarget, RawChineseDate, RawDates, RawLunarDate, StarRef,
 };
@@ -69,6 +79,9 @@ pub use models::horoscope::{
 pub use models::palace::{Decadal, PalaceData};
 pub use models::star::Star;
 pub use models::surpalaces::SurroundedPalaces;
+pub use pattern::{
+    ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
+};
 pub use prompt::{astrolabe_to_prompt, horoscope_to_prompt};
 
 /// 便捷函数：排盘并返回 JSON

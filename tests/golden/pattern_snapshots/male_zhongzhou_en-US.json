@@ -1,0 +1,706 @@
+{
+  "daily": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Marshal, Rebel and Wolf",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "marshal",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "rebel",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "wolf",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "qi_sha_chao_dou",
+      "name": "Marshal Facing the Dipper",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "marshal",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "yang_dou"
+    },
+    {
+      "broken": false,
+      "key": "lu_shuai_ma_kun",
+      "name": "Money Waning, Horse Trapped",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "money(D)",
+          "palaceIndex": 4
+        },
+        {
+          "key": "dahao",
+          "name": "wastrel",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "horse(Y)",
+          "palaceIndex": 6
+        },
+        {
+          "key": "yinsha",
+          "name": "gloomy",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "marshal",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "qisha"
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 3,
+      "palaceName": "property",
+      "palaceNameKey": "propertyPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "horse(D)",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "money(D)",
+          "palaceIndex": 4
+        },
+        {
+          "key": "liuma",
+          "name": "horse(Y)",
+          "palaceIndex": 6
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Literary Stars Facing Life",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "scholar(Y)",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "artist(Y)",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Literary Stars in Hidden Support",
+      "palaceIndex": 0,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "liuchang",
+          "name": "scholar(Y)",
+          "palaceIndex": 6
+        },
+        {
+          "key": "liuqu",
+          "name": "artist(Y)",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "decadal": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "money",
+          "palaceIndex": 1
+        },
+        {
+          "key": "tianmaMin",
+          "name": "horse",
+          "palaceIndex": 9
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Meeting of Wind and Cloud",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "money",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "money(D)",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "feng_yun_ji_hui",
+      "name": "Meeting of Wind and Cloud",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "money",
+          "palaceIndex": 1
+        },
+        {
+          "key": "yunlu",
+          "name": "money(D)",
+          "palaceIndex": 4
+        }
+      ],
+      "variant": "yearly_same_palace"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Qingyang and Tuoluo Flanking Life",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "money",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "[-3]",
+          "brightnessKey": "xian",
+          "key": "tuoluoMin",
+          "name": "tangled",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qingyangMin",
+          "name": "driven",
+          "palaceIndex": 2
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Literary Stars Facing Life",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "scholar(D)",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "D",
+          "mutagenKey": "sihuaJi",
+          "name": "artist",
+          "palaceIndex": 1
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Literary Stars in Hidden Support",
+      "palaceIndex": 1,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "decadal",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "scholar(D)",
+          "palaceIndex": 7
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "mutagen": "D",
+          "mutagenKey": "sihuaJi",
+          "name": "artist",
+          "palaceIndex": 1
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "hourly": [
+    {
+      "broken": false,
+      "key": "yang_liang_chang_lu",
+      "name": "Sun, Sage, Scholar and Money",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "sun",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "tianliangMaj",
+          "mutagen": "C",
+          "mutagenKey": "sihuaKe",
+          "name": "sage",
+          "palaceIndex": 11
+        },
+        {
+          "brightness": "[0]",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "scholar",
+          "palaceIndex": 9
+        },
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "horse(D)",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "horse(D)",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Qingyang and Tuoluo Flanking Life",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "liutuo",
+          "name": "tangled(Y)",
+          "palaceIndex": 2
+        },
+        {
+          "key": "liuyang",
+          "name": "driven(Y)",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "Literary Stars Facing Life",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[0]",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "scholar",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "artist(D)",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "Literary Stars in Hidden Support",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[0]",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "scholar",
+          "palaceIndex": 9
+        },
+        {
+          "key": "yunqu",
+          "name": "artist(D)",
+          "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "monthly": [
+    {
+      "broken": false,
+      "key": "zi_fu_tong_gong",
+      "name": "Emperor and Empress in One Palace",
+      "palaceIndex": 6,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "ziweiMaj",
+          "name": "emperor",
+          "palaceIndex": 6
+        },
+        {
+          "brightness": "[+1]",
+          "brightnessKey": "de",
+          "key": "tianfuMaj",
+          "name": "empress",
+          "palaceIndex": 6
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 3,
+      "palaceName": "children",
+      "palaceNameKey": "childrenPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "horse(D)",
+          "palaceIndex": 3
+        }
+      ]
+    }
+  ],
+  "origin": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Marshal, Rebel and Wolf",
+      "palaceIndex": 4,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "marshal",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "rebel",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "wolf",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "Heroic Star Enthroned",
+      "palaceIndex": 4,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "origin",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "rebel",
+          "palaceIndex": 4
+        }
+      ]
+    }
+  ],
+  "params": {
+    "config": {
+      "ageDivide": "normal",
+      "algorithm": "zhongzhou",
+      "astroType": "heaven",
+      "dayDivide": "forward",
+      "horoscopeDivide": "normal",
+      "yearDivide": "normal"
+    },
+    "fixLeap": true,
+    "gender": "male",
+    "language": "en-US",
+    "patternConfig": {
+      "borrow": true,
+      "brightnessSource": "table",
+      "flowStars": true
+    },
+    "solarDate": "1985-6-11",
+    "targetDate": "2026-8-19",
+    "targetTimeIndex": 3,
+    "timeIndex": 11
+  },
+  "yearly": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "Marshal, Rebel and Wolf",
+      "palaceIndex": 4,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "marshal",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "rebel",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "name": "wolf",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "Heroic Star Enthroned",
+      "palaceIndex": 4,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "brightness": "[+3]",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "rebel",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "Money and Horse Galloping Together",
+      "palaceIndex": 3,
+      "palaceName": "siblings",
+      "palaceNameKey": "siblingsPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "liulu",
+          "name": "money(Y)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunma",
+          "name": "horse(D)",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "Qingyang and Tuoluo Flanking Life",
+      "palaceIndex": 4,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "money(D)",
+          "palaceIndex": 4
+        },
+        {
+          "key": "yuntuo",
+          "name": "tangled(D)",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunyang",
+          "name": "driven(D)",
+          "palaceIndex": 5
+        }
+      ]
+    }
+  ]
+}

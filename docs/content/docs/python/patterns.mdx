@@ -1,0 +1,348 @@
+---
+title: 格局判定
+description: 本命与运限的格局命中、PatternConfig 口径、PatternKey 枚举与判断方法。
+---
+
+格局是「盘上某几颗星按特定方式凑在一起」的模式识别。判定在本命盘与运限盘上共用同一套规则，
+共 64 条。什么是格局、每条规则的条件与来源，见[概念页](/zh/docs/guide/concepts/patterns)。
+
+```python
+from x_iztro import Astro
+
+chart = Astro().by_solar("1985-5-3", 9, "male")
+hits = chart.patterns()
+```
+
+<Callout type="info">
+本页示例统一用默认的 `zh-CN` 本命盘，因此输出里的展示值都是中文。
+</Callout>
+
+## 类型
+
+`PatternHit`、`PatternStar`、`PatternConfig` 是 frozen dataclass，
+`PatternKey`、`BrightnessSource` 是 `StrEnum`，全部从 `x_iztro` 顶层导出。
+
+### PatternHit
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `str` | 语言无关格局标识，取值域即 `PatternKey` |
+| `name` | `str` | 格局名称，按排盘语言翻译 |
+| `scope` | `str` | 判定视角：本命为 `"origin"`，运限为该层 |
+| `palace_index` | `int` | 成格所在的宫位索引（0-11，寅宫为 0） |
+| `palace_name` | `str` | 该宫在这个视角下的宫名 |
+| `palace_name_key` | `str` | 宫名标识，取值域即 `PalaceName` |
+| `variant` | `str \| None` | 多口径格局命中的口径；单口径为 `None` |
+| `broken` | `bool` | 「破格 / 加杀平常」条件是否触发。成格照报，这里只作标记 |
+| `stars` | `list[PatternStar]` | 参与成格的星与落宫 |
+
+三个方法：
+
+| 方法 | 说明 |
+| --- | --- |
+| `is_(key)` | 是否为指定格局，收 `PatternKey` 或字符串 |
+| `in_palace(name)` | 成格宫位在该视角下是否为指定宫名，收 `PalaceName`、宫名标识或当前语言宫名 |
+| `to_dict()` | 绑定层返回的原始 DTO（camelCase 键） |
+
+### PatternStar
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `str` | 语言无关星耀标识 |
+| `name` | `str` | 星耀名称，按排盘语言翻译 |
+| `palace_index` | `int` | 该星**真正待的**宫位索引（借宫时不是借到的那一宫） |
+| `brightness` / `brightness_key` | `str \| None` | 亮度显示文本与标识；无亮度为 `None` |
+| `mutagen` / `mutagen_key` | `str \| None` | 判定视角下的四化与标识；无四化为 `None` |
+
+两个方法：`has_brightness(b)`、`has_mutagen(m)`，都比标识，与排盘语言无关。
+
+### PatternConfig
+
+判定口径。凡是「同一格局的多种成立形式」都走 `PatternHit.variant`，这里只放会改变
+**事实判定本身**的数据口径，因此只有三个字段。
+
+```python
+from x_iztro import PatternConfig, BrightnessSource
+
+PatternConfig(
+    brightness_source=BrightnessSource.TABLE,  # 默认
+    borrow=True,                               # 默认
+    flow_stars=True,                           # 默认
+)
+```
+
+| 字段 | 默认 | 作用 |
+| --- | --- | --- |
+| `brightness_source` | `BrightnessSource.TABLE` | 日月明暗的依据 |
+| `borrow` | `True` | 空宫是否借对宫主星参与判定 |
+| `flow_stars` | `True` | 运限视角下流曜（运禄/流禄、运昌/流昌…）是否等同对应本命辅星 |
+
+`BrightnessSource` 两个成员：`TABLE` 按星盘亮度表（庙旺为明，陷与「不」为暗，与 iztro 逐值一致），
+`POSITIONAL` 按传统位置（太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗）。
+两者的取舍见[概念页的说明](/zh/docs/guide/concepts/patterns#日月的明暗按哪张表)。
+
+<Callout type="info">
+`PatternConfig` 是 frozen dataclass，改一项用 `dataclasses.replace`，
+或直接构造一个新的——三个字段都有默认值，只写要改的那个即可。
+</Callout>
+
+### PatternKey
+
+64 个格局的语言无关标识，`StrEnum`，可直接与 `PatternHit.key` 比较：
+
+```python
+from x_iztro import PatternKey
+
+print(len(list(PatternKey)))
+print(PatternKey.SHA_PO_LANG)
+print(PatternKey("sha_po_lang").name)
+```
+
+```text
+64
+sha_po_lang
+SHA_PO_LANG
+```
+
+---
+
+## patterns
+
+**用途**　取本命盘的全部格局命中。
+
+**斗数含义**　把这张盘上成立的所有有名字的星耀组合列出来，附上成格的宫位与证据星。
+
+**签名**
+
+```python
+def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `config` | `PatternConfig \| None` | 否 | `None` | 判定口径；不传即默认口径 |
+
+**返回值**　`list[PatternHit]`——按来源页条目顺序排列；一条格局也不成立时为空列表。
+本命盘上两条行运格（禄衰马困、风云际会）永远不出现。
+
+**示例**
+
+```python
+chart = Astro().by_solar("1985-5-3", 9, "male")
+
+for hit in chart.patterns():
+    print(f"{hit.name} {hit.palace_index} {hit.palace_name} broken={hit.broken}")
+```
+
+**输出**
+
+```text
+武贪同行 11 迁移 broken=False
+府相朝垣 5 命宫 broken=False
+杀破狼 11 迁移 broken=False
+禄马交驰 5 命宫 broken=False
+左右夹命 5 命宫 broken=False
+文贵文华 11 迁移 broken=False
+文星朝命 5 命宫 broken=True
+文星暗拱 5 命宫 broken=False
+文星暗拱 5 命宫 broken=False
+```
+
+取一条命中并读它的证据星：
+
+```python
+from x_iztro import PatternKey, PalaceName
+
+hit = next(h for h in chart.patterns() if h.is_(PatternKey.FU_XIANG_CHAO_YUAN))
+
+print(hit.name, hit.variant, hit.in_palace(PalaceName.SOUL))
+for s in hit.stars:
+    print(" ", s.name, s.palace_index, s.brightness, s.brightness_key)
+```
+
+```text
+府相朝垣 soul_empty True
+  天府 9 得 de
+  天相 1 陷 xian
+```
+
+按口径判：
+
+```python
+from x_iztro import PatternConfig, BrightnessSource
+
+chart = Astro().by_solar("1985-1-5", 11, "female")
+
+print([h.name for h in chart.patterns()])
+print([h.name for h in chart.patterns(
+    PatternConfig(brightness_source=BrightnessSource.POSITIONAL))])
+```
+
+```text
+['禄马交驰', '左右夹命', '坐贵向贵']
+['日月并明', '禄马交驰', '左右夹命', '坐贵向贵']
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="palace_index 未必是命宫">
+多数格局成于命宫，但「身命」类格局（武贪同行、杀破狼、石中隐玉…）命宫身宫各判一次，
+`palace_index` 记实际成格的那一宫，两宫都成立就返回两条命中。
+禄马交驰更是任一宫成立即报，一张盘上可能有多条。
+上面那张盘的身宫落在迁移宫，所以三条记的是迁移宫。
+</Accordion>
+<Accordion title="stars 里的 palace_index 是星真正待的宫">
+空宫借对宫主星时，`PatternStar.palace_index` 记的是那颗星实际落的宫（对宫），
+不是借进来的宫。要知道格局成在哪一宫看 `PatternHit.palace_index`。
+</Accordion>
+<Accordion title="判断逻辑用标识，不要比译名">
+`hit.is_(PatternKey.SHA_PO_LANG)` 在任何排盘语言下结果一致；
+比 `hit.name == "杀破狼"` 只在中文盘上成立。星耀与宫位同理，
+用 `key` / `palace_name_key` 而不是 `name` / `palace_name`。
+</Accordion>
+</Accordions>
+
+---
+
+## Horoscope.patterns
+
+**用途**　取某个运限层级视角下的格局命中。
+
+**斗数含义**　以该层的命宫为命宫、合并该层的流曜与四化之后重跑全部规则。
+「本命有此组合，大限又走到即享其益」就是这么算出来的。
+
+**签名**
+
+```python
+def patterns(
+    self,
+    scope: Scope | ScopeLiteral,
+    config: PatternConfig | None = None,
+    astrolabe: Astrolabe | None = None,
+) -> list[PatternHit]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `scope` | `Scope \| str` | 是 | — | 判定视角所在的层级 |
+| `config` | `PatternConfig \| None` | 否 | `None` | 判定口径 |
+| `astrolabe` | `Astrolabe \| None` | 否 | `None` | 星盘；省略时取发起本次运限查询的那张盘 |
+
+**返回值**　`list[PatternHit]`，每条的 `scope` 即传入的层级。
+传 `Scope.ORIGIN` 时结果与本命盘上直接调 `patterns()` 完全一致。
+
+**异常**　`ValueError`——既没传 `astrolabe`、本运限也不是由星盘发起时抛出。
+用 `chart.horoscope(...)` 拿到的运限对象不会遇到这种情况。
+
+**示例**
+
+```python
+from x_iztro import Scope
+
+chart = Astro().by_solar("2000-8-16", 2, "female")
+h = chart.horoscope("2025-6-1", 0)
+
+for hit in h.patterns(Scope.DECADAL):
+    print(hit.name, hit.scope, hit.variant)
+
+print(h.patterns("origin") == chart.patterns())
+```
+
+**输出**
+
+```text
+杀破狼 decadal None
+风云际会 decadal None
+风云际会 decadal yearly
+True
+```
+
+同一张盘的本命视角只有一条「府相朝垣」——大限换了命宫，杀破狼才在这一层成立。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="运限视角没有身宫">
+身宫是本命概念。运限视角下「身命」类格局只判该层命宫。
+</Accordion>
+<Accordion title="两条行运格只在运限出现">
+禄衰马困按当前视角那一层判（大限视角判大限，流年视角判流年），
+限命宫三方四正又见七杀（古书严口径同时满足）时 `variant` 为 `"qisha"`；
+风云际会跨层比较「两限同时逢禄马」，只在 `Scope.DECADAL` 视角判一次，
+`variant` 同时记二限组合与「逢」的松紧：大限 + 小限命中为 `None`（三方四正会照）或
+`"same_palace"`（两限命宫皆本宫坐禄马的严口径），大限 + 流年命中为
+`"yearly"` 或 `"yearly_same_palace"`。两种组合各报一条，最多两条。
+</Accordion>
+<Accordion title="流曜等同本命辅星">
+默认口径下运禄/流禄当禄存看、运昌/流昌当文昌看，其余同理。
+不想要这个行为，传 `PatternConfig(flow_stars=False)`。
+</Accordion>
+<Accordion title="接口无状态">
+`patterns()` 不是在已有的星盘对象上做增量计算，而是把排盘上下文（生日、时辰、性别、
+语言、config）送回内核重新发起一次判定。因此它不修改星盘，也不缓存结果——
+在循环里反复调用时自己存一下返回值。
+</Accordion>
+</Accordions>
+
+---
+
+## to_dict
+
+**用途**　取绑定层返回的原始 DTO：camelCase 键，值按排盘语言翻译，同时带语言无关标识。
+需要把命中原样落库、发给前端或喂给模型时用它。
+
+**签名**
+
+```python
+def to_dict(self) -> dict[str, Any]
+```
+
+**示例**
+
+```python
+import json
+
+chart = Astro().by_solar("1985-5-3", 9, "male")
+hit = next(h for h in chart.patterns() if h.is_(PatternKey.FU_XIANG_CHAO_YUAN))
+print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
+```
+
+**输出**
+
+```json
+{
+  "broken": false,
+  "key": "fu_xiang_chao_yuan",
+  "name": "府相朝垣",
+  "palaceIndex": 5,
+  "palaceName": "命宫",
+  "palaceNameKey": "soulPalace",
+  "scope": "origin",
+  "stars": [
+    {
+      "brightness": "得",
+      "brightnessKey": "de",
+      "key": "tianfuMaj",
+      "name": "天府",
+      "palaceIndex": 9
+    },
+    {
+      "brightness": "陷",
+      "brightnessKey": "xian",
+      "key": "tianxiangMaj",
+      "name": "天相",
+      "palaceIndex": 1
+    }
+  ],
+  "variant": "soul_empty"
+}
+```
+
+<Callout type="info">
+无值的可选键（`variant`、亮度、四化）在 DTO 里直接省略，不会出现 `null`。
+</Callout>

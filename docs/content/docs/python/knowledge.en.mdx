@@ -1,0 +1,347 @@
+---
+title: Knowledge packs
+description: KnowledgePack and its entry dataclasses, the bundled default pack, dict/JSON conversion, overlay merging.
+---
+
+A knowledge pack is JSON mapping "language-independent key → reading text and school attributes".
+The core only judges facts; reading texts and the school-specific star attributes live here. For the
+concept, the format and how to write an overlay, see the
+[knowledge pack guide](/en/docs/guide/guides/knowledge-pack); the full field reference is
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md) in the
+repository.
+
+```python
+from x_iztro import KnowledgePack
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+intro = pack.star_intro(MajorStar.ZIWEI)
+```
+
+`KnowledgePack` is exported from the `x_iztro` top level; the entry dataclasses live in
+`x_iztro.knowledge`. Every lookup takes a string, and the enums (`MajorStar`, `PatternKey`,
+`PalaceName`, `Mutagen` …) are `StrEnum`, so you can pass them directly.
+
+## Types
+
+### KnowledgePack
+
+Holds the raw pack object (a dict); the lookups return typed entries.
+
+**Metadata (read-only properties)**
+
+| Property | Type | Meaning |
+| --- | --- | --- |
+| `schema` | `int` | Format version, currently 1 |
+| `id` | `str` | Pack identifier; `"iztro-docs"` for the default pack |
+| `version` | `str` | Pack version; for the default pack, retrieval date + short source commit |
+| `language` | `str` | Language code of the texts |
+| `extends` | `str \| None` | The pack this overlay overlays; `None` for a standalone pack |
+| `source` | `Source` | Origin and licence |
+
+**Methods**
+
+| Method | Meaning |
+| --- | --- |
+| `KnowledgePack.builtin(language="zh-CN")` | The bundled default pack |
+| `KnowledgePack.from_dict(d)` | Build from a pack object (holds the reference, no copy) |
+| `KnowledgePack.from_json(text)` | Build from JSON text |
+| `to_dict()` | A deep copy of the pack object |
+| `to_json(**kwargs)` | JSON text; `kwargs` are passed through to `json.dumps` |
+| `merged(*overlays)` | Layer overlays on, returning a new pack |
+| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | One entry, or `None` |
+| `stars()` / `patterns()` | All star / pattern entries |
+| `star_intro(key)` / `pattern_intro(key)` | The reading text directly |
+
+### Entry dataclasses
+
+`StarEntry`, `PatternEntry`, `TextEntry`, `ConceptEntry`, `StarAttributes` and `Source` are all
+`frozen=True, slots=True` dataclasses; absent fields are `None`.
+
+`StarEntry`
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `key` | `str` | Star key |
+| `name` | `str \| None` | Display name in this pack's language |
+| `category` | `str \| None` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `group` | `str \| None` | Grouping: the adjective star's category, the decorative star's group |
+| `attributes` | `StarAttributes` | School attributes |
+| `intro` | `str \| None` | Reading (Markdown) |
+| `combinations` | `dict[str, str]` | Reading for sharing a palace with another major star, keyed by that star |
+
+`StarAttributes`: `yin_yang` (`yin` / `yang`), `five_elements`
+(`wood` / `fire` / `earth` / `metal` / `water`), `stem` (`jia`…`gui`), `five_elements_note`,
+`dipper`, `chemistry`, `career`, `duty`, `aliases` (`list[str] | None`), `element_color`,
+`energy_color`.
+
+`PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`.
+
+`TextEntry` (palaces, transformations): `key`, `name`, `intro`.
+`ConceptEntry` (glossary): `slug`, `title`, `intro`.
+
+`Source`: `name`, `url`, `commit`, `license`, `author`, `retrieved_at`, `adapted` (adaptation note).
+
+<Callout type="info">
+`StarAttributes.five_elements` and `.yin_yang` are what the pack's source says, and may differ from
+the core star data, which is value-for-value identical to iztro's. The reason is in the
+[guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-here).
+</Callout>
+
+---
+
+## builtin
+
+**Purpose**　Get the bundled default knowledge pack.
+
+**Signature**
+
+```python
+@classmethod
+def builtin(cls, language: LanguageType = "zh-CN") -> KnowledgePack
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `language` | `LanguageType` | no | `"zh-CN"` | Text language |
+
+**Returns**　`KnowledgePack`.
+
+**Raises**　`IztroError` (with `code` `invalid_argument`) when there is no bundled pack for that
+language. Only `zh-CN` has one today.
+
+**Example**
+
+```python
+from x_iztro import IztroError, KnowledgePack
+
+pack = KnowledgePack.builtin()
+
+print(pack)
+print(pack.schema, pack.id, pack.version, pack.language, pack.extends)
+print(pack.source.license, pack.source.author)
+print(len(pack.stars()), len(pack.patterns()))
+
+try:
+    KnowledgePack.builtin("en-US")
+except IztroError as e:
+    print(e.code, e)
+```
+
+**Output**
+
+```text
+KnowledgePack(id='iztro-docs', version='2026-08-19+ec2d58b', language='zh-CN')
+1 iztro-docs 2026-08-19+ec2d58b zh-CN None
+MIT Sylar Long
+107 64
+invalid_argument no builtin knowledge pack for language 'en-US'
+```
+
+---
+
+## from_dict / from_json / to_dict / to_json
+
+**Purpose**　Convert between your own pack and x-iztro.
+
+**Signature**
+
+```python
+@classmethod
+def from_dict(cls, d: dict[str, Any]) -> KnowledgePack
+
+@classmethod
+def from_json(cls, text: str) -> KnowledgePack
+
+def to_dict(self) -> dict[str, Any]
+def to_json(self, **kwargs: Any) -> str
+```
+
+**Notes**
+
+- `from_dict` holds the dict you pass without copying: mutating that dict afterwards changes the
+  pack. To isolate them, `copy.deepcopy` first or go through `from_json`.
+- `to_dict` returns a deep copy, so changing it never touches the pack.
+- `to_json` defaults `ensure_ascii` to `False` (Chinese stays readable); the remaining `kwargs` go
+  straight to `json.dumps`, e.g. `pack.to_json(indent=2)`.
+- Both constructors **validate the format version**, with the same semantics as the Rust core's
+  parser: a non-object, a missing or zero `schema`, or a `schema` newer than this library supports
+  raises `IztroError` (`invalid_argument`). The structure is not deep-checked: an unrecognised
+  field simply yields nothing.
+
+**Example**　`my-school.json` is an overlay pack; a complete sample is in the
+[knowledge pack guide](/en/docs/guide/guides/knowledge-pack#writing-an-overlay-pack):
+
+```python
+from x_iztro import KnowledgePack
+
+overlay = KnowledgePack.from_json(open("my-school.json", encoding="utf-8").read())
+print(overlay.id, overlay.extends)
+
+raw = overlay.to_dict()
+raw["stars"]["ziweiMaj"]["intro"] = "changed again"
+print(overlay.star_intro("ziweiMaj"))  # to_dict is a deep copy; the pack is untouched
+```
+
+---
+
+## merged
+
+**Purpose**　Layer overlay packs onto this one and return a new pack.
+
+**Signature**
+
+```python
+def merged(self, *overlays: KnowledgePack | dict[str, Any]) -> KnowledgePack
+```
+
+**Parameters**
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `*overlays` | `KnowledgePack \| dict` | Overlays applied in argument order; later ones win |
+
+**Returns**　A new `KnowledgePack`; neither this pack nor the overlays change.
+
+**Raises**　`IztroError` (`invalid_argument`) when a pack does not fit the format, or its `schema`
+is newer than this library supports.
+
+The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
+key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `attributes` and
+`combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
+the Rust core, so all three languages agree.
+
+**Example**
+
+```python
+from x_iztro import IztroError, KnowledgePack, PatternKey
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+overlay = KnowledgePack.from_dict({
+    "schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMaj": {"intro": "我的紫微", "attributes": {"aliases": ["帝座"]}}},
+    "patterns": {"zi_fu_tong_gong": {"intro": "我的紫府同宫"}},
+})
+merged = pack.merged(overlay)
+
+ziwei = merged.star(MajorStar.ZIWEI)
+print(merged.id, ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry, ziwei.intro)
+print(merged.pattern_intro(PatternKey.ZI_FU_TONG_GONG),
+      merged.pattern(PatternKey.ZI_FU_TONG_GONG).quotes)
+print(pack.star_intro(MajorStar.ZIWEI)[:5])
+
+try:
+    pack.merged({"schema": 99})
+except IztroError as e:
+    print(e.code, e)
+```
+
+**Output**
+
+```text
+my-school 紫微 ['帝座'] 尊贵 我的紫微
+我的紫府同宫 ['紫府同宫终身福厚。']
+紫微星号称
+invalid_argument knowledge pack schema 99 is newer than supported 1
+```
+
+---
+
+## star / pattern / palace / mutagen / concept
+
+**Purpose**　Look up an entry by language-independent key.
+
+**Signature**
+
+```python
+def star(self, key: str) -> StarEntry | None
+def pattern(self, key: str) -> PatternEntry | None
+def palace(self, key: str) -> TextEntry | None
+def mutagen(self, key: str) -> TextEntry | None
+def concept(self, slug: str) -> ConceptEntry | None
+```
+
+**Returns**　`None` when the pack has no such entry.
+
+**Example**
+
+```python
+from x_iztro import KnowledgePack, Mutagen, PalaceName
+from x_iztro.enums import MajorStar
+
+pack = KnowledgePack.builtin()
+ziwei = pack.star(MajorStar.ZIWEI)
+
+print(ziwei.key, ziwei.name, ziwei.category, ziwei.attributes.dipper)
+print(ziwei.attributes.aliases)
+print(sorted(ziwei.combinations)[:5])
+print(pack.palace(PalaceName.SOUL).name, pack.mutagen(Mutagen.LU).name)
+print(pack.concept("tong-gong").title)
+print(pack.star("nope"))
+```
+
+**Output**
+
+```text
+ziweiMaj 紫微 major 中天星系
+['帝王星', '老板星', '俸禄星']
+['pojunMaj', 'qishaMaj', 'tanlangMaj', 'tianfuMaj', 'tianxiangMaj']
+命宫 化禄
+遇、加、逢、同宫、同度
+None
+```
+
+---
+
+## stars / patterns
+
+**Purpose**　List every star / pattern entry in the pack.
+
+**Signature**
+
+```python
+def stars(self) -> list[StarEntry]
+def patterns(self) -> list[PatternEntry]
+```
+
+**Returns**　Sorted by key, each entry carrying its own `key`. The default pack gives 107 and 64.
+Use these when walking the whole pack — indexing, exporting, feeding an LLM — instead of digging
+through `to_dict()`.
+
+---
+
+## star_intro / pattern_intro
+
+**Purpose**　Get the reading text directly.
+
+**Signature**
+
+```python
+def star_intro(self, key: str) -> str | None
+def pattern_intro(self, key: str) -> str | None
+```
+
+**Returns**　`None` both when the entry is missing and when it exists without a reading.
+
+**Example**　List the natal patterns with their quotations:
+
+```python
+from x_iztro import Astro, KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+    print(pack.pattern_intro(hit.key)[:10])
+```
+
+**Output**
+
+```text
+府相朝垣 | 府相朝垣命必荣
+“食禄千锺”的断语使
+```

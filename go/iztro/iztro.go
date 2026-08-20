@@ -153,7 +153,14 @@ func (a *Astrolabe) RearrangedContext(ctx context.Context, fromStemKey string, f
 	if err != nil {
 		return nil, err
 	}
-	return decodeAstrolabe(raw, config)
+	out, err := decodeAstrolabe(raw, config)
+	if err != nil {
+		return nil, err
+	}
+	// 记住重排起点：格局判定等再次发起计算的接口靠它把重排带给内核
+	out.fromStem = fromStemKey
+	out.fromBranch = fromBranchKey
+	return out, nil
 }
 
 // Horoscope 以本命盘为起点计算目标日期的运限，返回的运限持有本盘。
@@ -172,7 +179,7 @@ func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, tar
 	if a == nil {
 		return nil, invalidArgument("horoscope: nil astrolabe")
 	}
-	raw, err := callWasm(ctx, fnHoroscope, map[string]any{
+	payload := map[string]any{
 		"solarDate":       a.SolarDate,
 		"timeIndex":       a.TimeIndex,
 		"gender":          a.GenderKey,
@@ -181,7 +188,9 @@ func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, tar
 		"config":          a.requestConfig(),
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
-	})
+	}
+	a.addRearrange(payload)
+	raw, err := callWasm(ctx, fnHoroscope, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -190,6 +199,7 @@ func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, tar
 		return nil, internalError("decode horoscope: " + err.Error())
 	}
 	out.astrolabe = a
+	out.targetTimeIndex = targetTimeIndex
 	return &out, nil
 }
 

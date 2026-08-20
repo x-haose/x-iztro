@@ -94,7 +94,7 @@ iztro 的 `loadPlugin` / `use(plugin)` 是运行期往星盘对象上挂函数 �
 
 `kot(value, k)` 的第二个参数在三侧是独立入口：
 `key_of_in`（Rust）、`key_of(text, key_filter)`（Python）、`KeyOfIn`（Go）。
-取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시` 这类同形译名落到哪个标识。
+取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시`（韩语的酉时）这类同形译名落到哪个标识。
 
 <Callout type="warn" title="查不到时返回空，不是原样返回">
 iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
@@ -134,6 +134,54 @@ iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
 放进 DTO 会破坏与 iztro 的字段契约，所以读回来是空的 —— 要留档自己存。
 
 ## 比 iztro 多的
+
+### 格局判定（iztro 无对应 API）
+
+iztro 没有格局相关的 API，x-iztro 在排盘之上加了一层格局判定引擎：
+64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、口径（`variant`）、
+破格标记（`broken`）与证据星。规则条目、示例盘与古籍引文取自 iztro-docs 的《格局》页
+（MIT License，作者 Sylar Long），判定实现、六语言格局名与多种说法之间的取舍是 x-iztro 的工作。
+
+三侧的入口：Rust 的 `Astrolabe::patterns` / `HoroscopeRef::patterns`、
+Python 的 `Astrolabe.patterns` / `Horoscope.patterns`、
+Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`，
+另有语言无关的格局标识（Rust `PatternKey`、Python `PatternKey`、Go `PatternXxx` 常量）。
+概念与 64 条总表见[格局](/zh/docs/guide/concepts/patterns)。
+
+因为 iztro 没有对应实现，这部分没有金标数据，正确性由四层测试守着：
+每条规则的单测、来源页 32 张示例盘的真实盘复现、tier1 那 1,560 张盘上的批量不变量检查，
+以及三侧共读的输出快照。
+
+### 知识包（iztro 无对应 API）
+
+iztro 只给事实，星耀与格局的解读文本在它的文档站上、不在库里。
+x-iztro 把解读做成一份协议化的数据：知识包是「语言无关标识 → 文本与属性」的 JSON，
+库里内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、49 条术语，
+取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
+不认同其中说法可以写覆盖包按字段合并。
+
+三侧的入口：Rust 的 `KnowledgePack::builtin` / `merged`、
+Python 的 `KnowledgePack.builtin` / `merged`、
+Go 的 `BuiltinKnowledgePack` / `Merged`，合并只在 Rust 内核实现一处。
+星耀的阴阳五行、斗分、化气这类**属性**也在包里而不进核心数据表——
+核心的 `StarInfo` 与 iztro 逐值一致，属性是门派说法。
+见[知识包](/zh/docs/guide/guides/knowledge-pack)。
+
+### 反推（iztro 无对应 API）
+
+iztro 只有「生辰 → 盘」一个方向。x-iztro 加上了反方向：`solar_dates_by_bazi`
+由八字四柱反查公历生辰——四柱按传入 `Config` 的分界口径解释，
+与 `raw_dates.chinese_date` 同一套语义；`reverse_chart` 由星盘特征
+（命宫身宫地支、五行局、星耀落宫、生年四化）反查候选生辰。
+两者都是「剪枝枚举 + 正排终验」，结果与正向排盘零分歧。
+一组四柱约每 60 年重复一次，因此天然多解，候选拿去正排即可复现目标。
+
+三侧的入口：Rust 的 `solar_dates_by_bazi` / `reverse_chart`、
+Python 的 `solar_dates_by_bazi` / `reverse_chart`、
+Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）。
+见[反推](/zh/docs/guide/guides/reverse)。
+
+### 其余增补
 
 - **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，
   取值是 iztro 的 i18n key。判断逻辑因此不受盘面语言影响，

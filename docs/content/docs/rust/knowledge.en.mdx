@@ -1,0 +1,386 @@
+---
+title: Knowledge packs
+description: KnowledgePack and its entry types, the bundled default pack, JSON parsing and serialization, overlay merging.
+---
+
+A knowledge pack is JSON mapping "language-independent key → reading text and school attributes".
+The core only judges facts; reading texts and the school-specific star attributes live here. For the
+concept, the format and how to write an overlay, see the
+[knowledge pack guide](/en/docs/guide/guides/knowledge-pack); the full field reference is
+[`knowledge/SCHEMA.md`](https://github.com/x-haose/x-iztro/blob/main/knowledge/SCHEMA.md) in the
+repository.
+
+```rust
+use x_iztro::{KnowledgePack, Language, StarKey};
+
+let pack = KnowledgePack::builtin(Language::ZhCN).expect("zh-CN has a builtin pack");
+let intro = pack.star_intro(StarKey::ZiweiMaj);
+```
+
+`KnowledgePack` is re-exported at the crate root; the other types live in `x_iztro::knowledge`.
+
+## Types
+
+### KnowledgePack
+
+All fields are public and directly readable and writable. The map fields are `BTreeMap`, so
+iteration order is stable and sorted by key.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `schema` | `u32` | Format version, currently `SCHEMA_VERSION` (1) |
+| `id` | `String` | Pack identifier; `"iztro-docs"` for the default pack |
+| `version` | `String` | Pack version; for the default pack, retrieval date + short source commit |
+| `language` | `String` | Language code of the texts, e.g. `"zh-CN"` |
+| `extends` | `Option<String>` | The pack this overlay overlays; `None` for a standalone pack |
+| `source` | `Source` | Origin and licence |
+| `stars` | `BTreeMap<String, StarEntry>` | Star entries, keyed by `StarKey::as_key` |
+| `patterns` | `BTreeMap<String, PatternEntry>` | Pattern entries, keyed by `PatternKey::as_key` |
+| `palaces` | `BTreeMap<String, TextEntry>` | Palace entries, keyed by `Palace::as_key` |
+| `mutagens` | `BTreeMap<String, TextEntry>` | Transformation entries, keyed by `Mutagen::as_key` |
+| `concepts` | `BTreeMap<String, ConceptEntry>` | Glossary entries, keyed by slug |
+
+Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deserialize`.
+
+### Source
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `name` | `Option<String>` | Source name |
+| `url` | `Option<String>` | Source URL |
+| `commit` | `Option<String>` | Source revision (git commit) |
+| `license` | `Option<String>` | Licence |
+| `author` | `Option<String>` | Author |
+| `retrieved_at` | `Option<String>` | Retrieval date |
+| `adapted` | `Option<String>` | Adaptation note: how the text was edited relative to the source |
+
+### StarEntry
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `name` | `Option<String>` | Display name in this pack's language |
+| `category` | `Option<String>` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `group` | `Option<String>` | Grouping: the adjective star's category, the decorative star's group |
+| `attributes` | `StarAttributes` | School attributes; all `None` when absent |
+| `intro` | `Option<String>` | Reading (Markdown) |
+| `combinations` | `BTreeMap<String, String>` | Reading for sharing a palace with another major star, keyed by that star |
+
+### StarAttributes
+
+Every field is `Option<String>`, except `aliases` which is `Option<Vec<String>>`: `yin_yang`
+(`yin` / `yang`), `five_elements` (`wood` / `fire` / `earth` / `metal` / `water`), `stem`
+(`jia`…`gui`), `five_elements_note`, `dipper`, `chemistry`, `career`, `duty`, `aliases`,
+`element_color`, `energy_color`.
+
+<Callout type="info">
+`five_elements` and `yin_yang` here are what the pack's source says, and may differ from the core
+[`StarInfo`](/en/docs/rust/data), which is value-for-value identical to iztro's. The reason is in
+the [guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-here).
+</Callout>
+
+### PatternEntry
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `name` | `Option<String>` | Display name |
+| `quotes` | `Option<Vec<String>>` | Classical quotations |
+| `conditions` | `Option<String>` | The source's prose description of the conditions |
+| `intro` | `Option<String>` | Reading |
+
+### TextEntry / ConceptEntry
+
+`TextEntry` (palaces, transformations) has `name` and `intro`; `ConceptEntry` (glossary) has `title`
+and `intro`. All are `Option<String>`.
+
+### SCHEMA_VERSION
+
+```rust
+pub const SCHEMA_VERSION: u32 = 1;
+```
+
+The highest format version this library supports. Parsing a higher `schema` is an error.
+
+---
+
+## builtin
+
+**Purpose**　Get the bundled default knowledge pack.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn builtin(language: Language) -> Option<&'static KnowledgePack>
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `language` | `Language` | Text language |
+
+**Returns**　`Option<&'static KnowledgePack>` — `None` when there is no bundled pack for that
+language. Only `Language::ZhCN` has one today. The pack is parsed once on first use and cached, so
+later calls are a free static reference.
+
+**Example**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+println!("{} {} {}", pack.id, pack.version, pack.stars.len());
+println!("{:?}", pack.source.license);
+println!("{}", KnowledgePack::builtin(Language::EnUS).is_some());
+```
+
+**Output**
+
+```text
+iztro-docs 2026-08-19+ec2d58b 107
+Some("MIT")
+false
+```
+
+---
+
+## builtin_json
+
+**Purpose**　Get the raw JSON of the bundled pack, unparsed.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn builtin_json(language: Language) -> Option<&'static str>
+}
+```
+
+**Returns**　`Option<&'static str>`, zh-CN only, same as `builtin`. Use it to hand the pack to
+another process or write it to disk without a parse-and-serialize round trip — that is exactly what
+the bindings do.
+
+---
+
+## from_json
+
+**Purpose**　Parse a pack from JSON text.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn from_json(json: &str) -> Result<KnowledgePack, String>
+}
+```
+
+**Returns**　`Result<KnowledgePack, String>`. The error is a human-readable string, for three
+cases: JSON that does not fit the format (`invalid knowledge pack: ...`), a missing or zero
+`schema` (a pack must declare its format version), and a `schema` higher than `SCHEMA_VERSION`
+(no best-effort downgrade).
+
+<Callout type="info">
+This returns `String` rather than [`IztroError`](/en/docs/rust/errors): a knowledge pack is data the
+caller brings along, not input to a charting entry point. The bindings wrap it into each language's
+`invalid_argument` error.
+</Callout>
+
+**Example**
+
+```rust
+let pack = KnowledgePack::from_json(r#"{
+    "schema": 1, "id": "mine", "version": "1", "language": "zh-CN",
+    "stars": {"ziweiMaj": {"intro": "我的紫微"}}
+}"#)?;
+println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"id": "x"}"#));
+```
+
+**Output**
+
+```text
+Some("我的紫微")
+Err("knowledge pack schema 99 is newer than supported 1")
+Err("knowledge pack must declare \"schema\" (currently 1)")
+```
+
+**Edges and traps**
+
+<Accordions>
+<Accordion title="Absent and null mean the same thing">
+Every entry and field is optional. A map field (`source`, `stars`, `combinations` …) written as
+`null` is the same as leaving it out — Go serializes a nil map as `null`, and this keeps the default
+serialization of all three languages mutually parseable.
+</Accordion>
+<Accordion title="Unknown keys are not an error">
+A key in `stars` that is not a star key, or an unknown pattern key in `patterns`, is kept verbatim.
+Validating keys is the generator's and the tests' job; the parser only checks the format.
+</Accordion>
+</Accordions>
+
+---
+
+## to_json
+
+**Purpose**　Serialize to JSON (compact, no indentation).
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn to_json(&self) -> String
+}
+```
+
+**Returns**　`String`. Optional fields that are `None` and empty maps are omitted, so
+`from_json(&pack.to_json())` equals the original pack. For indented output use
+`serde_json::to_string_pretty(&pack)`.
+
+---
+
+## merged
+
+**Purpose**　Layer overlay packs onto this one and return a new pack.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn merged(&self, overlays: &[&KnowledgePack]) -> KnowledgePack
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `overlays` | `&[&KnowledgePack]` | Overlays applied in slice order; later ones win |
+
+**Returns**　A `KnowledgePack`; neither this pack nor the overlays change. The rules are in the
+[guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section, key by key, an
+overlay's non-`None` fields replace the same-keyed entry's fields, `attributes` and `combinations`
+merge field by field, array fields are replaced wholesale.
+
+**Example**
+
+```rust
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let overlay = KnowledgePack::from_json(r#"{
+    "schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMaj": {"intro": "我的紫微", "attributes": {"aliases": ["帝座"]}}},
+    "patterns": {"zi_fu_tong_gong": {"intro": "我的紫府同宫"}}
+}"#)?;
+let pack = base.merged(&[&overlay]);
+
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{:?} {:?} {:?}", ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+println!("{:?}", pack.pattern_intro(PatternKey::ZiFuTongGong));
+println!("{:?}", pack.pattern(PatternKey::ZiFuTongGong).unwrap().quotes);
+println!("{} {:?}", pack.id, base.star_intro(StarKey::ZiweiMaj).map(|s| s.chars().take(5).collect::<String>()));
+```
+
+**Output**
+
+```text
+Some("紫微") Some(["帝座"]) Some("尊贵")
+Some("我的紫府同宫")
+Some(["紫府同宫终身福厚。"])
+my-school Some("紫微星号称")
+```
+
+---
+
+## merge
+
+**Purpose**　Merge one overlay into this pack in place.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn merge(&mut self, overlay: &KnowledgePack)
+}
+```
+
+`merged` is the non-mutating version (clone, then `merge` each overlay). Use `merge` when you
+already hold a mutable pack and are layering many overlays, to skip the clone.
+
+---
+
+## star / pattern / palace / mutagen
+
+**Purpose**　Look up an entry by language-independent key.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn star(&self, key: StarKey) -> Option<&StarEntry>
+    pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
+    pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
+    pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+}
+```
+
+**Returns**　`None` when the pack has no such entry. All four look the key up in the corresponding
+`BTreeMap` by `as_key()`, exactly as `pack.stars.get(key.as_key())` would; the glossary has no
+dedicated method, use `pack.concepts.get(slug)`.
+
+**Example**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+
+println!("{:?} {:?} {:?}", ziwei.name, ziwei.category, ziwei.attributes.dipper);
+println!("{:?}", ziwei.combinations.keys().collect::<Vec<_>>());
+println!("{:?}", pack.palace(Palace::Soul).and_then(|e| e.name.clone()));
+println!("{:?}", pack.mutagen(Mutagen::Lu).and_then(|e| e.name.clone()));
+println!("{:?}", pack.concepts.get("tong-gong").and_then(|e| e.title.clone()));
+```
+
+**Output**
+
+```text
+Some("紫微") Some("major") Some("中天星系")
+["pojunMaj", "qishaMaj", "tanlangMaj", "tianfuMaj", "tianxiangMaj"]
+Some("命宫")
+Some("化禄")
+Some("遇、加、逢、同宫、同度")
+```
+
+---
+
+## star_intro / pattern_intro
+
+**Purpose**　Get the reading directly, skipping one layer of `Option`.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn star_intro(&self, key: StarKey) -> Option<&str>
+    pub fn pattern_intro(&self, key: PatternKey) -> Option<&str>
+}
+```
+
+**Returns**　`None` both when the entry is missing and when it exists without a reading.
+
+**Example**　List the natal patterns with their readings:
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+for hit in chart.patterns() {
+    let intro = pack.pattern_intro(hit.key).unwrap_or("(not written in this pack)");
+    let head: String = intro.chars().take(10).collect();
+    println!("{} {}", translate_pattern(hit.key, Language::ZhCN), head);
+}
+```
+
+**Output**
+
+```text
+府相朝垣 “食禄千锺”的断语使
+```

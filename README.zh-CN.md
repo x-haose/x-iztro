@@ -189,6 +189,14 @@ func main() {
 - **完整命盘** — 十二宫、身宫、命主身主、五行局，主星辅星杂耀连同亮度与四化。
 - **六个运限层级** — 大限（未起运时为童限）、流年、流月、流日、流时，各自带十二宫与四化。
 - **盘面查询** — 按宫名、地支或索引定位宫位；判断星耀、四化与空宫；三方四正；飞星族。
+- **格局判定** — 64 条格局，本命盘与运限盘共用同一套规则，命中带成格宫位、
+  多口径标记与证据星。iztro 无此 API。
+- **知识包** — 星耀与格局的解读文本、星耀的门派属性放在可替换的 JSON 包里，不进内核。
+  库内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、49 条术语，zh-CN，
+  取自 Sylar Long 的 iztro-docs，MIT），不认同的条目写覆盖包换掉。
+- **生辰反推** — `solar_dates_by_bazi` 由八字四柱反查公历生辰（四柱口径随排盘 Config），
+  `reverse_chart` 由命宫身宫、五行局、星耀落宫、生年四化等盘面特征反查。
+  剪枝枚举 + 正排终验，结果与正向排盘零分歧。iztro 无此 API。
 - **两个流派** — 默认算法与中州派，按盘选择。
 - **六种语言** — zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN，另有语言无关的标识常量，
   业务判断不依赖显示语言。
@@ -197,6 +205,70 @@ func main() {
   非法输入在 Rust 返回 `Err(IztroError)`，Python 抛 `x_iztro.IztroError`（继承 `ValueError`），
   Go 返回可用 `errors.Is` 匹配的 `error`，C FFI 返回 `{"error":"..."}` JSON。
   每种失败都带机器可读的类别。任何一侧都不 panic。
+
+### 格局判定
+
+```python
+chart = astro.by_solar("1985-5-3", 9, "male")
+
+for hit in chart.patterns():
+    print(hit.name, hit.palace_name, hit.broken)
+```
+
+```text
+武贪同行 迁移 False
+府相朝垣 命宫 False
+杀破狼 迁移 False
+禄马交驰 命宫 False
+左右夹命 命宫 False
+文贵文华 迁移 False
+文星朝命 命宫 True
+文星暗拱 命宫 False
+文星暗拱 命宫 False
+```
+
+判定原则与 64 条格局总表见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/concepts/patterns)。
+
+### 知识包
+
+```python
+from x_iztro import KnowledgePack
+
+pack = KnowledgePack.builtin()
+chart = astro.by_solar("2000-8-16", 2, "female")
+
+for hit in chart.patterns():
+    print(hit.name, "|", pack.pattern(hit.key).quotes[0])
+    print(pack.pattern_intro(hit.key)[:10])
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+“食禄千锺”的断语使
+```
+
+包的格式、合并规则与覆盖包写法见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/guides/knowledge-pack)。
+
+### 生辰反推
+
+```python
+from x_iztro import solar_dates_by_bazi
+
+# 庚辰 甲申 丙午 庚寅 这组八字在 1900–2100 间的全部公历生辰
+for c in solar_dates_by_bazi(
+    ("gengHeavenly", "chenEarthly"), ("jiaHeavenly", "shenEarthly"),
+    ("bingHeavenly", "wuEarthly"), ("gengHeavenly", "yinEarthly"),
+):
+    print(c.solar_date, c.time_index)
+```
+
+```text
+1940-8-31 2
+2000-8-16 2
+2060-8-1 2
+```
+
+星盘特征反查、四柱口径与 Config 的关系、截断语义见[文档站](https://ziwei.x-hoase.com/zh/docs/guide/guides/reverse)。
 
 ## 准确性
 

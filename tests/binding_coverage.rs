@@ -31,10 +31,10 @@ fn fn_body(src: &str, header: &str) -> String {
     rest[..end].to_string()
 }
 
-/// 抽出片段里形如 `"someIdentifier"` 的标识字面量。
+/// 抽出片段里形如 `"someIdentifier"` / `"some_snake_key"` 的标识字面量。
 ///
-/// 只收纯标识符（字母开头、仅含字母数字），从而滤掉错误信息、格式串等
-/// 含空格或标点的字符串。
+/// 只收纯标识符（字母开头、仅含字母数字与下划线——kind 是 camelCase、
+/// 格局 key 是 snake_case），从而滤掉错误信息、格式串等含空格或标点的字符串。
 fn identifier_literals(src: &str) -> Vec<String> {
     let mut out = Vec::new();
     let bytes = src.as_bytes();
@@ -53,7 +53,7 @@ fn identifier_literals(src: &str) -> Vec<String> {
             let lit = &src[start..j];
             let is_ident = !lit.is_empty()
                 && lit.chars().next().unwrap().is_ascii_alphabetic()
-                && lit.chars().all(|c| c.is_ascii_alphanumeric());
+                && lit.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
             if is_ident && !out.contains(&lit.to_string()) {
                 out.push(lit.to_string());
             }
@@ -134,6 +134,18 @@ fn star_keys() -> Vec<String> {
     keys
 }
 
+/// PatternKey::as_key 表里的全部格局标识（64 个 snake_case key）。
+fn pattern_keys() -> Vec<String> {
+    let src = read("src/pattern/keys.rs");
+    let keys = identifier_literals(&fn_body(&src, "    pub fn as_key(self) -> &'static str {"));
+    assert!(
+        keys.len() == 64,
+        "抽出 {} 个格局 key（应为 64），抽取逻辑与 pattern/keys.rs 结构脱节了",
+        keys.len()
+    );
+    keys
+}
+
 fn report_missing(label: &str, idents: &[String], src: &str) -> Vec<String> {
     idents
         .iter()
@@ -176,4 +188,22 @@ fn star_keys_are_exposed_in_bindings() {
         missing.join("\n  "),
     );
     eprintln!("binding coverage: all {} star keys exposed", keys.len());
+}
+
+#[test]
+fn pattern_keys_are_exposed_in_bindings() {
+    let keys = pattern_keys();
+    let python = binding_sources("python/x_iztro", ".py");
+    let go = binding_sources("go/iztro", ".go");
+
+    let mut missing = report_missing("python", &keys, &python);
+    missing.extend(report_missing("go", &keys, &go));
+
+    assert!(
+        missing.is_empty(),
+        "\n\n{} 个格局标识在绑定层枚举里缺失：\n  {}\n",
+        missing.len(),
+        missing.join("\n  "),
+    );
+    eprintln!("binding coverage: all {} pattern keys exposed", keys.len());
 }

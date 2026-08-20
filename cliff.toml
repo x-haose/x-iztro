@@ -1,0 +1,44 @@
+# git-cliff 配置：从 conventional commits 生成 CHANGELOG 草稿段落。
+#
+# 用法（发版 PR 前）：
+#   git cliff --unreleased --tag v<新版本>
+#
+# 产出是按 Keep a Changelog 中文节名归好类的骨架草稿。仓库的 CHANGELOG.md
+# 条目是带背景与语义说明的精写文本，草稿只用来保证不漏条目与归类起点：
+# 逐条润色后再并入 CHANGELOG.md，不把 commit 标题罗列直接当成品；
+# 未发布功能的开发期修正并进该功能条目的最终描述，不单列「先错后改」。
+
+[changelog]
+header = ""
+# 组名前的 <!-- N --> 是排序前缀（HTML 注释在 Markdown 渲染中不可见），
+# 输出时由 striptags 去掉。
+body = """
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}
+{%- endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+# 不合规范的提交也列出（进「其他」组），避免草稿静默漏条目
+filter_unconventional = false
+commit_parsers = [
+  { message = "^feat", group = "<!-- 1 -->新增" },
+  { message = "^fix", group = "<!-- 2 -->修正" },
+  { message = "^perf", group = "<!-- 3 -->性能" },
+  { message = "^refactor", group = "<!-- 4 -->变更" },
+  { message = "^docs", group = "<!-- 5 -->文档" },
+  { message = "^test", group = "<!-- 6 -->测试" },
+  { message = "^(chore|ci|style)", skip = true },
+  { message = "^wip", skip = true },
+  { message = ".*", group = "<!-- 7 -->其他" },
+]
+# 只认仓库版本标签 v*；go/iztro/v* 是 Go 子模块标签，不参与版本切分
+tag_pattern = "^v[0-9]"
+sort_commits = "oldest"

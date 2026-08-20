@@ -5,10 +5,14 @@ pub mod builder;
 pub mod context;
 /// 运限计算
 pub mod horoscope;
+/// 农历月表读取口（对 lunar_rust 月界数据缺陷的修正视图）
+pub(crate) mod lunar_table;
 /// 命身宫、五行局与大限小限计算
 pub mod palace;
 /// 生肖、星座、命宫主星等轻量查询
 pub mod query;
+/// 反推：由八字或星盘特征反查候选生辰
+pub mod reverse;
 
 /// 按指定干支重排星盘（中州派地盘、人盘）
 pub mod rearrange;

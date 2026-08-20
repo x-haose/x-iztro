@@ -92,6 +92,10 @@ pub struct HoroscopeInput {
     pub target_date: String,
     /// 运限目标时辰索引 0-12
     pub target_time_index: u8,
+    /// 重排起点天干标识；与 `from_branch` 同时给出时先按该干支重排星盘再算运限
+    pub from_stem: Option<String>,
+    /// 重排起点地支标识；与 `from_stem` 同时给出
+    pub from_branch: Option<String>,
 }
 
 /// 查询入参
@@ -152,10 +156,10 @@ pub struct QueryInput {
     /// 四柱干支标识 [年, 月, 日, 时]，每柱为 [天干, 地支]
     pub pillars: Vec<Vec<String>>,
 
-    // 安星用：中州派从别的干支起五行局
-    /// 起五行局的天干标识；与 `from_branch` 同时给出
+    // 安星与格局用：中州派安星从别的干支起五行局；格局判定按该干支重排后再判
+    /// 起五行局/重排起点的天干标识；与 `from_branch` 同时给出
     pub from_stem: Option<String>,
-    /// 起五行局的地支标识；与 `from_stem` 同时给出
+    /// 起五行局/重排起点的地支标识；与 `from_stem` 同时给出
     pub from_branch: Option<String>,
 
     // i18n 用
@@ -171,6 +175,22 @@ pub struct QueryInput {
     pub target_date: String,
     /// 运限目标时辰索引 0-12
     pub target_time_index: u8,
+
+    // 格局用
+    /// 格局判定口径，部分键对象（brightnessSource/borrow/flowStars）；省略取默认
+    pub pattern_config: Option<Value>,
+
+    // 知识包用
+    /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
+    pub knowledge_packs: Vec<Value>,
+
+    // 反推用
+    /// 反推范围起始公历年（含）
+    pub start_year: i64,
+    /// 反推范围截止公历年（含）
+    pub end_year: i64,
+    /// 星盘特征反推的条件对象（camelCase 键，含 yearRange/limit 等）
+    pub reverse_criteria: Option<Value>,
 }
 
 /// `fixIndex` 的 max 默认值，与 iztro 一致
@@ -223,24 +243,156 @@ fn parse_config(v: &Option<Value>) -> Result<Config, BridgeError> {
     }
 }
 
+/// 要求 JSON 值为字符串并取出，否则报带实际值的 invalid_argument。
+fn expect_str<'a>(v: &'a Value, name: &str) -> Result<&'a str, BridgeError> {
+    v.as_str().ok_or_else(|| {
+        BridgeError::invalid_argument(format!("{name} must be a string key, got {v}"))
+    })
+}
+
+/// 星盘特征反推条件：标识字段一律收语言无关 key。
+///
+/// 未知键与错型键都报错——静默回落默认值会把拼写/类型错误变成貌似成功的
+/// 错答案；每条错误信息都带上实际收到的值。
+fn parse_reverse_criteria(
+    v: &Value,
+) -> Result<crate::astro::reverse::ReverseCriteria, BridgeError> {
+    use crate::astro::reverse::{ReverseCriteria, StarPosition};
+    let obj = v.as_object().ok_or_else(|| {
+        BridgeError::invalid_argument("reverseCriteria must be an object".to_string())
+    })?;
+    const KNOWN: [&str; 8] = [
+        "soulBranch",
+        "bodyBranch",
+        "fiveElementsClass",
+        "stars",
+        "mutagens",
+        "yearRange",
+        "fixLeap",
+        "limit",
+    ];
+    if let Some(unknown) = obj.keys().find(|k| !KNOWN.contains(&k.as_str())) {
+        return Err(BridgeError::invalid_argument(format!(
+            "unknown reverseCriteria key '{unknown}'"
+        )));
+    }
+    let mut criteria = ReverseCriteria::default();
+    let branch = |v: &Value, name: &str| -> Result<EarthlyBranch, BridgeError> {
+        parse_branch_key(expect_str(v, name)?)
+            .map_err(|e| BridgeError::invalid_argument(format!("{name}: {e}")))
+    };
+    if let Some(v) = obj.get("soulBranch").filter(|v| !v.is_null()) {
+        criteria.soul_branch = Some(branch(v, "soulBranch")?);
+    }
+    if let Some(v) = obj.get("bodyBranch").filter(|v| !v.is_null()) {
+        criteria.body_branch = Some(branch(v, "bodyBranch")?);
+    }
+    if let Some(v) = obj.get("fiveElementsClass").filter(|v| !v.is_null()) {
+        let key = expect_str(v, "fiveElementsClass")?;
+        criteria.five_elements_class = Some(FiveElementsClass::from_key(key).ok_or_else(|| {
+            BridgeError::invalid_argument(format!("unknown five elements class key '{key}'"))
+        })?);
+    }
+    if let Some(v) = obj.get("stars").filter(|v| !v.is_null()) {
+        for (i, item) in v
+            .as_array()
+            .ok_or_else(|| BridgeError::invalid_argument("stars must be an array".to_string()))?
+            .iter()
+            .enumerate()
+        {
+            if !item.is_object() {
+                return Err(BridgeError::invalid_argument(format!(
+                    "stars[{i}] must be an object with star and branch keys, got {item}"
+                )));
+            }
+            criteria.stars.push(StarPosition {
+                star: parse_star_key(expect_str(&item["star"], "stars[].star")?)?,
+                branch: branch(&item["branch"], "stars[].branch")?,
+            });
+        }
+    }
+    if let Some(v) = obj.get("mutagens").filter(|v| !v.is_null()) {
+        let arr = v.as_array().ok_or_else(|| {
+            BridgeError::invalid_argument("mutagens must be an array of 4".to_string())
+        })?;
+        if arr.len() != 4 {
+            return Err(BridgeError::invalid_argument(
+                "mutagens must have exactly 4 entries (lu, quan, ke, ji)".to_string(),
+            ));
+        }
+        for (slot, item) in criteria.mutagens.iter_mut().zip(arr) {
+            if !item.is_null() {
+                *slot = Some(parse_star_key(expect_str(item, "mutagens[]")?)?);
+            }
+        }
+    }
+    if let Some(v) = obj.get("yearRange").filter(|v| !v.is_null()) {
+        let arr = v.as_array().filter(|a| a.len() == 2).ok_or_else(|| {
+            BridgeError::invalid_argument(format!(
+                "yearRange must be [startYear, endYear], got {v}"
+            ))
+        })?;
+        let year = |v: &Value| -> Result<i64, BridgeError> {
+            v.as_i64().ok_or_else(|| {
+                BridgeError::invalid_argument(format!(
+                    "yearRange entries must be integer years, got {v}"
+                ))
+            })
+        };
+        criteria.year_range = (year(&arr[0])?, year(&arr[1])?);
+    }
+    if let Some(v) = obj.get("fixLeap").filter(|v| !v.is_null()) {
+        criteria.fix_leap = v.as_bool().ok_or_else(|| {
+            BridgeError::invalid_argument(format!("fixLeap must be a boolean, got {v}"))
+        })?;
+    }
+    if let Some(v) = obj.get("limit").filter(|v| !v.is_null()) {
+        let n = v.as_u64().ok_or_else(|| {
+            BridgeError::invalid_argument(format!("limit must be a non-negative integer, got {v}"))
+        })?;
+        // wasm32 上 usize 为 32 位，超出即报错而不是截断成另一个上限
+        criteria.limit = usize::try_from(n)
+            .map_err(|_| BridgeError::invalid_argument(format!("limit {n} is out of range")))?;
+    }
+    Ok(criteria)
+}
+
+/// 格局判定口径：省略或 null 取默认；对象按 camelCase 部分键解析，未知键报错。
+fn parse_pattern_config(v: &Option<Value>) -> Result<crate::pattern::PatternConfig, BridgeError> {
+    match v {
+        None | Some(Value::Null) => Ok(crate::pattern::PatternConfig::default()),
+        Some(value) => serde_json::from_value(value.clone())
+            .map_err(|e| BridgeError::invalid_argument(format!("invalid patternConfig: {e}"))),
+    }
+}
+
 fn parse_star_key(key: &str) -> Result<StarKey, BridgeError> {
     StarKey::from_key(key)
         .ok_or_else(|| BridgeError::invalid_argument(format!("unknown star key '{key}'")))
 }
 
 fn parse_stem_key(key: &str) -> Result<HeavenlyStem, BridgeError> {
-    HeavenlyStem::from_key(key)
-        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown heavenly stem key '{key}'")))
+    HeavenlyStem::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!(
+            "unknown heavenly stem key '{key}' (expect language-neutral keys like 'jiaHeavenly', not translated names)"
+        ))
+    })
 }
 
 fn parse_branch_key(key: &str) -> Result<EarthlyBranch, BridgeError> {
-    EarthlyBranch::from_key(key)
-        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown earthly branch key '{key}'")))
+    EarthlyBranch::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!(
+            "unknown earthly branch key '{key}' (expect language-neutral keys like 'ziEarthly', not translated names)"
+        ))
+    })
 }
 
 fn parse_scope_key(key: &str) -> Result<Scope, BridgeError> {
-    Scope::from_key(key)
-        .ok_or_else(|| BridgeError::invalid_argument(format!("unknown scope '{key}'")))
+    Scope::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!(
+            "unknown scope '{key}' (expected one of: origin, decadal, yearly, monthly, daily, hourly)"
+        ))
+    })
 }
 
 /// 解析四柱干支标识：四柱各两项，顺序为年、月、日、时
@@ -337,7 +489,8 @@ pub fn by_lunar(input: &LunarChartInput) -> Result<Value, BridgeError> {
     serde_json::to_value(astrolabe.to_dto()).map_err(serialize_failed)
 }
 
-/// 运限，返回运限 DTO
+/// 运限，返回运限 DTO；给出 `fromStem`/`fromBranch` 时先按该干支重排星盘再算——
+/// 重排改变五行局与命宫，大限步长与各层宫名随之不同。
 pub fn horoscope(input: &HoroscopeInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let astrolabe = crate::by_solar(
@@ -348,6 +501,7 @@ pub fn horoscope(input: &HoroscopeInput) -> Result<Value, BridgeError> {
         language,
         parse_config(&input.config)?,
     )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
     let horoscope = crate::get_horoscope(
         &astrolabe,
         &input.target_date,
@@ -371,6 +525,49 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 轻量查询：结果按语言翻译 ----
         "zodiacBySolar" | "signBySolar" | "signByLunar" | "majorStarBySolar"
         | "majorStarByLunar" | "astrolabeToPrompt" | "horoscopeToPrompt" => translated(input),
+
+        // ---- 格局 ----
+        "patterns" | "horoscopePatterns" => patterns(input),
+
+        // ---- 反推 ----
+        "solarDatesByBazi" => {
+            let config = parse_config(&input.config)?;
+            let p = parse_pillars(&input.pillars)?;
+            let got = crate::astro::reverse::solar_dates_by_bazi(
+                p[0],
+                p[1],
+                p[2],
+                p[3],
+                (input.start_year, input.end_year),
+                &config,
+            )?;
+            serde_json::to_value(got).map_err(serialize_failed)
+        }
+        "reverseChart" => {
+            let config = parse_config(&input.config)?;
+            let criteria = match &input.reverse_criteria {
+                Some(v) => parse_reverse_criteria(v)?,
+                None => {
+                    return Err(BridgeError::invalid_argument("reverseCriteria is required"));
+                }
+            };
+            let got = crate::astro::reverse::reverse_chart(&criteria, &config)?;
+            serde_json::to_value(got).map_err(serialize_failed)
+        }
+
+        // ---- 知识包 ----
+        "knowledgePack" => {
+            let language = parse_language(&input.language)?;
+            let json =
+                crate::knowledge::KnowledgePack::builtin_json(language).ok_or_else(|| {
+                    BridgeError::invalid_argument(format!(
+                        "no builtin knowledge pack for language '{}'",
+                        input.language
+                    ))
+                })?;
+            serde_json::from_str(json).map_err(serialize_failed)
+        }
+        "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
 
         // ---- util 与 astro/palace ----
         "fixIndex"
@@ -473,27 +670,34 @@ fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
             language,
             config,
         ),
-        "astrolabeToPrompt" => crate::by_solar(
-            &input.solar_date,
-            input.time_index,
-            parse_gender(&input.gender)?,
-            input.fix_leap,
-            language,
-            config,
-        )
-        .map(|a| crate::astrolabe_to_prompt(&a, language)),
-        "horoscopeToPrompt" => crate::by_solar(
-            &input.solar_date,
-            input.time_index,
-            parse_gender(&input.gender)?,
-            input.fix_leap,
-            language,
-            config,
-        )
-        .and_then(|a| {
-            crate::get_horoscope(&a, &input.target_date, input.target_time_index, language)
-                .map(|h| crate::horoscope_to_prompt(&a, &h, language))
-        }),
+        // 两条 Prompt 走完整排盘：给出 `fromStem`/`fromBranch` 时先重排再生成，
+        // 与 patterns/horoscope 的重排语义一致
+        "astrolabeToPrompt" => {
+            let a = crate::by_solar(
+                &input.solar_date,
+                input.time_index,
+                parse_gender(&input.gender)?,
+                input.fix_leap,
+                language,
+                config,
+            )?;
+            let a = apply_rearrange(a, &input.from_stem, &input.from_branch)?;
+            return Ok(json!(crate::astrolabe_to_prompt(&a, language)));
+        }
+        "horoscopeToPrompt" => {
+            let a = crate::by_solar(
+                &input.solar_date,
+                input.time_index,
+                parse_gender(&input.gender)?,
+                input.fix_leap,
+                language,
+                config,
+            )?;
+            let a = apply_rearrange(a, &input.from_stem, &input.from_branch)?;
+            let h =
+                crate::get_horoscope(&a, &input.target_date, input.target_time_index, language)?;
+            return Ok(json!(crate::horoscope_to_prompt(&a, &h, language)));
+        }
         other => {
             return Err(BridgeError::invalid_argument(format!(
                 "unknown query kind '{other}'"
@@ -502,6 +706,57 @@ fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
     };
 
     Ok(json!(text?))
+}
+
+/// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`）。
+/// 给出 `fromStem`/`fromBranch` 时先按该干支重排星盘再判——重排改变五行局与
+/// 十二宫名，格局结论随之不同，判原盘会静默给出错的盘的答案。
+/// 返回命中 DTO 数组，名称按语言翻译、标识语言无关。
+fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let config = parse_config(&input.config)?;
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        config,
+    )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+    let hits = match input.kind.as_str() {
+        "patterns" => astrolabe.patterns_dto(&pattern_config),
+        _ => {
+            let scope = parse_scope_key(&input.scope)?;
+            let horoscope = crate::get_horoscope(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                language,
+            )?;
+            horoscope.patterns_dto(&astrolabe, scope, &pattern_config)
+        }
+    };
+    serde_json::to_value(hits).map_err(serialize_failed)
+}
+
+/// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。
+fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
+    let mut parsed = packs.iter().map(|v| {
+        crate::knowledge::KnowledgePack::from_json(&v.to_string())
+            .map_err(BridgeError::invalid_argument)
+    });
+    let Some(base) = parsed.next() else {
+        return Err(BridgeError::invalid_argument(
+            "knowledgePacks must contain at least one pack",
+        ));
+    };
+    let mut base = base?;
+    for overlay in parsed {
+        base.merge(&overlay?);
+    }
+    serde_json::to_value(base).map_err(serialize_failed)
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key
@@ -943,4 +1198,156 @@ fn rule_map(rule: &[HeavenlyStem; 10]) -> Value {
             .map(|(from, to)| (from.as_key().to_string(), json!(to.as_key())))
             .collect::<serde_json::Map<_, _>>()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 错型的反推条件必须报 invalid_argument，且信息里带上实际收到的值。
+    #[test]
+    fn reverse_criteria_rejects_wrong_types() {
+        let cases: &[(Value, &str)] = &[
+            (json!({"fixLeap": 0}), "fixLeap must be a boolean, got 0"),
+            (
+                json!({"limit": "5"}),
+                "limit must be a non-negative integer, got \"5\"",
+            ),
+            (
+                json!({"limit": -1}),
+                "limit must be a non-negative integer, got -1",
+            ),
+            (
+                json!({"yearRange": "1990-2000"}),
+                "yearRange must be [startYear, endYear], got \"1990-2000\"",
+            ),
+            (
+                json!({"yearRange": [1990, "2000"]}),
+                "yearRange entries must be integer years, got \"2000\"",
+            ),
+            (
+                json!({"soulBranch": 5}),
+                "soulBranch must be a string key, got 5",
+            ),
+            (
+                json!({"fiveElementsClass": true}),
+                "fiveElementsClass must be a string key, got true",
+            ),
+            (
+                json!({"mutagens": ["ziweiMaj", 1, null, null]}),
+                "mutagens[] must be a string key, got 1",
+            ),
+            (
+                json!({"stars": [42]}),
+                "stars[0] must be an object with star and branch keys, got 42",
+            ),
+            (
+                json!({"stars": [{"star": "ziweiMaj"}]}),
+                "stars[].branch must be a string key, got null",
+            ),
+        ];
+        for (criteria, want) in cases {
+            let err = parse_reverse_criteria(criteria).unwrap_err();
+            assert!(
+                err.message.contains(want),
+                "criteria {criteria}: got message {:?}, want it to contain {want:?}",
+                err.message
+            );
+        }
+    }
+
+    /// `patterns` kind 带 `fromStem`/`fromBranch` 时按重排后的盘判定，
+    /// 与 Rust 原生「rearranged 后调 patterns_dto」逐字节一致。
+    #[test]
+    fn patterns_kind_applies_rearrange() {
+        let q = |v: Value| query(&serde_json::from_value::<QueryInput>(v).unwrap()).unwrap();
+        let base = json!({
+            "kind": "patterns",
+            "solarDate": "1990-4-23",
+            "timeIndex": 2,
+            "gender": "male",
+            "language": "zh-CN",
+        });
+        let plain = q(base.clone());
+        let mut with_from = base;
+        with_from["fromStem"] = json!("gengHeavenly");
+        with_from["fromBranch"] = json!("chenEarthly");
+        let rearranged = q(with_from);
+        assert_ne!(plain, rearranged, "重排后的格局结论应与原盘不同");
+
+        let native = crate::by_solar(
+            "1990-4-23",
+            2,
+            Gender::Male,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap()
+        .rearranged(
+            HeavenlyStem::from_key("gengHeavenly").unwrap(),
+            EarthlyBranch::from_key("chenEarthly").unwrap(),
+        )
+        .patterns_dto(&crate::pattern::PatternConfig::default());
+        assert_eq!(rearranged, serde_json::to_value(native).unwrap());
+    }
+
+    /// `horoscope` kind 与两条 Prompt kind 带 `fromStem`/`fromBranch` 时按重排后的盘计算，
+    /// 运限结果与 Rust 原生「rearranged 后调 get_horoscope」逐字节一致。
+    #[test]
+    fn horoscope_and_prompt_kinds_apply_rearrange() {
+        let base = json!({
+            "solarDate": "1990-4-23",
+            "timeIndex": 2,
+            "gender": "male",
+            "language": "zh-CN",
+            "targetDate": "2024-6-1",
+            "targetTimeIndex": 0,
+        });
+        let run = |v: &Value| {
+            horoscope(&serde_json::from_value::<HoroscopeInput>(v.clone()).unwrap()).unwrap()
+        };
+        let plain = run(&base);
+        let mut with_from = base.clone();
+        with_from["fromStem"] = json!("gengHeavenly");
+        with_from["fromBranch"] = json!("chenEarthly");
+        let rearranged = run(&with_from);
+        assert_ne!(plain, rearranged, "重排后的运限应与原盘不同");
+
+        let native_chart = crate::by_solar(
+            "1990-4-23",
+            2,
+            Gender::Male,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap()
+        .rearranged(
+            HeavenlyStem::from_key("gengHeavenly").unwrap(),
+            EarthlyBranch::from_key("chenEarthly").unwrap(),
+        );
+        let native = crate::get_horoscope(&native_chart, "2024-6-1", 0, Language::ZhCN).unwrap();
+        assert_eq!(
+            rearranged,
+            serde_json::to_value(native.to_dto(Language::ZhCN)).unwrap()
+        );
+
+        for kind in ["astrolabeToPrompt", "horoscopeToPrompt"] {
+            let mut q = json!({
+                "kind": kind,
+                "solarDate": "1990-4-23",
+                "timeIndex": 2,
+                "gender": "male",
+                "language": "zh-CN",
+                "targetDate": "2024-6-1",
+                "targetTimeIndex": 0,
+            });
+            let plain = query(&serde_json::from_value::<QueryInput>(q.clone()).unwrap()).unwrap();
+            q["fromStem"] = json!("gengHeavenly");
+            q["fromBranch"] = json!("chenEarthly");
+            let rearranged = query(&serde_json::from_value::<QueryInput>(q).unwrap()).unwrap();
+            assert_ne!(plain, rearranged, "{kind}: 重排后的 Prompt 应与原盘不同");
+        }
+    }
 }

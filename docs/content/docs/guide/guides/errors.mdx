@@ -16,7 +16,7 @@ x-iztro 把外部输入的校验放在尽量靠内的一层，三种编程语言
 | --- | --- |
 | `invalid_date` | 日期格式非法、该日期不存在，或超出支持范围（公历 1583–9999） |
 | `invalid_time_index` | 时辰索引越界（合法值 0–12） |
-| `invalid_argument` | 其余入参或配置非法：未知的性别、盘面语言、星耀标识、开关取值、覆盖表长度错 |
+| `invalid_argument` | 其余入参或配置非法：未知的性别、盘面语言、星耀标识、开关取值、覆盖表长度错；反推的干支阴阳不配、条件为空或含流耀、年份范围非法 |
 | `internal` | 库内部缺陷或运行时故障，不是调用方的错，请上报 |
 
 ## 各语言的错误类型
@@ -39,7 +39,7 @@ invalid_date         invalid solar date '1000-1-1': year must be within 1583-999
 invalid_time_index   time_index must be 0-12, got 13
 ```
 
-变体有三个：`InvalidDate`、`InvalidTimeIndex`、`Internal`。
+变体有四个：`InvalidDate`、`InvalidTimeIndex`、`InvalidArgument`、`Internal`。
 枚举标了 `#[non_exhaustive]`，`match` 时请留 `_` 分支。
 
 </Tab>

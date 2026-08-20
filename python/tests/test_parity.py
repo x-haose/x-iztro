@@ -435,6 +435,22 @@ def test_rearranged_rejects_unknown_stem(chart):
         chart.rearranged("notAStem", EarthlyBranch.ZI)
 
 
+def test_rearranged_carries_into_horoscope_and_prompt():
+    """重排盘上的运限与 Prompt 按重排后的布局计算，而不是静默退回原盘。"""
+    astro = Astro()
+    chart = astro.by_solar("1990-4-23", 2, "male")
+    re = chart.rearranged(HeavenlyStem.GENG, EarthlyBranch.CHEN)
+
+    plain_h = chart.horoscope("2024-6-1", 0)
+    re_h = re.horoscope("2024-6-1", 0)
+    assert re_h.to_dict() != plain_h.to_dict()
+
+    assert astro.astrolabe_to_prompt(re) != astro.astrolabe_to_prompt(chart)
+    assert astro.horoscope_to_prompt(re, "2024-6-1", 0) != astro.horoscope_to_prompt(
+        chart, "2024-6-1", 0
+    )
+
+
 # ============================================================
 # 工具函数收尾与 horoscope 默认参数（阶段 5）
 # ============================================================

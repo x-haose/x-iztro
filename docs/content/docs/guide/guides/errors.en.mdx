@@ -18,7 +18,7 @@ it, do not parse the message**.
 | --- | --- |
 | `invalid_date` | Malformed date, a date that does not exist, or one outside the supported range (Gregorian 1583–9999) |
 | `invalid_time_index` | Hour index out of range (0–12 are legal) |
-| `invalid_argument` | Any other invalid argument or config: unknown gender, chart language, star key, switch value, or a wrong override-table length |
+| `invalid_argument` | Any other invalid argument or config: unknown gender, chart language, star key, switch value, a wrong override-table length; or reverse-lookup input — mismatched pillar polarity, empty or flow-star criteria, a bad year range |
 | `internal` | A defect or runtime failure inside the library. Not the caller's fault; please report it |
 
 ## The error type in each language
@@ -41,7 +41,7 @@ invalid_date         invalid solar date '1000-1-1': year must be within 1583-999
 invalid_time_index   time_index must be 0-12, got 13
 ```
 
-There are three variants: `InvalidDate`, `InvalidTimeIndex` and `Internal`. The enum is marked
+There are four variants: `InvalidDate`, `InvalidTimeIndex`, `InvalidArgument` and `Internal`. The enum is marked
 `#[non_exhaustive]`, so leave a `_` arm when matching.
 
 </Tab>

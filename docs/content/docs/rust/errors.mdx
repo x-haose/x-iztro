@@ -1,10 +1,10 @@
 ---
 title: 错误处理
-description: IztroError 的三个变体、code() 分类标识、BridgeError 与排查方式。
+description: IztroError 的四个变体、code() 分类标识、BridgeError 与排查方式。
 ---
 
 所有收外部输入的入口都返回 `Result`。日期格式、日期存在性、年份范围、
-时辰索引这四类都在核心层前置校验，非法输入得到错误值而不是 panic。
+时辰索引与反推入参都在核心层前置校验，非法输入得到错误值而不是 panic。
 
 ```rust
 #[non_exhaustive]
@@ -13,6 +13,8 @@ pub enum IztroError {
     InvalidDate(String),
     /// 时辰索引超出 0–12
     InvalidTimeIndex(u8),
+    /// 反推入参不合法：干支阴阳不配、条件为空或含流耀、年份范围非法
+    InvalidArgument(String),
     /// 依赖的历法库没给出本应存在的干支或星座取值
     Internal(String),
 }
@@ -33,9 +35,10 @@ impl IztroError {
 | --- | --- | --- |
 | `InvalidDate` | `invalid_date` | 日期非法 |
 | `InvalidTimeIndex` | `invalid_time_index` | 时辰索引越界 |
+| `InvalidArgument` | `invalid_argument` | 反推等入口的入参不合法 |
 | `Internal` | `internal` | 库内部缺陷 |
 
-这三个取值与 Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套，
+这四个取值与 Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套，
 跨语言分支逻辑可以照抄。
 
 ```rust
@@ -147,6 +150,41 @@ time_index must be 0-12, got 13
 
 ---
 
+## InvalidArgument
+
+**触发条件**　反推入口的调用方错误：
+
+| 情形 | 例 | 消息 |
+| --- | --- | --- |
+| 四柱干支阴阳不配 | 甲丑（阳干配阴支） | `invalid yearly pillar: stem and branch must have the same polarity` |
+| 反推条件为空 | `ReverseCriteria::default()` | `reverse criteria must contain at least one condition` |
+| 条件含运限流曜 | 流禄 | `star 'liulu' is a horoscope-scope star and never appears on the natal chart` |
+| 年份范围非法 | `(2100, 1900)` | `invalid year range 2100-1900: expected 1583-9999 with start <= end` |
+
+**示例**
+
+```rust
+let jia_zi = (HeavenlyStem::Jia, EarthlyBranch::Zi);
+let err = solar_dates_by_bazi(
+    (HeavenlyStem::Jia, EarthlyBranch::Chou), // 甲丑：阴阳不配
+    jia_zi, jia_zi, jia_zi,
+    (1900, 2100),
+    &Config::default(),
+)
+.unwrap_err();
+println!("{} / {}", err.code(), err);
+```
+
+**输出**
+
+```text
+invalid_argument / invalid yearly pillar: stem and branch must have the same polarity
+```
+
+反推入口的语义见[反推](/zh/docs/rust/reverse)。
+
+---
+
 ## Internal
 
 **触发条件**　依赖的历法库 `lunar_rust` 没有交回本应存在的干支或星座取值。
@@ -185,9 +223,9 @@ impl BridgeError {
 impl From<IztroError> for BridgeError { /* code 与 message 直接沿用 */ }
 ```
 
-比 `IztroError` 多一个分类 `invalid_argument`：绑定层收的是字符串而非枚举，
+四个分类与 `IztroError` 相同。绑定层收的是字符串而非枚举，
 性别、语言、宫名、四化、配置 JSON 这些取值的合法性只能在那一层校验，
-落到这个分类下。
+同样落在 `invalid_argument` 分类下。
 
 三条出口都把它序列化成同一段 JSON：
 
