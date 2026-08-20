@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "x-iztro"
-version = "0.2.0"
+version = "0.3.0"
 description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"
 readme = "README.md"
 license = { text = "MIT" }

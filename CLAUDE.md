@@ -200,6 +200,19 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 支持 6 种语言：zh-CN、zh-TW、en-US、ja-JP、ko-KR、vi-VN
 - 翻译在 `src/i18n/` 下，serde 序列化时自动应用
 
+## 发版
+
+1. `git cliff --unreleased --tag v<版本>` 生成草稿（配置在 `cliff.toml`，按 conventional
+   commits 归类为中文节名），逐条润色成带背景说明的条目并入 CHANGELOG.md——
+   未发布功能的开发期修正并进该功能条目的最终描述，只有对已发布版本的行为修正才单列；
+   `[Unreleased]` 下插入版本节，文件尾链接行同步更新。
+2. `Cargo.toml` 与 `pyproject.toml` 版本号同改（release.yml 开头断言两者相等），
+   `cargo check` 刷新 Cargo.lock——发版走 `cargo publish --locked`，
+   lock 里本包版本不同步会挂。
+3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
+   合并即自动发版：金标门禁 → crates.io（OIDC）→ `v*` 与 `go/iztro/v*` 双标签
+   → GitHub Release → 派发 wheels.yml 发 PyPI。
+
 ## 常用命令速查
 
 ```bash

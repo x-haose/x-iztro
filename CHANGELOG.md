@@ -7,8 +7,28 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-20
+
+### 变更（breaking）
+
+- **中州派重排盘的行为对齐**：`rearranged` 系列此前只有安星按重排干支起五行局，
+  运限查询与 Prompt 生成（以及本版新增的格局判定）仍按原始盘计算；
+  现在三者一律按重排后布局——五行局、命宫与大限随重排起点变化，出生数据不变，
+  Rust / Python / Go 与 bridge 序列化入口行为一致。
+
 ### 修正
 
+- **1602 年闰二月换算修正**：依赖 lunar_rust 1.0.1 推算农历 1602 年（明万历三十年）
+  闰二月合朔晚一天，月表自相矛盾（二月 31 天、闰二月 28 天），致
+  `by_solar("1602-3-24", …)` 全部时辰 panic（Go/wasm 即 trap）、
+  1602-3-25 至 4-21 共 28 天静默错盘。真值经 lunar-typescript（lunar_rust 的移植上游）、
+  寿星天文历 sxtwl 与韩国天文研究院历表交叉确认：1602-3-24 为闰二月初一，
+  二月 30 天、闰二月 29 天。新增 `lunar_table` 修正层作为仓库读取农历月结构的
+  唯一入口，按真值修正并带在场探测（依赖将来修复该表即自动停用）；
+  新增金标 tier_1602（受影响窗口 2,444 例与 JS iztro 逐字节一致）与
+  1583-9999 全域扫描测试（约 614 万盘无同类缺陷）。
+- bridge 报错信息改进：未知 `scope` 列出全部合法值；天干/地支收到非标识串
+  （如译名）时提示应传语言无关 key。
 - 三处 `% 2 == 0` 改为 `is_multiple_of(2)`，以通过新版 clippy 的 `manual_is_multiple_of`。
 - `rust-version` 由 1.85 改为 1.88：代码自 0.2.0 起已使用 let-chains（Rust 1.88 稳定），
   旧声明下 1.85 工具链无法编译；CI 新增 MSRV 编译检查防止再漂移。
@@ -39,6 +59,7 @@
   此前该分类只在绑定层（`BridgeError`）出现。
 - **反推的文档与测试**：使用指南《反推》与三语言 API 参考页（中英各一份）；
   往返一致性（任一盘的四柱/特征反查必含原生辰、每个候选正排必满足条件）、
+  逐类星耀条件的单星环测（任何一条剪枝臂不许错杀真解）、早晚子两种归属口径、
   节气分界与中州派口径下的闭环、60 年周期多解、截断语义与入参校验由
   `tests/reverse.rs`、`python/tests/test_reverse.py`、`go/iztro/reverse_test.go` 守着。
 - **知识包协议与内嵌默认包**：解读文本与星耀的门派属性从内核里分出来，
@@ -87,8 +108,10 @@
   bridge 新增 `patterns` 与 `horoscopePatterns` 两个 kind，入参含部分键的 `patternConfig`。
 - **文档站**：概念页《格局》（含 64 条总表）与三语言 API 参考页，中英各一份。
 - **测试**：每条规则的正反例单测、来源页 32 张示例盘的真实盘复现、
-  tier1 1,560 张盘的批量不变量与命中分布检查，以及三侧共读的 DTO 输出快照
-  （4 张盘 × 6 种语言）。
+  tier1 1,560 张盘的全表命中计数金标，以及三侧共读的 DTO 输出快照
+  （4 张盘 × 6 种语言 × 本命与五个运限层级；快照缺失即测试失败，
+  仅 `UPDATE_PATTERN_SNAPSHOTS=1` 时显式重建）。
+- Python 包补 `__version__`（与 PyPI 分发版本一致）。
 
 ## [0.2.0] - 2026-08-19
 
@@ -127,7 +150,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/x-haose/x-iztro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/x-haose/x-iztro/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/x-haose/x-iztro/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/x-haose/x-iztro/releases/tag/v0.1.0
