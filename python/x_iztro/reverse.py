@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from x_iztro.config import ChartConfig
 from x_iztro.enums import EarthlyBranch, FiveElementsClass, HeavenlyStem
 
 Pillar = tuple[HeavenlyStem | str, EarthlyBranch | str]
@@ -93,10 +94,12 @@ class ReverseResult:
     """星盘特征反推的结果"""
 
     candidates: list[BirthCandidate]
-    """满足全部条件的候选生辰，按日期升序"""
+    """满足全部条件的候选生辰，按枚举序排列：农历年升序，年内依 月→时辰→日；
+    同一年内不保证公历日期升序"""
 
     truncated: bool
-    """是否因达到候选数上限而提前截断（截断时更晚的解未被搜索）"""
+    """是否因达到候选数上限而提前截断；截断时枚举序更靠后的解未被搜索，
+    其中可能包含公历日期更早的解"""
 
 
 def _key(v: object | None) -> str | None:
@@ -110,7 +113,7 @@ def solar_dates_by_bazi(
     hourly: Pillar,
     *,
     year_range: tuple[int, int] = (1900, 2100),
-    config: Any | None = None,
+    config: ChartConfig | None = None,
 ) -> list[BirthCandidate]:
     """
     由八字四柱反查公历生辰。
@@ -125,7 +128,7 @@ def solar_dates_by_bazi(
         config: 排盘配置（`ChartConfig`）；不传取默认
 
     Returns:
-        候选生辰列表，按日期升序
+        候选生辰列表（公历日期串；子时因早晚子之分可能给出两个候选）
 
     Raises:
         IztroError: 干支阴阳不配、年份范围非法
@@ -144,7 +147,7 @@ def solar_dates_by_bazi(
 
 def reverse_chart(
     criteria: ReverseCriteria,
-    config: Any | None = None,
+    config: ChartConfig | None = None,
 ) -> ReverseResult:
     """
     由星盘特征反查候选生辰。

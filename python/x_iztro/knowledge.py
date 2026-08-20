@@ -18,6 +18,34 @@ from typing import Any
 
 from x_iztro.enums import LanguageType
 
+_SCHEMA_VERSION = 1
+"""支持的知识包格式版本，与 Rust 内核 `knowledge::SCHEMA_VERSION` 一致"""
+
+
+def _validate_schema(raw: object) -> dict[str, Any]:
+    """
+    校验包对象的格式版本，与 Rust 内核解析（`KnowledgePack::from_json`）同语义：
+    非对象、未声明 `schema`、`schema` 比支持版本新都拒绝。
+
+    Raises:
+        IztroError: 不符合格式（code 为 invalid_argument）
+    """
+    from x_iztro._x_iztro import IztroError
+
+    def invalid(message: str) -> IztroError:
+        err = IztroError(message)
+        err.code = "invalid_argument"
+        return err
+
+    if not isinstance(raw, dict):
+        raise invalid("knowledge pack must be a JSON object")
+    schema = raw.get("schema", 0)
+    if not isinstance(schema, int) or isinstance(schema, bool) or schema <= 0:
+        raise invalid('knowledge pack must declare "schema" (currently 1)')
+    if schema > _SCHEMA_VERSION:
+        raise invalid(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
+    return raw
+
 
 @dataclass(frozen=True, slots=True)
 class Source:
@@ -209,13 +237,24 @@ class KnowledgePack:
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> KnowledgePack:
-        """由包对象构造（保留引用，不复制）"""
-        return cls(d)
+        """
+        由包对象构造（保留引用，不复制）。
+
+        Raises:
+            IztroError: 未声明 `schema` 或格式版本过新（与内核解析同语义）
+        """
+        return cls(_validate_schema(d))
 
     @classmethod
     def from_json(cls, text: str) -> KnowledgePack:
-        """由 JSON 文本构造"""
-        return cls(json.loads(text))
+        """
+        由 JSON 文本构造。
+
+        Raises:
+            IztroError: 非对象、未声明 `schema` 或格式版本过新（与内核解析同语义）
+            json.JSONDecodeError: JSON 语法非法
+        """
+        return cls(_validate_schema(json.loads(text)))
 
     def to_dict(self) -> dict[str, Any]:
         """包对象的深拷贝"""

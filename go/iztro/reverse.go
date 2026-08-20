@@ -41,13 +41,16 @@ type ReverseCriteria struct {
 	Mutagens [4]string
 	// YearRange 为公历年闭区间（含两端），零值取 [1900, 2100]；须落在 1583-9999 内
 	YearRange [2]int
-	// FixLeap 为是否修正闰月（与排盘入参同义）
-	FixLeap bool
+	// FixLeap 为是否修正闰月（与排盘入参同义）；nil 取内核默认 true。
+	// 值类型 bool 的零值会把「未设置」静默当成 false、与内核默认相反，
+	// 故用指针区分（与 YearRange 零值取默认同思路）；显式取值用 Bool 构造
+	FixLeap *bool
 	// Limit 为候选数上限：达到即停止搜索并置 ReverseResult.Truncated；0 取内核默认（512）
 	Limit int
 }
 
-// payload 编组为绑定层入参：空串字段转 null（缺省），零值年份范围转默认。
+// payload 编组为绑定层入参：空串字段转 null（缺省），零值年份范围转默认，
+// nil FixLeap 省略键（由内核取默认 true）。
 func (c *ReverseCriteria) payload() map[string]any {
 	orNil := func(s string) any {
 		if s == "" {
@@ -67,23 +70,29 @@ func (c *ReverseCriteria) payload() map[string]any {
 	if yearRange == [2]int{} {
 		yearRange = [2]int{1900, 2100}
 	}
-	return map[string]any{
+	p := map[string]any{
 		"soulBranch":        orNil(c.SoulBranch),
 		"bodyBranch":        orNil(c.BodyBranch),
 		"fiveElementsClass": orNil(c.FiveElementsClass),
 		"stars":             stars,
 		"mutagens":          mutagens,
 		"yearRange":         []int{yearRange[0], yearRange[1]},
-		"fixLeap":           c.FixLeap,
 		"limit":             c.Limit,
 	}
+	// nil 即未设置：省略键让内核取默认 true
+	if c.FixLeap != nil {
+		p["fixLeap"] = *c.FixLeap
+	}
+	return p
 }
 
 // ReverseResult 为星盘特征反推的结果。
 type ReverseResult struct {
-	// Candidates 为满足全部条件的候选生辰，按日期升序
+	// Candidates 为满足全部条件的候选生辰，按枚举序排列：农历年升序，
+	// 年内依 月→时辰→日；同一年内不保证公历日期升序。
 	Candidates []BirthCandidate `json:"candidates"`
-	// Truncated 为是否因达到候选数上限而提前截断（截断时更晚的解未被搜索）
+	// Truncated 为是否因达到候选数上限而提前截断；截断时枚举序更靠后的
+	// 解未被搜索，其中可能包含公历日期更早的解。
 	Truncated bool `json:"truncated"`
 }
 

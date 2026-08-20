@@ -153,6 +153,8 @@ class Astro:
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
             config=astrolabe._config_payload(),
+            from_stem=astrolabe._from_stem,
+            from_branch=astrolabe._from_branch,
         )
 
     def horoscope_to_prompt(
@@ -183,6 +185,8 @@ class Astro:
             fix_leap=astrolabe.fix_leap,
             language=astrolabe.language,
             config=astrolabe._config_payload(),
+            from_stem=astrolabe._from_stem,
+            from_branch=astrolabe._from_branch,
             target_date=target_date,
             target_time_index=target_time_index,
         )

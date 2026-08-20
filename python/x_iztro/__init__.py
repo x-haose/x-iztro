@@ -36,8 +36,16 @@ x-iztro: 紫微斗数 Rust 核心库 Python 绑定
         print(e.code)          # invalid_date
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 # 原生扩展模块抛出的异常类型
 from x_iztro._x_iztro import IztroError
+
+try:
+    # 包版本，与 pyproject.toml 的 version 一致；安装元数据缺失（如源码树直跑）时为 "0.0.0"
+    __version__ = version("x-iztro")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 # 数据模型
 from x_iztro.models import (

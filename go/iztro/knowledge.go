@@ -3,7 +3,11 @@ package iztro
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 )
+
+// knowledgeSchemaVersion 为支持的知识包格式版本，与 Rust 内核 knowledge::SCHEMA_VERSION 一致。
+const knowledgeSchemaVersion = 1
 
 // 知识包：语言无关标识 → 解读文本与门派属性。
 // 内核只负责事实判定，星耀怎么解读、格局意味着什么、宫位与四化的含义属于门派观点，
@@ -136,11 +140,19 @@ func BuiltinKnowledgePackContext(ctx context.Context, language Language) (*Knowl
 	return &out, nil
 }
 
-// ParseKnowledgePack 由 JSON 文本解析一份包（不校验格式版本；合并时由内核校验）。
+// ParseKnowledgePack 由 JSON 文本解析一份包，并校验格式版本
+// （与 Rust 内核解析同语义：未声明 schema 或版本比支持的新都拒绝）。
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error) {
 	var out KnowledgePack
 	if err := json.Unmarshal(data, &out); err != nil {
 		return nil, invalidArgument("invalid knowledge pack: " + err.Error())
+	}
+	if out.Schema <= 0 {
+		return nil, invalidArgument(`knowledge pack must declare "schema" (currently 1)`)
+	}
+	if out.Schema > knowledgeSchemaVersion {
+		return nil, invalidArgument(fmt.Sprintf(
+			"knowledge pack schema %d is newer than supported %d", out.Schema, knowledgeSchemaVersion))
 	}
 	return &out, nil
 }

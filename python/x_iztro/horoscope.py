@@ -410,6 +410,8 @@ class Horoscope:
             fix_leap=chart.fix_leap,
             language=chart.language,
             config=chart._config_payload(),
+            from_stem=chart._from_stem,
+            from_branch=chart._from_branch,
             target_date=self.solar_date,
             target_time_index=self._target_time_index,
             scope=_scope_key(scope),

@@ -840,7 +840,11 @@ pub struct PatternHitDto {
     pub key: String,
     /// 格局名称（按排盘语言翻译）
     pub name: String,
-    /// 判定视角（origin/decadal/yearly/…）
+    /// 判定视角（origin/decadal/yearly/…）。
+    ///
+    /// 命名是双轨约定（翻译文本用本名、语言无关标识带 `Key` 后缀）的例外：
+    /// 视角没有翻译文本形态，本字段直接装语言无关标识而不叫 `scopeKey`，
+    /// 与运限流耀条目的 `scope` 键同形。
     pub scope: String,
     /// 成格所在宫位索引（0-11，寅宫为 0）
     pub palace_index: usize,

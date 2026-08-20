@@ -200,6 +200,16 @@ class Astrolabe:
     _palaces: list[Palace] | None = field(default=None, compare=False, repr=False)
     """十二宫的惰性缓存，首次访问 `palaces` 时构建"""
 
+    _from_stem: str | None = field(default=None, compare=False, repr=False)
+    """重排起点天干标识；本盘由 `rearranged` 产生时记录，非重排盘为 None。
+
+    绑定层调用无状态，格局判定等再次发起计算的接口必须转发重排起点，
+    让内核先重排再判——否则判的是原盘。
+    """
+
+    _from_branch: str | None = field(default=None, compare=False, repr=False)
+    """重排起点地支标识，与 `_from_stem` 成对；非重排盘为 None"""
+
     # ------ 十二宫 ------
 
     @property
@@ -358,7 +368,11 @@ class Astrolabe:
             from_stem=str(from_stem),
             from_branch=str(from_branch),
         )
-        return Astrolabe._from_dict(data, self._input_config)
+        chart = Astrolabe._from_dict(data, self._input_config)
+        # 记录重排起点，供格局判定等再次发起计算的接口转发（frozen dataclass 构造后写入）
+        object.__setattr__(chart, "_from_stem", str(from_stem))
+        object.__setattr__(chart, "_from_branch", str(from_branch))
+        return chart
 
     def horoscope(
         self,
@@ -399,6 +413,8 @@ class Astrolabe:
             fix_leap=self.fix_leap,
             language=self.language,
             config=self._config_payload(),
+            from_stem=self._from_stem,
+            from_branch=self._from_branch,
             target_date=target_date,
             target_time_index=target_time_index,
         )
@@ -410,6 +426,7 @@ class Astrolabe:
 
         判定在 Rust 内核完成，规则口径见文档站「格局」一页；
         多口径格局以 `PatternHit.variant` 区分。
+        重排盘（`rearranged` 产生）按重排后的布局判定。
 
         Args:
             config: 判定口径；不传取默认（亮度按 iztro 表、借宫、流曜参与）
@@ -428,6 +445,8 @@ class Astrolabe:
             fix_leap=self.fix_leap,
             language=self.language,
             config=self._config_payload(),
+            from_stem=self._from_stem,
+            from_branch=self._from_branch,
             pattern_config=_pattern_config(config),
         )
         return [PatternHit._from_dict(d) for d in data]

@@ -11,18 +11,34 @@ import (
 
 // PatternConfig 为格局判定口径。多口径的格局一律以 PatternHit.Variant 报出，
 // 这里只放会改变事实判定本身的开关；nil 取默认（亮度按 iztro 表、借宫、流曜参与）。
+//
+// 两个布尔开关是 *bool：内核默认都是 true，值类型 bool 的零值会把「未设置」
+// 静默当成 false——只设 BrightnessSource 的部分构造就会悄悄关掉借宫与流曜。
+// nil 表示未设置（序列化时省略该键、由内核取默认），显式取值用 Bool 构造：
+//
+//	cfg := &PatternConfig{BrightnessSource: BrightnessSourcePositional} // 借宫、流曜仍为默认 true
+//	cfg := &PatternConfig{Borrow: Bool(false)}                          // 只关借宫
 type PatternConfig struct {
 	// BrightnessSource 为日月明暗依据：BrightnessSourceTable（默认）或 BrightnessSourcePositional；空串取默认
 	BrightnessSource string `json:"brightnessSource,omitempty"`
-	// Borrow 为空宫是否借对宫主星参与判定
-	Borrow bool `json:"borrow"`
-	// FlowStars 为运限视角下流曜（运禄/流禄等）是否等同对应本命辅星参与判定
-	FlowStars bool `json:"flowStars"`
+	// Borrow 为空宫是否借对宫主星参与判定；nil 取内核默认 true
+	Borrow *bool `json:"borrow,omitempty"`
+	// FlowStars 为运限视角下流曜（运禄/流禄等）是否等同对应本命辅星参与判定；nil 取内核默认 true
+	FlowStars *bool `json:"flowStars,omitempty"`
+}
+
+// Bool 返回 v 的指针，给 PatternConfig、ReverseCriteria 的 *bool 可选字段赋值用。
+func Bool(v bool) *bool {
+	return &v
 }
 
 // DefaultPatternConfig 返回默认口径：亮度按 iztro 表、借宫、流曜参与。
 func DefaultPatternConfig() *PatternConfig {
-	return &PatternConfig{BrightnessSource: BrightnessSourceTable, Borrow: true, FlowStars: true}
+	return &PatternConfig{
+		BrightnessSource: BrightnessSourceTable,
+		Borrow:           Bool(true),
+		FlowStars:        Bool(true),
+	}
 }
 
 // PatternStar 为参与成格的一颗星及其落宫。
@@ -85,8 +101,7 @@ func (a *Astrolabe) PatternsContext(ctx context.Context, config *PatternConfig) 
 	if a == nil {
 		return nil, invalidArgument("patterns: nil astrolabe")
 	}
-	var out []PatternHit
-	return out, utilQueryContext(ctx, map[string]any{
+	payload := map[string]any{
 		"kind":          "patterns",
 		"solarDate":     a.SolarDate,
 		"timeIndex":     a.TimeIndex,
@@ -95,7 +110,10 @@ func (a *Astrolabe) PatternsContext(ctx context.Context, config *PatternConfig) 
 		"language":      a.Language,
 		"config":        a.requestConfig(),
 		"patternConfig": config,
-	}, &out)
+	}
+	a.addRearrange(payload)
+	var out []PatternHit
+	return out, utilQueryContext(ctx, payload, &out)
 }
 
 // Patterns 返回某运限层视角的格局命中：以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，
@@ -111,8 +129,7 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 		return nil, invalidArgument("horoscopePatterns: horoscope must be created by Astrolabe.Horoscope")
 	}
 	a := h.astrolabe
-	var out []PatternHit
-	return out, utilQueryContext(ctx, map[string]any{
+	payload := map[string]any{
 		"kind":            "horoscopePatterns",
 		"solarDate":       a.SolarDate,
 		"timeIndex":       a.TimeIndex,
@@ -124,7 +141,10 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 		"targetTimeIndex": h.targetTimeIndex,
 		"scope":           scope,
 		"patternConfig":   config,
-	}, &out)
+	}
+	a.addRearrange(payload)
+	var out []PatternHit
+	return out, utilQueryContext(ctx, payload, &out)
 }
 
 // String 返回「格局名(宫名)」形式的简要描述，便于日志与调试。

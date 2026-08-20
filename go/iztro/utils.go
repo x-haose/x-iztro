@@ -304,8 +304,7 @@ func (a *Astrolabe) AstrolabeToPromptContext(ctx context.Context) (string, error
 	if a == nil {
 		return "", invalidArgument("astrolabeToPrompt: nil astrolabe")
 	}
-	var out string
-	return out, utilQueryContext(ctx, map[string]any{
+	payload := map[string]any{
 		"kind":      "astrolabeToPrompt",
 		"solarDate": a.SolarDate,
 		"timeIndex": a.TimeIndex,
@@ -313,7 +312,10 @@ func (a *Astrolabe) AstrolabeToPromptContext(ctx context.Context) (string, error
 		"fixLeap":   a.FixLeap,
 		"language":  a.Language,
 		"config":    a.requestConfig(),
-	}, &out)
+	}
+	a.addRearrange(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
 }
 
 // HoroscopeToPrompt 生成运限的 AI 分析 prompt；本命信息与运限一并写入。
@@ -327,8 +329,7 @@ func (a *Astrolabe) HoroscopeToPromptContext(ctx context.Context, targetDate str
 	if a == nil {
 		return "", invalidArgument("horoscopeToPrompt: nil astrolabe")
 	}
-	var out string
-	return out, utilQueryContext(ctx, map[string]any{
+	payload := map[string]any{
 		"kind":            "horoscopeToPrompt",
 		"solarDate":       a.SolarDate,
 		"timeIndex":       a.TimeIndex,
@@ -338,5 +339,8 @@ func (a *Astrolabe) HoroscopeToPromptContext(ctx context.Context, targetDate str
 		"config":          a.requestConfig(),
 		"targetDate":      targetDate,
 		"targetTimeIndex": targetTimeIndex,
-	}, &out)
+	}
+	a.addRearrange(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
 }
