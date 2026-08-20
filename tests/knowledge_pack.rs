@@ -39,36 +39,41 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
         assert!(Mutagen::from_key(k).is_some(), "unknown mutagen key {k}");
     }
 
-    // 主星与辅星各 14 颗都有条目、有正文、有阴阳五行；全部格局、十二宫、四化都有条目
+    // 全部星耀条目都要有类别、名称与正文，属性字段一旦出现就必须落在值域内；
+    // 主星与辅星各 14 颗还必须有阴阳五行（杂耀与神煞类的阴阳五行门派表述不全，允许缺省）
     let majors: Vec<_> = StarKey::from_key("ziweiMaj").into_iter().collect();
     assert!(!majors.is_empty());
     let mut major_n = 0;
     let mut minor_n = 0;
     for (k, e) in &p.stars {
-        match e.category.as_deref() {
-            Some("major") => major_n += 1,
-            Some("minor") => minor_n += 1,
-            _ => continue,
-        }
+        let category = e.category.as_deref();
+        assert!(
+            matches!(category, Some("major" | "minor" | "adjective" | "dec")),
+            "{k} category {category:?}"
+        );
         assert!(
             e.intro.as_deref().is_some_and(|s| !s.trim().is_empty()),
             "{k} intro"
         );
         assert!(e.name.is_some(), "{k} name");
         let a = &e.attributes;
-        assert!(
-            matches!(a.yin_yang.as_deref(), Some("yin" | "yang")),
-            "{k} yinYang {:?}",
-            a.yin_yang
-        );
-        assert!(
-            matches!(
-                a.five_elements.as_deref(),
-                Some("wood" | "fire" | "earth" | "metal" | "water")
-            ),
-            "{k} fiveElements {:?}",
-            a.five_elements
-        );
+        if let Some(v) = a.yin_yang.as_deref() {
+            assert!(matches!(v, "yin" | "yang"), "{k} yinYang {v:?}");
+        }
+        if let Some(v) = a.five_elements.as_deref() {
+            assert!(
+                matches!(v, "wood" | "fire" | "earth" | "metal" | "water"),
+                "{k} fiveElements {v:?}"
+            );
+        }
+        if matches!(category, Some("major" | "minor")) {
+            match category {
+                Some("major") => major_n += 1,
+                _ => minor_n += 1,
+            }
+            assert!(a.yin_yang.is_some(), "{k} 主辅星必须有阴阳");
+            assert!(a.five_elements.is_some(), "{k} 主辅星必须有五行");
+        }
     }
     assert_eq!((major_n, minor_n), (14, 14));
     for k in ALL_PATTERNS {
@@ -83,6 +88,7 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
     }
     assert_eq!(p.palaces.len(), 12);
     assert_eq!(p.mutagens.len(), 4);
+    assert_eq!(p.concepts.len(), 49);
     assert!(
         p.star(StarKey::ZiweiMaj)
             .unwrap()

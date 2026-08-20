@@ -181,7 +181,7 @@ i18n 的
 
 内嵌默认包 `src/data/knowledge/iztro_docs.zh-CN.json`（仅 zh-CN）：
 
-- 内容：107 颗星（主星 14 颗含双星组合解读、辅星 14、杂耀 34、神煞 45）、 64 条格局（引文/条件/解读）、12 宫、4 化、38 条术语；
+- 内容：107 颗星（主星 14 颗含双星组合解读、辅星 14、杂耀 34、神煞 45）、 64 条格局（引文/条件/解读）、12 宫、4 化、49 条术语；
 - 底本为 [iztro-docs](https://github.com/SylarLong/iztro-docs)《学习》页的锁定 commit （`source.commit`），MIT 许可，作者
   Sylar Long；文本经 x-iztro 整理改写为第三人称释义口吻（`source.adapted` 注明；命理内容一仍其旧，只换表达）；
 - 该 JSON 是**手工维护的源文件**：修改内容就是直接编辑它，格式、完整性与文本口吻由 `tests/knowledge_pack.rs`（含口吻红线断言）守护；
