@@ -943,7 +943,11 @@ fn example_32_zhong_shui_chao_dong() {
     assert_soul_pattern(32, PatternKey::ZhongShuiChaoDong, None);
 }
 
-/// 搜盘结果总览：哪几张搜到、用的是哪张真实盘、哪几张没搜到。
+/// 搜盘结果总览：32 张示例必须全部搜到真实盘。
+///
+/// 搜盘按年份顺序合并、结果确定，当前枚举范围内 32/32 全搜到；
+/// 任何一张搜不到都意味着规则或搜盘条件回归（星位组合在这批年份里是存在的），
+/// 逐张测试里的跳过分支只是诊断路径，放行与否由这里统一把关。
 #[test]
 fn example_charts_are_reported() {
     let mut missing = Vec::new();
@@ -960,5 +964,10 @@ fn example_charts_are_reported() {
         "示例盘 {}/{} 搜到，未搜到：{missing:?}",
         EXAMPLES.len() - missing.len(),
         EXAMPLES.len()
+    );
+    assert_eq!(EXAMPLES.len(), 32, "示例盘总数");
+    assert!(
+        missing.is_empty(),
+        "示例盘未搜到 {missing:?}：当前枚举范围内全部示例都有真实盘，搜不到即回归"
     );
 }

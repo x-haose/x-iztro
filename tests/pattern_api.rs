@@ -49,6 +49,7 @@ fn query(kind: &str, extra: Value) -> Result<Value, String> {
 fn rust_api_natal_and_horoscope_agree_with_dto() {
     let a = chart();
     let hits = a.patterns();
+    assert!(!hits.is_empty(), "该盘本命应有命中，空列表会让下方核对空转");
     let dto = a.patterns_dto(&PatternConfig::default());
     assert_eq!(hits.len(), dto.len());
     for (h, d) in hits.iter().zip(&dto) {
@@ -60,14 +61,57 @@ fn rust_api_natal_and_horoscope_agree_with_dto() {
     }
     let h = a.horoscope("2026-8-19", 3).unwrap();
     let dec = h.patterns(Scope::Decadal);
+    assert!(
+        !dec.is_empty(),
+        "该盘大限层应有命中，空列表会让下方核对空转"
+    );
     assert!(dec.iter().all(|x| x.scope == Scope::Decadal));
     assert_eq!(h.patterns(Scope::Origin), hits);
+}
+
+/// `flow_stars` 开关的行为：流曜等同本命辅星只在开关开时成立。
+///
+/// 该盘流年层的禄马交驰由禄存与流马同宫构成（流马是天马的流曜等价），
+/// 关掉开关后流马不再算天马，这条命中随之消失；证据里不含流曜的命中不受影响。
+#[test]
+fn flow_stars_switch_changes_horoscope_judgement() {
+    let a = chart();
+    let h = a.horoscope("2026-8-19", 3).unwrap();
+
+    let on = h.patterns_with(Scope::Yearly, &PatternConfig::default());
+    let with_flow: Vec<_> = on
+        .iter()
+        .filter(|x| x.key == PatternKey::LuMaJiaoChi)
+        .collect();
+    assert!(
+        with_flow
+            .iter()
+            .any(|x| x.stars.iter().any(|s| s.star == x_iztro::StarKey::Liuma)),
+        "默认口径下该盘流年禄马交驰的证据应含流马"
+    );
+
+    let off = h.patterns_with(
+        Scope::Yearly,
+        &PatternConfig {
+            flow_stars: false,
+            ..PatternConfig::default()
+        },
+    );
+    assert!(
+        !off.iter().any(|x| x.key == PatternKey::LuMaJiaoChi),
+        "关掉 flow_stars 后流马不算天马，该盘流年禄马交驰应消失"
+    );
+    assert!(
+        off.iter().any(|x| x.key == PatternKey::FuXiangChaoYuan),
+        "不依赖流曜的命中（府相朝垣）不应受开关影响"
+    );
 }
 
 #[test]
 fn bridge_patterns_returns_translated_hits() {
     let v = query("patterns", json!({})).unwrap();
     let arr = v.as_array().expect("array");
+    assert!(!arr.is_empty(), "该盘本命应有命中，空列表会让下方核对空转");
     let a = chart();
     assert_eq!(arr.len(), a.patterns().len());
     for hit in arr {
@@ -90,12 +134,9 @@ fn bridge_horoscope_patterns_needs_scope_and_target() {
         json!({"targetDate": "2026-8-19", "targetTimeIndex": 3, "scope": "decadal"}),
     )
     .unwrap();
-    assert!(
-        v.as_array()
-            .unwrap()
-            .iter()
-            .all(|h| h["scope"] == "decadal")
-    );
+    let arr = v.as_array().unwrap();
+    assert!(!arr.is_empty(), "该盘大限层应有命中，空列表会让断言空转");
+    assert!(arr.iter().all(|h| h["scope"] == "decadal"));
     let err = query(
         "horoscopePatterns",
         json!({"targetDate": "2026-8-19", "targetTimeIndex": 3, "scope": "nope"}),

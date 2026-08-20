@@ -13,6 +13,8 @@ mod ziwei;
 use super::Rule;
 
 /// 全部规则：五个分组各自维护自己的 `RULES` 切片，这里按《格局》页顺序拼接。
+/// 唯一的顺序例外是禄衰马困（页序 #37）：它归禄与四化组并列于该组之首，
+/// 出现在 `major` 组的 #38、#39 之后。输出顺序无契约约束，调用方不应依赖。
 pub fn all() -> impl Iterator<Item = &'static Rule> {
     ziwei::RULES
         .iter()

@@ -91,13 +91,16 @@ fn sun_and_moon<'a>(v: &ChartView<'a>, s: usize, bright: bool) -> Option<[(usize
 
 /// 宫内的吉星：六吉星或带禄权科的星，取第一颗。
 /// 「吉星」的成员按《格局》页善荫朝纲一节的列举（辅弼昌曲魁钺、化禄化权化科）。
+/// 六吉星逐颗经 `find` 查——运限视角下流昌流曲流魁流钺等流曜等同对应本命辅星；
+/// 三吉化按视角四化判（本命生年四化、运限该层四化）。
 fn auspicious<'a>(v: &ChartView<'a>, i: usize) -> Option<&'a Star> {
-    v.stars(i).find(|s| {
-        JI6.contains(&s.key)
-            || matches!(
+    JI6.iter().find_map(|k| v.find(i, *k)).or_else(|| {
+        v.stars(i).find(|s| {
+            matches!(
                 v.mutagen_of(s),
                 Some(Mutagen::Lu | Mutagen::Quan | Mutagen::Ke)
             )
+        })
     })
 }
 
@@ -148,24 +151,30 @@ pub fn ju_ri_tong_gong(v: &ChartView) -> Vec<PatternHit> {
     }
 }
 
-/// 日照雷门：太阳、天梁同守命宫且命宫在卯（酉宫的阳梁是日落西山，不算）。
+/// 日照雷门：太阳、天梁同守卯宫，落在命宫（`variant = None`）或官禄宫
+/// （`variant = "career"`，古书「守官禄宫亦然」）。酉宫的阳梁是日落西山，不算。
 ///
-/// 来源：「日照雷门 富贵荣华」「日出扶桑 日在卯守命是也」。
-/// 口径：只取命宫；古书「守官禄宫亦然」与「昼生」皆不作条件。
+/// 安星几何下太阳在卯时天梁必同宫，官禄口径的两星条件与古书「日在卯守官禄」等价。
+/// 命宫与官禄宫地支不同，两口径不会同盘并报。「昼生」不作条件。
+///
+/// 来源：「日照雷门 富贵荣华」「日出扶桑 日在卯守命是也，守官禄宫亦然」。
 pub fn ri_zhao_lei_men(v: &ChartView) -> Vec<PatternHit> {
-    let s = v.soul();
-    if v.branch(s) != EarthlyBranch::Mao {
-        return vec![];
-    }
-    match (
-        v.find(s, StarKey::TaiyangMaj),
-        v.find(s, StarKey::TianliangMaj),
-    ) {
-        (Some(sun), Some(liang)) => {
-            vec![v.hit(PatternKey::RiZhaoLeiMen, s, vec![(s, sun), (s, liang)])]
-        }
-        _ => vec![],
-    }
+    [
+        (v.soul(), None),
+        (v.index_of(Palace::Career), Some("career")),
+    ]
+    .into_iter()
+    .filter(|(i, _)| v.branch(*i) == EarthlyBranch::Mao)
+    .filter_map(|(i, variant)| {
+        let (sun, liang) = (
+            v.find(i, StarKey::TaiyangMaj)?,
+            v.find(i, StarKey::TianliangMaj)?,
+        );
+        let mut hit = v.hit(PatternKey::RiZhaoLeiMen, i, vec![(i, sun), (i, liang)]);
+        hit.variant = variant;
+        Some(hit)
+    })
+    .collect()
 }
 
 /// 日月并明：命宫三方四正内太阳、太阴皆明。
@@ -416,6 +425,53 @@ mod tests {
             v.branch(s) == You && v.has(s, StarKey::TaiyangMaj) && v.has(s, StarKey::TianliangMaj)
         });
         assert!(ri_zhao_lei_men(&view(&b)).is_empty());
+    }
+
+    /// 官禄宫在卯坐阳梁：`variant = "career"`，成格宫位记官禄宫。
+    #[test]
+    fn ri_zhao_lei_men_career_variant() {
+        let a = find_chart(|a| {
+            let v = view(a);
+            let c = v.index_of(Palace::Career);
+            v.branch(c) == Mao && v.has(c, StarKey::TaiyangMaj) && v.has(c, StarKey::TianliangMaj)
+        });
+        let v = view(&a);
+        let hits = ri_zhao_lei_men(&v);
+        let hit = hits.first().expect("hit");
+        assert_eq!(hit.variant, Some("career"));
+        assert_eq!(hit.palace, v.index_of(Palace::Career));
+        assert_ne!(hit.palace, v.soul());
+        assert!(hit.stars.iter().all(|s| s.palace == hit.palace));
+    }
+
+    /// 宫内既无本命六吉星也无带三吉化的星、`auspicious` 却有值：吉星只能来自流曜等同。
+    fn only_flow_auspicious(v: &ChartView, i: usize) -> bool {
+        !v.stars(i).any(|s| JI6.contains(&s.key))
+            && !v.stars(i).any(|s| {
+                matches!(
+                    v.mutagen_of(s),
+                    Some(Mutagen::Lu | Mutagen::Quan | Mutagen::Ke)
+                )
+            })
+            && auspicious(v, i).is_some()
+    }
+
+    /// 运限视角下流昌流曲流魁流钺等同对应本命辅星，`auspicious` 认它们为吉星。
+    #[test]
+    fn auspicious_accepts_flow_counterparts_in_horoscope_view() {
+        use crate::data::types::Scope;
+        let a = find_chart(|a| {
+            let Ok(h) = a.horoscope("2026-8-19", 3) else {
+                return false;
+            };
+            let v = ChartView::at(a, h.data(), Scope::Yearly, &CFG);
+            (0..12).any(|i| only_flow_auspicious(&v, i))
+        });
+        let h = a.horoscope("2026-8-19", 3).unwrap();
+        let v = ChartView::at(&a, h.data(), Scope::Yearly, &CFG);
+        let i = (0..12).find(|i| only_flow_auspicious(&v, *i)).unwrap();
+        let star = auspicious(&v, i).expect("flow auspicious");
+        assert!(!JI6.contains(&star.key));
     }
 
     #[test]

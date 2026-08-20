@@ -330,28 +330,40 @@ pub fn chang_qu_jia_ming(v: &ChartView) -> Vec<PatternHit> {
     vec![hit]
 }
 
-/// 文星暗拱：文昌、文曲分居两宫遥拱命宫。
+/// 文星暗拱：文昌、文曲以「夹、迁移正照、三方会照」三种口径之一拱照命宫，逐口径独立判定、命中即报。
 ///
-/// `variant = "opposite"` 为两星分居命宫与迁移宫（命迁线对拱），`variant = "trine"` 为两星分居两三合宫。
-/// 「夹」的形式归昌曲夹命、会照（含同宫）的形式归文星朝命，三格互不重叠。
+/// - `variant = "jia"`：两星分居命宫前后两宫——页面主口径，与昌曲夹命同形，两格同盘并报；
+/// - `variant = "opposite"`：两星同坐迁移宫正照命宫；
+/// - `variant = "surround"`：两星皆见于命宫三方四正（含命宫本宫）——与文星朝命同形；
+///   迁移宫属三方四正，故 `opposite` 命中时 `surround` 必同时命中。
 ///
-/// 来源：「文星暗拱，贾谊允矣登科」；作者：「实务上应先写清星曜是夹、对拱还是三合会照」。
+/// 来源：「文星暗拱，贾谊允矣登科」；作者：「名称和口径并不完全一致，实务上应先写清
+/// 星曜是夹、对拱还是三合会照」——三种口径并报，取舍留给调用方。
 pub fn wen_xing_an_gong(v: &ChartView) -> Vec<PatternHit> {
     let s = v.soul();
-    let [t1, t2] = v.trine(s);
-    for (variant, pa, pb) in [("opposite", s, v.opposite(s)), ("trine", t1, t2)] {
-        for (a, b) in [
-            (StarKey::WenchangMin, StarKey::WenquMin),
-            (StarKey::WenquMin, StarKey::WenchangMin),
-        ] {
-            if let (Some(x), Some(y)) = (v.find(pa, a), v.find(pb, b)) {
-                let mut hit = v.hit(PatternKey::WenXingAnGong, s, vec![(pa, x), (pb, y)]);
-                hit.variant = Some(variant);
-                return vec![hit];
-            }
-        }
+    let mut hits = Vec::new();
+    let mut push = |variant, stars| {
+        let mut hit = v.hit(PatternKey::WenXingAnGong, s, stars);
+        hit.variant = Some(variant);
+        hits.push(hit);
+    };
+    if let Some((chang, qu)) = jia_pair(v, s, StarKey::WenchangMin, StarKey::WenquMin) {
+        push("jia", vec![chang, qu]);
     }
-    vec![]
+    let o = v.opposite(s);
+    if let (Some(chang), Some(qu)) = (
+        v.find(o, StarKey::WenchangMin),
+        v.find(o, StarKey::WenquMin),
+    ) {
+        push("opposite", vec![(o, chang), (o, qu)]);
+    }
+    if let (Some(chang), Some(qu)) = (
+        v.find_in_surround(s, StarKey::WenchangMin),
+        v.find_in_surround(s, StarKey::WenquMin),
+    ) {
+        push("surround", vec![chang, qu]);
+    }
+    hits
 }
 
 /// 权禄生逢：化权星与化禄星同守命宫，且两星皆庙旺。
@@ -373,19 +385,29 @@ pub fn quan_lu_sheng_feng(v: &ChartView) -> Vec<PatternHit> {
     vec![v.hit(PatternKey::QuanLuShengFeng, s, vec![(s, quan), (s, lu)])]
 }
 
-/// 科明暗禄：化科守命宫，命宫的暗合宫（六合位）有禄存。
+/// 科明暗禄：化科守命宫，命宫的暗合宫（六合位）有禄存（`variant = None`）；
+/// 暗合宫为化禄时按部分流派口径以 `variant = "hua_lu"` 报出。
+/// 两口径独立判定、证据各记各的禄，暗合宫禄存与化禄俱在则并报。
 ///
-/// 暗合宫只认禄存，不认化禄（化禄的形式已由明禄暗禄覆盖）。
+/// 暗合宫化禄不由明禄暗禄覆盖——明禄暗禄要求命宫坐禄存或化禄，命宫只有化科时它不成格。
 ///
-/// 来源：「科明暗禄…即化科守命宫，命宫之暗合宫有禄存是也」。
+/// 来源：「科明暗禄…即化科守命宫，命宫之暗合宫有禄存是也」；化禄口径为「部分流派亦可」之说。
 pub fn ke_ming_an_lu(v: &ChartView) -> Vec<PatternHit> {
     let s = v.soul();
     let h = v.hidden(s);
-    let (Some(ke), Some(lu)) = (v.mutagen_star(s, Mutagen::Ke), v.find(h, StarKey::LucunMin))
-    else {
+    let Some(ke) = v.mutagen_star(s, Mutagen::Ke) else {
         return vec![];
     };
-    vec![v.hit(PatternKey::KeMingAnLu, s, vec![(s, ke), (h, lu)])]
+    let mut hits = Vec::new();
+    if let Some(lu) = v.find(h, StarKey::LucunMin) {
+        hits.push(v.hit(PatternKey::KeMingAnLu, s, vec![(s, ke), (h, lu)]));
+    }
+    if let Some(hua) = v.mutagen_star(h, Mutagen::Lu) {
+        let mut hit = v.hit(PatternKey::KeMingAnLu, s, vec![(s, ke), (h, hua)]);
+        hit.variant = Some("hua_lu");
+        hits.push(hit);
+    }
+    hits
 }
 
 /// 科权禄夹：化禄、化权、化科中的两化分居命宫前后两宫；三化都在同一侧不算。
@@ -781,7 +803,7 @@ mod tests {
     }
 
     #[test]
-    fn chang_qu_jia_ming_needs_both_neighbours_and_excludes_an_gong() {
+    fn chang_qu_jia_ming_needs_both_neighbours() {
         let a = find_chart(|a| {
             let v = view(a);
             v.jia(v.soul(), &[StarKey::WenchangMin], &[StarKey::WenquMin])
@@ -792,8 +814,12 @@ mod tests {
         let hit = chang_qu_jia_ming(&v).pop().expect("hit");
         assert_eq!(hit.palace, s);
         assert_eq!(hit.broken, !v.no_sha(s));
-        // 夹的形式不由文星暗拱重复报出
-        assert!(wen_xing_an_gong(&v).is_empty());
+        // 夹是文星暗拱的主口径，同盘并报
+        assert!(
+            wen_xing_an_gong(&v)
+                .iter()
+                .any(|h| h.variant == Some("jia"))
+        );
 
         let b = find_chart(|a| {
             let v = view(a);
@@ -806,42 +832,60 @@ mod tests {
     }
 
     #[test]
-    fn wen_xing_an_gong_reports_opposite_and_trine() {
-        let split = |v: &ChartView, pa: usize, pb: usize| {
-            (v.has(pa, StarKey::WenchangMin) && v.has(pb, StarKey::WenquMin))
-                || (v.has(pa, StarKey::WenquMin) && v.has(pb, StarKey::WenchangMin))
-        };
+    fn wen_xing_an_gong_reports_jia_opposite_and_surround() {
+        // 昌曲同坐迁移宫：正照与会照两口径同时命中（迁移宫属三方四正）
         let a = find_chart(|a| {
             let v = view(a);
-            let s = v.soul();
-            split(&v, s, v.opposite(s))
+            let o = v.opposite(v.soul());
+            v.has(o, StarKey::WenchangMin) && v.has(o, StarKey::WenquMin)
         });
         let v = view(&a);
-        let s = v.soul();
-        let hit = wen_xing_an_gong(&v).pop().expect("hit");
-        assert_eq!(hit.variant, Some("opposite"));
-        assert_eq!(hit.palace, s);
-        let palaces: Vec<_> = hit.stars.iter().map(|x| x.palace).collect();
-        assert!(palaces.contains(&s) && palaces.contains(&v.opposite(s)));
+        let o = v.opposite(v.soul());
+        let hits = wen_xing_an_gong(&v);
+        let opp = hits
+            .iter()
+            .find(|h| h.variant == Some("opposite"))
+            .expect("opposite");
+        assert_eq!(opp.palace, v.soul());
+        assert!(opp.stars.iter().all(|x| x.palace == o));
+        assert!(hits.iter().any(|h| h.variant == Some("surround")));
 
+        // 昌曲分居两三合宫：只报会照
         let b = find_chart(|a| {
             let v = view(a);
             let [t1, t2] = v.trine(v.soul());
-            split(&v, t1, t2)
+            (v.has(t1, StarKey::WenchangMin) && v.has(t2, StarKey::WenquMin))
+                || (v.has(t1, StarKey::WenquMin) && v.has(t2, StarKey::WenchangMin))
         });
         let v = view(&b);
         let [t1, t2] = v.trine(v.soul());
-        let hit = wen_xing_an_gong(&v).pop().expect("hit");
-        assert_eq!(hit.variant, Some("trine"));
-        let palaces: Vec<_> = hit.stars.iter().map(|x| x.palace).collect();
+        let hits = wen_xing_an_gong(&v);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].variant, Some("surround"));
+        let palaces: Vec<_> = hits[0].stars.iter().map(|x| x.palace).collect();
         assert!(palaces.contains(&t1) && palaces.contains(&t2));
 
-        // 昌曲同宫属文贵文华/文星朝命，不报暗拱
+        // 昌曲同宫坐命：会照口径含命宫本宫，与文星朝命同形并报
         let c = find_chart(|a| {
             let v = view(a);
-            (0..12).any(|i| v.has(i, StarKey::WenchangMin) && v.has(i, StarKey::WenquMin))
+            let s = v.soul();
+            v.has(s, StarKey::WenchangMin) && v.has(s, StarKey::WenquMin)
         });
-        assert!(wen_xing_an_gong(&view(&c)).is_empty());
+        let v = view(&c);
+        let hits = wen_xing_an_gong(&v);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].variant, Some("surround"));
+        assert!(hits[0].stars.iter().all(|x| x.palace == v.soul()));
+
+        // 夹的形式不落三方四正，只报 jia
+        let d = find_chart(|a| {
+            let v = view(a);
+            v.jia(v.soul(), &[StarKey::WenchangMin], &[StarKey::WenquMin])
+                .is_some()
+        });
+        let hits = wen_xing_an_gong(&view(&d));
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].variant, Some("jia"));
     }
 
     #[test]
@@ -874,16 +918,45 @@ mod tests {
         });
         let v = view(&a);
         let s = v.soul();
-        let hit = ke_ming_an_lu(&v).pop().expect("hit");
+        let hit = ke_ming_an_lu(&v)
+            .into_iter()
+            .find(|h| h.variant.is_none())
+            .expect("hit");
         assert_eq!(hit.palace, s);
         assert!(evidence(&hit, StarKey::LucunMin, v.hidden(s)));
 
         let b = find_chart(|a| {
             let v = view(a);
             let s = v.soul();
-            v.has_mutagen(s, Mutagen::Ke) && !v.has(v.hidden(s), StarKey::LucunMin)
+            v.has_mutagen(s, Mutagen::Ke)
+                && !v.has(v.hidden(s), StarKey::LucunMin)
+                && !v.has_mutagen(v.hidden(s), Mutagen::Lu)
         });
         assert!(ke_ming_an_lu(&view(&b)).is_empty());
+    }
+
+    /// 暗合宫无禄存但有化禄：以 `variant = "hua_lu"` 报出（命宫无禄时明禄暗禄不成格，
+    /// 此口径不被它覆盖）。
+    #[test]
+    fn ke_ming_an_lu_hua_lu_variant() {
+        let a = find_chart(|a| {
+            let v = view(a);
+            let s = v.soul();
+            v.has_mutagen(s, Mutagen::Ke)
+                && !v.has(v.hidden(s), StarKey::LucunMin)
+                && v.has_mutagen(v.hidden(s), Mutagen::Lu)
+                && !v.has(s, StarKey::LucunMin)
+                && !v.has_mutagen(s, Mutagen::Lu)
+        });
+        let v = view(&a);
+        let s = v.soul();
+        let hits = ke_ming_an_lu(&v);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].variant, Some("hua_lu"));
+        assert_eq!(hits[0].stars[1].palace, v.hidden(s));
+        assert_eq!(hits[0].stars[1].mutagen, Some(Mutagen::Lu));
+        // 命宫无禄存无化禄：明禄暗禄不报，宽口径不与之重叠
+        assert!(!a.patterns().iter().any(|h| h.key == PatternKey::MingLuAnLu));
     }
 
     #[test]

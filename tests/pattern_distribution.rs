@@ -3,8 +3,9 @@
 //! 逐条规则的正反例在 `src/pattern/rules/*` 的单测里，示例盘复现在 `tests/pattern_examples.rs`；
 //! 本测试只回答「放到一大批真实盘上跑会不会出事」：本命与两层运限全跑一遍，
 //! 检查结果的结构不变量（宫位索引、证据、视角）、地支不变量（只可能落某几个地支的格局），
-//! 并统计每个格局的命中盘数——命中数为 0 的格局收在 [`NEVER_HIT`] 里，
-//! 新增的 0 命中（规则写死）与不再为 0（口径放宽）都会让断言失败。
+//! 并统计每个格局的命中盘数——整张计数表锁定为金标 [`GOLDEN_TALLY`] 逐格对照，
+//! 命中数为 0 的格局另收在 [`NEVER_HIT`] 里注明成因；
+//! 新增的 0 命中（规则写死）、不再为 0（口径放宽）与任何计数漂移都会让断言失败。
 //!
 //! 盘的来源是 tier1 金标的入参（1984-2043 每年 2 月 15 日 × 13 时辰 × 男女），
 //! 与排盘金标同一批，故这里只测格局，不重复测排盘。
@@ -32,19 +33,20 @@ const TARGET_TIME_INDEX: u8 = 3;
 
 /// 只可能成格于特定地支的格局：星耀布局或规则本身把成格宫位钉死在这几个地支。
 ///
-/// 其中金舆扶驾、极向离明、极居卯酉、机月同梁、机巨居卯、日照雷门、金灿光辉、
+/// 其中金舆扶驾、极向离明、极居卯酉、机巨居卯、日照雷门、金灿光辉、
 /// 月朗天门、月生沧海、明珠出海、武贪同行、雄宿朝元、石中隐玉、七杀朝斗、
 /// 英星入庙、众水朝东、马头带箭是规则里写死的地支条件；紫府同宫、紫府夹命、
 /// 日月同宫、巨日同宫、机巨同临、善荫朝纲、日月照璧、日月夹命、日月夹财、
 /// 刑囚夹印则是安星规律的必然结果（如紫微天府只在寅申同宫、日月只在丑未同宫），
 /// 规则不写地支也只能落在这里——写成断言即可守住这条规律。
+/// 机月同梁不在表内：主口径钉死寅申，但宽口径（四星齐见三方四正，`variant = "surround"`）
+/// 的成格宫是命宫本身、地支不限，钉死地支的只是主口径，由规则单测守。
 const BRANCH_BOUND: &[(PatternKey, &[EarthlyBranch])] = &[
     (PatternKey::ZiFuTongGong, &[Yin, Shen]),
     (PatternKey::JinYuFuJia, &[Chou, Wei]),
     (PatternKey::ZiFuJiaMing, &[Yin, Shen]),
     (PatternKey::JiXiangLiMing, &[Wu]),
     (PatternKey::JiJuMaoYou, &[Mao, You]),
-    (PatternKey::JiYueTongLiang, &[Yin, Shen]),
     (PatternKey::ShanYinChaoGang, &[Chen, Xu]),
     (PatternKey::JiJuTongLin, &[Mao, You]),
     (PatternKey::JiJuJuMao, &[Mao]),
@@ -77,6 +79,78 @@ const BRANCH_BOUND: &[(PatternKey, &[EarthlyBranch])] = &[
 /// 这两格的正例见 `src/pattern/rules/assist.rs` 的单测与 `src/pattern/mod.rs` 的
 /// `zuo_you_jia_ming_requires_both_neighbours`（在 1950-2020 全枚举里都能搜到真实盘）。
 const NEVER_HIT: &[PatternKey] = &[PatternKey::ZuoYouTongGong, PatternKey::ZuoYouJiaMing];
+
+/// 全表金标：每个格局在本命、大限、流年三层各命中的盘数（顺序同 [`ALL_PATTERNS`]）。
+///
+/// 数值锁定当前口径在这 1,560 张盘 × 固定运限目标上的实跑结果，任何一格变动都判失败：
+/// 无意的口径漂移（含大面积误报这类「永真」回归）由此可红。有意改动格局口径后，
+/// 从本测试打印的表抄新数值更新（与 `UPDATE_PATTERN_SNAPSHOTS=1` 重建快照同一流程）。
+const GOLDEN_TALLY: &[(&str, [usize; 3])] = &[
+    ("jun_chen_qing_hui", [4, 0, 0]),
+    ("zi_fu_tong_gong", [30, 22, 0]),
+    ("jin_yu_fu_jia", [8, 17, 0]),
+    ("zi_fu_jia_ming", [26, 12, 0]),
+    ("ji_xiang_li_ming", [0, 0, 12]),
+    ("ji_ju_mao_you", [16, 15, 0]),
+    ("ji_yue_tong_liang", [402, 376, 530]),
+    ("shan_yin_chao_gang", [44, 15, 0]),
+    ("ji_ju_tong_lin", [26, 29, 0]),
+    ("ji_ju_ju_mao", [16, 17, 0]),
+    ("ri_yue_tong_gong", [32, 29, 0]),
+    ("ju_ri_tong_gong", [34, 21, 0]),
+    ("ri_zhao_lei_men", [20, 25, 0]),
+    ("ri_yue_bing_ming", [76, 80, 180]),
+    ("ri_yue_fan_bei", [80, 79, 0]),
+    ("ri_yue_zhao_bi", [24, 33, 0]),
+    ("jin_can_guang_hui", [4, 6, 104]),
+    ("ri_yue_cang_hui", [30, 28, 0]),
+    ("dan_chi_gui_chi", [40, 42, 0]),
+    ("ri_yue_jia_ming", [6, 12, 0]),
+    ("ri_yue_jia_cai", [30, 10, 0]),
+    ("yue_lang_tian_men", [10, 11, 0]),
+    ("yue_sheng_cang_hai", [34, 29, 0]),
+    ("ming_zhu_chu_hai", [12, 9, 0]),
+    ("wu_tan_tong_xing", [44, 18, 0]),
+    ("ling_chang_tuo_wu", [64, 89, 49]),
+    ("xing_qiu_jia_yin", [4, 6, 39]),
+    ("sheng_bu_feng_shi", [62, 53, 74]),
+    ("xiong_su_chao_yuan", [34, 23, 0]),
+    ("fu_xiang_chao_yuan", [138, 131, 136]),
+    ("huo_tan", [26, 40, 28]),
+    ("ling_tan", [70, 55, 18]),
+    ("shi_zhong_yin_yu", [46, 28, 140]),
+    ("liang_ma_piao_dang", [18, 9, 0]),
+    ("yang_liang_chang_lu", [94, 81, 82]),
+    ("sha_po_lang", [550, 390, 408]),
+    ("qi_sha_chao_dou", [38, 44, 208]),
+    ("lu_shuai_ma_kun", [0, 107, 145]),
+    ("ying_xing_ru_miao", [22, 31, 130]),
+    ("zhong_shui_chao_dong", [8, 1, 0]),
+    ("san_qi_jia_hui", [110, 41, 0]),
+    ("lu_ma_jiao_chi", [276, 816, 1560]),
+    ("lu_he_yuan_yang", [46, 56, 97]),
+    ("ming_lu_an_lu", [18, 43, 33]),
+    ("lu_ma_pei_yin", [4, 25, 91]),
+    ("liang_chong_hua_gai", [4, 5, 10]),
+    ("feng_yun_ji_hui", [0, 1244, 0]),
+    ("yang_tuo_jia_ming", [130, 233, 563]),
+    ("ma_tou_dai_jian", [6, 9, 91]),
+    ("zuo_you_tong_gong", [0, 0, 0]),
+    ("zuo_you_jia_ming", [0, 0, 0]),
+    ("fu_bi_gong_zhu", [22, 18, 0]),
+    ("kui_yue_jia_ming", [50, 125, 0]),
+    ("zuo_gui_xiang_gui", [78, 120, 0]),
+    ("jie_kong_jia_ming", [0, 38, 0]),
+    ("lu_feng_liang_sha", [4, 22, 50]),
+    ("wen_gui_wen_hua", [204, 154, 58]),
+    ("wen_xing_chao_ming", [816, 723, 594]),
+    ("chang_qu_jia_ming", [0, 104, 35]),
+    ("wen_xing_an_gong", [816, 802, 629]),
+    ("quan_lu_sheng_feng", [4, 2, 0]),
+    ("ke_ming_an_lu", [14, 39, 0]),
+    ("ke_quan_lu_jia", [66, 26, 0]),
+    ("jia_di_deng_yong", [24, 32, 0]),
+];
 
 /// tier1 金标的入参：阳历日期、时辰索引、性别。
 struct Case {
@@ -225,5 +299,29 @@ fn tier1_charts_hit_patterns_consistently() {
     assert_eq!(
         never, NEVER_HIT,
         "0 命中的格局清单变了：新增的要确认不是规则写死，消失的要从 NEVER_HIT 里删掉"
+    );
+
+    // 逐格对照全表金标：每个格局都必须在金标里且计数完全一致
+    let golden: BTreeMap<&str, [usize; 3]> = GOLDEN_TALLY.iter().copied().collect();
+    assert_eq!(
+        golden.len(),
+        ALL_PATTERNS.len(),
+        "GOLDEN_TALLY 行数应与格局总数一致"
+    );
+    let diffs: Vec<String> = ALL_PATTERNS
+        .into_iter()
+        .filter_map(|k| {
+            let key = k.as_key();
+            let want = golden
+                .get(key)
+                .unwrap_or_else(|| panic!("GOLDEN_TALLY 缺 {key}"));
+            let got = tally[key];
+            (got != *want).then(|| format!("  {key}: 实测 {got:?} ≠ 金标 {want:?}"))
+        })
+        .collect();
+    assert!(
+        diffs.is_empty(),
+        "格局命中盘数与金标不一致（有意改口径时从上方打印的表更新 GOLDEN_TALLY）：\n{}",
+        diffs.join("\n")
     );
 }

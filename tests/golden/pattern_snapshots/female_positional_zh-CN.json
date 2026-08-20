@@ -1,4 +1,78 @@
 {
+  "daily": [
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "禄马交驰",
+      "palaceIndex": 0,
+      "palaceName": "兄弟",
+      "palaceNameKey": "siblingsPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "禄存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天马",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 1,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "name": "文曲",
+          "palaceIndex": 9
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 1,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "daily",
+      "stars": [
+        {
+          "brightness": "利",
+          "brightnessKey": "li",
+          "key": "wenchangMin",
+          "name": "文昌",
+          "palaceIndex": 1
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "wenquMin",
+          "name": "文曲",
+          "palaceIndex": 9
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
   "decadal": [
     {
       "broken": false,
@@ -147,17 +221,291 @@
       "scope": "decadal",
       "stars": [
         {
+          "key": "yunchang",
+          "name": "运昌",
+          "palaceIndex": 7
+        },
+        {
           "key": "yunqu",
           "name": "运曲",
           "palaceIndex": 3
+        }
+      ],
+      "variant": "surround"
+    }
+  ],
+  "hourly": [
+    {
+      "broken": false,
+      "key": "sha_po_lang",
+      "name": "杀破狼",
+      "palaceIndex": 4,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "庙",
+          "brightnessKey": "miao",
+          "key": "qishaMaj",
+          "name": "七杀",
+          "palaceIndex": 0
+        },
+        {
+          "brightness": "庙",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破军",
+          "palaceIndex": 4
+        },
+        {
+          "brightness": "庙",
+          "brightnessKey": "miao",
+          "key": "tanlangMaj",
+          "mutagen": "权",
+          "mutagenKey": "sihuaQuan",
+          "name": "贪狼",
+          "palaceIndex": 8
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "ying_xing_ru_miao",
+      "name": "英星入庙",
+      "palaceIndex": 4,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "庙",
+          "brightnessKey": "miao",
+          "key": "pojunMaj",
+          "name": "破军",
+          "palaceIndex": 4
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "禄马交驰",
+      "palaceIndex": 0,
+      "palaceName": "财帛",
+      "palaceNameKey": "wealthPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "禄存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天马",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "禄马交驰",
+      "palaceIndex": 4,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "运禄",
+          "palaceIndex": 4
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天马",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "surround"
+    },
+    {
+      "broken": false,
+      "key": "yang_tuo_jia_ming",
+      "name": "羊陀夹命",
+      "palaceIndex": 4,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "运禄",
+          "palaceIndex": 4
+        },
+        {
+          "key": "yuntuo",
+          "name": "运陀",
+          "palaceIndex": 3
+        },
+        {
+          "key": "yunyang",
+          "name": "运羊",
+          "palaceIndex": 5
+        }
+      ]
+    }
+  ],
+  "monthly": [
+    {
+      "broken": false,
+      "key": "ri_yue_bing_ming",
+      "name": "日月并明",
+      "palaceIndex": 7,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太阳",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "不",
+          "brightnessKey": "bu",
+          "key": "taiyinMaj",
+          "name": "太阴",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "dan_chi_gui_chi",
+      "name": "丹墀桂墀",
+      "palaceIndex": 7,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太阳",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "不",
+          "brightnessKey": "bu",
+          "key": "taiyinMaj",
+          "name": "太阴",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "yang_liang_chang_lu",
+      "name": "阳梁昌禄",
+      "palaceIndex": 7,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太阳",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "tianliangMaj",
+          "name": "天梁",
+          "palaceIndex": 11
         },
         {
           "key": "yunchang",
           "name": "运昌",
           "palaceIndex": 7
+        },
+        {
+          "key": "liulu",
+          "name": "流禄",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "禄马交驰",
+      "palaceIndex": 0,
+      "palaceName": "仆役",
+      "palaceNameKey": "friendsPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "lucunMin",
+          "name": "禄存",
+          "palaceIndex": 0
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天马",
+          "palaceIndex": 0
+        }
+      ]
+    },
+    {
+      "broken": true,
+      "key": "wen_xing_chao_ming",
+      "name": "文星朝命",
+      "palaceIndex": 7,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "运昌",
+          "palaceIndex": 7
+        },
+        {
+          "key": "yunqu",
+          "name": "运曲",
+          "palaceIndex": 3
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "wen_xing_an_gong",
+      "name": "文星暗拱",
+      "palaceIndex": 7,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "monthly",
+      "stars": [
+        {
+          "key": "yunchang",
+          "name": "运昌",
+          "palaceIndex": 7
+        },
+        {
+          "key": "yunqu",
+          "name": "运曲",
+          "palaceIndex": 3
         }
       ],
-      "variant": "trine"
+      "variant": "surround"
     }
   ],
   "origin": [
@@ -380,6 +728,28 @@
           "palaceIndex": 0
         }
       ]
+    },
+    {
+      "broken": false,
+      "key": "lu_ma_jiao_chi",
+      "name": "禄马交驰",
+      "palaceIndex": 4,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "yearly",
+      "stars": [
+        {
+          "key": "yunlu",
+          "name": "运禄",
+          "palaceIndex": 4
+        },
+        {
+          "key": "tianmaMin",
+          "name": "天马",
+          "palaceIndex": 0
+        }
+      ],
+      "variant": "surround"
     },
     {
       "broken": false,

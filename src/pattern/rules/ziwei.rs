@@ -3,6 +3,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::EarthlyBranch;
 use crate::models::star::Star;
+use crate::pattern::view::JYTL;
 use crate::pattern::{ChartView, PatternHit, PatternKey, Rule};
 
 /// 本组规则，按《格局》页顺序。
@@ -49,24 +50,21 @@ pub static RULES: &[Rule] = &[
     },
 ];
 
-/// 机阴：君臣庆会形式 C 的一侧。
+/// 机阴：机月同梁在寅申的两种主星组合之一。
 const JI_YIN: [StarKey; 2] = [StarKey::TianjiMaj, StarKey::TaiyinMaj];
 
-/// 同梁：君臣庆会形式 C 的另一侧，亦为机月同梁在寅申的两种主星组合之一。
+/// 同梁：机月同梁在寅申的两种主星组合之一。
 const TONG_LIANG: [StarKey; 2] = [StarKey::TiantongMaj, StarKey::TianliangMaj];
-
-/// 宫内出现集合中第一颗主星（空宫按 `borrow` 借对宫），返回 `(实际落宫, 星)`。
-fn any_major<'a>(v: &ChartView<'a>, i: usize, keys: &[StarKey]) -> Option<(usize, &'a Star)> {
-    keys.iter().find_map(|k| v.find_major_at(i, *k))
-}
 
 /// 君臣庆会：紫微或天府与辅佐诸星成下列会合之一。
 ///
 /// `variant` 分列四种形式：
 /// - `zi_po_zuo_you_jia`：紫微破军同守命宫（丑未），左辅右弼分夹命宫；
 /// - `zi_xiang_chang_qu_axis`：紫微天相同守命宫（辰戌），文昌文曲分居命宫与迁移宫；
-/// - `tian_fu_ji_yin_tong_liang_jia`：天府守命（巳亥），一侧天机或太阴、另一侧天同或天梁
-///   相夹；夹宫为空宫时借其对宫主星（此形式的夹宫本就常是空宫，故只有它借宫）；
+/// - `tian_fu_ji_yin_tong_liang_jia`：天府守命，天机、太阴、天同、天梁四星俱全、
+///   分布于命宫前后两宫（页面示例即一侧天同太阴、另一侧天机天梁）；夹宫为空宫时
+///   借其对宫主星补足——安星几何下四星俱全只出现在天府巳亥守命的布局，
+///   且此时命宫前一宫恒为空宫，借宫是此形式成立的必要条件；
 /// - `zi_zuo_you_tong_gong`：紫微与左辅右弼三星同守命宫。
 ///
 /// 来源：全书「君臣庆会 紫微左右同守命是也，更会相武阴妙上」「天府天相天梁同君臣庆会」。
@@ -127,15 +125,17 @@ pub fn jun_chen_qing_hui(v: &ChartView) -> Vec<PatternHit> {
 
     if clean && let Some(fu) = v.find(s, StarKey::TianfuMaj) {
         let (prev, next) = (v.prev(s), v.next(s));
-        let jia = any_major(v, prev, &JI_YIN)
-            .zip(any_major(v, next, &TONG_LIANG))
-            .or_else(|| any_major(v, prev, &TONG_LIANG).zip(any_major(v, next, &JI_YIN)));
-        if let Some((a, b)) = jia {
-            push(
-                &mut hits,
-                "tian_fu_ji_yin_tong_liang_jia",
-                vec![(s, fu), a, b],
-            );
+        let four: Option<Vec<_>> = JYTL
+            .iter()
+            .map(|k| {
+                v.find_major_at(prev, *k)
+                    .or_else(|| v.find_major_at(next, *k))
+            })
+            .collect();
+        if let Some(four) = four {
+            let mut stars = vec![(s, fu)];
+            stars.extend(four);
+            push(&mut hits, "tian_fu_ji_yin_tong_liang_jia", stars);
         }
     }
 
@@ -246,27 +246,43 @@ pub fn ji_ju_mao_you(v: &ChartView) -> Vec<PatternHit> {
     }
 }
 
-/// 机月同梁：命宫在寅或申，宫内为天同天梁或天机太阴（空宫借对宫主星）。
+/// 机月同梁：两种口径独立判定、命中即报。
+///
+/// - `variant = None`：命宫在寅或申，宫内为天同天梁或天机太阴（空宫借对宫主星）——
+///   页面作者穷举的八种情形，按古书「命在寅申方论」为主口径；
+/// - `variant = "surround"`：机月同梁四星齐见命宫三方四正（含借宫）——页面首句的宽口径。
+///   它与主口径相交而不互含：天机与天同恒隔四宫、太阴与天梁亦恒隔四宫，四星分属两组三合，
+///   命宫落在四星所在两组三合的其余宫位时四星照样齐见，主星却不是同梁或机阴；
+///   反之命宫实坐同梁或机阴时四星齐见、两口径并报，而主口径经借宫成立时
+///   四星未必齐见三方四正，可只报主口径。
 ///
 /// 来源：「梁同机月寅申位一生利业聪明」「机月同梁作吏人 命在寅申方论」。
-/// 页面作者穷举的八种情形即此条件。作者首句另有「机月同梁四星齐见命宫三方四正」的宽口径，
-/// 它严格更宽而非等价：天机与天同恒隔四宫、太阴与天梁亦恒隔四宫，四星必分属两组三合，
-/// 命宫落在同一组三合的另外两宫时四星照样齐见，主星却不是同梁或机阴
-/// （`ji_yue_tong_liang_rejects_trine_only` 即一例）。按古书「命在寅申方论」只取作者口径。
 pub fn ji_yue_tong_liang(v: &ChartView) -> Vec<PatternHit> {
     let s = v.soul();
-    if !matches!(v.branch(s), EarthlyBranch::Yin | EarthlyBranch::Shen) {
-        return vec![];
+    let mut hits = Vec::new();
+    if matches!(v.branch(s), EarthlyBranch::Yin | EarthlyBranch::Shen)
+        && let Some(stars) = [TONG_LIANG, JI_YIN].into_iter().find_map(|pair| {
+            pair.iter()
+                .map(|k| v.find_major_at(s, *k))
+                .collect::<Option<Vec<_>>>()
+        })
+    {
+        hits.push(v.hit(PatternKey::JiYueTongLiang, s, stars));
     }
-    let found = [TONG_LIANG, JI_YIN].into_iter().find_map(|pair| {
-        pair.iter()
-            .map(|k| v.find_major_at(s, *k))
-            .collect::<Option<Vec<_>>>()
-    });
-    match found {
-        Some(stars) => vec![v.hit(PatternKey::JiYueTongLiang, s, stars)],
-        None => vec![],
+    let wide: Option<Vec<_>> = JYTL
+        .iter()
+        .map(|k| {
+            v.surround(s)
+                .into_iter()
+                .find_map(|p| v.find_major_at(p, *k))
+        })
+        .collect();
+    if let Some(stars) = wide {
+        let mut hit = v.hit(PatternKey::JiYueTongLiang, s, stars);
+        hit.variant = Some("surround");
+        hits.push(hit);
     }
+    hits
 }
 
 /// 善荫朝纲：天机、天梁同守命宫或身宫（只可能在辰、戌）。
@@ -321,11 +337,26 @@ mod tests {
     use super::*;
     use crate::data::types::{Palace, Scope};
     use crate::models::astrolabe::Astrolabe;
-    use crate::pattern::testutil::find_chart;
-    use crate::pattern::{PatternConfig, view::JYTL};
+    use crate::pattern::PatternConfig;
+    use crate::pattern::testutil::{find_chart, find_charts};
 
     fn view(a: &Astrolabe) -> ChartView<'_> {
         ChartView::natal(a, &PatternConfig::default())
+    }
+
+    /// 宫内是否有集合任一主星（空宫借对宫），搜盘条件用。
+    fn any_major(v: &ChartView, i: usize, keys: &[StarKey]) -> bool {
+        keys.iter().any(|k| v.find_major_at(i, *k).is_some())
+    }
+
+    /// 君臣庆会形式 C 的四星条件：机、阴、同、梁俱全分布于命宫前后两宫（借宫补空侧）。
+    fn tian_fu_four(v: &ChartView, s: usize) -> bool {
+        let (p, n) = (v.prev(s), v.next(s));
+        JYTL.iter().all(|k| {
+            v.find_major_at(p, *k)
+                .or_else(|| v.find_major_at(n, *k))
+                .is_some()
+        })
     }
 
     fn soul_index(a: &Astrolabe) -> usize {
@@ -408,17 +439,11 @@ mod tests {
     }
 
     #[test]
-    fn jun_chen_qing_hui_tian_fu_jia_may_borrow() {
+    fn jun_chen_qing_hui_tian_fu_needs_all_four_across_flanks() {
         let a = find_chart(|a| {
             let v = view(a);
             let s = v.soul();
-            let (p, n) = (v.prev(s), v.next(s));
-            v.no_sha(s)
-                && v.has(s, StarKey::TianfuMaj)
-                && (v.is_empty(p) || v.is_empty(n))
-                && (any_major(&v, p, &JI_YIN).is_some() && any_major(&v, n, &TONG_LIANG).is_some()
-                    || any_major(&v, p, &TONG_LIANG).is_some()
-                        && any_major(&v, n, &JI_YIN).is_some())
+            v.no_sha(s) && v.has(s, StarKey::TianfuMaj) && tian_fu_four(&v, s)
         });
         let v = view(&a);
         let s = v.soul();
@@ -430,13 +455,57 @@ mod tests {
                     && h.variant == Some("tian_fu_ji_yin_tong_liang_jia")
             })
             .expect("hit");
-        assert_eq!(hit.stars.len(), 3);
+        // 四星俱全只出现在天府巳亥守命的布局
+        assert!(matches!(
+            v.branch(s),
+            EarthlyBranch::Si | EarthlyBranch::Hai
+        ));
+        assert_eq!(hit.stars.len(), 5);
         assert_eq!(hit.stars[0].star, StarKey::TianfuMaj);
         // 借来的星记在它真正的落宫（夹宫的对宫），故落宫不必是相邻宫
         assert!(hit.stars[1..].iter().all(|st| {
             let d = (st.palace + 12 - s) % 12;
             [1, 11, 5, 7].contains(&d)
         }));
+    }
+
+    /// 反例：一侧机或阴、另一侧同或梁的「集合任一相夹」不足以成形式 C ——
+    /// 安星几何下太阴恒在天府后一宫，该形态在天府守命盘上大量出现，四星俱全才算。
+    #[test]
+    fn jun_chen_qing_hui_tian_fu_rejects_partial_pairs() {
+        let a = find_chart(|a| {
+            let v = view(a);
+            let s = v.soul();
+            let (p, n) = (v.prev(s), v.next(s));
+            v.no_sha(s)
+                && v.has(s, StarKey::TianfuMaj)
+                && (any_major(&v, p, &JI_YIN) && any_major(&v, n, &TONG_LIANG)
+                    || any_major(&v, p, &TONG_LIANG) && any_major(&v, n, &JI_YIN))
+                && !tian_fu_four(&v, s)
+        });
+        assert!(!a.patterns().iter().any(|h| {
+            h.key == PatternKey::JunChenQingHui
+                && h.variant == Some("tian_fu_ji_yin_tong_liang_jia")
+        }));
+    }
+
+    /// 形式 C 命中的盘全部收在天府巳亥守命布局内（枚举抽样验证安星几何结论）。
+    #[test]
+    fn jun_chen_qing_hui_tian_fu_hits_only_si_hai() {
+        let hits = find_charts(8, |a| {
+            a.patterns().iter().any(|h| {
+                h.key == PatternKey::JunChenQingHui
+                    && h.variant == Some("tian_fu_ji_yin_tong_liang_jia")
+            })
+        });
+        for a in &hits {
+            let v = view(a);
+            assert!(matches!(
+                v.branch(v.soul()),
+                EarthlyBranch::Si | EarthlyBranch::Hai
+            ));
+            assert!(v.has(v.soul(), StarKey::TianfuMaj));
+        }
     }
 
     #[test]
@@ -654,23 +723,32 @@ mod tests {
             let v = view(a);
             let s = v.soul();
             matches!(v.branch(s), EarthlyBranch::Yin | EarthlyBranch::Shen)
+                && !v.is_empty(s)
                 && v.has_major(s, StarKey::TiantongMaj)
                 && v.has_major(s, StarKey::TianliangMaj)
         });
         let hit = a
             .patterns()
             .into_iter()
-            .find(|h| h.key == PatternKey::JiYueTongLiang)
+            .find(|h| h.key == PatternKey::JiYueTongLiang && h.variant.is_none())
             .expect("hit");
         assert_eq!(hit.palace, soul_index(&a));
         assert_eq!(hit.stars.len(), 2);
+        // 命宫实坐同梁时四星齐见三方四正，宽口径命中随之并报
+        assert_eq!(
+            variants(&a, PatternKey::JiYueTongLiang),
+            vec![None, Some("surround")]
+        );
 
-        // 命宫在寅申但主星是杀破狼：不成格
+        // 命宫在寅申但主星是杀破狼、四星也不齐见三方四正：两口径都不成格
         let b = find_chart(|a| {
             let v = view(a);
             let s = v.soul();
             matches!(v.branch(s), EarthlyBranch::Yin | EarthlyBranch::Shen)
                 && v.has_major(s, StarKey::QishaMaj)
+                && !JYTL
+                    .iter()
+                    .all(|k| v.surround(s).iter().any(|p| v.has_major(*p, *k)))
         });
         assert!(
             !b.patterns()
@@ -695,14 +773,14 @@ mod tests {
         let hit = a
             .patterns()
             .into_iter()
-            .find(|h| h.key == PatternKey::JiYueTongLiang)
+            .find(|h| h.key == PatternKey::JiYueTongLiang && h.variant.is_none())
             .expect("hit");
         assert!(hit.stars.iter().all(|st| st.palace == v.opposite(s)));
     }
 
-    /// 反例：宽口径（四星齐见命宫三方四正）严格宽于作者口径，故不采纳。
+    /// 宽口径单独命中：四星齐见命宫三方四正、命宫却不在寅申，只报 `surround`。
     #[test]
-    fn ji_yue_tong_liang_rejects_trine_only() {
+    fn ji_yue_tong_liang_surround_variant_outside_yin_shen() {
         let a = find_chart(|a| {
             let v = view(a);
             let s = v.soul();
@@ -711,11 +789,18 @@ mod tests {
                     .iter()
                     .all(|k| v.surround(s).iter().any(|p| v.has_major(*p, *k)))
         });
-        assert!(
-            !a.patterns()
-                .iter()
-                .any(|h| h.key == PatternKey::JiYueTongLiang)
+        assert_eq!(
+            variants(&a, PatternKey::JiYueTongLiang),
+            vec![Some("surround")]
         );
+        let v = view(&a);
+        let hit = a
+            .patterns()
+            .into_iter()
+            .find(|h| h.key == PatternKey::JiYueTongLiang)
+            .expect("hit");
+        assert_eq!(hit.palace, v.soul());
+        assert_eq!(hit.stars.len(), 4);
     }
 
     #[test]
