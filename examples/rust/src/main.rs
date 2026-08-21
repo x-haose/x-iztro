@@ -12,7 +12,7 @@ use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use x_iztro::{IztroError, astrolabe_to_prompt, by_solar, horoscope_to_prompt};
+use x_iztro::{IztroError, astrolabe_to_text, by_solar, horoscope_to_text};
 
 fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;
@@ -171,16 +171,16 @@ fn main() -> Result<(), IztroError> {
     println!("\n流年四化：{}", yearly_mutagen_names.join("、"));
 
     // ============================================================
-    // 4. AI 提示词（本命 + 流年）
+    // 4. 语义化文本（本命 + 运限），可直接喂给大语言模型
     // ============================================================
-    println!("\n===== AI 提示词 =====\n");
+    println!("\n===== 语义化文本 =====\n");
 
-    let natal_prompt = astrolabe_to_prompt(&astrolabe, lang);
-    let fortune_prompt = horoscope_to_prompt(&astrolabe, &horoscope, lang);
-    let full_prompt = format!("{}\n{}", natal_prompt, fortune_prompt);
+    let natal_text = astrolabe_to_text(&astrolabe, lang);
+    let fortune_text = horoscope_to_text(&astrolabe, &horoscope, lang);
+    let full_text = format!("{}\n{}", natal_text, fortune_text);
 
-    println!("{full_prompt}");
-    println!("（Prompt 共 {} 字符）", full_prompt.chars().count());
+    println!("{full_text}");
+    println!("（文本共 {} 字符）", full_text.chars().count());
 
     println!("\n===== 完毕 =====");
 

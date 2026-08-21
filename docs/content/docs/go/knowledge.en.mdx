@@ -48,7 +48,7 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `Name` | `string` | Display name in this pack's language |
-| `Category` | `string` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `Category` | `string` | `"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"` (a flowing star, a cross-reference entry pointing at its natal minor-star counterpart) |
 | `Group` | `string` | Grouping: the adjective star's category, the decorative star's group |
 | `Attributes` | `StarAttributes` | School attributes |
 | `Intro` | `string` | Reading (Markdown) |
@@ -123,7 +123,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-107 64 12 4 49
+162 64 12 4 49
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 

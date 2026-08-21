@@ -12,6 +12,9 @@ pub struct HoroscopeItem {
     pub index: usize,
     /// 层级显示名（大限/童限/流年/流月/流日/流时，按输出语言翻译）
     pub name: String,
+    /// 层级的语言无关标识；大限层未起运时为 `Childhood`（童限），
+    /// 与 `Decadal` 是不同的解盘语义，靠它而非译文区分
+    pub name_key: HoroscopeName,
     /// 该运限天干
     pub heavenly_stem: HeavenlyStem,
     /// 该运限地支

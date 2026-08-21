@@ -140,12 +140,12 @@ def test_palace_methods() -> None:
     assert len(places) == 4 and all(p is not None for p in places)
 
 
-def test_prompts() -> None:
-    """两个 Prompt 接口输出结构化文本。"""
+def test_to_text() -> None:
+    """星盘与运限的语义化文本接口输出结构化文本。"""
     a = astro.by_solar("2000-8-16", 2, "female")
-    natal = astro.astrolabe_to_prompt(a)
+    natal = a.to_text()
     assert "=== 基本信息 ===" in natal and "十二宫" in natal
-    fortune = astro.horoscope_to_prompt(a, "2024-1-1", 0)
+    fortune = a.horoscope("2024-1-1", 0).to_text()
     assert "=== 运限 ===" in fortune and "流年" in fortune
 
 

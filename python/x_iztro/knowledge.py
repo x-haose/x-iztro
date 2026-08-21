@@ -49,7 +49,17 @@ def _validate_schema(raw: object) -> dict[str, Any]:
 
 @dataclass(frozen=True, slots=True)
 class Source:
-    """包的来源与许可信息"""
+    """包的来源与许可信息
+
+    Attributes:
+        name: 来源名称（如 iztro-docs）
+        url: 来源仓库或页面地址
+        commit: 提取时锁定的来源 commit
+        license: 来源的许可协议（如 MIT）
+        author: 来源作者
+        retrieved_at: 提取日期（YYYY-MM-DD）
+        adapted: 改写说明——文本经过整理改写时注明
+    """
 
     name: str | None = None
     url: str | None = None

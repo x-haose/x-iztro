@@ -218,7 +218,7 @@ true
 
 ### Context 变体
 
-排盘、运限、重排、Prompt 这些要进 wasm 的入口都有一个 `*Context` 版本，
+排盘、运限、重排、文本投影这些要进 wasm 的入口都有一个 `*Context` 版本，
 多收一个 `context.Context`：
 
 | 无 ctx | 带 ctx |
@@ -226,7 +226,7 @@ true
 | `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
 | `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
 | `Astrolabe.Rearranged` | `RearrangedContext` |
-| `Astrolabe.AstrolabeToPrompt` / `HoroscopeToPrompt` | `AstrolabeToPromptContext` / `HoroscopeToPromptContext` |
+| `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` |
 | — | `Warmup` / `Close` / `CompilationCacheDir` 只有 ctx 版本 |
 
 ```go

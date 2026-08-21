@@ -160,6 +160,9 @@ def test_zodiac_and_sign_match_full_chart(chart):
 
     assert get_zodiac_by_solar_date("2000-8-16") == chart.zodiac
     assert get_sign_by_solar_date("2000-8-16") == chart.sign
+    # 星座与生肖的语言无关标识随盘携带，中文盘上同样是英文 key
+    assert chart.zodiac_key == "dragon"
+    assert chart.sign_key == "leo"
 
 
 def test_sign_by_lunar_equals_solar():
@@ -174,6 +177,32 @@ def test_major_star_of_soul_palace():
 
     assert get_major_star_by_solar_date("2000-8-16", 2) == "紫微"
     assert get_major_star_by_lunar_date("2000-7-17", 2) == "紫微"
+
+
+def test_major_star_keys_of_soul_palace(chart):
+    """keys 投影与 text 同一结果：每个 key 都是命宫（或借的对宫）主星的 key。"""
+    from x_iztro import (
+        get_major_star_keys_by_lunar_date,
+        get_major_star_keys_by_solar_date,
+    )
+
+    keys = get_major_star_keys_by_solar_date("2000-8-16", 2)
+    assert keys and keys == get_major_star_keys_by_lunar_date("2000-7-17", 2)
+
+    soul = chart.palace(PalaceName.SOUL)
+    soul_star_keys = {s.key for s in soul.major_stars} | {
+        s.key for s in soul.opposite_palace().major_stars
+    }
+    assert all(k in soul_star_keys for k in keys)
+
+
+def test_flow_star_counterparts():
+    """流耀对照表：50 条流耀 → 本命辅星的全量映射。"""
+    from x_iztro import data
+
+    table = data.flow_star_counterparts()
+    assert len(table) == 50
+    assert table["liuchang"] == "wenchangMin"
 
 
 def test_query_respects_language():
@@ -435,8 +464,8 @@ def test_rearranged_rejects_unknown_stem(chart):
         chart.rearranged("notAStem", EarthlyBranch.ZI)
 
 
-def test_rearranged_carries_into_horoscope_and_prompt():
-    """重排盘上的运限与 Prompt 按重排后的布局计算，而不是静默退回原盘。"""
+def test_rearranged_carries_into_horoscope_and_text():
+    """重排盘上的运限与语义化文本按重排后的布局计算，而不是静默退回原盘。"""
     astro = Astro()
     chart = astro.by_solar("1990-4-23", 2, "male")
     re = chart.rearranged(HeavenlyStem.GENG, EarthlyBranch.CHEN)
@@ -445,10 +474,8 @@ def test_rearranged_carries_into_horoscope_and_prompt():
     re_h = re.horoscope("2024-6-1", 0)
     assert re_h.to_dict() != plain_h.to_dict()
 
-    assert astro.astrolabe_to_prompt(re) != astro.astrolabe_to_prompt(chart)
-    assert astro.horoscope_to_prompt(re, "2024-6-1", 0) != astro.horoscope_to_prompt(
-        chart, "2024-6-1", 0
-    )
+    assert re.to_text() != chart.to_text()
+    assert re_h.to_text() != plain_h.to_text()
 
 
 # ============================================================
@@ -849,7 +876,7 @@ def test_custom_mutagens_survive_into_horoscope():
     """运限从星盘无状态再发起，覆盖表不能在这一跳丢失。2030 年为庚戌年。"""
     horoscope = _custom_chart().horoscope("2030-6-1", 0)
 
-    assert horoscope.yearly.mutagen_keys == [
+    assert horoscope.yearly.mutagen_star_keys == [
         MajorStar.TAIYANG,
         MajorStar.WUQU,
         MajorStar.TIANTONG,
@@ -857,16 +884,15 @@ def test_custom_mutagens_survive_into_horoscope():
     ]
 
 
-def test_custom_mutagens_survive_into_prompt():
-    """Prompt 同样是无状态再发起：生年四化行反映覆盖表。"""
-    astro = Astro()
+def test_custom_mutagens_survive_into_text():
+    """语义化文本同样是无状态再发起：生年四化行反映覆盖表。"""
     chart = _custom_chart()
 
-    assert _prompt_line(astro.astrolabe_to_prompt(chart), "生年四化") == (
+    assert _text_line(chart.to_text(), "生年四化") == (
         "生年四化: 太阳禄, 武曲权, 天同科, 天相忌"
     )
-    assert _prompt_line(
-        astro.astrolabe_to_prompt(Astro().by_solar("2000-8-16", 2, "female")), "生年四化"
+    assert _text_line(
+        Astro().by_solar("2000-8-16", 2, "female").to_text(), "生年四化"
     ) == "生年四化: 太阳禄, 武曲权, 太阴科, 天同忌"
 
 
@@ -883,35 +909,69 @@ def test_custom_brightness_survives_into_rearranged_chart():
     assert rearranged.star(MajorStar.TANLANG).brightness_key == Brightness.WANG
 
 
-def _prompt_line(prompt: str, prefix: str) -> str:
-    """取 prompt 中以 prefix 开头的第一行。"""
-    return next(line for line in prompt.splitlines() if line.startswith(prefix))
+def _text_line(text: str, prefix: str) -> str:
+    """取语义化文本中以 prefix 开头的第一行。"""
+    return next(line for line in text.splitlines() if line.startswith(prefix))
 
 
 # ============================================================
-# Prompt 与 Rust 快照逐字节一致
+# 语义化文本与 Rust 快照逐字节一致
 # ============================================================
 
-SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "prompt_snapshots"
+SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "text_snapshots"
 
 
 @pytest.mark.parametrize("language", ["zh-CN", "en-US"])
-def test_prompts_match_rust_snapshots(language: str):
+def test_to_text_matches_rust_snapshots(language: str):
     """
-    与 `tests/prompt_snapshot.rs` 同一张盘、同一目标日期，输出须逐字节相同。
+    与 `tests/text_snapshot.rs` 同一张盘、同一目标日期，五类输出须逐字节相同。
 
     `in` 断言察觉不到措辞、字段顺序与整段缺失的漂移，因此这里比整份文本；
     快照由 Rust 侧生成，Python 只做消费方。
     """
     astro = Astro()
     chart = astro.by_solar("2000-8-16", 2, "female", language=language)
+    soul = chart.palace(PalaceName.SOUL)
 
-    assert astro.astrolabe_to_prompt(chart) == (
-        SNAPSHOTS / f"astrolabe_{language}.txt"
-    ).read_text()
-    assert astro.horoscope_to_prompt(chart, "2025-1-1", 0) == (
-        SNAPSHOTS / f"horoscope_{language}.txt"
-    ).read_text()
+    def snapshot(kind: str) -> str:
+        return (SNAPSHOTS / f"{kind}_{language}.txt").read_text()
+
+    assert chart.to_text() == snapshot("astrolabe")
+    assert chart.horoscope("2025-1-1", 0).to_text() == snapshot("horoscope")
+    assert chart.patterns_to_text() == snapshot("patterns")
+    assert soul.to_text() == snapshot("palace")
+    assert soul.surrounded_palaces().to_text() == snapshot("surrounded")
+
+
+def test_str_is_to_text():
+    """`str()` 直接给出语义化文本：星盘与运限都接到 to_text。"""
+    chart = Astro().by_solar("2000-8-16", 2, "female")
+    horoscope = chart.horoscope("2025-1-1", 0)
+
+    assert str(chart) == chart.to_text()
+    assert str(horoscope) == horoscope.to_text()
+
+
+def test_childhood_decadal_name_key():
+    """未起运的大限层 name_key 为 childhood（童限），与 decadal 是不同解盘语义。"""
+    chart = Astro().by_solar("2000-8-16", 2, "female")
+    horoscope = chart.horoscope("2001-10-1", 0)
+
+    assert horoscope.decadal.name_key == "childhood"
+    assert "童限" in horoscope.to_text()
+
+    grown = chart.horoscope("2025-1-1", 0)
+    assert grown.decadal.name_key == "decadal"
+
+
+def test_horoscope_patterns_to_text_reports_scope_view():
+    """运限视角的格局文本非空，且与本命视角的格局文本不同源。"""
+    chart = Astro().by_solar("2000-8-16", 2, "female")
+    horoscope = chart.horoscope("2025-1-1", 0)
+
+    yearly_text = horoscope.patterns_to_text("yearly")
+    assert yearly_text
+    assert yearly_text != chart.patterns_to_text()
 
 
 # ============================================================
@@ -942,4 +1002,7 @@ def test_to_json_round_trips(chart):
 
     horoscope = chart.horoscope("2024-10-1", 0)
     assert json.loads(horoscope.to_json()) == horoscope.to_dict()
-    assert horoscope.to_dict()["yearly"]["mutagenKeys"] == horoscope.yearly.mutagen_keys
+    assert (
+        horoscope.to_dict()["yearly"]["mutagenStarKeys"]
+        == horoscope.yearly.mutagen_star_keys
+    )

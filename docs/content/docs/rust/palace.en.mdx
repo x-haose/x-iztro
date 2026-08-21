@@ -521,3 +521,40 @@ println!("{}", translate_five_elements_class(soul.astrolabe().five_elements_clas
 ```text
 wood 3rd
 ```
+
+---
+
+## to_text
+
+**Purpose** The palace's semantic text, identical to that palace's section in the natal text.
+
+**Signature**
+
+```rust
+pub fn to_text(&self) -> String
+```
+
+Defined on `PalaceRef` and emitting in the chart's charting language; for an explicit language use
+the free function `text::palace_to_text(palace, lang)`.
+
+**Example**
+
+```rust
+let soul = chart.palace(Palace::Soul).unwrap();
+print!("{}", soul.to_text());
+```
+
+**Output**
+
+```text
+--- soul ---
+Stem-Branch: renwoo
+Decadal: 3-12
+Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+Twelve Gods: weak, dragon, downcast, disastery
+Major Stars: emperor([+3])
+Minor Stars: artist([-3])
+Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+```
+
+The full format is on [Semantic text](/en/docs/guide/guides/to-text).

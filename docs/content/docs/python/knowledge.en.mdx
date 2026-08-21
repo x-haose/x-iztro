@@ -64,7 +64,7 @@ Holds the raw pack object (a dict); the lookups return typed entries.
 | --- | --- | --- |
 | `key` | `str` | Star key |
 | `name` | `str \| None` | Display name in this pack's language |
-| `category` | `str \| None` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `category` | `str \| None` | `"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"` (a flowing star, a cross-reference entry pointing at its natal minor-star counterpart) |
 | `group` | `str \| None` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes |
 | `intro` | `str \| None` | Reading (Markdown) |
@@ -136,7 +136,7 @@ except IztroError as e:
 KnowledgePack(id='iztro-docs', version='2026-08-19+ec2d58b', language='zh-CN')
 1 iztro-docs 2026-08-19+ec2d58b zh-CN None
 MIT Sylar Long
-107 64
+162 64
 invalid_argument no builtin knowledge pack for language 'en-US'
 ```
 
@@ -307,7 +307,7 @@ def stars(self) -> list[StarEntry]
 def patterns(self) -> list[PatternEntry]
 ```
 
-**Returns**　Sorted by key, each entry carrying its own `key`. The default pack gives 107 and 64.
+**Returns**　Sorted by key, each entry carrying its own `key`. The default pack gives 162 and 64.
 Use these when walking the whole pack — indexing, exporting, feeding an LLM — instead of digging
 through `to_dict()`.
 

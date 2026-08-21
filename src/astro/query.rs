@@ -14,6 +14,88 @@ use crate::utils::fix_index;
 /// 生肖由年支决定，与出生时辰无关；iztro 同样固定用早子时查年支。
 const ZODIAC_TIME_INDEX: u8 = 0;
 
+/// 生肖查询的排盘配方：固定早子时与 fix_leap，性别不影响星盘布局。
+///
+/// 绑定层的 `zodiacBySolar` 也走本函数取盘——配方只此一份，改动不会分叉。
+pub(crate) fn zodiac_chart(
+    solar_date: &str,
+    language: Language,
+    config: Config,
+) -> Result<Astrolabe, IztroError> {
+    by_solar(
+        solar_date,
+        ZODIAC_TIME_INDEX,
+        Gender::Male,
+        true,
+        language,
+        config,
+    )
+}
+
+/// 星座查询的排盘配方（阳历）：星座只由公历日期决定，配置固定默认。
+///
+/// 绑定层的 `signBySolar` 也走本函数取盘。
+pub(crate) fn sign_chart_by_solar(
+    solar_date: &str,
+    language: Language,
+) -> Result<Astrolabe, IztroError> {
+    by_solar(
+        solar_date,
+        ZODIAC_TIME_INDEX,
+        Gender::Male,
+        true,
+        language,
+        Config::default(),
+    )
+}
+
+/// 星座查询的排盘配方（农历）；绑定层的 `signByLunar` 也走本函数取盘。
+pub(crate) fn sign_chart_by_lunar(
+    lunar_date: &str,
+    is_leap_month: bool,
+    language: Language,
+) -> Result<Astrolabe, IztroError> {
+    by_lunar(
+        lunar_date,
+        ZODIAC_TIME_INDEX,
+        Gender::Male,
+        LeapMonth::from_flags(is_leap_month, true),
+        language,
+        Config::default(),
+    )
+}
+
+/// 命宫主星查询的排盘配方（阳历）：性别不影响星盘布局，按 iztro 同名函数固定男。
+///
+/// 绑定层的 `majorStarBySolar` 也走本函数取盘。
+pub(crate) fn major_star_chart_by_solar(
+    solar_date: &str,
+    time_index: u8,
+    fix_leap: bool,
+    language: Language,
+    config: Config,
+) -> Result<Astrolabe, IztroError> {
+    by_solar(
+        solar_date,
+        time_index,
+        Gender::Male,
+        fix_leap,
+        language,
+        config,
+    )
+}
+
+/// 命宫主星查询的排盘配方（农历）；绑定层的 `majorStarByLunar` 也走本函数取盘。
+pub(crate) fn major_star_chart_by_lunar(
+    lunar_date: &str,
+    time_index: u8,
+    leap: LeapMonth,
+    language: Language,
+    config: Config,
+) -> Result<Astrolabe, IztroError> {
+    by_lunar(lunar_date, time_index, Gender::Male, leap, language, config)
+}
+
 /// 命宫主星之间的分隔符，与 iztro 的输出一致。
 const MAJOR_STAR_SEPARATOR: &str = ",";
 
@@ -29,15 +111,7 @@ pub fn get_zodiac_by_solar_date(
     language: Language,
     config: Config,
 ) -> Result<String, IztroError> {
-    Ok(by_solar(
-        solar_date,
-        ZODIAC_TIME_INDEX,
-        Gender::Male,
-        true,
-        language,
-        config,
-    )?
-    .zodiac)
+    Ok(zodiac_chart(solar_date, language, config)?.zodiac)
 }
 
 /// 通过阳历日期取星座。
@@ -47,15 +121,7 @@ pub fn get_zodiac_by_solar_date(
 /// # Errors
 /// 日期非法时返回 [`IztroError`]。
 pub fn get_sign_by_solar_date(solar_date: &str, language: Language) -> Result<String, IztroError> {
-    Ok(by_solar(
-        solar_date,
-        ZODIAC_TIME_INDEX,
-        Gender::Male,
-        true,
-        language,
-        Config::default(),
-    )?
-    .sign)
+    Ok(sign_chart_by_solar(solar_date, language)?.sign)
 }
 
 /// 通过农历日期取星座。
@@ -69,42 +135,55 @@ pub fn get_sign_by_lunar_date(
     is_leap_month: bool,
     language: Language,
 ) -> Result<String, IztroError> {
-    Ok(by_lunar(
-        lunar_date,
-        ZODIAC_TIME_INDEX,
-        Gender::Male,
-        LeapMonth::from_flags(is_leap_month, true),
-        language,
-        Config::default(),
-    )?
-    .sign)
+    Ok(sign_chart_by_lunar(lunar_date, is_leap_month, language)?.sign)
 }
 
-/// 取命宫主星名，多颗时以逗号分隔。
+/// 命宫主星的取值宫索引：命宫，命宫无主星时借对宫（iztro 同款借宫规则）。
 ///
-/// 命宫为空宫时借对宫主星，与 iztro 行为一致；对宫也无主星时返回空串。
-fn major_stars_of_soul_palace(astrolabe: &Astrolabe) -> String {
+/// 译文轨与 key 轨共用这一处，借宫口径改动不会分叉。
+fn major_star_source_index(astrolabe: &Astrolabe) -> usize {
     let soul_index = astrolabe
         .palaces
         .iter()
         .find(|p| p.name == Palace::Soul)
         .map_or(0, |p| p.index);
-
-    let names_at = |index: usize| -> Vec<String> {
+    let has_major = |index: usize| {
         astrolabe.palaces[index]
             .major_stars
             .iter()
-            .filter(|s| s.star_type == StarType::Major)
-            .map(|s| s.name.clone())
-            .collect()
+            .any(|s| s.star_type == StarType::Major)
     };
-
-    let names = names_at(soul_index);
-    if !names.is_empty() {
-        return names.join(MAJOR_STAR_SEPARATOR);
+    if has_major(soul_index) {
+        soul_index
+    } else {
+        fix_index(soul_index as i32 + 6, 12)
     }
+}
 
-    names_at(fix_index(soul_index as i32 + 6, 12)).join(MAJOR_STAR_SEPARATOR)
+/// 命宫主星的语言无关标识列表。
+///
+/// 借宫规则与 [`major_stars_of_soul_palace`] 完全一致：命宫为空宫时借对宫主星，
+/// 对宫也无主星时返回空列表。译文形态接不上知识包，按 key 消费用本函数。
+pub fn major_star_keys_of_soul_palace(astrolabe: &Astrolabe) -> Vec<String> {
+    astrolabe.palaces[major_star_source_index(astrolabe)]
+        .major_stars
+        .iter()
+        .filter(|s| s.star_type == StarType::Major)
+        .map(|s| s.key.as_key().to_string())
+        .collect()
+}
+
+/// 取命宫主星名，多颗时以逗号分隔。
+///
+/// 命宫为空宫时借对宫主星，与 iztro 行为一致；对宫也无主星时返回空串。
+pub(crate) fn major_stars_of_soul_palace(astrolabe: &Astrolabe) -> String {
+    astrolabe.palaces[major_star_source_index(astrolabe)]
+        .major_stars
+        .iter()
+        .filter(|s| s.star_type == StarType::Major)
+        .map(|s| s.name.as_str())
+        .collect::<Vec<_>>()
+        .join(MAJOR_STAR_SEPARATOR)
 }
 
 /// 通过阳历日期取命宫主星。
@@ -120,14 +199,7 @@ pub fn get_major_star_by_solar_date(
     language: Language,
     config: Config,
 ) -> Result<String, IztroError> {
-    let astrolabe = by_solar(
-        solar_date,
-        time_index,
-        Gender::Male,
-        fix_leap,
-        language,
-        config,
-    )?;
+    let astrolabe = major_star_chart_by_solar(solar_date, time_index, fix_leap, language, config)?;
     Ok(major_stars_of_soul_palace(&astrolabe))
 }
 
@@ -144,7 +216,7 @@ pub fn get_major_star_by_lunar_date(
     language: Language,
     config: Config,
 ) -> Result<String, IztroError> {
-    let astrolabe = by_lunar(lunar_date, time_index, Gender::Male, leap, language, config)?;
+    let astrolabe = major_star_chart_by_lunar(lunar_date, time_index, leap, language, config)?;
     Ok(major_stars_of_soul_palace(&astrolabe))
 }
 

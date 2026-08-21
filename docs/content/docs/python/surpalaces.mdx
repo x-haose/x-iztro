@@ -161,3 +161,32 @@ print("三方四正不见科:", sp.not_have_mutagen(Mutagen.KE))
 这里看的是**生年四化**打在星上的标记，与宫干飞出的四化无关。
 后者请用宫位的飞星族方法。
 </Callout>
+
+---
+
+## to_text
+
+**用途**　三方四正的语义化文本：本宫、对宫、财帛位、官禄位各一段。
+
+**签名**
+
+```python
+def to_text(self) -> str
+```
+
+**示例**
+
+```python
+sp = chart.surrounded_palaces("命宫")
+
+print(sp.to_text().split("\n")[0])
+```
+
+**输出**
+
+```text
+本宫: 命宫 (壬午)
+```
+
+本宫脱离星盘单独构造时没有排盘上下文，调用抛 `ValueError`。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。

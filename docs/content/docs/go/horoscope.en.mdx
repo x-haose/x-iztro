@@ -43,10 +43,11 @@ together.
 | --- | --- | --- |
 | `Index` | `int` | Which palace this scope lands on (a palace index) |
 | `Name` | `string` | Display name of the scope, translated into the output language |
+| `NameKey` | `string` | Scope key: `decadal` / `childhood` (before the decadals begin) / `turn` (age fortune) / `yearly` / `monthly` / `daily` / `hourly`. Predicate on this, never on the translation |
 | `HeavenlyStem` / `HeavenlyStemKey` | `string` | Stem of the scope, which determines the mutagens it flies |
 | `EarthlyBranch` / `EarthlyBranchKey` | `string` | Branch of the scope |
 | `PalaceNames` / `PalaceNameKeys` | `[]string` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
-| `Mutagen` / `MutagenKeys` | `[]string` | The stars this scope's stem transforms, in the order lu, quan, ke, ji |
+| `Mutagen` / `MutagenStarKeys` | `[]string` | The stars this scope's stem transforms, in the order lu, quan, ke, ji; `MutagenStarKeys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
 | `Stars` | `[][]Star` | The scope stars of this layer; `nil` for layers that have none |
 | `NominalAge` | `int` | Age scope only: the nominal age. `0` on every other layer |
 | `YearlyDecStar` | `*YearlyDecStar` | Yearly scope only: the Sui-qian and Jiang-qian gods. **`nil`** on every other layer |
@@ -433,3 +434,38 @@ decadal
 `ScopeItem` is for writing generic logic parameterized by scope, which is tidier than a chain of
 `switch scope`. Remember to check for `nil`.
 </Callout>
+
+---
+
+## ToText
+
+**Purpose** The horoscope's semantic text: a complete description for language models and people.
+
+**Signature**
+
+```go
+func (h *Horoscope) ToText() (string, error)
+func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
+```
+
+**Return value** `string` — sectioned plain text in the chart's charting language; each scope
+carries a patterns line and flowing-star lines from its own perspective. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```go
+h, _ := chart.Horoscope("2025-1-1", 0)
+text, _ := h.ToText()
+
+fmt.Println(string([]rune(text)[:39]))
+```
+
+**Output**
+
+```text
+=== Horoscope ===
+Target Date: 2025-1-1
+```
+
+For the pattern hits as text, see `PatternsToText` on [Patterns](/en/docs/go/patterns).

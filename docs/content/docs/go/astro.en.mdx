@@ -1,6 +1,6 @@
 ---
 title: Charting entries
-description: BySolar, ByLunar, Rearranged and AI prompt generation.
+description: BySolar, ByLunar, Rearranged and the semantic text projection.
 ---
 
 Charting is where everything starts: give a birth date, hour and gender, get an `*Astrolabe`.
@@ -220,7 +220,7 @@ tables are charting **input** rather than result and do not enter the DTO (match
 contract of JS iztro).
 
 The chart does keep the originals you passed in internally, so `Rearranged`, `Horoscope` and the
-prompts still use those tables in their secondary computations; nothing is silently lost.
+the ToText projection still use those tables in their secondary computations; nothing is silently lost.
 To record the configuration, keep the `*Config` on your own call site.
 
 ```go
@@ -289,7 +289,7 @@ the soul star, plus Tianshang, Tianshi and Tiancai, which follow the Soul palace
 Carried over from the original chart: minor stars, the remaining adjective stars, the Boshi gods, the
 Sui-qian and Jiang-qian gods, and the body star.
 
-On the rearranged chart, `Patterns`, horoscope queries and prompt generation all compute from
+On the rearranged chart, `Patterns`, horoscope queries and the ToText projection all compute from
 **the rearranged layout** — the five elements class, soul palace and decadal ranges follow the
 new starting stem-branch; the birth data (dates and four pillars) stays unchanged.
 
@@ -333,33 +333,41 @@ The soul star is looked up by the Soul palace branch and therefore does update.
 
 ---
 
-## AstrolabeToPrompt / HoroscopeToPrompt
+## Semantic text (ToText)
 
-**Purpose** Render a chart or a horoscope into structured text for a language model.
+**Purpose** Project a chart or a horoscope into semantic text — the chart's facts in
+natural-language form, for a language model or a person. Alongside the JSON DTO (machine structure)
+and the translated fields (display), it is the third projection of the same object.
 
 **Signature**
 
 ```go
-func (a *Astrolabe) AstrolabeToPrompt() (string, error)
-func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error)
+func (a *Astrolabe) ToText() (string, error)
+func (h *Horoscope) ToText() (string, error)
+func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error)
+func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 ```
+
+Each has a `Context` variant (`ToTextContext` etc.); the ctx cancels waiting for the wasm instance.
+Pattern text is `PatternsToText` — see [Patterns](/en/docs/go/patterns).
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `targetDate` | `string` | Yes | — | Horoscope version only: the target solar date |
-| `targetTimeIndex` | `uint8` | Yes | — | Horoscope version only: the target hour index |
+| `target` | `PalaceTarget` | Yes | — | Palace addressing: with a non-empty `Key` the palace is located by name key (`PalaceSoul` etc.; `PalaceBody` / `PalaceOriginal` are also accepted), otherwise by `Index` (0–11) |
 
-**Return value** `string` — structured text in the chart's own charting language.
+**Return value** `string` — sectioned plain text in the chart's own charting language; the natal
+text closes with a patterns section, and each horoscope scope carries a patterns line and
+flowing-star lines from its own perspective.
 
 **Example**
 
 ```go
 chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
-prompt, _ := chart.AstrolabeToPrompt()
+text, _ := chart.ToText()
 
-fmt.Println(string([]rune(prompt)[:68]))
+fmt.Println(string([]rune(text)[:68]))
 ```
 
 **Output**
@@ -375,5 +383,5 @@ Lunar Date:
 
 <Callout type="info">
 The output language follows the chart's charting language and is not set separately. For an English
-prompt, chart in English.
+text, chart in English.
 </Callout>

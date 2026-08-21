@@ -7,6 +7,82 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-21
+
+### 变更（breaking）
+
+- **Prompt 更名 to_text，定位为「语义化文本投影」**：文本输出不再叫「AI 提示词」——
+  它是与 `to_json`（机器格式）、译文字段（展示）并列的第三种投影：同一份盘面事实的
+  自然语言形态，提示词只是用途之一。Rust 模块 `prompt` 更名 `text`，
+  `astrolabe_to_prompt` / `horoscope_to_prompt` 更名 `astrolabe_to_text` /
+  `horoscope_to_text`；bridge kind `astrolabeToPrompt` / `horoscopeToPrompt` 更名
+  `astrolabeToText` / `horoscopeToText`；Python 删除 `Astro.astrolabe_to_prompt` /
+  `horoscope_to_prompt`，改为对象方法 `Astrolabe.to_text()` / `Horoscope.to_text()`
+  （`str()` 即 to_text）；Go 的 `AstrolabeToPrompt` / `HoroscopeToPrompt` 更名
+  `Astrolabe.ToText` / `Horoscope.ToText`。一律不留旧名别名。
+- **运限层级的 `mutagenKeys` 更名 `mutagenStarKeys`**（Python `mutagen_star_keys`、
+  Go `MutagenStarKeys`）：与宫位的同名字段同义对齐。此前单数 `mutagenKey` 装四化类型
+  标识（`sihuaLu` 等）、复数 `mutagenKeys` 却装被化四星的星耀标识——差一个字母就换
+  命名空间；更名后「`mutagenKey`＝四化类型、`mutagenStarKeys`＝被化的星」泾渭分明。
+- **轻量查询返回双轨对象**：bridge 的 `zodiacBySolar` / `signBySolar` / `signByLunar` /
+  `majorStarBySolar` / `majorStarByLunar` 由裸译文串改为 `{text, keys}`——`text` 与
+  iztro 同名函数一致，`keys` 是同一结果的语言无关标识（命宫主星从此接得上知识包）。
+  Python / Go 的同名函数签名与返回不变（取 `text`），直连 FFI/wasm 的消费方需按新形状解析。
+- **Rust 的 `rearranged` 返回 `Result`**：此前对非法 `raw_dates`（反序列化或手工构造的盘把
+  农历月改成月表中不存在的月份）直接 panic——wasm 上 panic 即 trap 且损耗共享实例；
+  现返回 `IztroError::Internal`。排盘入口产出的盘重排必成功；Python / Go 走 bridge 不受影响。
+
+### 修正
+
+- **反推条件校验漏放流月/流日流耀**：v0.3.0 的 `reverse_chart` 只拒绝运/流/时三个层级的
+  流曜，条件含 `yuechang`（月昌）等流月/流日流曜时通过校验并静默返回空结果，
+  看起来像真的无解。现按全量流曜对照表判定，五个层级共 50 颗一律报 `invalid_argument`。
+- 反推枚举的闰月判定不再直读 lunar_rust 月表，统一经 `lunar_table` 修正视图——
+  月表读取的唯一入口约定从此无例外。
+
+### 新增
+
+- **语义化 key 契约成文并全量补齐**：契约两条规则——有译文的属性 `x` 配套 `xKey`
+  （数组 `xKeys`）、实体自身标识叫 `key`。补上最后三处缺口：星盘的 `signKey`（星座）与
+  `zodiacKey`（生肖）；运限层级的 `nameKey`——大限层未起运时为 `childhood`（童限），
+  与 `decadal` 是不同的解盘语义，此前只能比对译文区分。新增 `semantic_contract` 测试：
+  同一张盘按 zh-CN 与 en-US 双排盘逐字段并行遍历，任何随语言变化的译文字段缺配套
+  key 即失败——契约从文档承诺变成 CI 强制。
+- **to_text 覆盖五类对象**：本命盘、运限之外新增格局命中（`patterns_to_text`）、
+  单宫（`palace_to_text`）与三方四正（`surrounded_palaces_to_text`）的文本投影；
+  三侧同名动词（Rust 方法 / Python 对象方法 / Go `ToText` 与 Context 变体），
+  bridge 新增 `palaceToText` / `surroundedPalacesToText` / `patternsToText` /
+  `horoscopePatternsToText` 四个 kind，宫位寻址收 `palaceKey`（宫名 key 或
+  `bodyPalace` / `originalPalace`）或 `palaceIndex`，必须显式给出，缺省报错。
+- **文本内容升级**：本命文本带「格局」节；运限各层带格局行（同名同宫命中去重）；
+  流月/流日/流时补流耀行（标注落宫）；小限补重排宫名与四化；各层四化行逐星标注
+  禄权科忌（「太阳禄, 武曲权, …」，与生年四化同款，不再要求读者记顺序约定）；
+  未起运的盘大限段正确标注「童限」（此前误标「大限」）。
+- **文本语言与排盘语言解耦**：`text` 模块的自由函数传任意语言都输出纯该语言文本——
+  星名、时辰、星座、干支、流耀一律按语义 key 现翻，zh-CN 盘按 en-US 渲染与原生
+  en-US 盘的输出逐字节一致（有等价测试锁定）。
+- **知识包星耀条目补至 162 全覆盖**：新增流耀 50 条（新类别 `flow`，指向对应本命辅星，
+  按随天干/随地支分写安放依据）与截路、旬中、年解、劫煞、岁破 5 条（只述安放事实与
+  组别归属，不新增解读；劫煞、岁破沿用同名神煞原释义，出处逐条写进 `source.adapted`）。
+  测试补反向断言：内核每个星耀标识必有条目，漏写即失败。
+- **流耀对照表**：`flowStarCounterparts` kind（Rust `flow_star_counterparts` /
+  `natal_counterpart_of_flow_star`，Python `flow_star_counterparts`，
+  Go `FlowStarCounterparts`）导出 50 条「流耀 → 对应本命辅星」，如 `liuchang` →
+  `wenchangMin`；安星与格局引擎共用同一张源表，两处一致性有测试锁定。
+- **命宫主星 keys 轨**：Rust `major_star_keys_of_soul_palace`、Python
+  `get_major_star_keys_by_*`、Go `MajorStarKeysBy*`——借宫规则与译文轨共享同一实现。
+- **to_text 快照金标**：五类输出 × zh-CN / en-US 十份完整快照
+  （`tests/golden/text_snapshots/`），Rust / Python / Go 读同一批逐字节比对；
+  仅 `UPDATE_TEXT_SNAPSHOTS=1` 时显式重建。
+
+### 工程
+
+- 核心库以 `#![deny(unsafe_code)]` 锁定 unsafe 只出现在 FFI / wasm 边界，
+  由编译期保证而非约定。
+- CI 的 Python 矩阵作业加聚合门，分支保护可按固定作业名等待。
+- README（中英）、文档站首页与视觉资产全面重写；文档站按语义化契约对齐
+  （《AI 提示词》页更名《语义化文本》，数据模型页收录契约总纲）。
+
 ## [0.3.0] - 2026-08-20
 
 ### 变更（breaking）
@@ -150,7 +226,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/x-haose/x-iztro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/x-haose/x-iztro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/x-haose/x-iztro/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/x-haose/x-iztro/compare/v0.1.0...v0.1.1

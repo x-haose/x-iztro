@@ -175,3 +175,14 @@ fmt.Println("三方四正不见科:", sp.NotHaveMutagen(iztro.MutagenKe))
 这里看的是**生年四化**打在星上的标记，与宫干飞出的四化无关。
 后者请用宫位的飞星族方法。
 </Callout>
+
+---
+
+## 语义化文本
+
+三方四正文本不在 `*SurroundedPalaces` 上，而是星盘方法
+[`SurroundedPalacesToText`](/zh/docs/go/astrolabe#totext--palacetotext--surroundedpalacestotext)：
+
+```go
+text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+```

@@ -46,6 +46,8 @@ Display fields follow `language`. For predicates use the `*_key` fields in the n
 | Field | Type | Description |
 | --- | --- | --- |
 | `gender_key` | `str` | `"male"` / `"female"` |
+| `sign_key` | `str` | Zodiac sign key, `aries` … `pisces` |
+| `zodiac_key` | `str` | Zodiac animal key, `rat` … `pig` |
 | `soul_key` | `str` | Soul star key |
 | `body_key` | `str` | Body star key |
 | `five_elements_class_key` | `str` | Five elements class key |
@@ -425,6 +427,41 @@ now = chart.horoscope()
 decadal gengchen
 yearly  yisi
 ```
+
+---
+
+## to_text
+
+**Purpose** The chart's semantic text: a complete description for language models and people;
+`str(chart)` is equivalent.
+
+**Signature**
+
+```python
+def to_text(self) -> str
+```
+
+**Return value** `str` — sectioned plain text in the charting language: basic info, the twelve
+palaces, and the pattern hits. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```python
+print(chart.to_text()[:77])
+```
+
+**Output**
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+```
+
+For single-palace and surrounded-palace text see `palace(...).to_text()` and
+`surrounded_palaces(...).to_text()`; for pattern text see `patterns_to_text` on
+[Patterns](/en/docs/python/patterns).
 
 ---
 

@@ -54,10 +54,11 @@ together.
 | --- | --- | --- |
 | `index` | `int` | Which palace this scope lands on (a palace index) |
 | `name` | `str` | Display name of the scope, translated into the output language |
+| `name_key` | `str` | Scope key: `decadal` / `childhood` (before the decadals begin) / `turn` (age fortune) / `yearly` / `monthly` / `daily` / `hourly`. Predicate on this, never on the translation |
 | `heavenly_stem` / `heavenly_stem_key` | `str` | Stem of the scope, which determines the mutagens it flies |
 | `earthly_branch` / `earthly_branch_key` | `str` | Branch of the scope |
 | `palace_names` / `palace_name_keys` | `list[str]` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
-| `mutagen` / `mutagen_keys` | `list[str]` | The stars this scope's stem transforms, in the order lu, quan, ke, ji |
+| `mutagen` / `mutagen_star_keys` | `list[str]` | The stars this scope's stem transforms, in the order lu, quan, ke, ji; `mutagen_star_keys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
 | `stars` | `list[list[Star]] \| None` | The scope stars of this layer; `None` for layers that have none |
 
 `AgeItem` and `HoroscopeYearly` both inherit `HoroscopeItem` and each add one field:
@@ -447,6 +448,46 @@ print(item.palace_index_by_name("nosuch"))
 10
 None
 ```
+</Callout>
+
+---
+
+## to_text
+
+**Purpose** The horoscope's semantic text: a complete description for language models and people;
+`str(h)` is equivalent.
+
+**Signature**
+
+```python
+def to_text(self) -> str
+```
+
+**Return value** `str` — sectioned plain text in the chart's charting language; each scope carries a
+patterns line and flowing-star lines from its own perspective. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```python
+h = chart.horoscope("2025-1-1", 0)
+
+print(h.to_text()[:39])
+```
+
+**Output**
+
+```text
+=== Horoscope ===
+Target Date: 2025-1-1
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A horoscope constructed detached from a chart (outside `horoscope()`) has no charting context and
+raises `ValueError`. For the pattern hits as text, see `patterns_to_text` on
+[Patterns](/en/docs/python/patterns).
 </Callout>
 
 ---

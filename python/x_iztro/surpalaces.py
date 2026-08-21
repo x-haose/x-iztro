@@ -30,6 +30,25 @@ class SurroundedPalaces:
     career: Palace
     """官禄位（三方）"""
 
+    def to_text(self) -> str:
+        """
+        三方四正的语义化文本：本宫、对宫、财帛位、官禄位四宫合看的完整描述。
+
+        从本宫所属星盘的排盘上下文（含重排起点）无状态再发起计算，
+        文本按排盘语言输出。
+
+        Raises:
+            ValueError: 本宫脱离星盘单独构造，无排盘上下文可转发
+        """
+        astrolabe = self.target.astrolabe()
+        if astrolabe is None:
+            raise ValueError(
+                "to_text 需要所属星盘：请从 Astrolabe.surrounded_palaces 获取三方四正"
+            )
+        return astrolabe._context_query(
+            "surroundedPalacesToText", palace_index=self.target.index
+        )
+
     def have(self, stars: list[str]) -> bool:
         """判断三方四正是否包含指定的 **所有** 星耀（接受星耀枚举或当前语言的星名）"""
         identifiers = self._all_star_identifiers()

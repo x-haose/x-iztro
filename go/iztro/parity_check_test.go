@@ -450,9 +450,9 @@ func TestAstroTypeParity(t *testing.T) {
 	}
 }
 
-// TestRearrangedCarriesIntoHoroscopeAndPrompt 校验重排盘上的运限与 Prompt
+// TestRearrangedCarriesIntoHoroscopeAndText 校验重排盘上的运限与语义化文本
 // 按重排后的布局计算，而不是静默退回原盘。
-func TestRearrangedCarriesIntoHoroscopeAndPrompt(t *testing.T) {
+func TestRearrangedCarriesIntoHoroscopeAndText(t *testing.T) {
 	chart, err := BySolar("1990-4-23", 2, GenderMale, false, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -482,28 +482,28 @@ func TestRearrangedCarriesIntoHoroscopeAndPrompt(t *testing.T) {
 		t.Fatal("重排盘的运限应与原盘不同")
 	}
 
-	plainPrompt, err := chart.AstrolabeToPrompt()
+	plainText, err := chart.ToText()
 	if err != nil {
 		t.Fatal(err)
 	}
-	rePrompt, err := re.AstrolabeToPrompt()
+	reText, err := re.ToText()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plainPrompt == rePrompt {
-		t.Fatal("重排盘的本命 Prompt 应与原盘不同")
+	if plainText == reText {
+		t.Fatal("重排盘的本命文本应与原盘不同")
 	}
 
-	plainHP, err := chart.HoroscopeToPrompt("2024-6-1", 0)
+	plainHT, err := plainH.ToText()
 	if err != nil {
 		t.Fatal(err)
 	}
-	reHP, err := re.HoroscopeToPrompt("2024-6-1", 0)
+	reHT, err := reH.ToText()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plainHP == reHP {
-		t.Fatal("重排盘的运限 Prompt 应与原盘不同")
+	if plainHT == reHT {
+		t.Fatal("重排盘的运限文本应与原盘不同")
 	}
 }
 
@@ -595,42 +595,46 @@ func TestHoroscopeNowParity(t *testing.T) {
 	}
 }
 
-// promptSnapshot 读取 Rust 侧写下的 prompt 快照。
-func promptSnapshot(t *testing.T, name string) string {
+// textSnapshot 读取 Rust 侧写下的语义化文本快照。
+func textSnapshot(t *testing.T, name string) string {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "..", "tests", "golden", "prompt_snapshots", name+".txt"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "tests", "golden", "text_snapshots", name+".txt"))
 	if err != nil {
-		t.Fatalf("prompt 快照不可用: %v", err)
+		t.Fatalf("文本快照不可用: %v", err)
 	}
 	return string(raw)
 }
 
-// TestPromptParity 断言 Go 侧 Prompt 与 Rust 侧快照逐字节相同。
+// TestTextParity 断言 Go 侧各 ToText 输出与 Rust 侧快照逐字节相同。
 //
-// 快照由 tests/prompt_snapshot.rs 生成，固定盘 2000-8-16 时辰 2 女命、
-// 运限目标 2025-1-1 时辰 0。措辞、字段顺序、段落增删任一处漂移都会暴露；
-// 有意改动 prompt 时按 Rust 侧的流程重建快照，两侧一起更新。
-func TestPromptParity(t *testing.T) {
+// 快照由 Rust 侧写在 tests/golden/text_snapshots/，固定盘 2000-8-16 时辰 2
+// 女命、运限目标 2025-1-1 时辰 0，palace/surrounded 取命宫。措辞、字段顺序、
+// 段落增删任一处漂移都会暴露；有意改动文本时按 Rust 侧的流程重建快照，两侧一起更新。
+func TestTextParity(t *testing.T) {
 	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
 		chart, err := BySolar("2000-8-16", 2, GenderFemale, true, lang, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		natal, err := chart.AstrolabeToPrompt()
+		horoscope, err := chart.Horoscope("2025-1-1", 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := promptSnapshot(t, "astrolabe_"+string(lang)); natal != want {
-			t.Errorf("%s 本命 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, natal, want)
-		}
 
-		horo, err := chart.HoroscopeToPrompt("2025-1-1", 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := promptSnapshot(t, "horoscope_"+string(lang)); horo != want {
-			t.Errorf("%s 运限 prompt 与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, horo, want)
+		for name, get := range map[string]func() (string, error){
+			"astrolabe":  chart.ToText,
+			"horoscope":  horoscope.ToText,
+			"patterns":   func() (string, error) { return chart.PatternsToText(nil) },
+			"palace":     func() (string, error) { return chart.PalaceToText(PalaceTarget{Key: PalaceSoul}) },
+			"surrounded": func() (string, error) { return chart.SurroundedPalacesToText(PalaceTarget{Key: PalaceSoul}) },
+		} {
+			got, err := get()
+			if err != nil {
+				t.Fatalf("%s %s: %v", lang, name, err)
+			}
+			if want := textSnapshot(t, name+"_"+string(lang)); got != want {
+				t.Errorf("%s %s 文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, name, got, want)
+			}
 		}
 	}
 
@@ -639,7 +643,7 @@ func TestPromptParity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := chart.HoroscopeToPrompt("garbage", 0); !errors.Is(err, ErrInvalidDate) {
+	if _, err := chart.Horoscope("garbage", 0); !errors.Is(err, ErrInvalidDate) {
 		t.Fatalf("非法目标日期应报 ErrInvalidDate，实际 %v", err)
 	}
 }

@@ -53,6 +53,36 @@ fmt.Printf("%q\n", info[iztro.StarTaiyangMaj].FiveElements)
 
 ---
 
+## FlowStarCounterparts
+
+**用途**　流耀 → 对应本命辅星的全量对照表（50 条）。
+
+**签名**
+
+```go
+func FlowStarCounterparts() (map[string]string, error)
+```
+
+**返回值**　键为流耀标识常量取值（`StarLiuchang` 等），值为本命辅星标识
+（`StarWenchangMin` 等）。流耀没有独立的知识包条目，释义按对应的本命辅星查，
+这张表就是官方对照。
+
+**示例**
+
+```go
+m, _ := iztro.FlowStarCounterparts()
+
+fmt.Println(m["liuchang"])
+```
+
+**输出**
+
+```text
+wenchangMin
+```
+
+---
+
 ## HeavenlyStems
 
 **用途**　取天干信息表。

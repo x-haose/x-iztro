@@ -32,6 +32,13 @@ class HoroscopeItem:
     name: str
     """层级显示名（大限/童限/小限/流年/流月/流日/流时，按排盘语言翻译）"""
 
+    name_key: str
+    """层级的语言无关标识。
+
+    大限层未起运时为 "childhood"（童限）而非 "decadal"——两者是不同的解盘语义，
+    程序判断一律用本字段而非译文。
+    """
+
     heavenly_stem: str
     """该运限天干（翻译文本）"""
 
@@ -53,8 +60,9 @@ class HoroscopeItem:
     mutagen: list[str]
     """四化星名列表 [禄, 权, 科, 忌]（翻译文本）"""
 
-    mutagen_keys: list[str]
-    """四化星标识列表 [禄, 权, 科, 忌]（星耀 key）"""
+    mutagen_star_keys: list[str]
+    """被化的四颗星标识列表 [禄, 权, 科, 忌]（星耀 key，与 `Palace.mutagen_star_keys`
+    同名同义；单数的 mutagen_key 才是四化类型 `Mutagen` 的标识）"""
 
     stars: list[list[Star]] | None = None
     """流耀，12 个宫位各一组星耀列表，或 None"""
@@ -74,6 +82,7 @@ class HoroscopeItem:
         return cls(
             index=d["index"],
             name=d["name"],
+            name_key=d["nameKey"],
             heavenly_stem=d["heavenlyStem"],
             heavenly_stem_key=d["heavenlyStemKey"],
             earthly_branch=d["earthlyBranch"],
@@ -81,7 +90,7 @@ class HoroscopeItem:
             palace_names=list(d["palaceNames"]),
             palace_name_keys=list(d["palaceNameKeys"]),
             mutagen=list(d["mutagen"]),
-            mutagen_keys=list(d["mutagenKeys"]),
+            mutagen_star_keys=list(d["mutagenStarKeys"]),
             stars=stars,
         )
 
@@ -133,6 +142,7 @@ class HoroscopeYearly(HoroscopeItem):
         return cls(
             index=base.index,
             name=base.name,
+            name_key=base.name_key,
             heavenly_stem=base.heavenly_stem,
             heavenly_stem_key=base.heavenly_stem_key,
             earthly_branch=base.earthly_branch,
@@ -140,7 +150,7 @@ class HoroscopeYearly(HoroscopeItem):
             palace_names=base.palace_names,
             palace_name_keys=base.palace_name_keys,
             mutagen=base.mutagen,
-            mutagen_keys=base.mutagen_keys,
+            mutagen_star_keys=base.mutagen_star_keys,
             stars=base.stars,
             yearly_dec_star=YearlyDecStar._from_dict(d["yearlyDecStar"]),
         )
@@ -159,6 +169,7 @@ class AgeItem(HoroscopeItem):
         return cls(
             index=base.index,
             name=base.name,
+            name_key=base.name_key,
             heavenly_stem=base.heavenly_stem,
             heavenly_stem_key=base.heavenly_stem_key,
             earthly_branch=base.earthly_branch,
@@ -166,7 +177,7 @@ class AgeItem(HoroscopeItem):
             palace_names=base.palace_names,
             palace_name_keys=base.palace_name_keys,
             mutagen=base.mutagen,
-            mutagen_keys=base.mutagen_keys,
+            mutagen_star_keys=base.mutagen_star_keys,
             stars=base.stars,
             nominal_age=d["nominalAge"],
         )
@@ -232,9 +243,43 @@ class Horoscope:
         kwargs.setdefault("ensure_ascii", False)
         return json.dumps(self._raw, **kwargs)
 
+    def to_text(self) -> str:
+        """
+        运限的语义化文本：面向语言模型与人的完整描述，`str(horoscope)` 等价。
+
+        与 `to_dict`/`to_json`（机器结构）、翻译字段（展示文本）同源，
+        是同一份运限的第三种投影。文本按排盘语言输出。
+
+        Raises:
+            ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
+        """
+        return self._context_query("horoscopeToText", None)
+
+    def __str__(self) -> str:
+        # 脱离星盘的运限没有排盘上下文可转发，str() 必须仍是安全操作：
+        # 回退到默认 repr 而不是从 __str__ 里抛异常
+        if self._astrolabe is None:
+            return super().__repr__()
+        return self.to_text()
+
     def astrolabe(self) -> Astrolabe | None:
         """发起这次运限查询的星盘；脱离星盘单独构造的运限返回 None"""
         return self._astrolabe
+
+    def _context_query(self, kind: str, astrolabe: Astrolabe | None, **extra: Any) -> Any:
+        """以发起本次运限查询的排盘上下文调用绑定层：星盘上下文（含重排起点）
+        委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加目标日期。"""
+        chart = self._chart(astrolabe)
+        if chart is None:
+            raise ValueError(
+                f"{kind} 需要星盘：传入 astrolabe，或由 Astrolabe.horoscope 发起运限"
+            )
+        return chart._context_query(
+            kind,
+            target_date=self.solar_date,
+            target_time_index=self._target_time_index,
+            **extra,
+        )
 
     def _chart(self, astrolabe: Astrolabe | None) -> Astrolabe | None:
         """显式传入的星盘优先，否则用发起查询的那张盘。"""
@@ -324,9 +369,9 @@ class Horoscope:
         if p is None:
             return False
         idx = _MUTAGEN_INDEX.get(mutagen)
-        if idx is None or idx >= len(item.mutagen_keys):
+        if idx is None or idx >= len(item.mutagen_star_keys):
             return False
-        star_key = item.mutagen_keys[idx]
+        star_key = item.mutagen_star_keys[idx]
         return any(
             s.key == star_key for s in p.major_stars + p.minor_stars
         )
@@ -396,28 +441,44 @@ class Horoscope:
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
         """
-        from x_iztro._bridge import query
         from x_iztro.pattern import PatternHit, _pattern_config, _scope_key
 
-        chart = self._chart(astrolabe)
-        if chart is None:
-            raise ValueError("patterns() 需要星盘：传入 astrolabe，或由 Astrolabe.horoscope 发起运限")
-        data = query(
+        data = self._context_query(
             "horoscopePatterns",
-            solar_date=chart.solar_date,
-            time_index=chart.time_index,
-            gender=chart.gender_key,
-            fix_leap=chart.fix_leap,
-            language=chart.language,
-            config=chart._config_payload(),
-            from_stem=chart._from_stem,
-            from_branch=chart._from_branch,
-            target_date=self.solar_date,
-            target_time_index=self._target_time_index,
+            astrolabe,
             scope=_scope_key(scope),
             pattern_config=_pattern_config(config),
         )
         return [PatternHit._from_dict(d) for d in data]
+
+    def patterns_to_text(
+        self,
+        scope: Scope | ScopeLiteral,
+        config: PatternConfig | None = None,
+        astrolabe: Astrolabe | None = None,
+    ) -> str:
+        """
+        某运限层视角格局命中的语义化文本。
+
+        与 `patterns` 同一套判定（含重排上下文与判定口径），输出面向语言模型
+        与人的文本而非结构化命中列表；宫名按该层重排后的宫名书写。
+
+        Args:
+            scope: 运限层级
+            config: 判定口径；不传取默认
+            astrolabe: 星盘；省略时取发起本次运限查询的那张盘
+
+        Raises:
+            ValueError: 既未传星盘、本运限也不是由星盘发起
+        """
+        from x_iztro.pattern import _pattern_config, _scope_key
+
+        return self._context_query(
+            "horoscopePatternsToText",
+            astrolabe,
+            scope=_scope_key(scope),
+            pattern_config=_pattern_config(config),
+        )
 
     def _collect_horoscope_star_identifiers(self, palace_idx: int) -> set[str]:
         """收集大限和流年在指定宫位的所有流耀标识"""

@@ -72,6 +72,9 @@ pub const BRIGHT: [Brightness; 2] = [Brightness::Miao, Brightness::Wang];
 pub const DARK: [Brightness; 2] = [Brightness::Xian, Brightness::Bu];
 
 /// 本命辅星与其运限流曜的对应：运限视角下流曜等同该辅星参与判定。
+///
+/// 判定只认大限（运）与流年（流）两层的流曜——流月/日/时的流曜（yue/ri/shi）
+/// 不参与格局；全量对照表见 [`crate::astro::horoscope::natal_counterpart_of_flow_star`]。
 fn flow_counterparts(key: StarKey) -> &'static [StarKey] {
     use StarKey::*;
     match key {
@@ -541,5 +544,37 @@ fn positional(key: StarKey, branch: EarthlyBranch) -> Option<bool> {
             _ => None,
         },
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod counterpart_tests {
+    use super::*;
+    use crate::astro::horoscope::natal_counterpart_of_flow_star;
+
+    /// 判定用的运/流对应关系必须是全量对照表的子集，两表不许分叉。
+    #[test]
+    fn flow_counterparts_agree_with_full_table() {
+        use StarKey::*;
+        for natal in [
+            LucunMin,
+            TianmaMin,
+            WenchangMin,
+            WenquMin,
+            QingyangMin,
+            TuoluoMin,
+            TiankuiMin,
+            TianyueMin,
+            Hongluan,
+            Tianxi,
+        ] {
+            for flow in flow_counterparts(natal) {
+                assert_eq!(
+                    natal_counterpart_of_flow_star(*flow),
+                    Some(natal),
+                    "{flow:?} 在两张对照表中的本命对应不一致"
+                );
+            }
+        }
     }
 }

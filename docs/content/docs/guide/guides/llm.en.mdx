@@ -26,15 +26,15 @@ chart = astro.by_solar("2000-8-16", 2, "female")
 
 system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
           "do not invent information that is not on it.")
-user = f"""{astro.astrolabe_to_prompt(chart)}
+user = f"""{chart.to_text()}
 
-{astro.horoscope_to_prompt(chart, "2025-1-1", 0)}
+{chart.horoscope("2025-1-1", 0).to_text()}
 
 Analyse this person's career prospects for 2025."""
 ```
 
 For what the generated text looks like and how to read its format, see
-[AI prompt generation](/en/docs/guide/guides/ai-prompt).
+[Semantic text](/en/docs/guide/guides/to-text).
 
 ## Exposing it as a tool call
 
@@ -61,7 +61,7 @@ minimal tool definition:
 }
 ```
 
-The implementation just calls `astrolabe_to_prompt` and returns the text. Make the horoscope a
+The implementation just calls `chart.to_text()` and returns the text. Make the horoscope a
 separate tool (one extra parameter, the target date) so the model can fetch it when it needs it.
 
 <Callout title="Spell out the hour index in the tool description">

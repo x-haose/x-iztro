@@ -39,10 +39,11 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 | --- | --- | --- |
 | `Index` | `int` | 该层级落在哪一宫（宫位索引） |
 | `Name` | `string` | 层级显示名，按输出语言翻译 |
+| `NameKey` | `string` | 层级标识：`decadal` / `childhood`（童限，未起运）/ `turn`（小限）/ `yearly` / `monthly` / `daily` / `hourly`。判断层级用它，不要比对译文 |
 | `HeavenlyStem` / `HeavenlyStemKey` | `string` | 该层级的天干，决定它飞出的四化 |
 | `EarthlyBranch` / `EarthlyBranchKey` | `string` | 该层级的地支 |
 | `PalaceNames` / `PalaceNameKeys` | `[]string` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
-| `Mutagen` / `MutagenKeys` | `[]string` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `Mutagen` / `MutagenStarKeys` | `[]string` | 该层级天干引发的四化星，顺序为禄权科忌；`MutagenStarKeys` 是被化四星的星耀标识，与宫位的同名字段同义 |
 | `Stars` | `[][]Star` | 该层级的流耀分布；无流耀的层级为 `nil` |
 | `NominalAge` | `int` | 仅小限：虚岁。其余层级为 `0` |
 | `YearlyDecStar` | `*YearlyDecStar` | 仅流年：岁前与将前十二神。其余层级为 **`nil`** |
@@ -416,3 +417,37 @@ fmt.Println(h.Astrolabe().SolarDate)
 `ScopeItem` 用于写按层级参数化的通用逻辑，比一串 `switch scope` 简洁。
 返回 `nil` 时记得判空。
 </Callout>
+
+---
+
+## ToText
+
+**用途**　运限的语义化文本：面向语言模型与人的完整描述。
+
+**签名**
+
+```go
+func (h *Horoscope) ToText() (string, error)
+func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
+```
+
+**返回值**　`string`——按星盘排盘语言输出的分节纯文本，各层带该层视角的格局行与流耀行。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```go
+h, _ := chart.Horoscope("2025-1-1", 0)
+text, _ := h.ToText()
+
+fmt.Println(string([]rune(text)[:25]))
+```
+
+**输出**
+
+```text
+=== 运限 ===
+目标日期: 2025-1-1
+```
+
+格局命中的文本另见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。

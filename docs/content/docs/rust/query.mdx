@@ -169,8 +169,37 @@ emperor
 命宫由农历月份与出生时辰共同定位，因此 `time_index` 是必填的。
 只知道日期不知道时辰时，斗数无法给出确定的命宫。
 </Accordion>
-<Accordion title="要判断请用整盘">
-返回值是翻译后的字符串，换语言就会变。要做程序判断请排整盘，
-用 `chart.palace(Palace::Soul)` 取宫位后比较 `major_stars` 里的 `key`。
+<Accordion title="要判断请用 key 形态">
+返回值是翻译后的字符串，换语言就会变。要做程序判断用下面的
+`major_star_keys_of_soul_palace`，或排整盘后比较 `major_stars` 里的 `key`。
 </Accordion>
 </Accordions>
+
+---
+
+## major_star_keys_of_soul_palace
+
+**用途**　命宫主星的语言无关标识列表——上面两个函数的 key 形态，供程序判断。
+
+**签名**
+
+```rust
+pub fn major_star_keys_of_soul_palace(astrolabe: &Astrolabe) -> Vec<String>
+```
+
+收已排好的盘（配合 `by_solar` / `by_lunar` 使用），借宫规则与译文形态共享同一实现：
+命宫为空宫时借对宫主星，对宫也无主星时返回空列表。标识与盘面语言无关。
+
+**示例**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+println!("{:?}", major_star_keys_of_soul_palace(&chart));
+```
+
+**输出**
+
+```text
+["ziweiMaj"]
+```

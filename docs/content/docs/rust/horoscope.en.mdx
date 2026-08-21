@@ -62,6 +62,7 @@ together.
 | --- | --- | --- |
 | `index` | `usize` | Which palace this scope lands on (a palace index) |
 | `name` | `String` | Display name of the scope, translated into the output language |
+| `name_key` | `HoroscopeName` | The scope's language-independent key; before the decadals begin the decadal scope carries `Childhood`, a different reading semantics from `Decadal` — predicate on this, never on the translation |
 | `heavenly_stem` | `HeavenlyStem` | Stem of the scope, which determines the mutagens it flies |
 | `earthly_branch` | `EarthlyBranch` | Branch of the scope |
 | `palace_names` | `Vec<Palace>` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
@@ -409,6 +410,40 @@ println!("{}", data.solar_date);
 ```text
 2000-8-16
 2025-6-1
+```
+
+---
+
+## to_text
+
+**Purpose** The horoscope's semantic text: a complete description for language models and people.
+
+**Signature**
+
+```rust
+pub fn to_text(&self) -> String
+```
+
+Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language use
+the free function `text::horoscope_to_text(astrolabe, horoscope, lang)`.
+
+**Return value** `String` — sectioned plain text; each scope carries a patterns line and
+flowing-star lines from its own perspective. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```rust
+let h = chart.horoscope("2025-1-1", 0)?;
+
+println!("{}", h.to_text().chars().take(39).collect::<String>());
+```
+
+**Output**
+
+```text
+=== Horoscope ===
+Target Date: 2025-1-1
 ```
 
 ---

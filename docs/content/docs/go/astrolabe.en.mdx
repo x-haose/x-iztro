@@ -46,6 +46,8 @@ Display fields follow the charting language. For predicates use the `*Key` field
 | Field | Type | Description |
 | --- | --- | --- |
 | `GenderKey` | `Gender` | `GenderMale` / `GenderFemale` |
+| `SignKey` | `string` | Zodiac sign key, `aries` … `pisces` |
+| `ZodiacKey` | `string` | Zodiac animal key, `rat` … `pig` |
 | `SoulKey` | `string` | Soul star key |
 | `BodyKey` | `string` | Body star key |
 | `FiveElementsClassKey` | `string` | Five elements class key |
@@ -401,6 +403,42 @@ fmt.Println("yearly ", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch)
 decadal gengchen
 yearly  yisi
 ```
+
+---
+
+## ToText / PalaceToText / SurroundedPalacesToText
+
+**Purpose** Semantic text for the chart, a single palace or the surrounded palaces: a complete
+description for language models and people.
+
+**Signature**
+
+```go
+func (a *Astrolabe) ToText() (string, error)
+func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error)
+func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
+```
+
+Each has a `Context` variant. With a non-empty `Key`, `PalaceTarget` locates the palace by name key
+(`PalaceSoul` etc.; `PalaceBody` / `PalaceOriginal` are also accepted), otherwise by `Index` (0–11).
+Emits in the charting language; the full format is on
+[Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```go
+text, _ := chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+
+fmt.Println(strings.Split(text, "\n")[0])
+```
+
+**Output**
+
+```text
+--- soul ---
+```
+
+For pattern text see `PatternsToText` on [Patterns](/en/docs/go/patterns).
 
 ---
 

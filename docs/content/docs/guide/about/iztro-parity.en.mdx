@@ -204,9 +204,9 @@ The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
   its translated name, valued with iztro's i18n keys. Predicate logic is therefore unaffected by the
   chart language and never has to reverse-look-up a translation. See
   [The key contract](/en/docs/guide/guides/keys).
-- **Prompt generation**: `astrolabe_to_prompt` / `horoscope_to_prompt` render an astrolabe or a
-  horoscope as plain text suited to feeding a language model. See
-  [AI prompt generation](/en/docs/guide/guides/ai-prompt).
+- **The semantic text projection (to_text)**: project an astrolabe, a horoscope, a palace or the
+  surrounded palaces into natural-language text, for a language model or a person. See
+  [Semantic text](/en/docs/guide/guides/to-text).
 - **Up-front validation at the entry points**: invalid dates, out-of-range hours and the like return
   an error rather than panicking, with a machine-readable category code. See
   [Error handling](/en/docs/guide/guides/errors).

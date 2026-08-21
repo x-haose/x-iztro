@@ -30,7 +30,9 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `time` | string | 时辰名，如「寅时」 |
 | `timeRange` | string | 时辰时间段，如「03:00~05:00」 |
 | `sign` | string | 星座 |
+| `signKey` | string | 星座 key，`aries` … `pisces` |
 | `zodiac` | string | 生肖，按年支 |
+| `zodiacKey` | string | 生肖 key，`rat` … `pig` |
 | `earthlyBranchOfSoulPalace` | string | 命宫地支 |
 | `earthlyBranchOfSoulPalaceKey` | string | 命宫地支 key |
 | `earthlyBranchOfBodyPalace` | string | 身宫地支 |
@@ -167,15 +169,22 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | --- | --- | --- |
 | `index` | int | 该运限所在盘上位置 0–11 |
 | `name` | string | 层级名，翻译文本 |
+| `nameKey` | string | 层级 key：`decadal` / `childhood` / `turn`（小限）/ `yearly` / `monthly` / `daily` / `hourly` |
 | `heavenlyStem` / `heavenlyStemKey` | string | 该运限天干 |
 | `earthlyBranch` / `earthlyBranchKey` | string | 该运限地支 |
 | `palaceNames` | string[12] | 以该运限位置为命宫重排的宫名，按盘上位置排列 |
 | `palaceNameKeys` | string[12] | 同上的 key 形式 |
 | `mutagen` | string[4] | 四化星名，顺序为禄、权、科、忌 |
-| `mutagenKeys` | string[4] | 同上的 key 形式 |
+| `mutagenStarKeys` | string[4] | 同上的 key 形式，与宫位的同名字段同义——被化的四颗星的星耀标识；单数 `mutagenKey` 才是四化类型（`sihuaLu` 等） |
 | `stars` | [Star](#star-星耀)[][12]? | 流耀在十二宫的分布（外层十二项对应宫位，内层是该宫的流耀列表），无流耀的层级缺省 |
 | `nominalAge` | int? | 虚岁，仅小限有 |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar-流年十二神)? | 仅流年有 |
+
+<Callout type="warn" title="大限层未起运时 nameKey 是 childhood">
+命主尚未起运时，`decadal` 这一层的 `nameKey` 为 `childhood`（童限）而非 `decadal`——
+童限与大限是不同的解盘语义。程序判断该层是不是童限请用 `nameKey`，
+不要比对 `name` 的译文。
+</Callout>
 
 ### YearlyDecStar 流年十二神
 
@@ -213,8 +222,8 @@ Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base,
   },
   "time": "寅时",
   "timeRange": "03:00~05:00",
-  "sign": "狮子座",
-  "zodiac": "龙",
+  "sign": "狮子座", "signKey": "leo",
+  "zodiac": "龙", "zodiacKey": "dragon",
   "earthlyBranchOfSoulPalace": "午", "earthlyBranchOfSoulPalaceKey": "wuEarthly",
   "earthlyBranchOfBodyPalace": "戌", "earthlyBranchOfBodyPalaceKey": "xuEarthly",
   "soul": "破军", "soulKey": "pojunMaj",
@@ -284,9 +293,15 @@ Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base,
 { "name": "紫微", "key": "ziweiMaj", "brightness": "庙", "brightnessKey": "miao" }
 ```
 
-翻译字段给人看，标识字段给代码用。星耀的标识字段直接叫 `key`（没有 `nameKey`），
-其余一律是「原字段名 + Key」；数组形式的用复数 `Keys`
-（`mutagenKeys`、`palaceNameKeys`、`yearlyKeys`）。
+翻译字段给人看，标识字段给代码用。契约就两条：
+
+1. **凡有译文的属性 `x`，必有配套的 `xKey`**；数组形式的用复数 `Keys`
+   （`palaceNameKeys`、`yearlyKeys`）。
+2. **实体自身的标识直接叫 `key`**——星耀的标识字段是 `key` 而非 `nameKey`。
+
+唯一的命名分叉在四化：单数 `mutagenKey` 是四化类型（`sihuaLu` 等），
+复数 `mutagenStarKeys` 是被化的四颗星的星耀标识。
+这份契约由 `semantic_contract` 测试强制——DTO 每个翻译字段都必须有对应的标识字段。
 
 <Callout>
 `*Key` / `key` 系列、`genderKey`、`timeIndex`、`fixLeap`、`language`、`config`

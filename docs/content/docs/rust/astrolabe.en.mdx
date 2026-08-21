@@ -40,6 +40,8 @@ Display fields follow `language`. For predicates use the key fields in the next 
 
 | Field | Type | Description |
 | --- | --- | --- |
+| `sign_key` | `String` | Zodiac sign key, `aries` … `pisces` |
+| `zodiac_key` | `String` | Zodiac animal key, `rat` … `pig` |
 | `earthly_branch_of_soul_palace` | `EarthlyBranch` | Branch of the Soul palace |
 | `earthly_branch_of_body_palace` | `EarthlyBranch` | Branch of the body palace |
 | `soul` | `StarKey` | Soul star |
@@ -395,6 +397,39 @@ but both implement `Deref`, so `h.yearly.heavenly_stem` reads directly as well.
 ```text
 decadal geng chen
 yearly  yi si
+```
+
+---
+
+## to_text
+
+**Purpose** The chart's semantic text: a complete description for language models and people.
+
+**Signature**
+
+```rust
+pub fn to_text(&self) -> String
+```
+
+Emits in the charting language; for an explicit language use the free function
+`text::astrolabe_to_text(astrolabe, lang)` — `lang` may differ from the charting language, with
+every field re-translated by key into the target language. For single palaces and surrounded palaces see
+`PalaceRef::to_text()` / `SurroundedPalaces::to_text(lang)`. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text).
+
+**Example**
+
+```rust
+println!("{}", chart.to_text().chars().take(77).collect::<String>());
+```
+
+**Output**
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
 ```
 
 ---

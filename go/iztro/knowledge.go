@@ -17,11 +17,17 @@ const knowledgeSchemaVersion = 1
 
 // KnowledgeSource 为包的来源与许可信息。
 type KnowledgeSource struct {
-	Name        string `json:"name,omitempty"`
-	URL         string `json:"url,omitempty"`
-	Commit      string `json:"commit,omitempty"`
-	License     string `json:"license,omitempty"`
-	Author      string `json:"author,omitempty"`
+	// Name 为来源名称（如 iztro-docs）
+	Name string `json:"name,omitempty"`
+	// URL 为来源仓库或页面地址
+	URL string `json:"url,omitempty"`
+	// Commit 为提取时锁定的来源 commit
+	Commit string `json:"commit,omitempty"`
+	// License 为来源的许可协议（如 MIT）
+	License string `json:"license,omitempty"`
+	// Author 为来源作者
+	Author string `json:"author,omitempty"`
+	// RetrievedAt 为提取日期（YYYY-MM-DD）
 	RetrievedAt string `json:"retrievedAt,omitempty"`
 	// Adapted 为改写说明：文本经过整理改写时注明
 	Adapted string `json:"adapted,omitempty"`

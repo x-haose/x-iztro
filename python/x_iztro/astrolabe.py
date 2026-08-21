@@ -142,8 +142,14 @@ class Astrolabe:
     sign: str
     """星座"""
 
+    sign_key: str
+    """星座的语言无关标识（"aries" … "pisces"）"""
+
     zodiac: str
     """生肖"""
+
+    zodiac_key: str
+    """生肖的语言无关标识（"rat" … "pig"）"""
 
     earthly_branch_of_soul_palace: str
     """命宫地支（翻译文本）"""
@@ -252,6 +258,35 @@ class Astrolabe:
         """再次发起计算时使用的配置：优先用户原件，其次由 DTO 还原的开关。"""
         source = self._input_config if self._input_config is not None else self.config
         return source.to_dict()
+
+    def _context_query(self, kind: str, **extra: Any) -> Any:
+        """以本盘的排盘上下文（含重排起点）调用绑定层的统一查询入口。"""
+        from x_iztro._bridge import query
+
+        return query(
+            kind,
+            solar_date=self.solar_date,
+            time_index=self.time_index,
+            gender=self.gender_key,
+            fix_leap=self.fix_leap,
+            language=self.language,
+            config=self._config_payload(),
+            from_stem=self._from_stem,
+            from_branch=self._from_branch,
+            **extra,
+        )
+
+    def to_text(self) -> str:
+        """
+        星盘的语义化文本：面向语言模型与人的完整描述，`str(astrolabe)` 等价。
+
+        与 `to_dict`/`to_json`（机器结构）、翻译字段（展示文本）同源，
+        是同一张盘的第三种投影。文本按排盘语言输出；重排盘按重排后的布局描述。
+        """
+        return self._context_query("astrolabeToText")
+
+    def __str__(self) -> str:
+        return self.to_text()
 
     # ------ 宫位查询 ------
 
@@ -434,22 +469,26 @@ class Astrolabe:
         Returns:
             命中列表，按《格局》页条目顺序
         """
-        from x_iztro._bridge import query
         from x_iztro.pattern import _pattern_config
 
-        data = query(
-            "patterns",
-            solar_date=self.solar_date,
-            time_index=self.time_index,
-            gender=self.gender_key,
-            fix_leap=self.fix_leap,
-            language=self.language,
-            config=self._config_payload(),
-            from_stem=self._from_stem,
-            from_branch=self._from_branch,
-            pattern_config=_pattern_config(config),
-        )
+        data = self._context_query("patterns", pattern_config=_pattern_config(config))
         return [PatternHit._from_dict(d) for d in data]
+
+    def patterns_to_text(self, config: PatternConfig | None = None) -> str:
+        """
+        本命盘格局命中的语义化文本。
+
+        与 `patterns` 同一套判定（含重排上下文与判定口径），输出面向语言模型
+        与人的文本而非结构化命中列表。
+
+        Args:
+            config: 判定口径；不传取默认
+        """
+        from x_iztro.pattern import _pattern_config
+
+        return self._context_query(
+            "patternsToText", pattern_config=_pattern_config(config)
+        )
 
     def _link(self, palaces: list[Palace]) -> None:
         """
@@ -483,7 +522,9 @@ class Astrolabe:
             time=d["time"],
             time_range=d["timeRange"],
             sign=d["sign"],
+            sign_key=d["signKey"],
             zodiac=d["zodiac"],
+            zodiac_key=d["zodiacKey"],
             earthly_branch_of_soul_palace=d["earthlyBranchOfSoulPalace"],
             earthly_branch_of_soul_palace_key=d["earthlyBranchOfSoulPalaceKey"],
             earthly_branch_of_body_palace=d["earthlyBranchOfBodyPalace"],

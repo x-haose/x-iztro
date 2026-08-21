@@ -118,6 +118,8 @@ from x_iztro.query import (
     get_sign_by_lunar_date,
     get_major_star_by_solar_date,
     get_major_star_by_lunar_date,
+    get_major_star_keys_by_solar_date,
+    get_major_star_keys_by_lunar_date,
 )
 
 __all__ = [
@@ -131,6 +133,8 @@ __all__ = [
     "get_sign_by_lunar_date",
     "get_major_star_by_solar_date",
     "get_major_star_by_lunar_date",
+    "get_major_star_keys_by_solar_date",
+    "get_major_star_keys_by_lunar_date",
     # 数据模型
     "Astrolabe",
     "Palace",

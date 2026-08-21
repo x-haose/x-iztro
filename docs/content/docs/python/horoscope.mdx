@@ -50,10 +50,11 @@ h = chart.horoscope("2025-6-1", 0)
 | --- | --- | --- |
 | `index` | `int` | 该层级落在哪一宫（宫位索引） |
 | `name` | `str` | 层级显示名，按输出语言翻译 |
+| `name_key` | `str` | 层级标识：`decadal` / `childhood`（童限，未起运）/ `turn`（小限）/ `yearly` / `monthly` / `daily` / `hourly`。判断层级用它，不要比对译文 |
 | `heavenly_stem` / `heavenly_stem_key` | `str` | 该层级的天干，决定它飞出的四化 |
 | `earthly_branch` / `earthly_branch_key` | `str` | 该层级的地支 |
 | `palace_names` / `palace_name_keys` | `list[str]` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
-| `mutagen` / `mutagen_keys` | `list[str]` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `mutagen` / `mutagen_star_keys` | `list[str]` | 该层级天干引发的四化星，顺序为禄权科忌；`mutagen_star_keys` 是被化四星的星耀标识，与宫位的同名字段同义 |
 | `stars` | `list[list[Star]] \| None` | 该层级的流耀分布；无流耀的层级为 `None` |
 
 `AgeItem` 与 `HoroscopeYearly` 继承 `HoroscopeItem`，各自多一个字段：
@@ -431,6 +432,43 @@ print(item.palace_index_by_name("nosuch"))
 10
 None
 ```
+</Callout>
+
+---
+
+## to_text
+
+**用途**　运限的语义化文本：面向语言模型与人的完整描述，`str(h)` 等价。
+
+**签名**
+
+```python
+def to_text(self) -> str
+```
+
+**返回值**　`str`——按星盘排盘语言输出的分节纯文本，各层带该层视角的格局行与流耀行。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```python
+h = chart.horoscope("2025-1-1", 0)
+
+print(h.to_text()[:25])
+```
+
+**输出**
+
+```text
+=== 运限 ===
+目标日期: 2025-1-1
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+脱离星盘单独构造的运限（`horoscope()` 之外的途径）没有排盘上下文，调用抛 `ValueError`。
+格局命中的文本另见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。
 </Callout>
 
 ---

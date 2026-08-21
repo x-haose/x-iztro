@@ -332,3 +332,34 @@ for _, hit := range hits {
   ]
 }
 ```
+
+---
+
+## PatternsToText / Horoscope.PatternsToText
+
+**用途**　格局命中的语义化文本，每条一行：格局名、命中宫、构成星耀，破格标 `[破格]`。
+
+**签名**
+
+```go
+func (a *Astrolabe) PatternsToText(config *PatternConfig) (string, error)
+func (h *Horoscope) PatternsToText(scope string, config *PatternConfig) (string, error)
+```
+
+各有 `Context` 变体。与 `Patterns` 同一套判定（含重排上下文与判定口径）；
+运限版本的宫名按该层重排后的宫名书写，`config` 传 `nil` 取默认口径。
+
+**示例**
+
+```go
+text, _ := chart.PatternsToText(nil)
+fmt.Print(text)
+```
+
+**输出**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+```
+
+本命盘与运限的 `ToText` 已各自带格局节；单独调用适合只要格局摘要的场景。

@@ -292,20 +292,13 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 	return merged, nil
 }
 
-// AstrolabeToPrompt 生成本命盘的 AI 分析 prompt：一段结构化文本，
-// 按星盘的排盘语言输出，可直接喂给大模型。
-func (a *Astrolabe) AstrolabeToPrompt() (string, error) {
-	return a.AstrolabeToPromptContext(context.Background())
-}
+// 语义化文本（ToText）：同一个对象的三种投影之一——JSON 给机器、ToText 给语言
+// 模型、译文字段给展示。所有 ToText 按星盘的排盘语言输出结构化纯文本。
 
-// AstrolabeToPromptContext 为 AstrolabeToPrompt 的 Context 变体；
-// ctx 用于取消等待 wasm 实例。
-func (a *Astrolabe) AstrolabeToPromptContext(ctx context.Context) (string, error) {
-	if a == nil {
-		return "", invalidArgument("astrolabeToPrompt: nil astrolabe")
-	}
+// textPayload 组装 to_text 类查询的公共入参：排盘上下文 + 重排起点。
+func (a *Astrolabe) textPayload(kind string) map[string]any {
 	payload := map[string]any{
-		"kind":      "astrolabeToPrompt",
+		"kind":      kind,
 		"solarDate": a.SolarDate,
 		"timeIndex": a.TimeIndex,
 		"gender":    a.GenderKey,
@@ -314,33 +307,88 @@ func (a *Astrolabe) AstrolabeToPromptContext(ctx context.Context) (string, error
 		"config":    a.requestConfig(),
 	}
 	a.addRearrange(payload)
+	return payload
+}
+
+// ToText 生成本命盘的语义化文本：一段结构化纯文本，可直接喂给大模型。
+func (a *Astrolabe) ToText() (string, error) {
+	return a.ToTextContext(context.Background())
+}
+
+// ToTextContext 为 ToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) ToTextContext(ctx context.Context) (string, error) {
+	if a == nil {
+		return "", invalidArgument("astrolabeToText: nil astrolabe")
+	}
+	var out string
+	return out, utilQueryContext(ctx, a.textPayload("astrolabeToText"), &out)
+}
+
+// ToText 生成运限的语义化文本；本命信息与运限一并写入。
+func (h *Horoscope) ToText() (string, error) {
+	return h.ToTextContext(context.Background())
+}
+
+// ToTextContext 为 ToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (h *Horoscope) ToTextContext(ctx context.Context) (string, error) {
+	if h == nil || h.astrolabe == nil {
+		return "", invalidArgument("horoscopeToText: horoscope must be created by Astrolabe.Horoscope")
+	}
+	payload := h.astrolabe.textPayload("horoscopeToText")
+	payload["targetDate"] = h.SolarDate
+	payload["targetTimeIndex"] = h.targetTimeIndex
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
 
-// HoroscopeToPrompt 生成运限的 AI 分析 prompt；本命信息与运限一并写入。
-func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error) {
-	return a.HoroscopeToPromptContext(context.Background(), targetDate, targetTimeIndex)
+// PalaceTarget 为文本投影的宫位寻址参数：Key 非空时按宫名标识定位，
+// 否则按 Index 取宫。
+type PalaceTarget struct {
+	// Key 为宫名标识（PalaceSoul 等常量），另接受 PalaceBody / PalaceOriginal
+	Key string
+	// Index 为宫位索引（0-11，寅宫为 0），仅在 Key 为空时生效
+	Index int
 }
 
-// HoroscopeToPromptContext 为 HoroscopeToPrompt 的 Context 变体；
-// ctx 用于取消等待 wasm 实例。
-func (a *Astrolabe) HoroscopeToPromptContext(ctx context.Context, targetDate string, targetTimeIndex uint8) (string, error) {
+// apply 把宫位寻址写进查询入参；内核要求显式寻址（palaceKey 或 palaceIndex），
+// Key 为空时 Index 的零值即寅宫，与内核「索引 0」同义。
+func (t PalaceTarget) apply(payload map[string]any) {
+	if t.Key != "" {
+		payload["palaceKey"] = t.Key
+	} else {
+		payload["palaceIndex"] = t.Index
+	}
+}
+
+// PalaceToText 生成单个宫位的语义化文本。
+func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error) {
+	return a.PalaceToTextContext(context.Background(), target)
+}
+
+// PalaceToTextContext 为 PalaceToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) PalaceToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
 	if a == nil {
-		return "", invalidArgument("horoscopeToPrompt: nil astrolabe")
+		return "", invalidArgument("palaceToText: nil astrolabe")
 	}
-	payload := map[string]any{
-		"kind":            "horoscopeToPrompt",
-		"solarDate":       a.SolarDate,
-		"timeIndex":       a.TimeIndex,
-		"gender":          a.GenderKey,
-		"fixLeap":         a.FixLeap,
-		"language":        a.Language,
-		"config":          a.requestConfig(),
-		"targetDate":      targetDate,
-		"targetTimeIndex": targetTimeIndex,
+	payload := a.textPayload("palaceToText")
+	target.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// SurroundedPalacesToText 生成指定宫位三方四正的语义化文本。
+func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error) {
+	return a.SurroundedPalacesToTextContext(context.Background(), target)
+}
+
+// SurroundedPalacesToTextContext 为 SurroundedPalacesToText 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) SurroundedPalacesToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
+	if a == nil {
+		return "", invalidArgument("surroundedPalacesToText: nil astrolabe")
 	}
-	a.addRearrange(payload)
+	payload := a.textPayload("surroundedPalacesToText")
+	target.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }

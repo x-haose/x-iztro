@@ -174,3 +174,36 @@ asking for lu and for ji both give `false`, while asking for quan would give `tr
 This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
 For those, use the palace's flying-star methods.
 </Callout>
+
+---
+
+## to_text
+
+**Purpose** The surrounded palaces' semantic text: one section each for the target palace, its
+opposite, and the wealth and career positions.
+
+**Signature**
+
+```rust
+pub fn to_text(&self, lang: Language) -> String
+```
+
+`SurroundedPalaces` holds four palace references and records no language, so pass one explicitly —
+usually `chart.language` to match the natal chart. The equivalent free function is
+`text::surrounded_palaces_to_text(sp, lang)`.
+
+**Example**
+
+```rust
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{}", sp.to_text(chart.language).lines().next().unwrap());
+```
+
+**Output**
+
+```text
+Target Palace: soul (renwoo)
+```
+
+The full format is on [Semantic text](/en/docs/guide/guides/to-text).

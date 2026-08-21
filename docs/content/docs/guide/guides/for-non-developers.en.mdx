@@ -71,8 +71,8 @@ Passing along the following is enough:
 | Installation | Python: `pip install x-iztro`; Go: `go get`; Rust: `cargo add` |
 | Requirements | Python 3.10 or later / Go 1.22 or later / Rust edition 2024 |
 | Inputs | Three things: date of birth, hour index (0–12), gender |
-| For AI use | Call `astrolabe_to_prompt` to get the chart text and feed it straight to a model |
-| Docs | [Getting started](/en/docs/guide/getting-started), [AI prompt generation](/en/docs/guide/guides/ai-prompt) |
+| For AI use | Call `chart.to_text()` to get the chart text and feed it straight to a model |
+| Docs | [Getting started](/en/docs/guide/getting-started), [Semantic text](/en/docs/guide/guides/to-text) |
 
 <Callout title="How to fill in the hour index">
 It is not the clock hour; it is one of thirteen values, 0 through 12. 0 is the early Zi hour

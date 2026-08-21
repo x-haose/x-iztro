@@ -442,3 +442,15 @@ fmt.Println(soul.Astrolabe().FiveElementsClass)
 三方四正见煞: true
 木三局
 ```
+
+---
+
+## 语义化文本
+
+单宫文本不在 `*Palace` 上，而是星盘方法
+[`PalaceToText`](/zh/docs/go/astrolabe#totext--palacetotext--surroundedpalacestotext)：
+Go 侧的宫位对象是纯数据，文本投影从星盘的排盘上下文无状态再发起计算。
+
+```go
+text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
+```

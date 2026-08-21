@@ -63,8 +63,8 @@ x-iztro 排一张盘是毫秒级的，几十万条数据在单机上跑得完。
 | 安装 | Python 用 `pip install x-iztro`；Go 用 `go get`；Rust 用 `cargo add` |
 | 环境要求 | Python 3.10 及以上 / Go 1.22 及以上 / Rust edition 2024 |
 | 输入 | 出生日期、时辰索引（0–12）、性别，三样 |
-| AI 用法 | 调 `astrolabe_to_prompt` 拿到盘面文字，直接喂大模型 |
-| 文档 | [快速开始](/zh/docs/guide/getting-started)、[AI Prompt 生成](/zh/docs/guide/guides/ai-prompt) |
+| AI 用法 | 调 `chart.to_text()` 拿到盘面文字，直接喂大模型 |
+| 文档 | [快速开始](/zh/docs/guide/getting-started)、[语义化文本](/zh/docs/guide/guides/to-text) |
 
 <Callout title="时辰索引怎么填">
 不是小时数，是 0–12 的十三个值：0 是早子时（00:00–01:00），

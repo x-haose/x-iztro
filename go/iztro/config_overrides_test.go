@@ -112,7 +112,7 @@ func TestCustomMutagensApplyToHoroscope(t *testing.T) {
 	if h.Yearly.HeavenlyStemKey != StemGeng {
 		t.Fatalf("流年干 %s，期望庚", h.Yearly.HeavenlyStemKey)
 	}
-	assertKeyList(t, "流年四化", h.Yearly.MutagenKeys, []string{
+	assertKeyList(t, "流年四化", h.Yearly.MutagenStarKeys, []string{
 		StarTaiyangMaj, StarWuquMaj, StarTiantongMaj, StarTianxiangMaj,
 	})
 }
@@ -137,26 +137,30 @@ func TestCustomMutagensApplyToRearranged(t *testing.T) {
 	assertKeyList(t, "二次重排后化忌", starsWithMutagen(again, MutagenJi), []string{StarTianxiangMaj})
 }
 
-// TestCustomMutagensApplyToPrompt 校验 prompt 的生年四化取自自定义表。
-func TestCustomMutagensApplyToPrompt(t *testing.T) {
+// TestCustomMutagensApplyToText 校验语义化文本的生年四化取自自定义表。
+func TestCustomMutagensApplyToText(t *testing.T) {
 	chart, err := BySolar(overridesBirth, 2, GenderFemale, true, LanguageZhCN, customGeng())
 	if err != nil {
 		t.Fatal(err)
 	}
-	prompt, err := chart.AstrolabeToPrompt()
+	text, err := chart.ToText()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(prompt, "生年四化: 太阳禄, 武曲权, 天同科, 天相忌") {
-		t.Errorf("prompt 的生年四化未反映自定义表:\n%s", prompt)
+	if !strings.Contains(text, "生年四化: 太阳禄, 武曲权, 天同科, 天相忌") {
+		t.Errorf("本命文本的生年四化未反映自定义表:\n%s", text)
 	}
 
-	horoPrompt, err := chart.HoroscopeToPrompt("2030-6-1", 0)
+	horoscope, err := chart.Horoscope("2030-6-1", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(horoPrompt, "流年四化: 太阳, 武曲, 天同, 天相") {
-		t.Errorf("运限 prompt 的流年四化未反映自定义表:\n%s", horoPrompt)
+	horoText, err := horoscope.ToText()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(horoText, "流年四化: 太阳禄, 武曲权, 天同科, 天相忌") {
+		t.Errorf("运限文本的流年四化未反映自定义表:\n%s", horoText)
 	}
 }
 

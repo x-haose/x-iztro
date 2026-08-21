@@ -45,6 +45,84 @@ const CHILDHOOD_PALACES: [Palace; 6] = [
 // 流耀计算
 // ============================================================
 
+/// 十颗随层级更名的流耀，按 [魁, 钺, 昌, 曲, 禄, 羊, 陀, 马, 鸾, 喜] 排列；
+/// 各层级的行与 `Scope::Origin` 行按列一一对应，即同列即「流耀 ↔ 本命辅星」。
+///
+/// 本命行的红鸾天喜：iztro 此处把红鸾写成了 `hongluanMin`，该标识在其 i18n 表中
+/// 不存在，任何语言下都原样漏成星名；本命红鸾的标识是 `hongluan`，此处按正确标识安放。
+const fn flow_star_row(scope: Scope) -> [StarKey; 10] {
+    use StarKey::*;
+    match scope {
+        Scope::Decadal => [
+            Yunkui, Yunyue, Yunchang, Yunqu, Yunlu, Yunyang, Yuntuo, Yunma, Yunluan, Yunxi,
+        ],
+        Scope::Yearly => [
+            Liukui, Liuyue, Liuchang, Liuqu, Liulu, Liuyang, Liutuo, Liuma, Liuluan, Liuxi,
+        ],
+        Scope::Monthly => [
+            Yuekui, Yueyue, Yuechang, Yuequ, Yuelu, Yueyang, Yuetuo, Yuema, Yueluan, Yuexi,
+        ],
+        Scope::Daily => [
+            Rikui, Riyue, Richang, Riqu, Rilu, Riyang, Rituo, Rima, Riluan, Rixi,
+        ],
+        Scope::Hourly => [
+            Shikui, Shiyue, Shichang, Shiqu, Shilu, Shiyang, Shituo, Shima, Shiluan, Shixi,
+        ],
+        Scope::Origin => [
+            TiankuiMin,
+            TianyueMin,
+            WenchangMin,
+            WenquMin,
+            LucunMin,
+            QingyangMin,
+            TuoluoMin,
+            TianmaMin,
+            Hongluan,
+            Tianxi,
+        ],
+    }
+}
+
+/// 流耀对应的本命辅星：`yunchang`/`liuchang`/`yuechang`/`richang`/`shichang` → 文昌，
+/// 依此类推；非流耀返回 `None`。
+///
+/// 这是流耀语义的官方对照：流耀本身没有知识包条目，释义按对应本命辅星查。
+pub fn natal_counterpart_of_flow_star(key: StarKey) -> Option<StarKey> {
+    let natal = flow_star_row(Scope::Origin);
+    for scope in [
+        Scope::Decadal,
+        Scope::Yearly,
+        Scope::Monthly,
+        Scope::Daily,
+        Scope::Hourly,
+    ] {
+        if let Some(pos) = flow_star_row(scope).iter().position(|k| *k == key) {
+            return Some(natal[pos]);
+        }
+    }
+    None
+}
+
+/// 全部流耀与其对应本命辅星的键值对（50 条），供绑定层导出对照表。
+pub fn flow_star_counterparts() -> Vec<(StarKey, StarKey)> {
+    let natal = flow_star_row(Scope::Origin);
+    [
+        Scope::Decadal,
+        Scope::Yearly,
+        Scope::Monthly,
+        Scope::Daily,
+        Scope::Hourly,
+    ]
+    .into_iter()
+    .flat_map(|scope| {
+        flow_star_row(scope)
+            .into_iter()
+            .zip(natal)
+            .collect::<Vec<_>>()
+    })
+    .collect()
+}
+
 /// 获取运限流耀
 ///
 /// 根据给定范围的天干地支，计算流耀在12宫中的分布。
@@ -60,94 +138,7 @@ pub fn get_horoscope_stars(
     let lu_yang_tuo_ma = get_lu_yang_tuo_ma_index(stem, branch);
     let luan_xi = get_luan_xi_index(branch);
 
-    let star_keys: (
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-        StarKey,
-    ) = match scope {
-        Scope::Decadal => (
-            StarKey::Yunkui,
-            StarKey::Yunyue,
-            StarKey::Yunchang,
-            StarKey::Yunqu,
-            StarKey::Yunlu,
-            StarKey::Yunyang,
-            StarKey::Yuntuo,
-            StarKey::Yunma,
-            StarKey::Yunluan,
-            StarKey::Yunxi,
-        ),
-        Scope::Yearly => (
-            StarKey::Liukui,
-            StarKey::Liuyue,
-            StarKey::Liuchang,
-            StarKey::Liuqu,
-            StarKey::Liulu,
-            StarKey::Liuyang,
-            StarKey::Liutuo,
-            StarKey::Liuma,
-            StarKey::Liuluan,
-            StarKey::Liuxi,
-        ),
-        Scope::Monthly => (
-            StarKey::Yuekui,
-            StarKey::Yueyue,
-            StarKey::Yuechang,
-            StarKey::Yuequ,
-            StarKey::Yuelu,
-            StarKey::Yueyang,
-            StarKey::Yuetuo,
-            StarKey::Yuema,
-            StarKey::Yueluan,
-            StarKey::Yuexi,
-        ),
-        Scope::Daily => (
-            StarKey::Rikui,
-            StarKey::Riyue,
-            StarKey::Richang,
-            StarKey::Riqu,
-            StarKey::Rilu,
-            StarKey::Riyang,
-            StarKey::Rituo,
-            StarKey::Rima,
-            StarKey::Riluan,
-            StarKey::Rixi,
-        ),
-        Scope::Hourly => (
-            StarKey::Shikui,
-            StarKey::Shiyue,
-            StarKey::Shichang,
-            StarKey::Shiqu,
-            StarKey::Shilu,
-            StarKey::Shiyang,
-            StarKey::Shituo,
-            StarKey::Shima,
-            StarKey::Shiluan,
-            StarKey::Shixi,
-        ),
-        // 本命层级取本命星名。iztro 此处把红鸾写成了 `hongluanMin`，
-        // 该标识在其 i18n 表中不存在，任何语言下都原样漏成星名；
-        // 本命红鸾的标识是 `hongluan`，此处按正确标识安放。
-        Scope::Origin => (
-            StarKey::TiankuiMin,
-            StarKey::TianyueMin,
-            StarKey::WenchangMin,
-            StarKey::WenquMin,
-            StarKey::LucunMin,
-            StarKey::QingyangMin,
-            StarKey::TuoluoMin,
-            StarKey::TianmaMin,
-            StarKey::Hongluan,
-            StarKey::Tianxi,
-        ),
-    };
+    let star_keys = flow_star_row(scope);
 
     let mut stars: [Vec<Star>; 12] = std::array::from_fn(|_| Vec::new());
 
@@ -165,16 +156,16 @@ pub fn get_horoscope_stars(
     }
 
     let placements = [
-        (kui_yue.kui, star_keys.0, StarType::Soft),
-        (kui_yue.yue, star_keys.1, StarType::Soft),
-        (chang_qu.chang, star_keys.2, StarType::Soft),
-        (chang_qu.qu, star_keys.3, StarType::Soft),
-        (lu_yang_tuo_ma.lu, star_keys.4, StarType::Lucun),
-        (lu_yang_tuo_ma.yang, star_keys.5, StarType::Tough),
-        (lu_yang_tuo_ma.tuo, star_keys.6, StarType::Tough),
-        (lu_yang_tuo_ma.ma, star_keys.7, StarType::Tianma),
-        (luan_xi.hongluan, star_keys.8, StarType::Flower),
-        (luan_xi.tianxi, star_keys.9, StarType::Flower),
+        (kui_yue.kui, star_keys[0], StarType::Soft),
+        (kui_yue.yue, star_keys[1], StarType::Soft),
+        (chang_qu.chang, star_keys[2], StarType::Soft),
+        (chang_qu.qu, star_keys[3], StarType::Soft),
+        (lu_yang_tuo_ma.lu, star_keys[4], StarType::Lucun),
+        (lu_yang_tuo_ma.yang, star_keys[5], StarType::Tough),
+        (lu_yang_tuo_ma.tuo, star_keys[6], StarType::Tough),
+        (lu_yang_tuo_ma.ma, star_keys[7], StarType::Tianma),
+        (luan_xi.hongluan, star_keys[8], StarType::Flower),
+        (luan_xi.tianxi, star_keys[9], StarType::Flower),
     ];
 
     for (idx, key, star_type) in placements {
@@ -334,17 +325,15 @@ pub fn get_horoscope(
     let decadal_palace_names = get_palace_names(decadal_palace_idx).to_vec();
     let decadal_stars = get_horoscope_stars(decadal_stem, decadal_branch, Scope::Decadal, language);
 
+    let decadal_name = if is_childhood {
+        HoroscopeName::Childhood
+    } else {
+        HoroscopeName::Decadal
+    };
     let decadal = HoroscopeItem {
         index: decadal_palace_idx,
-        name: translate_horoscope_name(
-            if is_childhood {
-                HoroscopeName::Childhood
-            } else {
-                HoroscopeName::Decadal
-            },
-            language,
-        )
-        .to_string(),
+        name: translate_horoscope_name(decadal_name, language).to_string(),
+        name_key: decadal_name,
         heavenly_stem: decadal_stem,
         earthly_branch: decadal_branch,
         palace_names: decadal_palace_names,
@@ -363,6 +352,7 @@ pub fn get_horoscope(
         base: HoroscopeItem {
             index: age_palace_idx,
             name: translate_horoscope_name(HoroscopeName::Age, language).to_string(),
+            name_key: HoroscopeName::Age,
             heavenly_stem: age_stem,
             earthly_branch: age_branch,
             palace_names: age_palace_names,
@@ -389,6 +379,7 @@ pub fn get_horoscope(
         base: HoroscopeItem {
             index: yearly_index,
             name: translate_horoscope_name(HoroscopeName::Yearly, language).to_string(),
+            name_key: HoroscopeName::Yearly,
             heavenly_stem: target_year_stem,
             earthly_branch: target_year_branch,
             palace_names: yearly_palace_names,
@@ -433,6 +424,7 @@ pub fn get_horoscope(
     let monthly = HoroscopeItem {
         index: monthly_index,
         name: translate_horoscope_name(HoroscopeName::Monthly, language).to_string(),
+        name_key: HoroscopeName::Monthly,
         heavenly_stem: target_month_stem,
         earthly_branch: target_month_branch,
         palace_names: monthly_palace_names,
@@ -450,6 +442,7 @@ pub fn get_horoscope(
     let daily = HoroscopeItem {
         index: daily_index,
         name: translate_horoscope_name(HoroscopeName::Daily, language).to_string(),
+        name_key: HoroscopeName::Daily,
         heavenly_stem: target_day_stem,
         earthly_branch: target_day_branch,
         palace_names: daily_palace_names,
@@ -472,6 +465,7 @@ pub fn get_horoscope(
     let hourly = HoroscopeItem {
         index: hourly_index,
         name: translate_horoscope_name(HoroscopeName::Hourly, language).to_string(),
+        name_key: HoroscopeName::Hourly,
         heavenly_stem: target_time_stem,
         earthly_branch: target_time_branch,
         palace_names: hourly_palace_names,

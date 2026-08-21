@@ -56,7 +56,7 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `name` | `Option<String>` | 该语言的显示名 |
-| `category` | `Option<String>` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `category` | `Option<String>` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"`（流耀，指向对应本命辅星的对照性条目） |
 | `group` | `Option<String>` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性，缺省为全 `None` |
 | `intro` | `Option<String>` | 解读正文（Markdown） |
@@ -132,7 +132,7 @@ println!("{}", KnowledgePack::builtin(Language::EnUS).is_some());
 **输出**
 
 ```text
-iztro-docs 2026-08-19+ec2d58b 107
+iztro-docs 2026-08-19+ec2d58b 162
 Some("MIT")
 false
 ```

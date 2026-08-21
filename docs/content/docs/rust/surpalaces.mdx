@@ -168,3 +168,35 @@ println!("三方四正不见科: {}", sp.not_have_mutagen(Mutagen::Ke));
 这里看的是**生年四化**打在星上的标记，与宫干飞出的四化无关。
 后者请用宫位的飞星族方法。
 </Callout>
+
+---
+
+## to_text
+
+**用途**　三方四正的语义化文本：本宫、对宫、财帛位、官禄位各一段。
+
+**签名**
+
+```rust
+pub fn to_text(&self, lang: Language) -> String
+```
+
+`SurroundedPalaces` 持有的是四个宫位引用、不记语言，因此这里显式传——
+通常传 `chart.language` 与本命盘保持一致；等价的自由函数是
+`text::surrounded_palaces_to_text(sp, lang)`。
+
+**示例**
+
+```rust
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+
+println!("{}", sp.to_text(chart.language).lines().next().unwrap());
+```
+
+**输出**
+
+```text
+本宫: 命宫 (壬午)
+```
+
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。

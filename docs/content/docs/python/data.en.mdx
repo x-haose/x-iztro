@@ -68,6 +68,38 @@ Chinese characters (`土`, `阴` and so on) in every output language.
 
 ---
 
+## flow_star_counterparts
+
+**Purpose** The full table mapping flowing stars to their natal minor-star counterparts (50
+entries).
+
+**Signature**
+
+```python
+def flow_star_counterparts() -> dict[str, str]
+```
+
+**Return value** Keys are flowing-star keys (the `HoroscopeStar` enum's domain), values natal
+minor-star keys (the `MinorStar` enum's domain). Flowing stars have no knowledge-pack entries of
+their own — their readings are looked up via the natal counterpart, and this table is the official
+mapping.
+
+**Example**
+
+```python
+from x_iztro import data
+
+print(data.flow_star_counterparts()["liuchang"])
+```
+
+**Output**
+
+```text
+wenchangMin
+```
+
+---
+
 ## heavenly_stems
 
 **Purpose** Get the heavenly stem information table.

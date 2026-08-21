@@ -139,6 +139,11 @@ pub struct QueryInput {
     pub stem_key: String,
     /// 地支标识
     pub branch_key: String,
+    /// 宫位标识：宫名 key（`soulPalace` 等）或 `bodyPalace`/`originalPalace`；
+    /// 与 `palace_index` 二选一，都缺省即报错——静默取默认宫会把漏传变成错答案
+    pub palace_key: String,
+    /// 盘上宫位索引（0-11，寅宫为 0）；与 `palace_key` 二选一，后者优先
+    pub palace_index: Option<i64>,
     /// 运限层级标识
     pub scope: String,
     /// 农历月索引（0-based）
@@ -451,7 +456,7 @@ fn apply_rearrange(
 ) -> Result<Astrolabe, BridgeError> {
     match parse_from(stem, branch)? {
         None => Ok(astrolabe),
-        Some((s, b)) => Ok(astrolabe.rearranged(s, b)),
+        Some((s, b)) => Ok(astrolabe.rearranged(s, b)?),
     }
 }
 
@@ -524,7 +529,15 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
     match input.kind.as_str() {
         // ---- 轻量查询：结果按语言翻译 ----
         "zodiacBySolar" | "signBySolar" | "signByLunar" | "majorStarBySolar"
-        | "majorStarByLunar" | "astrolabeToPrompt" | "horoscopeToPrompt" => translated(input),
+        | "majorStarByLunar" => translated(input),
+
+        // ---- 语义化文本（to_text）----
+        "astrolabeToText"
+        | "horoscopeToText"
+        | "palaceToText"
+        | "surroundedPalacesToText"
+        | "patternsToText"
+        | "horoscopePatternsToText" => to_text(input),
 
         // ---- 格局 ----
         "patterns" | "horoscopePatterns" => patterns(input),
@@ -589,9 +602,11 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         k if k.starts_with("get") && is_star_kind(k) => star(input),
 
         // ---- data ----
-        "starsInfo" | "heavenlyStems" | "earthlyBranches" | "constants" => {
-            Ok(data(input.kind.as_str()))
-        }
+        "starsInfo"
+        | "heavenlyStems"
+        | "earthlyBranches"
+        | "constants"
+        | "flowStarCounterparts" => Ok(data(input.kind.as_str())),
 
         // ---- i18n ----
         "translate" => Ok(json!(translate_key(
@@ -645,58 +660,57 @@ fn is_star_kind(kind: &str) -> bool {
     )
 }
 
-/// 需要排盘的查询：结果都是按语言翻译的字符串
+/// 需要排盘的轻量查询：返回 `{text, keys}` 双轨——`text` 按语言翻译
+/// （与 iztro 同名函数的返回一致），`keys` 是同一结果的语言无关标识列表
 fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
+    use crate::astro::query::{
+        major_star_chart_by_lunar, major_star_chart_by_solar, major_star_keys_of_soul_palace,
+        major_stars_of_soul_palace, sign_chart_by_lunar, sign_chart_by_solar, zodiac_chart,
+    };
+
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
 
-    let text = match input.kind.as_str() {
-        "zodiacBySolar" => crate::get_zodiac_by_solar_date(&input.solar_date, language, config),
-        "signBySolar" => crate::get_sign_by_solar_date(&input.solar_date, language),
+    // 排盘配方（固定时辰/性别/闰月口径）与 query.rs 的同名查询共用一份，
+    // 保证绑定层与 Rust 原生入口对同一日期永远同答案
+    let (text, keys) = match input.kind.as_str() {
+        "zodiacBySolar" => {
+            let a = zodiac_chart(&input.solar_date, language, config)?;
+            (a.zodiac, vec![a.zodiac_key])
+        }
+        "signBySolar" => {
+            let a = sign_chart_by_solar(&input.solar_date, language)?;
+            (a.sign, vec![a.sign_key])
+        }
         "signByLunar" => {
-            crate::get_sign_by_lunar_date(&input.lunar_date, input.is_leap_month, language)
+            let a = sign_chart_by_lunar(&input.lunar_date, input.is_leap_month, language)?;
+            (a.sign, vec![a.sign_key])
         }
-        "majorStarBySolar" => crate::get_major_star_by_solar_date(
-            &input.solar_date,
-            input.time_index,
-            input.fix_leap,
-            language,
-            config,
-        ),
-        "majorStarByLunar" => crate::get_major_star_by_lunar_date(
-            &input.lunar_date,
-            input.time_index,
-            LeapMonth::from_flags(input.is_leap_month, input.fix_leap),
-            language,
-            config,
-        ),
-        // 两条 Prompt 走完整排盘：给出 `fromStem`/`fromBranch` 时先重排再生成，
-        // 与 patterns/horoscope 的重排语义一致
-        "astrolabeToPrompt" => {
-            let a = crate::by_solar(
+        "majorStarBySolar" => {
+            let a = major_star_chart_by_solar(
                 &input.solar_date,
                 input.time_index,
-                parse_gender(&input.gender)?,
                 input.fix_leap,
                 language,
                 config,
             )?;
-            let a = apply_rearrange(a, &input.from_stem, &input.from_branch)?;
-            return Ok(json!(crate::astrolabe_to_prompt(&a, language)));
+            (
+                major_stars_of_soul_palace(&a),
+                major_star_keys_of_soul_palace(&a),
+            )
         }
-        "horoscopeToPrompt" => {
-            let a = crate::by_solar(
-                &input.solar_date,
+        "majorStarByLunar" => {
+            let a = major_star_chart_by_lunar(
+                &input.lunar_date,
                 input.time_index,
-                parse_gender(&input.gender)?,
-                input.fix_leap,
+                LeapMonth::from_flags(input.is_leap_month, input.fix_leap),
                 language,
                 config,
             )?;
-            let a = apply_rearrange(a, &input.from_stem, &input.from_branch)?;
-            let h =
-                crate::get_horoscope(&a, &input.target_date, input.target_time_index, language)?;
-            return Ok(json!(crate::horoscope_to_prompt(&a, &h, language)));
+            (
+                major_stars_of_soul_palace(&a),
+                major_star_keys_of_soul_palace(&a),
+            )
         }
         other => {
             return Err(BridgeError::invalid_argument(format!(
@@ -705,7 +719,113 @@ fn translated(input: &QueryInput) -> Result<Value, BridgeError> {
         }
     };
 
-    Ok(json!(text?))
+    Ok(json!({ "text": text, "keys": keys }))
+}
+
+/// 宫位寻址：`palace_key` 非空时按宫名 key 或 `bodyPalace`/`originalPalace` 定位，
+/// 留空时按 `index`（0-11）取宫
+fn parse_palace_target(
+    input: &QueryInput,
+) -> Result<crate::models::astrolabe::PalaceTarget, BridgeError> {
+    use crate::models::astrolabe::PalaceTarget;
+    if input.palace_key.is_empty() {
+        // 显式寻址是硬要求：缺省时静默取某个默认宫，会把「漏传/键名拼错」
+        // 变成貌似成功的错答案
+        let raw = input.palace_index.ok_or_else(|| {
+            BridgeError::invalid_argument(
+                "palace addressing is required: pass 'palaceKey' or 'palaceIndex'",
+            )
+        })?;
+        let index = usize::try_from(raw)
+            .ok()
+            .filter(|i| *i < 12)
+            .ok_or_else(|| {
+                BridgeError::invalid_argument(format!("invalid palaceIndex '{raw}': expected 0-11"))
+            })?;
+        return Ok(PalaceTarget::Index(index));
+    }
+    match input.palace_key.as_str() {
+        "bodyPalace" => Ok(PalaceTarget::Body),
+        "originalPalace" => Ok(PalaceTarget::Original),
+        key => Palace::from_key(key).map(PalaceTarget::Name).ok_or_else(|| {
+            BridgeError::invalid_argument(format!(
+                "invalid palaceKey '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
+            ))
+        }),
+    }
+}
+
+/// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
+/// 与 patterns/horoscope 的重排语义一致
+fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let config = parse_config(&input.config)?;
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        config,
+    )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+
+    let text = match input.kind.as_str() {
+        "astrolabeToText" => crate::astrolabe_to_text(&astrolabe, language),
+        "horoscopeToText" => {
+            let h = crate::get_horoscope(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                language,
+            )?;
+            crate::horoscope_to_text(&astrolabe, &h, language)
+        }
+        "palaceToText" => {
+            let target = parse_palace_target(input)?;
+            let p = astrolabe.palace(target).ok_or_else(|| {
+                BridgeError::invalid_argument("palace not found on this chart".to_string())
+            })?;
+            crate::palace_to_text(&p, language)
+        }
+        "surroundedPalacesToText" => {
+            let target = parse_palace_target(input)?;
+            let sp = astrolabe.surrounded_palaces(target).ok_or_else(|| {
+                BridgeError::invalid_argument("palace not found on this chart".to_string())
+            })?;
+            crate::surrounded_palaces_to_text(&sp, language)
+        }
+        "patternsToText" => {
+            let pattern_config = parse_pattern_config(&input.pattern_config)?;
+            let hits = astrolabe.patterns_with(&pattern_config);
+            let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
+            crate::patterns_to_text(&hits, &names, language)
+        }
+        "horoscopePatternsToText" => {
+            let pattern_config = parse_pattern_config(&input.pattern_config)?;
+            let scope = parse_scope_key(&input.scope)?;
+            let h = crate::get_horoscope(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                language,
+            )?;
+            let hits = crate::pattern::patterns_at(&astrolabe, &h, scope, &pattern_config);
+            // 宫名按判定视角取：本命视角用本命宫名，运限层用该层重排宫名
+            let names: Vec<Palace> = match h.scope_item(scope) {
+                Some(item) => item.palace_names.clone(),
+                None => astrolabe.palaces.iter().map(|p| p.name).collect(),
+            };
+            crate::patterns_to_text(&hits, &names, language)
+        }
+        other => {
+            return Err(BridgeError::internal(format!(
+                "to_text dispatched with non-text kind '{other}'"
+            )));
+        }
+    };
+
+    Ok(json!(text))
 }
 
 /// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`）。
@@ -1108,6 +1228,14 @@ fn star(input: &QueryInput) -> Result<Value, BridgeError> {
 /// 导出 `data` 模块的查表，键与取值一律语言无关
 fn data(kind: &str) -> Value {
     match kind {
+        // 流耀 → 对应本命辅星的全量对照（50 条）：流耀没有知识包条目，
+        // 释义按对应本命辅星查，这张表就是官方对照
+        "flowStarCounterparts" => json!(
+            crate::astro::horoscope::flow_star_counterparts()
+                .into_iter()
+                .map(|(flow, natal)| (flow.as_key().to_string(), natal.as_key().to_string()))
+                .collect::<std::collections::BTreeMap<_, _>>()
+        ),
         "starsInfo" => json!(
             STARS_WITH_INFO
                 .iter()
@@ -1288,14 +1416,15 @@ mod tests {
             HeavenlyStem::from_key("gengHeavenly").unwrap(),
             EarthlyBranch::from_key("chenEarthly").unwrap(),
         )
+        .unwrap()
         .patterns_dto(&crate::pattern::PatternConfig::default());
         assert_eq!(rearranged, serde_json::to_value(native).unwrap());
     }
 
-    /// `horoscope` kind 与两条 Prompt kind 带 `fromStem`/`fromBranch` 时按重排后的盘计算，
+    /// `horoscope` kind 与各 to_text kind 带 `fromStem`/`fromBranch` 时按重排后的盘计算，
     /// 运限结果与 Rust 原生「rearranged 后调 get_horoscope」逐字节一致。
     #[test]
-    fn horoscope_and_prompt_kinds_apply_rearrange() {
+    fn horoscope_and_text_kinds_apply_rearrange() {
         let base = json!({
             "solarDate": "1990-4-23",
             "timeIndex": 2,
@@ -1326,14 +1455,15 @@ mod tests {
         .rearranged(
             HeavenlyStem::from_key("gengHeavenly").unwrap(),
             EarthlyBranch::from_key("chenEarthly").unwrap(),
-        );
+        )
+        .unwrap();
         let native = crate::get_horoscope(&native_chart, "2024-6-1", 0, Language::ZhCN).unwrap();
         assert_eq!(
             rearranged,
             serde_json::to_value(native.to_dto(Language::ZhCN)).unwrap()
         );
 
-        for kind in ["astrolabeToPrompt", "horoscopeToPrompt"] {
+        for kind in ["astrolabeToText", "horoscopeToText"] {
             let mut q = json!({
                 "kind": kind,
                 "solarDate": "1990-4-23",
@@ -1347,7 +1477,79 @@ mod tests {
             q["fromStem"] = json!("gengHeavenly");
             q["fromBranch"] = json!("chenEarthly");
             let rearranged = query(&serde_json::from_value::<QueryInput>(q).unwrap()).unwrap();
-            assert_ne!(plain, rearranged, "{kind}: 重排后的 Prompt 应与原盘不同");
+            assert_ne!(plain, rearranged, "{kind}: 重排后的文本应与原盘不同");
         }
+    }
+
+    /// 单宫/三方四正/格局的 to_text kind：宫位寻址两种写法一致，非法寻址报错
+    #[test]
+    fn palace_and_pattern_text_kinds() {
+        let base = json!({
+            "solarDate": "2000-8-16",
+            "timeIndex": 2,
+            "gender": "female",
+            "language": "zh-CN",
+        });
+        let run = |extra: Value| {
+            let mut q = base.clone();
+            for (k, v) in extra.as_object().unwrap() {
+                q[k] = v.clone();
+            }
+            query(&serde_json::from_value::<QueryInput>(q).unwrap())
+        };
+
+        // 命宫按 key 寻址与按索引寻址取到同一段文本
+        let by_key = run(json!({"kind": "palaceToText", "palaceKey": "soulPalace"})).unwrap();
+        let text = by_key.as_str().unwrap();
+        assert!(text.starts_with("--- 命宫"));
+        let soul_index = text_soul_index();
+        let by_index = run(json!({"kind": "palaceToText", "palaceIndex": soul_index})).unwrap();
+        assert_eq!(by_key, by_index);
+
+        // 身宫寻址
+        let body = run(json!({"kind": "palaceToText", "palaceKey": "bodyPalace"})).unwrap();
+        assert!(body.as_str().unwrap().contains("[身宫]"));
+
+        // 三方四正
+        let sp =
+            run(json!({"kind": "surroundedPalacesToText", "palaceKey": "soulPalace"})).unwrap();
+        assert!(sp.as_str().unwrap().starts_with("本宫: 命宫"));
+
+        // 本命与运限视角的格局文本
+        let hits = run(json!({"kind": "patternsToText"})).unwrap();
+        assert!(hits.is_string());
+        let h = run(json!({
+            "kind": "horoscopePatternsToText",
+            "scope": "decadal",
+            "targetDate": "2024-10-1",
+            "targetTimeIndex": 0,
+        }))
+        .unwrap();
+        assert!(h.is_string());
+
+        // 非法宫位 key 与越界索引都报 invalid_argument
+        assert!(run(json!({"kind": "palaceToText", "palaceKey": "nope"})).is_err());
+        assert!(run(json!({"kind": "palaceToText", "palaceIndex": 12})).is_err());
+        // 寻址缺省不许静默取默认宫
+        assert!(run(json!({"kind": "palaceToText"})).is_err());
+        assert!(run(json!({"kind": "surroundedPalacesToText"})).is_err());
+    }
+
+    /// 测试盘（2000-8-16 女，寅时）命宫的宫位索引
+    fn text_soul_index() -> usize {
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        chart
+            .palaces
+            .iter()
+            .position(|p| p.name == Palace::Soul)
+            .unwrap()
     }
 }

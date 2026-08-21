@@ -287,6 +287,35 @@ pub enum HoroscopeName {
     Hourly,
 }
 
+impl HoroscopeName {
+    /// 语言无关标识（iztro i18n key；小限为 `turn`）
+    pub fn as_key(self) -> &'static str {
+        match self {
+            HoroscopeName::Decadal => "decadal",
+            HoroscopeName::Childhood => "childhood",
+            HoroscopeName::Age => "turn",
+            HoroscopeName::Yearly => "yearly",
+            HoroscopeName::Monthly => "monthly",
+            HoroscopeName::Daily => "daily",
+            HoroscopeName::Hourly => "hourly",
+        }
+    }
+
+    /// 由语言无关标识还原；未知标识返回 `None`
+    pub fn from_key(key: &str) -> Option<Self> {
+        match key {
+            "decadal" => Some(HoroscopeName::Decadal),
+            "childhood" => Some(HoroscopeName::Childhood),
+            "turn" => Some(HoroscopeName::Age),
+            "yearly" => Some(HoroscopeName::Yearly),
+            "monthly" => Some(HoroscopeName::Monthly),
+            "daily" => Some(HoroscopeName::Daily),
+            "hourly" => Some(HoroscopeName::Hourly),
+            _ => None,
+        }
+    }
+}
+
 /// 性别
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Gender {

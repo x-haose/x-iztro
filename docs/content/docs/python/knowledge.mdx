@@ -62,7 +62,7 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | --- | --- | --- |
 | `key` | `str` | 星耀标识 |
 | `name` | `str \| None` | 该语言的显示名 |
-| `category` | `str \| None` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `category` | `str \| None` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"`（流耀，指向对应本命辅星的对照性条目） |
 | `group` | `str \| None` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性 |
 | `intro` | `str \| None` | 解读正文（Markdown） |
@@ -134,7 +134,7 @@ except IztroError as e:
 KnowledgePack(id='iztro-docs', version='2026-08-19+ec2d58b', language='zh-CN')
 1 iztro-docs 2026-08-19+ec2d58b zh-CN None
 MIT Sylar Long
-107 64
+162 64
 invalid_argument no builtin knowledge pack for language 'en-US'
 ```
 
@@ -303,7 +303,7 @@ def stars(self) -> list[StarEntry]
 def patterns(self) -> list[PatternEntry]
 ```
 
-**返回值**　按键的字典序排列，每条带自己的 `key`。默认包是 107 与 64。
+**返回值**　按键的字典序排列，每条带自己的 `key`。默认包是 162 与 64。
 遍历整包（做检索、导出、喂给大模型）时用它，比自己翻 `to_dict()` 省事。
 
 ---

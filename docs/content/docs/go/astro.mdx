@@ -1,6 +1,6 @@
 ---
 title: 排盘入口
-description: BySolar、ByLunar、Rearranged 与 AI Prompt 生成。
+description: BySolar、ByLunar、Rearranged 与语义化文本投影。
 ---
 
 排盘是一切的起点：给出生日期、时辰、性别，得到一个 `*Astrolabe`。
@@ -207,7 +207,7 @@ fmt.Println(chart.FiveElementsClass)
 `chart.Config` 由输出 DTO 还原，只含六个开关——两张自定义表是排盘**输入**而非结果，
 不进 DTO（这一点与 JS iztro 的字段契约一致）。
 
-但星盘内部保留了你传进来的原件，因此 `Rearranged`、`Horoscope`、Prompt
+但星盘内部保留了你传进来的原件，因此 `Rearranged`、`Horoscope`、ToText
 这些二次计算仍然用得上那两张表，不会静默丢失。
 要把配置记录下来，请在自己的调用侧保存 `*Config`。
 
@@ -272,7 +272,7 @@ func (a *Astrolabe) Rearranged(fromStemKey string, fromBranchKey string) (*Astro
 长生十二神、大限小限、命主星，以及随命宫挪位的天伤、天使、天才。
 沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神、身主星。
 
-重排返回的盘上，`Patterns`、运限查询与 Prompt 生成都按**重排后的布局**
+重排返回的盘上，`Patterns`、运限查询与 ToText 文本投影都按**重排后的布局**
 计算——五行局、命宫与大限随重排起点变化；出生数据（日期与四柱）保持不变。
 
 **示例**
@@ -314,33 +314,40 @@ fmt.Println("天盘", chart.FiveElementsClass, "→ 地盘", earth.FiveElementsC
 
 ---
 
-## AstrolabeToPrompt / HoroscopeToPrompt
+## 语义化文本（ToText）
 
-**用途**　把星盘或运限渲染成结构化文本，供大模型消费。
+**用途**　把星盘或运限投影成语义化文本——盘面事实的自然语言形态，
+喂给大模型或直接给人读。与 JSON DTO（机器结构）、译文字段（展示）
+是同一对象的三种投影。
 
 **签名**
 
 ```go
-func (a *Astrolabe) AstrolabeToPrompt() (string, error)
-func (a *Astrolabe) HoroscopeToPrompt(targetDate string, targetTimeIndex uint8) (string, error)
+func (a *Astrolabe) ToText() (string, error)
+func (h *Horoscope) ToText() (string, error)
+func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error)
+func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 ```
+
+各有 `Context` 变体（`ToTextContext` 等），ctx 用于取消等待 wasm 实例。
+格局文本另见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。
 
 **参数**
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `targetDate` | `string` | 是 | — | 仅运限版本：目标公历日期 |
-| `targetTimeIndex` | `uint8` | 是 | — | 仅运限版本：目标时辰索引 |
+| `target` | `PalaceTarget` | 是 | — | 宫位寻址：`Key` 非空时按宫名标识定位（`PalaceSoul` 等常量，另接受 `PalaceBody` / `PalaceOriginal`），否则按 `Index`（0–11）取宫 |
 
-**返回值**　`string`——按星盘的排盘语言输出的结构化文本。
+**返回值**　`string`——按星盘的排盘语言输出的分节纯文本；本命文本末尾带格局节，
+运限文本各层带该层视角的格局行与流耀行。
 
 **示例**
 
 ```go
 chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
-prompt, _ := chart.AstrolabeToPrompt()
+text, _ := chart.ToText()
 
-fmt.Println(string([]rune(prompt)[:36]))
+fmt.Println(string([]rune(text)[:36]))
 ```
 
 **输出**
@@ -355,5 +362,5 @@ fmt.Println(string([]rune(prompt)[:36]))
 **边界与陷阱**
 
 <Callout type="info">
-输出语言跟随星盘的排盘语言，不单独设置。要英文 prompt 就用英文排盘。
+输出语言跟随星盘的排盘语言，不单独设置。要英文文本就用英文排盘。
 </Callout>

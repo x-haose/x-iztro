@@ -180,3 +180,14 @@ Soul palace's surrounded set.
 This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
 For those, use the palace's flying-star methods.
 </Callout>
+
+---
+
+## Semantic text
+
+Surrounded-palaces text lives not on `*SurroundedPalaces` but on the astrolabe method
+[`SurroundedPalacesToText`](/en/docs/go/astrolabe#totext--palacetotext--surroundedpalacestotext):
+
+```go
+text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+```

@@ -154,8 +154,44 @@ fmt.Println(zh, en)
 命宫由农历月份与出生时辰共同定位，因此 `timeIndex` 是必填的。
 只知道日期不知道时辰时，斗数无法给出确定的命宫。
 </Accordion>
-<Accordion title="要判断请用整盘">
-返回值是翻译后的字符串，换语言就会变。要做程序判断请排整盘，
-用 `chart.Palace(iztro.PalaceSoul)` 取宫位后比较 `MajorStars` 里的 `Key`。
+<Accordion title="要判断请用 key 形态">
+返回值是翻译后的字符串，换语言就会变。要做程序判断用下面的
+`MajorStarKeysBySolarDate` / `MajorStarKeysByLunarDate`，
+或排整盘后比较 `MajorStars` 里的 `Key`。
 </Accordion>
 </Accordions>
+
+---
+
+## MajorStarKeysBySolarDate / MajorStarKeysByLunarDate
+
+**用途**　命宫主星的语言无关标识列表——上面两个函数的 key 形态，供程序判断。
+
+**签名**
+
+```go
+func MajorStarKeysBySolarDate(
+    solarDate string, timeIndex uint8, fixLeap bool, config *Config,
+) ([]string, error)
+
+func MajorStarKeysByLunarDate(
+    lunarDate string, timeIndex uint8, leap LeapMonth, config *Config,
+) ([]string, error)
+```
+
+**返回值**　`[]string`——星耀标识常量取值（如 `StarZiweiMaj`）；
+命宫为空宫时同样借对宫主星。标识与输出语言无关，因此**不收 `language`**。
+
+**示例**
+
+```go
+keys, _ := iztro.MajorStarKeysBySolarDate("2000-8-16", 2, true, nil)
+
+fmt.Println(keys)
+```
+
+**输出**
+
+```text
+[ziweiMaj]
+```

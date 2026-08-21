@@ -413,3 +413,35 @@ println!("{}", serde_json::to_string_pretty(&dto[0]).unwrap());
 The DTO field is called `palaceIndex` while the Rust struct field is `palace` — DTO key names follow
 the JS-side naming convention, the Rust side takes the shorter name.
 </Callout>
+
+---
+
+## Semantic text
+
+The pattern-hit list projects to text via `text::patterns_to_text`, one hit per line: pattern name,
+landing palace, forming stars, with broken patterns marked `[Broken]`.
+
+```rust
+pub fn patterns_to_text(hits: &[PatternHit], palace_names: &[Palace], lang: Language) -> String
+```
+
+`palace_names` is the twelve palace names in slot order under the judging perspective — pass each
+palace's `name` from `chart.palaces` for the natal view, or the scope's `palace_names` for a
+horoscope view.
+
+```rust
+use x_iztro::text::patterns_to_text;
+
+let hits = chart.patterns();
+let names: Vec<Palace> = chart.palaces.iter().map(|p| p.name).collect();
+print!("{}", patterns_to_text(&hits, &names, chart.language));
+```
+
+**Output**
+
+```text
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+```
+
+The chart's `to_text` already carries this section; the standalone call suits cases that want only
+the pattern summary.

@@ -216,8 +216,12 @@ pub struct AstrolabeDto {
     pub time_range: String,
     /// 星座（按排盘语言）
     pub sign: String,
+    /// 星座的语言无关标识（"aries" … "pisces"）
+    pub sign_key: String,
     /// 生肖（按排盘语言）
     pub zodiac: String,
+    /// 生肖的语言无关标识（"rat" … "pig"）
+    pub zodiac_key: String,
     /// 命宫地支（按排盘语言翻译）
     pub earthly_branch_of_soul_palace: String,
     /// 命宫地支的语言无关标识
@@ -260,6 +264,9 @@ pub struct HoroscopeScopeDto {
     pub index: usize,
     /// 名称（按排盘语言翻译）
     pub name: String,
+    /// 名称的语言无关标识；大限层未起运时为 "childhood"（童限），
+    /// 与 "decadal" 是不同的解盘语义，程序判断一律用本字段而非译文
+    pub name_key: String,
     /// 天干（按排盘语言翻译）
     pub heavenly_stem: String,
     /// 语言无关天干标识
@@ -274,8 +281,9 @@ pub struct HoroscopeScopeDto {
     pub palace_name_keys: Vec<String>,
     /// 四化星名（禄、权、科、忌，翻译文本）
     pub mutagen: Vec<String>,
-    /// 四化星（禄、权、科、忌）的语言无关标识
-    pub mutagen_keys: Vec<String>,
+    /// 四化星（禄、权、科、忌）的语言无关标识（StarKey，与 `PalaceDto` 的
+    /// mutagenStarKeys 同名同义；单数 mutagenKey 才是四化类型 Mutagen 的标识）
+    pub mutagen_star_keys: Vec<String>,
     /// 流耀在十二宫的分布；无流耀的层级省略该键
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stars: Option<Vec<Vec<StarDto>>>,
@@ -676,7 +684,9 @@ impl Astrolabe {
             time: self.time.clone(),
             time_range: self.time_range.clone(),
             sign: self.sign.clone(),
+            sign_key: self.sign_key.clone(),
             zodiac: self.zodiac.clone(),
+            zodiac_key: self.zodiac_key.clone(),
             earthly_branch_of_soul_palace: translate_earthly_branch(
                 self.earthly_branch_of_soul_palace,
                 lang,
@@ -720,6 +730,7 @@ fn scope_dto(item: &HoroscopeItem, lang: Language) -> HoroscopeScopeDto {
     HoroscopeScopeDto {
         index: item.index,
         name: item.name.clone(),
+        name_key: item.name_key.as_key().to_string(),
         heavenly_stem: translate_heavenly_stem(item.heavenly_stem, lang).to_string(),
         heavenly_stem_key: item.heavenly_stem.as_key().to_string(),
         earthly_branch: translate_earthly_branch(item.earthly_branch, lang).to_string(),
@@ -739,7 +750,7 @@ fn scope_dto(item: &HoroscopeItem, lang: Language) -> HoroscopeScopeDto {
             .iter()
             .map(|k| translate_star(*k, lang).to_string())
             .collect(),
-        mutagen_keys: item
+        mutagen_star_keys: item
             .mutagen
             .iter()
             .map(|k| k.as_key().to_string())
