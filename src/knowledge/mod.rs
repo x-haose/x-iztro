@@ -224,6 +224,18 @@ impl KnowledgePack {
     pub fn from_json(json: &str) -> Result<KnowledgePack, String> {
         let pack: KnowledgePack =
             serde_json::from_str(json).map_err(|e| format!("invalid knowledge pack: {e}"))?;
+        Self::validated(pack)
+    }
+
+    /// 由已解析的 JSON 值解析一份包（绑定层免字符串往返）；校验同 [`Self::from_json`]。
+    pub fn from_value(value: serde_json::Value) -> Result<KnowledgePack, String> {
+        let pack: KnowledgePack =
+            serde_json::from_value(value).map_err(|e| format!("invalid knowledge pack: {e}"))?;
+        Self::validated(pack)
+    }
+
+    /// 解析共用的格式版本校验：schema 必须声明且不高于本库支持的版本。
+    fn validated(pack: KnowledgePack) -> Result<KnowledgePack, String> {
         if pack.schema == 0 {
             return Err("knowledge pack must declare \"schema\" (currently 1)".to_string());
         }
@@ -246,21 +258,19 @@ impl KnowledgePack {
     /// 合并后 `id` / `version` / `language` / `source` 取覆盖包的（若非空），`extends` 保留本包的。
     pub fn merge(&mut self, overlay: &KnowledgePack) {
         for (k, e) in &overlay.stars {
-            merge_star(self.stars.entry(k.clone()).or_default(), e);
+            merge_entry(self.stars.entry(k.clone()).or_default(), e);
         }
         for (k, e) in &overlay.patterns {
-            merge_pattern(self.patterns.entry(k.clone()).or_default(), e);
+            merge_entry(self.patterns.entry(k.clone()).or_default(), e);
         }
         for (k, e) in &overlay.palaces {
-            merge_text(self.palaces.entry(k.clone()).or_default(), e);
+            merge_entry(self.palaces.entry(k.clone()).or_default(), e);
         }
         for (k, e) in &overlay.mutagens {
-            merge_text(self.mutagens.entry(k.clone()).or_default(), e);
+            merge_entry(self.mutagens.entry(k.clone()).or_default(), e);
         }
         for (k, e) in &overlay.concepts {
-            let t = self.concepts.entry(k.clone()).or_default();
-            or_set(&mut t.title, &e.title);
-            or_set(&mut t.intro, &e.intro);
+            merge_entry(self.concepts.entry(k.clone()).or_default(), e);
         }
         if !overlay.id.is_empty() {
             self.id = overlay.id.clone();
@@ -316,44 +326,33 @@ impl KnowledgePack {
     }
 }
 
-fn or_set<T: Clone>(target: &mut Option<T>, value: &Option<T>) {
-    if value.is_some() {
-        *target = value.clone();
+/// JSON 值合并：对象逐键递归，数组与标量整体覆盖。
+///
+/// 条目字段一律 `skip_serializing_if` 跳过空值，覆盖条目的缺省字段不会出现在
+/// 值里，「非空字段覆盖、缺省保留、数组整体替换、null 等同缺省」由此自然成立。
+fn merge_json(target: &mut serde_json::Value, overlay: &serde_json::Value) {
+    if let (serde_json::Value::Object(t), serde_json::Value::Object(o)) = (&mut *target, overlay) {
+        for (k, ov) in o {
+            match t.get_mut(k) {
+                Some(tv) if tv.is_object() && ov.is_object() => merge_json(tv, ov),
+                _ => {
+                    t.insert(k.clone(), ov.clone());
+                }
+            }
+        }
+    } else {
+        *target = overlay.clone();
     }
 }
 
-fn merge_star(t: &mut StarEntry, o: &StarEntry) {
-    or_set(&mut t.name, &o.name);
-    or_set(&mut t.category, &o.category);
-    or_set(&mut t.group, &o.group);
-    or_set(&mut t.intro, &o.intro);
-    let (a, b) = (&mut t.attributes, &o.attributes);
-    or_set(&mut a.yin_yang, &b.yin_yang);
-    or_set(&mut a.five_elements, &b.five_elements);
-    or_set(&mut a.stem, &b.stem);
-    or_set(&mut a.five_elements_note, &b.five_elements_note);
-    or_set(&mut a.dipper, &b.dipper);
-    or_set(&mut a.chemistry, &b.chemistry);
-    or_set(&mut a.career, &b.career);
-    or_set(&mut a.duty, &b.duty);
-    or_set(&mut a.aliases, &b.aliases);
-    or_set(&mut a.element_color, &b.element_color);
-    or_set(&mut a.energy_color, &b.energy_color);
-    for (k, v) in &o.combinations {
-        t.combinations.insert(k.clone(), v.clone());
-    }
-}
-
-fn merge_pattern(t: &mut PatternEntry, o: &PatternEntry) {
-    or_set(&mut t.name, &o.name);
-    or_set(&mut t.quotes, &o.quotes);
-    or_set(&mut t.conditions, &o.conditions);
-    or_set(&mut t.intro, &o.intro);
-}
-
-fn merge_text(t: &mut TextEntry, o: &TextEntry) {
-    or_set(&mut t.name, &o.name);
-    or_set(&mut t.intro, &o.intro);
+/// 把覆盖条目的非空字段并进底条目：经 JSON 值合并再落回类型——
+/// 合并逻辑与结构体字段定义永不脱节，schema 新增字段自动参与合并，
+/// 无须（也不许再有）逐字段手抄的合并清单。
+fn merge_entry<T: serde::Serialize + serde::de::DeserializeOwned>(target: &mut T, overlay: &T) {
+    let mut tv = serde_json::to_value(&*target).expect("知识包条目只含普通可序列化字段");
+    let ov = serde_json::to_value(overlay).expect("知识包条目只含普通可序列化字段");
+    merge_json(&mut tv, &ov);
+    *target = serde_json::from_value(tv).expect("合并结果仍符合条目结构");
 }
 
 #[cfg(test)]

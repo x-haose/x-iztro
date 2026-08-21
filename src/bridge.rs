@@ -578,7 +578,12 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
                         input.language
                     ))
                 })?;
-            serde_json::from_str(json).map_err(serialize_failed)
+            // 内嵌包是编译期常量，解析结果缓存复用——每次查询重解析 237KB 纯属浪费。
+            // 目前只有 zh-CN 一份内嵌包，单个缓存位即覆盖全部命中路径
+            static BUILTIN_VALUE: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+            Ok(BUILTIN_VALUE
+                .get_or_init(|| serde_json::from_str(json).expect("内嵌默认知识包与格式一致"))
+                .clone())
         }
         "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
 
@@ -864,7 +869,7 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
 /// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。
 fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
     let mut parsed = packs.iter().map(|v| {
-        crate::knowledge::KnowledgePack::from_json(&v.to_string())
+        crate::knowledge::KnowledgePack::from_value(v.clone())
             .map_err(BridgeError::invalid_argument)
     });
     let Some(base) = parsed.next() else {

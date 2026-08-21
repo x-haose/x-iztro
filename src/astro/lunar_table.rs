@@ -103,6 +103,17 @@ pub(crate) fn month_day_count(year: i64, signed_month: i64) -> Option<i64> {
     }
 }
 
+/// 该农历年的闰月月份（1-12）；无闰月返回 `None`。
+///
+/// 反推按年枚举月份时先查本函数即可跳过 11-12 次无效的闰月试探；
+/// 与 [`month_day_count`] 同为修正视图——修正层若需改写闰月归属，改这里即可。
+pub(crate) fn leap_month(year: i64) -> Option<i64> {
+    let leap = lunar_year::LunarYear::from_lunar_year(year)
+        .get_leap_months()
+        .abs();
+    (leap != 0).then_some(leap)
+}
+
 /// 农历日期转公历日期串（"YYYY-M-D"，不带前导零）。
 ///
 /// 调用方须先经 [`month_day_count`] 校验日在当月范围内。缺陷月按真实首日
