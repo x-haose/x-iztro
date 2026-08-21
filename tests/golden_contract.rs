@@ -28,10 +28,11 @@ fn extension_keys(path: &str) -> &'static [&'static str] {
     const STAR: &[&str] = &["key", "brightnessKey", "mutagenKey"];
     /// 运限层级对象的标识字段
     const SCOPE: &[&str] = &[
+        "nameKey",
         "heavenlyStemKey",
         "earthlyBranchKey",
         "palaceNameKeys",
-        "mutagenKeys",
+        "mutagenStarKeys",
     ];
 
     match path {
@@ -46,6 +47,8 @@ fn extension_keys(path: &str) -> &'static [&'static str] {
             "soulKey",
             "bodyKey",
             "fiveElementsClassKey",
+            "signKey",
+            "zodiacKey",
         ],
         "astrolabe.rawDates.chineseDate" => {
             &["yearlyKeys", "monthlyKeys", "dailyKeys", "hourlyKeys"]

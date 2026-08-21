@@ -49,6 +49,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
     `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
   - `i18n/` — 多语言翻译
+  - `text.rs` — 语义化文本投影（to_text：本命/运限/格局/单宫/三方四正的自然语言形态，六语言标签表）
   - `error.rs` — IztroError（入口前置校验的错误类型）
   - `dto.rs` — JS 兼容序列化 DTO（三语言绑定共用）
   - `ffi.rs` — C FFI（错误 JSON + catch_unwind 兜底）
@@ -72,14 +73,29 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `python` feature 启用 PyO3 + pythonize
 
 ### 绑定契约（三语言共用）
+- 语义化契约总纲：**一个对象三种投影**——`to_json`/DTO（机器）、`to_text`（自然语言）、译文字段（展示）；
+  **key 两条命名规则**——① 有译文的属性 `x` 配套 `xKey`（数组 `xKeys`），② 实体自身标识一律叫 `key`
+  （星、格局命中）。少数语义改名：运限层级与宫位的四化星数组统一叫 `mutagenStarKeys`
+  （单数 `mutagenKey` 是四化类型 Mutagen 的标识，两者命名空间不同）；`time` 的语义对应是 `timeIndex`。
+  守护测试 `semantic_contract`：zh-CN/en-US 双排盘逐字段并行遍历，任何随语言变化的译文字段
+  缺配套 key 即失败——新增译文字段必须同时给 key
 - `src/dto.rs` 定义 JS iztro 兼容的序列化 DTO：camelCase 键 + 按排盘语言翻译的值，
   附加两类扩展：排盘上下文（genderKey/timeIndex/fixLeap/language/config）与
-  语言无关标识（星/宫/干支/四化/亮度/五行局的 `*key`/`*Key(s)`，取值为 iztro i18n key）
+  语言无关标识（星/宫/干支/四化/亮度/五行局/星座/生肖/运限层级名的 `*key`/`*Key(s)`，
+  取值为 iztro i18n key；运限层级 `nameKey` 未起运时为 `childhood`，与 `decadal` 是不同解盘语义）
 - 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
   判断方法在任何输出语言的星盘上结果一致
-- 绑定接口无状态：运限/Prompt/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
-  重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/两类 Prompt 的
+- 绑定接口无状态：运限/to_text/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
+  重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/各 to_text kind 的
   payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
+- to_text 覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+  /`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
+  bodyPalace/originalPalace）或 `index`。Python 挂对象方法且 `__str__` 即 to_text，Go 是 `ToText()`
+- 轻量查询 `zodiacBySolar`/`signBySolar`/`signByLunar`/`majorStarBySolar`/`majorStarByLunar`
+  返回 `{text, keys}` 双轨：text 与 iztro 同名函数一致，keys 是语言无关标识；绑定层的
+  iztro 对齐函数仍返回 text，命宫主星另有 keys 形态入口
+- `flowStarCounterparts` kind（data 组）导出流耀 → 本命辅星的 50 条对照，源头是
+  `astro/horoscope.rs` 的 `flow_star_row` 表（格局引擎的运/流对应是它的子集，有测试锁定不分叉）
 - 契约由 golden_contract 测试与 JS 的 JSON.stringify 输出逐键逐值对照
 
 ### Python 绑定架构
@@ -166,7 +182,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
-  `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见」等残留）
+  `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见/参见」等残留）
+- 星耀条目覆盖全部 162 个 `StarKey`（`knowledge_pack` 有反向断言兜底）：iztro-docs 有释义的
+  107 条 + x-iztro 自撰的对照性条目 55 条——流耀 50 条（category `flow`，指向对应本命辅星，
+  机器可读对照走 `flowStarCounterparts`）与截路/旬中/年解/劫煞/岁破 5 条（只述安放事实与组别，
+  不新增解读；劫煞、岁破沿用同名神煞原释义），出处均已写进 `source.adapted`
 - 同步上游：人工 diff iztro-docs 新旧 commit 的 learn 页差异，把变化条目改写后写回 JSON 并更新
   `source.commit`；一次性提取脚手架存于 docs/plan/knowledge-scaffold（gitignore，不进仓库）
 - 映射类字段允许写 `null`（Go nil map 默认序列化）
@@ -195,8 +215,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - Prompt 文本 → `prompt_snapshot`（zh-CN / en-US 固定盘的完整输出快照，
-    缺失即失败；有意改动后用 `UPDATE_PROMPT_SNAPSHOTS=1` 重跑该测试重建基线）
+  - 语义化文本 → `text_snapshot`（本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US
+    固定盘完整快照 `tests/golden/text_snapshots/`，Python `test_parity.py` 与 Go
+    `parity_check_test.go` 读同一批快照逐字节比对；缺失即失败，有意改动后用
+    `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
+  - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、

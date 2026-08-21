@@ -59,8 +59,12 @@ pub struct Astrolabe {
     pub time_range: String,
     /// 星座（按排盘语言，如「狮子座」）
     pub sign: String,
+    /// 星座的语言无关标识（"aries" … "pisces"）
+    pub sign_key: String,
     /// 生肖（按排盘语言，按年支）
     pub zodiac: String,
+    /// 生肖的语言无关标识（"rat" … "pig"）
+    pub zodiac_key: String,
     /// 命宫地支
     pub earthly_branch_of_soul_palace: EarthlyBranch,
     /// 身宫地支

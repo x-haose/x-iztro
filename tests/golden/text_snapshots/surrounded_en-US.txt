@@ -1,0 +1,16 @@
+Target Palace: soul (renwoo)
+  Major Stars: emperor([+3])
+  Minor Stars: artist([-3])
+  Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+Opposite Palace: surface (wuzi)
+  Major Stars: wolf([+2])
+  Minor Stars: spark([-3])
+  Adjective Stars: dignified
+Wealth Palace: wealth (wuyin)
+  Major Stars: general([+1])[B], minister([+3])
+  Minor Stars: horse
+  Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+Career Palace: career (bingxu)
+  Major Stars: judge([0]), empress([+3])
+  Minor Stars: officer
+  Adjective Stars: gifted, frail

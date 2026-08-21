@@ -10,7 +10,7 @@ use lunar_rust::{lunar, solar};
 use crate::astro::context::{self, AstroContext};
 use crate::astro::lunar_table;
 use crate::astro::palace::{get_decadals_and_ages, get_palace_names};
-use crate::data::constants::{TIGER_RULE, TIME_RANGES};
+use crate::data::constants::{SIGNS, TIGER_RULE, TIME_RANGES, ZODIAC};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
@@ -571,6 +571,7 @@ pub fn by_solar(
 
     // 5. 展示字段：星座、生肖、时辰、农历日期串
     //    （月/日名取修正后的农历日期，闰月带「闰」前缀；年名不经月表，直接取）
+    let sign_index = parse_sign_index(&solar_ref.get_xing_zuo())?;
     let chart = Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
@@ -583,8 +584,10 @@ pub fn by_solar(
         chinese_date,
         time: translate_time(time_index, language).to_string(),
         time_range: TIME_RANGES[time_index as usize].to_string(),
-        sign: translate_sign(parse_sign_index(&solar_ref.get_xing_zuo())?, language).to_string(),
+        sign: translate_sign(sign_index, language).to_string(),
+        sign_key: SIGNS[sign_index].to_string(),
         zodiac: translate_zodiac(ctx.yearly_branch, language).to_string(),
+        zodiac_key: ZODIAC[ctx.yearly_branch.index()].to_string(),
         earthly_branch_of_soul_palace: soul_palace_branch,
         earthly_branch_of_body_palace: body_palace_branch,
         soul: soul_star,

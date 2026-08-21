@@ -117,3 +117,6 @@ Twelve Gods: embryo, happiness, blessed, admired
 Major Stars: fortunate([-2])[D], advocator([-2])
 Minor Stars: assistant, fickle
 Adjective Stars: blessed, lonely, broken, heaven
+
+=== Patterns ===
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])

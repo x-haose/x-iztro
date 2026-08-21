@@ -1,7 +1,8 @@
 //! 紫微斗数排盘核心库，移植自 JS iztro v2.5.8。
 //!
 //! 入口：[`by_solar`] / [`by_lunar`] 排盘，[`get_horoscope`] 计算运限，
-//! [`astrolabe_to_prompt`] / [`horoscope_to_prompt`] 生成 AI 分析文本。
+//! [`astrolabe_to_text`] / [`horoscope_to_text`] 生成语义化文本（星盘对象也有
+//! 同名 `to_text` 方法，与 `to_json` 相对：机器格式与自然语言两种投影）。
 //! 排盘行为由 [`Config`] 的六个开关控制，默认与 JS iztro 一致。
 
 #![warn(missing_docs)]
@@ -32,10 +33,10 @@ pub mod knowledge;
 pub mod models;
 /// 格局判定引擎
 pub mod pattern;
-/// AI 分析 Prompt 生成
-pub mod prompt;
 /// 安星算法
 pub mod star;
+/// 语义化文本投影（to_text）
+pub mod text;
 /// 通用索引工具
 pub mod utils;
 
@@ -53,10 +54,11 @@ pub mod wasm;
 // Re-export main public API
 pub use astro::builder::{by_lunar, by_solar};
 pub use astro::horoscope::get_horoscope;
+pub use astro::horoscope::{flow_star_counterparts, natal_counterpart_of_flow_star};
 pub use astro::palace::{get_five_elements_class, get_palace_names, get_soul_and_body};
 pub use astro::query::{
     get_major_star_by_lunar_date, get_major_star_by_solar_date, get_sign_by_lunar_date,
-    get_sign_by_solar_date, get_zodiac_by_solar_date,
+    get_sign_by_solar_date, get_zodiac_by_solar_date, major_star_keys_of_soul_palace,
 };
 pub use astro::reverse::{
     BirthCandidate, DEFAULT_REVERSE_LIMIT, ReverseCriteria, ReverseResult, StarPosition,
@@ -85,7 +87,10 @@ pub use models::surpalaces::SurroundedPalaces;
 pub use pattern::{
     ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
 };
-pub use prompt::{astrolabe_to_prompt, horoscope_to_prompt};
+pub use text::{
+    astrolabe_to_text, horoscope_to_text, palace_to_text, patterns_to_text,
+    surrounded_palaces_to_text,
+};
 
 /// 便捷函数：排盘并返回 JSON
 ///
