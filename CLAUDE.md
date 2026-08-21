@@ -156,7 +156,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `src/astro/lunar_table.rs` 是仓库读取农历月结构（公历↔农历、月天数、中文月/日名）的
   **唯一入口**——lunar_rust 1.0.1 的 1602 年闰二月合朔晚一天（月表自相矛盾：二月 31 天），
   该层按权威历表真值修正并带在场探测（依赖将来修好即自动停用）。新代码不许绕过它
-  直读 lunar_rust 的月表；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
+  直读 lunar_rust 的月表——公历↔农历、月天数、闰月归属（`leap_month`）、中文月/日名
+  都走这一层；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
 - 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
   （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
 
@@ -165,6 +166,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢——
   日层剪枝对时辰敏感，`day_divide=Current` 时须以归一时辰（晚子归 0）参与，八字入口
   晚子同日给 t=0/t=12 双候选；年干候选 Exact 口径含 `year+1`（春节晚于立春年份的立春后段）
+- 剪枝几何不许手抄副本：主星落宫反解的偏移取安星表（`star::major` 的
+  `ZIWEI_GROUP`/`TIANFU_GROUP`），年层候选按 `year_prefilter` 逐组过滤——手抄第二份
+  几何漂移时剪枝静默错杀，v0.4.0 终审清过一轮（`MAJOR_OFFSETS`/`admits_year`），别再引入
 - 无外部金标，正确性由往返测试定义（`tests/reverse.rs`）：任取一盘，四柱/特征反查必含原生辰，
   且每个候选正排后必须真的得出目标；全星环测逐类星耀条件核「任何剪枝臂不错杀」
 - 四柱按传入 `Config` 的分界口径解释（与 `raw_dates.chinese_date` 同语义）；星盘布局与性别无关，
@@ -178,7 +182,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   核心 `StarInfo` 保持与 iztro 一致，不把卡片属性并进去（卡片与 iztro 表本身有冲突，说明也是观点）
 - 协议：语言无关 key（`StarKey`/`PatternKey`/`Palace`/`Mutagen` 的 `as_key`）→ 文本/属性，格式 `knowledge/SCHEMA.md`；
   合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
-  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
+  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON（解析结果有缓存）。
+  条目合并是 JSON 值递归（`merge_entry`），schema 新增字段自动参与——不许再写逐字段
+  手抄的合并清单，那种清单在加字段时会静默漏合并且测试全绿
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
