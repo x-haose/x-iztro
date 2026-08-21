@@ -44,6 +44,8 @@ chart = Astro().by_solar("2000-8-16", 2, "female")
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `gender_key` | `str` | `"male"` / `"female"` |
+| `sign_key` | `str` | 星座标识，`aries` … `pisces` |
+| `zodiac_key` | `str` | 生肖标识，`rat` … `pig` |
 | `soul_key` | `str` | 命主星标识 |
 | `body_key` | `str` | 身主星标识 |
 | `five_elements_class_key` | `str` | 五行局标识 |
@@ -404,6 +406,39 @@ now = chart.horoscope()
 大限 庚辰
 流年 乙巳
 ```
+
+---
+
+## to_text
+
+**用途**　星盘的语义化文本：面向语言模型与人的完整描述，`str(chart)` 等价。
+
+**签名**
+
+```python
+def to_text(self) -> str
+```
+
+**返回值**　`str`——按排盘语言输出的分节纯文本：基本信息、十二宫、格局命中。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```python
+print(chart.to_text()[:46])
+```
+
+**输出**
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
+```
+
+单宫与三方四正的文本见 `palace(...).to_text()` 与 `surrounded_palaces(...).to_text()`，
+格局文本见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。
 
 ---
 

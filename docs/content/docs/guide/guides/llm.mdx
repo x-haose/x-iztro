@@ -24,14 +24,14 @@ astro = Astro()
 chart = astro.by_solar("2000-8-16", 2, "female")
 
 system = "你是紫微斗数分析师。基于给定命盘作答，不要编造盘上没有的信息。"
-user = f"""{astro.astrolabe_to_prompt(chart)}
+user = f"""{chart.to_text()}
 
-{astro.horoscope_to_prompt(chart, "2025-1-1", 0)}
+{chart.horoscope("2025-1-1", 0).to_text()}
 
 请分析这个人 2025 年的事业运势。"""
 ```
 
-生成的文本长什么样、格式怎么读，见 [AI Prompt 生成](/zh/docs/guide/guides/ai-prompt)。
+生成的文本长什么样、格式怎么读，见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 ## 做成工具调用
 
@@ -55,7 +55,7 @@ user = f"""{astro.astrolabe_to_prompt(chart)}
 }
 ```
 
-实现里调 `astrolabe_to_prompt` 返回文本即可。
+实现里调 `chart.to_text()` 返回文本即可。
 运限单独做一个工具（多收一个目标日期），让模型按需要取。
 
 <Callout title="时辰索引要在工具描述里说清楚">
@@ -65,7 +65,7 @@ user = f"""{astro.astrolabe_to_prompt(chart)}
 
 ## 用中文盘喂模型
 
-排盘结果本身与盘面语言无关，但生成的 prompt 会跟着变。默认的中文盘就是最好的选择：
+排盘结果本身与盘面语言无关，但 to_text 生成的文本会跟着变。默认的中文盘就是最好的选择：
 
 主流模型的中文命理术语能力都不差；而英文盘的星名走 iztro 的意译词表
 （紫微 `emperor`、七杀 `marshal`），亮度退化成 `[+3]` 这类记号，四化写成 `A`/`B`/`C`/`D`，

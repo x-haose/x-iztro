@@ -44,6 +44,8 @@ chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.Langua
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `GenderKey` | `Gender` | `GenderMale` / `GenderFemale` |
+| `SignKey` | `string` | 星座标识，`aries` … `pisces` |
+| `ZodiacKey` | `string` | 生肖标识，`rat` … `pig` |
 | `SoulKey` | `string` | 命主星标识 |
 | `BodyKey` | `string` | 身主星标识 |
 | `FiveElementsClassKey` | `string` | 五行局标识 |
@@ -385,6 +387,41 @@ fmt.Println("流年", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch)
 大限 庚辰
 流年 乙巳
 ```
+
+---
+
+## ToText / PalaceToText / SurroundedPalacesToText
+
+**用途**　星盘、单宫或三方四正的语义化文本：面向语言模型与人的完整描述。
+
+**签名**
+
+```go
+func (a *Astrolabe) ToText() (string, error)
+func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error)
+func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
+```
+
+各有 `Context` 变体。`PalaceTarget` 的 `Key` 非空时按宫名标识定位
+（`PalaceSoul` 等常量，另接受 `PalaceBody` / `PalaceOriginal`），
+否则按 `Index`（0–11）取宫。按排盘语言输出，
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```go
+text, _ := chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+
+fmt.Println(strings.Split(text, "\n")[0])
+```
+
+**输出**
+
+```text
+--- 命宫 ---
+```
+
+格局文本见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。
 
 ---
 

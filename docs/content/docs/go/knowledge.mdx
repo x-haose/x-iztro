@@ -45,7 +45,7 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `Name` | `string` | 该语言的显示名 |
-| `Category` | `string` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `Category` | `string` | 类别：`"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"`（流耀，指向对应本命辅星的对照性条目） |
 | `Group` | `string` | 分组：杂耀的分类、神煞的组别 |
 | `Attributes` | `StarAttributes` | 门派属性 |
 | `Intro` | `string` | 解读正文（Markdown） |
@@ -118,7 +118,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-107 64 12 4 49
+162 64 12 4 49
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 

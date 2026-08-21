@@ -161,9 +161,46 @@ emperor 紫微
 The Soul palace is located jointly from the lunar month and the birth hour, so `timeIndex` is
 required. Knowing only the date and not the hour, Zi Wei Dou Shu cannot fix a Soul palace.
 </Accordion>
-<Accordion title="For predicates, chart the whole thing">
-The return value is a translated string and changes with the language. For programmatic tests, chart
-in full, fetch the palace with `chart.Palace(iztro.PalaceSoul)` and compare the `Key` fields inside
-`MajorStars`.
+<Accordion title="For predicates, use the key form">
+The return value is a translated string that changes with the language. For programmatic checks use
+`MajorStarKeysBySolarDate` / `MajorStarKeysByLunarDate` below, or chart the whole thing and compare
+the `Key` of the `MajorStars`.
 </Accordion>
 </Accordions>
+
+---
+
+## MajorStarKeysBySolarDate / MajorStarKeysByLunarDate
+
+**Purpose** The Soul palace's major stars as language-independent keys — the key form of the two
+functions above, for programmatic checks.
+
+**Signature**
+
+```go
+func MajorStarKeysBySolarDate(
+    solarDate string, timeIndex uint8, fixLeap bool, config *Config,
+) ([]string, error)
+
+func MajorStarKeysByLunarDate(
+    lunarDate string, timeIndex uint8, leap LeapMonth, config *Config,
+) ([]string, error)
+```
+
+**Return value** `[]string` — star key constant values (e.g. `StarZiweiMaj`); an empty Soul palace
+borrows its opposite's major stars just the same. Keys are language-independent, so these functions
+**take no `language`**.
+
+**Example**
+
+```go
+keys, _ := iztro.MajorStarKeysBySolarDate("2000-8-16", 2, true, nil)
+
+fmt.Println(keys)
+```
+
+**Output**
+
+```text
+[ziweiMaj]
+```

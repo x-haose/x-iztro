@@ -57,6 +57,7 @@ let h = chart.horoscope("2025-6-1", 0)?;
 | --- | --- | --- |
 | `index` | `usize` | 该层级落在哪一宫（宫位索引） |
 | `name` | `String` | 层级显示名，按输出语言翻译 |
+| `name_key` | `HoroscopeName` | 层级标识；大限层未起运时为 `Childhood`（童限），与 `Decadal` 是不同的解盘语义，判断层级用它、不要比对译文 |
 | `heavenly_stem` | `HeavenlyStem` | 该层级的天干，决定它飞出的四化 |
 | `earthly_branch` | `EarthlyBranch` | 该层级的地支 |
 | `palace_names` | `Vec<Palace>` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
@@ -391,6 +392,39 @@ println!("{}", data.solar_date);
 ```text
 2000-8-16
 2025-6-1
+```
+
+---
+
+## to_text
+
+**用途**　运限的语义化文本：面向语言模型与人的完整描述。
+
+**签名**
+
+```rust
+pub fn to_text(&self) -> String
+```
+
+定义在 `HoroscopeRef` 上，按星盘排盘语言输出；要指定语言用自由函数
+`text::horoscope_to_text(astrolabe, horoscope, lang)`。
+
+**返回值**　`String`——分节的纯文本，各层带该层视角的格局行与流耀行。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```rust
+let h = chart.horoscope("2025-1-1", 0)?;
+
+println!("{}", h.to_text().chars().take(25).collect::<String>());
+```
+
+**输出**
+
+```text
+=== 运限 ===
+目标日期: 2025-1-1
 ```
 
 ---

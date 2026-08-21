@@ -465,3 +465,16 @@ the opposite of soul is surface
 malefics in the surrounded set: true
 wood 3rd
 ```
+
+---
+
+## Semantic text
+
+Single-palace text lives not on `*Palace` but on the astrolabe method
+[`PalaceToText`](/en/docs/go/astrolabe#totext--palacetotext--surroundedpalacestotext): the Go palace
+object is pure data, and the text projection recomputes statelessly from the chart's charting
+context.
+
+```go
+text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
+```

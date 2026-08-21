@@ -57,6 +57,38 @@ characters (`土`, `阴` and so on) in every output language.
 
 ---
 
+## FlowStarCounterparts
+
+**Purpose** The full table mapping flowing stars to their natal minor-star counterparts (50
+entries).
+
+**Signature**
+
+```go
+func FlowStarCounterparts() (map[string]string, error)
+```
+
+**Return value** Keys are flowing-star key constant values (`StarLiuchang` and friends), values
+natal minor-star keys (`StarWenchangMin` and friends). Flowing stars have no knowledge-pack entries
+of their own — their readings are looked up via the natal counterpart, and this table is the
+official mapping.
+
+**Example**
+
+```go
+m, _ := iztro.FlowStarCounterparts()
+
+fmt.Println(m["liuchang"])
+```
+
+**Output**
+
+```text
+wenchangMin
+```
+
+---
+
 ## HeavenlyStems
 
 **Purpose** Get the heavenly stem information table.

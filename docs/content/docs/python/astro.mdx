@@ -1,6 +1,6 @@
 ---
 title: 排盘入口
-description: Astro 类的排盘方法、重排与 AI Prompt 生成。
+description: Astro 类的排盘方法、重排与语义化文本投影。
 ---
 
 排盘是一切的起点：给出生日期、时辰、性别，得到一个 `Astrolabe`。
@@ -98,7 +98,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 不进 DTO（这一点与 JS iztro 的字段契约一致）。
 
 但星盘内部保留了你传进来的原件，因此 `chart.rearranged(...)`、`chart.horoscope(...)`、
-Prompt 生成这些二次计算仍然用得上那两张表，不会静默丢失。
+to_text 文本投影这些二次计算仍然用得上那两张表，不会静默丢失。
 要把配置记录下来，请在自己的调用侧保存 `ChartConfig` 对象。
 </Accordion>
 </Accordions>
@@ -320,7 +320,7 @@ def rearranged(self, from_stem: str, from_branch: str) -> Astrolabe
 长生十二神、大限小限、命主星，以及随命宫挪位的天伤、天使、天才。
 沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神、身主星。
 
-重排返回的盘上，`patterns()`、运限查询与 Prompt 生成都按**重排后的布局**
+重排返回的盘上，`patterns()`、运限查询与 to_text 文本投影都按**重排后的布局**
 计算——五行局、命宫与大限随重排起点变化；出生数据（日期与四柱）保持不变。
 
 **示例**
@@ -357,31 +357,24 @@ print("天盘", chart.five_elements_class, "→ 地盘", earth.five_elements_cla
 
 ---
 
-## astrolabe_to_prompt / horoscope_to_prompt
+## 语义化文本（to_text）
 
-**用途**　把星盘或运限渲染成结构化文本，供大模型消费。
+**用途**　把星盘或运限投影成语义化文本——盘面事实的自然语言形态，
+喂给大模型或直接给人读。与 `to_dict`/`to_json`（机器结构）、译文字段（展示）
+是同一对象的三种投影。
 
-**签名**
+**签名**　文本投影是对象自己的方法，不在 `Astro` 上：
 
 ```python
-def astrolabe_to_prompt(self, astrolabe: Astrolabe) -> str
-def horoscope_to_prompt(
-    self,
-    astrolabe: Astrolabe,
-    target_date: str,
-    target_time_index: TimeIndexType,
-) -> str
+chart.to_text()                       # 本命盘；str(chart) 等价
+chart.horoscope("2025-1-1", 0).to_text()   # 运限；str(h) 等价
+chart.palace("命宫").to_text()         # 单宫
+chart.surrounded_palaces("命宫").to_text() # 三方四正
+chart.patterns_to_text()              # 本命格局
 ```
 
-**参数**
-
-| 参数 | 类型 | 必填 | 默认 | 说明 |
-| --- | --- | --- | --- | --- |
-| `astrolabe` | `Astrolabe` | 是 | — | 星盘对象 |
-| `target_date` | `str` | 是 | — | 仅运限版本：目标公历日期 |
-| `target_time_index` | `int` | 是 | — | 仅运限版本：目标时辰索引 |
-
-**返回值**　`str`——按星盘的排盘语言输出的结构化文本。
+**返回值**　`str`——按星盘的排盘语言输出的分节纯文本；本命文本末尾带格局节，
+运限文本各层带该层视角的格局行与流耀行。
 
 **示例**
 
@@ -389,7 +382,7 @@ def horoscope_to_prompt(
 astro = Astro()
 chart = astro.by_solar("2000-8-16", 2, "female")
 
-print(astro.astrolabe_to_prompt(chart)[:46])
+print(chart.to_text()[:46])
 ```
 
 **输出**
@@ -404,5 +397,5 @@ print(astro.astrolabe_to_prompt(chart)[:46])
 **边界与陷阱**
 
 <Callout type="info">
-输出语言跟随星盘的 `language`，不单独设置。要英文 prompt 就用英文排盘。
+输出语言跟随星盘的 `language`，不单独设置。要英文文本就用英文排盘。
 </Callout>

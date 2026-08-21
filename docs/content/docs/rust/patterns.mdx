@@ -398,3 +398,33 @@ println!("{}", serde_json::to_string_pretty(&dto[0]).unwrap());
 `PatternHitDto` 里的字段叫 `palaceIndex`，Rust 结构体里叫 `palace`——
 DTO 的键名与 JS 侧的命名习惯对齐，Rust 侧用更短的名字。
 </Callout>
+
+---
+
+## 语义化文本
+
+格局命中列表可以经 `text::patterns_to_text` 投影成文本，每条一行：
+格局名、命中宫、构成星耀，破格标 `[破格]`。
+
+```rust
+pub fn patterns_to_text(hits: &[PatternHit], palace_names: &[Palace], lang: Language) -> String
+```
+
+`palace_names` 是判定视角下按宫位索引排列的十二宫名——本命视角传
+`chart.palaces` 各宫的 `name`，运限视角传该层的 `palace_names`。
+
+```rust
+use x_iztro::text::patterns_to_text;
+
+let hits = chart.patterns();
+let names: Vec<Palace> = chart.palaces.iter().map(|p| p.name).collect();
+print!("{}", patterns_to_text(&hits, &names, chart.language));
+```
+
+**输出**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+```
+
+本命盘的 `to_text` 已自带这一节；单独调用适合只要格局摘要的场景。

@@ -364,3 +364,35 @@ print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
 Optional keys with no value (`variant`, brightness, mutagen) are omitted from the DTO entirely;
 they never come back as `null`.
 </Callout>
+
+---
+
+## patterns_to_text
+
+**Purpose** The pattern hits as semantic text, one per line: pattern name, landing palace, forming
+stars, with broken patterns marked `[Broken]`.
+
+**Signature**
+
+```python
+def patterns_to_text(self, config: PatternConfig | None = None) -> str          # Astrolabe
+def patterns_to_text(self, scope, config=None, astrolabe=None) -> str           # Horoscope
+```
+
+The same judgment as `patterns` (including re-anchoring context and judging criteria); the horoscope
+version writes palace names as re-laid out at that scope.
+
+**Example**
+
+```python
+print(chart.patterns_to_text(), end="")
+```
+
+**Output**
+
+```text
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+```
+
+The chart's and the horoscope's `to_text` each already carry a patterns section; the standalone call
+suits cases that want only the pattern summary.

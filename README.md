@@ -39,7 +39,7 @@ from x_iztro import Astro
 astro = Astro()
 # time_index 2 = Tiger hour (03:00-05:00); 0 = early Rat hour ... 12 = late Rat hour
 chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
-print(astro.astrolabe_to_prompt(chart))
+print(chart.to_text())
 ```
 
 ```text
@@ -91,7 +91,7 @@ and held identical to it; the layers an AI pipeline needs on top are new.
 | Pattern judgement (64 rules)                                 | —                 | ✅                                        |
 | Knowledge packs (reading texts, school attributes)           | —                 | ✅                                        |
 | Reverse lookup (BaZi pillars / chart features → birth dates) | —                 | ✅                                        |
-| LLM prompt rendering                                         | —                 | ✅                                        |
+| Semantic text projection (to_text)                           | —                 | ✅                                        |
 | Calling languages                                            | JS / TS           | Rust / Python / Go                        |
 | Configuration                                                | global singleton  | passed per chart, no global state         |
 | Invalid input                                                | throws            | typed errors with machine-readable codes; never panics on invalid input |
@@ -337,11 +337,12 @@ Pack format, merge rules, and how to write an overlay:
 
 ### LLM output in practice
 
-- `astrolabe_to_prompt(chart)` renders the whole chart as structured text;
-  `horoscope_to_prompt(chart, "2024-10-1", 0)` does the same for the horoscope
-  at a date. The format is deterministic with a stable field order, and the
-  prompt snapshots guarding it are part of the test suite.
-- A full natal-chart prompt is ~1.8k characters in zh-CN and ~3.5k in en-US —
+- `chart.to_text()` projects the whole chart into semantic text (patterns
+  section included); `chart.horoscope("2024-10-1", 0).to_text()` does the same
+  for the horoscope at a date; palaces, surrounded palaces and pattern hits
+  each have their own to_text. The format is deterministic with a stable field
+  order, and the text snapshots guarding it are part of the test suite.
+- A full natal-chart text is ~1.8k characters in zh-CN and ~3.6k in en-US —
   on the order of 1–2k tokens, varying by model.
 - Even for an English-facing product, consider feeding the model the **zh-CN**
   chart: models know the Chinese star names, while the English names are
@@ -422,7 +423,7 @@ probes the dependency at runtime and disables itself once upstream is fixed.
   `go/iztro` — and `Warmup` moves the cold start to boot time.
 - **Rust** — MSRV 1.88; direct dependencies are `serde`, `serde_json`,
   `lunar_rust` and `chrono` (clock only, for `horoscope_now`).
-- **Pre-1.0 stability** — the serialized JSON contract, the prompt format and
+- **Pre-1.0 stability** — the serialized JSON contract, the to_text format and
   the error codes are snapshot-guarded by the test suite; breaking changes are
   called out explicitly in the [CHANGELOG](CHANGELOG.md).
 

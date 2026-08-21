@@ -347,3 +347,37 @@ for _, hit := range hits {
   ]
 }
 ```
+
+---
+
+## PatternsToText / Horoscope.PatternsToText
+
+**Purpose** The pattern hits as semantic text, one per line: pattern name, landing palace, forming
+stars, with broken patterns marked `[Broken]`.
+
+**Signature**
+
+```go
+func (a *Astrolabe) PatternsToText(config *PatternConfig) (string, error)
+func (h *Horoscope) PatternsToText(scope string, config *PatternConfig) (string, error)
+```
+
+Each has a `Context` variant. The same judgment as `Patterns` (including re-anchoring context and
+judging criteria); the horoscope version writes palace names as re-laid out at that scope, and `nil`
+for `config` takes the default criteria.
+
+**Example**
+
+```go
+text, _ := chart.PatternsToText(nil)
+fmt.Print(text)
+```
+
+**Output**
+
+```text
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+```
+
+The chart's and the horoscope's `ToText` each already carry a patterns section; the standalone call
+suits cases that want only the pattern summary.

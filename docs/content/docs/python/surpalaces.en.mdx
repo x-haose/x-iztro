@@ -167,3 +167,33 @@ Soul, Surface, Wealth and Career — only the quan falls inside it, so both the 
 This looks at the **natal mutagen** marks on stars, unrelated to mutagens flown by palace stems.
 For those, use the palace's flying-star methods.
 </Callout>
+
+---
+
+## to_text
+
+**Purpose** The surrounded palaces' semantic text: one section each for the target palace, its
+opposite, and the wealth and career positions.
+
+**Signature**
+
+```python
+def to_text(self) -> str
+```
+
+**Example**
+
+```python
+sp = chart.surrounded_palaces("soul")
+
+print(sp.to_text().split("\n")[0])
+```
+
+**Output**
+
+```text
+Target Palace: soul (renwoo)
+```
+
+When the target palace is detached from a chart there is no charting context and `ValueError` is
+raised. The full format is on [Semantic text](/en/docs/guide/guides/to-text).

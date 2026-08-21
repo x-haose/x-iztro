@@ -184,9 +184,41 @@ emperor
 The Soul palace is located jointly from the lunar month and the birth hour, so `time_index` is
 required. Knowing only the date and not the hour, Zi Wei Dou Shu cannot fix a Soul palace.
 </Accordion>
-<Accordion title="For predicates, chart the whole thing">
-The return value is a translated string and changes with the language. For programmatic tests, chart
-in full, fetch the palace with `chart.palace(Palace::Soul)` and compare the `key` fields inside
+<Accordion title="For predicates, use the key form">
+The return value is a translated string that changes with the language. For programmatic checks use
+`major_star_keys_of_soul_palace` below, or chart the whole thing and compare the `key` of the
 `major_stars`.
 </Accordion>
 </Accordions>
+
+---
+
+## major_star_keys_of_soul_palace
+
+**Purpose** The Soul palace's major stars as language-independent keys — the key form of the two
+functions above, for programmatic checks.
+
+**Signature**
+
+```rust
+pub fn major_star_keys_of_soul_palace(astrolabe: &Astrolabe) -> Vec<String>
+```
+
+Takes an already-cast chart (pair it with `by_solar` / `by_lunar`); the borrowing rule shares one
+implementation with the translated form: an empty Soul palace borrows its opposite's major stars,
+and an empty list comes back when the opposite has none either. Keys are independent of the chart
+language.
+
+**Example**
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+
+println!("{:?}", major_star_keys_of_soul_palace(&chart));
+```
+
+**Output**
+
+```text
+["ziweiMaj"]
+```

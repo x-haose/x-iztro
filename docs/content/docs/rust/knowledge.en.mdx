@@ -59,7 +59,7 @@ Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deseria
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `name` | `Option<String>` | Display name in this pack's language |
-| `category` | `Option<String>` | `"major"` / `"minor"` / `"adjective"` / `"dec"` |
+| `category` | `Option<String>` | `"major"` / `"minor"` / `"adjective"` / `"dec"` / `"flow"` (a flowing star, a cross-reference entry pointing at its natal minor-star counterpart) |
 | `group` | `Option<String>` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes; all `None` when absent |
 | `intro` | `Option<String>` | Reading (Markdown) |
@@ -136,7 +136,7 @@ println!("{}", KnowledgePack::builtin(Language::EnUS).is_some());
 **Output**
 
 ```text
-iztro-docs 2026-08-19+ec2d58b 107
+iztro-docs 2026-08-19+ec2d58b 162
 Some("MIT")
 false
 ```

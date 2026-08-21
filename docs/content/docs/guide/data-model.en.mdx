@@ -30,7 +30,9 @@ The return value of a charting entry point.
 | `time` | string | Hour name, e.g. `Tiger hour` |
 | `timeRange` | string | The hour's clock range, e.g. `03:00~05:00` |
 | `sign` | string | Zodiac sign |
+| `signKey` | string | Zodiac sign key, `aries` … `pisces` |
 | `zodiac` | string | Zodiac animal, from the year branch |
+| `zodiacKey` | string | Zodiac animal key, `rat` … `pig` |
 | `earthlyBranchOfSoulPalace` | string | Soul palace branch |
 | `earthlyBranchOfSoulPalaceKey` | string | Soul palace branch key |
 | `earthlyBranchOfBodyPalace` | string | Body palace branch |
@@ -168,15 +170,22 @@ For what they mean, see [Config in depth](/en/docs/guide/guides/config).
 | --- | --- | --- |
 | `index` | int | This scope's slot on the chart, 0–11 |
 | `name` | string | Scope name, translated text |
+| `nameKey` | string | Scope key: `decadal` / `childhood` / `turn` (age fortune) / `yearly` / `monthly` / `daily` / `hourly` |
 | `heavenlyStem` / `heavenlyStemKey` | string | This scope's heavenly stem |
 | `earthlyBranch` / `earthlyBranchKey` | string | This scope's earthly branch |
 | `palaceNames` | string[12] | The palace names re-laid-out with this scope's slot as the Soul palace, in slot order |
 | `palaceNameKeys` | string[12] | The same as keys |
 | `mutagen` | string[4] | Mutagen star names, in the order Lu, Quan, Ke, Ji |
-| `mutagenKeys` | string[4] | The same as keys |
+| `mutagenStarKeys` | string[4] | The same as keys — star keys of the four mutated stars, synonymous with the palace field of the same name; the singular `mutagenKey` is the mutagen type (`sihuaLu` etc.) |
 | `stars` | [Star](#star)[][12]? | Flowing stars across the twelve palaces (the outer twelve entries are palaces, each inner list that palace's flowing stars); absent on scopes with no flowing stars |
 | `nominalAge` | int? | Nominal age (虚岁); age fortune only |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar)? | Yearly scope only |
+
+<Callout type="warn" title="Before the decadals begin, nameKey is childhood">
+When the subject has not yet entered the decadals, the `decadal` scope's `nameKey` is `childhood`
+rather than `decadal` — childhood and decadal are different reading semantics. Test `nameKey` to
+tell whether the scope is a childhood one; do not compare `name` translations.
+</Callout>
 
 ### YearlyDecStar
 
@@ -216,8 +225,8 @@ entries of `palaces` elided):
   },
   "time": "Tiger hour",
   "timeRange": "03:00~05:00",
-  "sign": "leo",
-  "zodiac": "dragon",
+  "sign": "leo", "signKey": "leo",
+  "zodiac": "dragon", "zodiacKey": "dragon",
   "earthlyBranchOfSoulPalace": "woo", "earthlyBranchOfSoulPalaceKey": "wuEarthly",
   "earthlyBranchOfBodyPalace": "xu", "earthlyBranchOfBodyPalaceKey": "xuEarthly",
   "soul": "rebel", "soulKey": "pojunMaj",
@@ -300,9 +309,16 @@ key names and independent of the chart language:
 { "name": "emperor", "key": "ziweiMaj", "brightness": "[+3]", "brightnessKey": "miao" }
 ```
 
-The translated field is for people, the key field is for code. On stars the key field is simply
-`key` (there is no `nameKey`); everywhere else it is "original field name + Key", and array-valued
-ones use the plural `Keys` (`mutagenKeys`, `palaceNameKeys`, `yearlyKeys`).
+The translated field is for people, the key field is for code. The contract is two rules:
+
+1. **Every translated property `x` has a companion `xKey`**; array-valued ones use the plural
+   `Keys` (`palaceNameKeys`, `yearlyKeys`).
+2. **An entity's own identity is simply `key`** — a star's key field is `key`, not `nameKey`.
+
+The one naming fork is around mutagens: the singular `mutagenKey` is the mutagen type (`sihuaLu`
+etc.), while the plural `mutagenStarKeys` holds the star keys of the four mutated stars. The
+`semantic_contract` test enforces this contract — every translated field in the DTO must have its
+key companion.
 
 <Callout>
 The `*Key` / `key` family, `genderKey`, `timeIndex`, `fixLeap`, `language` and `config` are

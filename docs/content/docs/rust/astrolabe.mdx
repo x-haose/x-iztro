@@ -38,6 +38,8 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
+| `sign_key` | `String` | 星座标识，`aries` … `pisces` |
+| `zodiac_key` | `String` | 生肖标识，`rat` … `pig` |
 | `earthly_branch_of_soul_palace` | `EarthlyBranch` | 命宫地支 |
 | `earthly_branch_of_body_palace` | `EarthlyBranch` | 身宫地支 |
 | `soul` | `StarKey` | 命主星 |
@@ -379,6 +381,38 @@ println!("流年 {}{}",
 ```text
 大限 庚辰
 流年 乙巳
+```
+
+---
+
+## to_text
+
+**用途**　星盘的语义化文本：面向语言模型与人的完整描述。
+
+**签名**
+
+```rust
+pub fn to_text(&self) -> String
+```
+
+按排盘语言输出；要指定语言用自由函数 `text::astrolabe_to_text(astrolabe, lang)`——
+`lang` 可以与排盘语言不同，全部字段按标识以目标语言重翻。
+单宫与三方四正见 `PalaceRef::to_text()` / `SurroundedPalaces::to_text(lang)`。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+**示例**
+
+```rust
+println!("{}", chart.to_text().chars().take(46).collect::<String>());
+```
+
+**输出**
+
+```text
+=== 基本信息 ===
+性别: 女
+阳历: 2000-8-16
+农历: 二〇〇〇年七月十七
 ```
 
 ---

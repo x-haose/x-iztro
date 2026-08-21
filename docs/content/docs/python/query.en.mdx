@@ -182,9 +182,53 @@ emperor
 The Soul palace is located jointly from the lunar month and the birth hour, so `time_index` is
 required. Knowing only the date and not the hour, Zi Wei Dou Shu cannot fix a Soul palace.
 </Accordion>
-<Accordion title="For predicates, chart the whole thing">
-The return value is a translated string and changes with the language. For programmatic tests, chart
-in full, fetch the palace with `chart.palace("soulPalace")` and compare the `key` fields inside
-`major_stars`.
+<Accordion title="For predicates, use the key form">
+The return value is a translated string that changes with the language. For programmatic checks use
+`get_major_star_keys_by_solar_date` / `get_major_star_keys_by_lunar_date` below, or chart the whole
+thing and compare the `key` of the `major_stars`.
 </Accordion>
 </Accordions>
+
+---
+
+## get_major_star_keys_by_solar_date / get_major_star_keys_by_lunar_date
+
+**Purpose** The Soul palace's major stars as language-independent keys — the key form of the two
+functions above, for programmatic checks.
+
+**Signature**
+
+```python
+def get_major_star_keys_by_solar_date(
+    solar_date: str,
+    time_index: TimeIndexType,
+    *,
+    fix_leap: bool = True,
+    config: ChartConfig | None = None,
+) -> list[str]
+
+def get_major_star_keys_by_lunar_date(
+    lunar_date: str,
+    time_index: TimeIndexType,
+    *,
+    is_leap_month: bool = False,
+    fix_leap: bool = True,
+    config: ChartConfig | None = None,
+) -> list[str]
+```
+
+**Return value** `list[str]` — keys from the `MajorStar` enum's domain (e.g. `"ziweiMaj"`); an empty
+Soul palace borrows its opposite's major stars just the same. Keys are language-independent, so
+these functions **take no `language`**.
+
+**Example**
+
+```python
+print(query.get_major_star_keys_by_solar_date("2000-8-16", 2))
+```
+
+**Output**
+
+```text
+['ziweiMaj']
+```

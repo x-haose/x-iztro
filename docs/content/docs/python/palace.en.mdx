@@ -479,3 +479,37 @@ the opposite of soul is surface
 malefics in the surrounded set: True
 wood 3rd
 ```
+
+---
+
+## to_text
+
+**Purpose** The palace's semantic text, identical to that palace's section in the natal text.
+
+**Signature**
+
+```python
+def to_text(self) -> str
+```
+
+**Example**
+
+```python
+print(chart.palace("soul").to_text())
+```
+
+**Output**
+
+```text
+--- soul ---
+Stem-Branch: renwoo
+Decadal: 3-12
+Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+Twelve Gods: weak, dragon, downcast, disastery
+Major Stars: emperor([+3])
+Minor Stars: artist([-3])
+Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+```
+
+A palace constructed detached from a chart has no charting context and raises `ValueError`. The full
+format is on [Semantic text](/en/docs/guide/guides/to-text).

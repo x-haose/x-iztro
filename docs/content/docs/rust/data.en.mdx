@@ -245,6 +245,26 @@ reports only **whether there is an override**, while `Config::mutagens_of` repor
 
 ---
 
+## flow_star_counterparts
+
+**Purpose** The full table mapping flowing stars to their natal minor-star counterparts (50
+entries).
+
+**Signature**
+
+```rust
+pub fn flow_star_counterparts() -> Vec<(StarKey, StarKey)>
+pub fn natal_counterpart_of_flow_star(key: StarKey) -> Option<StarKey>
+```
+
+Both are re-exported at the crate root (`use x_iztro::*` brings them in). Each entry of the full
+table is (flowing star, natal minor-star counterpart), e.g.
+`(StarKey::Liuchang, StarKey::WenchangMin)`; the single-lookup form returns `None` for a
+non-flowing star. Flowing stars have no knowledge-pack entries of their own — their readings are
+looked up via the natal counterpart, and this table is the official mapping.
+
+---
+
 ## get_star_info
 
 **Purpose** Get a star's brightness table, five element and polarity.

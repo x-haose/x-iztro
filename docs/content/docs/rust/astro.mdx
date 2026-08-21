@@ -10,7 +10,7 @@ description: by_solar、by_lunar、rearranged 与 JSON 便捷版本。
 收外部输入的入口（`by_solar`、`by_lunar`、两个 JSON 版本、`get_horoscope`）都返回
 `Result`：日期格式与存在性、公历年份范围、时辰索引在核心层前置校验，非法输入返回
 `IztroError` 而不是 panic。入参全是枚举、无非法值的函数（`rearranged`、
-`astrolabe_to_prompt`）直接返回结果。错误类型见[错误处理](/zh/docs/rust/errors)。
+`astrolabe_to_text`）直接返回结果。错误类型见[错误处理](/zh/docs/rust/errors)。
 </Callout>
 
 ---
@@ -188,7 +188,7 @@ pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) ->
 **返回值**　新的 `Astrolabe`。重算：命宫身宫、五行局、十四主星、十二宫名、长生十二神、大限小限，
 以及随命宫挪位的天伤、天使、天才。沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神。
 
-重排返回的盘上，`patterns() / patterns_with()`、运限查询与 Prompt 生成都按**重排后的布局**
+重排返回的盘上，`patterns() / patterns_with()`、运限查询与 to_text 文本投影都按**重排后的布局**
 计算——五行局、命宫与大限随重排起点变化；出生数据（日期与四柱）保持不变。
 
 **示例**
@@ -352,20 +352,28 @@ println!("大限宫位索引 {}，流年干支 {:?}{:?}",
 
 ---
 
-## astrolabe_to_prompt / horoscope_to_prompt
+## astrolabe_to_text / horoscope_to_text
 
-**用途**　把星盘或运限渲染成适合喂给大模型的纯文本。
+**用途**　把星盘或运限投影成语义化文本——盘面事实的自然语言形态，
+喂给大模型或直接给人读。与 `serde_json`（机器结构）、译文字段（展示）
+是同一对象的三种投影。
 
-**签名**
+**签名**（`x_iztro::text` 模块，同模块另有
+`palace_to_text` / `surrounded_palaces_to_text` / `patterns_to_text`）
 
 ```rust
-pub fn astrolabe_to_prompt(astrolabe: &Astrolabe, lang: Language) -> String
-pub fn horoscope_to_prompt(
+pub fn astrolabe_to_text(astrolabe: &Astrolabe, lang: Language) -> String
+pub fn horoscope_to_text(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
     lang: Language,
 ) -> String
 ```
+
+按排盘语言输出的便捷方法：`Astrolabe::to_text()`、`HoroscopeRef::to_text()`、
+`PalaceRef::to_text()`；`SurroundedPalaces::to_text(lang)` 收显式语言。
+自由函数的 `lang` 可以与排盘语言不同：星名、时辰、星座、干支、流耀全部按标识
+以目标语言重翻，输出与用该语言排的盘逐字一致。
 
 **参数**
 
@@ -375,7 +383,8 @@ pub fn horoscope_to_prompt(
 | `horoscope` | `&HoroscopeData` | 是 | — | `get_horoscope` 的结果 |
 | `lang` | `Language` | 是 | — | 输出语言，随之切换段落标题与星耀译名 |
 
-**返回值**　`String`，分节的纯文本。
+**返回值**　`String`，分节的纯文本；本命文本末尾带格局节，
+运限文本各层带该层视角的格局行与流耀行。
 
 **示例**
 
@@ -383,7 +392,7 @@ pub fn horoscope_to_prompt(
 use x_iztro::*;
 
 let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
-print!("{}", astrolabe_to_prompt(&chart, Language::ZhCN));
+print!("{}", chart.to_text());
 ```
 
 **输出**
@@ -416,9 +425,12 @@ print!("{}", astrolabe_to_prompt(&chart, Language::ZhCN));
 杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
 
 （以下十一宫格式相同，此处从略）
+
+=== 格局 ===
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
 ```
 
-完整输出与逐字段说明见[生成 AI 提示词](/zh/docs/guide/guides/ai-prompt)。
+完整输出与逐字段说明见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 这是 x-iztro 在 iztro 之外自加的功能，三语言均可用。
-用法与提示词写法见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。
+接入大模型的写法见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。

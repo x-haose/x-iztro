@@ -186,8 +186,8 @@ Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）。
 - **语言无关标识**：星盘每个字段在译名之外同时给出 `*key` / `*Key`，
   取值是 iztro 的 i18n key。判断逻辑因此不受盘面语言影响，
   不必再反查译名。详见[标识体系](/zh/docs/guide/guides/keys)
-- **Prompt 生成**：`astrolabe_to_prompt` / `horoscope_to_prompt`
-  把星盘或运限渲染成适合喂给大模型的纯文本，见 [AI Prompt 生成](/zh/docs/guide/guides/ai-prompt)
+- **语义化文本投影（to_text）**：把星盘、运限、宫位或三方四正投影成自然语言文本，
+  喂大模型或直接给人读，见[语义化文本](/zh/docs/guide/guides/to-text)
 - **入口前置校验**：非法日期、越界时辰等在入口返回错误而非 panic，
   且带机器可读的分类码，见[错误处理](/zh/docs/guide/guides/errors)
 - **自定义四化表与亮度表**：按标识整表替换内置数据，

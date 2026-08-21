@@ -232,6 +232,23 @@ Some(Miao)
 
 ---
 
+## flow_star_counterparts
+
+**用途**　流耀 → 对应本命辅星的全量对照表（50 条）。
+
+**签名**
+
+```rust
+pub fn flow_star_counterparts() -> Vec<(StarKey, StarKey)>
+pub fn natal_counterpart_of_flow_star(key: StarKey) -> Option<StarKey>
+```
+
+两者都从 crate 根导出（`use x_iztro::*` 即得）。全量表每项为（流耀，对应本命辅星），
+如 `(StarKey::Liuchang, StarKey::WenchangMin)`；单查版本非流耀返回 `None`。
+流耀没有独立的知识包条目，释义按对应的本命辅星查，这张表就是官方对照。
+
+---
+
 ## get_star_info
 
 **用途**　取一颗星的亮度表、五行与阴阳。

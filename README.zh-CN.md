@@ -38,7 +38,7 @@ from x_iztro import Astro
 astro = Astro()
 # 时辰索引 2 = 寅时 (03:00-05:00)；0 = 早子时 ... 12 = 晚子时
 chart = astro.by_solar("2000-8-16", 2, "female")
-print(astro.astrolabe_to_prompt(chart))
+print(chart.to_text())
 ```
 
 ```text
@@ -89,7 +89,7 @@ JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键�
 | 格局判定（64 条）                        | 无                | ✅                                   |
 | 知识包（解读文本、门派属性）             | 无                | ✅                                   |
 | 生辰反推（八字四柱 / 盘面特征 → 生辰）   | 无                | ✅                                   |
-| LLM Prompt 渲染                          | 无                | ✅                                   |
+| 语义化文本投影（to_text）                | 无                | ✅                                   |
 | 调用语言                                 | JS / TS           | Rust / Python / Go                   |
 | 配置                                     | 全局单例          | 随盘传入，无全局状态                 |
 | 非法输入                                 | 抛异常            | 带分类码的错误，非法输入不 panic     |
@@ -320,10 +320,11 @@ for c in result.candidates:
 
 ### 接大模型的几件实事
 
-- `astrolabe_to_prompt(chart)` 把整张盘渲染成结构化文本，
-  `horoscope_to_prompt(chart, "2024-10-1", 0)` 对指定日期的运限做同样的事。
-  格式确定、字段顺序稳定，守着它的 Prompt 快照就在测试套件里。
-- 一张本命盘的完整 Prompt 约 1.8 千字（zh-CN）/ 3.5 千字符（en-US），
+- `chart.to_text()` 把整张盘投影成语义化文本（含格局节），
+  `chart.horoscope("2024-10-1", 0).to_text()` 对指定日期的运限做同样的事；
+  宫位、三方四正、格局命中各有自己的 to_text。
+  格式确定、字段顺序稳定，守着它的文本快照就在测试套件里。
+- 一张本命盘的完整文本约 1.8 千字（zh-CN）/ 3.6 千字符（en-US），
   折合大约一两千 token，随模型而异。
 - 即使做英文产品，也建议**喂模型中文盘**：模型认识中文星名，而英文星名是
   iztro 自造的释义词表（`considery`、`dissipated` 这类），模型多半不认识——
@@ -388,7 +389,7 @@ lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三�
   `Warmup` 可把冷启动挪到启动阶段。
 - **Rust**——MSRV 1.88；直接依赖只有 `serde`、`serde_json`、`lunar_rust` 与
   `chrono`（仅 `horoscope_now` 用到时钟）。
-- **1.0 之前的稳定性**——序列化 JSON 契约、Prompt 格式与错误码都有快照测试
+- **1.0 之前的稳定性**——序列化 JSON 契约、to_text 文本格式与错误码都有快照测试
   守着；破坏性变更在 [CHANGELOG](CHANGELOG.md) 里显式列出。
 
 ## 配置

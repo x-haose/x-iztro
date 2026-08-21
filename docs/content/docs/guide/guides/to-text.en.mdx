@@ -1,0 +1,277 @@
+---
+title: Semantic text (to_text)
+description: Project a chart, a horoscope or a palace into natural-language text — for a language model, or for a person to read.
+---
+
+*For: everyone. This is the library's most direct use*
+
+A chart has three projections in x-iztro: `to_json` / the DTO is the structured form for machines,
+the translated fields are the display form for UIs, and **to_text is the natural-language form for
+models and people** — a complete written description of the chart's facts. Feeding it to a language
+model is its most common use, but it is not itself a prompt and contains no instructions. Assembling
+that description by hand is tedious and easy to get incomplete, so every readable object carries its
+own to_text.
+
+| Entry | Contents |
+| --- | --- |
+| Chart `to_text` | The natal chart: basic info, each palace's stem and branch, decadal, age-fortune nominal ages, four groups of twelve gods, three star groups, plus pattern hits |
+| Horoscope `to_text` | The horoscope: decadal, age fortune, yearly, monthly, daily and hourly scopes, each with its mutagens, flowing stars and patterns |
+| Palace `to_text` | A single palace, identical to that palace's section in the natal text |
+| Surrounded palaces `to_text` | The target palace, its opposite, and the wealth and career positions read together |
+| `patterns_to_text` | The pattern-hit list on its own, from the natal or any horoscope perspective |
+
+Everything generates in the **chart language**: a Chinese chart yields Chinese text, an English
+chart English text.
+
+## Usage
+
+```python
+chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
+h = chart.horoscope("2025-1-1", 0)
+
+text = f"{chart.to_text()}\n{h.to_text()}"   # str(chart) / str(h) are equivalent
+```
+
+```rust
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
+let h = chart.horoscope("2025-1-1", 0)?;
+
+let text = format!("{}\n{}", chart.to_text(), h.to_text());
+```
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
+h, _ := chart.Horoscope("2025-1-1", 0)
+
+natal, _ := chart.ToText()
+fortune, _ := h.ToText()
+```
+
+The finer-grained entries:
+
+```python
+chart.palace("soul").to_text()                  # one palace
+chart.surrounded_palaces("soul").to_text()      # surrounded palaces
+chart.patterns_to_text()                        # natal patterns
+h.patterns_to_text("yearly")                    # patterns from the yearly perspective
+```
+
+```go
+chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.PatternsToText(nil)
+h.PatternsToText(iztro.ScopeYearly, nil)
+```
+
+On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text(lang)` and the free
+functions of the `text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
+`surrounded_palaces_to_text` / `patterns_to_text`); the convenience methods emit in the chart
+language, the free functions take an explicit language. All three languages emit identical text.
+
+## What the natal text looks like
+
+Below is the complete opening, three palaces and the closing patterns section of the chart for
+2000-8-16, Yin hour, female, charted with `language="en-US"`:
+
+```text
+=== Basic Info ===
+Gender: female
+Solar Date: 2000-8-16
+Lunar Date: 二〇〇〇年七月十七
+Chinese Date: geng chen - jia shen - bing woo - geng yin
+Time: Tiger hour (03:00~05:00)
+Zodiac Sign: leo
+Zodiac Animal: dragon
+Soul Palace Branch: woo
+Body Palace Branch: xu
+Soul Star: rebel
+Body Star: scholar
+Five Elements Class: wood 3rd
+Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+
+=== Palaces ===
+
+--- wealth ---
+Stem-Branch: wuyin
+Decadal: 43-52
+Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+Twelve Gods: dissipated, gossip, sorrowing, varied
+Major Stars: general([+1])[B], minister([+3])
+Minor Stars: horse
+Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+
+--- spouse [Original Palace] ---
+Stem-Branch: gengchen
+Decadal: 23-32
+Age Fortune Years: 7, 19, 31, 43, 55, 67, 79, 91, 103, 115
+Twelve Gods: dead, general, initial, religious
+Major Stars: marshal([+3])
+Minor Stars: helper, impulsive([-3])
+Adjective Stars: awarded, religious
+
+--- career [Body Palace] ---
+Stem-Branch: bingxu
+Decadal: 83-92
+Age Fortune Years: 1, 13, 25, 37, 49, 61, 73, 85, 97, 109
+Twelve Gods: infancy, ambush, wastrel, hapless
+Major Stars: judge([0]), empress([+3])
+Minor Stars: officer
+Adjective Stars: gifted, frail
+
+(the other nine palaces are elided)
+
+=== Patterns ===
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+```
+
+Palaces come out in slot order on the chart, not in palace-name order. The closing `Patterns`
+section lists every hit of the [pattern engine](/en/docs/guide/concepts/patterns) on the natal
+chart, one per line: pattern name, the palace it lands in, and the stars that form it.
+
+<Callout title="Lunar Date stays in Chinese">
+`Lunar Date` is the only field that is not localized: the lunar date is written with Chinese
+numerals whatever the chart language. `二〇二四年腊月初二` below is the 2nd day of the 12th lunar
+month, 2024. `Chinese Date` is the four pillars romanized in pinyin.
+</Callout>
+
+## What the horoscope text looks like
+
+Target date 2025-1-1, early Zi hour:
+
+```text
+=== Horoscope ===
+Target Date: 2025-1-1 / 二〇二四年腊月初二
+
+--- Decadal Fortune ---
+Decadal Fortune Soul Palace: Natal spouse (gengchen)
+  Decadal Fortune Mutagen: sunA, generalB, moonC, fortunateD
+  Decadal Fortune Patterns: Marshal, Rebel and Wolf(soul), Meeting of Wind and Cloud(soul)
+  spouse (wealth):
+    Major Stars: general([+1])[B], minister([+3])
+    Minor Stars: horse
+    Scope Stars: horse(D)
+  siblings (children):
+    Major Stars: sun([+3])[A], sage([+3])
+    Scope Stars: artist(D)
+  ...
+
+Age Fortune Soul Palace: Natal career (Nominal Age 25)
+  Age Fortune Palace Names: career, friends, surface, health, wealth, children, spouse, siblings, soul, parents, spirit, property
+  Age Fortune Mutagen: fortunateA, advisorB, scholarC, judgeD
+  Major Stars: judge([0]), empress([+3])
+  Minor Stars: officer
+  Adjective Stars: gifted, frail
+
+--- Yearly ---
+Yearly Soul Palace: Natal spouse (jiachen)
+  Yearly Mutagen: judgeA, rebelB, generalC, sunD
+  Yearly Patterns: Marshal, Rebel and Wolf(soul), Money and Horse Galloping Together(spouse), Scholar and Artist Flanking Life(soul) [Broken], ...
+  spouse (wealth):
+    Major Stars: general([+1])[B], minister([+3])
+    Minor Stars: horse
+    Scope Stars: money(Y), horse(Y)
+    Twelve Gods: sorrowing, varied
+  ...
+
+Monthly Soul Palace: Natal friends (dingchou)
+  Monthly Palace Names: property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents, spirit
+  Monthly Mutagen: moonA, fortunateB, advisorC, advocatorD
+  Monthly Scope Stars: attractive(M)(property), artist(M)(surface), tangled(M)(surface), money(M)(health), ...
+  Monthly Patterns: Advisor, Moon, Fortunate and Sage(soul), Sun Shining on Thunder Gate(career), ...
+
+Daily Soul Palace: Natal surface (gengwoo)
+  Daily Palace Names: spirit, property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents
+  Daily Mutagen: sunA, generalB, moonC, fortunateD
+  Daily Scope Stars: artist(d)(property), cheerful(d)(property), aide(d)(health), ...
+  Daily Patterns: Fire and Wolf(soul), Bell and Wolf(soul), Marshal, Rebel and Wolf(soul), ...
+
+Hourly Soul Palace: Natal surface (bingzi)
+  Hourly Palace Names: spirit, property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents
+  Hourly Mutagen: fortunateA, advisorB, scholarC, judgeD
+  Hourly Scope Stars: horse(H)(spirit), attractive(H)(property), tangled(H)(career), ...
+  Hourly Patterns: Fire and Wolf(soul), Bell and Wolf(soul), Marshal, Rebel and Wolf(soul), ...
+```
+
+The decadal, yearly and finer scopes each carry a patterns line from their own perspective, with
+palace names written as re-laid out at that scope; age fortune has no pattern perspective and
+carries only its re-laid-out palace names and mutagens. When the subject
+has not yet entered the decadals, the decadal section's heading and labels all read `Childhood
+Fortune` instead of `Decadal Fortune` — childhood and decadal are different reading semantics.
+
+## Format conventions
+
+| Notation | Meaning |
+| --- | --- |
+| `judge([0])` | The parentheses hold [brightness](/en/docs/guide/concepts/stars#brightness) on a −3…+3 scale |
+| `sun([+3])[A]` | The square brackets hold the [mutagen](/en/docs/guide/concepts/mutagen); `A`/`B`/`C`/`D` are Lu/Quan/Ke/Ji |
+| `--- career [Body Palace] ---` | The bracket marks this palace as also being the Body palace |
+| `--- spouse [Original Palace] ---` | The bracket marks this palace as the [Original palace](/en/docs/guide/concepts/palaces#the-original-palace) |
+| `- Empress and Minister Facing the Palace(soul): …` | A pattern line: pattern name, landing palace (immediately after the name), forming stars |
+| `Scholar and Artist Flanking Life(soul) [Broken]` | `[Broken]` marks a pattern that forms but is broken |
+| `Decadal Fortune Soul Palace: Natal spouse (gengchen)` | Which natal palace this level's Soul palace landed on; the parentheses hold that level's stem and branch |
+| `Age Fortune Soul Palace: Natal career (Nominal Age 25)` | Where age fortune landed, with the [nominal age](/en/docs/guide/concepts#four-concepts-to-get-straight-first) (虚岁, the East Asian reckoning that starts at 1 on the day of birth) in parentheses |
+| `spouse (wealth):` | Inside a horoscope section, **the name in front is this level's re-laid-out palace name and the parentheses hold the natal palace name** |
+| `Twelve Gods: dissipated, gossip, sorrowing, varied` | In a natal palace this line is always one god from each of the four groups, in the order Changsheng-12, Boshi-12, Sui-qian-12, Jiang-qian-12; the per-palace `Twelve Gods` line in the yearly section holds only the Sui-qian and Jiang-qian pair |
+| `Age Fortune Palace Names: …`, `Monthly Palace Names: …` | That level's twelve re-laid-out palace names, in **natal slot order** (starting from the Yin palace) |
+| `Scope Stars: horse(D)` | Flowing stars, with a scope suffix: `(D)` decadal, `(Y)` yearly, `(M)` monthly, `(d)` daily, `(H)` hourly |
+| `attractive(M)(property)` | On monthly and finer scopes, the second parenthesis holds the re-laid-out palace the flowing star lands in |
+
+<Callout type="warn" title="The parentheses hold the natal name — don't read it backwards">
+`spouse (wealth):` says "within this decadal this cell is called the Spouse palace, and on the natal
+chart it is the Wealth palace". A horoscope reading goes by the name in front; the one in
+parentheses is there so you can map back to the natal chart. See
+[Horoscopes](/en/docs/guide/concepts/horoscope#the-same-cell-a-different-palace-name).
+</Callout>
+
+<Callout type="warn" title="The (Y) on considery is not a scope suffix">
+`(D)` and `(Y)` after a flowing star mark the scope. But `considery(Y)` is the literal en-US name of
+the star Nianjie (年解), suffix included — iztro's vocabulary bakes it in to separate 年解 from 解神
+(`jieshen`, `considery`). So `considery(Y)` appears among the **Adjective Stars** of the natal chart,
+where no scope suffix is implied. Verify by key, never by parsing the name.
+</Callout>
+
+Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` and you get
+`Solar Date: 2000-8-16`.
+
+## Length
+
+An English natal text runs about 3,570 characters and the horoscope section about 5,980, so the two
+together stay under 9,600 characters. A Chinese chart is shorter — star names are two characters
+rather than a word — at about 1,810 and 2,490, around 4,300 combined. Any mainstream model's context
+window holds either comfortably; trimming is normally unnecessary.
+
+## Wiring it to a model
+
+The generated text is pure description and contains no instructions. In practice, put your analysis
+request in front of it:
+
+```python
+system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
+          "do not invent information that is not on it.")
+user = f"""{chart.to_text()}
+
+{chart.horoscope("2025-1-1", 0).to_text()}
+
+Analyse this person's career prospects for 2025."""
+```
+
+For a fuller integration (tool calls, and not letting the model chart for itself) see
+[Letting an AI read the chart](/en/docs/guide/guides/llm).
+
+<Callout title="Chinese chart or English chart?">
+Prefer a Chinese chart even when your product is in English. The English vocabulary is iztro's
+interpretive word list — Ziwei is `emperor`, Qisha is `marshal` — brightness degrades to marks such
+as `[+3]`, mutagens become `A`/`B`/`C`/`D`, and a couple of entries are not English words at all
+(`considery`, `disastery`). None of that matches the rendering conventional in English-language Zi
+Wei writing, so a model may not recognise it.
+
+Mainstream models handle Chinese Zi Wei terminology well, and feeding them the Chinese text gets
+better results. When you genuinely need English, attach a
+[star-name table](/en/docs/guide/concepts/stars#star-name-table) alongside it.
+</Callout>
+
+## When you need finer control
+
+to_text covers the general case. To customise the text structure — describing only a few palaces, or
+emitting JSON instead of text — walk the chart data and assemble it yourself; every field is public.
+See the [Data model](/en/docs/guide/data-model).

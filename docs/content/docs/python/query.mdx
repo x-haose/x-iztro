@@ -174,8 +174,51 @@ emperor
 命宫由农历月份与出生时辰共同定位，因此 `time_index` 是必填的。
 只知道日期不知道时辰时，斗数无法给出确定的命宫。
 </Accordion>
-<Accordion title="要判断请用整盘">
-返回值是翻译后的字符串，换语言就会变。要做程序判断请排整盘，
-用 `chart.palace("soulPalace")` 取宫位后比较 `major_stars` 里的 `key`。
+<Accordion title="要判断请用 key 形态">
+返回值是翻译后的字符串，换语言就会变。要做程序判断用下面的
+`get_major_star_keys_by_solar_date` / `get_major_star_keys_by_lunar_date`，
+或排整盘后比较 `major_stars` 里的 `key`。
 </Accordion>
 </Accordions>
+
+---
+
+## get_major_star_keys_by_solar_date / get_major_star_keys_by_lunar_date
+
+**用途**　命宫主星的语言无关标识列表——上面两个函数的 key 形态，供程序判断。
+
+**签名**
+
+```python
+def get_major_star_keys_by_solar_date(
+    solar_date: str,
+    time_index: TimeIndexType,
+    *,
+    fix_leap: bool = True,
+    config: ChartConfig | None = None,
+) -> list[str]
+
+def get_major_star_keys_by_lunar_date(
+    lunar_date: str,
+    time_index: TimeIndexType,
+    *,
+    is_leap_month: bool = False,
+    fix_leap: bool = True,
+    config: ChartConfig | None = None,
+) -> list[str]
+```
+
+**返回值**　`list[str]`——`MajorStar` 枚举值域的标识（如 `"ziweiMaj"`）；
+命宫为空宫时同样借对宫主星。标识与输出语言无关，因此**不收 `language`**。
+
+**示例**
+
+```python
+print(query.get_major_star_keys_by_solar_date("2000-8-16", 2))
+```
+
+**输出**
+
+```text
+['ziweiMaj']
+```

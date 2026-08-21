@@ -1,6 +1,6 @@
 ---
 title: Charting entries
-description: The charting methods of the Astro class, re-anchoring, and AI prompt generation.
+description: The charting methods of the Astro class, re-anchoring, and the semantic text projection.
 ---
 
 Charting is where everything starts: give a birth date, hour and gender, get an `Astrolabe`.
@@ -109,7 +109,7 @@ tables are charting **input** rather than result, so they never enter the DTO (m
 contract of JS iztro).
 
 The chart does keep the originals you passed in internally, however, so follow-up computations such as
-`chart.rearranged(...)`, `chart.horoscope(...)` and prompt generation still use those two tables; they
+`chart.rearranged(...)`, `chart.horoscope(...)` and the to_text projection still use those two tables; they
 are not silently dropped.
 To record the configuration, keep your `ChartConfig` object on your own call site.
 </Accordion>
@@ -347,7 +347,7 @@ the soul star, plus Tianshang, Tianshi and Tiancai, which follow the Soul palace
 Carried over from the original chart: minor stars, the remaining adjective stars, the Boshi gods, the
 Sui-qian and Jiang-qian gods, and the body star.
 
-On the rearranged chart, `patterns()`, horoscope queries and prompt generation all compute from
+On the rearranged chart, `patterns()`, horoscope queries and the to_text projection all compute from
 **the rearranged layout** — the five elements class, soul palace and decadal ranges follow the
 new starting stem-branch; the birth data (dates and four pillars) stays unchanged.
 
@@ -386,31 +386,25 @@ The soul star is looked up by the Soul palace branch and therefore does update.
 
 ---
 
-## astrolabe_to_prompt / horoscope_to_prompt
+## Semantic text (to_text)
 
-**Purpose** Render a chart or a horoscope into structured text for a language model.
+**Purpose** Project a chart or a horoscope into semantic text — the chart's facts in
+natural-language form, for a language model or a person. Alongside `to_dict`/`to_json` (machine
+structure) and the translated fields (display), it is the third projection of the same object.
 
-**Signature**
+**Signature** The text projection lives on the objects themselves, not on `Astro`:
 
 ```python
-def astrolabe_to_prompt(self, astrolabe: Astrolabe) -> str
-def horoscope_to_prompt(
-    self,
-    astrolabe: Astrolabe,
-    target_date: str,
-    target_time_index: TimeIndexType,
-) -> str
+chart.to_text()                            # natal chart; str(chart) is equivalent
+chart.horoscope("2025-1-1", 0).to_text()   # horoscope; str(h) is equivalent
+chart.palace("soul").to_text()             # one palace
+chart.surrounded_palaces("soul").to_text() # surrounded palaces
+chart.patterns_to_text()                   # natal patterns
 ```
 
-**Parameters**
-
-| Parameter | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `astrolabe` | `Astrolabe` | Yes | — | The chart object |
-| `target_date` | `str` | Yes | — | Horoscope version only: the target solar date |
-| `target_time_index` | `int` | Yes | — | Horoscope version only: the target hour index |
-
-**Return value** `str` — structured text in the chart's own charting language.
+**Return value** `str` — sectioned plain text in the chart's own charting language; the natal text
+closes with a patterns section, and each horoscope scope carries a patterns line and flowing-star
+lines from its own perspective.
 
 **Example**
 
@@ -418,7 +412,7 @@ def horoscope_to_prompt(
 astro = Astro()
 chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
 
-print(astro.astrolabe_to_prompt(chart)[:77])
+print(chart.to_text()[:77])
 ```
 
 **Output**
@@ -433,6 +427,6 @@ Lunar Date: 二〇〇〇年七月十七
 **Edge cases and pitfalls**
 
 <Callout type="info">
-The output language follows the chart's `language` and is not set separately. For an English prompt,
+The output language follows the chart's `language` and is not set separately. For English text,
 chart in English.
 </Callout>

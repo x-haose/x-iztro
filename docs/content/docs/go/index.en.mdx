@@ -233,7 +233,7 @@ during startup.
 
 ### Context variants
 
-The entry points that cross into wasm — charting, horoscope, rearranging, prompts — each have a
+The entry points that cross into wasm — charting, horoscope, rearranging, text projection — each have a
 `*Context` version taking one extra `context.Context`:
 
 | Without ctx | With ctx |
@@ -241,7 +241,7 @@ The entry points that cross into wasm — charting, horoscope, rearranging, prom
 | `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
 | `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
 | `Astrolabe.Rearranged` | `RearrangedContext` |
-| `Astrolabe.AstrolabeToPrompt` / `HoroscopeToPrompt` | `AstrolabeToPromptContext` / `HoroscopeToPromptContext` |
+| `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` |
 | — | `Warmup` / `Close` / `CompilationCacheDir` exist only in the ctx form |
 
 ```go

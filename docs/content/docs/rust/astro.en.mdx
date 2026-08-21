@@ -11,7 +11,7 @@ The entry points that take external input (`by_solar`, `by_lunar`, the two JSON 
 `get_horoscope`) all return a `Result`: date format and existence, the solar year range and the hour
 index are validated up front in the core, and invalid input returns an `IztroError` rather than
 panicking. Functions whose parameters are all enums with no invalid values (`rearranged`,
-`astrolabe_to_prompt`) return their result directly. Error types are on
+`astrolabe_to_text`) return their result directly. Error types are on
 [Error handling](/en/docs/rust/errors).
 </Callout>
 
@@ -212,7 +212,8 @@ plus Tianshang, Tianshi and Tiancai, which follow the Soul palace. Carried over 
 chart: minor stars, the remaining adjective stars, the Boshi gods and the Sui-qian and Jiang-qian
 gods.
 
-On the rearranged chart, `patterns()` / `patterns_with()`, horoscope queries and prompt generation
+On the rearranged chart, `patterns()` / `patterns_with()`, horoscope queries and the to_text
+projection
 all compute from **the rearranged layout** — the five elements class, soul palace and decadal
 ranges follow the new starting stem-branch; the birth data (dates and four pillars) stays unchanged.
 
@@ -382,20 +383,29 @@ too, so queries need not be handed the chart again. The free function here retur
 
 ---
 
-## astrolabe_to_prompt / horoscope_to_prompt
+## astrolabe_to_text / horoscope_to_text
 
-**Purpose** Render a chart or a horoscope into plain text suited to a language model.
+**Purpose** Project a chart or a horoscope into semantic text — the chart's facts in
+natural-language form, for a language model or a person. Alongside `serde_json` (machine structure)
+and the translated fields (display), it is the third projection of the same object.
 
-**Signature**
+**Signature** (the `x_iztro::text` module, which also holds `palace_to_text` /
+`surrounded_palaces_to_text` / `patterns_to_text`)
 
 ```rust
-pub fn astrolabe_to_prompt(astrolabe: &Astrolabe, lang: Language) -> String
-pub fn horoscope_to_prompt(
+pub fn astrolabe_to_text(astrolabe: &Astrolabe, lang: Language) -> String
+pub fn horoscope_to_text(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
     lang: Language,
 ) -> String
 ```
+
+Convenience methods that emit in the chart language: `Astrolabe::to_text()`,
+`HoroscopeRef::to_text()`, `PalaceRef::to_text()`; `SurroundedPalaces::to_text(lang)` takes an
+explicit language. The free functions' `lang` may differ from the charting language: star names,
+hours, zodiac signs, stems and branches and flowing stars are all re-translated by key into the
+target language, byte-identical to a chart cast in that language.
 
 **Parameters**
 
@@ -405,7 +415,8 @@ pub fn horoscope_to_prompt(
 | `horoscope` | `&HoroscopeData` | Yes | — | The result of `get_horoscope` |
 | `lang` | `Language` | Yes | — | Output language, which switches both the section headings and the star names |
 
-**Return value** `String`, sectioned plain text.
+**Return value** `String`, sectioned plain text; the natal text closes with a patterns section, and
+each horoscope scope carries a patterns line and flowing-star lines from its own perspective.
 
 **Example**
 
@@ -413,7 +424,7 @@ pub fn horoscope_to_prompt(
 use x_iztro::*;
 
 let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
-print!("{}", astrolabe_to_prompt(&chart, Language::EnUS));
+print!("{}", chart.to_text());
 ```
 
 **Output**
@@ -446,10 +457,13 @@ Minor Stars: horse
 Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
 
 (the other eleven palaces follow the same format and are omitted here)
+
+=== Patterns ===
+- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
 ```
 
 The complete output with a field-by-field walkthrough is on
-[Generating AI prompts](/en/docs/guide/guides/ai-prompt).
+[Semantic text](/en/docs/guide/guides/to-text).
 
 This is an addition of x-iztro's beyond iztro, available in all three languages.
-Usage and prompt-writing notes are on [Docs for AI](/en/docs/guide/guides/llm).
+Wiring it to a model is covered on [Docs for AI](/en/docs/guide/guides/llm).
