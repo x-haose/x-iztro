@@ -48,7 +48,10 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
     for (k, e) in &p.stars {
         let category = e.category.as_deref();
         assert!(
-            matches!(category, Some("major" | "minor" | "adjective" | "dec")),
+            matches!(
+                category,
+                Some("major" | "minor" | "adjective" | "dec" | "flow")
+            ),
             "{k} category {category:?}"
         );
         assert!(
@@ -76,6 +79,27 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
         }
     }
     assert_eq!((major_n, minor_n), (14, 14));
+
+    // 反向覆盖：内核的每个星耀标识都必须有知识条目——上面的正向校验只保证
+    // 「包里的键都合法」，漏写条目（尤其新增 StarKey 时）靠这条兜住
+    for star in x_iztro::data::stars::ALL_STARS {
+        assert!(
+            p.stars.contains_key(star.as_key()),
+            "star {} has no knowledge entry",
+            star.as_key()
+        );
+    }
+
+    // 流耀条目与内核对照表一一对应：每颗流耀都有 flow 类条目，且内核能给出其本命对应
+    for (flow, natal) in x_iztro::astro::horoscope::flow_star_counterparts() {
+        let e = p.stars.get(flow.as_key()).expect("flow star entry");
+        assert_eq!(e.category.as_deref(), Some("flow"), "{}", flow.as_key());
+        assert!(
+            StarKey::from_key(natal.as_key()).is_some(),
+            "counterpart {}",
+            natal.as_key()
+        );
+    }
     for k in ALL_PATTERNS {
         let e = p
             .pattern(k)
