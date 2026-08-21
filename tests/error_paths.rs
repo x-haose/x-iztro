@@ -170,3 +170,34 @@ fn get_horoscope_rejects_invalid_targets() {
     );
     assert!(get_horoscope(&astrolabe, "2025-1-1", 12, LANG).is_ok());
 }
+
+/// `rearranged` 对非法 `raw_dates` 报错而非 panic：排盘入口产出的盘不会触发，
+/// 反序列化或手工构造的盘把农历月改成月表中不存在的月份时，
+/// 必须走 `IztroError::Internal`——wasm 上 panic 即 trap 且损耗共享实例。
+#[test]
+fn rearranged_rejects_corrupt_raw_dates() {
+    let chart = by_solar(
+        "2000-8-16",
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        Config::default(),
+    )
+    .unwrap();
+
+    let mut corrupt = chart.clone();
+    // 2000 年无闰七月，把 raw_dates 强改为闰月即构成月表中不存在的月份
+    corrupt.raw_dates.lunar_date.is_leap = true;
+    assert!(matches!(
+        corrupt.rearranged(HeavenlyStem::Geng, EarthlyBranch::Chen),
+        Err(IztroError::Internal(_))
+    ));
+
+    // 合法盘照常重排
+    assert!(
+        chart
+            .rearranged(HeavenlyStem::Geng, EarthlyBranch::Chen)
+            .is_ok()
+    );
+}

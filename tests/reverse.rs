@@ -440,19 +440,28 @@ fn reverse_chart_rejects_bad_criteria() {
     // 空条件
     let err = reverse_chart(&ReverseCriteria::default(), &cfg).unwrap_err();
     assert_eq!(err.code(), "invalid_argument");
-    // 流耀
-    let err = reverse_chart(
-        &ReverseCriteria {
-            stars: vec![StarPosition {
-                star: StarKey::Liulu,
-                branch: EarthlyBranch::Zi,
-            }],
-            ..Default::default()
-        },
-        &cfg,
-    )
-    .unwrap_err();
-    assert_eq!(err.code(), "invalid_argument");
+    // 流耀：五个层级（运/流/月/日/时）都必须拒绝——它们不出现在本命盘上，
+    // 放行会静默得到空结果，看起来像真的无解
+    for star in [
+        StarKey::Yunlu,
+        StarKey::Liulu,
+        StarKey::Yuechang,
+        StarKey::Richang,
+        StarKey::Shima,
+    ] {
+        let err = reverse_chart(
+            &ReverseCriteria {
+                stars: vec![StarPosition {
+                    star,
+                    branch: EarthlyBranch::Zi,
+                }],
+                ..Default::default()
+            },
+            &cfg,
+        )
+        .unwrap_err();
+        assert_eq!(err.code(), "invalid_argument", "{star:?} 应被拒绝");
+    }
     // 四组十二神：以每宫单值字段存在、不进入星耀列表，落宫条件恒不可满足，须显式拒绝
     for star in [
         StarKey::Changsheng,

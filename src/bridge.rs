@@ -456,7 +456,7 @@ fn apply_rearrange(
 ) -> Result<Astrolabe, BridgeError> {
     match parse_from(stem, branch)? {
         None => Ok(astrolabe),
-        Some((s, b)) => Ok(astrolabe.rearranged(s, b)),
+        Some((s, b)) => Ok(astrolabe.rearranged(s, b)?),
     }
 }
 
@@ -1416,6 +1416,7 @@ mod tests {
             HeavenlyStem::from_key("gengHeavenly").unwrap(),
             EarthlyBranch::from_key("chenEarthly").unwrap(),
         )
+        .unwrap()
         .patterns_dto(&crate::pattern::PatternConfig::default());
         assert_eq!(rearranged, serde_json::to_value(native).unwrap());
     }
@@ -1454,7 +1455,8 @@ mod tests {
         .rearranged(
             HeavenlyStem::from_key("gengHeavenly").unwrap(),
             EarthlyBranch::from_key("chenEarthly").unwrap(),
-        );
+        )
+        .unwrap();
         let native = crate::get_horoscope(&native_chart, "2024-6-1", 0, Language::ZhCN).unwrap();
         assert_eq!(
             rearranged,

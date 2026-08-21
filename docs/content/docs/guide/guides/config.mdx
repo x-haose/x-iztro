@@ -220,7 +220,7 @@ earth, _ := chart.Rearranged(body.HeavenlyStemKey, body.EarthlyBranchKey)
 ```
 
 ```rust
-let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch)?;
 ```
 
 以身宫干支重排，结果与 `astro_type = earth` 一致。

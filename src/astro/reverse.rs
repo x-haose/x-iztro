@@ -12,7 +12,6 @@
 use std::sync::OnceLock;
 
 use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_year::{self, LunarYearRefHelper};
 use lunar_rust::{lunar, solar};
 use serde::{Deserialize, Serialize};
 
@@ -307,9 +306,6 @@ pub fn reverse_chart(
         if stems.is_empty() || !year_prefilter(criteria, &stems, config) {
             continue;
         }
-        let leap_month = lunar_year::LunarYear::from_lunar_year(year)
-            .get_leap_months()
-            .abs();
         for month in 1..=12i64 {
             if let Some(months) = &domains.months
                 && !months.contains(&month)
@@ -317,9 +313,6 @@ pub fn reverse_chart(
                 continue;
             }
             for is_leap in [false, true] {
-                if is_leap && month != leap_month {
-                    continue;
-                }
                 let signed_month = if is_leap { -month } else { month };
                 // 月天数走 lunar_table 修正视图（lunar_rust 的 1602 闰二月月界缺陷在
                 // 那里归位），枚举的农历日标签与正排上下文完全同源
@@ -822,42 +815,12 @@ fn is_twelve_gods_star(key: StarKey) -> bool {
     )
 }
 
-/// 是否运限流曜（大限运曜、流年流曜、小限流曜）：它们不出现在本命盘上。
+/// 是否运限流曜：五个层级（运/流/月/日/时）共 50 颗，一律不出现在本命盘上。
+///
+/// 判定复用全量流曜对照表 [`crate::astro::horoscope::natal_counterpart_of_flow_star`]，
+/// 不另抄一份清单——手抄清单漏层级时，含该流曜的条件会通过校验并静默得到空结果。
 fn is_flow_star(key: StarKey) -> bool {
-    use StarKey::*;
-    matches!(
-        key,
-        Yunkui
-            | Yunyue
-            | Yunchang
-            | Yunqu
-            | Yunluan
-            | Yunxi
-            | Yunlu
-            | Yunyang
-            | Yuntuo
-            | Yunma
-            | Liukui
-            | Liuyue
-            | Liuchang
-            | Liuqu
-            | Liuluan
-            | Liuxi
-            | Liulu
-            | Liuyang
-            | Liutuo
-            | Liuma
-            | Shikui
-            | Shiyue
-            | Shichang
-            | Shiqu
-            | Shiluan
-            | Shixi
-            | Shilu
-            | Shiyang
-            | Shituo
-            | Shima
-    )
+    crate::astro::horoscope::natal_counterpart_of_flow_star(key).is_some()
 }
 
 #[cfg(test)]

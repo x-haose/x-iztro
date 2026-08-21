@@ -11,6 +11,7 @@ use crate::astro::palace::{get_decadals_and_ages, get_five_elements_class, get_p
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::error::IztroError;
 use crate::i18n::translate_star;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
@@ -33,7 +34,16 @@ impl Astrolabe {
     ///
     /// 常规的天盘、地盘、人盘用 [`Config::astro_type`] 指定即可，
     /// 本方法用于从任意干支起盘。
-    pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) -> Astrolabe {
+    ///
+    /// # Errors
+    /// 本盘 `raw_dates` 的农历月不存在于月表时返回 [`IztroError::Internal`]——
+    /// 排盘入口产出的盘不会触发，只可能来自反序列化或手工构造的非法 `raw_dates`；
+    /// 报错而非 panic，wasm 上 panic 即 trap 且损耗共享实例。
+    pub fn rearranged(
+        &self,
+        from_stem: HeavenlyStem,
+        from_branch: EarthlyBranch,
+    ) -> Result<Astrolabe, IztroError> {
         let mut chart = self.clone();
 
         // 晚子时算当天时按早子时安星，与排盘入口的处理一致
@@ -58,8 +68,12 @@ impl Astrolabe {
             lunar.lunar_month as i64
         };
         let month_day_count = lunar_table::month_day_count(lunar.lunar_year, signed_month)
-            .expect("已排盘星盘的 raw_dates 农历月必然存在于月表")
-            as u32;
+            .ok_or_else(|| {
+                IztroError::Internal(format!(
+                    "raw_dates 的农历月不存在于月表：{}年{}月（闰月={}）",
+                    lunar.lunar_year, lunar.lunar_month, lunar.is_leap
+                ))
+            })? as u32;
         let start_idx = get_start_index(
             lunar.lunar_day,
             effective_ti,
@@ -132,7 +146,7 @@ impl Astrolabe {
             chart.soul = get_earthly_branch_info(chart.earthly_branch_of_soul_palace).soul;
         }
 
-        chart
+        Ok(chart)
     }
 }
 

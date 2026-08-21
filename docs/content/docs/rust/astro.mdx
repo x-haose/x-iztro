@@ -9,8 +9,9 @@ description: by_solar、by_lunar、rearranged 与 JSON 便捷版本。
 <Callout type="info">
 收外部输入的入口（`by_solar`、`by_lunar`、两个 JSON 版本、`get_horoscope`）都返回
 `Result`：日期格式与存在性、公历年份范围、时辰索引在核心层前置校验，非法输入返回
-`IztroError` 而不是 panic。入参全是枚举、无非法值的函数（`rearranged`、
-`astrolabe_to_text`）直接返回结果。错误类型见[错误处理](/zh/docs/rust/errors)。
+`IztroError` 而不是 panic。`rearranged` 同样返回 `Result`（守护反序列化来的非法
+`raw_dates`）；入参全是枚举、无非法值的函数（`astrolabe_to_text` 等）直接返回结果。
+错误类型见[错误处理](/zh/docs/rust/errors)。
 </Callout>
 
 ---
@@ -175,7 +176,11 @@ println!("{}", a.solar_date);
 **签名**
 
 ```rust
-pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) -> Astrolabe
+pub fn rearranged(
+    &self,
+    from_stem: HeavenlyStem,
+    from_branch: EarthlyBranch,
+) -> Result<Astrolabe, IztroError>
 ```
 
 **参数**
@@ -185,8 +190,10 @@ pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) ->
 | `from_stem` | `HeavenlyStem` | 是 | — | 新命宫的天干 |
 | `from_branch` | `EarthlyBranch` | 是 | — | 新命宫的地支 |
 
-**返回值**　新的 `Astrolabe`。重算：命宫身宫、五行局、十四主星、十二宫名、长生十二神、大限小限，
-以及随命宫挪位的天伤、天使、天才。沿用原盘：辅星、其余杂耀、博士十二神、岁前与将前十二神。
+**返回值**　`Result<Astrolabe, IztroError>`。重算：命宫身宫、五行局、十四主星、十二宫名、
+长生十二神、大限小限，以及随命宫挪位的天伤、天使、天才。沿用原盘：辅星、其余杂耀、
+博士十二神、岁前与将前十二神。排盘入口产出的盘重排必成功；仅当 `raw_dates` 被
+反序列化或手工构造成月表中不存在的农历月时返回 `IztroError::Internal`。
 
 重排返回的盘上，`patterns() / patterns_with()`、运限查询与 to_text 文本投影都按**重排后的布局**
 计算——五行局、命宫与大限随重排起点变化；出生数据（日期与四柱）保持不变。
@@ -200,7 +207,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 
 // 从原盘身宫的干支起盘，等价于地盘
 let body = chart.palaces.iter().find(|p| p.is_body_palace).unwrap();
-let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch)?;
 
 println!("天盘 {} → 地盘 {}",
     translate_five_elements_class(chart.five_elements_class, Language::ZhCN),

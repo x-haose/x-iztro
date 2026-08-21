@@ -617,13 +617,16 @@ pub fn by_solar(
     // 6. 地盘与人盘以身宫、福德宫的干支重排；天盘即上面排好的结果
     Ok(match chart.config.astro_type {
         AstroType::Heaven => chart,
-        AstroType::Earth => rearrange_from_palace(&chart, |p| p.is_body_palace),
-        AstroType::Human => rearrange_from_palace(&chart, |p| p.name == Palace::Spirit),
+        AstroType::Earth => rearrange_from_palace(&chart, |p| p.is_body_palace)?,
+        AstroType::Human => rearrange_from_palace(&chart, |p| p.name == Palace::Spirit)?,
     })
 }
 
 /// 以满足 `pick` 的那一宫的干支重排星盘；十二宫必有身宫与福德宫，故必然命中。
-fn rearrange_from_palace(chart: &Astrolabe, pick: impl Fn(&PalaceData) -> bool) -> Astrolabe {
+fn rearrange_from_palace(
+    chart: &Astrolabe,
+    pick: impl Fn(&PalaceData) -> bool,
+) -> Result<Astrolabe, IztroError> {
     let from = chart
         .palaces
         .iter()

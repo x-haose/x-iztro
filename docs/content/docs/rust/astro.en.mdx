@@ -10,8 +10,9 @@ This page is the full reference for the four charting entry points.
 The entry points that take external input (`by_solar`, `by_lunar`, the two JSON variants and
 `get_horoscope`) all return a `Result`: date format and existence, the solar year range and the hour
 index are validated up front in the core, and invalid input returns an `IztroError` rather than
-panicking. Functions whose parameters are all enums with no invalid values (`rearranged`,
-`astrolabe_to_text`) return their result directly. Error types are on
+panicking. `rearranged` also returns a `Result` (guarding against invalid `raw_dates` from
+deserialized charts); functions whose parameters are all enums with no invalid values
+(`astrolabe_to_text` and friends) return their result directly. Error types are on
 [Error handling](/en/docs/rust/errors).
 </Callout>
 
@@ -196,7 +197,11 @@ This method opens that capability up to **any** stem and branch, not just those 
 **Signature**
 
 ```rust
-pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) -> Astrolabe
+pub fn rearranged(
+    &self,
+    from_stem: HeavenlyStem,
+    from_branch: EarthlyBranch,
+) -> Result<Astrolabe, IztroError>
 ```
 
 **Parameters**
@@ -206,7 +211,10 @@ pub fn rearranged(&self, from_stem: HeavenlyStem, from_branch: EarthlyBranch) ->
 | `from_stem` | `HeavenlyStem` | Yes | — | Stem of the new Soul palace |
 | `from_branch` | `EarthlyBranch` | Yes | — | Branch of the new Soul palace |
 
-**Return value** A new `Astrolabe`. Recomputed: the Soul and body palaces, the five elements class,
+**Return value** `Result<Astrolabe, IztroError>`. A chart produced by a charting entry point always
+rearranges successfully; `IztroError::Internal` is returned only when `raw_dates` was deserialized
+or hand-built with a lunar month that does not exist in the month table.
+Recomputed: the Soul and body palaces, the five elements class,
 the fourteen major stars, the twelve palace names, the Changsheng gods, the decadal and age scopes,
 plus Tianshang, Tianshi and Tiancai, which follow the Soul palace. Carried over from the original
 chart: minor stars, the remaining adjective stars, the Boshi gods and the Sui-qian and Jiang-qian
@@ -226,7 +234,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Confi
 
 // anchor on the original chart's body palace pillar — equivalent to the earth chart
 let body = chart.palaces.iter().find(|p| p.is_body_palace).unwrap();
-let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch);
+let earth = chart.rearranged(body.heavenly_stem, body.earthly_branch)?;
 
 println!("heaven {} → earth {}",
     translate_five_elements_class(chart.five_elements_class, Language::EnUS),
