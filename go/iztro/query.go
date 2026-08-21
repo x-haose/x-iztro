@@ -1,29 +1,25 @@
 package iztro
 
-import (
-	"context"
-	"encoding/json"
-)
-
 // 轻量查询：不需要完整星盘就能拿到的单个结果。
 // 五个查询共用 wasm 侧的同一个入口，由 kind 分派。
 
-// queryResult 为 wasm 查询入口的返回体。
-type queryResult struct {
-	Value string `json:"value"`
+// translatedResult 为轻量查询的双轨返回：Text 按语言翻译（与 iztro 同名函数
+// 的返回一致），Keys 为同一结果的语言无关标识列表。
+type translatedResult struct {
+	Text string   `json:"text"`
+	Keys []string `json:"keys"`
 }
 
-// query 调用 wasm 的查询入口并取出结果字符串。
+// queryTranslated 调用 wasm 的查询入口并取出双轨结果。
+func queryTranslated(payload map[string]any) (translatedResult, error) {
+	var out translatedResult
+	return out, utilQuery(payload, &out)
+}
+
+// query 调用 wasm 的查询入口并取出翻译文本。
 func query(payload map[string]any) (string, error) {
-	raw, err := callWasm(context.Background(), fnQuery, payload)
-	if err != nil {
-		return "", err
-	}
-	var out queryResult
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return "", internalError("decode query result: " + err.Error())
-	}
-	return out.Value, nil
+	out, err := queryTranslated(payload)
+	return out.Text, err
 }
 
 // GetZodiacBySolarDate 通过阳历日期取生肖。
@@ -87,4 +83,37 @@ func GetMajorStarByLunarDate(lunarDate string, timeIndex uint8, leap LeapMonth, 
 		"language":    language,
 		"config":      config,
 	})
+}
+
+// MajorStarKeysBySolarDate 通过阳历日期取命宫主星的语言无关标识列表
+// （StarZiweiMaj 等常量取值）。空宫借对宫的口径与 GetMajorStarBySolarDate 一致。
+func MajorStarKeysBySolarDate(solarDate string, timeIndex uint8, fixLeap bool, config *Config) ([]string, error) {
+	out, err := queryTranslated(map[string]any{
+		"kind":      "majorStarBySolar",
+		"solarDate": solarDate,
+		"timeIndex": timeIndex,
+		"fixLeap":   fixLeap,
+		"language":  LanguageZhCN,
+		"config":    config,
+	})
+	return out.Keys, err
+}
+
+// MajorStarKeysByLunarDate 通过农历日期取命宫主星的语言无关标识列表。
+// 空宫借对宫与闰月口径与 GetMajorStarByLunarDate 一致。
+func MajorStarKeysByLunarDate(lunarDate string, timeIndex uint8, leap LeapMonth, config *Config) ([]string, error) {
+	isLeapMonth, fixLeap, err := leap.flags()
+	if err != nil {
+		return nil, err
+	}
+	out, err := queryTranslated(map[string]any{
+		"kind":        "majorStarByLunar",
+		"lunarDate":   lunarDate,
+		"timeIndex":   timeIndex,
+		"isLeapMonth": isLeapMonth,
+		"fixLeap":     fixLeap,
+		"language":    LanguageZhCN,
+		"config":      config,
+	})
+	return out.Keys, err
 }

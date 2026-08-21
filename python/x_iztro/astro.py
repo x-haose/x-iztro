@@ -2,8 +2,9 @@
 x-iztro 排盘主类
 
 封装 Rust 原生模块，返回类型化的 dataclass 对象。
-运限与 Prompt 为无状态接口：从星盘对象自带的排盘上下文重新发起计算，
+运限为无状态接口：从星盘对象自带的排盘上下文重新发起计算，
 无需在 Python 与 Rust 之间往返完整星盘数据。
+语义化文本走对象方法：`Astrolabe.to_text()` / `Horoscope.to_text()` 等。
 """
 
 from __future__ import annotations
@@ -131,62 +132,3 @@ class Astro:
             IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
         """
         return astrolabe.horoscope(target_date, target_time_index)
-
-    def astrolabe_to_prompt(self, astrolabe: Astrolabe) -> str:
-        """
-        生成本命盘 AI Prompt
-
-        Args:
-            astrolabe: 星盘对象
-
-        Returns:
-            结构化文本 prompt
-
-        Raises:
-            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
-        """
-        return bridge.query(
-            "astrolabeToPrompt",
-            solar_date=astrolabe.solar_date,
-            time_index=astrolabe.time_index,
-            gender=astrolabe.gender_key,
-            fix_leap=astrolabe.fix_leap,
-            language=astrolabe.language,
-            config=astrolabe._config_payload(),
-            from_stem=astrolabe._from_stem,
-            from_branch=astrolabe._from_branch,
-        )
-
-    def horoscope_to_prompt(
-        self,
-        astrolabe: Astrolabe,
-        target_date: str,
-        target_time_index: TimeIndexType,
-    ) -> str:
-        """
-        生成运限 AI Prompt
-
-        Args:
-            astrolabe: 星盘对象
-            target_date: 目标阳历日期
-            target_time_index: 目标时辰索引 (0-12)
-
-        Returns:
-            结构化文本 prompt
-
-        Raises:
-            IztroError: 入参非法（日期格式/范围、时辰索引、性别、语言或配置）
-        """
-        return bridge.query(
-            "horoscopeToPrompt",
-            solar_date=astrolabe.solar_date,
-            time_index=astrolabe.time_index,
-            gender=astrolabe.gender_key,
-            fix_leap=astrolabe.fix_leap,
-            language=astrolabe.language,
-            config=astrolabe._config_payload(),
-            from_stem=astrolabe._from_stem,
-            from_branch=astrolabe._from_branch,
-            target_date=target_date,
-            target_time_index=target_time_index,
-        )

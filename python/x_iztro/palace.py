@@ -177,6 +177,20 @@ class Palace:
         """宫位所属星盘；脱离星盘单独构造的宫位返回 None"""
         return self._astrolabe
 
+    def to_text(self) -> str:
+        """
+        本宫的语义化文本：面向语言模型与人的单宫完整描述。
+
+        从所属星盘的排盘上下文（含重排起点）无状态再发起计算，
+        文本按排盘语言输出。
+
+        Raises:
+            ValueError: 宫位脱离星盘单独构造，无排盘上下文可转发
+        """
+        if self._astrolabe is None:
+            raise ValueError("to_text 需要所属星盘：请从 Astrolabe 的宫位查询获取宫位")
+        return self._astrolabe._context_query("palaceToText", palace_index=self.index)
+
     def opposite_palace(self) -> Palace | None:
         """
         本宫的对宫，即索引 +6 的那一宫；脱离星盘单独构造的宫位返回 None。

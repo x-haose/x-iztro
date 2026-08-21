@@ -31,7 +31,7 @@ const (
 	PalaceParents = "parentsPalace"
 )
 
-// 四化标识（Star.MutagenKey 与 HoroscopeScope.MutagenKeys）。
+// 四化标识（Star.MutagenKey）。
 const (
 	// MutagenLu 为化禄
 	MutagenLu = "sihuaLu"

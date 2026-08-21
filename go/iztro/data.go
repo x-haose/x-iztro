@@ -101,3 +101,10 @@ func GetConstants() (Constants, error) {
 	var out Constants
 	return out, utilQuery(map[string]any{"kind": "constants"}, &out)
 }
+
+// FlowStarCounterparts 取流耀到对应本命辅星的标识映射（50 条，如 StarLiuchang
+// 对应 StarWenchangMin）。流耀没有独立的知识包条目，释义按对应本命辅星查询。
+func FlowStarCounterparts() (map[string]string, error) {
+	var out map[string]string
+	return out, utilQuery(map[string]any{"kind": "flowStarCounterparts"}, &out)
+}

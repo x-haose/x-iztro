@@ -424,8 +424,12 @@ type Astrolabe struct {
 	TimeRange string `json:"timeRange"`
 	// Sign 为星座
 	Sign string `json:"sign"`
+	// SignKey 为语言无关星座标识（"aries" 到 "pisces"）
+	SignKey string `json:"signKey"`
 	// Zodiac 为生肖
 	Zodiac string `json:"zodiac"`
+	// ZodiacKey 为语言无关生肖标识（"rat" 到 "pig"）
+	ZodiacKey string `json:"zodiacKey"`
 	// EarthlyBranchOfSoulPalace 为命宫地支（翻译文本）
 	EarthlyBranchOfSoulPalace string `json:"earthlyBranchOfSoulPalace"`
 	// EarthlyBranchOfSoulPalaceKey 为命宫地支标识
@@ -689,6 +693,10 @@ type HoroscopeScope struct {
 	Index int `json:"index"`
 	// Name 为层级显示名（大限/童限/小限/流年/流月/流日/流时，翻译文本）
 	Name string `json:"name"`
+	// NameKey 为层级的语言无关标识（"decadal"/"turn"/"yearly" 等；小限为 "turn"，与 iztro 的 i18n key 一致）。
+	// 大限层在未起运时为 "childhood"（童限）——童限与大限是不同的解盘语义，
+	// 判断该盘是否已起运应看此字段而非译名。
+	NameKey string `json:"nameKey"`
 	// HeavenlyStem 为该运限天干（翻译文本）
 	HeavenlyStem string `json:"heavenlyStem"`
 	// HeavenlyStemKey 为该运限天干标识
@@ -703,8 +711,9 @@ type HoroscopeScope struct {
 	PalaceNameKeys []string `json:"palaceNameKeys"`
 	// Mutagen 为四化星名 [禄, 权, 科, 忌]（翻译文本）
 	Mutagen []string `json:"mutagen"`
-	// MutagenKeys 为四化星标识 [禄, 权, 科, 忌]
-	MutagenKeys []string `json:"mutagenKeys"`
+	// MutagenStarKeys 为被四化的四颗星的语言无关星耀标识 [禄, 权, 科, 忌]，
+	// 与 Palace.MutagenStarKeys 同名同义；四化类型标识见单数的 Star.MutagenKey
+	MutagenStarKeys []string `json:"mutagenStarKeys"`
 	// Stars 为流耀在十二宫的分布（无流耀的层级为 nil）
 	Stars [][]Star `json:"stars,omitempty"`
 	// NominalAge 为虚岁（仅小限层级有值）
@@ -851,14 +860,14 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 		return false
 	}
 	idx, ok := mutagenIndex[mutagenKey]
-	if !ok || idx >= len(item.MutagenKeys) {
+	if !ok || idx >= len(item.MutagenStarKeys) {
 		return false
 	}
 	p := h.Palace(nameKeyOrName, scope)
 	if p == nil {
 		return false
 	}
-	starKey := item.MutagenKeys[idx]
+	starKey := item.MutagenStarKeys[idx]
 	for _, group := range [][]Star{p.MajorStars, p.MinorStars} {
 		for _, s := range group {
 			if s.Key == starKey {

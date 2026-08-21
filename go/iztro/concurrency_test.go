@@ -75,12 +75,12 @@ func mixedCallRound(g int) error {
 		if err != nil {
 			return err
 		}
-		prompt, err := chart.AstrolabeToPrompt()
+		text, err := chart.ToText()
 		if err != nil {
 			return err
 		}
-		if !strings.Contains(prompt, "五行局: 木三局") {
-			return errors.New("并发 prompt 结果不正确")
+		if !strings.Contains(text, "五行局: 木三局") {
+			return errors.New("并发 ToText 结果不正确")
 		}
 	default:
 		// 错误路径同样并发：非法入参不得污染其他实例
@@ -136,8 +136,8 @@ func TestContextCancellation(t *testing.T) {
 	if _, err := chart.HoroscopeContext(ctx, "2024-10-1", 0); err == nil {
 		t.Error("已取消的 Context 下运限应报错")
 	}
-	if _, err := chart.AstrolabeToPromptContext(ctx); err == nil {
-		t.Error("已取消的 Context 下 prompt 应报错")
+	if _, err := chart.ToTextContext(ctx); err == nil {
+		t.Error("已取消的 Context 下 ToText 应报错")
 	}
 	if _, err := chart.RearrangedContext(ctx, StemGeng, BranchChen); err == nil {
 		t.Error("已取消的 Context 下重排应报错")

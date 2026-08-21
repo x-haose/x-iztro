@@ -116,6 +116,20 @@ class Constants:
     """五行局标识对应的局数 2-6，与 `FiveElementsClass.number` 同源"""
 
 
+def flow_star_counterparts() -> dict[str, str]:
+    """
+    流耀 → 对应本命辅星的全量对照表（50 条）。
+
+    流耀（运昌、流魁等）没有独立的知识包条目，释义按对应的本命辅星查，
+    这张表就是官方对照。键为流耀标识（`HoroscopeStar` 枚举值域），
+    值为本命辅星标识（`MinorStar` 枚举值域）。
+
+    Returns:
+        流耀标识 → 本命辅星标识
+    """
+    return dict(query("flowStarCounterparts"))
+
+
 def stars_info() -> dict[str, StarInfo]:
     """
     星耀基础信息：十四主星与文昌、文曲、火星、铃星、擎羊、陀罗共二十颗。

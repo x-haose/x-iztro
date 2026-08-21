@@ -147,6 +147,42 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 	return out, utilQueryContext(ctx, payload, &out)
 }
 
+// PatternsToText 生成本命盘格局命中的语义化文本；config 传 nil 取默认口径。
+func (a *Astrolabe) PatternsToText(config *PatternConfig) (string, error) {
+	return a.PatternsToTextContext(context.Background(), config)
+}
+
+// PatternsToTextContext 为 PatternsToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) PatternsToTextContext(ctx context.Context, config *PatternConfig) (string, error) {
+	if a == nil {
+		return "", invalidArgument("patternsToText: nil astrolabe")
+	}
+	payload := a.textPayload("patternsToText")
+	payload["patternConfig"] = config
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// PatternsToText 生成某运限层视角格局命中的语义化文本。
+// scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘；config 传 nil 取默认口径。
+func (h *Horoscope) PatternsToText(scope string, config *PatternConfig) (string, error) {
+	return h.PatternsToTextContext(context.Background(), scope, config)
+}
+
+// PatternsToTextContext 为 PatternsToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (h *Horoscope) PatternsToTextContext(ctx context.Context, scope string, config *PatternConfig) (string, error) {
+	if h == nil || h.astrolabe == nil {
+		return "", invalidArgument("horoscopePatternsToText: horoscope must be created by Astrolabe.Horoscope")
+	}
+	payload := h.astrolabe.textPayload("horoscopePatternsToText")
+	payload["targetDate"] = h.SolarDate
+	payload["targetTimeIndex"] = h.targetTimeIndex
+	payload["scope"] = scope
+	payload["patternConfig"] = config
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
 // String 返回「格局名(宫名)」形式的简要描述，便于日志与调试。
 func (h PatternHit) String() string {
 	if h.Variant != "" {

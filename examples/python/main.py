@@ -135,15 +135,17 @@ def main():
     print()
 
     # ============================================================
-    # 8. AI Prompt
+    # 8. 语义化文本 — str() 即面向语言模型与人的完整描述
     # ============================================================
-    print("===== 8. AI Prompt =====\n")
+    print("===== 8. 语义化文本 =====\n")
 
-    prompt = astro.astrolabe_to_prompt(result)
-    print(prompt[:300] + "...\n")
+    text = result.to_text()  # 等价于 str(result)
+    print(text[:300] + "...\n")
 
-    fortune_prompt = astro.horoscope_to_prompt(result, "2024-10-1", 0)
-    print(fortune_prompt[:200] + "...\n")
+    fortune_text = h.to_text()  # 等价于 str(h)
+    print(fortune_text[:200] + "...\n")
+
+    print(result.palace(PalaceName.SOUL).to_text()[:200] + "...\n")
 
     # ============================================================
     # 9. JSON 导出与错误处理
