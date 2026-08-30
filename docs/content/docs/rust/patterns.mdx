@@ -428,3 +428,33 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 ```
 
 本命盘的 `to_text` 已自带这一节；单独调用适合只要格局摘要的场景。
+
+带释义的形态在命中列表之后追加每条命中格局的释义（`intro` 加「成立条件」）：
+
+```rust
+pub fn patterns_to_text_with(
+    hits: &[PatternHit],
+    palace_names: &[Palace],
+    pack: &KnowledgePack,
+    lang: Language,
+) -> String
+```
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+
+for line in text.lines().take(5) {
+    println!("{}", line.chars().take(30).collect::<String>());
+}
+```
+
+**输出**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+
+=== 格局释义 ===
+
+府相朝垣
+```

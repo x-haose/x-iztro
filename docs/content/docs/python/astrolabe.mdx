@@ -416,16 +416,27 @@ now = chart.horoscope()
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
 
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包（自定义或合并后的包）；给出时在事实之后追加星耀释义（含同宫主星组合）、格局释义、四化释义三节 |
+
 **返回值**　`str`——按排盘语言输出的分节纯文本：基本信息、十二宫、格局命中。
-完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)，释义节格式见
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
 ```python
 print(chart.to_text()[:46])
+
+text = chart.to_text(knowledge=True)
+print(len(chart.to_text()), len(text))
+print(" ".join(l for l in text.splitlines() if l.startswith("=== ")))
 ```
 
 **输出**
@@ -435,7 +446,16 @@ print(chart.to_text()[:46])
 性别: 女
 阳历: 2000-8-16
 农历: 二〇〇〇年七月十七
+1812 20158
+=== 基本信息 === === 十二宫 === === 格局 === === 星耀释义 === === 格局释义 === === 四化释义 ===
 ```
+
+**边界与陷阱**
+
+<Callout type="warn">
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`（`invalid_argument`），
+不会静默退回无释义；英文盘显式传一份 `KnowledgePack` 即可。
+</Callout>
 
 单宫与三方四正的文本见 `palace(...).to_text()` 与 `surrounded_palaces(...).to_text()`，
 格局文本见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。

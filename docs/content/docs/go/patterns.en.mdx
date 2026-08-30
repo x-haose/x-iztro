@@ -381,3 +381,29 @@ fmt.Print(text)
 
 The chart's and the horoscope's `ToText` each already carry a patterns section; the standalone call
 suits cases that want only the pattern summary.
+
+The form with readings appends, after the hit list, a reading for each hit pattern (`intro` plus a
+"Conditions" line); the `knowledge` values are on
+[Knowledge](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom):
+
+```go
+func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, knowledge Knowledge) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, knowledge Knowledge) (string, error)
+```
+
+On a zh-CN chart, since the bundled pack is Chinese:
+
+```go
+text, _ := chart.PatternsToTextWith(nil, iztro.BuiltinKnowledge())
+fmt.Println(strings.Join(strings.Split(text, "\n")[:5], "\n"))
+```
+
+**Output**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+
+=== 格局释义 ===
+
+府相朝垣
+```

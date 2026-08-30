@@ -443,11 +443,18 @@ None
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
 
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时追加各层流耀的释义与大限到流时各层视角命中格局的释义，本命星耀不重复 |
+
 **返回值**　`str`——按星盘排盘语言输出的分节纯文本，各层带该层视角的格局行与流耀行。
-完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text)，释义节格式见
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
@@ -455,6 +462,7 @@ def to_text(self) -> str
 h = chart.horoscope("2025-1-1", 0)
 
 print(h.to_text()[:25])
+print(" ".join(l for l in h.to_text(knowledge=True).splitlines() if l.startswith("=== ")))
 ```
 
 **输出**
@@ -462,6 +470,7 @@ print(h.to_text()[:25])
 ```text
 === 运限 ===
 目标日期: 2025-1-1
+=== 运限 === === 流耀释义 === === 格局释义 ===
 ```
 
 **边界与陷阱**
@@ -469,6 +478,7 @@ print(h.to_text()[:25])
 <Callout type="info">
 脱离星盘单独构造的运限（`horoscope()` 之外的途径）没有排盘上下文，调用抛 `ValueError`。
 格局命中的文本另见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`（`invalid_argument`）。
 </Callout>
 
 ---

@@ -178,8 +178,14 @@ opposite, and the wealth and career positions.
 **Signature**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, a note for each star in the four palaces follows the facts (each star once, tagged with its palace) — format on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
 
 **Example**
 
@@ -187,13 +193,18 @@ def to_text(self) -> str
 sp = chart.surrounded_palaces("soul")
 
 print(sp.to_text().split("\n")[0])
+
+zh = astro.by_solar("2000-8-16", 2, "female").surrounded_palaces("soul")   # the bundled pack is zh-CN
+print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 ```
 
 **Output**
 
 ```text
 Target Palace: soul (renwoo)
+237 6009
 ```
 
 When the target palace is detached from a chart there is no charting context and `ValueError` is
-raised. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
+raised; `knowledge=True` on a chart whose language has no bundled pack (only zh-CN has one) raises
+`IztroError`. The full format is on [Semantic text](/en/docs/guide/guides/to-text).

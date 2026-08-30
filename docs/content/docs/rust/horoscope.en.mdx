@@ -448,6 +448,46 @@ Target Date: 2025-1-1
 
 ---
 
+## to_text_with
+
+**Purpose** After the factual text of `to_text`, append readings: notes on each scope's flowing
+stars and on the patterns hit from the decadal down to the hourly perspective. Natal star readings
+are not repeated here — they are in the chart's `to_text_with`.
+
+**Signature**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+
+Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language
+use the free function `text::horoscope_to_text_with(astrolabe, horoscope, pack, lang)`. The section
+format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let h = chart.horoscope("2025-1-1", 0)?;
+let text = h.to_text_with(&pack);
+
+println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+```
+
+**Output**
+
+```text
+=== 运限 === === 流耀释义 === === 格局释义 ===
+```
+
+---
+
 ## to_dto
 
 **Purpose** Convert the horoscope data into the serialization structure that matches the JS iztro

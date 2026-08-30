@@ -477,4 +477,8 @@ context.
 
 ```go
 text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
+withNotes, _ := chart.PalaceToTextWith(iztro.PalaceTarget{Index: p.Index}, iztro.BuiltinKnowledge())
 ```
+
+`PalaceToTextWith` appends a note for each star in the palace after the palace text; the
+`knowledge` values are on [Knowledge](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom).

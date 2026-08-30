@@ -190,4 +190,9 @@ Surrounded-palaces text lives not on `*SurroundedPalaces` but on the astrolabe m
 
 ```go
 text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, iztro.BuiltinKnowledge())
 ```
+
+`SurroundedPalacesToTextWith` appends a note for each star in the four palaces (each star once,
+tagged with its palace) after the surrounded-palaces text; the `knowledge` values are on
+[Knowledge](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom).

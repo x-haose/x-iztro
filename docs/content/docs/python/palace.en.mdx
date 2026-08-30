@@ -489,13 +489,22 @@ wood 3rd
 **Signature**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, a note for each star in the palace follows the facts — format on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
 
 **Example**
 
 ```python
 print(chart.palace("soul").to_text())
+
+zh = astro.by_solar("2000-8-16", 2, "female")          # the bundled pack is zh-CN
+print(zh.palace("soul").to_text(knowledge=True).splitlines()[11])
 ```
 
 **Output**
@@ -509,7 +518,9 @@ Twelve Gods: weak, dragon, downcast, disastery
 Major Stars: emperor([+3])
 Minor Stars: artist([-3])
 Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+紫微(命宫)
 ```
 
-A palace constructed detached from a chart has no charting context and raises `ValueError`. The full
-format is on [Semantic text](/en/docs/guide/guides/to-text).
+A palace constructed detached from a chart has no charting context and raises `ValueError`;
+`knowledge=True` on a chart whose language has no bundled pack (only zh-CN has one) raises
+`IztroError`. The full format is on [Semantic text](/en/docs/guide/guides/to-text).

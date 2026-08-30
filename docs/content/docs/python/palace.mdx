@@ -458,13 +458,20 @@ print(soul.astrolabe().five_elements_class)
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时追加该宫每颗星的释义节，格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
 
 **示例**
 
 ```python
 print(chart.palace("命宫").to_text())
+print(chart.palace("命宫").to_text(knowledge=True).splitlines()[11])
 ```
 
 **输出**
@@ -478,7 +485,9 @@ print(chart.palace("命宫").to_text())
 主星: 紫微(庙)
 辅星: 文曲(陷)
 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+紫微(命宫)
 ```
 
-脱离星盘单独构造的宫位没有排盘上下文，调用抛 `ValueError`。
+脱离星盘单独构造的宫位没有排盘上下文，调用抛 `ValueError`；
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。

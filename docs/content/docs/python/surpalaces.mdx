@@ -171,8 +171,14 @@ print("三方四正不见科:", sp.not_have_mutagen(Mutagen.KE))
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
 ```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时追加四宫每颗星的释义节（每星一次，标注所在宫），格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
 
 **示例**
 
@@ -180,13 +186,16 @@ def to_text(self) -> str
 sp = chart.surrounded_palaces("命宫")
 
 print(sp.to_text().split("\n")[0])
+print(len(sp.to_text()), len(sp.to_text(knowledge=True)))
 ```
 
 **输出**
 
 ```text
 本宫: 命宫 (壬午)
+237 6009
 ```
 
-本宫脱离星盘单独构造时没有排盘上下文，调用抛 `ValueError`。
+本宫脱离星盘单独构造时没有排盘上下文，调用抛 `ValueError`；
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。

@@ -14,7 +14,9 @@ x-iztro keeps the two apart. The core only judges facts (charting, horoscopes, p
 texts and the school-specific star attributes live in a **knowledge pack**. A pack is a JSON file
 whose protocol is "language-independent key → text and attributes". One default pack ships inside
 the library so everything works out of the box; if you disagree with what it says, write an overlay
-pack and change those entries.
+pack and change those entries. A pack is a parameter of the to_text family: hand it to
+[text with readings](/en/docs/guide/guides/to-text#text-with-readings) and the readings, picked by
+chart, follow the facts.
 
 ## What belongs where
 
@@ -245,6 +247,78 @@ for _, hit := range hits {
 Stars work the same way: take each star's `key` from the chart to `pack.star(key)`, a palace's
 `palaceNameKey` to `pack.palace(key)`, and a transformation key to `pack.mutagen(key)`.
 
+## Picking by chart
+
+The full pack holds 162 stars and 64 patterns; one chart uses far fewer. `for_astrolabe` cuts a
+sub-pack containing only what is on this chart, and `for_horoscope` adds the horoscope scopes'
+material on top:
+
+| Section | `for_astrolabe` | `for_horoscope` adds |
+| --- | --- | --- |
+| `stars` | The stars on the twelve palaces: major, minor, adjective and the four groups of twelve gods; the 14 major stars' `combinations` keep only partners that actually share the palace | Each scope's flowing stars |
+| `patterns` | Patterns hit under the pattern criteria | Patterns hit from the decadal down to the hourly perspective |
+| `mutagens` | All four entries Lu, Quan, Ke, Ji, independent of the chart | — |
+| `palaces` / `concepts` | Empty — palaces and glossary do not depend on the chart; read them from the full pack as needed | — |
+
+The pattern criteria are optional: Rust takes `for_astrolabe_with(&chart, &PatternConfig)` /
+`for_horoscope_with(&chart, &h, &PatternConfig)` (the two without `_with` use the default),
+Python a `config=` keyword, Go a second `*PatternConfig` argument (`nil` for the default). Pair the
+sub-pack with `patterns` / `patterns_to_text` under the same criteria: different criteria hit
+different sets, and the readings would then miss or over-include entries. Go also offers
+`BuiltinKnowledge().ForAstrolabe(chart, nil)`, which lets the core read the bundled pack directly
+instead of fetching the whole pack and sending it back.
+
+The result is still a standard knowledge pack (metadata carried over from the source pack): merge
+it, serialise it, look up keys in it, or pass it back as the reading parameter of to_text. The
+sub-pack cut from the default pack for the 2000-8-16 Yin-hour female chart: 108 stars / 1 pattern /
+4 mutagens for the natal chart, about 75 KB serialised (the full pack is about 219 KB); the
+2025-1-1 horoscope adds flowing stars and each scope's patterns for 158 stars / 16 patterns.
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let sub = pack.for_astrolabe(&chart);
+println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let sub = pack.for_horoscope(&chart, h.data());
+println!("{} {}", sub.stars.len(), sub.patterns.len());
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+pack = KnowledgePack.builtin()
+sub = pack.for_astrolabe(chart)
+print(len(sub.stars()), len(sub.patterns()), sub.mutagen("sihuaLu") is not None, sub.palace("soulPalace"))
+
+sub = pack.for_horoscope(chart.horoscope("2025-1-1", 0))
+print(len(sub.stars()), len(sub.patterns()))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+sub, _ := pack.ForAstrolabe(chart, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns), len(sub.Mutagens), len(sub.Palaces))
+
+h, _ := chart.Horoscope("2025-1-1", 0)
+sub, _ = pack.ForHoroscope(h, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns))
+```
+
+</Tab>
+</Tabs>
+
+All three sides agree: `108 1 4 0` and `158 16` (Python's first line ends `True None`). The
+to_text-with-readings form selects by the same rule: whatever is in the sub-pack is in the reading
+sections.
+
 ## Writing an overlay pack
 
 An overlay is the same format, containing only the entries and fields you want to change, with
@@ -365,8 +439,8 @@ knowledge pack where they can be swapped.
 
 ## Later
 
-The same protocol supports loading and distributing overlay packs, and handing a pack to an LLM
-along with the chart. That belongs to the application layer, not to this library.
+The same protocol supports loading and distributing overlay packs. That belongs to the application
+layer, not to this library.
 
 ## API reference
 

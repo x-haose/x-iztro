@@ -90,7 +90,15 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
 - to_text 覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
   /`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
-  bodyPalace/originalPalace）或 `index`。Python 挂对象方法且 `__str__` 即 to_text，Go 是 `ToText()`
+  bodyPalace/originalPalace）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
+  Go 是 `ToText()`
+- 知识包只作为**参数**融入 to_text：六个 kind 的可选入参 `knowledge`（`"builtin"` 取盘语言内嵌包，
+  无该语言包即报错不回退；或直接给包对象），给了就在事实文本后追加释义节；Rust 是 `*_to_text_with(&pack)`
+  与各对象的 `to_text_with`，Python `to_text(knowledge=True|pack)`，Go `ToTextWith(k)`。
+  「按盘取材」只在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope` 实现一处（bridge kind
+  `knowledgeForChart`），文本释义节与结构化子包共用它：取盘上出现的星（含四组十二神，同宫主星的
+  双星组合只留同宫对方）、命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。
+  排盘 DTO 永远不嵌解读
 - 轻量查询 `zodiacBySolar`/`signBySolar`/`signByLunar`/`majorStarBySolar`/`majorStarByLunar`
   返回 `{text, keys}` 双轨：text 与 iztro 同名函数一致，keys 是语言无关标识；绑定层的
   iztro 对齐函数仍返回 text，命宫主星另有 keys 形态入口
@@ -221,10 +229,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - 语义化文本 → `text_snapshot`（本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US
-    固定盘完整快照 `tests/golden/text_snapshots/`，Python `test_parity.py` 与 Go
-    `parity_check_test.go` 读同一批快照逐字节比对；缺失即失败，有意改动后用
-    `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
+  - 语义化文本 → `text_snapshot`（本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US，
+    外加五类带释义输出 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+    `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
+    Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
+    有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`

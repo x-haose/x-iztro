@@ -294,8 +294,10 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 
 // 语义化文本（ToText）：同一个对象的三种投影之一——JSON 给机器、ToText 给语言
 // 模型、译文字段给展示。所有 ToText 按星盘的排盘语言输出结构化纯文本。
+// 每个 ToText 都有 ToTextWith 形态：传 Knowledge 释义来源时在事实节之后追加释义节
+// （星耀 / 格局 / 四化；运限为流耀与各层格局；单宫与三方四正为该宫星耀；格局文本为命中格局）。
 
-// textPayload 组装 to_text 类查询的公共入参：排盘上下文 + 重排起点。
+// textPayload 组装按盘查询（to_text 家族与知识包取材）的公共入参：排盘上下文 + 重排起点。
 func (a *Astrolabe) textPayload(kind string) map[string]any {
 	payload := map[string]any{
 		"kind":      kind,
@@ -317,11 +319,23 @@ func (a *Astrolabe) ToText() (string, error) {
 
 // ToTextContext 为 ToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) ToTextContext(ctx context.Context) (string, error) {
+	return a.ToTextWithContext(ctx, Knowledge{})
+}
+
+// ToTextWith 生成本命盘的语义化文本并按 knowledge 追加释义节：盘上星耀、命中格局与四化的解读。
+func (a *Astrolabe) ToTextWith(knowledge Knowledge) (string, error) {
+	return a.ToTextWithContext(context.Background(), knowledge)
+}
+
+// ToTextWithContext 为 ToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) ToTextWithContext(ctx context.Context, knowledge Knowledge) (string, error) {
 	if a == nil {
 		return "", invalidArgument("astrolabeToText: nil astrolabe")
 	}
+	payload := a.textPayload("astrolabeToText")
+	knowledge.apply(payload)
 	var out string
-	return out, utilQueryContext(ctx, a.textPayload("astrolabeToText"), &out)
+	return out, utilQueryContext(ctx, payload, &out)
 }
 
 // ToText 生成运限的语义化文本；本命信息与运限一并写入。
@@ -331,12 +345,23 @@ func (h *Horoscope) ToText() (string, error) {
 
 // ToTextContext 为 ToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (h *Horoscope) ToTextContext(ctx context.Context) (string, error) {
+	return h.ToTextWithContext(ctx, Knowledge{})
+}
+
+// ToTextWith 生成运限的语义化文本并按 knowledge 追加释义节：各层流耀与各层命中格局的解读。
+func (h *Horoscope) ToTextWith(knowledge Knowledge) (string, error) {
+	return h.ToTextWithContext(context.Background(), knowledge)
+}
+
+// ToTextWithContext 为 ToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (h *Horoscope) ToTextWithContext(ctx context.Context, knowledge Knowledge) (string, error) {
 	if h == nil || h.astrolabe == nil {
 		return "", invalidArgument("horoscopeToText: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := h.astrolabe.textPayload("horoscopeToText")
 	payload["targetDate"] = h.SolarDate
 	payload["targetTimeIndex"] = h.targetTimeIndex
+	knowledge.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
@@ -367,11 +392,22 @@ func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error) {
 
 // PalaceToTextContext 为 PalaceToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) PalaceToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
+	return a.PalaceToTextWithContext(ctx, target, Knowledge{})
+}
+
+// PalaceToTextWith 生成单个宫位的语义化文本并按 knowledge 追加该宫星耀的释义节。
+func (a *Astrolabe) PalaceToTextWith(target PalaceTarget, knowledge Knowledge) (string, error) {
+	return a.PalaceToTextWithContext(context.Background(), target, knowledge)
+}
+
+// PalaceToTextWithContext 为 PalaceToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) PalaceToTextWithContext(ctx context.Context, target PalaceTarget, knowledge Knowledge) (string, error) {
 	if a == nil {
 		return "", invalidArgument("palaceToText: nil astrolabe")
 	}
 	payload := a.textPayload("palaceToText")
 	target.apply(payload)
+	knowledge.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
@@ -384,11 +420,23 @@ func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 // SurroundedPalacesToTextContext 为 SurroundedPalacesToText 的 Context 变体；
 // ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) SurroundedPalacesToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
+	return a.SurroundedPalacesToTextWithContext(ctx, target, Knowledge{})
+}
+
+// SurroundedPalacesToTextWith 生成指定宫位三方四正的语义化文本并按 knowledge 追加这些宫位星耀的释义节。
+func (a *Astrolabe) SurroundedPalacesToTextWith(target PalaceTarget, knowledge Knowledge) (string, error) {
+	return a.SurroundedPalacesToTextWithContext(context.Background(), target, knowledge)
+}
+
+// SurroundedPalacesToTextWithContext 为 SurroundedPalacesToTextWith 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) SurroundedPalacesToTextWithContext(ctx context.Context, target PalaceTarget, knowledge Knowledge) (string, error) {
 	if a == nil {
 		return "", invalidArgument("surroundedPalacesToText: nil astrolabe")
 	}
 	payload := a.textPayload("surroundedPalacesToText")
 	target.apply(payload)
+	knowledge.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }

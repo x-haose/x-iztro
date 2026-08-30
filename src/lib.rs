@@ -88,8 +88,9 @@ pub use pattern::{
     ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
 };
 pub use text::{
-    astrolabe_to_text, horoscope_to_text, palace_to_text, patterns_to_text,
-    surrounded_palaces_to_text,
+    astrolabe_to_text, astrolabe_to_text_with, horoscope_to_text, horoscope_to_text_with,
+    palace_to_text, palace_to_text_with, patterns_to_text, patterns_to_text_with,
+    surrounded_palaces_to_text, surrounded_palaces_to_text_with,
 };
 
 /// 便捷函数：排盘并返回 JSON

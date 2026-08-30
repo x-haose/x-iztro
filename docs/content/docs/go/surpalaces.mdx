@@ -185,4 +185,8 @@ fmt.Println("三方四正不见科:", sp.NotHaveMutagen(iztro.MutagenKe))
 
 ```go
 text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, iztro.BuiltinKnowledge())
 ```
+
+`SurroundedPalacesToTextWith` 在四宫文本之后追加四宫每颗星的释义（每星一次，标注所在宫），
+`knowledge` 取值见 [Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)。

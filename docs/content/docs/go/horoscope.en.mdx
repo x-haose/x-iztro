@@ -468,4 +468,51 @@ fmt.Println(string([]rune(text)[:39]))
 Target Date: 2025-1-1
 ```
 
+---
+
+## ToTextWith
+
+**Purpose** After the factual text of `ToText`, append readings: notes on each scope's flowing stars
+and on the patterns hit from the decadal down to the hourly perspective. Natal star readings are not
+repeated here — they are in the chart's `ToTextWith`.
+
+**Signature**
+
+```go
+func (h *Horoscope) ToTextWith(knowledge Knowledge) (string, error)
+func (h *Horoscope) ToTextWithContext(ctx context.Context, knowledge Knowledge) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `knowledge` | [`Knowledge`](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom) | Source of the readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the zero value behaves like `ToText` |
+
+The section format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+h, _ := chart.Horoscope("2025-1-1", 0)
+text, _ := h.ToTextWith(iztro.BuiltinKnowledge())
+
+var heads []string
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "=== ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**Output**
+
+```text
+=== 运限 === === 流耀释义 === === 格局释义 ===
+```
+
+`BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns
+`ErrInvalidArgument`.
+
 For the pattern hits as text, see `PatternsToText` on [Patterns](/en/docs/go/patterns).

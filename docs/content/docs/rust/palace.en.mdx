@@ -558,3 +558,45 @@ Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
 ```
 
 The full format is on [Semantic text](/en/docs/guide/guides/to-text).
+
+---
+
+## to_text_with
+
+**Purpose** After the palace text, append a reading for each star in the palace (major, minor,
+adjective and the four groups of twelve gods).
+
+**Signature**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+
+Defined on `PalaceRef` and emitting in the chart's charting language; for an explicit language use
+the free function `text::palace_to_text_with(palace, pack, lang)`. The section format is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.palace(Palace::Soul).unwrap().to_text_with(&pack);
+
+for line in text.lines().skip(9).take(3) {
+    println!("{}", line.chars().take(30).collect::<String>());
+}
+```
+
+**Output**
+
+```text
+=== 星耀释义 ===
+
+紫微(命宫)
+```

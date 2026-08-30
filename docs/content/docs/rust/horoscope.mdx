@@ -429,6 +429,45 @@ println!("{}", h.to_text().chars().take(25).collect::<String>());
 
 ---
 
+## to_text_with
+
+**用途**　`to_text` 的事实文本之后追加释义：各层流耀的释义、大限到流时各层视角命中格局的释义。
+本命星耀的释义不在这里重复，在本命盘的 `to_text_with` 里。
+
+**签名**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | 是 | — | 释义材料来源：内嵌默认包或合并覆盖包之后的自定义包 |
+
+定义在 `HoroscopeRef` 上，按星盘排盘语言输出；要指定语言用自由函数
+`text::horoscope_to_text_with(astrolabe, horoscope, pack, lang)`。
+节格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let h = chart.horoscope("2025-1-1", 0)?;
+let text = h.to_text_with(&pack);
+
+println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+```
+
+**输出**
+
+```text
+=== 运限 === === 流耀释义 === === 格局释义 ===
+```
+
+---
+
 ## to_dto
 
 **用途**　把运限数据转成与 JS iztro 字段契约一致的序列化结构。

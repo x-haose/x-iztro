@@ -156,17 +156,20 @@ impl KnowledgePack {
 
 ---
 
-## from_json
+## from_json / from_value
 
-**用途**　由 JSON 文本解析一份包。
+**用途**　由 JSON 文本或已解析的 `serde_json::Value` 解析一份包。
 
 **签名**
 
 ```rust
 impl KnowledgePack {
     pub fn from_json(json: &str) -> Result<KnowledgePack, String>
+    pub fn from_value(value: &serde_json::Value) -> Result<KnowledgePack, String>
 }
 ```
+
+`from_value` 只借用值树、不复制，手上已有 `Value` 时省一次序列化往返；校验与 `from_json` 相同。
 
 **返回值**　`Result<KnowledgePack, String>`。错误是给人看的字符串，三种情况：
 JSON 语法或类型不合格式（`invalid knowledge pack: ...`）、
@@ -377,3 +380,66 @@ for hit in chart.patterns() {
 ```text
 府相朝垣 “食禄千锺”的断语使
 ```
+
+---
+
+## for_astrolabe / for_horoscope
+
+**用途**　按盘取材：裁出只含这张盘相关条目的子包。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
+    pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
+    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
+    pub fn for_horoscope_with(
+        &self,
+        chart: &Astrolabe,
+        horoscope: &HoroscopeData,
+        config: &PatternConfig,
+    ) -> KnowledgePack
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `chart` | `&Astrolabe` | 是 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
+| `horoscope` | `&HoroscopeData` | 是 | — | 运限数据，`HoroscopeRef::data()` 可得 |
+| `config` | `&PatternConfig` | `_with` 必填 | — | 格局判定口径；无 `_with` 的两个即 `PatternConfig::default()` |
+
+**返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
+（主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
+`patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
+`for_horoscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+子包要和[`patterns_with`](/zh/docs/rust/patterns#patterns_with) / `patterns_to_text_with`
+配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
+取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+let sub = pack.for_astrolabe(&chart);
+println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
+println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let sub = pack.for_horoscope(&chart, h.data());
+println!("{} {}", sub.stars.len(), sub.patterns.len());
+```
+
+**输出**
+
+```text
+108 1 4 0
+["tianxiangMaj"]
+158 16
+```
+
+武曲在这张盘上与天相同宫，所以子包里武曲的 `combinations` 只剩天相一条。

@@ -108,6 +108,18 @@ func main() {
 	fmt.Printf("%s：虚岁 %d，落宫 %s\n", h.Age.Name, h.Age.NominalAge, h.AgePalace().Name)
 	fmt.Println()
 
+	// 语义化文本：盘面事实 + 内嵌知识包的释义节，可整段喂给大模型；只要事实用 ToText()
+	text, err := astrolabe.ToTextWith(iztro.BuiltinKnowledge())
+	if err != nil {
+		log.Fatalf("ToTextWith failed: %v", err)
+	}
+	lines := strings.Split(text, "\n")
+	fmt.Printf("带释义的语义化文本共 %d 行，开头：\n", len(lines))
+	for _, line := range lines[:5] {
+		fmt.Printf("  %s\n", line)
+	}
+	fmt.Println()
+
 	// ============================================================
 	// 5. 中州派配置
 	// ============================================================

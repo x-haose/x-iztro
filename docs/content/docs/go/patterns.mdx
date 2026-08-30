@@ -363,3 +363,26 @@ fmt.Print(text)
 ```
 
 本命盘与运限的 `ToText` 已各自带格局节；单独调用适合只要格局摘要的场景。
+
+带释义的形态在命中列表之后追加每条命中格局的释义（`intro` 加「成立条件」），
+`knowledge` 取值见 [Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)：
+
+```go
+func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, knowledge Knowledge) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, knowledge Knowledge) (string, error)
+```
+
+```go
+text, _ := chart.PatternsToTextWith(nil, iztro.BuiltinKnowledge())
+fmt.Println(strings.Join(strings.Split(text, "\n")[:5], "\n"))
+```
+
+**输出**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+
+=== 格局释义 ===
+
+府相朝垣
+```

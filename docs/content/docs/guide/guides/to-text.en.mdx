@@ -240,6 +240,132 @@ together stay under 9,600 characters. A Chinese chart is shorter — star names 
 rather than a word — at about 1,810 and 2,490, around 4,300 combined. Any mainstream model's context
 window holds either comfortably; trimming is normally unnecessary.
 
+## Text with readings
+
+The text above is facts only. Every to_text also has a form that takes a
+[knowledge pack](/en/docs/guide/guides/knowledge-pack): it appends **reading sections** after the
+factual text, with the material picked from the pack according to the chart — the stars on it, the
+patterns it hits, the four mutagens — quoted verbatim. The core only selects and assembles; it holds
+no interpretive opinion of its own. Pass the bundled default pack and you get iztro-docs' readings;
+pass a custom pack merged from overlays and you get yours. `by_solar` and the DTO output are unchanged.
+
+```python
+chart.to_text(knowledge=True)          # True takes the bundled pack for the chart language
+chart.to_text(knowledge=my_pack)       # or any KnowledgePack
+h.to_text(knowledge=True)
+chart.palace("soul").to_text(knowledge=True)
+chart.surrounded_palaces("soul").to_text(knowledge=True)
+chart.patterns_to_text(knowledge=True)
+h.patterns_to_text("yearly", knowledge=True)
+```
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+
+chart.to_text_with(&pack);
+h.to_text_with(&pack);
+chart.palace(Palace::Soul).unwrap().to_text_with(&pack);
+chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&pack, chart.language);
+text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+```
+
+```go
+k := iztro.BuiltinKnowledge()          // or iztro.KnowledgeFrom(pack)
+
+chart.ToTextWith(k)
+h.ToTextWith(k)
+chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, k)
+chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, k)
+chart.PatternsToTextWith(nil, k)
+h.PatternsToTextWith(iztro.ScopeYearly, nil, k)
+```
+
+What each entry appends:
+
+| Entry | Reading sections appended |
+| --- | --- |
+| Chart | `=== Star Notes ===`, `=== Pattern Notes ===`, `=== Mutagen Notes ===` |
+| Horoscope | `=== Scope Star Notes ===`, `=== Pattern Notes ===` (hits from the decadal down to the hourly perspective, deduplicated) |
+| Palace | `=== Star Notes ===` (that palace's stars) |
+| Surrounded palaces | `=== Star Notes ===` (the four palaces' stars) |
+| `patterns_to_text` | `=== Pattern Notes ===` (the hit patterns) |
+
+Star notes follow the twelve palaces in chart order; each star appears once, headed
+`star(palace)`, with the pack's `intro` for that star as the body. A double-star reading between
+major stars sharing a palace (`combinations`) rides along with whichever of the two appears first, as
+one line `With X in the same palace: …` — both directions are checked, so a reading recorded under
+only one of the two stars still appears. A pattern note is the `intro` plus a `Conditions: …` line.
+Mutagen notes are always the four entries Lu, Quan, Ke, Ji. The horoscope's reading sections cover
+only the flowing stars and each scope's patterns; natal stars are not repeated — those readings are in
+the natal text. An excerpt from the reading part of the 2000-8-16 Yin-hour female chart's natal text
+(the bundled pack is Chinese, so the bodies are Chinese):
+
+```text
+=== 星耀释义 ===
+
+武曲(财帛)
+武曲星是紫微斗数中有名的“独行侠”，因个性孤傲刚直，被传统命理师冠以 `刑克之星` 的名头。……
+与天相同宫: 天相星的加入，使武曲星表现得更为温和；武曲星则赋予天相星更强的执行力。……
+
+天相(财帛)
+天相星以左右逢源、八面玲珑著称，论知人善用，天相星无疑是群星中的佼佼者。……
+
+(remaining stars omitted)
+
+=== 格局释义 ===
+
+府相朝垣
+“食禄千锺”的断语使此格备受欢迎，但成格并不必然富足。……
+成立条件: 此格指 天府星 在官禄宫、天相星 在财帛宫会照命宫。……
+
+=== 四化释义 ===
+
+禄
+**五行**：土；**意象**：开心、忙碌、增加、包容、多
+……
+```
+
+The bodies are the pack's Markdown, untrimmed. Section headings and each entry's heading (star
+name, pattern name, palace name) are translated into the chart language: on an English chart they
+read `=== Star Notes ===` and `emperor(soul)`, while the bodies stay in the pack's language.
+
+### Length
+
+Readings come in full; trimming belongs to the application. Measured character counts for the same
+chart with the default pack:
+
+| Entry | Facts only | With readings |
+| --- | --- | --- |
+| Natal chart | 1,810 | 20,160 |
+| Horoscope | 2,490 | 8,170 |
+| Palace (Soul) | 140 | 1,140 |
+| Surrounded palaces (Soul) | 240 | 6,010 |
+| Patterns | 25 | 325 |
+
+The natal chart's readings dominate because every star (the four groups of twelve gods included)
+has an entry. For readings on a few palaces only, use the palace or surrounded-palaces entry; to lay
+things out yourself, take the chart's sub-pack with
+[`for_astrolabe`](/en/docs/guide/guides/knowledge-pack#picking-by-chart) and assemble from it.
+
+### Custom packs
+
+The pack is a parameter, so the result of merging overlays is passed the same way:
+
+```python
+pack = KnowledgePack.builtin().merged(KnowledgePack.from_json(open("my-school.json").read()))
+chart.to_text(knowledge=pack)
+```
+
+The same chart with different packs yields byte-identical facts; only the reading sections change.
+
+<Callout type="warn" title="English charts have no bundled pack">
+The bundled default pack is zh-CN only. On an English chart (or any of the other four languages),
+`knowledge=True` / `BuiltinKnowledge()` / `KnowledgePack::builtin(Language::EnUS)` raise
+`invalid_argument` rather than silently falling back to no readings. Pass a pack explicitly — a
+pack's language is not tied to the chart's, so an English chart with the Chinese pack gives English
+headings and Chinese bodies.
+</Callout>
+
 ## Wiring it to a model
 
 The generated text is pure description and contains no instructions. In practice, put your analysis
@@ -255,6 +381,9 @@ user = f"""{chart.to_text()}
 Analyse this person's career prospects for 2025."""
 ```
 
+To have the model interpret along one school's lines rather than freely, replace `chart.to_text()`
+with `chart.to_text(knowledge=True)` (or pass your own pack) and the readings enter the context with
+the chart.
 For a fuller integration (tool calls, and not letting the model chart for itself) see
 [Letting an AI read the chart](/en/docs/guide/guides/llm).
 

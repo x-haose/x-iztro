@@ -324,6 +324,9 @@ for c in result.candidates:
   `chart.horoscope("2024-10-1", 0).to_text()` 对指定日期的运限做同样的事；
   宫位、三方四正、格局命中各有自己的 to_text。
   格式确定、字段顺序稳定，守着它的文本快照就在测试套件里。
+- `chart.to_text(knowledge=True)` 在事实之后追加按盘取材的释义节（星耀、格局、四化），
+  材料来自内嵌知识包或你合并覆盖包之后的自定义包——内核只装配，不内置观点；
+  Rust 是 `to_text_with(&pack)`，Go 是 `ToTextWith(iztro.BuiltinKnowledge())`。
 - 一张本命盘的完整文本约 1.8 千字（zh-CN）/ 3.6 千字符（en-US），
   折合大约一两千 token，随模型而异。
 - 即使做英文产品，也建议**喂模型中文盘**：模型认识中文星名，而英文星名是

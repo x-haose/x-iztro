@@ -15,6 +15,7 @@ from typing import Any
 from x_iztro.config import ChartConfig
 from x_iztro.enums import PalaceName
 from x_iztro.horoscope import Horoscope
+from x_iztro.knowledge import KnowledgePack, _wire
 from x_iztro.palace import Palace
 from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
@@ -260,9 +261,16 @@ class Astrolabe:
         return source.to_dict()
 
     def _context_query(self, kind: str, **extra: Any) -> Any:
-        """以本盘的排盘上下文（含重排起点）调用绑定层的统一查询入口。"""
+        """以本盘的排盘上下文（含重排起点）调用绑定层的统一查询入口。
+
+        `extra` 里的 `knowledge`（True / KnowledgePack / None）在这里落成线协议值：
+        与本盘同语言的内嵌包只发 "builtin"，其余发包对象——释义类 kind 都经此处，
+        转换只维护这一处。
+        """
         from x_iztro._bridge import query
 
+        if "knowledge" in extra:
+            extra["knowledge"] = _wire(extra["knowledge"], self.language)
         return query(
             kind,
             solar_date=self.solar_date,
@@ -276,14 +284,22 @@ class Astrolabe:
             **extra,
         )
 
-    def to_text(self) -> str:
+    def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str:
         """
-        星盘的语义化文本：面向语言模型与人的完整描述，`str(astrolabe)` 等价。
+        星盘的语义化文本：面向语言模型与人的完整描述，`str(astrolabe)` 等价于不带释义的形态。
 
         与 `to_dict`/`to_json`（机器结构）、翻译字段（展示文本）同源，
         是同一张盘的第三种投影。文本按排盘语言输出；重排盘按重排后的布局描述。
+
+        Args:
+            knowledge: 释义材料。True 取排盘语言的内嵌知识包，KnowledgePack 用该包
+                （自定义或合并后的包）；给出时在事实节之后追加星耀释义、格局释义、
+                四化释义三节，不给只输出盘面事实
+
+        Raises:
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
         """
-        return self._context_query("astrolabeToText")
+        return self._context_query("astrolabeToText", knowledge=knowledge)
 
     def __str__(self) -> str:
         return self.to_text()
@@ -474,7 +490,12 @@ class Astrolabe:
         data = self._context_query("patterns", pattern_config=_pattern_config(config))
         return [PatternHit._from_dict(d) for d in data]
 
-    def patterns_to_text(self, config: PatternConfig | None = None) -> str:
+    def patterns_to_text(
+        self,
+        config: PatternConfig | None = None,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+    ) -> str:
         """
         本命盘格局命中的语义化文本。
 
@@ -483,11 +504,18 @@ class Astrolabe:
 
         Args:
             config: 判定口径；不传取默认
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时追加命中格局的释义节
+
+        Raises:
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
         """
         from x_iztro.pattern import _pattern_config
 
         return self._context_query(
-            "patternsToText", pattern_config=_pattern_config(config)
+            "patternsToText",
+            pattern_config=_pattern_config(config),
+            knowledge=knowledge,
         )
 
     def _link(self, palaces: list[Palace]) -> None:

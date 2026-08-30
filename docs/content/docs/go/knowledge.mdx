@@ -302,3 +302,135 @@ for _, hit := range hits {
 府相朝垣 | 府相朝垣命必荣
 “食禄千锺”的断语使
 ```
+
+---
+
+## Knowledge / BuiltinKnowledge / KnowledgeFrom
+
+**用途**　`ToTextWith` 家族（`ToTextWith` / `PalaceToTextWith` / `SurroundedPalacesToTextWith` /
+`PatternsToTextWith` 与 `Horoscope` 上的同名方法）的释义材料来源。
+
+**签名**
+
+```go
+type Knowledge struct { /* 不导出 */ }
+
+func BuiltinKnowledge() Knowledge
+func KnowledgeFrom(pack *KnowledgePack) Knowledge
+```
+
+**取值**
+
+| 取值 | 含义 |
+| --- | --- |
+| `BuiltinKnowledge()` | 用盘语言的内嵌默认包；该语言没有内嵌包（目前只有 zh-CN 有）时方法返回 `ErrInvalidArgument`，不静默回退 |
+| `KnowledgeFrom(pack)` | 用给定的包（自定义或 `Merged` 之后的包）；`pack` 为 `nil` 等同零值 |
+| `Knowledge{}`（零值） | 不带释义，输出与不带 `With` 的方法逐字节相同 |
+
+**示例**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+data, _ := os.ReadFile("my-school.json")
+overlay, _ := iztro.ParseKnowledgePack(data)
+mine, _ := pack.Merged(overlay)
+
+text, _ := chart.ToTextWith(iztro.KnowledgeFrom(mine))
+```
+
+---
+
+## ForAstrolabe / ForHoroscope
+
+**用途**　按盘取材：裁出只含这张盘相关条目的子包。
+
+**签名**
+
+```go
+func (p *KnowledgePack) ForAstrolabe(chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error)
+func (p *KnowledgePack) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error)
+func (p *KnowledgePack) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error)
+func (p *KnowledgePack) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `ctx` | `context.Context` | Context 变体专有，用于取消等待 wasm 实例 |
+| `chart` | `*Astrolabe` | 取材依据的星盘；重排盘按重排后的布局取材 |
+| `horoscope` | `*Horoscope` | 由 `chart.Horoscope(...)` 得到的运限，本命部分随之取材 |
+| `config` | `*PatternConfig` | 格局判定口径，与 [`Patterns(config)`](/zh/docs/go/patterns#patternconfig) 同一入参；传 `nil` 取默认 |
+
+**返回值**　`(*KnowledgePack, error)`。标准知识包，元信息沿用本包：`Stars` 是盘上出现的星
+（主辅杂与四组十二神，14 主星的 `Combinations` 只留对方主星确在同宫的），
+`Patterns` 是按 `config` 口径命中的格局，`Mutagens` 四条全留，`Palaces` 与 `Concepts` 为空。
+`ForHoroscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+子包要和 `Patterns(config)` / `PatternsToTextWith` 配同一口径：口径不同，命中集合不同，
+释义就会缺项或多项。
+取材以本包当前内容为准（整包发给内核），就地改过的条目照样进入子包。
+接收者或入参为 `nil`、运限不是由 `Astrolabe.Horoscope` 得到时返回 `ErrInvalidArgument`。
+取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。
+
+**示例**
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+
+sub, _ := pack.ForAstrolabe(chart, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns), len(sub.Mutagens), len(sub.Palaces))
+for k := range sub.Stars[iztro.StarWuquMaj].Combinations {
+    fmt.Println(k)
+}
+
+h, _ := chart.Horoscope("2025-1-1", 0)
+sub, _ = pack.ForHoroscope(h, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns))
+```
+
+**输出**
+
+```text
+108 1 4 0
+tianxiangMaj
+158 16
+```
+
+武曲在这张盘上与天相同宫，所以子包里武曲的 `Combinations` 只剩天相一条。
+
+---
+
+## Knowledge.ForAstrolabe / Knowledge.ForHoroscope
+
+**用途**　用 `Knowledge` 哨兵按盘取材。`BuiltinKnowledge()` 时内核直接读内嵌包，
+不必先 `BuiltinKnowledgePack` 拿整包再送回去；`KnowledgeFrom(pack)` 时等同 `pack.ForAstrolabe` 系列。
+
+**签名**
+
+```go
+func (k Knowledge) ForAstrolabe(chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error)
+func (k Knowledge) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error)
+func (k Knowledge) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error)
+func (k Knowledge) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error)
+```
+
+**参数**　与 `(*KnowledgePack).ForAstrolabe` 系列相同。
+
+**返回值**　同上。`Knowledge{}` 零值没有材料来源，返回 `ErrInvalidArgument`；
+`BuiltinKnowledge()` 遇到没有内嵌包的盘语言也返回 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+
+sub, _ := iztro.BuiltinKnowledge().ForAstrolabe(chart, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns))
+```
+
+**输出**
+
+```text
+108 1
+```

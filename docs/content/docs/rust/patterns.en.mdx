@@ -445,3 +445,36 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 
 The chart's `to_text` already carries this section; the standalone call suits cases that want only
 the pattern summary.
+
+The form with readings appends, after the hit list, a reading for each hit pattern (`intro` plus a
+"Conditions" line):
+
+```rust
+pub fn patterns_to_text_with(
+    hits: &[PatternHit],
+    palace_names: &[Palace],
+    pack: &KnowledgePack,
+    lang: Language,
+) -> String
+```
+
+On a zh-CN chart, since the bundled pack is Chinese:
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+
+for line in text.lines().take(5) {
+    println!("{}", line.chars().take(30).collect::<String>());
+}
+```
+
+**Output**
+
+```text
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+
+=== 格局释义 ===
+
+府相朝垣
+```

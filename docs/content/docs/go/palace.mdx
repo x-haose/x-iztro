@@ -453,4 +453,8 @@ Go 侧的宫位对象是纯数据，文本投影从星盘的排盘上下文无�
 
 ```go
 text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
+withNotes, _ := chart.PalaceToTextWith(iztro.PalaceTarget{Index: p.Index}, iztro.BuiltinKnowledge())
 ```
+
+`PalaceToTextWith` 在宫位文本之后追加该宫每颗星的释义，`knowledge` 取值见
+[Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)。

@@ -375,23 +375,35 @@ stars, with broken patterns marked `[Broken]`.
 **Signature**
 
 ```python
-def patterns_to_text(self, config: PatternConfig | None = None) -> str          # Astrolabe
-def patterns_to_text(self, scope, config=None, astrolabe=None) -> str           # Horoscope
+def patterns_to_text(self, config: PatternConfig | None = None, *, knowledge=None) -> str          # Astrolabe
+def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None) -> str           # Horoscope
 ```
 
 The same judgment as `patterns` (including re-anchoring context and judging criteria); the horoscope
-version writes palace names as re-laid out at that scope.
+version writes palace names as re-laid out at that scope. `knowledge`
+(`bool | KnowledgePack | None`): `True` takes the bundled default pack for the charting language, a
+`KnowledgePack` uses that pack; when given, a reading for each hit pattern (`intro` plus a
+"Conditions" line) follows the hit list — format on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example**
 
 ```python
 print(chart.patterns_to_text(), end="")
+
+zh = astro.by_solar("2000-8-16", 2, "female")          # the bundled pack is zh-CN
+print("\n".join(zh.patterns_to_text(knowledge=True).splitlines()[:5]))
 ```
 
 **Output**
 
 ```text
 - Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+- 府相朝垣(命宫): 天府(庙), 天相(庙)
+
+=== 格局释义 ===
+
+府相朝垣
 ```
 
 The chart's and the horoscope's `to_text` each already carry a patterns section; the standalone call

@@ -442,6 +442,64 @@ For pattern text see `PatternsToText` on [Patterns](/en/docs/go/patterns).
 
 ---
 
+## ToTextWith / PalaceToTextWith / SurroundedPalacesToTextWith
+
+**Purpose** After the factual text of the matching `ToText`, append readings picked from a knowledge
+pack by chart: the chart gets three sections — star notes (with same-palace major-star
+combinations), pattern notes, mutagen notes; a palace or the surrounded palaces get a note for each
+star in that palace / those four palaces.
+
+**Signature**
+
+```go
+func (a *Astrolabe) ToTextWith(knowledge Knowledge) (string, error)
+func (a *Astrolabe) PalaceToTextWith(target PalaceTarget, knowledge Knowledge) (string, error)
+func (a *Astrolabe) SurroundedPalacesToTextWith(target PalaceTarget, knowledge Knowledge) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `target` | `PalaceTarget` | As for `PalaceToText` |
+| `knowledge` | [`Knowledge`](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom) | Source of the readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the zero value behaves like the method without `With` |
+
+Each has a `Context` variant. The section format is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+plain, _ := chart.ToText()
+text, _ := chart.ToTextWith(iztro.BuiltinKnowledge())
+
+fmt.Println(len([]rune(plain)), len([]rune(text)))
+var heads []string
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "=== ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**Output**
+
+```text
+1812 20158
+=== 基本信息 === === 十二宫 === === 格局 === === 星耀释义 === === 格局释义 === === 四化释义 ===
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+`BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns
+`ErrInvalidArgument` rather than silently dropping the readings; on an English chart give the pack
+explicitly with `KnowledgeFrom(pack)`.
+</Callout>
+
+---
+
 ## How it relates to JSON
 
 `Astrolabe` and every type beneath it carry `json` tags whose names match the field contract of JS

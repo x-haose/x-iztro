@@ -13,8 +13,27 @@ use std::sync::OnceLock;
 use serde::{Deserialize, Serialize};
 
 use crate::data::stars::StarKey;
-use crate::data::types::{Language, Mutagen, Palace};
-use crate::pattern::PatternKey;
+use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace};
+use crate::models::astrolabe::Astrolabe;
+use crate::models::horoscope::HoroscopeData;
+use crate::models::palace::PalaceData;
+use crate::pattern::{PatternConfig, PatternKey, patterns_at};
+
+/// 一宫之内出现的全部星耀标识：主星、辅星、杂耀与四组十二神各一位。
+pub(crate) fn palace_star_keys(palace: &PalaceData) -> impl Iterator<Item = StarKey> + '_ {
+    palace
+        .major_stars
+        .iter()
+        .chain(&palace.minor_stars)
+        .chain(&palace.adjective_stars)
+        .map(|s| s.key)
+        .chain([
+            palace.changsheng12,
+            palace.boshi12,
+            palace.suiqian12,
+            palace.jiangqian12,
+        ])
+}
 
 /// 当前支持的知识包格式版本。
 pub const SCHEMA_VERSION: u32 = 1;
@@ -198,7 +217,7 @@ where
 }
 
 /// 内嵌默认包的原文（zh-CN，源自 iztro-docs）。
-const BUILTIN_ZH_CN: &str = include_str!("../data/knowledge/iztro_docs.zh-CN.json");
+static BUILTIN_ZH_CN: &str = include_str!("../data/knowledge/iztro_docs.zh-CN.json");
 
 impl KnowledgePack {
     /// 内嵌的默认包；该语言没有默认包时返回 `None`（目前只有 zh-CN）。
@@ -227,10 +246,11 @@ impl KnowledgePack {
         Self::validated(pack)
     }
 
-    /// 由已解析的 JSON 值解析一份包（绑定层免字符串往返）；校验同 [`Self::from_json`]。
-    pub fn from_value(value: serde_json::Value) -> Result<KnowledgePack, String> {
-        let pack: KnowledgePack =
-            serde_json::from_value(value).map_err(|e| format!("invalid knowledge pack: {e}"))?;
+    /// 由已解析的 JSON 值解析一份包（绑定层免字符串往返，也不复制值树）；
+    /// 校验同 [`Self::from_json`]。
+    pub fn from_value(value: &serde_json::Value) -> Result<KnowledgePack, String> {
+        let pack = KnowledgePack::deserialize(value)
+            .map_err(|e| format!("invalid knowledge pack: {e}"))?;
         Self::validated(pack)
     }
 
@@ -293,6 +313,103 @@ impl KnowledgePack {
             out.merge(o);
         }
         out
+    }
+
+    /// 按本命盘取材（默认格局口径）：只含盘上出现的星（十二宫的主辅杂与四组十二神；
+    /// 同宫主星之间的双星组合解读一并保留，不同宫的组合剔除）、命中的格局、四化四条。
+    /// 宫位与术语条目与盘无关，不进子包，按需从整包直接查。
+    ///
+    /// 返回的是标准 [`KnowledgePack`]（元信息沿用本包），可继续合并、序列化或按 key 查。
+    pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack {
+        self.for_astrolabe_with(chart, &PatternConfig::default())
+    }
+
+    /// 按本命盘取材，格局按指定口径判定；与 [`Astrolabe::patterns_with`] 同口径的
+    /// 文本或 DTO 配同一口径的子包，释义才不会缺项。
+    pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack {
+        let mut out = self.skeleton();
+        for palace in &chart.palaces {
+            let majors: Vec<StarKey> = palace.major_stars.iter().map(|s| s.key).collect();
+            for star in palace_star_keys(palace) {
+                self.copy_star(&mut out, star, &majors);
+            }
+        }
+        for hit in chart.patterns_with(config) {
+            self.copy_pattern(&mut out, hit.key);
+        }
+        out.mutagens = self.mutagens.clone();
+        out
+    }
+
+    /// 按运限取材（默认格局口径）：在 [`Self::for_astrolabe`] 之上，再加各层流耀的条目与
+    /// 各层视角命中的格局。
+    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack {
+        self.for_horoscope_with(chart, horoscope, &PatternConfig::default())
+    }
+
+    /// 按运限取材，格局按指定口径判定。
+    pub fn for_horoscope_with(
+        &self,
+        chart: &Astrolabe,
+        horoscope: &HoroscopeData,
+        config: &PatternConfig,
+    ) -> KnowledgePack {
+        let mut out = self.for_astrolabe_with(chart, config);
+        for scope in HOROSCOPE_SCOPES {
+            if let Some(item) = horoscope.scope_item(scope) {
+                for star in item.stars.iter().flatten().flatten() {
+                    self.copy_star(&mut out, star.key, &[]);
+                }
+            }
+            for hit in patterns_at(chart, horoscope, scope, config) {
+                self.copy_pattern(&mut out, hit.key);
+            }
+        }
+        out
+    }
+
+    /// 只带元信息、各段为空的同源包。
+    fn skeleton(&self) -> KnowledgePack {
+        KnowledgePack {
+            schema: self.schema,
+            id: self.id.clone(),
+            version: self.version.clone(),
+            language: self.language.clone(),
+            extends: self.extends.clone(),
+            source: self.source.clone(),
+            stars: BTreeMap::new(),
+            patterns: BTreeMap::new(),
+            palaces: BTreeMap::new(),
+            mutagens: BTreeMap::new(),
+            concepts: BTreeMap::new(),
+        }
+    }
+
+    /// 把一颗星的条目复制进子包；`same_palace_majors` 是该星同宫的主星，
+    /// 双星组合解读只保留对方主星确在同宫的那些。已复制过的星不重复处理。
+    fn copy_star(&self, out: &mut KnowledgePack, star: StarKey, same_palace_majors: &[StarKey]) {
+        let key = star.as_key();
+        if out.stars.contains_key(key) {
+            return;
+        }
+        let Some(entry) = self.stars.get(key) else {
+            return;
+        };
+        let mut entry = entry.clone();
+        entry
+            .combinations
+            .retain(|other, _| same_palace_majors.iter().any(|m| m.as_key() == other));
+        out.stars.insert(key.to_string(), entry);
+    }
+
+    /// 把一条格局的条目复制进子包（已有则跳过）。
+    fn copy_pattern(&self, out: &mut KnowledgePack, pattern: PatternKey) {
+        let key = pattern.as_key();
+        if !out.patterns.contains_key(key)
+            && let Some(entry) = self.patterns.get(key)
+        {
+            out.patterns.insert(key.to_string(), entry.clone());
+        }
     }
 
     /// 星耀条目。

@@ -434,6 +434,49 @@ Lunar Date: 二〇〇〇年七月十七
 
 ---
 
+## to_text_with
+
+**Purpose** After the factual text of `to_text`, append the readings picked from a knowledge pack
+by chart: three sections — star notes (with same-palace major-star combinations), pattern notes and
+mutagen notes.
+
+**Signature**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+
+Emits in the charting language; for an explicit language use the free function
+`text::astrolabe_to_text_with(astrolabe, pack, lang)`. Section and entry headings are translated
+into `lang`; the bodies are the pack's text verbatim. Selection follows the same rule as
+[`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); the section
+format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.to_text_with(&pack);
+
+println!("{} {}", chart.to_text().chars().count(), text.chars().count());
+println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+```
+
+**Output**
+
+```text
+1812 20158
+=== 基本信息 === === 十二宫 === === 格局 === === 星耀释义 === === 格局释义 === === 四化释义 ===
+```
+
+---
+
 ## to_dto
 
 **Purpose** Convert the chart into the serialization structure that matches the JS iztro field

@@ -217,6 +217,121 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text(lang)` 与
 英文盘更长（星名是单词而非两字），本命约 3,570、运限约 5,990 字符。
 任何主流模型的上下文窗口都装得下，通常不必裁剪。
 
+## 带释义的文本
+
+上面的文本只有事实。每个 to_text 都有一个带[知识包](/zh/docs/guide/guides/knowledge-pack)参数的形态：
+在事实文本之后追加**释义节**，材料按盘从知识包里取——盘上出现的星、命中的格局、四化，
+原文照录。内核只做「按盘取材 + 装配」，不内置任何解读观点：传内嵌默认包就是 iztro-docs 的说法，
+传合并覆盖包之后的自定义包就是你的说法。`by_solar` 与 DTO 输出不变。
+
+```python
+chart.to_text(knowledge=True)          # True 取盘语言的内嵌默认包
+chart.to_text(knowledge=my_pack)       # 或任意 KnowledgePack
+h.to_text(knowledge=True)
+chart.palace("命宫").to_text(knowledge=True)
+chart.surrounded_palaces("命宫").to_text(knowledge=True)
+chart.patterns_to_text(knowledge=True)
+h.patterns_to_text("yearly", knowledge=True)
+```
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+
+chart.to_text_with(&pack);
+h.to_text_with(&pack);
+chart.palace(Palace::Soul).unwrap().to_text_with(&pack);
+chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&pack, chart.language);
+text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+```
+
+```go
+k := iztro.BuiltinKnowledge()          // 或 iztro.KnowledgeFrom(pack)
+
+chart.ToTextWith(k)
+h.ToTextWith(k)
+chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, k)
+chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, k)
+chart.PatternsToTextWith(nil, k)
+h.PatternsToTextWith(iztro.ScopeYearly, nil, k)
+```
+
+各入口追加的节：
+
+| 入口 | 追加的释义节 |
+| --- | --- |
+| 星盘 | `=== 星耀释义 ===`、`=== 格局释义 ===`、`=== 四化释义 ===` |
+| 运限 | `=== 流耀释义 ===`、`=== 格局释义 ===`（大限到流时各层视角的命中，去重） |
+| 宫位 | `=== 星耀释义 ===`（该宫的星） |
+| 三方四正 | `=== 星耀释义 ===`（四宫的星） |
+| `patterns_to_text` | `=== 格局释义 ===`（命中的格局） |
+
+星耀释义按十二宫在盘上的顺序列出，每颗星只出现一次，标题写「星名(所在宫)」，
+正文是知识包里该星的 `intro`；同宫主星之间的双星组合解读（`combinations`）随先出现的那颗主星
+附一行「与X同宫: …」——两个方向都查，组合解读只写在其中一方名下时同样会出。格局释义是 `intro` 加一行「成立条件: …」。四化释义固定禄权科忌四条。
+运限的释义节只覆盖流耀与各层格局，本命星耀不重复——本命盘的释义在本命盘文本里。
+下面是 2000-8-16 寅时 女这张盘本命文本释义部分的节选：
+
+```text
+=== 星耀释义 ===
+
+武曲(财帛)
+武曲星是紫微斗数中有名的“独行侠”，因个性孤傲刚直，被传统命理师冠以 `刑克之星` 的名头。……
+与天相同宫: 天相星的加入，使武曲星表现得更为温和；武曲星则赋予天相星更强的执行力。……
+
+天相(财帛)
+天相星以左右逢源、八面玲珑著称，论知人善用，天相星无疑是群星中的佼佼者。……
+
+（其余各星从略）
+
+=== 格局释义 ===
+
+府相朝垣
+“食禄千锺”的断语使此格备受欢迎，但成格并不必然富足。……
+成立条件: 此格指 天府星 在官禄宫、天相星 在财帛宫会照命宫。……
+
+=== 四化释义 ===
+
+禄
+**五行**：土；**意象**：开心、忙碌、增加、包容、多
+……
+```
+
+释义正文是知识包里的 Markdown 原文，一字不裁。节标题与每条的标题（星名、格局名、宫名）
+按盘面语言翻译：英文盘上是 `=== Star Notes ===` 与 `emperor(soul)`，正文仍是包里的语言。
+
+### 篇幅
+
+释义给全文，裁剪归应用层。同一张盘（默认包）的实测字符数：
+
+| 入口 | 只有事实 | 带释义 |
+| --- | --- | --- |
+| 本命盘 | 1,810 | 20,160 |
+| 运限 | 2,490 | 8,170 |
+| 单宫（命宫） | 140 | 1,140 |
+| 三方四正（命宫） | 240 | 6,010 |
+| 格局 | 25 | 325 |
+
+本命盘的释义占大头是因为每颗星（含四组十二神）都有条目。只要某几个宫的释义，
+用宫位或三方四正的入口；要自己排版，用 [`for_astrolabe`](/zh/docs/guide/guides/knowledge-pack#按盘取材)
+取出这张盘的子包自己拼。
+
+### 自定义包
+
+包是参数，合并覆盖包之后的结果照样传：
+
+```python
+pack = KnowledgePack.builtin().merged(KnowledgePack.from_json(open("my-school.json").read()))
+chart.to_text(knowledge=pack)
+```
+
+同一张盘传不同的包，事实部分逐字节相同，只有释义节随包变。
+
+<Callout type="warn" title="英文盘没有内嵌包">
+内嵌默认包只有 zh-CN。英文（及其他四种语言）盘上 `knowledge=True` / `BuiltinKnowledge()` /
+`KnowledgePack::builtin(Language::EnUS)` 报 `invalid_argument`，不会静默退回到无释义。
+显式传一份包即可——包的语言不受盘语言限制，英文盘配中文包得到英文标题、中文正文。
+</Callout>
+
 ## 接入大模型
 
 生成的文本是纯描述，不含指令。实际使用时在前面加上你的分析要求：
@@ -230,6 +345,8 @@ user = f"""{chart.to_text()}
 请分析这个人 2025 年的事业运势。"""
 ```
 
+要让模型按某一家的说法解读而不是自由发挥，把 `chart.to_text()` 换成
+`chart.to_text(knowledge=True)`（或传你的包），释义随盘一起进上下文。
 更完整的接法（工具调用、别让模型自己排盘）见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。
 
 <Callout title="用中文盘还是英文盘">

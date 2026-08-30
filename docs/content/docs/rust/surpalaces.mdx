@@ -200,3 +200,41 @@ println!("{}", sp.to_text(chart.language).lines().next().unwrap());
 ```
 
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+---
+
+## to_text_with
+
+**用途**　三方四正文本之后追加四宫每颗星的释义，每颗星只出现一次并标注所在宫。
+
+**签名**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack, lang: Language) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | 是 | — | 释义材料来源：内嵌默认包或合并覆盖包之后的自定义包 |
+| `lang` | `Language` | 是 | — | 输出语言，通常传 `chart.language` |
+
+等价的自由函数是 `text::surrounded_palaces_to_text_with(sp, pack, lang)`。
+节格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+let text = sp.to_text_with(&pack, chart.language);
+
+println!("{} {}", sp.to_text(chart.language).chars().count(), text.chars().count());
+```
+
+**输出**
+
+```text
+237 6009
+```

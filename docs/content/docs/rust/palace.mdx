@@ -530,3 +530,44 @@ print!("{}", soul.to_text());
 ```
 
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+---
+
+## to_text_with
+
+**用途**　本宫文本之后追加该宫每颗星（主星、辅星、杂耀与四组十二神）的释义。
+
+**签名**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | 是 | — | 释义材料来源：内嵌默认包或合并覆盖包之后的自定义包 |
+
+定义在 `PalaceRef` 上，按星盘排盘语言输出；要指定语言用自由函数
+`text::palace_to_text_with(palace, pack, lang)`。
+节格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.palace(Palace::Soul).unwrap().to_text_with(&pack);
+
+for line in text.lines().skip(9).take(3) {
+    println!("{}", line.chars().take(30).collect::<String>());
+}
+```
+
+**输出**
+
+```text
+=== 星耀释义 ===
+
+紫微(命宫)
+```

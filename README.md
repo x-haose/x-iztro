@@ -342,6 +342,11 @@ Pack format, merge rules, and how to write an overlay:
   for the horoscope at a date; palaces, surrounded palaces and pattern hits
   each have their own to_text. The format is deterministic with a stable field
   order, and the text snapshots guarding it are part of the test suite.
+- `chart.to_text(knowledge=True)` appends reading sections picked by chart
+  (stars, patterns, mutagens) after the facts, sourced from the bundled
+  knowledge pack or your own pack merged from overlays — the core assembles,
+  it holds no opinion of its own. Rust: `to_text_with(&pack)`; Go:
+  `ToTextWith(iztro.BuiltinKnowledge())`.
 - A full natal-chart text is ~1.8k characters in zh-CN and ~3.6k in en-US —
   on the order of 1–2k tokens, varying by model.
 - Even for an English-facing product, consider feeding the model the **zh-CN**

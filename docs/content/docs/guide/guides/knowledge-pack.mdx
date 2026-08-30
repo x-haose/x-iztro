@@ -12,7 +12,8 @@ description: 解读文本与门派属性怎么与内核分开、内嵌默认包�
 x-iztro 把这两件事分开：内核只做事实判定（排盘、运限、格局），
 解读文本与星耀的门派属性放在**知识包**里。知识包是一份 JSON，
 协议是「语言无关标识 → 文本与属性」。库里内嵌一份默认包，开箱即用；
-不认同其中的说法，写一份覆盖包逐条改掉。
+不认同其中的说法，写一份覆盖包逐条改掉。包是 to_text 家族的参数：传给
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)，释义就按盘取材追加在事实之后。
 
 ## 内核与知识包的分工
 
@@ -234,6 +235,73 @@ for _, hit := range hits {
 星耀同理：盘上每颗星的 `key` 直接拿去 `pack.star(key)`，宫位用 `palaceNameKey`，
 四化用四化标识。
 
+## 按盘取材
+
+整包 162 颗星、64 条格局，一张盘用不到这么多。`for_astrolabe` 从包里裁出只含这张盘的子包，
+`for_horoscope` 在此之上再加运限层的材料：
+
+| 段 | `for_astrolabe` | `for_horoscope` 另加 |
+| --- | --- | --- |
+| `stars` | 十二宫上出现的星：主星、辅星、杂耀与四组十二神；14 主星的 `combinations` 只保留对方主星确在同宫的那些 | 各层流耀 |
+| `patterns` | 按格局口径命中的格局 | 大限到流时各层视角命中的格局 |
+| `mutagens` | 禄权科忌四条，与盘无关 | — |
+| `palaces` / `concepts` | 空——宫位与术语与盘无关，按需从整包直接查 | — |
+
+格局口径可选传：Rust 走 `for_astrolabe_with(&chart, &PatternConfig)` /
+`for_horoscope_with(&chart, &h, &PatternConfig)`（不带 `_with` 的两个即默认口径），
+Python 是 `config=` 关键字，Go 是第二个参数 `*PatternConfig`（`nil` 即默认）。
+子包要和 `patterns` / `patterns_to_text` 配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
+Go 另有 `BuiltinKnowledge().ForAstrolabe(chart, nil)` 这条路，让内核直接读内嵌包，不必先取整包再送回。
+
+返回的仍是标准知识包（元信息沿用本包），可以继续合并、序列化、按 key 查，
+或者反过来作为 to_text 的释义参数。2000-8-16 寅时 女这张盘从默认包取出的子包：
+本命 108 星 / 1 格局 / 4 四化，序列化约 75 KB（整包约 219 KB）；
+2025-1-1 的运限再加流耀与各层格局，158 星 / 16 格局。
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let sub = pack.for_astrolabe(&chart);
+println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let sub = pack.for_horoscope(&chart, h.data());
+println!("{} {}", sub.stars.len(), sub.patterns.len());
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+pack = KnowledgePack.builtin()
+sub = pack.for_astrolabe(chart)
+print(len(sub.stars()), len(sub.patterns()), sub.mutagen("sihuaLu") is not None, sub.palace("soulPalace"))
+
+sub = pack.for_horoscope(chart.horoscope("2025-1-1", 0))
+print(len(sub.stars()), len(sub.patterns()))
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+pack, _ := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+sub, _ := pack.ForAstrolabe(chart, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns), len(sub.Mutagens), len(sub.Palaces))
+
+h, _ := chart.Horoscope("2025-1-1", 0)
+sub, _ = pack.ForHoroscope(h, nil)
+fmt.Println(len(sub.Stars), len(sub.Patterns))
+```
+
+</Tab>
+</Tabs>
+
+三侧输出一致：`108 1 4 0` 与 `158 16`（Python 第一行的后两项是 `True None`）。
+带释义的 to_text 按同一套规则取材：子包里有的，释义节里就有。
+
 ## 写一份覆盖包
 
 覆盖包是同样格式的 JSON，只写要改的条目与字段，`extends` 记被覆盖包的 `id`。
@@ -346,8 +414,7 @@ iztro-docs 星耀卡片本身就对不上：
 
 ## 之后
 
-同一套协议之上还能做覆盖包的加载与分发、以及把知识包连同盘一起交给大模型解读——
-这些属于应用层的事，不在库里。
+同一套协议之上还能做覆盖包的加载与分发——这属于应用层的事，不在库里。
 
 ## API 参考
 

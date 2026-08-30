@@ -207,3 +207,42 @@ Target Palace: soul (renwoo)
 ```
 
 The full format is on [Semantic text](/en/docs/guide/guides/to-text).
+
+---
+
+## to_text_with
+
+**Purpose** After the surrounded-palaces text, append a reading for each star in the four palaces;
+each star appears once, tagged with its palace.
+
+**Signature**
+
+```rust
+pub fn to_text_with(&self, pack: &KnowledgePack, lang: Language) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+| `lang` | `Language` | yes | — | Output language, usually `chart.language` |
+
+The equivalent free function is `text::surrounded_palaces_to_text_with(sp, pack, lang)`. The
+section format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+let text = sp.to_text_with(&pack, chart.language);
+
+println!("{} {}", sp.to_text(chart.language).chars().count(), text.chars().count());
+```
+
+**Output**
+
+```text
+237 6009
+```

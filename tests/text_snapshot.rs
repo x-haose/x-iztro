@@ -11,10 +11,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use x_iztro::data::types::*;
 use x_iztro::text::{
-    astrolabe_to_text, horoscope_to_text, palace_to_text, patterns_to_text,
-    surrounded_palaces_to_text,
+    astrolabe_to_text, astrolabe_to_text_with, horoscope_to_text, horoscope_to_text_with,
+    palace_to_text, palace_to_text_with, patterns_to_text, patterns_to_text_with,
+    surrounded_palaces_to_text, surrounded_palaces_to_text_with,
 };
-use x_iztro::{by_solar, get_horoscope};
+use x_iztro::{KnowledgePack, by_solar, get_horoscope};
 
 const SNAPSHOT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/text_snapshots");
 
@@ -57,18 +58,26 @@ fn assert_snapshot(name: &str, actual: &str) {
     );
 }
 
-/// 快照目录的文件集必须恰为五类输出 × 两种语言，孤儿文件同样报错。
+/// 五类输出的名称；带释义形态在名称后加 `_knowledge`
+const KINDS: [&str; 5] = ["astrolabe", "horoscope", "patterns", "palace", "surrounded"];
+
+/// 快照目录的文件集必须恰为五类输出 × 两种语言，外加五类带释义输出 × zh-CN
+/// （内嵌知识包只有 zh-CN），孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
-    let expected: std::collections::BTreeSet<String> =
-        ["astrolabe", "horoscope", "patterns", "palace", "surrounded"]
-            .iter()
-            .flat_map(|kind| {
-                ["zh-CN", "en-US"]
-                    .iter()
-                    .map(move |tag| format!("{kind}_{tag}.txt"))
-            })
-            .collect();
+    let expected: std::collections::BTreeSet<String> = KINDS
+        .iter()
+        .flat_map(|kind| {
+            ["zh-CN", "en-US"]
+                .iter()
+                .map(move |tag| format!("{kind}_{tag}.txt"))
+        })
+        .chain(
+            KINDS
+                .iter()
+                .map(|kind| format!("{kind}_knowledge_zh-CN.txt")),
+        )
+        .collect();
     let actual: std::collections::BTreeSet<String> = fs::read_dir(SNAPSHOT_DIR)
         .expect("快照目录存在")
         .map(|e| {
@@ -153,4 +162,38 @@ fn surrounded_text_matches_snapshot() {
             &surrounded_palaces_to_text(&sp, lang),
         );
     }
+}
+
+/// 带释义的五类输出：同一固定盘按内嵌 zh-CN 知识包取材，逐字节比对。
+#[test]
+fn text_with_knowledge_matches_snapshot() {
+    let lang = Language::ZhCN;
+    let pack = KnowledgePack::builtin(lang).unwrap();
+    let astrolabe = chart(lang);
+    let horoscope = get_horoscope(&astrolabe, TARGET_DATE, TARGET_TIME_INDEX, lang).unwrap();
+    let hits = astrolabe.patterns();
+    let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
+    let palace = astrolabe.palace(Palace::Soul).unwrap();
+    let sp = astrolabe.surrounded_palaces(Palace::Soul).unwrap();
+
+    assert_snapshot(
+        "astrolabe_knowledge_zh-CN",
+        &astrolabe_to_text_with(&astrolabe, pack, lang),
+    );
+    assert_snapshot(
+        "horoscope_knowledge_zh-CN",
+        &horoscope_to_text_with(&astrolabe, &horoscope, pack, lang),
+    );
+    assert_snapshot(
+        "patterns_knowledge_zh-CN",
+        &patterns_to_text_with(&hits, &names, pack, lang),
+    );
+    assert_snapshot(
+        "palace_knowledge_zh-CN",
+        &palace_to_text_with(&palace, pack, lang),
+    );
+    assert_snapshot(
+        "surrounded_knowledge_zh-CN",
+        &surrounded_palaces_to_text_with(&sp, pack, lang),
+    );
 }

@@ -14,12 +14,37 @@ from __future__ import annotations
 import copy
 import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from x_iztro.enums import LanguageType
 
+if TYPE_CHECKING:
+    from x_iztro.astrolabe import Astrolabe
+    from x_iztro.horoscope import Horoscope
+    from x_iztro.pattern import PatternConfig
+
 _SCHEMA_VERSION = 1
 """支持的知识包格式版本，与 Rust 内核 `knowledge::SCHEMA_VERSION` 一致"""
+
+_BUILTIN = "builtin"
+"""绑定层 `knowledge` 入参的字面量：让内核取盘语言的内嵌包，不搬整包"""
+
+
+def _wire(knowledge: bool | KnowledgePack | None, language: str) -> str | dict[str, Any] | None:
+    """
+    把 `knowledge` 参数落成绑定层 `knowledge` 入参：`True` 与「就是 `language` 的内嵌包」
+    的实例都发 `"builtin"`（内核自取，避免每次搬整包），其他实例发包对象，None/False 不发。
+
+    Raises:
+        TypeError: 既不是布尔也不是 KnowledgePack
+    """
+    if knowledge is None or knowledge is False:
+        return None
+    if knowledge is True:
+        return _BUILTIN
+    if isinstance(knowledge, KnowledgePack):
+        return _BUILTIN if knowledge._builtin_language == language else knowledge._raw
+    raise TypeError(f"knowledge 须为 True 或 KnowledgePack，收到 {type(knowledge).__name__}")
 
 
 def _validate_schema(raw: object) -> dict[str, Any]:
@@ -223,13 +248,16 @@ class KnowledgePack:
     一份知识包。持有原始 dict（`to_dict()` 深拷贝导出），查询方法返回类型化条目。
 
     构造：`KnowledgePack.builtin()` 取内嵌默认包，`from_dict` / `from_json` 读自己的包，
-    `merged(*overlays)` 叠加覆盖包。
+    `merged(*overlays)` 叠加覆盖包，`for_astrolabe` / `for_horoscope` 按盘取材成子包。
     """
 
-    __slots__ = ("_raw",)
+    __slots__ = ("_raw", "_builtin_language")
 
-    def __init__(self, raw: dict[str, Any]) -> None:
+    def __init__(self, raw: dict[str, Any], *, builtin_language: str | None = None) -> None:
         self._raw = raw
+        # 本实例就是该语言的内嵌包时记语言，传给内核时只发 "builtin" 而不搬整包；
+        # 自定义包与合并结果为 None
+        self._builtin_language = builtin_language
 
     # ------ 构造 ------
 
@@ -243,7 +271,47 @@ class KnowledgePack:
         """
         from x_iztro._bridge import query
 
-        return cls(query("knowledgePack", language=language))
+        return cls(query("knowledgePack", language=language), builtin_language=language)
+
+    def for_astrolabe(
+        self, chart: Astrolabe, config: PatternConfig | None = None
+    ) -> KnowledgePack:
+        """
+        按本命盘取材的子包：只含盘上出现的星（十二宫主辅杂与四组十二神；同宫主星的
+        双星组合解读保留，不同宫的剔除）、按 `config` 口径命中的格局、四化四条；
+        不含宫位与术语条目。元信息沿用本包，结果仍是标准包，可再合并、序列化或按 key 查。
+        重排盘（`rearranged` 产生）按重排后的布局取材。
+
+        Args:
+            config: 格局判定口径，与 `Astrolabe.patterns` 同一参数；不传取默认
+        """
+        from x_iztro.pattern import _pattern_config
+
+        return KnowledgePack(
+            chart._context_query(
+                "knowledgeForChart", knowledge=self, pattern_config=_pattern_config(config)
+            )
+        )
+
+    def for_horoscope(
+        self, horoscope: Horoscope, config: PatternConfig | None = None
+    ) -> KnowledgePack:
+        """
+        按运限取材的子包：在 `for_astrolabe` 之上再加各层流耀的条目与各层视角命中的格局。
+
+        Args:
+            config: 格局判定口径，与 `Horoscope.patterns` 同一参数；不传取默认
+
+        Raises:
+            ValueError: 运限不是由星盘发起（脱离星盘无排盘上下文可转发）
+        """
+        from x_iztro.pattern import _pattern_config
+
+        return KnowledgePack(
+            horoscope._context_query(
+                "knowledgeForChart", None, knowledge=self, pattern_config=_pattern_config(config)
+            )
+        )
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> KnowledgePack:
