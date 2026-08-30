@@ -372,12 +372,16 @@ fn ffi_text_with_knowledge_and_chart_selection() {
     let plain = run(json!({"kind": "astrolabeToText"})).unwrap();
     let with = run(json!({"kind": "astrolabeToText", "knowledge": "builtin"})).unwrap();
     let with = with.as_str().unwrap();
-    assert!(
-        with.starts_with(plain.as_str().unwrap()),
-        "带释义文本以事实文本开头"
-    );
-    assert!(with.contains("=== 星耀释义 ==="));
-    assert!(with.contains("=== 四化释义 ==="));
+    // 事实文本是带释义文本的有序子序列（同一渲染器）
+    let mut lines = with.lines();
+    for want in plain.as_str().unwrap().lines() {
+        assert!(
+            lines.any(|got| got == want),
+            "带释义文本缺行或顺序不同：{want:?}"
+        );
+    }
+    assert!(with.contains("## 四化释义"));
+    assert!(with.contains("**禄**: "));
 
     // 自定义包：覆盖后的释义进文本
     let builtin = query(json!({"kind": "knowledgePack", "language": "zh-CN"})).unwrap();
@@ -413,7 +417,7 @@ fn ffi_text_with_knowledge_and_chart_selection() {
         q["kind"] = json!(kind);
         q["knowledge"] = json!("builtin");
         let text = run(q).unwrap();
-        assert!(text.as_str().unwrap().contains("释义"), "{kind} 应带释义节");
+        assert!(text.as_str().unwrap().contains("**"), "{kind} 应带释义");
     }
 
     // 子包 kind：本命与运限两种取材

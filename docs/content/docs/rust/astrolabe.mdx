@@ -387,7 +387,7 @@ println!("流年 {}{}",
 
 ## to_text
 
-**用途**　星盘的语义化文本：面向语言模型与人的完整描述。
+**用途**　星盘的语义化文本：面向语言模型与人的完整描述，Markdown 子集。
 
 **签名**
 
@@ -397,63 +397,67 @@ pub fn to_text(&self) -> String
 
 按排盘语言输出；要指定语言用自由函数 `text::astrolabe_to_text(astrolabe, lang)`——
 `lang` 可以与排盘语言不同，全部字段按标识以目标语言重翻。
-单宫与三方四正见 `PalaceRef::to_text()` / `SurroundedPalaces::to_text(lang)`。
+单宫与三方四正见 `PalaceRef::to_text()` / `SurroundedPalaces::to_text()`。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 **示例**
 
 ```rust
-println!("{}", chart.to_text().chars().take(46).collect::<String>());
+for line in chart.to_text().lines().take(5) {
+    println!("{line}");
+}
 ```
 
 **输出**
 
 ```text
-=== 基本信息 ===
-性别: 女
-阳历: 2000-8-16
-农历: 二〇〇〇年七月十七
+# 命盘 2000-8-16 寅时 女
+
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
 ```
 
 ---
 
 ## to_text_with
 
-**用途**　`to_text` 的事实文本之后追加按盘从知识包取出的释义：星耀释义（含同宫主星组合）、
-格局释义、四化释义三节。
+**用途**　`to_text` 的同一份文本，按 [`TextOptions`](/zh/docs/rust/astro#textoptions) 附释义：
+格局列表之后紧跟格局释义，每宫事实之后紧跟该宫星耀释义（同宫主星组合在前），
+文末附 `## 四化释义`。事实部分与 `to_text` 逐行相同。
 
 **签名**
 
 ```rust
-pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> String
 ```
 
 **参数**
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `pack` | `&KnowledgePack` | 是 | — | 释义材料来源：内嵌默认包或合并覆盖包之后的自定义包 |
+| `opts` | `&TextOptions` | 是 | — | 输出选项；`TextOptions::new().knowledge(pack)` 带释义，`TextOptions::default()` 与 `to_text` 等价 |
 
-按排盘语言输出；要指定语言用自由函数 `text::astrolabe_to_text_with(astrolabe, pack, lang)`。
-节标题与条目标题按 `lang` 翻译，正文是包里的原文。取材规则与
+按排盘语言输出；要指定语言用自由函数 `text::astrolabe_to_text_with(astrolabe, opts, lang)`。
+条目标题按 `lang` 翻译，正文是包里的原文。取材规则与
 [`KnowledgePack::for_astrolabe`](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope) 相同，
-节格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+插入位置见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
-let text = chart.to_text_with(&pack);
+let text = chart.to_text_with(&TextOptions::new().knowledge(pack));
 
 println!("{} {}", chart.to_text().chars().count(), text.chars().count());
-println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>().join(" "));
 ```
 
 **输出**
 
 ```text
-1812 20158
-=== 基本信息 === === 十二宫 === === 格局 === === 星耀释义 === === 格局释义 === === 四化释义 ===
+3389 20767
+## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 
 ---

@@ -305,10 +305,52 @@ for _, hit := range hits {
 
 ---
 
-## Knowledge / BuiltinKnowledge / KnowledgeFrom
+## TextOptions
 
 **用途**　`ToTextWith` 家族（`ToTextWith` / `PalaceToTextWith` / `SurroundedPalacesToTextWith` /
-`PatternsToTextWith` 与 `Horoscope` 上的同名方法）的释义材料来源。
+`PatternsToTextWith` 与 `Horoscope` 上的同名方法）的输出选项：释义材料来源与格局判定口径。
+零值只输出盘面事实、按默认口径判格局，与不带 `With` 的方法输出逐字节相同。
+
+**定义**
+
+```go
+type TextOptions struct {
+    Knowledge     Knowledge
+    PatternConfig *PatternConfig
+}
+```
+
+**字段**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | 释义材料来源；零值不带释义。给出时每宫事实之后紧跟该宫星耀释义、格局列表之后紧跟格局释义、本命文本末尾附 `## 四化释义`，见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `PatternConfig` | [`*PatternConfig`](/zh/docs/go/patterns#patternconfig) | 格局判定口径，与 `Patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`nil` 取内核默认 |
+
+**示例**
+
+```go
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+same, _ := chart.ToTextWith(iztro.TextOptions{})
+plain, _ := chart.ToText()
+
+fmt.Println(same == plain, utf8.RuneCountInString(plain), utf8.RuneCountInString(text))
+
+cfg := iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
+byPosition, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternConfig: &cfg})
+```
+
+**输出**
+
+```text
+true 3389 20767
+```
+
+---
+
+## Knowledge / BuiltinKnowledge / KnowledgeFrom
+
+**用途**　[`TextOptions`](#textoptions) 的 `Knowledge` 字段取值：`ToTextWith` 家族的释义材料来源。
 
 **签名**
 
@@ -325,7 +367,7 @@ func KnowledgeFrom(pack *KnowledgePack) Knowledge
 | --- | --- |
 | `BuiltinKnowledge()` | 用盘语言的内嵌默认包；该语言没有内嵌包（目前只有 zh-CN 有）时方法返回 `ErrInvalidArgument`，不静默回退 |
 | `KnowledgeFrom(pack)` | 用给定的包（自定义或 `Merged` 之后的包）；`pack` 为 `nil` 等同零值 |
-| `Knowledge{}`（零值） | 不带释义，输出与不带 `With` 的方法逐字节相同 |
+| `Knowledge{}`（零值） | 不带释义，`TextOptions{}` 的输出与不带 `With` 的方法逐字节相同 |
 
 **示例**
 
@@ -335,7 +377,7 @@ data, _ := os.ReadFile("my-school.json")
 overlay, _ := iztro.ParseKnowledgePack(data)
 mine, _ := pack.Merged(overlay)
 
-text, _ := chart.ToTextWith(iztro.KnowledgeFrom(mine))
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.KnowledgeFrom(mine)})
 ```
 
 ---

@@ -191,12 +191,13 @@ def test_builtin_knowledge_for_english_chart_is_rejected(pack):
     with pytest.raises(ValueError) as info:
         en.to_text(knowledge=True)
     assert info.value.code == "invalid_argument"
-    assert "=== " in en.to_text(knowledge=pack)[len(en.to_text()):]
+    explained = en.to_text(knowledge=pack)
+    assert "**" in explained and _keeps_facts(en.to_text(), explained)
     assert pack.for_astrolabe(en).stars()
 
 
 def test_custom_pack_text_uses_overridden_entries(chart, pack):
-    """传合并后的自定义包：释义节用覆盖后的文本，且 `to_text` 不改盘面事实节。"""
+    """传合并后的自定义包：释义用覆盖后的文本，且 `to_text` 不改盘面事实行。"""
     mine = pack.merged(
         {
             "schema": 1,
@@ -209,7 +210,13 @@ def test_custom_pack_text_uses_overridden_entries(chart, pack):
     )
     text = chart.to_text(knowledge=mine)
     assert "我的紫微释义" in text
-    assert text.startswith(_snapshot("astrolabe_zh-CN"))
+    assert _keeps_facts(_snapshot("astrolabe_zh-CN"), text)
     assert "我的紫微释义" not in chart.to_text(knowledge=True)
     with pytest.raises(TypeError):
         chart.to_text(knowledge="builtin")
+
+
+def _keeps_facts(plain: str, explained: str) -> bool:
+    """释义穿插在各宫事实之后，故不带释义文本的每一行须按原顺序出现在带释义文本里。"""
+    remaining = iter(explained.splitlines())
+    return all(any(line == candidate for candidate in remaining) for line in plain.splitlines())

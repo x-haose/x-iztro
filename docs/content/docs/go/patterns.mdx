@@ -337,7 +337,8 @@ for _, hit := range hits {
 
 ## PatternsToText / Horoscope.PatternsToText
 
-**用途**　格局命中的语义化文本，每条一行：格局名、命中宫、构成星耀，破格标 `[破格]`。
+**用途**　格局命中的语义化文本，每条一行 `- **格局名** (命中宫, 破格): 构成星耀`，
+括号里的「破格」只在被冲破时出现。
 
 **签名**
 
@@ -359,30 +360,29 @@ fmt.Print(text)
 **输出**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
 ```
 
 本命盘与运限的 `ToText` 已各自带格局节；单独调用适合只要格局摘要的场景。
 
-带释义的形态在命中列表之后追加每条命中格局的释义（`intro` 加「成立条件」），
-`knowledge` 取值见 [Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)：
+带释义的形态在命中列表之后紧跟每条命中格局的释义（`**格局名**: intro`，末段 `成立条件: `），
+同一格局只释义一次；`opts` 见 [TextOptions](/zh/docs/go/knowledge#textoptions)：
 
 ```go
-func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, knowledge Knowledge) (string, error)
-func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, knowledge Knowledge) (string, error)
+func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, opts TextOptions) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, opts TextOptions) (string, error)
 ```
 
 ```go
-text, _ := chart.PatternsToTextWith(nil, iztro.BuiltinKnowledge())
-fmt.Println(strings.Join(strings.Split(text, "\n")[:5], "\n"))
+text, _ := chart.PatternsToTextWith(nil, iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+fmt.Println(string([]rune(lines[2])[:16]))
 ```
 
 **输出**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
-
-=== 格局释义 ===
-
-府相朝垣
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
+**府相朝垣**: “食禄千锺”
 ```

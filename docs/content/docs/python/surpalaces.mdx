@@ -171,29 +171,42 @@ print("三方四正不见科:", sp.not_have_mutagen(Mutagen.KE))
 **签名**
 
 ```python
-def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
 **参数**
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时追加四宫每颗星的释义节（每星一次，标注所在宫），格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时四宫各自的事实行之后紧跟该宫星耀的释义，见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
+
+**返回值**　`str`——`## 命宫 三方四正` 标题之下四宫各一段 `### `，标题带角色前缀（本宫、对宫、财帛位、官禄位），
+事实行与单宫 `to_text` 一致。
 
 **示例**
 
 ```python
 sp = chart.surrounded_palaces("命宫")
 
-print(sp.to_text().split("\n")[0])
+print("\n".join(l for l in sp.to_text().splitlines() if l.startswith("#")))
 print(len(sp.to_text()), len(sp.to_text(knowledge=True)))
 ```
 
 **输出**
 
 ```text
-本宫: 命宫 (壬午)
-237 6009
+## 命宫 三方四正
+### 本宫 · 命宫 (壬午) · 大限 3-12
+### 对宫 · 迁移 (戊子) · 大限 63-72
+### 财帛位 · 财帛 (戊寅) · 大限 43-52
+### 官禄位 · 官禄 (丙戌) · 大限 83-92 [身宫]
+924 6312
 ```
 
 本宫脱离星盘单独构造时没有排盘上下文，调用抛 `ValueError`；

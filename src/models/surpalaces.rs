@@ -1,5 +1,6 @@
 use crate::data::stars::StarKey;
 use crate::data::types::Mutagen;
+use crate::models::astrolabe::Astrolabe;
 use crate::models::palace::PalaceData;
 
 /// 三方四正宫位
@@ -12,9 +13,16 @@ pub struct SurroundedPalaces<'a> {
     pub wealth: &'a PalaceData,
     /// 官禄位 (+4)
     pub career: &'a PalaceData,
+    /// 所属星盘：文本投影要查星落宫与宫干飞化，须回指全盘
+    pub(crate) astrolabe: &'a Astrolabe,
 }
 
 impl<'a> SurroundedPalaces<'a> {
+    /// 所属星盘。
+    pub fn astrolabe(&self) -> &'a Astrolabe {
+        self.astrolabe
+    }
+
     /// 三方四正是否包含所有指定星耀
     pub fn have(&self, stars: &[StarKey]) -> bool {
         let all_keys = self.all_star_keys();

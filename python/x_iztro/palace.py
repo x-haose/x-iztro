@@ -14,6 +14,7 @@ from x_iztro.enums import _MUTAGEN_INDEX, Mutagen, _as_mutagen_list, _or_all_mut
 from x_iztro.star_object import Star, _star_identifiers
 
 if TYPE_CHECKING:
+    from x_iztro.pattern import PatternConfig
     from x_iztro.astrolabe import Astrolabe
     from x_iztro.knowledge import KnowledgePack
     from x_iztro.surpalaces import SurroundedPalaces
@@ -178,16 +179,22 @@ class Palace:
         """宫位所属星盘；脱离星盘单独构造的宫位返回 None"""
         return self._astrolabe
 
-    def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str:
+    def to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        config: PatternConfig | None = None,
+    ) -> str:
         """
         本宫的语义化文本：面向语言模型与人的单宫完整描述。
 
         从所属星盘的排盘上下文（含重排起点）无状态再发起计算，
-        文本按排盘语言输出。
+        文本是 Markdown 子集，按排盘语言输出。
 
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
-                给出时追加本宫星耀的释义节
+                给出时事实之后紧跟本宫星耀的释义
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 宫位脱离星盘单独构造，无排盘上下文可转发
@@ -195,8 +202,13 @@ class Palace:
         """
         if self._astrolabe is None:
             raise ValueError("to_text 需要所属星盘：请从 Astrolabe 的宫位查询获取宫位")
+        from x_iztro.pattern import _pattern_config
+
         return self._astrolabe._context_query(
-            "palaceToText", palace_index=self.index, knowledge=knowledge
+            "palaceToText",
+            palace_index=self.index,
+            knowledge=knowledge,
+            pattern_config=_pattern_config(config),
         )
 
     def opposite_palace(self) -> Palace | None:

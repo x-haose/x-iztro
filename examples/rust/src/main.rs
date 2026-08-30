@@ -1,6 +1,6 @@
 //! x-iztro Rust 示例
 //!
-//! 排盘 → 命盘信息 → 流年运限 → AI 提示词
+//! 排盘 → 命盘信息 → 流年运限 → 语义化文本（Markdown）
 //!
 //! 运行方式：
 //!   cd examples/rust
@@ -12,7 +12,9 @@ use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use x_iztro::{IztroError, KnowledgePack, astrolabe_to_text, by_solar, horoscope_to_text};
+use x_iztro::{
+    IztroError, KnowledgePack, TextOptions, astrolabe_to_text, by_solar, horoscope_to_text,
+};
 
 fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;
@@ -191,7 +193,7 @@ fn main() -> Result<(), IztroError> {
     println!("\n===== 带释义的语义化文本（前 40 行）=====\n");
 
     let pack = KnowledgePack::builtin(lang).expect("zh-CN 有内嵌知识包");
-    let annotated = astrolabe.to_text_with(pack);
+    let annotated = astrolabe.to_text_with(&TextOptions::new().knowledge(pack));
     for line in annotated.lines().take(40) {
         println!("{line}");
     }

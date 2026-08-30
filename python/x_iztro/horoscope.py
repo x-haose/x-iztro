@@ -244,22 +244,35 @@ class Horoscope:
         kwargs.setdefault("ensure_ascii", False)
         return json.dumps(self._raw, **kwargs)
 
-    def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str:
+    def to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        config: PatternConfig | None = None,
+    ) -> str:
         """
         运限的语义化文本：面向语言模型与人的完整描述，`str(horoscope)` 等价于不带释义的形态。
 
         与 `to_dict`/`to_json`（机器结构）、翻译字段（展示文本）同源，
-        是同一份运限的第三种投影。文本按排盘语言输出。
+        是同一份运限的第三种投影。文本是 Markdown 子集（标题、列表、表格），按排盘语言输出。
 
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
-                给出时在事实节之后追加流耀释义与格局释义
+                给出时各层事实之后紧跟该层流耀释义与格局释义
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
         """
-        return self._context_query("horoscopeToText", None, knowledge=knowledge)
+        from x_iztro.pattern import _pattern_config
+
+        return self._context_query(
+            "horoscopeToText",
+            None,
+            knowledge=knowledge,
+            pattern_config=_pattern_config(config),
+        )
 
     def __str__(self) -> str:
         # 脱离星盘的运限没有排盘上下文可转发，str() 必须仍是安全操作：
@@ -476,7 +489,7 @@ class Horoscope:
             config: 判定口径；不传取默认
             astrolabe: 星盘；省略时取发起本次运限查询的那张盘
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
-                给出时追加命中格局的释义节
+                给出时格局列表之后紧跟各格局的释义
 
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起

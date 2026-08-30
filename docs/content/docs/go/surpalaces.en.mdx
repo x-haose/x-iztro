@@ -190,9 +190,23 @@ Surrounded-palaces text lives not on `*SurroundedPalaces` but on the astrolabe m
 
 ```go
 text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
-withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, iztro.BuiltinKnowledge())
+withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul},
+    iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(strings.Split(text, "\n")[0])
+fmt.Println(utf8.RuneCountInString(text), utf8.RuneCountInString(withNotes))
 ```
 
-`SurroundedPalacesToTextWith` appends a note for each star in the four palaces (each star once,
-tagged with its palace) after the surrounded-palaces text; the `knowledge` values are on
-[Knowledge](/en/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom).
+**Output** (on a zh-CN chart)
+
+```text
+## 命宫 三方四正
+924 6312
+```
+
+The text opens with a `## <palace> Trine & Opposite` heading followed by four sections — the
+target, its opposite, the wealth position and the career position — each headed with its role
+(`### Target Palace · soul (ren woo) · Decadal 3-12`, `### Opposite Palace · surface (wu zi) · …`)
+and with fact lines identical to that palace's section in the natal text; `SurroundedPalacesToTextWith` places each palace's star
+readings right after its fact lines. `opts` is on
+[TextOptions](/en/docs/go/knowledge#textoptions).

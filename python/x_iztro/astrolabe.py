@@ -284,22 +284,35 @@ class Astrolabe:
             **extra,
         )
 
-    def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str:
+    def to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        config: PatternConfig | None = None,
+    ) -> str:
         """
         星盘的语义化文本：面向语言模型与人的完整描述，`str(astrolabe)` 等价于不带释义的形态。
 
         与 `to_dict`/`to_json`（机器结构）、翻译字段（展示文本）同源，
-        是同一张盘的第三种投影。文本按排盘语言输出；重排盘按重排后的布局描述。
+        是同一张盘的第三种投影。文本是 Markdown 子集（标题、列表、表格），
+        按排盘语言输出；重排盘按重排后的布局描述。
 
         Args:
             knowledge: 释义材料。True 取排盘语言的内嵌知识包，KnowledgePack 用该包
-                （自定义或合并后的包）；给出时在事实节之后追加星耀释义、格局释义、
-                四化释义三节，不给只输出盘面事实
+                （自定义或合并后的包）；给出时每宫事实之后紧跟该宫星耀释义、格局之后
+                紧跟格局释义，文末另起四化释义一节，不给只输出盘面事实
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
         """
-        return self._context_query("astrolabeToText", knowledge=knowledge)
+        from x_iztro.pattern import _pattern_config
+
+        return self._context_query(
+            "astrolabeToText",
+            knowledge=knowledge,
+            pattern_config=_pattern_config(config),
+        )
 
     def __str__(self) -> str:
         return self.to_text()
@@ -505,7 +518,7 @@ class Astrolabe:
         Args:
             config: 判定口径；不传取默认
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
-                给出时追加命中格局的释义节
+                给出时格局列表之后紧跟各格局的释义
 
         Raises:
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）

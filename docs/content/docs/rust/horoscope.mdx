@@ -398,7 +398,7 @@ println!("{}", data.solar_date);
 
 ## to_text
 
-**用途**　运限的语义化文本：面向语言模型与人的完整描述。
+**用途**　运限的语义化文本：面向语言模型与人的完整描述，Markdown 子集。
 
 **签名**
 
@@ -409,7 +409,8 @@ pub fn to_text(&self) -> String
 定义在 `HoroscopeRef` 上，按星盘排盘语言输出；要指定语言用自由函数
 `text::horoscope_to_text(astrolabe, horoscope, lang)`。
 
-**返回值**　`String`——分节的纯文本，各层带该层视角的格局行与流耀行。
+**返回值**　`String`——大限（未起运为童限）、小限、流年、流月、流日、流时各一节，
+各层带四化、该层视角的格局与流耀，大限与流年展开十二宫表。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 **示例**
@@ -417,53 +418,68 @@ pub fn to_text(&self) -> String
 ```rust
 let h = chart.horoscope("2025-1-1", 0)?;
 
-println!("{}", h.to_text().chars().take(25).collect::<String>());
+for line in h.to_text().lines().take(5) {
+    println!("{line}");
+}
 ```
 
 **输出**
 
 ```text
-=== 运限 ===
-目标日期: 2025-1-1
+# 运限 2025-1-1 (二〇二四年腊月初二)
+
+## 大限 · 命宫: 本命夫妻 (庚辰)
+- 四化: 太阳化禄→本命子女, 武曲化权→本命财帛, 太阴化科→本命仆役, 天同化忌→本命疾厄
+- 格局: 杀破狼 (命宫), 风云际会 (命宫)
 ```
 
 ---
 
 ## to_text_with
 
-**用途**　`to_text` 的事实文本之后追加释义：各层流耀的释义、大限到流时各层视角命中格局的释义。
+**用途**　`to_text` 的同一份文本，按 [`TextOptions`](/zh/docs/rust/astro#textoptions) 附释义：
+每层的表或事实之后紧跟该层流耀的释义与该层视角命中格局的释义，跨层去重。
 本命星耀的释义不在这里重复，在本命盘的 `to_text_with` 里。
 
 **签名**
 
 ```rust
-pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> String
 ```
 
 **参数**
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `pack` | `&KnowledgePack` | 是 | — | 释义材料来源：内嵌默认包或合并覆盖包之后的自定义包 |
+| `opts` | `&TextOptions` | 是 | — | 输出选项；`TextOptions::new().knowledge(pack)` 带释义，`TextOptions::default()` 与 `to_text` 等价 |
 
 定义在 `HoroscopeRef` 上，按星盘排盘语言输出；要指定语言用自由函数
-`text::horoscope_to_text_with(astrolabe, horoscope, pack, lang)`。
-节格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+`text::horoscope_to_text_with(astrolabe, horoscope, opts, lang)`。
+插入位置见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let h = chart.horoscope("2025-1-1", 0)?;
-let text = h.to_text_with(&pack);
+let text = h.to_text_with(&TextOptions::new().knowledge(pack));
 
-println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+println!("{} {}", h.to_text().chars().count(), text.chars().count());
+for line in text.lines().filter(|l| l.starts_with("## ")) {
+    println!("{line}");
+}
 ```
 
 **输出**
 
 ```text
-=== 运限 === === 流耀释义 === === 格局释义 ===
+2457 8458
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+## 流月 · 命宫: 本命仆役 (丁丑)
+## 流日 · 命宫: 本命迁移 (庚午)
+## 流时 · 命宫: 本命迁移 (丙子)
 ```
 
 ---

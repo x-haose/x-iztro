@@ -179,31 +179,32 @@ For those, use the palace's flying-star methods.
 
 ## to_text
 
-**Purpose** The surrounded palaces' semantic text: one section each for the target palace, its
-opposite, and the wealth and career positions.
+**Purpose** The surrounded palaces' semantic text: under a `## <palace> Trine & Opposite` heading,
+one section each for the target palace, its opposite, and the wealth and career positions, each
+headed with its role (`### Target Palace · soul (ren woo) · Decadal 3-12`) and with fact lines
+identical to that palace's section in the natal text.
 
 **Signature**
 
 ```rust
-pub fn to_text(&self, lang: Language) -> String
+pub fn to_text(&self) -> String
 ```
 
-`SurroundedPalaces` holds four palace references and records no language, so pass one explicitly —
-usually `chart.language` to match the natal chart. The equivalent free function is
-`text::surrounded_palaces_to_text(sp, lang)`.
+Emits in the chart's charting language; for an explicit language use the free function
+`text::surrounded_palaces_to_text(&sp, lang)`.
 
 **Example**
 
 ```rust
 let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
 
-println!("{}", sp.to_text(chart.language).lines().next().unwrap());
+println!("{}", sp.to_text().lines().next().unwrap());
 ```
 
 **Output**
 
 ```text
-Target Palace: soul (renwoo)
+## soul Trine & Opposite
 ```
 
 The full format is on [Semantic text](/en/docs/guide/guides/to-text).
@@ -212,37 +213,37 @@ The full format is on [Semantic text](/en/docs/guide/guides/to-text).
 
 ## to_text_with
 
-**Purpose** After the surrounded-palaces text, append a reading for each star in the four palaces;
-each star appears once, tagged with its palace.
+**Purpose** Each of the four palace sections is followed by readings of that palace's stars,
+section for section the same as the single-palace `to_text_with`.
 
 **Signature**
 
 ```rust
-pub fn to_text_with(&self, pack: &KnowledgePack, lang: Language) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> String
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
-| `lang` | `Language` | yes | — | Output language, usually `chart.language` |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text`. See [TextOptions](/en/docs/rust/astro#textoptions) |
 
-The equivalent free function is `text::surrounded_palaces_to_text_with(sp, pack, lang)`. The
-section format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+For an explicit language use the free function
+`text::surrounded_palaces_to_text_with(&sp, opts, lang)`. Placement is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example** (on a zh-CN chart, since the bundled pack is Chinese)
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
-let text = sp.to_text_with(&pack, chart.language);
+let text = sp.to_text_with(&TextOptions::new().knowledge(pack));
 
-println!("{} {}", sp.to_text(chart.language).chars().count(), text.chars().count());
+println!("{} {}", sp.to_text().chars().count(), text.chars().count());
 ```
 
 **Output**
 
 ```text
-237 6009
+924 6312
 ```

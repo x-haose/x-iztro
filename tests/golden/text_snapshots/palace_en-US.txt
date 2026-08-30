@@ -1,8 +1,8 @@
---- soul ---
-Stem-Branch: renwoo
-Decadal: 3-12
-Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
-Twelve Gods: weak, dragon, downcast, disastery
-Major Stars: emperor([+3])
-Minor Stars: artist([-3])
-Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+### soul (ren woo) · Decadal 3-12
+- Major Stars: emperor([+3])
+- Minor Stars: artist([-3])
+- Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+- Trine & Opposite: Opposite surface · Trine wealth, career
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
+- Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113

@@ -843,13 +843,14 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
     let pack = parse_knowledge(&input.knowledge, language)?;
-    let pack = pack.as_deref();
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
+    let mut opts = crate::TextOptions::new().pattern_config(&pattern_config);
+    if let Some(k) = pack.as_deref() {
+        opts = opts.knowledge(k);
+    }
 
     let text = match input.kind.as_str() {
-        "astrolabeToText" => match pack {
-            Some(k) => crate::astrolabe_to_text_with(&astrolabe, k, language),
-            None => crate::astrolabe_to_text(&astrolabe, language),
-        },
+        "astrolabeToText" => crate::astrolabe_to_text_with(&astrolabe, &opts, language),
         "horoscopeToText" => {
             let h = crate::get_horoscope(
                 &astrolabe,
@@ -857,39 +858,27 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
                 input.target_time_index,
                 language,
             )?;
-            match pack {
-                Some(k) => crate::horoscope_to_text_with(&astrolabe, &h, k, language),
-                None => crate::horoscope_to_text(&astrolabe, &h, language),
-            }
+            crate::horoscope_to_text_with(&astrolabe, &h, &opts, language)
         }
         "palaceToText" => {
             let target = parse_palace_target(input)?;
             let p = astrolabe.palace(target).ok_or_else(|| {
                 BridgeError::invalid_argument("palace not found on this chart".to_string())
             })?;
-            match pack {
-                Some(k) => crate::palace_to_text_with(&p, k, language),
-                None => crate::palace_to_text(&p, language),
-            }
+            crate::palace_to_text_with(&p, &opts, language)
         }
         "surroundedPalacesToText" => {
             let target = parse_palace_target(input)?;
             let sp = astrolabe.surrounded_palaces(target).ok_or_else(|| {
                 BridgeError::invalid_argument("palace not found on this chart".to_string())
             })?;
-            match pack {
-                Some(k) => crate::surrounded_palaces_to_text_with(&sp, k, language),
-                None => crate::surrounded_palaces_to_text(&sp, language),
-            }
+            crate::surrounded_palaces_to_text_with(&sp, &opts, language)
         }
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);
             let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
-            match pack {
-                Some(k) => crate::patterns_to_text_with(&hits, &names, k, language),
-                None => crate::patterns_to_text(&hits, &names, language),
-            }
+            crate::patterns_to_text_with(&hits, &names, &opts, language)
         }
         "horoscopePatternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
@@ -906,10 +895,7 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
                 Some(item) => item.palace_names.clone(),
                 None => astrolabe.palaces.iter().map(|p| p.name).collect(),
             };
-            match pack {
-                Some(k) => crate::patterns_to_text_with(&hits, &names, k, language),
-                None => crate::patterns_to_text(&hits, &names, language),
-            }
+            crate::patterns_to_text_with(&hits, &names, &opts, language)
         }
         other => {
             return Err(BridgeError::internal(format!(
@@ -1593,7 +1579,7 @@ mod tests {
         // 命宫按 key 寻址与按索引寻址取到同一段文本
         let by_key = run(json!({"kind": "palaceToText", "palaceKey": "soulPalace"})).unwrap();
         let text = by_key.as_str().unwrap();
-        assert!(text.starts_with("--- 命宫"));
+        assert!(text.starts_with("### 命宫 ("), "{text}");
         let soul_index = text_soul_index();
         let by_index = run(json!({"kind": "palaceToText", "palaceIndex": soul_index})).unwrap();
         assert_eq!(by_key, by_index);
@@ -1605,7 +1591,7 @@ mod tests {
         // 三方四正
         let sp =
             run(json!({"kind": "surroundedPalacesToText", "palaceKey": "soulPalace"})).unwrap();
-        assert!(sp.as_str().unwrap().starts_with("本宫: 命宫"));
+        assert!(sp.as_str().unwrap().starts_with("## 命宫 三方四正\n"));
 
         // 本命与运限视角的格局文本
         let hits = run(json!({"kind": "patternsToText"})).unwrap();

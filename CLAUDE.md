@@ -88,13 +88,19 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 绑定接口无状态：运限/to_text/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
   重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/各 to_text kind 的
   payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
-- to_text 覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+- to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
+  记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
+  开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
+  覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
   /`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
   bodyPalace/originalPalace）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
   Go 是 `ToText()`
-- 知识包只作为**参数**融入 to_text：六个 kind 的可选入参 `knowledge`（`"builtin"` 取盘语言内嵌包，
-  无该语言包即报错不回退；或直接给包对象），给了就在事实文本后追加释义节；Rust 是 `*_to_text_with(&pack)`
-  与各对象的 `to_text_with`，Python `to_text(knowledge=True|pack)`，Go `ToTextWith(k)`。
+- 知识包只作为**参数**融入 to_text：选项对象 `TextOptions`（Rust `to_text_with(&TextOptions::new()
+  .knowledge(&pack))`，Go `ToTextWith(TextOptions{Knowledge})`，Python 关键字参数
+  `to_text(knowledge=True|pack)`），将来的分层等开关也加在这里。bridge 六个 kind 的可选入参
+  `knowledge`（`"builtin"` 取盘语言内嵌包，无该语言包即报错不回退；或直接给包对象）。带包时释义
+  **内联**：每宫事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；十二神不释义），
+  格局列表后跟格局释义，文末附四化释义。
   「按盘取材」只在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope` 实现一处（bridge kind
   `knowledgeForChart`），文本释义节与结构化子包共用它：取盘上出现的星（含四组十二神，同宫主星的
   双星组合只留同宫对方）、命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。
@@ -229,7 +235,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - 语义化文本 → `text_snapshot`（本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US，
+  - 语义化文本 → `text_snapshot`（Markdown 形态的本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US，
     外加五类带释义输出 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，

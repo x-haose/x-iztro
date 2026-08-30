@@ -185,8 +185,21 @@ fmt.Println("三方四正不见科:", sp.NotHaveMutagen(iztro.MutagenKe))
 
 ```go
 text, _ := chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
-withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, iztro.BuiltinKnowledge())
+withNotes, _ := chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul},
+    iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(strings.Split(text, "\n")[0])
+fmt.Println(utf8.RuneCountInString(text), utf8.RuneCountInString(withNotes))
 ```
 
-`SurroundedPalacesToTextWith` 在四宫文本之后追加四宫每颗星的释义（每星一次，标注所在宫），
-`knowledge` 取值见 [Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)。
+**输出**
+
+```text
+## 命宫 三方四正
+924 6312
+```
+
+文本以 `## 命宫 三方四正` 起，下接本宫、对宫、财帛位、官禄位四段，每段标题带角色前缀
+（`### 本宫 · 命宫 (壬午) · 大限 3-12`、`### 对宫 · 迁移 (戊子) · 大限 63-72`），事实行与本命文本里该宫的段落一致；
+`SurroundedPalacesToTextWith` 在每宫事实行之后紧跟该宫星耀的释义，
+`opts` 见 [TextOptions](/zh/docs/go/knowledge#textoptions)。

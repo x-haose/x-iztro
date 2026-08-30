@@ -7,6 +7,42 @@
 
 ## [Unreleased]
 
+### 变更（breaking）
+
+- **to_text 输出改为 Markdown 子集**，事实与释义同处一屏：`# 命盘` 标题 → `## 基本信息`
+  （生年四化带落宫、身宫与来因宫带宫名）→ `## 十二宫总览`（宫位 | 主星 | 辅星 | 大限）→
+  `## 格局` → `## 十二宫`（从命宫起顺排，每宫 `### 宫名 (干支) · 大限` 与事实行）。
+  按「标签: 值」逐行解析或用 `=== 节 ===`/`--- 宫名 ---` 切段的下游需按新记号调整。
+  运限文本同步改为各层 `## 大限 · 命宫: 本命X (干支)` 节，大限与流年展开十二宫表。
+- **四化改写全称**：`天同(平)化权` 取代 `天同(平)[权]`，与禄存的「禄」不再同形；英文为 `[A]`。
+  破格由 `[破格]` 改为格局括号内标注 `(命宫, 破格)`。
+- **`to_text_with` 收 `TextOptions`**：Rust `to_text_with(&TextOptions::new().knowledge(&pack)
+  .pattern_config(&cfg))`、Go `ToTextWith(TextOptions{Knowledge, PatternConfig})`；Python
+  `to_text(knowledge=…, config=…)`。格局口径从此对文本的格局节、释义与 bridge 的 `patternConfig`
+  入参一并生效。`palace_to_text` 收 `&PalaceRef`（单宫的三方四正与飞化行需要全盘），
+  `SurroundedPalaces::to_text` 不再收语言参数（按所属星盘语言）。
+- **带释义文本不再为四组十二神出释义**：十二神只保留在每宫的事实行（标组名），其一句话条目
+  仍在知识包与按盘取材的子包里，需要时按 key 自取。
+
+### 新增
+
+- **知识包融入 to_text**：`TextOptions` 带知识包时，每宫事实之后紧跟该宫星耀的释义（同宫主星的
+  组合解读在前，包里只记在一方名下也查得到），格局列表之后紧跟释义（含成立条件），文末附四化释义；
+  运限各层附流耀与格局释义（跨层去重）。bridge 六个 to_text kind 增可选入参 `knowledge`
+  （`"builtin"` 取盘语言内嵌包、无该语言包即报错；或直接给包对象），新 kind `knowledgeForChart`。
+- **按盘取材**：`KnowledgePack::for_astrolabe(_with)` / `for_horoscope(_with)` 裁出本盘相关子包
+  （盘上的星含四组十二神、同宫主星组合、按口径命中的格局、四化四条；不含宫位与术语），
+  返回仍是标准包；Python `pack.for_astrolabe(chart, config=None)`、Go `pack.ForAstrolabe(chart, cfg)`
+  与 `Knowledge.ForAstrolabe`（内嵌包哨兵不搬整包）。
+- **事实层补齐**：每宫新增三方四正行（对宫 · 三合）与宫干飞化行（四化星带落宫）；十二神标组名
+  （长生·/博士·/岁前·/将前·）；空宫写明「空宫」；运限流耀行标注落宫（`流魁→命宫`）。
+- to_text 快照金标扩为 15 份（五类 × zh-CN/en-US + 五类带释义 × zh-CN），三侧读同一批逐字节比对。
+
+### 修正
+
+- 反推枚举的闰月判定改走 `lunar_table` 修正视图（新增 `leap_month`）；反推剪枝的主星几何改由安星表
+  派生、年层锁域去掉手抄副本；知识包解析结果缓存、条目合并改为 JSON 值递归（schema 新增字段自动参与）。
+
 ## [0.4.0] - 2026-08-21
 
 ### 变更（breaking）

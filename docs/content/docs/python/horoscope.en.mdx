@@ -460,18 +460,27 @@ None
 **Signature**
 
 ```python
-def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, notes on each scope's flowing stars and on the patterns hit from the decadal down to the hourly perspective follow the facts — natal stars are not repeated |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
-**Return value** `str` — sectioned plain text in the chart's charting language; each scope carries a
-patterns line and flowing-star lines from its own perspective. The full format is on
-[Semantic text](/en/docs/guide/guides/to-text); the reading sections are on
+**Return value** `str` — a Markdown subset in the chart's charting language: a
+`# Horoscope <date> (<lunar>)` title, then one `## ` section each for the decadal (childhood before
+the decadals start), age fortune, yearly, monthly, daily and hourly scopes; the decadal and yearly
+sections expand into a twelve-palace table, and every scope carries its mutagen, flowing-star and
+pattern lines from its own perspective. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text#format-conventions); where readings are inserted is on
 [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example**
@@ -479,18 +488,23 @@ patterns line and flowing-star lines from its own perspective. The full format i
 ```python
 h = chart.horoscope("2025-1-1", 0)
 
-print(h.to_text()[:39])
+print("\n".join(l for l in h.to_text().splitlines() if l.startswith("#")))
 
 zh = astro.by_solar("2000-8-16", 2, "female").horoscope("2025-1-1", 0)   # the bundled pack is zh-CN
-print(" ".join(l for l in zh.to_text(knowledge=True).splitlines() if l.startswith("=== ")))
+print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 ```
 
 **Output**
 
 ```text
-=== Horoscope ===
-Target Date: 2025-1-1
-=== 运限 === === 流耀释义 === === 格局释义 ===
+# Horoscope 2025-1-1 (二〇二四年腊月初二)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal career · Nominal Age 25
+## Yearly · Soul Palace: Natal spouse (jia chen)
+## Monthly · Soul Palace: Natal friends (ding chou)
+## Daily · Soul Palace: Natal surface (geng woo)
+## Hourly · Soul Palace: Natal surface (bing zi)
+2457 8458
 ```
 
 **Edge cases and pitfalls**

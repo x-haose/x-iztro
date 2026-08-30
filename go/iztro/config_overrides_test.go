@@ -147,7 +147,7 @@ func TestCustomMutagensApplyToText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(text, "生年四化: 太阳禄, 武曲权, 天同科, 天相忌") {
+	if !strings.Contains(text, "- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 天同化科→疾厄, 天相化忌→财帛") {
 		t.Errorf("本命文本的生年四化未反映自定义表:\n%s", text)
 	}
 
@@ -159,7 +159,8 @@ func TestCustomMutagensApplyToText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(horoText, "流年四化: 太阳禄, 武曲权, 天同科, 天相忌") {
+	// 大限、流年、流时同为庚干，四化行内容相同，须锚定到流年节的标题行
+	if !strings.Contains(horoText, "## 流年 · 命宫: 本命官禄 (庚戌)\n- 四化: 太阳化禄→本命子女, 武曲化权→本命财帛, 天同化科→本命疾厄, 天相化忌→本命财帛") {
 		t.Errorf("运限文本的流年四化未反映自定义表:\n%s", horoText)
 	}
 }

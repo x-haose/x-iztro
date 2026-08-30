@@ -329,7 +329,9 @@ func (a *Astrolabe) PalaceToText(target PalaceTarget) (string, error)
 func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 ```
 
-各有 `Context` 变体（`ToTextContext` 等），ctx 用于取消等待 wasm 实例。
+各有 `Context` 变体（`ToTextContext` 等），ctx 用于取消等待 wasm 实例；
+各有 `With` 变体（`ToTextWith(opts TextOptions)` 等），带知识包时释义紧跟在对应事实之后，
+见 [ToTextWith](/zh/docs/go/astrolabe#totextwith--palacetotextwith--surroundedpalacestotextwith)。
 格局文本另见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。
 
 **参数**
@@ -338,8 +340,9 @@ func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 | --- | --- | --- | --- | --- |
 | `target` | `PalaceTarget` | 是 | — | 宫位寻址：`Key` 非空时按宫名标识定位（`PalaceSoul` 等常量，另接受 `PalaceBody` / `PalaceOriginal`），否则按 `Index`（0–11）取宫 |
 
-**返回值**　`string`——按星盘的排盘语言输出的分节纯文本；本命文本末尾带格局节，
-运限文本各层带该层视角的格局行与流耀行。
+**返回值**　`string`——按星盘的排盘语言输出的 Markdown 子集（`#` 标题、`- 标签: 值` 列表、
+一张十二宫总览表）；本命文本带格局节与从命宫起的十二宫详解，
+运限文本各层带该层视角的四化、流耀与格局行。全部记号见[格式约定](/zh/docs/guide/guides/to-text#格式约定)。
 
 **示例**
 
@@ -347,16 +350,16 @@ func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 text, _ := chart.ToText()
 
-fmt.Println(string([]rune(text)[:36]))
+fmt.Println(strings.Join(strings.Split(text, "\n")[:4], "\n"))
 ```
 
 **输出**
 
 ```text
-=== 基本信息 ===
-性别: 女
-阳历: 2000-8-16
-农历:
+# 命盘 2000-8-16 寅时 女
+
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
 ```
 
 **边界与陷阱**

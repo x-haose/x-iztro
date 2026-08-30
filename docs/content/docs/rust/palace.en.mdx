@@ -526,7 +526,10 @@ wood 3rd
 
 ## to_text
 
-**Purpose** The palace's semantic text, identical to that palace's section in the natal text.
+**Purpose** The palace's semantic text, byte-identical to that palace's section in the natal text:
+a heading line with the stem-branch, decadal and Body/Original palace marks, then fact lines for
+major stars (`Empty` for an empty palace), minor stars, adjective stars, trine & opposite, stem
+flying, twelve gods and age-fortune years.
 
 **Signature**
 
@@ -535,7 +538,7 @@ pub fn to_text(&self) -> String
 ```
 
 Defined on `PalaceRef` and emitting in the chart's charting language; for an explicit language use
-the free function `text::palace_to_text(palace, lang)`.
+the free function `text::palace_to_text(&palace, lang)` (which takes a `&PalaceRef`).
 
 **Example**
 
@@ -547,14 +550,14 @@ print!("{}", soul.to_text());
 **Output**
 
 ```text
---- soul ---
-Stem-Branch: renwoo
-Decadal: 3-12
-Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
-Twelve Gods: weak, dragon, downcast, disastery
-Major Stars: emperor([+3])
-Minor Stars: artist([-3])
-Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+### soul (ren woo) · Decadal 3-12
+- Major Stars: emperor([+3])
+- Minor Stars: artist([-3])
+- Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+- Trine & Opposite: Opposite surface · Trine wealth, career
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
+- Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 ```
 
 The full format is on [Semantic text](/en/docs/guide/guides/to-text).
@@ -563,40 +566,45 @@ The full format is on [Semantic text](/en/docs/guide/guides/to-text).
 
 ## to_text_with
 
-**Purpose** After the palace text, append a reading for each star in the palace (major, minor,
-adjective and the four groups of twelve gods).
+**Purpose** Right after the palace's facts, a reading for each star in the palace (major, minor,
+adjective), written `**star(brightness)[mutagen]**: body`, with same-palace major-star combinations
+`**A × B (same palace)**: ` first; the twelve gods carry no readings.
 
 **Signature**
 
 ```rust
-pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> String
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text`. See [TextOptions](/en/docs/rust/astro#textoptions) |
 
 Defined on `PalaceRef` and emitting in the chart's charting language; for an explicit language use
-the free function `text::palace_to_text_with(palace, pack, lang)`. The section format is on
+the free function `text::palace_to_text_with(&palace, opts, lang)`. Placement is on
 [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example** (on a zh-CN chart, since the bundled pack is Chinese)
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
-let text = chart.palace(Palace::Soul).unwrap().to_text_with(&pack);
+let text = chart.palace(Palace::Soul).unwrap().to_text_with(&TextOptions::new().knowledge(pack));
 
-for line in text.lines().skip(9).take(3) {
-    println!("{}", line.chars().take(30).collect::<String>());
+for line in text.lines().filter(|l| l.starts_with("**")) {
+    println!("{}", line.chars().take(14).collect::<String>());
 }
 ```
 
 **Output**
 
 ```text
-=== 星耀释义 ===
-
-紫微(命宫)
+**紫微(庙)**: 紫微星
+**文曲(陷)**: 文曲星
+**凤阁**: 凤阁星会增加
+**天福**: 天福星可以看
+**截路**: 截路星按生年
+**蜚廉**: 蜚廉星充满好
+**年解**: 年解星按年支
 ```

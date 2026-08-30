@@ -351,7 +351,8 @@ print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
 
 ## patterns_to_text
 
-**用途**　格局命中的语义化文本，每条一行：格局名、命中宫、构成星耀，破格标 `[破格]`。
+**用途**　格局命中的语义化文本，每条一行 `- **格局名** (宫名, 破格): 构成星耀`，
+破格在括号里与宫名并列。
 
 **签名**
 
@@ -362,25 +363,22 @@ def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None
 
 与 `patterns` 同一套判定（含重排上下文与判定口径）；运限版本的宫名
 按该层重排后的宫名书写。`knowledge`（`bool | KnowledgePack | None`）：`True` 取排盘语言的
-内嵌默认包，`KnowledgePack` 用该包；给出时在命中列表之后追加每条命中格局的释义
-（`intro` 加「成立条件」），格式见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+内嵌默认包，`KnowledgePack` 用该包；给出时命中列表之后紧跟每条命中格局的释义
+（`**格局名**: ` 正文加 `成立条件: ` 段，同一格局只出一次），见
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
 ```python
 print(chart.patterns_to_text(), end="")
-print("\n".join(chart.patterns_to_text(knowledge=True).splitlines()[:5]))
+print(chart.patterns_to_text(knowledge=True).splitlines()[2][:20])
 ```
 
 **输出**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
-
-=== 格局释义 ===
-
-府相朝垣
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
+**府相朝垣**: “食禄千锺”的断语使
 ```
 
 运限视角同形：`chart.horoscope("2025-1-1", 0).patterns_to_text("yearly", knowledge=True)`，

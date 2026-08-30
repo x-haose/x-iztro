@@ -418,8 +418,9 @@ the JS-side naming convention, the Rust side takes the shorter name.
 
 ## Semantic text
 
-The pattern-hit list projects to text via `text::patterns_to_text`, one hit per line: pattern name,
-landing palace, forming stars, with broken patterns marked `[Broken]`.
+The pattern-hit list projects to text via `text::patterns_to_text`, one hit per line:
+`- **pattern** (landing palace, broken): forming stars`, with only the palace in the parentheses
+when the pattern is not broken.
 
 ```rust
 pub fn patterns_to_text(hits: &[PatternHit], palace_names: &[Palace], lang: Language) -> String
@@ -440,20 +441,21 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 **Output**
 
 ```text
-- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
 ```
 
 The chart's `to_text` already carries this section; the standalone call suits cases that want only
 the pattern summary.
 
-The form with readings appends, after the hit list, a reading for each hit pattern (`intro` plus a
-"Conditions" line):
+The form with readings follows the hit list with a reading for each hit pattern (`intro` plus a
+`Conditions: ` line, each pattern once); the options are on
+[TextOptions](/en/docs/rust/astro#textoptions):
 
 ```rust
 pub fn patterns_to_text_with(
     hits: &[PatternHit],
     palace_names: &[Palace],
-    pack: &KnowledgePack,
+    opts: &TextOptions,
     lang: Language,
 ) -> String
 ```
@@ -462,9 +464,10 @@ On a zh-CN chart, since the bundled pack is Chinese:
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
-let text = text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+let opts = TextOptions::new().knowledge(pack);
+let text = text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
-for line in text.lines().take(5) {
+for line in text.lines().take(3) {
     println!("{}", line.chars().take(30).collect::<String>());
 }
 ```
@@ -472,9 +475,7 @@ for line in text.lines().take(5) {
 **Output**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
 
-=== 格局释义 ===
-
-府相朝垣
+**府相朝垣**: “食禄千锺”的断语使此格备受欢迎，但成格
 ```

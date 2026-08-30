@@ -15,7 +15,7 @@ use x_iztro::text::{
     palace_to_text, palace_to_text_with, patterns_to_text, patterns_to_text_with,
     surrounded_palaces_to_text, surrounded_palaces_to_text_with,
 };
-use x_iztro::{KnowledgePack, by_solar, get_horoscope};
+use x_iztro::{KnowledgePack, TextOptions, by_solar, get_horoscope};
 
 const SNAPSHOT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/text_snapshots");
 
@@ -169,6 +169,7 @@ fn surrounded_text_matches_snapshot() {
 fn text_with_knowledge_matches_snapshot() {
     let lang = Language::ZhCN;
     let pack = KnowledgePack::builtin(lang).unwrap();
+    let opts = TextOptions::new().knowledge(pack);
     let astrolabe = chart(lang);
     let horoscope = get_horoscope(&astrolabe, TARGET_DATE, TARGET_TIME_INDEX, lang).unwrap();
     let hits = astrolabe.patterns();
@@ -178,22 +179,22 @@ fn text_with_knowledge_matches_snapshot() {
 
     assert_snapshot(
         "astrolabe_knowledge_zh-CN",
-        &astrolabe_to_text_with(&astrolabe, pack, lang),
+        &astrolabe_to_text_with(&astrolabe, &opts, lang),
     );
     assert_snapshot(
         "horoscope_knowledge_zh-CN",
-        &horoscope_to_text_with(&astrolabe, &horoscope, pack, lang),
+        &horoscope_to_text_with(&astrolabe, &horoscope, &opts, lang),
     );
     assert_snapshot(
         "patterns_knowledge_zh-CN",
-        &patterns_to_text_with(&hits, &names, pack, lang),
+        &patterns_to_text_with(&hits, &names, &opts, lang),
     );
     assert_snapshot(
         "palace_knowledge_zh-CN",
-        &palace_to_text_with(&palace, pack, lang),
+        &palace_to_text_with(&palace, &opts, lang),
     );
     assert_snapshot(
         "surrounded_knowledge_zh-CN",
-        &surrounded_palaces_to_text_with(&sp, pack, lang),
+        &surrounded_palaces_to_text_with(&sp, &opts, lang),
     );
 }

@@ -311,10 +311,54 @@ for _, hit := range hits {
 
 ---
 
+## TextOptions
+
+**Purpose**　Output options for the `ToTextWith` family (`ToTextWith` / `PalaceToTextWith` /
+`SurroundedPalacesToTextWith` / `PatternsToTextWith`, and the same-named methods on `Horoscope`):
+the source of readings and the pattern criteria. The zero value emits the chart facts only under
+the default criteria, byte-identical to the method without `With`.
+
+**Definition**
+
+```go
+type TextOptions struct {
+    Knowledge     Knowledge
+    PatternConfig *PatternConfig
+}
+```
+
+**Fields**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | Source of readings; the zero value adds none. When given, each palace's star readings follow that palace's fact lines, the pattern readings follow the pattern list, and the natal text closes with `## Mutagen Notes` — see [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
+| `PatternConfig` | [`*PatternConfig`](/en/docs/go/patterns#patternconfig) | Pattern criteria, the same argument as `Patterns(config)`; acts on both the text's pattern section and the pattern readings. `nil` takes the core default |
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+same, _ := chart.ToTextWith(iztro.TextOptions{})
+plain, _ := chart.ToText()
+
+fmt.Println(same == plain, utf8.RuneCountInString(plain), utf8.RuneCountInString(text))
+
+cfg := iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
+byPosition, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternConfig: &cfg})
+```
+
+**Output**
+
+```text
+true 3389 20767
+```
+
+---
+
 ## Knowledge / BuiltinKnowledge / KnowledgeFrom
 
-**Purpose**　The source of readings for the `ToTextWith` family (`ToTextWith` / `PalaceToTextWith` /
-`SurroundedPalacesToTextWith` / `PatternsToTextWith`, and the same-named methods on `Horoscope`).
+**Purpose**　The value of the `Knowledge` field of [`TextOptions`](#textoptions): the source of
+readings for the `ToTextWith` family.
 
 **Signature**
 
@@ -331,7 +375,7 @@ func KnowledgeFrom(pack *KnowledgePack) Knowledge
 | --- | --- |
 | `BuiltinKnowledge()` | The bundled default pack for the chart language; when that language has no bundled pack (only zh-CN has one) the method returns `ErrInvalidArgument` rather than silently falling back |
 | `KnowledgeFrom(pack)` | The given pack (custom, or the result of `Merged`); a `nil` `pack` equals the zero value |
-| `Knowledge{}` (zero value) | No readings; the output is byte-identical to the method without `With` |
+| `Knowledge{}` (zero value) | No readings; the output of `TextOptions{}` is byte-identical to the method without `With` |
 
 **Example**
 
@@ -341,7 +385,7 @@ data, _ := os.ReadFile("my-school.json")
 overlay, _ := iztro.ParseKnowledgePack(data)
 mine, _ := pack.Merged(overlay)
 
-text, _ := chart.ToTextWith(iztro.KnowledgeFrom(mine))
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.KnowledgeFrom(mine)})
 ```
 
 ---

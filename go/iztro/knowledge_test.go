@@ -20,29 +20,29 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		t.Fatal(err)
 	}
 	soul := PalaceTarget{Key: PalaceSoul}
-	cases := map[string]func(Knowledge) (string, error){
+	cases := map[string]func(TextOptions) (string, error){
 		"astrolabe": chart.ToTextWith,
 		"horoscope": horoscope.ToTextWith,
-		"patterns":  func(k Knowledge) (string, error) { return chart.PatternsToTextWith(nil, k) },
-		"palace":    func(k Knowledge) (string, error) { return chart.PalaceToTextWith(soul, k) },
-		"surrounded": func(k Knowledge) (string, error) {
-			return chart.SurroundedPalacesToTextWith(soul, k)
+		"patterns":  func(o TextOptions) (string, error) { return chart.PatternsToTextWith(nil, o) },
+		"palace":    func(o TextOptions) (string, error) { return chart.PalaceToTextWith(soul, o) },
+		"surrounded": func(o TextOptions) (string, error) {
+			return chart.SurroundedPalacesToTextWith(soul, o)
 		},
 	}
 	for name, get := range cases {
-		got, err := get(BuiltinKnowledge())
+		got, err := get(TextOptions{Knowledge: BuiltinKnowledge()})
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
 		if want := textSnapshot(t, name+"_knowledge_zh-CN"); got != want {
 			t.Errorf("%s 带释义文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
 		}
-		plain, err := get(Knowledge{})
+		plain, err := get(TextOptions{})
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
 		if want := textSnapshot(t, name+"_zh-CN"); plain != want {
-			t.Errorf("%s 零值 Knowledge 应等于无释义快照", name)
+			t.Errorf("%s 零值 TextOptions 应等于无释义快照", name)
 		}
 	}
 
@@ -51,7 +51,7 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := en.ToTextWith(BuiltinKnowledge()); !errors.Is(err, ErrInvalidArgument) {
+	if _, err := en.ToTextWith(TextOptions{Knowledge: BuiltinKnowledge()}); !errors.Is(err, ErrInvalidArgument) {
 		t.Fatalf("en-US builtin knowledge should be ErrInvalidArgument, got %v", err)
 	}
 
@@ -69,7 +69,7 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	custom, err := chart.ToTextWith(KnowledgeFrom(merged))
+	custom, err := chart.ToTextWith(TextOptions{Knowledge: KnowledgeFrom(merged)})
 	if err != nil {
 		t.Fatal(err)
 	}

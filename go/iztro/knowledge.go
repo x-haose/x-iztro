@@ -158,6 +158,22 @@ func (k Knowledge) apply(payload map[string]any) {
 	}
 }
 
+// TextOptions 为 ToTextWith 家族的输出选项。零值只输出盘面事实，与不带 With 的方法输出完全一致。
+type TextOptions struct {
+	// Knowledge 为释义材料来源；零值不带释义
+	Knowledge Knowledge
+	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
+	PatternConfig *PatternConfig
+}
+
+// apply 把全部选项写进查询入参；零值不加任何键。
+func (o TextOptions) apply(payload map[string]any) {
+	o.Knowledge.apply(payload)
+	if o.PatternConfig != nil {
+		payload["patternConfig"] = o.PatternConfig
+	}
+}
+
 // BuiltinKnowledgePack 返回内嵌的默认包（源自 iztro-docs，MIT）；该语言没有默认包时返回错误（目前只有 zh-CN）。
 func BuiltinKnowledgePack(language Language) (*KnowledgePack, error) {
 	return BuiltinKnowledgePackContext(context.Background(), language)

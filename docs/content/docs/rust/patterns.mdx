@@ -404,7 +404,7 @@ DTO 的键名与 JS 侧的命名习惯对齐，Rust 侧用更短的名字。
 ## 语义化文本
 
 格局命中列表可以经 `text::patterns_to_text` 投影成文本，每条一行：
-格局名、命中宫、构成星耀，破格标 `[破格]`。
+`- **格局名** (命中宫, 破格): 构成星耀`，未破格时括号里只有宫名。
 
 ```rust
 pub fn patterns_to_text(hits: &[PatternHit], palace_names: &[Palace], lang: Language) -> String
@@ -424,27 +424,29 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 **输出**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
 ```
 
 本命盘的 `to_text` 已自带这一节；单独调用适合只要格局摘要的场景。
 
-带释义的形态在命中列表之后追加每条命中格局的释义（`intro` 加「成立条件」）：
+带释义的形态在命中列表之后紧跟每条命中格局的释义（`intro` 加 `成立条件: ` 段，同一格局只出一次），
+选项见 [TextOptions](/zh/docs/rust/astro#textoptions)：
 
 ```rust
 pub fn patterns_to_text_with(
     hits: &[PatternHit],
     palace_names: &[Palace],
-    pack: &KnowledgePack,
+    opts: &TextOptions,
     lang: Language,
 ) -> String
 ```
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
-let text = text::patterns_to_text_with(&hits, &names, &pack, chart.language);
+let opts = TextOptions::new().knowledge(pack);
+let text = text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
-for line in text.lines().take(5) {
+for line in text.lines().take(3) {
     println!("{}", line.chars().take(30).collect::<String>());
 }
 ```
@@ -452,9 +454,7 @@ for line in text.lines().take(5) {
 **输出**
 
 ```text
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
 
-=== 格局释义 ===
-
-府相朝垣
+**府相朝垣**: “食禄千锺”的断语使此格备受欢迎，但成格
 ```

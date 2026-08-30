@@ -453,8 +453,19 @@ Go 侧的宫位对象是纯数据，文本投影从星盘的排盘上下文无�
 
 ```go
 text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
-withNotes, _ := chart.PalaceToTextWith(iztro.PalaceTarget{Index: p.Index}, iztro.BuiltinKnowledge())
+withNotes, _ := chart.PalaceToTextWith(iztro.PalaceTarget{Index: p.Index},
+    iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(strings.Split(text, "\n")[0])
+fmt.Println(utf8.RuneCountInString(text), utf8.RuneCountInString(withNotes))
 ```
 
-`PalaceToTextWith` 在宫位文本之后追加该宫每颗星的释义，`knowledge` 取值见
-[Knowledge](/zh/docs/go/knowledge#knowledge--builtinknowledge--knowledgefrom)。
+**输出**（命宫）
+
+```text
+### 命宫 (壬午) · 大限 3-12
+222 1141
+```
+
+单宫文本就是本命文本「十二宫」节里该宫的段落；`PalaceToTextWith` 在事实行之后紧跟该宫每颗星的释义，
+`opts` 见 [TextOptions](/zh/docs/go/knowledge#textoptions)。

@@ -178,21 +178,31 @@ opposite, and the wealth and career positions.
 **Signature**
 
 ```python
-def to_text(self, *, knowledge: bool | KnowledgePack | None = None) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, a note for each star in the four palaces follows the facts (each star once, tagged with its palace) — format on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each of the four palaces' fact lines is followed by readings of that palace's stars — see [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
+
+**Return value** `str` — a `## soul Trine & Opposite` heading followed by one `### ` section per
+palace, each headed with its role (Target, Opposite, Wealth, Career) and with fact lines identical
+to that palace's own `to_text`.
 
 **Example**
 
 ```python
 sp = chart.surrounded_palaces("soul")
 
-print(sp.to_text().split("\n")[0])
+print("\n".join(l for l in sp.to_text().splitlines() if l.startswith("#")))
 
 zh = astro.by_solar("2000-8-16", 2, "female").surrounded_palaces("soul")   # the bundled pack is zh-CN
 print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
@@ -201,8 +211,12 @@ print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 **Output**
 
 ```text
-Target Palace: soul (renwoo)
-237 6009
+## soul Trine & Opposite
+### Target Palace · soul (ren woo) · Decadal 3-12
+### Opposite Palace · surface (wu zi) · Decadal 63-72
+### Wealth Palace · wealth (wu yin) · Decadal 43-52
+### Career Palace · career (bing xu) · Decadal 83-92 [Body Palace]
+924 6312
 ```
 
 When the target palace is detached from a chart there is no charting context and `ValueError` is

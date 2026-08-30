@@ -109,7 +109,7 @@ func main() {
 	fmt.Println()
 
 	// 语义化文本：盘面事实 + 内嵌知识包的释义节，可整段喂给大模型；只要事实用 ToText()
-	text, err := astrolabe.ToTextWith(iztro.BuiltinKnowledge())
+	text, err := astrolabe.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
 	if err != nil {
 		log.Fatalf("ToTextWith failed: %v", err)
 	}

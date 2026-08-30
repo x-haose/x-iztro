@@ -16,7 +16,8 @@ whose protocol is "language-independent key → text and attributes". One defaul
 the library so everything works out of the box; if you disagree with what it says, write an overlay
 pack and change those entries. A pack is a parameter of the to_text family: hand it to
 [text with readings](/en/docs/guide/guides/to-text#text-with-readings) and the readings, picked by
-chart, follow the facts.
+chart, are inlined next to the facts — each palace's star readings after that palace's fact lines,
+the pattern readings after the pattern list, and the mutagen notes at the end.
 
 ## What belongs where
 
@@ -316,8 +317,9 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 </Tabs>
 
 All three sides agree: `108 1 4 0` and `158 16` (Python's first line ends `True None`). The
-to_text-with-readings form selects by the same rule: whatever is in the sub-pack is in the reading
-sections.
+to_text-with-readings form selects by the same rule: every star and pattern in the sub-pack has a
+reading entry in the text (except the twelve gods — the sub-pack includes them, to_text writes no
+readings for them).
 
 ## Writing an overlay pack
 

@@ -79,7 +79,7 @@ func mixedCallRound(g int) error {
 		if err != nil {
 			return err
 		}
-		if !strings.Contains(text, "五行局: 木三局") {
+		if !strings.Contains(text, "- 五行局: 木三局") {
 			return errors.New("并发 ToText 结果不正确")
 		}
 	default:

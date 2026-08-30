@@ -147,10 +147,10 @@ def main():
 
     print(result.palace(PalaceName.SOUL).to_text()[:200] + "...\n")
 
-    # knowledge=True：事实节之后追加内嵌知识包的释义（星耀/格局/四化），
-    # 也可传 KnowledgePack 实例（自定义或合并后的包）
+    # knowledge=True：每宫事实之后紧跟该宫星耀的释义（`**星名**：正文`），
+    # 格局与四化释义同理；也可传 KnowledgePack 实例（自定义或合并后的包）
     explained = result.to_text(knowledge=True)
-    print(explained[explained.index("=== 星耀释义 ==="):][:300] + "...\n")
+    print(explained[explained.index("## 十二宫\n"):][:300] + "...\n")
 
     # ============================================================
     # 9. JSON 导出与错误处理

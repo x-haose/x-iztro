@@ -403,7 +403,8 @@ yearly  yi si
 
 ## to_text
 
-**Purpose** The chart's semantic text: a complete description for language models and people.
+**Purpose** The chart's semantic text: a complete description for language models and people, as
+a Markdown subset.
 
 **Signature**
 
@@ -414,65 +415,69 @@ pub fn to_text(&self) -> String
 Emits in the charting language; for an explicit language use the free function
 `text::astrolabe_to_text(astrolabe, lang)` — `lang` may differ from the charting language, with
 every field re-translated by key into the target language. For single palaces and surrounded palaces see
-`PalaceRef::to_text()` / `SurroundedPalaces::to_text(lang)`. The full format is on
+`PalaceRef::to_text()` / `SurroundedPalaces::to_text()`. The full format is on
 [Semantic text](/en/docs/guide/guides/to-text).
 
 **Example**
 
 ```rust
-println!("{}", chart.to_text().chars().take(77).collect::<String>());
+for line in chart.to_text().lines().take(5) {
+    println!("{line}");
+}
 ```
 
 **Output**
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
+# Natal Chart 2000-8-16 Tiger hour female
+
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 ```
 
 ---
 
 ## to_text_with
 
-**Purpose** After the factual text of `to_text`, append the readings picked from a knowledge pack
-by chart: three sections — star notes (with same-palace major-star combinations), pattern notes and
-mutagen notes.
+**Purpose** The same text as `to_text`, with readings attached per
+[`TextOptions`](/en/docs/rust/astro#textoptions): pattern readings right after the pattern list,
+each palace's star readings right after that palace's facts (same-palace major-star combinations
+first), and `## Mutagen Notes` at the end. The factual lines are identical to `to_text`.
 
 **Signature**
 
 ```rust
-pub fn to_text_with(&self, pack: &KnowledgePack) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> String
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `pack` | `&KnowledgePack` | yes | — | Source of the readings: the bundled default pack or a custom pack merged from overlays |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text` |
 
 Emits in the charting language; for an explicit language use the free function
-`text::astrolabe_to_text_with(astrolabe, pack, lang)`. Section and entry headings are translated
-into `lang`; the bodies are the pack's text verbatim. Selection follows the same rule as
-[`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); the section
-format is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+`text::astrolabe_to_text_with(astrolabe, opts, lang)`. Entry headings are translated into `lang`;
+the bodies are the pack's text verbatim. Selection follows the same rule as
+[`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); placement
+is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example** (on a zh-CN chart, since the bundled pack is Chinese)
 
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
-let text = chart.to_text_with(&pack);
+let text = chart.to_text_with(&TextOptions::new().knowledge(pack));
 
 println!("{} {}", chart.to_text().chars().count(), text.chars().count());
-println!("{}", text.lines().filter(|l| l.starts_with("=== ")).collect::<Vec<_>>().join(" "));
+println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>().join(" "));
 ```
 
 **Output**
 
 ```text
-1812 20158
-=== 基本信息 === === 十二宫 === === 格局 === === 星耀释义 === === 格局释义 === === 四化释义 ===
+3389 20767
+## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 
 ---
