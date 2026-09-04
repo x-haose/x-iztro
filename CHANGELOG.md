@@ -7,6 +7,76 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-04
+
+### 变更（breaking）
+
+- **to_text 输出改为 Markdown 子集**，事实与释义同处一屏：`# 命盘` 标题 → `## 基本信息`
+  （生年四化带落宫、身宫与来因宫带宫名）→ `## 十二宫总览`（宫位 | 主星 | 辅星 | 大限）→
+  `## 格局` → `## 十二宫`（从命宫起顺排，每宫 `### 宫名 (干支) · 大限` 与事实行）。
+  按「标签: 值」逐行解析或用 `=== 节 ===`/`--- 宫名 ---` 切段的下游需按新记号调整。
+  运限文本同步改为各层 `## 大限 · 命宫: 本命X (干支)` 节，大限与流年展开十二宫表。
+- **四化改写全称**：`天同(平)化权` 取代 `天同(平)[权]`，与禄存的「禄」不再同形；英文为 `[A]`。
+  破格由 `[破格]` 改为格局括号内标注 `(命宫, 破格)`。
+- **`to_text_with` 收 `TextOptions`**：Rust `to_text_with(&TextOptions::new().knowledge(&pack)
+  .pattern_config(&cfg))`、Go `ToTextWith(TextOptions{Knowledge, PatternConfig})`；Python
+  `to_text(knowledge=…, config=…)`。格局口径从此对文本的格局节、释义与 bridge 的 `patternConfig`
+  入参一并生效。`palace_to_text` 收 `&PalaceRef`（单宫的三方四正与飞化行需要全盘），
+  `SurroundedPalaces::to_text` 不再收语言参数（按所属星盘语言）。
+- **带释义文本不再为四组十二神出释义**：十二神只保留在每宫的事实行（标组名），其一句话条目
+  仍在知识包与按盘取材的子包里，需要时按 key 自取。
+- **运限的宫名行改为成对映射**：小限与流月及以下不展开十二宫表，此前只写一串该层宫名，
+  且按宫位索引排——既非命宫起也非本命宫序，读者无从还原对应关系。现从该层命宫起写
+  `命宫→本命官禄, 兄弟→本命田宅, …`，与大限、流年十二宫表的两列同序同义。
+- **格局文本带文档标题**：`patternsToText` / `horoscopePatternsToText` 输出以 `# 格局` 起，
+  零命中时为标题加 `—`。此前零命中返回空串，调用方分不清「确实没有格局」与「参数没生效」。
+- **Go 的 `PatternsToTextWith` 去掉位置参数 `config`**：格局口径统一取 `opts.PatternConfig`，
+  与 Go 侧其余 `ToTextWith` 家族一致。此前两处都能给口径而 `opts` 静默压掉位置参数。
+- **`SurroundedPalaces` 不再可由结构体字面量构造**：新增私有字段回指所属星盘（单宫与三方四正
+  文本要按全盘算飞化与会照）。自建三方四正视图的下游改用 `Palace::surrounded_palaces()`。
+
+### 新增
+
+- **知识包融入 to_text**：`TextOptions` 带知识包时，每宫事实之后紧跟该宫星耀的释义（同宫主星的
+  组合解读在前，包里只记在一方名下也查得到），格局列表之后紧跟释义（含成立条件），文末附四化释义；
+  运限各层附流耀与格局释义（跨层去重）。bridge 六个 to_text kind 增可选入参 `knowledge`
+  （`"builtin"` 取盘语言内嵌包、无该语言包即报错；或直接给包对象），新 kind `knowledgeForChart`。
+- **按盘取材**：`KnowledgePack::for_astrolabe(_with)` / `for_horoscope(_with)` 裁出本盘相关子包
+  （盘上的星含四组十二神、同宫主星组合、按口径命中的格局、四化四条；不含宫位与术语），
+  返回仍是标准包；Python `pack.for_astrolabe(chart, config=None)`、Go `pack.ForAstrolabe(chart, cfg)`
+  与 `Knowledge.ForAstrolabe`（内嵌包哨兵不搬整包）。
+- **事实层补齐**：每宫新增三方四正行（对宫 · 三合）与宫干飞化行（四化星带落宫）；十二神标组名
+  （长生·/博士·/岁前·/将前·）；空宫写明「空宫」；运限流耀行标注落宫（`流魁→命宫`）。
+- to_text 快照金标扩为 15 份（五类 × zh-CN/en-US + 五类带释义 × zh-CN），三侧读同一批逐字节比对。
+
+### 修正
+
+- **反推在地盘 / 人盘（`astroType`）下静默错杀真解**：地盘与人盘在排盘末尾按身宫、福德宫干支
+  整体重排，星耀落宫、命宫身宫与五行局随之移位，而反推的四层剪枝一律按天盘安星表几何计算，
+  终验读的却是重排后的盘——两端口径不一致，真解在到达终验前就被剪掉。表现分两档且都无声：
+  给命宫地支或五行局时候选常为空，给星耀落宫时返回非空但残缺的列表（每条单独看都满足条件，
+  唯独原生辰不在其中）。重排偏移取决于身宫位置、本身是待求量，无法在剪枝前反解，故非天盘
+  一律跳过几何剪枝，退化为逐日枚举加终验：慢，但不错杀。0.4.0 及更早版本均受影响。
+- **知识包里五条兼作十二神与宫内杂耀的条目释义语境错位**：华盖、咸池、天德、大耗（连同只作
+  十二神的病符、小耗）的正文按源站分节拼接，首段限定于十二神语境。本版起十二神不出释义，
+  这些条目只剩杂耀出口，於是出现「事实行说华盖坐本命夫妻宫、释义却说仅影响流月流日」的
+  自相矛盾。现改写为一段：杂耀语境在前、十二神语境作补充，并去掉与释义标题同形的源站分节标题。
+- 内嵌知识包的 JSON 值缓存改为按语言分槽并移到内核数据源旁——此前单槽不分键，
+  今天只有 zh-CN 一份包故无碍，一旦新增第二个内嵌语言包即会静默串包。
+- `for_astrolabe` / `for_horoscope` 的四化条目改为按 key 取，与星、格局同一口径；
+  此前整段照抄，包里的非法键会混进子包。
+
+### 内部
+
+以下四项不改变任何输出，是防漂移与提速：
+
+- 反推按年枚举先查 `lunar_table::leap_month` 跳过无效闰月试探——v0.4.0 为消除对 lunar_rust 月表的
+  直读，把这层预筛一并删了，现经修正视图加回；枚举结果不变，反推测试 debug 构建 14.3s → 约 9s。
+- 反推剪枝的主星落宫偏移改由安星表（`ZIWEI_GROUP` / `TIANFU_GROUP`）派生，年层锁域去掉手抄副本——
+  手抄的第二份几何一旦与安星表漂移，剪枝会静默错杀候选而测试全绿。
+- 知识包解析结果加缓存，内嵌包由 `const` 改 `static`（wasm 不再嵌两份 JSON）。
+- 知识包条目合并改为 JSON 值递归，替代逐字段手抄的合并清单——schema 新增字段自动参与合并。
+
 ## [0.4.0] - 2026-08-21
 
 ### 变更（breaking）
@@ -226,7 +296,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/x-haose/x-iztro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/x-haose/x-iztro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/x-haose/x-iztro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/x-haose/x-iztro/compare/v0.1.1...v0.2.0

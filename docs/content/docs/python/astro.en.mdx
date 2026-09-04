@@ -402,9 +402,13 @@ chart.surrounded_palaces("soul").to_text() # surrounded palaces
 chart.patterns_to_text()                   # natal patterns
 ```
 
-**Return value** `str` — sectioned plain text in the chart's own charting language; the natal text
-closes with a patterns section, and each horoscope scope carries a patterns line and flowing-star
-lines from its own perspective.
+**Return value** `str` — a Markdown subset (`#` headings, `- label: value` lists, a narrow
+palace-overview table) in the chart's own charting language; the natal text carries a patterns
+section and the twelve palaces in detail from the Soul palace on, and each horoscope scope carries
+its mutagen, flowing-star and pattern lines from its own perspective. Every `to_text` accepts
+`knowledge=` (`True` or a `KnowledgePack`); when given, readings picked by the chart are inlined
+after the facts. Each also accepts `config=` (a `PatternConfig`), the criteria for the pattern
+section and the pattern readings. The format is on [Semantic text](/en/docs/guide/guides/to-text).
 
 **Example**
 
@@ -412,16 +416,17 @@ lines from its own perspective.
 astro = Astro()
 chart = astro.by_solar("2000-8-16", 2, "female", language="en-US")
 
-print(chart.to_text()[:77])
+print("\n".join(chart.to_text().splitlines()[:5]))
 ```
 
 **Output**
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
+# Natal Chart 2000-8-16 Tiger hour female
+
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 ```
 
 **Edge cases and pitfalls**

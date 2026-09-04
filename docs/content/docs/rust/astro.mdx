@@ -363,23 +363,31 @@ println!("大限宫位索引 {}，流年干支 {:?}{:?}",
 
 **用途**　把星盘或运限投影成语义化文本——盘面事实的自然语言形态，
 喂给大模型或直接给人读。与 `serde_json`（机器结构）、译文字段（展示）
-是同一对象的三种投影。
+是同一对象的三种投影。输出是 Markdown 子集（`#` 标题、`- 标签: 值` 列表、
+`**粗体**` 与十二宫总览窄表），不渲染时源码同样可读。
 
-**签名**（`x_iztro::text` 模块，同模块另有
-`palace_to_text` / `surrounded_palaces_to_text` / `patterns_to_text`）
+**签名**（`x_iztro::text` 模块，全部从 crate 根 re-export；同模块另有
+`palace_to_text` / `surrounded_palaces_to_text` / `patterns_to_text` 与各自的 `_with` 形态）
 
 ```rust
 pub fn astrolabe_to_text(astrolabe: &Astrolabe, lang: Language) -> String
+pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: Language) -> String
 pub fn horoscope_to_text(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
     lang: Language,
 ) -> String
+pub fn horoscope_to_text_with(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    opts: &TextOptions,
+    lang: Language,
+) -> String
 ```
 
 按排盘语言输出的便捷方法：`Astrolabe::to_text()`、`HoroscopeRef::to_text()`、
-`PalaceRef::to_text()`；`SurroundedPalaces::to_text(lang)` 收显式语言。
-自由函数的 `lang` 可以与排盘语言不同：星名、时辰、星座、干支、流耀全部按标识
+`PalaceRef::to_text()`、`SurroundedPalaces::to_text()`，各自另有收 `&TextOptions` 的 `to_text_with`。
+自由函数的 `lang` 可以与排盘语言不同：结构标签、星名、时辰、星座、干支、流耀全部按标识
 以目标语言重翻，输出与用该语言排的盘逐字一致。
 
 **参数**
@@ -388,10 +396,12 @@ pub fn horoscope_to_text(
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | 是 | — | 本命盘 |
 | `horoscope` | `&HoroscopeData` | 是 | — | `get_horoscope` 的结果 |
-| `lang` | `Language` | 是 | — | 输出语言，随之切换段落标题与星耀译名 |
+| `opts` | `&TextOptions` | `_with` 必填 | — | 输出选项；无 `_with` 的两个即 `TextOptions::default()`，只输出事实。见 [TextOptions](#textoptions) |
+| `lang` | `Language` | 是 | — | 输出语言，随之切换结构标签与星耀译名 |
 
-**返回值**　`String`，分节的纯文本；本命文本末尾带格局节，
-运限文本各层带该层视角的格局行与流耀行。
+**返回值**　`String`，Markdown 文本。本命文本：标题、基本信息、十二宫总览表、格局、
+从命宫起的十二宫详解；运限文本：大限（未起运为童限）、小限、流年、流月、流日、流时各一节，
+各层带四化、格局与流耀，大限与流年展开十二宫表。带知识包时释义紧跟对应事实之后。
 
 **示例**
 
@@ -405,39 +415,111 @@ print!("{}", chart.to_text());
 **输出**
 
 ```text
-=== 基本信息 ===
-性别: 女
-阳历: 2000-8-16
-农历: 二〇〇〇年七月十七
-干支: 庚辰 甲申 丙午 庚寅
-时辰: 寅时 (03:00~05:00)
-星座: 狮子座
-生肖: 龙
-命宫地支: 午
-身宫地支: 戌
-命主: 破军
-身主: 文昌
-五行局: 木三局
-生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+# 命盘 2000-8-16 寅时 女
 
-=== 十二宫 ===
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
+- 五行局: 木三局 · 命主: 破军 · 身主: 文昌
+- 命宫: 午 · 身宫: 戌 (官禄) · 来因宫: 辰 (夫妻)
+- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 太阴化科→仆役, 天同化忌→疾厄
 
---- 财帛 ---
-天干地支: 戊寅
-大限: 43-52
-小限虚岁: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
-十二神: 绝, 飞廉, 吊客, 岁驿
-主星: 武曲(得)[权], 天相(庙)
-辅星: 天马
-杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
+## 十二宫总览
+| 宫位 | 主星 | 辅星 | 大限 |
+|---|---|---|---|
+| **命宫** 午 | 紫微(庙) | 文曲(陷) | 3-12 |
+| 兄弟 巳 | 天机(平) | — | 13-22 |
+| 夫妻 辰 [来因宫] | 七杀(庙) | 右弼, 火星(陷) | 23-32 |
+| 子女 卯 | 太阳(庙)化禄, 天梁(庙) | — | 33-42 |
+| 财帛 寅 | 武曲(得)化权, 天相(庙) | 天马 | 43-52 |
+| 疾厄 丑 | 天同(不)化忌, 巨门(不) | 天魁, 地劫 | 53-62 |
+| 迁移 子 | 贪狼(旺) | 铃星(陷) | 63-72 |
+| 仆役 亥 | 太阴(庙)化科 | — | 73-82 |
+| 官禄 戌 [身宫] | 廉贞(利), 天府(庙) | 左辅 | 83-92 |
+| 田宅 酉 | — | 地空, 擎羊(陷) | 93-102 |
+| 福德 申 | 破军(得) | 文昌(得), 禄存 | 103-112 |
+| 父母 未 | — | 天钺, 陀罗(庙) | 113-122 |
 
-（以下十一宫格式相同，此处从略）
+## 格局
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
 
-=== 格局 ===
-- 府相朝垣(命宫): 天府(庙), 天相(庙)
+## 十二宫
+
+### 命宫 (壬午) · 大限 3-12
+- 主星: 紫微(庙)
+- 辅星: 文曲(陷)
+- 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+- 三方四正: 对宫 迁移 · 三合 财帛, 官禄
+- 宫干壬飞化: 天梁化禄→子女, 紫微化权→命宫, 左辅化科→官禄, 武曲化忌→财帛
+- 十二神: 长生·衰, 博士·青龙, 岁前·丧门, 将前·灾煞
+- 小限虚岁: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+
+
+（其余十一宫格式相同，此处从略）
 ```
 
 完整输出与逐字段说明见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 这是 x-iztro 在 iztro 之外自加的功能，三语言均可用。
 接入大模型的写法见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。
+
+---
+
+## TextOptions
+
+**用途**　to_text 家族的输出选项：释义材料来源与格局判定口径。默认只输出盘面事实、按默认口径判格局；
+给知识包后，每宫事实之后紧跟该宫星耀的释义
+（同宫主星组合 `**A × B (同宫)**: ` 在前），格局列表之后紧跟格局释义（含 `成立条件: ` 段），
+本命文本末尾附 `## 四化释义`，运限文本各层附该层流耀与格局的释义（跨层去重）。十二神不释义。
+
+**签名**（`x_iztro::text`，从 crate 根 re-export）
+
+```rust
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TextOptions<'a> { /* 字段私有 */ }
+
+impl<'a> TextOptions<'a> {
+    pub fn new() -> Self
+    pub fn knowledge(self, pack: &'a KnowledgePack) -> Self
+    pub fn pattern_config(self, config: &'a PatternConfig) -> Self
+    pub fn knowledge_pack(&self) -> Option<&'a KnowledgePack>
+}
+```
+
+**方法**
+
+| 方法 | 说明 |
+| --- | --- |
+| `new()` / `default()` | 只输出事实、默认格局口径的选项 |
+| `knowledge(&pack)` | 按盘从 `pack` 取释义；`pack` 是内嵌默认包或合并覆盖包之后的自定义包，借用期须覆盖选项本身 |
+| `pattern_config(&config)` | 格局按 `config` 口径判定，与 [`patterns_with`](/zh/docs/rust/patterns#patterns_with) 同一入参；同时作用于文本的格局节与格局释义。不设即 `PatternConfig::default()` |
+| `knowledge_pack()` | 当前的释义材料来源；`None` 即只输出事实 |
+
+`Copy`，同一份选项可传给任意多个 `to_text_with`。释义正文是包里的 Markdown 原文，
+条目标题（星名、格局名、四化名）按输出语言翻译。取材规则与
+[`KnowledgePack::for_astrolabe`](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope) 相同，
+插入位置与去重规则见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let opts = TextOptions::new().knowledge(pack);
+
+let plain = chart.to_text();
+let noted = chart.to_text_with(&opts);
+println!("{} {}", plain.chars().count(), noted.chars().count());
+assert!(plain.lines().all(|l| noted.contains(l)));
+
+let positional = PatternConfig { brightness_source: BrightnessSource::Positional, ..PatternConfig::default() };
+let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // 格局节与格局释义都按该口径
+```
+
+**输出**
+
+```text
+3389 20767
+```
+
+内嵌默认包只有 zh-CN，其他语言 `KnowledgePack::builtin` 返回 `None`；英文盘要带释义须显式传一份包，
+包的语言不受盘语言限制——英文盘配中文包得到英文标题、中文正文。

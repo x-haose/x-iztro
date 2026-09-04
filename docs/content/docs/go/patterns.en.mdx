@@ -352,8 +352,9 @@ for _, hit := range hits {
 
 ## PatternsToText / Horoscope.PatternsToText
 
-**Purpose** The pattern hits as semantic text, one per line: pattern name, landing palace, forming
-stars, with broken patterns marked `[Broken]`.
+**Purpose** The pattern hits as semantic text, one line each of the form
+`- **pattern** (palace, broken): forming stars`; `broken` appears in the parentheses only when the
+pattern is broken.
 
 **Signature**
 
@@ -376,8 +377,35 @@ fmt.Print(text)
 **Output**
 
 ```text
-- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+# Patterns
+
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
 ```
 
 The chart's and the horoscope's `ToText` each already carry a patterns section; the standalone call
 suits cases that want only the pattern summary.
+
+The form with readings places, right after the hit list, a reading for each hit pattern
+(`**pattern**: intro`, closing with a `Conditions: ` paragraph), each pattern read once; `opts`
+is on [TextOptions](/en/docs/go/knowledge#textoptions):
+
+```go
+func (a *Astrolabe) PatternsToTextWith(opts TextOptions) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, opts TextOptions) (string, error)
+```
+
+On a zh-CN chart, since the bundled pack is Chinese:
+
+```go
+text, _ := chart.PatternsToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+lines := strings.Split(text, "\n")
+fmt.Println(lines[2])
+fmt.Println(string([]rune(lines[4])[:16]))
+```
+
+**Output**
+
+```text
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
+**府相朝垣**: “食禄千锺”
+```

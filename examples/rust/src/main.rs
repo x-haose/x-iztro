@@ -1,6 +1,6 @@
 //! x-iztro Rust 示例
 //!
-//! 排盘 → 命盘信息 → 流年运限 → AI 提示词
+//! 排盘 → 命盘信息 → 流年运限 → 语义化文本（Markdown）
 //!
 //! 运行方式：
 //!   cd examples/rust
@@ -12,7 +12,9 @@ use x_iztro::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
     translate_heavenly_stem, translate_mutagen, translate_palace, translate_star,
 };
-use x_iztro::{IztroError, astrolabe_to_text, by_solar, horoscope_to_text};
+use x_iztro::{
+    IztroError, KnowledgePack, TextOptions, astrolabe_to_text, by_solar, horoscope_to_text,
+};
 
 fn main() -> Result<(), IztroError> {
     let lang = Language::ZhCN;
@@ -130,7 +132,10 @@ fn main() -> Result<(), IztroError> {
     println!("日期：{} / {}", horoscope.solar_date, horoscope.lunar_date);
     println!(
         "大限：{} ({}{})",
-        translate_palace(astrolabe.palace(horoscope.decadal.index).unwrap().name, lang),
+        translate_palace(
+            astrolabe.palace(horoscope.decadal.index).unwrap().name,
+            lang
+        ),
         translate_heavenly_stem(horoscope.decadal.heavenly_stem, lang),
         translate_earthly_branch(horoscope.decadal.earthly_branch, lang),
     );
@@ -181,6 +186,18 @@ fn main() -> Result<(), IztroError> {
 
     println!("{full_text}");
     println!("（文本共 {} 字符）", full_text.chars().count());
+
+    // ============================================================
+    // 5. 带释义的语义化文本：知识包作为参数传入，事实之后追加本盘相关的释义节
+    // ============================================================
+    println!("\n===== 带释义的语义化文本（前 40 行）=====\n");
+
+    let pack = KnowledgePack::builtin(lang).expect("zh-CN 有内嵌知识包");
+    let annotated = astrolabe.to_text_with(&TextOptions::new().knowledge(pack));
+    for line in annotated.lines().take(40) {
+        println!("{line}");
+    }
+    println!("……（带释义文本共 {} 字符）", annotated.chars().count());
 
     println!("\n===== 完毕 =====");
 

@@ -1,1 +1,3 @@
-- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
+# Patterns
+
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])

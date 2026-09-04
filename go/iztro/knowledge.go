@@ -129,6 +129,51 @@ type KnowledgePack struct {
 	Concepts map[string]ConceptEntry `json:"concepts"`
 }
 
+// Knowledge 为语义化文本（ToTextWith 家族）的释义材料来源。零值表示不带释义，
+// 文本只含盘面事实，与不带 With 的方法输出完全一致。
+type Knowledge struct {
+	// builtin 为真时取盘语言的内嵌包；该语言没有内嵌包（目前只有 zh-CN）时调用报 ErrInvalidArgument，不静默回退
+	builtin bool
+	// pack 为显式给定的知识包（自定义或合并后的包），builtin 为假且 pack 为 nil 即零值
+	pack *KnowledgePack
+}
+
+// BuiltinKnowledge 表示用盘语言的内嵌知识包作释义；英文盘等无内嵌包的语言调用时报 ErrInvalidArgument。
+func BuiltinKnowledge() Knowledge {
+	return Knowledge{builtin: true}
+}
+
+// KnowledgeFrom 表示用给定的知识包作释义；传 nil 等同零值（不带释义）。
+func KnowledgeFrom(pack *KnowledgePack) Knowledge {
+	return Knowledge{pack: pack}
+}
+
+// apply 把释义来源写进查询入参；零值不加键，内核即只输出盘面事实。
+func (k Knowledge) apply(payload map[string]any) {
+	switch {
+	case k.builtin:
+		payload["knowledge"] = "builtin"
+	case k.pack != nil:
+		payload["knowledge"] = k.pack
+	}
+}
+
+// TextOptions 为 ToTextWith 家族的输出选项。零值只输出盘面事实，与不带 With 的方法输出完全一致。
+type TextOptions struct {
+	// Knowledge 为释义材料来源；零值不带释义
+	Knowledge Knowledge
+	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
+	PatternConfig *PatternConfig
+}
+
+// apply 把全部选项写进查询入参；零值不加任何键。
+func (o TextOptions) apply(payload map[string]any) {
+	o.Knowledge.apply(payload)
+	if o.PatternConfig != nil {
+		payload["patternConfig"] = o.PatternConfig
+	}
+}
+
 // BuiltinKnowledgePack 返回内嵌的默认包（源自 iztro-docs，MIT）；该语言没有默认包时返回错误（目前只有 zh-CN）。
 func BuiltinKnowledgePack(language Language) (*KnowledgePack, error) {
 	return BuiltinKnowledgePackContext(context.Background(), language)
@@ -144,6 +189,82 @@ func BuiltinKnowledgePackContext(ctx context.Context, language Language) (*Knowl
 		return nil, err
 	}
 	return &out, nil
+}
+
+// ForAstrolabe 按本命盘从本材料来源取材，返回只含盘上内容的子包：stars 为盘上出现的星
+// （含四组十二神，同宫主星的组合解读保留）、patterns 为按 config 口径命中的格局（nil 取默认口径）、
+// mutagens 为四化 4 条；palaces 与 concepts 为空，元信息沿用来源包。
+// BuiltinKnowledge 在内核内直接读内嵌包；显式包整包发给内核，就地改过的条目照样进入子包。
+// 零值 Knowledge 没有材料可取，报 ErrInvalidArgument。
+// 子包仍是标准知识包，可再作 Merged 的底包或 KnowledgeFrom 的来源。
+func (k Knowledge) ForAstrolabe(chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error) {
+	return k.ForAstrolabeContext(context.Background(), chart, config)
+}
+
+// ForAstrolabeContext 为 ForAstrolabe 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (k Knowledge) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error) {
+	if chart == nil {
+		return nil, invalidArgument("knowledgeForChart: nil astrolabe")
+	}
+	return k.forChart(ctx, chart.textPayload("knowledgeForChart"), config)
+}
+
+// ForHoroscope 按运限取材：在 ForAstrolabe 的本命内容之上，另加各运限层的流耀与各层按 config 口径命中的格局。
+func (k Knowledge) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
+	return k.ForHoroscopeContext(context.Background(), horoscope, config)
+}
+
+// ForHoroscopeContext 为 ForHoroscope 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (k Knowledge) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
+	if horoscope == nil || horoscope.astrolabe == nil {
+		return nil, invalidArgument("knowledgeForChart: horoscope must be created by Astrolabe.Horoscope")
+	}
+	payload := horoscope.astrolabe.textPayload("knowledgeForChart")
+	payload["targetDate"] = horoscope.SolarDate
+	payload["targetTimeIndex"] = horoscope.targetTimeIndex
+	return k.forChart(ctx, payload, config)
+}
+
+// forChart 把材料来源与格局口径写进已定位到盘（或运限）的 knowledgeForChart 入参并查询内核。
+func (k Knowledge) forChart(ctx context.Context, payload map[string]any, config *PatternConfig) (*KnowledgePack, error) {
+	if !k.builtin && k.pack == nil {
+		return nil, invalidArgument("knowledgeForChart: zero Knowledge has no pack to draw from")
+	}
+	k.apply(payload)
+	if config != nil {
+		payload["patternConfig"] = config
+	}
+	var out KnowledgePack
+	if err := utilQueryContext(ctx, payload, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ForAstrolabe 以本包为材料按本命盘取材，等同 KnowledgeFrom(p).ForAstrolabe；nil 包报 ErrInvalidArgument。
+func (p *KnowledgePack) ForAstrolabe(chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error) {
+	return p.ForAstrolabeContext(context.Background(), chart, config)
+}
+
+// ForAstrolabeContext 为 ForAstrolabe 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (p *KnowledgePack) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, config *PatternConfig) (*KnowledgePack, error) {
+	if p == nil {
+		return nil, invalidArgument("knowledgeForChart: nil knowledge pack")
+	}
+	return KnowledgeFrom(p).ForAstrolabeContext(ctx, chart, config)
+}
+
+// ForHoroscope 以本包为材料按运限取材，等同 KnowledgeFrom(p).ForHoroscope；nil 包报 ErrInvalidArgument。
+func (p *KnowledgePack) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
+	return p.ForHoroscopeContext(context.Background(), horoscope, config)
+}
+
+// ForHoroscopeContext 为 ForHoroscope 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (p *KnowledgePack) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
+	if p == nil {
+		return nil, invalidArgument("knowledgeForChart: nil knowledge pack")
+	}
+	return KnowledgeFrom(p).ForHoroscopeContext(ctx, horoscope, config)
 }
 
 // ParseKnowledgePack 由 JSON 文本解析一份包，并校验格式版本

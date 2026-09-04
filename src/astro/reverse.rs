@@ -283,8 +283,18 @@ pub fn reverse_chart(
     let mut out = Vec::new();
     let mut truncated = false;
 
+    // 地盘与人盘在排盘末尾按身宫/福德宫干支整体重排，星耀落宫、命宫身宫与五行局随之移位，
+    // 而剪枝几何一律按天盘安星表算——两端口径不同，任何几何剪枝都会剪掉真解。重排偏移取决于
+    // 身宫位置（本身是待求量），无法在剪枝前反解，故非天盘跳过全部几何剪枝，退化为逐日枚举，
+    // 由终验（读重排后的盘）定结果：慢，但不错杀。
+    let geometric = matches!(config.astro_type, AstroType::Heaven);
+
     // 解析域：条件先按安星几何锁定各维度；主星条件互斥则整个查询无解
-    let domains = Domains::resolve(criteria);
+    let domains = if geometric {
+        Domains::resolve(criteria)
+    } else {
+        Domains::unconstrained()
+    };
     if matches!(domains.ziwei_palace, Some(Err(()))) {
         return Ok(ReverseResult {
             candidates: out,
@@ -299,13 +309,20 @@ pub fn reverse_chart(
     'year: for year in (start_year - 1)..=end_year {
         // 候选的安星年干支按分界口径可能取相邻年份干支，
         // 年层剪枝对全部候选干支放行（保守），归属差异由终验兜住。
+        // 年层条件只依赖 (年干, 年支)：不满足的候选干支组在此剔除，
+        // 不再流入按「组 × 月 × 时」相乘的内层循环。逐组精确复用
+        // year_prefilter 判定——剪枝几何与年层校验只此一份，不另抄副本
         let stems: Vec<(HeavenlyStem, EarthlyBranch)> = year_stem_candidates(year, config)
             .into_iter()
-            .filter(|(s, b)| domains.admits_year(*s, *b))
+            .filter(|pair| {
+                !geometric || year_prefilter(criteria, std::slice::from_ref(pair), config)
+            })
             .collect();
-        if stems.is_empty() || !year_prefilter(criteria, &stems, config) {
+        if stems.is_empty() {
             continue;
         }
+        // 闰月只查一次修正视图：非闰月年直接跳过全部闰月试探
+        let leap_month = lunar_table::leap_month(year);
         for month in 1..=12i64 {
             if let Some(months) = &domains.months
                 && !months.contains(&month)
@@ -313,6 +330,9 @@ pub fn reverse_chart(
                 continue;
             }
             for is_leap in [false, true] {
+                if is_leap && leap_month != Some(month) {
+                    continue;
+                }
                 let signed_month = if is_leap { -month } else { month };
                 // 月天数走 lunar_table 修正视图（lunar_rust 的 1602 闰二月月界缺陷在
                 // 那里归位），枚举的农历日标签与正排上下文完全同源
@@ -330,16 +350,23 @@ pub fn reverse_chart(
                     // 闰月与下半月修正可能使安星月 +1，两种月索引都放行（保守）。
                     let month_indices =
                         [fix_index(month as i32 - 1, 12), fix_index(month as i32, 12)];
-                    let fecs =
-                        month_time_prefilter(criteria, &stems, &month_indices, time_index, config);
-                    if fecs.is_empty() {
-                        continue;
-                    }
+                    // 非天盘时为空且不被日层读取（几何剪枝整体跳过）
+                    let fecs = if geometric {
+                        let fecs =
+                            month_time_prefilter(criteria, &stems, &month_indices, time_index);
+                        if fecs.is_empty() {
+                            continue;
+                        }
+                        fecs
+                    } else {
+                        Vec::new()
+                    };
                     // 紫微起宫与日系杂耀区分早晚子，日层剪枝须收与正排一致的生效时辰
                     let eff_t = effective_time_index(config.day_divide, time_index);
                     for day in 1..=month_day_count {
-                        if !day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
-                            || !daily_star_prefilter(criteria, month as usize - 1, day, eff_t)
+                        if geometric
+                            && (!day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
+                                || !daily_star_prefilter(criteria, month as usize - 1, day, eff_t))
                         {
                             continue;
                         }
@@ -483,9 +510,7 @@ fn month_time_prefilter(
     stems: &[(HeavenlyStem, EarthlyBranch)],
     month_indices: &[usize; 2],
     time_index: u8,
-    config: &Config,
 ) -> Vec<u32> {
-    let _ = config;
     let mut fecs: Vec<u32> = Vec::new();
     for (stem, branch) in stems {
         for &mi in month_indices {
@@ -534,13 +559,12 @@ fn month_time_prefilter(
 /// 由星耀落宫条件解析出的枚举域：每个维度先按安星几何锁定到最小集合，
 /// 枚举骨架只在锁剩的域上跑。域为 `None` 表示该维度无条件约束（全域）。
 /// 任何反查都是「对小域试正向安星函数」——与排盘共用同一实现，不会与正排脱节。
+///
+/// 干系/支系星（禄存羊陀魁钺、天马鸾喜）不在此锁域：年干支候选每年至多 3 组，
+/// `year_prefilter` 对每组逐星精确复验，年层再做存在性预筛纯属同一几何的手抄副本。
 struct Domains {
     /// 主星条件归一化出的紫微落宫；`Some(Err)` 表示多颗主星条件互斥，整个查询无解
     ziwei_palace: Option<Result<usize, ()>>,
-    /// 干系星（禄存/擎羊/陀罗/天魁/天钺）锁定的年干集合
-    stems: Option<Vec<HeavenlyStem>>,
-    /// 支系星（天马/红鸾/天喜）锁定的年支集合
-    branches: Option<Vec<EarthlyBranch>>,
     /// 月系星（左辅/右弼）锁定的农历月集合（1-12；含闰月修正的 ±1 保守扩张）
     months: Option<Vec<i64>>,
     /// 时系星（文昌/文曲/地空/地劫）锁定的时辰集合
@@ -548,16 +572,23 @@ struct Domains {
 }
 
 impl Domains {
+    /// 各维度全开，枚举骨架不做任何几何裁剪。
+    fn unconstrained() -> Domains {
+        Domains {
+            ziwei_palace: None,
+            months: None,
+            times: None,
+        }
+    }
+
     /// 从条件集解析各维度域。
     fn resolve(criteria: &ReverseCriteria) -> Domains {
         let mut ziwei: Option<Result<usize, ()>> = None;
         for p in &criteria.stars {
-            if let Some((_, offset, from_tianfu)) =
-                MAJOR_OFFSETS.iter().find(|(k, _, _)| *k == p.star)
-            {
+            if let Some((offset, from_tianfu)) = major_offset(p.star) {
                 // 主星相对紫微/天府的偏移固定，任何主星落宫都唯一反解出紫微落宫
                 let palace = branch_to_palace(p.branch) as i32;
-                let z = if *from_tianfu {
+                let z = if from_tianfu {
                     fix_index(12 - fix_index(palace - offset, 12) as i32, 12)
                 } else {
                     fix_index(palace + offset, 12)
@@ -569,55 +600,11 @@ impl Domains {
                 });
             }
         }
-        let mut stems: Option<Vec<HeavenlyStem>> = None;
-        let mut branches: Option<Vec<EarthlyBranch>> = None;
         let mut months: Option<Vec<i64>> = None;
         let mut times: Option<Vec<u8>> = None;
-        let mut narrow_stems = |pred: &dyn Fn(HeavenlyStem) -> bool| {
-            let set: Vec<HeavenlyStem> = (0..10)
-                .map(HeavenlyStem::from_index)
-                .filter(|s| pred(*s))
-                .collect();
-            stems = Some(match stems.take() {
-                Some(prev) => prev.into_iter().filter(|s| set.contains(s)).collect(),
-                None => set,
-            });
-        };
-        let mut narrow_branches = |pred: &dyn Fn(EarthlyBranch) -> bool| {
-            let set: Vec<EarthlyBranch> = (0..12)
-                .map(EarthlyBranch::from_index)
-                .filter(|b| pred(*b))
-                .collect();
-            branches = Some(match branches.take() {
-                Some(prev) => prev.into_iter().filter(|b| set.contains(b)).collect(),
-                None => set,
-            });
-        };
         for p in &criteria.stars {
             let want = branch_to_palace(p.branch);
             match p.star {
-                StarKey::LucunMin => narrow_stems(&|s| {
-                    (0..12).any(|b| {
-                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).lu == want
-                    })
-                }),
-                StarKey::QingyangMin => narrow_stems(&|s| {
-                    (0..12).any(|b| {
-                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).yang == want
-                    })
-                }),
-                StarKey::TuoluoMin => narrow_stems(&|s| {
-                    (0..12).any(|b| {
-                        get_lu_yang_tuo_ma_index(s, EarthlyBranch::from_index(b)).tuo == want
-                    })
-                }),
-                StarKey::TiankuiMin => narrow_stems(&|s| get_kui_yue_index(s).kui == want),
-                StarKey::TianyueMin => narrow_stems(&|s| get_kui_yue_index(s).yue == want),
-                StarKey::TianmaMin => {
-                    narrow_branches(&|b| get_lu_yang_tuo_ma_index(HeavenlyStem::Jia, b).ma == want)
-                }
-                StarKey::Hongluan => narrow_branches(&|b| get_luan_xi_index(b).hongluan == want),
-                StarKey::Tianxi => narrow_branches(&|b| get_luan_xi_index(b).tianxi == want),
                 StarKey::ZuofuMin | StarKey::YoubiMin => {
                     let base: Vec<i64> = (1..=12i64)
                         .filter(|m| {
@@ -667,37 +654,29 @@ impl Domains {
         }
         Domains {
             ziwei_palace: ziwei,
-            stems,
-            branches,
             months,
             times,
         }
     }
-
-    /// 年干支是否落在锁定域内。
-    fn admits_year(&self, stem: HeavenlyStem, branch: EarthlyBranch) -> bool {
-        self.stems.as_ref().is_none_or(|s| s.contains(&stem))
-            && self.branches.as_ref().is_none_or(|b| b.contains(&branch))
-    }
 }
 
-/// 主星与其相对紫微（负偏移）或天府（正偏移）的位次。
-const MAJOR_OFFSETS: [(StarKey, i32, bool); 14] = [
-    (StarKey::ZiweiMaj, 0, false),
-    (StarKey::TianjiMaj, 1, false),
-    (StarKey::TaiyangMaj, 3, false),
-    (StarKey::WuquMaj, 4, false),
-    (StarKey::TiantongMaj, 5, false),
-    (StarKey::LianzhenMaj, 8, false),
-    (StarKey::TianfuMaj, 0, true),
-    (StarKey::TaiyinMaj, 1, true),
-    (StarKey::TanlangMaj, 2, true),
-    (StarKey::JumenMaj, 3, true),
-    (StarKey::TianxiangMaj, 4, true),
-    (StarKey::TianliangMaj, 5, true),
-    (StarKey::QishaMaj, 6, true),
-    (StarKey::PojunMaj, 10, true),
-];
+/// 主星相对紫微/天府的位次：`(位次, 是否天府系)`；非主星返回 `None`。
+///
+/// 位次直接取安星表（`star::major` 的 [`ZIWEI_GROUP`]/[`TIANFU_GROUP`]），
+/// 不另抄一份——手抄副本与安星表漂移时，剪枝会静默错杀真解。
+fn major_offset(key: StarKey) -> Option<(i32, bool)> {
+    use crate::star::major::{TIANFU_GROUP, ZIWEI_GROUP};
+    ZIWEI_GROUP
+        .iter()
+        .find(|(_, k)| *k == key)
+        .map(|(o, _)| (*o as i32, false))
+        .or_else(|| {
+            TIANFU_GROUP
+                .iter()
+                .find(|(_, k)| *k == key)
+                .map(|(o, _)| (*o as i32, true))
+        })
+}
 
 /// 日层剪枝：主星条件已归一化为紫微落宫，任一可行五行局下紫微落到该宫才保留该日。
 /// `effective_ti` 是 [`effective_time_index`] 归一后的生效时辰（`get_start_index` 区分早晚子）。

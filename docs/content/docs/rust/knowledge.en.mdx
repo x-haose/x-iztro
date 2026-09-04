@@ -161,17 +161,21 @@ the bindings do.
 
 ---
 
-## from_json
+## from_json / from_value
 
-**Purpose**　Parse a pack from JSON text.
+**Purpose**　Parse a pack from JSON text or from an already parsed `serde_json::Value`.
 
 **Signature**
 
 ```rust
 impl KnowledgePack {
     pub fn from_json(json: &str) -> Result<KnowledgePack, String>
+    pub fn from_value(value: &serde_json::Value) -> Result<KnowledgePack, String>
 }
 ```
+
+`from_value` borrows the value tree without copying it, saving a serialisation round trip when you
+already hold a `Value`; validation is the same as `from_json`.
 
 **Returns**　`Result<KnowledgePack, String>`. The error is a human-readable string, for three
 cases: JSON that does not fit the format (`invalid knowledge pack: ...`), a missing or zero
@@ -384,3 +388,69 @@ for hit in chart.patterns() {
 ```text
 府相朝垣 “食禄千锺”的断语使
 ```
+
+---
+
+## for_astrolabe / for_horoscope
+
+**Purpose**　Pick by chart: cut a sub-pack holding only the entries relevant to this chart.
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
+    pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
+    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
+    pub fn for_horoscope_with(
+        &self,
+        chart: &Astrolabe,
+        horoscope: &HoroscopeData,
+        config: &PatternConfig,
+    ) -> KnowledgePack
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `chart` | `&Astrolabe` | yes | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
+| `horoscope` | `&HoroscopeData` | yes | — | Horoscope data, available from `HoroscopeRef::data()` |
+| `config` | `&PatternConfig` | `_with` only | — | Pattern criteria; the two without `_with` use `PatternConfig::default()` |
+
+**Returns**　A standard `KnowledgePack` with the metadata carried over: `stars` holds the stars on
+the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
+`combinations` keep only partners that actually share the palace), `patterns` the hits under the
+`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
+each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+Pair the sub-pack with [`patterns_with`](/en/docs/rust/patterns#patterns_with) /
+`patterns_to_text_with` under the same criteria: different criteria hit different sets, and the
+readings would then miss or over-include entries.
+The selection rule is on [Picking by chart](/en/docs/guide/guides/knowledge-pack#picking-by-chart).
+
+**Example**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Config::default())?;
+
+let sub = pack.for_astrolabe(&chart);
+println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
+println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let sub = pack.for_horoscope(&chart, h.data());
+println!("{} {}", sub.stars.len(), sub.patterns.len());
+```
+
+**Output**
+
+```text
+108 1 4 0
+["tianxiangMaj"]
+158 16
+```
+
+Wuqu shares its palace with Tianxiang on this chart, so Wuqu's `combinations` in the sub-pack keeps
+only the Tianxiang entry.

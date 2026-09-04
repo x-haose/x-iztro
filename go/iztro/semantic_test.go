@@ -25,7 +25,7 @@ func TestChildhoodNameKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(text, "童限") {
+	if !strings.Contains(text, "## 童限 · 命宫: 本命") {
 		t.Errorf("未起运盘的运限文本应含「童限」:\n%s", text)
 	}
 

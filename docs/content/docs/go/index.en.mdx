@@ -241,7 +241,8 @@ The entry points that cross into wasm — charting, horoscope, rearranging, text
 | `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
 | `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
 | `Astrolabe.Rearranged` | `RearrangedContext` |
-| `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` |
+| `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` / `PatternsToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` / `PatternsToTextContext` |
+| The `With` form of each (`ToTextWith(opts TextOptions)` etc.) | `ToTextWithContext` / `PalaceToTextWithContext` / `SurroundedPalacesToTextWithContext` / `PatternsToTextWithContext` |
 | — | `Warmup` / `Close` / `CompilationCacheDir` exist only in the ctx form |
 
 ```go

@@ -1,6 +1,6 @@
 [package]
 name = "x-iztro"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 # 摘要用英文：crates.io 的搜索与列表面向的是国际读者，中文说明在 README 里。
 description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"

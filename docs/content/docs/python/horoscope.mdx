@@ -443,25 +443,48 @@ None
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
-**返回值**　`str`——按星盘排盘语言输出的分节纯文本，各层带该层视角的格局行与流耀行。
-完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时每层事实之后紧跟该层流耀释义与该层视角命中格局的释义（跨层去重），本命星耀不重复 |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
+
+**返回值**　`str`——按星盘排盘语言输出的 Markdown 子集：`# 运限 <日期> (<农历>)` 标题，
+大限（未起运写童限）、小限、流年、流月、流日、流时各一节 `## `，大限与流年展开十二宫表，
+各层带该层视角的四化、流耀与格局行。
+完整格式见[语义化文本](/zh/docs/guide/guides/to-text#格式约定)，释义的插入位置见
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
 **示例**
 
 ```python
 h = chart.horoscope("2025-1-1", 0)
 
-print(h.to_text()[:25])
+text = h.to_text(knowledge=True)
+print(len(h.to_text()), len(text))
+print("\n".join(l for l in text.splitlines() if l.startswith("#")))
 ```
 
 **输出**
 
 ```text
-=== 运限 ===
-目标日期: 2025-1-1
+2457 8458
+# 运限 2025-1-1 (二〇二四年腊月初二)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+## 流月 · 命宫: 本命仆役 (丁丑)
+## 流日 · 命宫: 本命迁移 (庚午)
+## 流时 · 命宫: 本命迁移 (丙子)
 ```
 
 **边界与陷阱**
@@ -469,6 +492,7 @@ print(h.to_text()[:25])
 <Callout type="info">
 脱离星盘单独构造的运限（`horoscope()` 之外的途径）没有排盘上下文，调用抛 `ValueError`。
 格局命中的文本另见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`（`invalid_argument`）。
 </Callout>
 
 ---

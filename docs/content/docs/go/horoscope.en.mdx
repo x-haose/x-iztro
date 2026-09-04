@@ -448,9 +448,13 @@ func (h *Horoscope) ToText() (string, error)
 func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
 ```
 
-**Return value** `string` — sectioned plain text in the chart's charting language; each scope
-carries a patterns line and flowing-star lines from its own perspective. The full format is on
-[Semantic text](/en/docs/guide/guides/to-text).
+**Return value** `string` — a Markdown subset in the chart's charting language: under the
+`# Horoscope <date> (<lunar date>)` heading, one `## ` section each for the decadal (childhood
+before the decadals start), age fortune, yearly, monthly, daily and hourly scopes; each section
+says which natal palace that scope's Soul palace landed on and carries the scope's mutagens (with
+landing palaces), flowing stars and pattern line from its own perspective; the decadal and yearly
+sections also expand a twelve-palace table. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text#the-five-entries).
 
 **Example**
 
@@ -458,14 +462,75 @@ carries a patterns line and flowing-star lines from its own perspective. The ful
 h, _ := chart.Horoscope("2025-1-1", 0)
 text, _ := h.ToText()
 
-fmt.Println(string([]rune(text)[:39]))
+fmt.Println(strings.Join(strings.Split(text, "\n")[:5], "\n"))
 ```
 
 **Output**
 
 ```text
-=== Horoscope ===
-Target Date: 2025-1-1
+# Horoscope 2025-1-1 (二〇二四年腊月初二)
+
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+- Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
+- Patterns: Marshal, Rebel and Wolf (soul), Meeting of Wind and Cloud (soul)
 ```
+
+---
+
+## ToTextWith
+
+**Purpose** The text of `ToText`, with readings from a knowledge pack woven in according to
+`opts`: after each scope's table or fact lines come the readings for that scope's flowing stars
+and for the patterns hit from that scope's perspective; a flowing star or a pattern is read once
+across scopes. Natal star readings are not here — they are in the chart's `ToTextWith`.
+
+**Signature**
+
+```go
+func (h *Horoscope) ToTextWith(opts TextOptions) (string, error)
+func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the criteria for each scope's pattern line and pattern readings; the zero value `TextOptions{}` behaves like `ToText` |
+
+Where the readings are inserted and how they are deduplicated is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+h, _ := chart.Horoscope("2025-1-1", 0)
+plain, _ := h.ToText()
+text, _ := h.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(utf8.RuneCountInString(plain), utf8.RuneCountInString(text))
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "## ") {
+        fmt.Println(l)
+    }
+}
+```
+
+**Output**
+
+```text
+2457 8458
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+## 流月 · 命宫: 本命仆役 (丁丑)
+## 流日 · 命宫: 本命迁移 (庚午)
+## 流时 · 命宫: 本命迁移 (丙子)
+```
+
+The two texts have identical `## ` sections: readings do not get sections of their own but sit
+right after each scope.
+
+`BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns
+`ErrInvalidArgument`.
 
 For the pattern hits as text, see `PatternsToText` on [Patterns](/en/docs/go/patterns).

@@ -141,12 +141,13 @@ def test_palace_methods() -> None:
 
 
 def test_to_text() -> None:
-    """星盘与运限的语义化文本接口输出结构化文本。"""
+    """星盘与运限的语义化文本接口输出 Markdown 子集。"""
     a = astro.by_solar("2000-8-16", 2, "female")
     natal = a.to_text()
-    assert "=== 基本信息 ===" in natal and "十二宫" in natal
+    assert natal.startswith("# 命盘 2000-8-16 寅时 女\n")
+    assert "\n## 基本信息\n" in natal and "\n## 十二宫\n" in natal
     fortune = a.horoscope("2024-1-1", 0).to_text()
-    assert "=== 运限 ===" in fortune and "流年" in fortune
+    assert fortune.startswith("# 运限 2024-1-1 (") and "\n## 流年 · 命宫: 本命" in fortune
 
 
 def test_enums_work_across_languages() -> None:

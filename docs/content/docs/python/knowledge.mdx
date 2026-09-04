@@ -50,6 +50,9 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | 取单条条目，没有返回 `None` |
 | `stars()` / `patterns()` | 全部星耀 / 格局条目 |
 | `star_intro(key)` / `pattern_intro(key)` | 直接取解读正文 |
+| `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | 按盘取材，返回只含该盘相关条目的子包 |
+
+`KnowledgePack` 实例本身也是 to_text 家族 `knowledge=` 参数的取值（见各对象的 `to_text`）。
 
 ### 条目 dataclass
 
@@ -340,3 +343,57 @@ for hit in chart.patterns():
 府相朝垣 | 府相朝垣命必荣
 “食禄千锺”的断语使
 ```
+
+---
+
+## for_astrolabe / for_horoscope
+
+**用途**　按盘取材：裁出只含这张盘相关条目的子包。
+
+**签名**
+
+```python
+def for_astrolabe(self, chart: Astrolabe, config: PatternConfig | None = None) -> KnowledgePack
+def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = None) -> KnowledgePack
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `chart` | `Astrolabe` | 是 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
+| `horoscope` | `Horoscope` | 是 | — | 由 `chart.horoscope(...)` 得到的运限，本命部分随之取材 |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 [`chart.patterns(config)`](/zh/docs/python/patterns#patterns) 同形态；不传即默认口径 |
+
+**返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
+（主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
+`patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
+`for_horoscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+子包要和 `patterns(config)` / `patterns_to_text(config)` 配同一口径：口径不同，命中集合不同，
+释义就会缺项或多项。
+取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。
+
+**示例**
+
+```python
+pack = KnowledgePack.builtin()
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+sub = pack.for_astrolabe(chart)
+print(len(sub.stars()), len(sub.patterns()), sub.palace("soulPalace"))
+print(list(sub.star(MajorStar.WUQU).combinations))
+
+sub = pack.for_horoscope(chart.horoscope("2025-1-1", 0))
+print(len(sub.stars()), len(sub.patterns()))
+```
+
+**输出**
+
+```text
+108 1 None
+['tianxiangMaj']
+158 16
+```
+
+武曲在这张盘上与天相同宫，所以子包里武曲的 `combinations` 只剩天相一条。
+脱离星盘单独构造的运限没有排盘上下文，`for_horoscope` 抛 `ValueError`。

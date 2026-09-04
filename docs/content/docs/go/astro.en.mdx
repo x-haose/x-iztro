@@ -349,6 +349,9 @@ func (a *Astrolabe) SurroundedPalacesToText(target PalaceTarget) (string, error)
 ```
 
 Each has a `Context` variant (`ToTextContext` etc.); the ctx cancels waiting for the wasm instance.
+Each also has a `With` variant (`ToTextWith(opts TextOptions)` etc.): with a knowledge pack the
+readings follow the facts they belong to — see
+[ToTextWith](/en/docs/go/astrolabe#totextwith--palacetotextwith--surroundedpalacestotextwith).
 Pattern text is `PatternsToText` — see [Patterns](/en/docs/go/patterns).
 
 **Parameters**
@@ -357,9 +360,11 @@ Pattern text is `PatternsToText` — see [Patterns](/en/docs/go/patterns).
 | --- | --- | --- | --- | --- |
 | `target` | `PalaceTarget` | Yes | — | Palace addressing: with a non-empty `Key` the palace is located by name key (`PalaceSoul` etc.; `PalaceBody` / `PalaceOriginal` are also accepted), otherwise by `Index` (0–11) |
 
-**Return value** `string` — sectioned plain text in the chart's own charting language; the natal
-text closes with a patterns section, and each horoscope scope carries a patterns line and
-flowing-star lines from its own perspective.
+**Return value** `string` — a Markdown subset (`#` headings, `- label: value` lists, one palace
+overview table) in the chart's own charting language; the natal text carries a patterns section
+and the twelve palaces in detail starting from the Soul palace, and each horoscope scope carries
+its own mutagen, flowing-star and pattern lines. Every notation is listed under
+[Format conventions](/en/docs/guide/guides/to-text#format-conventions).
 
 **Example**
 
@@ -367,16 +372,16 @@ flowing-star lines from its own perspective.
 chart, _ := iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil)
 text, _ := chart.ToText()
 
-fmt.Println(string([]rune(text)[:68]))
+fmt.Println(strings.Join(strings.Split(text, "\n")[:4], "\n"))
 ```
 
 **Output**
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 
+# Natal Chart 2000-8-16 Tiger hour female
+
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
 ```
 
 **Edge cases and pitfalls**

@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString};
 use serde_json::{Value, json};
 use x_iztro::ffi::{iztro_free_string, iztro_query};
 use x_iztro::pattern::ALL_PATTERNS;
-use x_iztro::{KnowledgePack, Language, Mutagen, Palace, PatternKey, StarKey};
+use x_iztro::{Config, Gender, KnowledgePack, Language, Mutagen, Palace, PatternKey, StarKey};
 
 fn query(payload: Value) -> Result<Value, String> {
     let input = CString::new(payload.to_string()).unwrap();
@@ -244,4 +244,223 @@ fn ffi_returns_builtin_and_merges_overlays() {
     let err = query(json!({"kind": "mergeKnowledgePacks", "knowledgePacks": [{"schema": 9}]}))
         .unwrap_err();
     assert!(err.contains("schema"), "{err}");
+}
+
+/// 按盘取材的往返：子包里的每颗星都在盘上、盘上每颗有条目的星都进了子包，
+/// 同宫主星的组合解读保留而不同宫的剔除，宫位与术语不进子包。
+#[test]
+fn for_astrolabe_selects_exactly_the_chart_material() {
+    use x_iztro::{Astrolabe, by_solar};
+    let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    let chart: Astrolabe = by_solar(
+        "2000-8-16",
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        Config::default(),
+    )
+    .unwrap();
+    let sub = pack.for_astrolabe(&chart);
+
+    let mut on_chart: Vec<StarKey> = Vec::new();
+    for p in &chart.palaces {
+        on_chart.extend(p.major_stars.iter().map(|s| s.key));
+        on_chart.extend(p.minor_stars.iter().map(|s| s.key));
+        on_chart.extend(p.adjective_stars.iter().map(|s| s.key));
+        on_chart.extend([p.changsheng12, p.boshi12, p.suiqian12, p.jiangqian12]);
+    }
+    for key in sub.stars.keys() {
+        let star = StarKey::from_key(key).unwrap();
+        assert!(on_chart.contains(&star), "{key} 不在盘上却进了子包");
+    }
+    for star in &on_chart {
+        if pack.star(*star).is_some() {
+            assert!(
+                sub.star(*star).is_some(),
+                "{} 在盘上却没进子包",
+                star.as_key()
+            );
+        }
+    }
+    // 双星组合：只保留同宫的对方主星
+    for (key, entry) in &sub.stars {
+        let star = StarKey::from_key(key).unwrap();
+        let palace = chart
+            .palaces
+            .iter()
+            .find(|p| p.major_stars.iter().any(|s| s.key == star));
+        for other in entry.combinations.keys() {
+            let other = StarKey::from_key(other).unwrap();
+            assert!(
+                palace.is_some_and(|p| p.major_stars.iter().any(|s| s.key == other)),
+                "{key} 的组合解读对方 {} 不在同宫",
+                other.as_key()
+            );
+        }
+    }
+    // 格局：命中的才在
+    let hits: Vec<PatternKey> = chart.patterns().iter().map(|h| h.key).collect();
+    for key in sub.patterns.keys() {
+        assert!(hits.contains(&PatternKey::from_key(key).unwrap()));
+    }
+    for hit in &hits {
+        assert!(sub.pattern(*hit).is_some());
+    }
+    assert_eq!(sub.mutagens.len(), 4);
+    assert!(sub.palaces.is_empty() && sub.concepts.is_empty());
+    assert_eq!(
+        (sub.id.as_str(), sub.schema),
+        (pack.id.as_str(), pack.schema)
+    );
+
+    // 格局口径随入参：Positional 口径下多命中的格局要进子包
+    let positional = x_iztro::PatternConfig {
+        brightness_source: x_iztro::BrightnessSource::Positional,
+        ..x_iztro::PatternConfig::default()
+    };
+    let sub_pos = pack.for_astrolabe_with(&chart, &positional);
+    let hits_pos: Vec<PatternKey> = chart
+        .patterns_with(&positional)
+        .iter()
+        .map(|h| h.key)
+        .collect();
+    for hit in &hits_pos {
+        assert!(
+            sub_pos.pattern(*hit).is_some(),
+            "{} 未按口径进入子包",
+            hit.as_key()
+        );
+    }
+    assert_eq!(sub_pos.patterns.len(), {
+        let mut uniq = hits_pos.clone();
+        uniq.sort_by_key(|k| k.as_key());
+        uniq.dedup();
+        uniq.len()
+    });
+
+    // 运限取材：在本命之上多出流耀条目与各层格局
+    let h = x_iztro::get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN).unwrap();
+    let sub_h = pack.for_horoscope(&chart, &h);
+    assert!(sub_h.stars.len() > sub.stars.len());
+    assert!(
+        sub_h
+            .stars
+            .keys()
+            .any(|k| k.starts_with("liu") || k.starts_with("yun"))
+    );
+    for (k, e) in &sub.stars {
+        assert_eq!(sub_h.stars.get(k), Some(e), "运限子包必须包含本命子包 {k}");
+    }
+}
+
+/// bridge：to_text kind 的 `knowledge` 入参与 `knowledgeForChart` kind。
+#[test]
+fn ffi_text_with_knowledge_and_chart_selection() {
+    let base = json!({
+        "solarDate": "2000-8-16", "timeIndex": 2, "gender": "female",
+        "fixLeap": true, "language": "zh-CN",
+    });
+    let run = |extra: Value| {
+        let mut q = base.clone();
+        for (k, v) in extra.as_object().unwrap() {
+            q[k] = v.clone();
+        }
+        query(q)
+    };
+
+    let plain = run(json!({"kind": "astrolabeToText"})).unwrap();
+    let with = run(json!({"kind": "astrolabeToText", "knowledge": "builtin"})).unwrap();
+    let with = with.as_str().unwrap();
+    // 事实文本是带释义文本的有序子序列（同一渲染器）
+    let mut lines = with.lines();
+    for want in plain.as_str().unwrap().lines() {
+        assert!(
+            lines.any(|got| got == want),
+            "带释义文本缺行或顺序不同：{want:?}"
+        );
+    }
+    assert!(with.contains("## 四化释义"));
+    assert!(with.contains("**禄**: "));
+
+    // 自定义包：覆盖后的释义进文本
+    let builtin = query(json!({"kind": "knowledgePack", "language": "zh-CN"})).unwrap();
+    let overlay = json!({
+        "schema": 1, "id": "mine", "version": "1", "language": "zh-CN",
+        "stars": {"wuquMaj": {"intro": "我的武曲释义"}}
+    });
+    let merged = query(json!({
+        "kind": "mergeKnowledgePacks", "knowledgePacks": [builtin, overlay]
+    }))
+    .unwrap();
+    let custom = run(json!({"kind": "astrolabeToText", "knowledge": merged.clone()})).unwrap();
+    assert!(custom.as_str().unwrap().contains("我的武曲释义"));
+
+    // 六个 kind 都收 knowledge
+    for (kind, extra) in [
+        (
+            "horoscopeToText",
+            json!({"targetDate": "2025-1-1", "targetTimeIndex": 0}),
+        ),
+        ("palaceToText", json!({"palaceKey": "soulPalace"})),
+        (
+            "surroundedPalacesToText",
+            json!({"palaceKey": "soulPalace"}),
+        ),
+        ("patternsToText", json!({})),
+        (
+            "horoscopePatternsToText",
+            json!({"scope": "decadal", "targetDate": "2025-1-1"}),
+        ),
+    ] {
+        let mut q = extra.clone();
+        q["kind"] = json!(kind);
+        q["knowledge"] = json!("builtin");
+        let text = run(q).unwrap();
+        assert!(text.as_str().unwrap().contains("**"), "{kind} 应带释义");
+    }
+
+    // 子包 kind：本命与运限两种取材
+    let sub = run(json!({"kind": "knowledgeForChart", "knowledge": "builtin"})).unwrap();
+    assert_eq!(sub["mutagens"].as_object().unwrap().len(), 4);
+    assert!(sub["palaces"].as_object().is_none_or(|m| m.is_empty()));
+    let sub_h = run(json!({
+        "kind": "knowledgeForChart", "knowledge": "builtin",
+        "targetDate": "2025-1-1", "targetTimeIndex": 0
+    }))
+    .unwrap();
+    assert!(sub_h["stars"].as_object().unwrap().len() > sub["stars"].as_object().unwrap().len());
+
+    // 子包 kind 转发 patternConfig：两种口径的格局集合与 patterns kind 一致
+    for cfg in [json!(null), json!({"brightnessSource": "positional"})] {
+        let sub =
+            run(json!({"kind": "knowledgeForChart", "knowledge": "builtin", "patternConfig": cfg}))
+                .unwrap();
+        let hits = run(json!({"kind": "patterns", "patternConfig": cfg})).unwrap();
+        let mut expected: Vec<String> = hits
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|h| h["key"].as_str().unwrap().to_string())
+            .collect();
+        expected.sort();
+        expected.dedup();
+        let mut got: Vec<String> = sub["patterns"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect();
+        got.sort();
+        assert_eq!(got, expected, "patternConfig={cfg}");
+    }
+
+    // 错误路径：英文盘无内嵌包、非法 knowledge 串、子包 kind 缺 knowledge
+    let mut en = base.clone();
+    en["language"] = json!("en-US");
+    en["kind"] = json!("astrolabeToText");
+    en["knowledge"] = json!("builtin");
+    assert!(query(en).unwrap_err().contains("no builtin knowledge pack"));
+    assert!(run(json!({"kind": "astrolabeToText", "knowledge": "nope"})).is_err());
+    assert!(run(json!({"kind": "knowledgeForChart"})).is_err());
 }

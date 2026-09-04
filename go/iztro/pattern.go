@@ -154,11 +154,22 @@ func (a *Astrolabe) PatternsToText(config *PatternConfig) (string, error) {
 
 // PatternsToTextContext 为 PatternsToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) PatternsToTextContext(ctx context.Context, config *PatternConfig) (string, error) {
+	return a.PatternsToTextWithContext(ctx, TextOptions{PatternConfig: config})
+}
+
+// PatternsToTextWith 生成本命盘格局命中的语义化文本并按 opts.Knowledge 追加命中格局的释义节；
+// 判定口径取 opts.PatternConfig，nil 即默认口径。
+func (a *Astrolabe) PatternsToTextWith(opts TextOptions) (string, error) {
+	return a.PatternsToTextWithContext(context.Background(), opts)
+}
+
+// PatternsToTextWithContext 为 PatternsToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) PatternsToTextWithContext(ctx context.Context, opts TextOptions) (string, error) {
 	if a == nil {
 		return "", invalidArgument("patternsToText: nil astrolabe")
 	}
 	payload := a.textPayload("patternsToText")
-	payload["patternConfig"] = config
+	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
@@ -171,6 +182,17 @@ func (h *Horoscope) PatternsToText(scope string, config *PatternConfig) (string,
 
 // PatternsToTextContext 为 PatternsToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (h *Horoscope) PatternsToTextContext(ctx context.Context, scope string, config *PatternConfig) (string, error) {
+	return h.PatternsToTextWithContext(ctx, scope, TextOptions{PatternConfig: config})
+}
+
+// PatternsToTextWith 生成某运限层视角格局命中的语义化文本并按 opts.Knowledge 追加命中格局的释义节。
+// scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘；判定口径取 opts.PatternConfig，nil 即默认口径。
+func (h *Horoscope) PatternsToTextWith(scope string, opts TextOptions) (string, error) {
+	return h.PatternsToTextWithContext(context.Background(), scope, opts)
+}
+
+// PatternsToTextWithContext 为 PatternsToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (h *Horoscope) PatternsToTextWithContext(ctx context.Context, scope string, opts TextOptions) (string, error) {
 	if h == nil || h.astrolabe == nil {
 		return "", invalidArgument("horoscopePatternsToText: horoscope must be created by Astrolabe.Horoscope")
 	}
@@ -178,7 +200,7 @@ func (h *Horoscope) PatternsToTextContext(ctx context.Context, scope string, con
 	payload["targetDate"] = h.SolarDate
 	payload["targetTimeIndex"] = h.targetTimeIndex
 	payload["scope"] = scope
-	payload["patternConfig"] = config
+	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }

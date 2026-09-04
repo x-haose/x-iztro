@@ -458,27 +458,42 @@ print(soul.astrolabe().five_elements_class)
 **签名**
 
 ```python
-def to_text(self) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时该宫事实行之后紧跟该宫每颗星的释义（`**星名(亮度)化X**: 正文`，同宫主星组合在前，十二神不释义），见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
 
 **示例**
 
 ```python
-print(chart.palace("命宫").to_text())
+print(chart.palace("命宫").to_text(), end="")
+print(chart.palace("命宫").to_text(knowledge=True).splitlines()[9][:15])
 ```
 
 **输出**
 
 ```text
---- 命宫 ---
-天干地支: 壬午
-大限: 3-12
-小限虚岁: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
-十二神: 衰, 青龙, 丧门, 灾煞
-主星: 紫微(庙)
-辅星: 文曲(陷)
-杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+### 命宫 (壬午) · 大限 3-12
+- 主星: 紫微(庙)
+- 辅星: 文曲(陷)
+- 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+- 三方四正: 对宫 迁移 · 三合 财帛, 官禄
+- 宫干壬飞化: 天梁化禄→子女, 紫微化权→命宫, 左辅化科→官禄, 武曲化忌→财帛
+- 十二神: 长生·衰, 博士·青龙, 岁前·丧门, 将前·灾煞
+- 小限虚岁: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+**紫微(庙)**: 紫微星号
 ```
 
-脱离星盘单独构造的宫位没有排盘上下文，调用抛 `ValueError`。
+脱离星盘单独构造的宫位没有排盘上下文，调用抛 `ValueError`；
+`knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN 有）抛 `IztroError`。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。

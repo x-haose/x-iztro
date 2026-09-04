@@ -373,8 +373,11 @@ chart.surrounded_palaces("命宫").to_text() # 三方四正
 chart.patterns_to_text()              # 本命格局
 ```
 
-**返回值**　`str`——按星盘的排盘语言输出的分节纯文本；本命文本末尾带格局节，
-运限文本各层带该层视角的格局行与流耀行。
+**返回值**　`str`——按星盘的排盘语言输出的 Markdown 子集（`#` 标题、`- 标签: 值` 列表、
+十二宫总览窄表）；本命文本带格局节与从命宫起的十二宫详解，运限文本各层带该层视角的
+四化、流耀与格局行。每个 `to_text` 都收 `knowledge=`（`True` 或 `KnowledgePack`），
+给出时释义按盘取材内联在事实之后；也都收 `config=`（`PatternConfig`），给格局节与格局释义的判定口径。
+格式见[语义化文本](/zh/docs/guide/guides/to-text)。
 
 **示例**
 
@@ -382,16 +385,17 @@ chart.patterns_to_text()              # 本命格局
 astro = Astro()
 chart = astro.by_solar("2000-8-16", 2, "female")
 
-print(chart.to_text()[:46])
+print("\n".join(chart.to_text().splitlines()[:5]))
 ```
 
 **输出**
 
 ```text
-=== 基本信息 ===
-性别: 女
-阳历: 2000-8-16
-农历: 二〇〇〇年七月十七
+# 命盘 2000-8-16 寅时 女
+
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
 ```
 
 **边界与陷阱**

@@ -395,25 +395,35 @@ too, so queries need not be handed the chart again. The free function here retur
 
 **Purpose** Project a chart or a horoscope into semantic text — the chart's facts in
 natural-language form, for a language model or a person. Alongside `serde_json` (machine structure)
-and the translated fields (display), it is the third projection of the same object.
+and the translated fields (display), it is the third projection of the same object. The output is a
+Markdown subset (`#` headings, `- label: value` lists, `**bold**` and one narrow palace-overview
+table) that reads fine unrendered.
 
-**Signature** (the `x_iztro::text` module, which also holds `palace_to_text` /
-`surrounded_palaces_to_text` / `patterns_to_text`)
+**Signature** (the `x_iztro::text` module, all re-exported from the crate root; the module also
+holds `palace_to_text` / `surrounded_palaces_to_text` / `patterns_to_text` and their `_with` forms)
 
 ```rust
 pub fn astrolabe_to_text(astrolabe: &Astrolabe, lang: Language) -> String
+pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: Language) -> String
 pub fn horoscope_to_text(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
     lang: Language,
 ) -> String
+pub fn horoscope_to_text_with(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    opts: &TextOptions,
+    lang: Language,
+) -> String
 ```
 
 Convenience methods that emit in the chart language: `Astrolabe::to_text()`,
-`HoroscopeRef::to_text()`, `PalaceRef::to_text()`; `SurroundedPalaces::to_text(lang)` takes an
-explicit language. The free functions' `lang` may differ from the charting language: star names,
-hours, zodiac signs, stems and branches and flowing stars are all re-translated by key into the
-target language, byte-identical to a chart cast in that language.
+`HoroscopeRef::to_text()`, `PalaceRef::to_text()`, `SurroundedPalaces::to_text()`, each with a
+`to_text_with` taking `&TextOptions`. The free functions' `lang` may differ from the charting
+language: structural labels, star names, hours, zodiac signs, stems and branches and flowing stars
+are all re-translated by key into the target language, byte-identical to a chart cast in that
+language.
 
 **Parameters**
 
@@ -421,10 +431,15 @@ target language, byte-identical to a chart cast in that language.
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | Yes | — | The natal chart |
 | `horoscope` | `&HoroscopeData` | Yes | — | The result of `get_horoscope` |
-| `lang` | `Language` | Yes | — | Output language, which switches both the section headings and the star names |
+| `opts` | `&TextOptions` | `_with` only | — | Output options; the two without `_with` use `TextOptions::default()`, facts only. See [TextOptions](#textoptions) |
+| `lang` | `Language` | Yes | — | Output language, which switches both the structural labels and the star names |
 
-**Return value** `String`, sectioned plain text; the natal text closes with a patterns section, and
-each horoscope scope carries a patterns line and flowing-star lines from its own perspective.
+**Return value** `String`, Markdown text. The natal text: title, basic info, palace-overview
+table, patterns, then the twelve palaces in detail starting from the Soul palace. The horoscope
+text: one section each for the decadal (childhood before the decadals start), age fortune, yearly,
+monthly, daily and hourly scopes, each with its mutagens, patterns and flowing stars, the decadal
+and yearly ones expanded into a twelve-palace table. With a knowledge pack, readings follow the
+facts they belong to.
 
 **Example**
 
@@ -438,36 +453,47 @@ print!("{}", chart.to_text());
 **Output**
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
-Chinese Date: geng chen - jia shen - bing woo - geng yin
-Time: Tiger hour (03:00~05:00)
-Zodiac Sign: leo
-Zodiac Animal: dragon
-Soul Palace Branch: woo
-Body Palace Branch: xu
-Soul Star: rebel
-Body Star: scholar
-Five Elements Class: wood 3rd
-Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+# Natal Chart 2000-8-16 Tiger hour female
 
-=== Palaces ===
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
+- Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
+- Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
+- Birth-Year Mutagen: sun [A]→children, general [B]→wealth, moon [C]→friends, fortunate [D]→health
 
---- wealth ---
-Stem-Branch: wuyin
-Decadal: 43-52
-Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
-Twelve Gods: dissipated, gossip, sorrowing, varied
-Major Stars: general([+1])[B], minister([+3])
-Minor Stars: horse
-Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+## Palace Overview
+| Palace | Major Stars | Minor Stars | Decadal |
+|---|---|---|---|
+| **soul** woo | emperor([+3]) | artist([-3]) | 3-12 |
+| siblings si | advisor([-1]) | — | 13-22 |
+| spouse chen [Original Palace] | marshal([+3]) | helper, impulsive([-3]) | 23-32 |
+| children mao | sun([+3]) [A], sage([+3]) | — | 33-42 |
+| wealth yin | general([+1]) [B], minister([+3]) | horse | 43-52 |
+| health chou | fortunate([-2]) [D], advocator([-2]) | assistant, fickle | 53-62 |
+| surface zi | wolf([+2]) | spark([-3]) | 63-72 |
+| friends hai | moon([+3]) [C] | — | 73-82 |
+| career xu [Body Palace] | judge([0]), empress([+3]) | officer | 83-92 |
+| property you | — | ideologue, driven([-3]) | 93-102 |
+| spirit shen | rebel([+1]) | scholar([+1]), money | 103-112 |
+| parents wei | — | aide, tangled([+3]) | 113-122 |
+
+## Patterns
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
+
+## Palaces
+
+### soul (ren woo) · Decadal 3-12
+- Major Stars: emperor([+3])
+- Minor Stars: artist([-3])
+- Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+- Trine & Opposite: Opposite surface · Trine wealth, career
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
+- Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+
 
 (the other eleven palaces follow the same format and are omitted here)
-
-=== Patterns ===
-- Empress and Minister Facing the Palace(soul): empress([+3]), minister([+3])
 ```
 
 The complete output with a field-by-field walkthrough is on
@@ -475,3 +501,69 @@ The complete output with a field-by-field walkthrough is on
 
 This is an addition of x-iztro's beyond iztro, available in all three languages.
 Wiring it to a model is covered on [Docs for AI](/en/docs/guide/guides/llm).
+
+---
+
+## TextOptions
+
+**Purpose** Output options for the to_text family: the source of readings and the pattern
+criteria. By default only the chart's facts are emitted and patterns are judged under the default
+criteria; with a knowledge pack, each palace's facts are followed by readings of that palace's stars
+(same-palace major-star combinations `**A × B (same palace)**: ` first), the pattern list is
+followed by pattern readings (with a `Conditions: ` line), the natal text closes with
+`## Mutagen Notes`, and each horoscope scope carries readings of its flowing stars and patterns
+(deduplicated across scopes). The twelve gods carry no readings.
+
+**Signature** (`x_iztro::text`, re-exported from the crate root)
+
+```rust
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TextOptions<'a> { /* private fields */ }
+
+impl<'a> TextOptions<'a> {
+    pub fn new() -> Self
+    pub fn knowledge(self, pack: &'a KnowledgePack) -> Self
+    pub fn pattern_config(self, config: &'a PatternConfig) -> Self
+    pub fn knowledge_pack(&self) -> Option<&'a KnowledgePack>
+}
+```
+
+**Methods**
+
+| Method | Description |
+| --- | --- |
+| `new()` / `default()` | Facts-only options under the default pattern criteria |
+| `knowledge(&pack)` | Pick readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
+| `pattern_config(&config)` | Judge patterns under `config`, the same argument as [`patterns_with`](/en/docs/rust/patterns#patterns_with); acts on both the text's pattern section and the pattern readings. Unset means `PatternConfig::default()` |
+| `knowledge_pack()` | The current source of readings; `None` means facts only |
+
+`Copy`, so one value can be handed to any number of `to_text_with` calls. Reading bodies are the
+pack's Markdown verbatim; entry headings (star, pattern and mutagen names) are translated into the
+output language. Selection follows the same rule as
+[`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); placement
+and deduplication are on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let opts = TextOptions::new().knowledge(pack);
+
+let plain = chart.to_text();
+let noted = chart.to_text_with(&opts);
+println!("{} {}", plain.chars().count(), noted.chars().count());
+assert!(plain.lines().all(|l| noted.contains(l)));
+
+let positional = PatternConfig { brightness_source: BrightnessSource::Positional, ..PatternConfig::default() };
+let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pattern section and readings both follow it
+```
+
+**Output**
+
+```text
+3389 20767
+```
+
+The bundled default pack is zh-CN only; `KnowledgePack::builtin` returns `None` for the other
+languages. An English chart needs an explicit pack for readings — a pack's language is not tied to
+the chart's, so an English chart with the Chinese pack gives English headings and Chinese bodies.

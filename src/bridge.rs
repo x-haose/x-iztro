@@ -188,6 +188,9 @@ pub struct QueryInput {
     // 知识包用
     /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
     pub knowledge_packs: Vec<Value>,
+    /// to_text 家族的释义材料来源：字符串 `"builtin"` 取盘语言的内嵌包，
+    /// 或直接给一个知识包对象（自定义/合并后的包）；省略则只输出盘面事实
+    pub knowledge: Option<Value>,
 
     // 反推用
     /// 反推范围起始公历年（含）
@@ -539,6 +542,9 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "patternsToText"
         | "horoscopePatternsToText" => to_text(input),
 
+        // ---- 知识包按盘取材 ----
+        "knowledgeForChart" => knowledge_for_chart(input),
+
         // ---- 格局 ----
         "patterns" | "horoscopePatterns" => patterns(input),
 
@@ -571,14 +577,15 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 知识包 ----
         "knowledgePack" => {
             let language = parse_language(&input.language)?;
-            let json =
-                crate::knowledge::KnowledgePack::builtin_json(language).ok_or_else(|| {
+            // 解析结果在内核侧按语言缓存，绑定层只取值克隆
+            crate::knowledge::KnowledgePack::builtin_value(language)
+                .cloned()
+                .ok_or_else(|| {
                     BridgeError::invalid_argument(format!(
                         "no builtin knowledge pack for language '{}'",
                         input.language
                     ))
-                })?;
-            serde_json::from_str(json).map_err(serialize_failed)
+                })
         }
         "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
 
@@ -755,8 +762,70 @@ fn parse_palace_target(
     }
 }
 
+/// 释义材料来源：`"builtin"` 取盘语言的内嵌包（无该语言内嵌包即报错，不静默回退），
+/// 对象即自定义/合并后的知识包；省略返回 `None`
+fn parse_knowledge(
+    v: &Option<Value>,
+    language: Language,
+) -> Result<Option<std::borrow::Cow<'static, crate::knowledge::KnowledgePack>>, BridgeError> {
+    use crate::knowledge::KnowledgePack;
+    use std::borrow::Cow;
+    match v {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(s)) if s == "builtin" => KnowledgePack::builtin(language)
+            .map(|p| Some(Cow::Borrowed(p)))
+            .ok_or_else(|| {
+                BridgeError::invalid_argument(format!(
+                    "no builtin knowledge pack for language '{}'",
+                    language.as_code()
+                ))
+            }),
+        Some(Value::String(other)) => Err(BridgeError::invalid_argument(format!(
+            "invalid knowledge '{other}': expected \"builtin\" or a knowledge pack object"
+        ))),
+        Some(obj) => KnowledgePack::from_value(obj)
+            .map(|p| Some(Cow::Owned(p)))
+            .map_err(BridgeError::invalid_argument),
+    }
+}
+
+/// 知识包按盘取材：`knowledge` 必填；给 `targetDate` 时按运限取材（含本命部分），
+/// 否则按本命盘取材。格局按 `patternConfig` 口径判定（与 patterns/to_text kind 同一入参），
+/// 给出 `fromStem`/`fromBranch` 时先重排再取材
+fn knowledge_for_chart(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let config = parse_config(&input.config)?;
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
+    let Some(pack) = parse_knowledge(&input.knowledge, language)? else {
+        return Err(BridgeError::invalid_argument(
+            "knowledge is required: pass \"builtin\" or a knowledge pack object",
+        ));
+    };
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        config,
+    )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+    let sub = if input.target_date.is_empty() {
+        pack.for_astrolabe_with(&astrolabe, &pattern_config)
+    } else {
+        let h = crate::get_horoscope(
+            &astrolabe,
+            &input.target_date,
+            input.target_time_index,
+            language,
+        )?;
+        pack.for_horoscope_with(&astrolabe, &h, &pattern_config)
+    };
+    serde_json::to_value(sub).map_err(serialize_failed)
+}
+
 /// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
-/// 与 patterns/horoscope 的重排语义一致
+/// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时追加按盘取材的释义节
 fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
@@ -769,9 +838,15 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
         config,
     )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+    let pack = parse_knowledge(&input.knowledge, language)?;
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
+    let mut opts = crate::TextOptions::new().pattern_config(&pattern_config);
+    if let Some(k) = pack.as_deref() {
+        opts = opts.knowledge(k);
+    }
 
     let text = match input.kind.as_str() {
-        "astrolabeToText" => crate::astrolabe_to_text(&astrolabe, language),
+        "astrolabeToText" => crate::astrolabe_to_text_with(&astrolabe, &opts, language),
         "horoscopeToText" => {
             let h = crate::get_horoscope(
                 &astrolabe,
@@ -779,27 +854,27 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
                 input.target_time_index,
                 language,
             )?;
-            crate::horoscope_to_text(&astrolabe, &h, language)
+            crate::horoscope_to_text_with(&astrolabe, &h, &opts, language)
         }
         "palaceToText" => {
             let target = parse_palace_target(input)?;
             let p = astrolabe.palace(target).ok_or_else(|| {
                 BridgeError::invalid_argument("palace not found on this chart".to_string())
             })?;
-            crate::palace_to_text(&p, language)
+            crate::palace_to_text_with(&p, &opts, language)
         }
         "surroundedPalacesToText" => {
             let target = parse_palace_target(input)?;
             let sp = astrolabe.surrounded_palaces(target).ok_or_else(|| {
                 BridgeError::invalid_argument("palace not found on this chart".to_string())
             })?;
-            crate::surrounded_palaces_to_text(&sp, language)
+            crate::surrounded_palaces_to_text_with(&sp, &opts, language)
         }
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);
             let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
-            crate::patterns_to_text(&hits, &names, language)
+            crate::patterns_to_text_with(&hits, &names, &opts, language)
         }
         "horoscopePatternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
@@ -816,7 +891,7 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
                 Some(item) => item.palace_names.clone(),
                 None => astrolabe.palaces.iter().map(|p| p.name).collect(),
             };
-            crate::patterns_to_text(&hits, &names, language)
+            crate::patterns_to_text_with(&hits, &names, &opts, language)
         }
         other => {
             return Err(BridgeError::internal(format!(
@@ -864,8 +939,7 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
 /// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。
 fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
     let mut parsed = packs.iter().map(|v| {
-        crate::knowledge::KnowledgePack::from_json(&v.to_string())
-            .map_err(BridgeError::invalid_argument)
+        crate::knowledge::KnowledgePack::from_value(v).map_err(BridgeError::invalid_argument)
     });
     let Some(base) = parsed.next() else {
         return Err(BridgeError::invalid_argument(
@@ -1501,7 +1575,7 @@ mod tests {
         // 命宫按 key 寻址与按索引寻址取到同一段文本
         let by_key = run(json!({"kind": "palaceToText", "palaceKey": "soulPalace"})).unwrap();
         let text = by_key.as_str().unwrap();
-        assert!(text.starts_with("--- 命宫"));
+        assert!(text.starts_with("### 命宫 ("), "{text}");
         let soul_index = text_soul_index();
         let by_index = run(json!({"kind": "palaceToText", "palaceIndex": soul_index})).unwrap();
         assert_eq!(by_key, by_index);
@@ -1513,7 +1587,7 @@ mod tests {
         // 三方四正
         let sp =
             run(json!({"kind": "surroundedPalacesToText", "palaceKey": "soulPalace"})).unwrap();
-        assert!(sp.as_str().unwrap().starts_with("本宫: 命宫"));
+        assert!(sp.as_str().unwrap().starts_with("## 命宫 三方四正\n"));
 
         // 本命与运限视角的格局文本
         let hits = run(json!({"kind": "patternsToText"})).unwrap();

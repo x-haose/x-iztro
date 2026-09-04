@@ -268,6 +268,15 @@ impl Scope {
     }
 }
 
+/// 有流耀与运限四化的五个层级，按大限、流年、流月、流日、流时排列（本命与小限不在此列）。
+pub const HOROSCOPE_SCOPES: [Scope; 5] = [
+    Scope::Decadal,
+    Scope::Yearly,
+    Scope::Monthly,
+    Scope::Daily,
+    Scope::Hourly,
+];
+
 /// 运限层级显示名
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HoroscopeName {

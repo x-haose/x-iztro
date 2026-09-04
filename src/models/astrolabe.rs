@@ -270,6 +270,7 @@ impl Astrolabe {
             opposite: &self.palaces[fix_index(index as i32 + 6, 12)],
             career: &self.palaces[fix_index(index as i32 + 4, 12)],
             wealth: &self.palaces[fix_index(index as i32 + 8, 12)],
+            astrolabe: self,
         }
     }
 

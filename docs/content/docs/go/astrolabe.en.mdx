@@ -435,10 +435,77 @@ fmt.Println(strings.Split(text, "\n")[0])
 **Output**
 
 ```text
---- soul ---
+### soul (ren woo) · Decadal 3-12
 ```
 
-For pattern text see `PatternsToText` on [Patterns](/en/docs/go/patterns).
+The single-palace text is exactly that palace's section under the natal text's `Palaces`
+heading; the surrounded-palaces text opens with `## soul Trine & Opposite` followed by four
+sections — the target, its opposite, the wealth position and the career position — each headed
+with its role (`### Target Palace · soul (ren woo) · Decadal 3-12`) and with fact lines identical
+to the palace text. For pattern text see `PatternsToText` on [Patterns](/en/docs/go/patterns).
+
+---
+
+## ToTextWith / PalaceToTextWith / SurroundedPalacesToTextWith
+
+**Purpose** The text of the matching `ToText`, with readings from a knowledge pack woven in
+according to `opts`: after each palace's fact lines come that palace's star readings
+(`**star(brightness) [A]**: body`, with a same-palace major-star combination
+`**A × B (same palace)**: ` first; the twelve gods carry no reading), after the pattern list come
+the pattern readings (with a `Conditions: ` line), and the natal text closes with `## Mutagen Notes`.
+
+**Signature**
+
+```go
+func (a *Astrolabe) ToTextWith(opts TextOptions) (string, error)
+func (a *Astrolabe) PalaceToTextWith(target PalaceTarget, opts TextOptions) (string, error)
+func (a *Astrolabe) SurroundedPalacesToTextWith(target PalaceTarget, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `target` | `PalaceTarget` | As for `PalaceToText` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the pattern criteria for both the pattern section and the pattern readings; the zero value `TextOptions{}` behaves like the method without `With` |
+
+Each has a `Context` variant. Where the readings are inserted and how they are deduplicated is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+plain, _ := chart.ToText()
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(utf8.RuneCountInString(plain), utf8.RuneCountInString(text))
+var heads []string
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "## ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**Output**
+
+```text
+3389 20767
+## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
+```
+
+The two texts differ in their `## ` headings only by the closing `四化释义` (Mutagen Notes):
+readings do not get sections of their own but sit right after the palace or pattern they belong
+to.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+`BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns
+`ErrInvalidArgument` rather than silently dropping the readings; on an English chart give the pack
+explicitly with `KnowledgeFrom(pack)`.
+</Callout>
 
 ---
 

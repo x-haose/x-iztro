@@ -52,6 +52,10 @@ Holds the raw pack object (a dict); the lookups return typed entries.
 | `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | One entry, or `None` |
 | `stars()` / `patterns()` | All star / pattern entries |
 | `star_intro(key)` / `pattern_intro(key)` | The reading text directly |
+| `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | Pick by chart: a sub-pack holding only that chart's entries |
+
+A `KnowledgePack` instance is also what the to_text family's `knowledge=` parameter accepts (see
+each object's `to_text`).
 
 ### Entry dataclasses
 
@@ -345,3 +349,59 @@ for hit in chart.patterns():
 府相朝垣 | 府相朝垣命必荣
 “食禄千锺”的断语使
 ```
+
+---
+
+## for_astrolabe / for_horoscope
+
+**Purpose**　Pick by chart: cut a sub-pack holding only the entries relevant to this chart.
+
+**Signature**
+
+```python
+def for_astrolabe(self, chart: Astrolabe, config: PatternConfig | None = None) -> KnowledgePack
+def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = None) -> KnowledgePack
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `chart` | `Astrolabe` | yes | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
+| `horoscope` | `Horoscope` | yes | — | A horoscope from `chart.horoscope(...)`; the natal part is selected along with it |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same shape as [`chart.patterns(config)`](/en/docs/python/patterns#patterns); omit for the default criteria |
+
+**Returns**　A standard `KnowledgePack` with the metadata carried over: `stars` holds the stars on
+the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
+`combinations` keep only partners that actually share the palace), `patterns` the hits under the
+`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
+each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+Pair the sub-pack with `patterns(config)` / `patterns_to_text(config)` under the same criteria:
+different criteria hit different sets, and the readings would then miss or over-include entries.
+The selection rule is on [Picking by chart](/en/docs/guide/guides/knowledge-pack#picking-by-chart).
+
+**Example**
+
+```python
+pack = KnowledgePack.builtin()
+chart = Astro().by_solar("2000-8-16", 2, "female")
+
+sub = pack.for_astrolabe(chart)
+print(len(sub.stars()), len(sub.patterns()), sub.palace("soulPalace"))
+print(list(sub.star(MajorStar.WUQU).combinations))
+
+sub = pack.for_horoscope(chart.horoscope("2025-1-1", 0))
+print(len(sub.stars()), len(sub.patterns()))
+```
+
+**Output**
+
+```text
+108 1 None
+['tianxiangMaj']
+158 16
+```
+
+Wuqu shares its palace with Tianxiang on this chart, so Wuqu's `combinations` in the sub-pack keeps
+only the Tianxiang entry. A horoscope constructed detached from a chart has no charting context and
+`for_horoscope` raises `ValueError`.

@@ -1,16 +1,37 @@
-Target Palace: soul (renwoo)
-  Major Stars: emperor([+3])
-  Minor Stars: artist([-3])
-  Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
-Opposite Palace: surface (wuzi)
-  Major Stars: wolf([+2])
-  Minor Stars: spark([-3])
-  Adjective Stars: dignified
-Wealth Palace: wealth (wuyin)
-  Major Stars: general([+1])[B], minister([+3])
-  Minor Stars: horse
-  Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
-Career Palace: career (bingxu)
-  Major Stars: judge([0]), empress([+3])
-  Minor Stars: officer
-  Adjective Stars: gifted, frail
+## soul Trine & Opposite
+
+### Target Palace · soul (ren woo) · Decadal 3-12
+- Major Stars: emperor([+3])
+- Minor Stars: artist([-3])
+- Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+- Trine & Opposite: Opposite surface · Trine wealth, career
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
+- Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
+
+### Opposite Palace · surface (wu zi) · Decadal 63-72
+- Major Stars: wolf([+2])
+- Minor Stars: spark([-3])
+- Adjective Stars: dignified
+- Trine & Opposite: Opposite soul · Trine spirit, spouse
+- Stem wu Flying: wolf [A]→surface, moon [B]→friends, helper [C]→spouse, advisor [D]→siblings
+- Twelve Gods: Changsheng·molding, Boshi·illness, Suiqian·sinister, Jiangqian·capable
+- Age Fortune Years: 11, 23, 35, 47, 59, 71, 83, 95, 107, 119
+
+### Wealth Palace · wealth (wu yin) · Decadal 43-52
+- Major Stars: general([+1]) [B], minister([+3])
+- Minor Stars: horse
+- Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+- Trine & Opposite: Opposite spirit · Trine career, soul
+- Stem wu Flying: wolf [A]→surface, moon [B]→friends, helper [C]→spouse, advisor [D]→siblings
+- Twelve Gods: Changsheng·dissipated, Boshi·gossip, Suiqian·sorrowing, Jiangqian·varied
+- Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
+
+### Career Palace · career (bing xu) · Decadal 83-92 [Body Palace]
+- Major Stars: judge([0]), empress([+3])
+- Minor Stars: officer
+- Adjective Stars: gifted, frail
+- Trine & Opposite: Opposite spouse · Trine soul, wealth
+- Stem bing Flying: fortunate [A]→health, advisor [B]→siblings, scholar [C]→spirit, judge [D]→career
+- Twelve Gods: Changsheng·infancy, Boshi·ambush, Suiqian·wastrel, Jiangqian·hapless
+- Age Fortune Years: 1, 13, 25, 37, 49, 61, 73, 85, 97, 109

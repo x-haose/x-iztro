@@ -416,7 +416,8 @@ println!("{}", data.solar_date);
 
 ## to_text
 
-**Purpose** The horoscope's semantic text: a complete description for language models and people.
+**Purpose** The horoscope's semantic text: a complete description for language models and people,
+as a Markdown subset.
 
 **Signature**
 
@@ -427,23 +428,79 @@ pub fn to_text(&self) -> String
 Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language use
 the free function `text::horoscope_to_text(astrolabe, horoscope, lang)`.
 
-**Return value** `String` — sectioned plain text; each scope carries a patterns line and
-flowing-star lines from its own perspective. The full format is on
-[Semantic text](/en/docs/guide/guides/to-text).
+**Return value** `String` — one section each for the decadal (childhood before the decadals
+start), age fortune, yearly, monthly, daily and hourly scopes, each with its mutagens and the
+patterns and flowing stars from its own perspective; the decadal and yearly sections expand into a
+twelve-palace table. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
 
 **Example**
 
 ```rust
 let h = chart.horoscope("2025-1-1", 0)?;
 
-println!("{}", h.to_text().chars().take(39).collect::<String>());
+for line in h.to_text().lines().take(5) {
+    println!("{line}");
+}
 ```
 
 **Output**
 
 ```text
-=== Horoscope ===
-Target Date: 2025-1-1
+# Horoscope 2025-1-1 (二〇二四年腊月初二)
+
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+- Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
+- Patterns: Marshal, Rebel and Wolf (soul), Meeting of Wind and Cloud (soul)
+```
+
+---
+
+## to_text_with
+
+**Purpose** The same text as `to_text`, with readings attached per
+[`TextOptions`](/en/docs/rust/astro#textoptions): each scope's table or facts is followed by
+readings of that scope's flowing stars and of the patterns hit from its perspective, deduplicated
+across scopes. Natal star readings are not repeated here — they are in the chart's `to_text_with`.
+
+**Signature**
+
+```rust
+pub fn to_text_with(&self, opts: &TextOptions) -> String
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text` |
+
+Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language
+use the free function `text::horoscope_to_text_with(astrolabe, horoscope, opts, lang)`. Placement
+is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let h = chart.horoscope("2025-1-1", 0)?;
+let text = h.to_text_with(&TextOptions::new().knowledge(pack));
+
+println!("{} {}", h.to_text().chars().count(), text.chars().count());
+for line in text.lines().filter(|l| l.starts_with("## ")) {
+    println!("{line}");
+}
+```
+
+**Output**
+
+```text
+2457 8458
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+## 流月 · 命宫: 本命仆役 (丁丑)
+## 流日 · 命宫: 本命迁移 (庚午)
+## 流时 · 命宫: 本命迁移 (丙子)
 ```
 
 ---

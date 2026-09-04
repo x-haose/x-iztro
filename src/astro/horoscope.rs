@@ -89,13 +89,7 @@ const fn flow_star_row(scope: Scope) -> [StarKey; 10] {
 /// 这是流耀语义的官方对照：流耀本身没有知识包条目，释义按对应本命辅星查。
 pub fn natal_counterpart_of_flow_star(key: StarKey) -> Option<StarKey> {
     let natal = flow_star_row(Scope::Origin);
-    for scope in [
-        Scope::Decadal,
-        Scope::Yearly,
-        Scope::Monthly,
-        Scope::Daily,
-        Scope::Hourly,
-    ] {
+    for scope in HOROSCOPE_SCOPES {
         if let Some(pos) = flow_star_row(scope).iter().position(|k| *k == key) {
             return Some(natal[pos]);
         }
@@ -106,21 +100,15 @@ pub fn natal_counterpart_of_flow_star(key: StarKey) -> Option<StarKey> {
 /// 全部流耀与其对应本命辅星的键值对（50 条），供绑定层导出对照表。
 pub fn flow_star_counterparts() -> Vec<(StarKey, StarKey)> {
     let natal = flow_star_row(Scope::Origin);
-    [
-        Scope::Decadal,
-        Scope::Yearly,
-        Scope::Monthly,
-        Scope::Daily,
-        Scope::Hourly,
-    ]
-    .into_iter()
-    .flat_map(|scope| {
-        flow_star_row(scope)
-            .into_iter()
-            .zip(natal)
-            .collect::<Vec<_>>()
-    })
-    .collect()
+    HOROSCOPE_SCOPES
+        .into_iter()
+        .flat_map(|scope| {
+            flow_star_row(scope)
+                .into_iter()
+                .zip(natal)
+                .collect::<Vec<_>>()
+        })
+        .collect()
 }
 
 /// 获取运限流耀

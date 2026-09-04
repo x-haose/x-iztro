@@ -88,9 +88,25 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 绑定接口无状态：运限/to_text/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
   重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/各 to_text kind 的
   payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
-- to_text 覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+- to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
+  记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
+  开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
+  覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
   /`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
-  bodyPalace/originalPalace）或 `index`。Python 挂对象方法且 `__str__` 即 to_text，Go 是 `ToText()`
+  bodyPalace/originalPalace）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
+  Go 是 `ToText()`
+- 知识包只作为**参数**融入 to_text：选项对象 `TextOptions`（Rust `to_text_with(&TextOptions::new()
+  .knowledge(&pack))`，Go `ToTextWith(TextOptions{Knowledge})`，Python 关键字参数
+  `to_text(knowledge=True|pack)`），将来的分层等开关也加在这里。bridge 六个 kind 的可选入参
+  `knowledge`（`"builtin"` 取盘语言内嵌包，无该语言包即报错不回退；或直接给包对象）。带包时释义
+  **内联**：每宫事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；十二神不释义），
+  格局列表后跟格局释义，文末附四化释义。
+  结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
+  `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
+  命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
+  `text.rs` 自行按宫选材（逐宫内联需要星与宫的对应，扁平子包给不出），取材范围是子包的子集——
+  差在十二神：子包收、文本不出。两处口径若要改，一起改。
+  排盘 DTO 永远不嵌解读
 - 轻量查询 `zodiacBySolar`/`signBySolar`/`signByLunar`/`majorStarBySolar`/`majorStarByLunar`
   返回 `{text, keys}` 双轨：text 与 iztro 同名函数一致，keys 是语言无关标识；绑定层的
   iztro 对齐函数仍返回 text，命宫主星另有 keys 形态入口
@@ -156,7 +172,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `src/astro/lunar_table.rs` 是仓库读取农历月结构（公历↔农历、月天数、中文月/日名）的
   **唯一入口**——lunar_rust 1.0.1 的 1602 年闰二月合朔晚一天（月表自相矛盾：二月 31 天），
   该层按权威历表真值修正并带在场探测（依赖将来修好即自动停用）。新代码不许绕过它
-  直读 lunar_rust 的月表；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
+  直读 lunar_rust 的月表——公历↔农历、月天数、闰月归属（`leap_month`）、中文月/日名
+  都走这一层；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
 - 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
   （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
 
@@ -165,6 +182,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢——
   日层剪枝对时辰敏感，`day_divide=Current` 时须以归一时辰（晚子归 0）参与，八字入口
   晚子同日给 t=0/t=12 双候选；年干候选 Exact 口径含 `year+1`（春节晚于立春年份的立春后段）
+- 剪枝几何不许手抄副本：主星落宫反解的偏移取安星表（`star::major` 的
+  `ZIWEI_GROUP`/`TIANFU_GROUP`），年层候选按 `year_prefilter` 逐组过滤——手抄第二份
+  几何漂移时剪枝静默错杀，v0.4.0 终审清过一轮（`MAJOR_OFFSETS`/`admits_year`），别再引入
 - 无外部金标，正确性由往返测试定义（`tests/reverse.rs`）：任取一盘，四柱/特征反查必含原生辰，
   且每个候选正排后必须真的得出目标；全星环测逐类星耀条件核「任何剪枝臂不错杀」
 - 四柱按传入 `Config` 的分界口径解释（与 `raw_dates.chinese_date` 同语义）；星盘布局与性别无关，
@@ -178,7 +198,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   核心 `StarInfo` 保持与 iztro 一致，不把卡片属性并进去（卡片与 iztro 表本身有冲突，说明也是观点）
 - 协议：语言无关 key（`StarKey`/`PatternKey`/`Palace`/`Mutagen` 的 `as_key`）→ 文本/属性，格式 `knowledge/SCHEMA.md`；
   合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
-  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON
+  `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON（解析结果有缓存）。
+  条目合并是 JSON 值递归（`merge_entry`），schema 新增字段自动参与——不许再写逐字段
+  手抄的合并清单，那种清单在加字段时会静默漏合并且测试全绿
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
@@ -215,10 +237,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - 语义化文本 → `text_snapshot`（本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US
-    固定盘完整快照 `tests/golden/text_snapshots/`，Python `test_parity.py` 与 Go
-    `parity_check_test.go` 读同一批快照逐字节比对；缺失即失败，有意改动后用
-    `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
+  - 语义化文本 → `text_snapshot`（Markdown 形态的本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US，
+    外加五类带释义输出 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+    `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
+    Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
+    有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
@@ -250,11 +273,16 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    未发布功能的开发期修正并进该功能条目的最终描述，只有对已发布版本的行为修正才单列；
    `[Unreleased]` 下插入版本节，文件尾链接行同步更新。
 2. `Cargo.toml` 与 `pyproject.toml` 版本号同改（release.yml 开头断言两者相等），
-   `cargo check` 刷新 Cargo.lock——发版走 `cargo publish --locked`，
-   lock 里本包版本不同步会挂。
+   `cargo check` 与 `cd examples/rust && cargo check` 分别刷新两处 Cargo.lock——发版走
+   `cargo publish --locked`，lock 里本包版本不同步会挂；示例经 `path` 依赖本包，
+   它的 lock 不同步则首次运行示例即产生脏工作区。
+   **版本号忘了改不会报错**：release.yml 见 `v<版本>` 标签已存在就打印一行跳过并成功退出，
+   PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
 3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
    合并即自动发版：金标门禁 → crates.io（OIDC）→ `v*` 与 `go/iztro/v*` 双标签
    → GitHub Release → 派发 wheels.yml 发 PyPI。
+4. 合并后核验四样实际产物到位：crates.io 新版本、PyPI wheels、`v*` 与 `go/iztro/v*` 两个标签、
+   GitHub Release。CI 绿不等于发出去了。
 
 ## 常用命令速查
 

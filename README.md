@@ -43,38 +43,44 @@ print(chart.to_text())
 ```
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
-Chinese Date: geng chen - jia shen - bing woo - geng yin
-Time: Tiger hour (03:00~05:00)
-Zodiac Sign: leo
-Zodiac Animal: dragon
-Soul Palace Branch: woo
-Body Palace Branch: xu
-Soul Star: rebel
-Body Star: scholar
-Five Elements Class: wood 3rd
-Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+# Natal Chart 2000-8-16 Tiger hour female
 
-=== Palaces ===
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
+- Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
+- Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
+- Birth-Year Mutagen: sun [A]→children, general [B]→wealth, moon [C]→friends, fortunate [D]→health
 
---- wealth ---
-Stem-Branch: wuyin
-Decadal: 43-52
-Age Fortune Years: 9, 21, 33, 45, 57, 69, 81, 93, 105, 117
-Twelve Gods: dissipated, gossip, sorrowing, varied
-Major Stars: general([+1])[B], minister([+3])
-Minor Stars: horse
-Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
+## Palace Overview
+| Palace | Major Stars | Minor Stars | Decadal |
+|---|---|---|---|
+| **soul** woo | emperor([+3]) | artist([-3]) | 3-12 |
+| siblings si | advisor([-1]) | — | 13-22 |
+| spouse chen [Original Palace] | marshal([+3]) | helper, impulsive([-3]) | 23-32 |
+(the other nine rows omitted)
+
+## Patterns
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
+
+## Palaces
+
+### soul (ren woo) · Decadal 3-12
+- Major Stars: emperor([+3])
+- Minor Stars: artist([-3])
+- Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
+- Trine & Opposite: Opposite surface · Trine wealth, career
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
+- Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 
 ... (the other eleven palaces)
 ```
 
-Legend: `([+1])` is brightness on a −3…+3 scale; `[A]`–`[D]` are the four
-birth-year transformations (四化, "mutagens" in iztro's vocabulary). The lunar
-date stays in Chinese numerals by design. The same chart renders in six
+Legend: `([+3])` is brightness on a −3…+3 scale; `[A]`–`[D]` are the four
+transformations (四化, "mutagens" in iztro's vocabulary) and `→children` names
+the palace the transformed star sits in. The lunar date stays in Chinese
+numerals by design. The same chart renders in six
 languages; the underlying objects are typed, and `chart.to_json()` emits every
 key JS iztro emits, with the same values, plus documented extension keys.
 
@@ -337,13 +343,21 @@ Pack format, merge rules, and how to write an overlay:
 
 ### LLM output in practice
 
-- `chart.to_text()` projects the whole chart into semantic text (patterns
-  section included); `chart.horoscope("2024-10-1", 0).to_text()` does the same
-  for the horoscope at a date; palaces, surrounded palaces and pattern hits
-  each have their own to_text. The format is deterministic with a stable field
-  order, and the text snapshots guarding it are part of the test suite.
-- A full natal-chart text is ~1.8k characters in zh-CN and ~3.6k in en-US —
-  on the order of 1–2k tokens, varying by model.
+- `chart.to_text()` projects the whole chart into Markdown (basic info, a
+  palace overview table, patterns, the twelve palaces in detail);
+  `chart.horoscope("2024-10-1", 0).to_text()` does the same for the horoscope
+  at a date; palaces, surrounded palaces and pattern hits each have their own
+  to_text. The format is deterministic with a stable field order, and the text
+  snapshots guarding it are part of the test suite.
+- `chart.to_text(knowledge=True)` inlines readings picked by chart next to the
+  facts (each palace's star readings after that palace, pattern readings after
+  the pattern list, mutagen notes at the end), sourced from the bundled
+  knowledge pack or your own pack merged from overlays — the core assembles,
+  it holds no opinion of its own. Rust:
+  `to_text_with(&TextOptions::new().knowledge(&pack))`; Go:
+  `ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})`.
+- A full natal-chart text is ~3.4k characters in zh-CN and ~6.8k in en-US —
+  on the order of 2–3k tokens, varying by model.
 - Even for an English-facing product, consider feeding the model the **zh-CN**
   chart: models know the Chinese star names, while the English names are
   iztro's own gloss vocabulary (`considery`, `dissipated`) that models mostly

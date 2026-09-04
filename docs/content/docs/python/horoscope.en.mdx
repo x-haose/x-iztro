@@ -460,26 +460,51 @@ None
 **Signature**
 
 ```python
-def to_text(self) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
-**Return value** `str` — sectioned plain text in the chart's charting language; each scope carries a
-patterns line and flowing-star lines from its own perspective. The full format is on
-[Semantic text](/en/docs/guide/guides/to-text).
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
+
+**Return value** `str` — a Markdown subset in the chart's charting language: a
+`# Horoscope <date> (<lunar>)` title, then one `## ` section each for the decadal (childhood before
+the decadals start), age fortune, yearly, monthly, daily and hourly scopes; the decadal and yearly
+sections expand into a twelve-palace table, and every scope carries its mutagen, flowing-star and
+pattern lines from its own perspective. The full format is on
+[Semantic text](/en/docs/guide/guides/to-text#format-conventions); where readings are inserted is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example**
 
 ```python
 h = chart.horoscope("2025-1-1", 0)
 
-print(h.to_text()[:39])
+print("\n".join(l for l in h.to_text().splitlines() if l.startswith("#")))
+
+zh = astro.by_solar("2000-8-16", 2, "female").horoscope("2025-1-1", 0)   # the bundled pack is zh-CN
+print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 ```
 
 **Output**
 
 ```text
-=== Horoscope ===
-Target Date: 2025-1-1
+# Horoscope 2025-1-1 (二〇二四年腊月初二)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal career · Nominal Age 25
+## Yearly · Soul Palace: Natal spouse (jia chen)
+## Monthly · Soul Palace: Natal friends (ding chou)
+## Daily · Soul Palace: Natal surface (geng woo)
+## Hourly · Soul Palace: Natal surface (bing zi)
+2457 8458
 ```
 
 **Edge cases and pitfalls**
@@ -487,7 +512,8 @@ Target Date: 2025-1-1
 <Callout type="info">
 A horoscope constructed detached from a chart (outside `horoscope()`) has no charting context and
 raises `ValueError`. For the pattern hits as text, see `patterns_to_text` on
-[Patterns](/en/docs/python/patterns).
+[Patterns](/en/docs/python/patterns). `knowledge=True` on a chart whose language has no bundled
+pack (only zh-CN has one) raises `IztroError` (`invalid_argument`).
 </Callout>
 
 ---

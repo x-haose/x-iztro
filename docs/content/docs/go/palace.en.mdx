@@ -477,4 +477,20 @@ context.
 
 ```go
 text, _ := chart.PalaceToText(iztro.PalaceTarget{Index: p.Index})
+withNotes, _ := chart.PalaceToTextWith(iztro.PalaceTarget{Index: p.Index},
+    iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(strings.Split(text, "\n")[0])
+fmt.Println(utf8.RuneCountInString(text), utf8.RuneCountInString(withNotes))
 ```
+
+**Output** (Soul palace, on a zh-CN chart)
+
+```text
+### 命宫 (壬午) · 大限 3-12
+222 1141
+```
+
+The single-palace text is exactly that palace's section under the natal text's `Palaces` heading;
+`PalaceToTextWith` places a reading for each star in the palace right after the fact lines. `opts`
+is on [TextOptions](/en/docs/go/knowledge#textoptions).

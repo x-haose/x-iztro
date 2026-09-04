@@ -438,26 +438,53 @@ yearly  yisi
 **Signature**
 
 ```python
-def to_text(self) -> str
+def to_text(
+    self,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    config: PatternConfig | None = None,
+) -> str
 ```
 
-**Return value** `str` — sectioned plain text in the charting language: basic info, the twelve
-palaces, and the pattern hits. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack (custom or merged); when given, readings are inlined after the facts — pattern readings (with their conditions) follow the pattern list, each palace's star readings follow that palace's facts (same-palace major-star combinations first), and a `## Mutagen Notes` section closes the text |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
+
+**Return value** `str` — a Markdown subset in the charting language: a `# Natal Chart …` title,
+`## Basic Info`, `## Palace Overview` (a table), `## Patterns`, `## Palaces` (one `### ` section
+per palace from the Soul palace on). The full format is on
+[Semantic text](/en/docs/guide/guides/to-text#format-conventions); where readings are inserted is on
+[Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 
 **Example**
 
 ```python
-print(chart.to_text()[:77])
+print(chart.to_text().splitlines()[0])
+
+zh = astro.by_solar("2000-8-16", 2, "female")          # the bundled pack is zh-CN
+text = zh.to_text(knowledge=True)
+print(len(zh.to_text()), len(text))
+print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 ```
 
 **Output**
 
 ```text
-=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
+# Natal Chart 2000-8-16 Tiger hour female
+3389 20767
+## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
+
+**Edge cases and pitfalls**
+
+<Callout type="warn">
+`knowledge=True` on a chart whose language has no bundled pack (only zh-CN has one) raises
+`IztroError` (`invalid_argument`) rather than silently dropping the readings; on an English chart
+pass a `KnowledgePack` explicitly.
+</Callout>
 
 For single-palace and surrounded-palace text see `palace(...).to_text()` and
 `surrounded_palaces(...).to_text()`; for pattern text see `patterns_to_text` on

@@ -418,10 +418,68 @@ fmt.Println(strings.Split(text, "\n")[0])
 **输出**
 
 ```text
---- 命宫 ---
+### 命宫 (壬午) · 大限 3-12
 ```
 
-格局文本见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。
+单宫文本就是本命文本「十二宫」节里该宫的段落；三方四正文本以 `## 命宫 三方四正` 起，
+下接本宫、对宫、财帛位、官禄位四段，每段标题带角色前缀（`### 本宫 · 命宫 (壬午) · 大限 3-12`），事实行与单宫文本一致。格局文本见 `PatternsToText`（[格局判定](/zh/docs/go/patterns)）。
+
+---
+
+## ToTextWith / PalaceToTextWith / SurroundedPalacesToTextWith
+
+**用途**　对应 `ToText` 的文本，按 `opts` 带上知识包里的释义：每宫事实行之后紧跟该宫星耀的释义
+（`**星名(亮度)化X**: 正文`，同宫主星的组合解读 `**A × B (同宫)**: ` 放最前；十二神不释义），
+格局列表之后紧跟格局释义（含 `成立条件: ` 段），本命文本末尾另有 `## 四化释义`。
+
+**签名**
+
+```go
+func (a *Astrolabe) ToTextWith(opts TextOptions) (string, error)
+func (a *Astrolabe) PalaceToTextWith(target PalaceTarget, opts TextOptions) (string, error)
+func (a *Astrolabe) SurroundedPalacesToTextWith(target PalaceTarget, opts TextOptions) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `target` | `PalaceTarget` | 同 `PalaceToText` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 输出选项。`Knowledge` 字段给释义材料来源：`BuiltinKnowledge()` 取盘语言的内嵌默认包，`KnowledgeFrom(pack)` 用给定的包；`PatternConfig` 字段给格局判定口径，同时作用于格局节与格局释义；零值 `TextOptions{}` 等同不带 `With` 的方法 |
+
+各有 `Context` 变体。释义的插入位置与去重规则见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```go
+plain, _ := chart.ToText()
+text, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+
+fmt.Println(utf8.RuneCountInString(plain), utf8.RuneCountInString(text))
+var heads []string
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "## ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**输出**
+
+```text
+3389 20767
+## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
+```
+
+两份文本的 `## ` 节只差末尾的「四化释义」：释义不另起节，而是插在各宫与格局之后。
+
+**边界与陷阱**
+
+<Callout type="warn">
+`BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`，
+不会静默退回无释义；英文盘用 `KnowledgeFrom(pack)` 显式给包。
+</Callout>
 
 ---
 

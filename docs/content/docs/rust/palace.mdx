@@ -498,7 +498,8 @@ println!("{}", translate_five_elements_class(soul.astrolabe().five_elements_clas
 
 ## to_text
 
-**用途**　本宫的语义化文本，与本命盘文本中该宫的段落一致。
+**用途**　本宫的语义化文本，与本命盘文本中该宫的段落逐字节一致：标题行带干支、大限与身宫/来因宫标记，
+事实行依次是主星（空宫写「空宫」）、辅星、杂耀、三方四正、宫干飞化、十二神、小限虚岁。
 
 **签名**
 
@@ -507,7 +508,7 @@ pub fn to_text(&self) -> String
 ```
 
 定义在 `PalaceRef` 上，按星盘排盘语言输出；要指定语言用自由函数
-`text::palace_to_text(palace, lang)`。
+`text::palace_to_text(&palace, lang)`（收 `&PalaceRef`）。
 
 **示例**
 
@@ -519,14 +520,60 @@ print!("{}", soul.to_text());
 **输出**
 
 ```text
---- 命宫 ---
-天干地支: 壬午
-大限: 3-12
-小限虚岁: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
-十二神: 衰, 青龙, 丧门, 灾煞
-主星: 紫微(庙)
-辅星: 文曲(陷)
-杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+### 命宫 (壬午) · 大限 3-12
+- 主星: 紫微(庙)
+- 辅星: 文曲(陷)
+- 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+- 三方四正: 对宫 迁移 · 三合 财帛, 官禄
+- 宫干壬飞化: 天梁化禄→子女, 紫微化权→命宫, 左辅化科→官禄, 武曲化忌→财帛
+- 十二神: 长生·衰, 博士·青龙, 岁前·丧门, 将前·灾煞
+- 小限虚岁: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 ```
 
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+---
+
+## to_text_with
+
+**用途**　本宫事实之后紧跟该宫每颗星（主星、辅星、杂耀）的释义，写法 `**星名(亮度)化X**: 正文`，
+同宫主星的组合解读 `**A × B (同宫)**: ` 排在最前；十二神不释义。
+
+**签名**
+
+```rust
+pub fn to_text_with(&self, opts: &TextOptions) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `opts` | `&TextOptions` | 是 | — | 输出选项；`TextOptions::new().knowledge(pack)` 带释义，`TextOptions::default()` 与 `to_text` 等价。见 [TextOptions](/zh/docs/rust/astro#textoptions) |
+
+定义在 `PalaceRef` 上，按星盘排盘语言输出；要指定语言用自由函数
+`text::palace_to_text_with(&palace, opts, lang)`。
+插入位置见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.palace(Palace::Soul).unwrap().to_text_with(&TextOptions::new().knowledge(pack));
+
+for line in text.lines().filter(|l| l.starts_with("**")) {
+    println!("{}", line.chars().take(14).collect::<String>());
+}
+```
+
+**输出**
+
+```text
+**紫微(庙)**: 紫微星
+**文曲(陷)**: 文曲星
+**凤阁**: 凤阁星会增加
+**天福**: 天福星可以看
+**截路**: 截路星按生年
+**蜚廉**: 蜚廉星充满好
+**年解**: 年解星按年支
+```

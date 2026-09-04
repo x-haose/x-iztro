@@ -888,12 +888,12 @@ def test_custom_mutagens_survive_into_text():
     """语义化文本同样是无状态再发起：生年四化行反映覆盖表。"""
     chart = _custom_chart()
 
-    assert _text_line(chart.to_text(), "生年四化") == (
-        "生年四化: 太阳禄, 武曲权, 天同科, 天相忌"
+    assert _text_line(chart.to_text(), "- 生年四化") == (
+        "- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 天同化科→疾厄, 天相化忌→财帛"
     )
     assert _text_line(
-        Astro().by_solar("2000-8-16", 2, "female").to_text(), "生年四化"
-    ) == "生年四化: 太阳禄, 武曲权, 太阴科, 天同忌"
+        Astro().by_solar("2000-8-16", 2, "female").to_text(), "- 生年四化"
+    ) == "- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 太阴化科→仆役, 天同化忌→疾厄"
 
 
 def test_custom_brightness_survives_into_rearranged_chart():

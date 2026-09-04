@@ -173,30 +173,66 @@ println!("三方四正不见科: {}", sp.not_have_mutagen(Mutagen::Ke));
 
 ## to_text
 
-**用途**　三方四正的语义化文本：本宫、对宫、财帛位、官禄位各一段。
+**用途**　三方四正的语义化文本：`## 本宫名 三方四正` 标题之下，本宫、对宫、财帛位、官禄位各一段，
+每段标题带角色前缀（`### 本宫 · 命宫 (壬午) · 大限 3-12`），事实行与本命盘文本中该宫的段落一致。
 
 **签名**
 
 ```rust
-pub fn to_text(&self, lang: Language) -> String
+pub fn to_text(&self) -> String
 ```
 
-`SurroundedPalaces` 持有的是四个宫位引用、不记语言，因此这里显式传——
-通常传 `chart.language` 与本命盘保持一致；等价的自由函数是
-`text::surrounded_palaces_to_text(sp, lang)`。
+按星盘排盘语言输出；要指定语言用自由函数 `text::surrounded_palaces_to_text(&sp, lang)`。
 
 **示例**
 
 ```rust
 let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
 
-println!("{}", sp.to_text(chart.language).lines().next().unwrap());
+println!("{}", sp.to_text().lines().next().unwrap());
 ```
 
 **输出**
 
 ```text
-本宫: 命宫 (壬午)
+## 命宫 三方四正
 ```
 
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
+
+---
+
+## to_text_with
+
+**用途**　四宫每段事实之后紧跟该宫星耀的释义，与单宫的 `to_text_with` 逐段相同。
+
+**签名**
+
+```rust
+pub fn to_text_with(&self, opts: &TextOptions) -> String
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `opts` | `&TextOptions` | 是 | — | 输出选项；`TextOptions::new().knowledge(pack)` 带释义，`TextOptions::default()` 与 `to_text` 等价。见 [TextOptions](/zh/docs/rust/astro#textoptions) |
+
+要指定语言用自由函数 `text::surrounded_palaces_to_text_with(&sp, opts, lang)`。
+插入位置见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let sp = chart.surrounded_palaces(Palace::Soul).unwrap();
+let text = sp.to_text_with(&TextOptions::new().knowledge(pack));
+
+println!("{} {}", sp.to_text().chars().count(), text.chars().count());
+```
+
+**输出**
+
+```text
+924 6312
+```
