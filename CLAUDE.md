@@ -101,9 +101,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `knowledge`（`"builtin"` 取盘语言内嵌包，无该语言包即报错不回退；或直接给包对象）。带包时释义
   **内联**：每宫事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；十二神不释义），
   格局列表后跟格局释义，文末附四化释义。
-  「按盘取材」只在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope` 实现一处（bridge kind
-  `knowledgeForChart`），文本释义节与结构化子包共用它：取盘上出现的星（含四组十二神，同宫主星的
-  双星组合只留同宫对方）、命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。
+  结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
+  `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
+  命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
+  `text.rs` 自行按宫选材（逐宫内联需要星与宫的对应，扁平子包给不出），取材范围是子包的子集——
+  差在十二神：子包收、文本不出。两处口径若要改，一起改。
   排盘 DTO 永远不嵌解读
 - 轻量查询 `zodiacBySolar`/`signBySolar`/`signByLunar`/`majorStarBySolar`/`majorStarByLunar`
   返回 `{text, keys}` 双轨：text 与 iztro 同名函数一致，keys 是语言无关标识；绑定层的
@@ -271,11 +273,16 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    未发布功能的开发期修正并进该功能条目的最终描述，只有对已发布版本的行为修正才单列；
    `[Unreleased]` 下插入版本节，文件尾链接行同步更新。
 2. `Cargo.toml` 与 `pyproject.toml` 版本号同改（release.yml 开头断言两者相等），
-   `cargo check` 刷新 Cargo.lock——发版走 `cargo publish --locked`，
-   lock 里本包版本不同步会挂。
+   `cargo check` 与 `cd examples/rust && cargo check` 分别刷新两处 Cargo.lock——发版走
+   `cargo publish --locked`，lock 里本包版本不同步会挂；示例经 `path` 依赖本包，
+   它的 lock 不同步则首次运行示例即产生脏工作区。
+   **版本号忘了改不会报错**：release.yml 见 `v<版本>` 标签已存在就打印一行跳过并成功退出，
+   PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
 3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
    合并即自动发版：金标门禁 → crates.io（OIDC）→ `v*` 与 `go/iztro/v*` 双标签
    → GitHub Release → 派发 wheels.yml 发 PyPI。
+4. 合并后核验四样实际产物到位：crates.io 新版本、PyPI wheels、`v*` 与 `go/iztro/v*` 两个标签、
+   GitHub Release。CI 绿不等于发出去了。
 
 ## 常用命令速查
 
