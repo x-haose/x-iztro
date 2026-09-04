@@ -577,19 +577,15 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 知识包 ----
         "knowledgePack" => {
             let language = parse_language(&input.language)?;
-            let json =
-                crate::knowledge::KnowledgePack::builtin_json(language).ok_or_else(|| {
+            // 解析结果在内核侧按语言缓存，绑定层只取值克隆
+            crate::knowledge::KnowledgePack::builtin_value(language)
+                .cloned()
+                .ok_or_else(|| {
                     BridgeError::invalid_argument(format!(
                         "no builtin knowledge pack for language '{}'",
                         input.language
                     ))
-                })?;
-            // 内嵌包是编译期常量，解析结果缓存复用——每次查询重解析 237KB 纯属浪费。
-            // 目前只有 zh-CN 一份内嵌包，单个缓存位即覆盖全部命中路径
-            static BUILTIN_VALUE: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
-            Ok(BUILTIN_VALUE
-                .get_or_init(|| serde_json::from_str(json).expect("内嵌默认知识包与格式一致"))
-                .clone())
+                })
         }
         "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
 
@@ -780,7 +776,7 @@ fn parse_knowledge(
             .map(|p| Some(Cow::Borrowed(p)))
             .ok_or_else(|| {
                 BridgeError::invalid_argument(format!(
-                    "no builtin knowledge pack for language '{}'; pass a pack object instead",
+                    "no builtin knowledge pack for language '{}'",
                     language.as_code()
                 ))
             }),

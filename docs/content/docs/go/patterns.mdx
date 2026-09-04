@@ -360,6 +360,8 @@ fmt.Print(text)
 **输出**
 
 ```text
+# 格局
+
 - **府相朝垣** (命宫): 天府(庙), 天相(庙)
 ```
 
@@ -369,15 +371,15 @@ fmt.Print(text)
 同一格局只释义一次；`opts` 见 [TextOptions](/zh/docs/go/knowledge#textoptions)：
 
 ```go
-func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, opts TextOptions) (string, error)
-func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, opts TextOptions) (string, error)
+func (a *Astrolabe) PatternsToTextWith(opts TextOptions) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, opts TextOptions) (string, error)
 ```
 
 ```go
-text, _ := chart.PatternsToTextWith(nil, iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+text, _ := chart.PatternsToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
 lines := strings.Split(text, "\n")
-fmt.Println(lines[0])
-fmt.Println(string([]rune(lines[2])[:16]))
+fmt.Println(lines[2])
+fmt.Println(string([]rune(lines[4])[:16]))
 ```
 
 **输出**

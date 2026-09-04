@@ -239,6 +239,18 @@ impl KnowledgePack {
         }
     }
 
+    /// 内嵌默认包解析出的 JSON 值，供绑定层透传；每种语言一个缓存位，
+    /// 缓存与语言分支同处，新增内嵌语言包不会漏掉缓存分键。
+    pub fn builtin_value(language: Language) -> Option<&'static serde_json::Value> {
+        static ZH_CN: OnceLock<serde_json::Value> = OnceLock::new();
+        match language {
+            Language::ZhCN => Some(ZH_CN.get_or_init(|| {
+                serde_json::from_str(BUILTIN_ZH_CN).expect("内嵌默认知识包与格式一致")
+            })),
+            _ => None,
+        }
+    }
+
     /// 由 JSON 解析一份包；格式版本高于本库支持的返回错误。
     pub fn from_json(json: &str) -> Result<KnowledgePack, String> {
         let pack: KnowledgePack =
@@ -337,7 +349,12 @@ impl KnowledgePack {
         for hit in chart.patterns_with(config) {
             self.copy_pattern(&mut out, hit.key);
         }
-        out.mutagens = self.mutagens.clone();
+        // 四化四条恒在盘上，但仍按 key 取——与星、格局同一口径，包里的非法键不进子包
+        for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
+            if let Some(entry) = self.mutagens.get(m.as_key()) {
+                out.mutagens.insert(m.as_key().to_string(), entry.clone());
+            }
+        }
         out
     }
 

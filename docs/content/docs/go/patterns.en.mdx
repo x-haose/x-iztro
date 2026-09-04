@@ -377,6 +377,8 @@ fmt.Print(text)
 **Output**
 
 ```text
+# Patterns
+
 - **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
 ```
 
@@ -388,17 +390,17 @@ The form with readings places, right after the hit list, a reading for each hit 
 is on [TextOptions](/en/docs/go/knowledge#textoptions):
 
 ```go
-func (a *Astrolabe) PatternsToTextWith(config *PatternConfig, opts TextOptions) (string, error)
-func (h *Horoscope) PatternsToTextWith(scope string, config *PatternConfig, opts TextOptions) (string, error)
+func (a *Astrolabe) PatternsToTextWith(opts TextOptions) (string, error)
+func (h *Horoscope) PatternsToTextWith(scope string, opts TextOptions) (string, error)
 ```
 
 On a zh-CN chart, since the bundled pack is Chinese:
 
 ```go
-text, _ := chart.PatternsToTextWith(nil, iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+text, _ := chart.PatternsToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
 lines := strings.Split(text, "\n")
-fmt.Println(lines[0])
-fmt.Println(string([]rune(lines[2])[:16]))
+fmt.Println(lines[2])
+fmt.Println(string([]rune(lines[4])[:16]))
 ```
 
 **Output**

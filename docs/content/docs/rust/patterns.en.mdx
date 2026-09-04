@@ -441,6 +441,8 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 **Output**
 
 ```text
+# Patterns
+
 - **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
 ```
 
@@ -467,7 +469,7 @@ let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let opts = TextOptions::new().knowledge(pack);
 let text = text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
-for line in text.lines().take(3) {
+for line in text.lines().skip(2).take(3) {
     println!("{}", line.chars().take(30).collect::<String>());
 }
 ```

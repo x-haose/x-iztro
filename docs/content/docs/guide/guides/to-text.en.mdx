@@ -200,7 +200,7 @@ write landing palace, re-laid-out palace names, mutagens, scope stars and patter
 | parents | siblings | advisor([-1]) | — | cheerful(D) |
 
 ## Age Fortune · Soul Palace: Natal career · Nominal Age 25
-- Palace Names: career, friends, surface, health, wealth, children, spouse, siblings, soul, parents, spirit, property
+- Palace Names: soul→Natal career, siblings→Natal property, spouse→Natal spirit, children→Natal parents, wealth→Natal soul, health→Natal siblings, surface→Natal spouse, friends→Natal children, career→Natal wealth, property→Natal health, spirit→Natal surface, parents→Natal friends
 - Mutagen: fortunate [A]→Natal health, advisor [B]→Natal siblings, scholar [C]→Natal spirit, judge [D]→Natal career
 - Major Stars: judge([0]), empress([+3])
 - Minor Stars: officer
@@ -218,13 +218,13 @@ write landing palace, re-laid-out palace names, mutagens, scope stars and patter
 (the other nine rows follow in the same shape)
 
 ## Monthly · Soul Palace: Natal friends (ding chou)
-- Palace Names: property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents, spirit
+- Palace Names: soul→Natal friends, siblings→Natal career, spouse→Natal property, children→Natal spirit, wealth→Natal parents, health→Natal soul, surface→Natal siblings, friends→Natal spouse, career→Natal children, property→Natal wealth, spirit→Natal health, parents→Natal surface
 - Mutagen: moon [A]→Natal friends, fortunate [B]→Natal health, advisor [C]→Natal siblings, advocator [D]→Natal health
 - Scope Stars: attractive(M)→property, artist(M)→surface, tangled(M)→surface, money(M)→health, driven(M)→wealth, cheerful(M)→children, aide(M)→spouse, scholar(M)→spouse, assistant(M)→soul, horse(M)→soul
 - Patterns: Advisor, Moon, Fortunate and Sage (soul), Sun Shining on Thunder Gate (career), Sun and Moon Both Bright (soul), Cinnabar and Cassia Steps (soul), Bright Moon at Heaven's Gate (soul), Money and Horse Galloping Together (property), Open and Hidden Fortune (soul), Money and Horse Bearing the Seal (property), Literary Stars Facing Life (soul, broken), Literary Stars in Hidden Support (soul)
 
 ## Daily · Soul Palace: Natal surface (geng woo)
-- Palace Names: spirit, property, career, friends, surface, health, wealth, children, spouse, siblings, soul, parents
+- Palace Names: soul→Natal surface, siblings→Natal friends, spouse→Natal career, children→Natal property, wealth→Natal spirit, health→Natal parents, surface→Natal soul, friends→Natal siblings, career→Natal spouse, property→Natal children, spirit→Natal wealth, parents→Natal health
 - Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
 - Scope Stars: artist(d)→property, cheerful(d)→property, aide(d)→health, tangled(d)→health, money(d)→wealth, horse(d)→wealth, driven(d)→children, attractive(d)→children, scholar(d)→siblings, assistant(d)→parents
 - Patterns: Fire and Wolf (soul), Bell and Wolf (soul), Marshal, Rebel and Wolf (soul), Money and Horse Galloping Together (spirit), Money and Horse Bearing the Seal (spirit), Literary Stars Facing Life (soul, broken), Literary Stars in Hidden Support (soul)
@@ -268,7 +268,7 @@ different reading semantics.
 | `## Decadal Fortune · Soul Palace: Natal spouse (geng chen)` | Which natal palace this scope's Soul palace landed on; the parentheses hold that scope's stem and branch |
 | `## Age Fortune · Soul Palace: Natal career · Nominal Age 25` | Where age fortune landed, and the nominal age |
 | `\| Decadal Fortune \| Natal \| Major Stars \| Minor Stars \| Scope Stars \|` | A scope's twelve-palace table: the first column is **this scope's re-laid-out palace name**, the second the natal palace name; major and minor stars are the natal chart's, scope stars are this scope's |
-| `- Palace Names: property, career, …` | The twelve re-laid-out palace names of age fortune and of the monthly and finer scopes, in **natal slot order** (starting from the Yin palace) |
+| `- Palace Names: soul→Natal career, …` | Age fortune and the monthly and finer scopes have no palace table; this line carries the mapping instead: starting from that scope's soul palace, the left side is the scope's re-laid-out name and the right side is the natal one |
 | `**emperor([+3])**: body` | A reading entry (only [with a knowledge pack](#text-with-readings)): the heading is the star, pattern or mutagen as written on its fact line, the body is the pack's text verbatim |
 | `**emperor × empress (same palace)**: body` | A combined reading for two major stars sharing a palace |
 | `Conditions: …` | The forming conditions, at the end of a pattern reading |
@@ -336,6 +336,8 @@ The palace text is one of those sections without the role prefix (from
 `### soul (ren woo) · Decadal 3-12` on). The pattern text:
 
 ```text
+# Patterns
+
 - **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])
 ```
 
@@ -382,8 +384,8 @@ chart.ToTextWith(opts)
 h.ToTextWith(opts)
 chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
-chart.PatternsToTextWith(nil, opts)
-h.PatternsToTextWith(iztro.ScopeYearly, nil, opts)
+chart.PatternsToTextWith(opts)
+h.PatternsToTextWith(iztro.ScopeYearly, opts)
 
 cfg := iztro.PatternConfig{Borrow: iztro.Bool(false)}
 chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternConfig: &cfg})
@@ -444,6 +446,8 @@ Chinese, so the bodies are Chinese; bodies truncated):
 The patterns section with readings:
 
 ```text
+# 格局
+
 - **府相朝垣** (命宫): 天府(庙), 天相(庙)
 
 **府相朝垣**: “食禄千锺”的断语使此格备受欢迎，但成格并不必然富足。……

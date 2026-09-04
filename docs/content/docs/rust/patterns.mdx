@@ -424,6 +424,8 @@ print!("{}", patterns_to_text(&hits, &names, chart.language));
 **输出**
 
 ```text
+# 格局
+
 - **府相朝垣** (命宫): 天府(庙), 天相(庙)
 ```
 
@@ -446,7 +448,7 @@ let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let opts = TextOptions::new().knowledge(pack);
 let text = text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
-for line in text.lines().take(3) {
+for line in text.lines().skip(2).take(3) {
     println!("{}", line.chars().take(30).collect::<String>());
 }
 ```

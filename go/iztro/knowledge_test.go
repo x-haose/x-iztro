@@ -23,7 +23,7 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 	cases := map[string]func(TextOptions) (string, error){
 		"astrolabe": chart.ToTextWith,
 		"horoscope": horoscope.ToTextWith,
-		"patterns":  func(o TextOptions) (string, error) { return chart.PatternsToTextWith(nil, o) },
+		"patterns":  func(o TextOptions) (string, error) { return chart.PatternsToTextWith(o) },
 		"palace":    func(o TextOptions) (string, error) { return chart.PalaceToTextWith(soul, o) },
 		"surrounded": func(o TextOptions) (string, error) {
 			return chart.SurroundedPalacesToTextWith(soul, o)

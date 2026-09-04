@@ -334,11 +334,29 @@ fn mutagen_stars_with_places(
         .join(LIST_SEP)
 }
 
-/// 宫名列表
-fn palace_name_list(names: &[Palace], lang: Language) -> String {
-    names
-        .iter()
-        .map(|p| translate_palace(*p, lang).to_string())
+/// 运限层不展开十二宫表时的宫位映射行：从该层命宫起，逐宫写「层宫名→本命宫名」。
+/// 单写一串层宫名会丢掉顺序基准——该串按宫位索引排，既非命宫起也非本命宫序，
+/// 读者无从还原对应关系。
+fn scope_palace_map(
+    astrolabe: &Astrolabe,
+    index: usize,
+    names: &[Palace],
+    l: &Labels,
+    lang: Language,
+) -> String {
+    palace_order(index)
+        .into_iter()
+        .map(|i| {
+            let natal = astrolabe.palaces[i].name;
+            let scope = names.get(i).copied().unwrap_or(natal);
+            format!(
+                "{}{ARROW}{}{}{}",
+                translate_palace(scope, lang),
+                l.natal,
+                l.label_sep,
+                translate_palace(natal, lang)
+            )
+        })
         .collect::<Vec<_>>()
         .join(LIST_SEP)
 }
@@ -508,8 +526,7 @@ fn palace_section(
 /// `palace_names` 是判定视角下按宫位索引排列的十二宫名，与
 /// [`crate::pattern::PatternHit::to_dto`] 的同名入参语义一致；索引超出列表时不标宫名。
 pub fn patterns_to_text(hits: &[PatternHit], palace_names: &[Palace], lang: Language) -> String {
-    let l = labels(lang);
-    pattern_list(hits, palace_names, &l, lang)
+    patterns_to_text_with(hits, palace_names, &TextOptions::default(), lang)
 }
 
 /// 格局命中列表的渲染主体；`palace_names` 语义同 [`patterns_to_text`]
@@ -597,7 +614,15 @@ pub fn patterns_to_text_with(
     lang: Language,
 ) -> String {
     let l = labels(lang);
-    let mut out = pattern_list(hits, palace_names, &l, lang);
+    // 独立文档，故带标题：零命中时空串会让调用方分不清「确实没有格局」与「参数没生效」
+    let list = pattern_list(hits, palace_names, &l, lang);
+    let mut out = format!("# {}\n\n", l.sec_patterns);
+    if list.is_empty() {
+        out.push_str(NONE_MARK);
+        out.push('\n');
+    } else {
+        out.push_str(&list);
+    }
     if let Some(pack) = opts.knowledge {
         let notes = pattern_notes(hits, pack, &mut Vec::new(), &l, lang);
         if !notes.is_empty() {
@@ -1093,7 +1118,7 @@ pub fn horoscope_to_text_with(
     out.push_str(&format!(
         "- {}: {}\n",
         l.palace_names,
-        palace_name_list(&age.palace_names, lang)
+        scope_palace_map(astrolabe, age.index, &age.palace_names, &l, lang)
     ));
     out.push_str(&scope_mutagen_line(astrolabe, &age.base, &l, lang));
     for (label, stars) in [
@@ -1144,7 +1169,7 @@ pub fn horoscope_to_text_with(
         out.push_str(&format!(
             "- {}: {}\n",
             l.palace_names,
-            palace_name_list(&item.palace_names, lang)
+            scope_palace_map(astrolabe, item.index, &item.palace_names, &l, lang)
         ));
         out.push_str(&scope_mutagen_line(astrolabe, item, &l, lang));
         out.push_str(&scope_stars_line(item, &l, lang));
