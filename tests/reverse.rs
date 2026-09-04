@@ -270,6 +270,67 @@ fn reverse_chart_roundtrip_zhongzhou() {
     );
 }
 
+/// 凡是会改变盘面几何的 `Config` 开关，剪枝层都必须跟着走：地盘与人盘在排盘末尾整体重排，
+/// 条件按重排后的盘给出，而剪枝几何按天盘安星表算——两端脱钩时真解在终验之前就被剪掉，
+/// 且结果看着合理（每条候选单独都满足条件，唯独原生辰不在其中）。
+#[test]
+fn reverse_chart_roundtrip_across_geometry_configs() {
+    let (date, t) = ("2000-8-16", 2);
+    let variants: [(&str, Config); 4] = [
+        ("天盘", Config::default()),
+        (
+            "地盘",
+            Config {
+                astro_type: AstroType::Earth,
+                ..Config::default()
+            },
+        ),
+        (
+            "人盘",
+            Config {
+                astro_type: AstroType::Human,
+                ..Config::default()
+            },
+        ),
+        (
+            "人盘+中州派+节气分界",
+            Config {
+                astro_type: AstroType::Human,
+                algorithm: Algorithm::Zhongzhou,
+                year_divide: YearDivide::Exact,
+                ..Config::default()
+            },
+        ),
+    ];
+    for (name, cfg) in &variants {
+        let a = chart(date, t, cfg);
+        let crit = criteria_of(&a, cfg, (2000, 2000));
+        let r = reverse_chart(&crit, cfg).unwrap();
+        assert!(
+            r.candidates
+                .iter()
+                .any(|c| c.solar_date == date && c.time_index == t),
+            "{name}：反查未含原生辰，候选 {} 个",
+            r.candidates.len()
+        );
+        // 只给命宫地支这一个条件时同样不许错杀——剪枝对命宫的处理与星耀落宫是两条臂
+        let soul_only = ReverseCriteria {
+            soul_branch: Some(a.earthly_branch_of_soul_palace),
+            year_range: (2000, 2000),
+            limit: 4096,
+            ..Default::default()
+        };
+        let r = reverse_chart(&soul_only, cfg).unwrap();
+        assert!(
+            r.candidates
+                .iter()
+                .any(|c| c.solar_date == date && c.time_index == t),
+            "{name}：只给命宫地支时反查未含原生辰，候选 {} 个",
+            r.candidates.len()
+        );
+    }
+}
+
 #[test]
 fn reverse_chart_roundtrip_current_late_zi() {
     // 晚子归当天口径 + 日敏感星耀条件（紫微起宫、日系杂耀）：

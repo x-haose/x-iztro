@@ -283,8 +283,18 @@ pub fn reverse_chart(
     let mut out = Vec::new();
     let mut truncated = false;
 
+    // 地盘与人盘在排盘末尾按身宫/福德宫干支整体重排，星耀落宫、命宫身宫与五行局随之移位，
+    // 而剪枝几何一律按天盘安星表算——两端口径不同，任何几何剪枝都会剪掉真解。重排偏移取决于
+    // 身宫位置（本身是待求量），无法在剪枝前反解，故非天盘跳过全部几何剪枝，退化为逐日枚举，
+    // 由终验（读重排后的盘）定结果：慢，但不错杀。
+    let geometric = matches!(config.astro_type, AstroType::Heaven);
+
     // 解析域：条件先按安星几何锁定各维度；主星条件互斥则整个查询无解
-    let domains = Domains::resolve(criteria);
+    let domains = if geometric {
+        Domains::resolve(criteria)
+    } else {
+        Domains::unconstrained()
+    };
     if matches!(domains.ziwei_palace, Some(Err(()))) {
         return Ok(ReverseResult {
             candidates: out,
@@ -304,7 +314,9 @@ pub fn reverse_chart(
         // year_prefilter 判定——剪枝几何与年层校验只此一份，不另抄副本
         let stems: Vec<(HeavenlyStem, EarthlyBranch)> = year_stem_candidates(year, config)
             .into_iter()
-            .filter(|pair| year_prefilter(criteria, std::slice::from_ref(pair), config))
+            .filter(|pair| {
+                !geometric || year_prefilter(criteria, std::slice::from_ref(pair), config)
+            })
             .collect();
         if stems.is_empty() {
             continue;
@@ -338,15 +350,23 @@ pub fn reverse_chart(
                     // 闰月与下半月修正可能使安星月 +1，两种月索引都放行（保守）。
                     let month_indices =
                         [fix_index(month as i32 - 1, 12), fix_index(month as i32, 12)];
-                    let fecs = month_time_prefilter(criteria, &stems, &month_indices, time_index);
-                    if fecs.is_empty() {
-                        continue;
-                    }
+                    // 非天盘时为空且不被日层读取（几何剪枝整体跳过）
+                    let fecs = if geometric {
+                        let fecs =
+                            month_time_prefilter(criteria, &stems, &month_indices, time_index);
+                        if fecs.is_empty() {
+                            continue;
+                        }
+                        fecs
+                    } else {
+                        Vec::new()
+                    };
                     // 紫微起宫与日系杂耀区分早晚子，日层剪枝须收与正排一致的生效时辰
                     let eff_t = effective_time_index(config.day_divide, time_index);
                     for day in 1..=month_day_count {
-                        if !day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
-                            || !daily_star_prefilter(criteria, month as usize - 1, day, eff_t)
+                        if geometric
+                            && (!day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
+                                || !daily_star_prefilter(criteria, month as usize - 1, day, eff_t))
                         {
                             continue;
                         }
@@ -552,6 +572,15 @@ struct Domains {
 }
 
 impl Domains {
+    /// 各维度全开，枚举骨架不做任何几何裁剪。
+    fn unconstrained() -> Domains {
+        Domains {
+            ziwei_palace: None,
+            months: None,
+            times: None,
+        }
+    }
+
     /// 从条件集解析各维度域。
     fn resolve(criteria: &ReverseCriteria) -> Domains {
         let mut ziwei: Option<Result<usize, ()>> = None;
