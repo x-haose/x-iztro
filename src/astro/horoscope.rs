@@ -6,7 +6,7 @@ use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
 use crate::astro::builder::{
-    branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
+    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
 };
 use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
@@ -208,7 +208,8 @@ pub fn get_horoscope(
     let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
 
     let birth_hour = time_index_to_hour(astrolabe.time_index);
-    let birth_solar = solar::from_ymdhms(birth_year, birth_month, birth_day, birth_hour, 0, 0);
+    let birth_solar =
+        solar::from_ymdhms(birth_year, birth_month, birth_day, birth_hour, CHART_MINUTE, 0);
     let birth_lunar = lunar::from_solar(&birth_solar);
 
     let birth_ymd = lunar_table::ymd_of(&birth_lunar)?;
@@ -226,7 +227,8 @@ pub fn get_horoscope(
         astrolabe.config.day_divide,
         time_index,
     ));
-    let target_solar = solar::from_ymdhms(target_year, target_month, target_day, target_hour, 0, 0);
+    let target_solar =
+        solar::from_ymdhms(target_year, target_month, target_day, target_hour, CHART_MINUTE, 0);
     let target_lunar = lunar::from_solar(&target_solar);
 
     let target_ymd = lunar_table::ymd_of(&target_lunar)?;

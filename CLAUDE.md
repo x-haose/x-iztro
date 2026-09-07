@@ -187,6 +187,13 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   都走这一层；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
 - 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
   （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
+- 构造日期对象一律带 `builder::CHART_MINUTE`（30 分），与 lunar-lite 的
+  `Solar.fromYmdHms(…, 30, 0)` 同刻——按节气取月柱是**时刻级**比较，用 0 分会让节气落在
+  `HH:00`~`HH:30` 的日子判到另一侧、`horoscope_divide=Exact` 下月柱静默差一个月
+  （守护：`golden_config_jieqi_pillars`，按每个「节」的实际时刻取样，固定日期抽样抓不到）。
+  节气时刻本身骑在 30 分上的极少数日子（六十年 18 个）两边仍会分歧——lunar_rust 与
+  lunar-typescript 对同一节气可差数十秒（白露 2043：01:29:44 vs 01:30:13），
+  属天文算法精度差异，金标不取
 
 ### 反推（x-iztro 扩展）
 - 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
@@ -230,7 +237,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
-  Config 开关（四个非默认取值 + 排盘层与运限层的组合）9,696 / 中州派盘型 12,488 /
+  Config 开关（四个非默认取值 + 排盘层与运限层的组合、按节气时刻取样的四柱）11,388 / 中州派盘型 12,488 /
   1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）
 - tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
   （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；

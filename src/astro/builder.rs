@@ -241,6 +241,14 @@ pub(crate) fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 
     }
 }
 
+/// 构造时刻用的分钟数。
+///
+/// lunar-lite 取时辰整点后的 30 分（`ganzhi.js` 的 `Solar.fromYmdHms(…, 30, 0)`）。
+/// 按节气取干支是时刻级比较：用 0 分会让节气时刻落在 `HH:00`~`HH:30` 的那些日子
+/// 判到节气的另一侧，`horoscope_divide=Exact` 下的月柱静默差一个月。
+/// 农历年月日与日柱不受影响——前者是日期级，后者分界在 23:00，两个分钟数同侧。
+pub(crate) const CHART_MINUTE: i64 = 30;
+
 /// 时辰索引转小时数（用于 lunar_rust 日期创建）
 pub(crate) fn time_index_to_hour(time_index: u8) -> i64 {
     match time_index {
@@ -505,7 +513,7 @@ pub(crate) fn four_pillars(
         month,
         day,
         time_index_to_hour(ctx.effective_time_index),
-        0,
+        CHART_MINUTE,
         0,
     ));
     let pillars = build_pillars(&ctx, &lunar_ref, config)?;
@@ -548,7 +556,7 @@ pub fn by_solar(
         month,
         day,
         time_index_to_hour(ctx.effective_time_index),
-        0,
+        CHART_MINUTE,
         0,
     ));
 
