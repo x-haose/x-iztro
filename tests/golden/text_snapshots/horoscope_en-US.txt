@@ -1,14 +1,14 @@
 # Horoscope 2025-1-1 (二〇二四年腊月初二)
 
 ## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
-- Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
+- Mutagen: sun [A]→Natal children, warrior [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
 - Patterns: Marshal, Rebel and Wolf (soul), Meeting of Wind and Cloud (soul)
 
 | Decadal Fortune | Natal | Major Stars | Minor Stars | Scope Stars |
 |---|---|---|---|---|
 | soul | spouse | marshal([+3]) | helper, impulsive([-3]) | — |
 | siblings | children | sun([+3]) [A], sage([+3]) | — | artist(D) |
-| spouse | wealth | general([+1]) [B], minister([+3]) | horse | horse(D) |
+| spouse | wealth | warrior([+1]) [B], minister([+3]) | horse | horse(D) |
 | children | health | fortunate([-2]) [D], advocator([-2]) | assistant, fickle | assistant(D) |
 | wealth | surface | wolf([+2]) | spark([-3]) | — |
 | health | friends | moon([+3]) [C] | — | scholar(D), attractive(D) |
@@ -27,14 +27,14 @@
 - Adjective Stars: gifted, frail
 
 ## Yearly · Soul Palace: Natal spouse (jia chen)
-- Mutagen: judge [A]→Natal career, rebel [B]→Natal spirit, general [C]→Natal wealth, sun [D]→Natal children
+- Mutagen: judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children
 - Patterns: Marshal, Rebel and Wolf (soul), Money and Horse Galloping Together (spouse), Money and Horse Bearing the Seal (spouse), Scholar and Artist Flanking Life (soul, broken), Literary Stars in Hidden Support (soul)
 
 | Yearly | Natal | Major Stars | Minor Stars | Scope Stars | Twelve Gods |
 |---|---|---|---|---|---|
 | soul | spouse | marshal([+3]) | helper, impulsive([-3]) | — | Suiqian·initial, Jiangqian·religious |
 | siblings | children | sun([+3]) [A], sage([+3]) | — | driven(Y) | Suiqian·illness, Jiangqian·listless |
-| spouse | wealth | general([+1]) [B], minister([+3]) | horse | money(Y), horse(Y) | Suiqian·sorrowing, Jiangqian·varied |
+| spouse | wealth | warrior([+1]) [B], minister([+3]) | horse | money(Y), horse(Y) | Suiqian·sorrowing, Jiangqian·varied |
 | children | health | fortunate([-2]) [D], advocator([-2]) | assistant, fickle | assistant(Y), tangled(Y) | Suiqian·blessed, Jiangqian·admired |
 | wealth | surface | wolf([+2]) | spark([-3]) | — | Suiqian·sinister, Jiangqian·capable |
 | health | friends | moon([+3]) [C] | — | attractive(Y) | Suiqian·virtuous, Jiangqian·perished |
@@ -53,7 +53,7 @@
 
 ## Daily · Soul Palace: Natal surface (geng woo)
 - Palace Names: soul→Natal surface, siblings→Natal friends, spouse→Natal career, children→Natal property, wealth→Natal spirit, health→Natal parents, surface→Natal soul, friends→Natal siblings, career→Natal spouse, property→Natal children, spirit→Natal wealth, parents→Natal health
-- Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
+- Mutagen: sun [A]→Natal children, warrior [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
 - Scope Stars: artist(d)→property, cheerful(d)→property, aide(d)→health, tangled(d)→health, money(d)→wealth, horse(d)→wealth, driven(d)→children, attractive(d)→children, scholar(d)→siblings, assistant(d)→parents
 - Patterns: Fire and Wolf (soul), Bell and Wolf (soul), Marshal, Rebel and Wolf (soul), Money and Horse Galloping Together (spirit), Money and Horse Bearing the Seal (spirit), Literary Stars Facing Life (soul, broken), Literary Stars in Hidden Support (soul)
 

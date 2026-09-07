@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8。
+x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.1。
 支持 Rust / Python(PyO3) / Go(C FFI) 三语言调用。
 
 ## 决策标准
@@ -136,17 +136,19 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 已全数覆盖。改动后逐条自查用这两条线索——三侧测试都发现不了它们：
   - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
     等于对外不可用
-  - 反查取值（`key_of` ≡ iztro `kot`）依赖扫描顺序：iztro 按语言外层、locale 合并顺序内层，
-    8 处同形译名靠它消歧。金标须拿 `kot` 实际取值逐条对照（`tests/golden/i18n_kot.json`），
-    写成「反查到某个译文相同的标识」这类松断言查不出顺序分叉
+  - 反查取值（`key_of` ≡ iztro `kot`）先查星曜别名表（`lookup.rs` 的 `STAR_ALIASES`，
+    韩/越同形译名的带汉字限定名，命中即返回且不受标识名限定影响），未命中才按扫描顺序：
+    iztro 按语言外层、locale 合并顺序内层，余下的同形译名靠它消歧。金标须拿 `kot` 实际取值
+    逐条对照（`tests/golden/i18n_kot.json`），写成「反查到某个译文相同的标识」这类松断言
+    查不出顺序分叉
 - 换了形状而非照抄的几处，别改回去：
   - `astroType` 收进 `Config`（iztro 放在 `withOptions`，因其 `config()` 是全局单例装不下按盘变化的值）
   - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `setLanguage`
   - `get_decadals_and_ages` 直接收命宫索引与五行局，比 iztro `getHoroscope` 的 `from` 更一般
   - 插件按语言惯用方式实现：Rust 扩展 trait、Python 类方法注入、Go 嵌入 `*Astrolabe`
 - 故意不做的（考察过，不是漏）：`astro/analyzer`（Palace/Surpalaces 方法的自由函数版）、
-  `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（iztro v2.5.8 里已是死代码，
-  活路径走 lunar-lite）、`initStars`（空盘工厂，类型系统已给定长数组）、
+  `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（v2.5.8 里已是死代码，
+  v2.6.1 已从包中删除）、`initStars`（空盘工厂，类型系统已给定长数组）、
   `astrolabeBySolarDate` / `astrolabeByLunarDate`（v2.0.5 起废弃的别名）、
   `fixEarthlyBranchIndex`（与 `earthlyBranchIndexToPalaceIndex` 同义）、
   `setPalace` / `setAstrolabe`（建链是内部行为）、i18next 实例、`Astrolabe.copyright`
@@ -159,8 +161,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 规则来源 iztro-docs《格局》页（MIT）63 条，火贪/铃贪分列为 64 个 `PatternKey`；无金标，口径自守：
   每条规则函数的文档注释就是口径与出处，多口径一律以 `PatternHit.variant` 报出、不设 strict/loose 开关，
   「破格/加杀平常」只置 `broken` 不否决，「身命」类命宫身宫各判、命中哪宫 `palace` 记哪宫
-- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），页面《日月并明》示例太阴在酉、
-  表为「不」故按表不成格；`Positional` 口径复现传统位置判法。`PatternConfig` 只放会改变事实判定的开关
+- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），`Positional` 口径复现传统
+  位置判法。两口径在 iztro v2.6.1 表下只剩一处差集——太阳酉宫（表判「平」不算暗、位置法算暗），
+  落在「暗」侧，故日月反背有分歧而日月并明没有：表法比位置法多认的太阴寅宫，安星几何上必配
+  太阳子宫（陷），两边都不成格。找两口径的差异只能从「暗」侧入手。
+  `PatternConfig` 只放会改变事实判定的开关
 - 本命与运限共用同一套规则：`ChartView::at` 以该层命宫为命宫、合并该层流曜（流曜等同对应本命辅星）
   与该层四化；`Scope::Origin` 等同本命；两条行运格（禄衰马困、风云际会）只在运限视角报，
   风云际会只在大限视角报一次
@@ -214,7 +219,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 映射类字段允许写 `null`（Go nil map 默认序列化）
 
 ### 测试
-- 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
+- 全部金标数据由 JS iztro v2.6.1（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/

@@ -10,9 +10,8 @@
 //! 页面示例未给煞星信息，而《君臣庆会》《极向离明》两格以「命宫三方四正无煞忌」为前提，
 //! 故这几张的搜盘条件额外自行判定无煞（同样只读原始星列表）。
 //!
-//! 三张示例的预期与其余不同，页面本身即如此，注在各自的测试上：
-//! #3 一侧夹宫是空宫，只有借宫口径成立；#9/#10 的太阴在酉，iztro 亮度表判「不」，
-//! 默认口径不成格，位置法口径才成格；#15/#16 页面没给吉星与空亡信息，
+//! 两处示例的预期与其余不同，页面本身即如此，注在各自的测试上：
+//! #3 一侧夹宫是空宫，只有借宫口径成立；#15/#16 页面没给吉星与空亡信息，
 //! 只能验证「日月夹命宫」这一形态成立，成格与否两种结果都允许并打印。
 
 use std::sync::LazyLock;
@@ -21,8 +20,8 @@ use std::thread;
 use x_iztro::PalaceData;
 use x_iztro::data::types::StarType;
 use x_iztro::{
-    Astrolabe, BrightnessSource, Config, EarthlyBranch, Gender, Language, Mutagen, Palace,
-    PatternConfig, PatternHit, PatternKey, Scope, StarKey, by_solar,
+    Astrolabe, Config, EarthlyBranch, Gender, Language, Mutagen, Palace, PatternConfig, PatternHit,
+    PatternKey, Scope, StarKey, by_solar,
 };
 
 use EarthlyBranch::*;
@@ -696,23 +695,12 @@ fn example_8_ji_ju_mao_you() {
     assert_soul_pattern(8, PatternKey::JiJuMaoYou, None);
 }
 
-/// #9 的太阴在酉：iztro 亮度表判「不」，默认口径不成格；位置法（酉至丑为月明）才成格。
+/// #9 的太阴在酉，iztro 亮度表判「旺」，默认口径即成格；证据里的太阴须落在酉。
 #[test]
-fn example_9_ri_yue_bing_ming_needs_positional_brightness() {
+fn example_9_ri_yue_bing_ming_moon_at_you() {
     let key = PatternKey::RiYueBingMing;
     let Some(a) = example(9, key) else { return };
-    assert!(
-        hits(a, key).is_empty(),
-        "示例 #9（{}）：默认亮度表口径下太阴酉为「不」，不应成格",
-        describe(a)
-    );
-    let positional = PatternConfig {
-        brightness_source: BrightnessSource::Positional,
-        ..PatternConfig::default()
-    };
-    let hit = hits_with(a, key, &positional)
-        .pop()
-        .unwrap_or_else(|| panic!("示例 #9（{}）：位置法口径下应成格", describe(a)));
+    let hit = one(a, key, 9);
     in_soul(a, &hit, 9);
     let moon = hit
         .stars
@@ -722,24 +710,10 @@ fn example_9_ri_yue_bing_ming_needs_positional_brightness() {
     assert_eq!(a.palaces[moon.palace].earthly_branch, You);
 }
 
-/// #10 同 #9：太阴在酉，默认口径不成格，位置法下丹墀（命宫太阳明）成立。
+/// #10 同 #9：太阴在酉，亮度表判「旺」，默认口径下丹墀（命宫太阳明）成立。
 #[test]
-fn example_10_dan_chi_gui_chi_needs_positional_brightness() {
-    let key = PatternKey::DanChiGuiChi;
-    let Some(a) = example(10, key) else { return };
-    assert!(
-        hits(a, key).is_empty(),
-        "示例 #10（{}）：默认亮度表口径下不应成格",
-        describe(a)
-    );
-    let positional = PatternConfig {
-        brightness_source: BrightnessSource::Positional,
-        ..PatternConfig::default()
-    };
-    let hit = hits_with(a, key, &positional)
-        .pop()
-        .unwrap_or_else(|| panic!("示例 #10（{}）：位置法口径下应成格", describe(a)));
-    in_soul(a, &hit, 10);
+fn example_10_dan_chi_gui_chi() {
+    assert_soul_pattern(10, PatternKey::DanChiGuiChi, None);
 }
 
 #[test]

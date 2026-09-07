@@ -180,7 +180,8 @@ pub fn ri_zhao_lei_men(v: &ChartView) -> Vec<PatternHit> {
 /// 日月并明：命宫三方四正内太阳、太阴皆明。
 ///
 /// 来源：「日月并明 佐九重于尧殿」；作者：「任何太阳星和太阴星庙旺出现在命宫三方四正的，
-/// 都应该算日月并明格」。页面两张示例的太阴在酉，iztro 亮度表为「不」，默认口径下不成格。
+/// 都应该算日月并明格」。页面两张示例的太阴在酉，iztro 亮度表判「旺」，默认口径下成格；
+/// 位置法只认酉至丑为月明，与表法的差集落在太阴寅宫（表判旺、位置法中性）。
 pub fn ri_yue_bing_ming(v: &ChartView) -> Vec<PatternHit> {
     let s = v.soul();
     match sun_and_moon(v, s, true) {
@@ -498,32 +499,35 @@ mod tests {
         assert!(ri_yue_bing_ming(&view(&b)).is_empty());
     }
 
-    /// 命宫三方四正的太阴在酉，iztro 亮度表判「不」故默认不成格；
-    /// 位置法（酉至丑为月明）下同一张盘成格。
+    /// 命宫三方四正的太阳在酉，iztro 亮度表判「平」不算暗，默认口径下日月反背不成格；
+    /// 位置法（酉至丑为日暗）下同一张盘成格。
+    ///
+    /// 日月并明在两口径下已无差集：表法比位置法多认的太阴寅宫，安星几何上必配太阳子宫（陷），
+    /// 两边都不成格。两表的另一处差异即此处的太阳酉宫，落在「暗」这一侧。
     #[test]
-    fn ri_yue_bing_ming_moon_at_you_differs_by_brightness_source() {
+    fn ri_yue_fan_bei_sun_at_you_differs_by_brightness_source() {
         let a = find_chart(|a| {
             let (v, s) = (view(a), view(a).soul());
-            let Some((pm, _)) = v.find_in_surround(s, StarKey::TaiyinMaj) else {
+            let Some((ps, _)) = v.find_in_surround(s, StarKey::TaiyangMaj) else {
                 return false;
             };
-            v.branch(pm) == You && miao_wang(&v, s, StarKey::TaiyangMaj)
+            v.branch(ps) == You && xian(&v, s, StarKey::TaiyinMaj)
         });
-        assert!(ri_yue_bing_ming(&view(&a)).is_empty());
+        assert!(ri_yue_fan_bei(&view(&a)).is_empty());
 
         let positional = PatternConfig {
             brightness_source: BrightnessSource::Positional,
             ..CFG
         };
         let v = ChartView::natal(&a, &positional);
-        let hits = ri_yue_bing_ming(&v);
+        let hits = ri_yue_fan_bei(&v);
         let hit = hits.first().expect("hit under positional brightness");
-        let moon = hit
+        let sun = hit
             .stars
             .iter()
-            .find(|s| s.star == StarKey::TaiyinMaj)
-            .expect("moon");
-        assert_eq!(v.branch(moon.palace), You);
+            .find(|s| s.star == StarKey::TaiyangMaj)
+            .expect("sun");
+        assert_eq!(v.branch(sun.palace), You);
     }
 
     #[test]

@@ -328,6 +328,56 @@
   "hourly": [
     {
       "broken": false,
+      "key": "ri_yue_bing_ming",
+      "name": "Nhật Nguyệt Tịnh Minh",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "Thái Dương",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "Thái Âm",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "dan_chi_gui_chi",
+      "name": "Đan Trì Quế Trì",
+      "palaceIndex": 3,
+      "palaceName": "Mệnh",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "Thái Dương",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "Vượng",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "Thái Âm",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
       "key": "yang_liang_chang_lu",
       "name": "Dương Lương Xương Lộc",
       "palaceIndex": 3,

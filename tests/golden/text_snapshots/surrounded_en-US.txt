@@ -5,7 +5,7 @@
 - Minor Stars: artist([-3])
 - Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
 - Trine & Opposite: Opposite surface · Trine wealth, career
-- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, warrior [D]→wealth
 - Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
 - Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 
@@ -19,7 +19,7 @@
 - Age Fortune Years: 11, 23, 35, 47, 59, 71, 83, 95, 107, 119
 
 ### Wealth Palace · wealth (wu yin) · Decadal 43-52
-- Major Stars: general([+1]) [B], minister([+3])
+- Major Stars: warrior([+1]) [B], minister([+3])
 - Minor Stars: horse
 - Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
 - Trine & Opposite: Opposite spirit · Trine career, soul

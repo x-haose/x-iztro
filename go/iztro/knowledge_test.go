@@ -239,8 +239,9 @@ func TestKnowledgeForChartSources(t *testing.T) {
 // TestKnowledgeForChartPatternConfig 校验取材时的格局口径随 config 传给内核：
 // 子包 patterns 键集合恰等于同口径 Patterns 命中 key 的去重集合。
 func TestKnowledgeForChartPatternConfig(t *testing.T) {
-	// 1990-1-10 子时男：默认亮度表口径无格，位置口径命中日月并明
-	chart, err := BySolar("1990-1-10", 0, GenderMale, true, LanguageZhCN, nil)
+	// 1985-6-10 辰时女：命宫三方四正的太阳在酉，亮度表判「平」不算暗故默认口径无格，
+	// 位置法判暗、命中日月反背
+	chart, err := BySolar("1985-6-10", 8, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,8 +282,8 @@ func TestKnowledgeForChartPatternConfig(t *testing.T) {
 	if got := packKeys(positionalSub); !reflect.DeepEqual(got, positionalHits) {
 		t.Fatalf("positional sub pack patterns %v, hits %v", got, positionalHits)
 	}
-	if _, ok := positionalSub.Patterns[PatternRiYueBingMing]; !ok {
-		t.Fatalf("positional sub pack should carry 日月并明, got %v", packKeys(positionalSub))
+	if _, ok := positionalSub.Patterns[PatternRiYueFanBei]; !ok {
+		t.Fatalf("positional sub pack should carry 日月反背, got %v", packKeys(positionalSub))
 	}
 }
 

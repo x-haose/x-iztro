@@ -328,6 +328,56 @@
   "hourly": [
     {
       "broken": false,
+      "key": "ri_yue_bing_ming",
+      "name": "일월병명",
+      "palaceIndex": 3,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "태양",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "태음",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "dan_chi_gui_chi",
+      "name": "단지계지",
+      "palaceIndex": 3,
+      "palaceName": "명궁",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "태양",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "태음",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
       "key": "yang_liang_chang_lu",
       "name": "양량창록",
       "palaceIndex": 3,

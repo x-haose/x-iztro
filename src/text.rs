@@ -136,7 +136,7 @@ labels_table! {
     birth_mutagen: ["生年四化", "生年四化", "Birth-Year Mutagen", "生年四化", "생년사화", "Tứ hóa sinh niên"],
     soul_palace: ["命宫", "命宮", "Soul Palace", "命宮", "명궁", "Cung Mệnh"],
     body_palace: ["身宫", "身宮", "Body Palace", "身宮", "신궁", "Cung Thân"],
-    original_palace: ["来因宫", "來因宮", "Original Palace", "来因宮", "라인궁", "Cung Lai Nhân"],
+    original_palace: ["来因宫", "來因宮", "Original Palace", "来因宮", "래인궁", "Cung Lai Nhân"],
 
     // ---- 宫位 ----
     col_palace: ["宫位", "宮位", "Palace", "宮位", "궁위", "Cung"],
@@ -1551,8 +1551,10 @@ mod tests {
     /// TextOptions 的格局口径同时作用于格局节与带释义时的格局释义
     #[test]
     fn pattern_config_reaches_pattern_section() {
+        // 该盘在两个亮度口径下命中数不同（位置法 3、表法 2），两侧都非空，
+        // 故格局节与释义节都有可比对的内容
         let astrolabe = by_solar(
-            "1990-1-10",
+            "1990-10-10",
             0,
             Gender::Male,
             true,

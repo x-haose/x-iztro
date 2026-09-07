@@ -166,14 +166,14 @@ def test_for_horoscope_extends_the_natal_subpack(chart, horoscope, pack):
 def test_for_chart_honours_pattern_config(pack):
     """子包格局按传入口径判定：位置法亮度改判日月类格局，本命与运限子包都随之变化；
     省略与显式 None 同为默认口径。"""
-    chart = Astro().by_solar("1985-1-3", 7, "female")
+    chart = Astro().by_solar("1985-6-10", 8, "female")
     horoscope = chart.horoscope("2025-1-1", 0)
     positional = PatternConfig(brightness_source=BrightnessSource.POSITIONAL)
 
     natal_keys = {e.key for e in pack.for_astrolabe(chart, positional).patterns()}
     assert natal_keys == {h.key for h in chart.patterns(positional)}
-    assert PatternKey.RI_YUE_BING_MING in natal_keys
-    assert PatternKey.RI_YUE_BING_MING not in {e.key for e in pack.for_astrolabe(chart).patterns()}
+    assert PatternKey.RI_YUE_FAN_BEI in natal_keys
+    assert PatternKey.RI_YUE_FAN_BEI not in {e.key for e in pack.for_astrolabe(chart).patterns()}
     assert pack.for_astrolabe(chart, None).to_dict() == pack.for_astrolabe(chart).to_dict()
 
     flow_keys = {e.key for e in pack.for_horoscope(horoscope, positional).patterns()}

@@ -681,7 +681,7 @@
   "wuquMaj": {
     "zh-CN": "武曲",
     "zh-TW": "武曲",
-    "en-US": "general",
+    "en-US": "warrior",
     "ja-JP": "武曲",
     "ko-KR": "무곡",
     "vi-VN": "Vũ Khúc"
@@ -1353,7 +1353,7 @@
   "suipo": {
     "zh-CN": "岁破",
     "zh-TW": "歲破",
-    "en-US": "wastrel",
+    "en-US": "breaker",
     "ja-JP": "歲破",
     "ko-KR": "태파",
     "vi-VN": "Tuế Phá"
@@ -2059,7 +2059,7 @@
     "zh-TW": "来因",
     "en-US": "origin",
     "ja-JP": "来因",
-    "ko-KR": "라인",
+    "ko-KR": "래인",
     "vi-VN": "Lai Nhân"
   },
   "male": {

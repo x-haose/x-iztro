@@ -1,4 +1,4 @@
-//! 紫微斗数排盘核心库，移植自 JS iztro v2.5.8。
+//! 紫微斗数排盘核心库，移植自 JS iztro v2.6.1。
 //!
 //! 入口：[`by_solar`] / [`by_lunar`] 排盘，[`get_horoscope`] 计算运限，
 //! [`astrolabe_to_text`] / [`horoscope_to_text`] 生成语义化文本（星盘对象也有

@@ -317,10 +317,10 @@ mod tests {
 
     #[test]
     fn positional_brightness_flips_sun_moon_judgement() {
-        // 太阴在酉：表判「不」，位置法判明
+        // 太阴在寅：表判「旺」即明，位置法只认酉至丑为月明、寅为中性
         let a = find_chart(|a| {
             a.palaces.iter().any(|p| {
-                p.earthly_branch == crate::data::types::EarthlyBranch::You
+                p.earthly_branch == crate::data::types::EarthlyBranch::Yin
                     && p.has(&[StarKey::TaiyinMaj])
             })
         });
@@ -332,10 +332,10 @@ mod tests {
                 ..Default::default()
             },
         );
-        let you = (0..12)
-            .find(|i| table.branch(*i) == crate::data::types::EarthlyBranch::You)
+        let yin = (0..12)
+            .find(|i| table.branch(*i) == crate::data::types::EarthlyBranch::Yin)
             .unwrap();
-        assert!(!table.sun_moon_bright(you, StarKey::TaiyinMaj));
-        assert!(pos.sun_moon_bright(you, StarKey::TaiyinMaj));
+        assert!(table.sun_moon_bright(yin, StarKey::TaiyinMaj));
+        assert!(!pos.sun_moon_bright(yin, StarKey::TaiyinMaj));
     }
 }

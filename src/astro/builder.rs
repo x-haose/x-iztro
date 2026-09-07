@@ -230,6 +230,17 @@ pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32 {
     }
 }
 
+/// 参与推算的时辰索引：`day_divide=Current` 时晚子（>=12）归零按当日早子算，其余原样。
+/// 入参与展示仍用原始时辰。排盘、运限、反推三处共用此一份，不另抄副本——
+/// 手抄的第二份一旦与这里漂移，晚子时的盘会静默按另一天排。
+pub(crate) fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 {
+    if day_divide == DayDivide::Current && time_index >= 12 {
+        0
+    } else {
+        time_index
+    }
+}
+
 /// 时辰索引转小时数（用于 lunar_rust 日期创建）
 pub(crate) fn time_index_to_hour(time_index: u8) -> i64 {
     match time_index {

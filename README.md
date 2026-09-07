@@ -89,7 +89,7 @@ key JS iztro emits, with the same values, plus documented extension keys.
 Chart math is ported from the JavaScript [iztro](https://github.com/SylarLong/iztro)
 and held identical to it; the layers an AI pipeline needs on top are new.
 
-|                                                              | iztro v2.5.8 (JS) | x-iztro                                   |
+|                                                              | iztro v2.6.1 (JS) | x-iztro                                   |
 | ------------------------------------------------------------ | ----------------- | ----------------------------------------- |
 | Chart, twelve palaces (body and Original palace included), six horoscope levels | ✅ | ✅ field-for-field identical, 716,314 golden cases |
 | Palace queries, surrounded palaces (三方四正), flying stars  | ✅                | ✅                                        |
@@ -373,7 +373,7 @@ Pack format, merge rules, and how to write an overlay:
 ## Accuracy
 
 Every number is checked against the JavaScript
-[iztro v2.5.8](https://github.com/SylarLong/iztro) (version-pinned) with zero
+[iztro v2.6.1](https://github.com/SylarLong/iztro) (version-pinned) with zero
 tolerance for differences. That is a reproducibility standard, not a claim
 that any one school is the only correct one — schools genuinely differ, which
 is what the configuration switches and custom transformation/brightness tables

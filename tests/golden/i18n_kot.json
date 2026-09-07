@@ -3066,7 +3066,7 @@
     "kot": "wuquMaj"
   },
   {
-    "text": "general",
+    "text": "warrior",
     "lang": "en-US",
     "key": "wuquMaj",
     "kot": "wuquMaj"
@@ -5877,7 +5877,7 @@
     "text": "general",
     "lang": "en-US",
     "key": "jiangjun",
-    "kot": "wuquMaj"
+    "kot": "jiangjun"
   },
   {
     "text": "將軍",
@@ -6090,10 +6090,10 @@
     "kot": "suipo"
   },
   {
-    "text": "wastrel",
+    "text": "breaker",
     "lang": "en-US",
     "key": "suipo",
-    "kot": "dahao"
+    "kot": "suipo"
   },
   {
     "text": "歲破",
@@ -9270,7 +9270,7 @@
     "kot": "originalPalace"
   },
   {
-    "text": "라인",
+    "text": "래인",
     "lang": "ko-KR",
     "key": "originalPalace",
     "kot": "originalPalace"
@@ -9352,5 +9352,89 @@
     "lang": "vi-VN",
     "key": "female",
     "kot": "female"
+  },
+  {
+    "text": "천상(天相)",
+    "lang": "alias",
+    "key": "tianxiangMaj",
+    "kot": "tianxiangMaj"
+  },
+  {
+    "text": "천상(天傷)",
+    "lang": "alias",
+    "key": "tianshang",
+    "kot": "tianshang"
+  },
+  {
+    "text": "천월(天鉞)",
+    "lang": "alias",
+    "key": "tianyueMin",
+    "kot": "tianyueMin"
+  },
+  {
+    "text": "천월(天月)",
+    "lang": "alias",
+    "key": "tianyue",
+    "kot": "tianyue"
+  },
+  {
+    "text": "겁살(劫殺)",
+    "lang": "alias",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "겁살(劫煞)",
+    "lang": "alias",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "비렴(蜚廉)",
+    "lang": "alias",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "비렴(飛廉)",
+    "lang": "alias",
+    "key": "faylian",
+    "kot": "faylian"
+  },
+  {
+    "text": "관부(官府)",
+    "lang": "alias",
+    "key": "guanfu",
+    "kot": "guanfu"
+  },
+  {
+    "text": "관부(官符)",
+    "lang": "alias",
+    "key": "gwanfu",
+    "kot": "gwanfu"
+  },
+  {
+    "text": "Kiếp Sát(劫殺)",
+    "lang": "alias",
+    "key": "jieshaAdj",
+    "kot": "jieshaAdj"
+  },
+  {
+    "text": "Kiếp Sát(劫煞)",
+    "lang": "alias",
+    "key": "jiesha",
+    "kot": "jiesha"
+  },
+  {
+    "text": "Phi Liêm(蜚廉)",
+    "lang": "alias",
+    "key": "feilian",
+    "kot": "feilian"
+  },
+  {
+    "text": "Phi Liêm(飛廉)",
+    "lang": "alias",
+    "key": "faylian",
+    "kot": "faylian"
   }
 ]

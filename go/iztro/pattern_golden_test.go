@@ -199,8 +199,8 @@ func TestHoroscopePatternsScope(t *testing.T) {
 }
 
 func TestPatternConfigReachesKernel(t *testing.T) {
-	// 该盘命宫三方四正的太阴在酉：亮度表判「不」不成格，位置法判明成格
-	chart, err := BySolar("1985-1-3", 7, GenderFemale, true, LanguageZhCN, nil)
+	// 该盘命宫三方四正的太阳在酉：亮度表判「平」不算暗，日月反背不成格；位置法判暗成格
+	chart, err := BySolar("1985-6-10", 8, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,11 +217,11 @@ func TestPatternConfigReachesKernel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if hasPattern(table, PatternRiYueBingMing) {
-		t.Fatal("亮度表口径下不应命中日月并明")
+	if hasPattern(table, PatternRiYueFanBei) {
+		t.Fatal("亮度表口径下不应命中日月反背")
 	}
-	if !hasPattern(positional, PatternRiYueBingMing) || !hasPattern(positional, PatternDanChiGuiChi) {
-		t.Fatalf("位置法口径下应命中日月并明与丹墀桂墀，实际 %v", positional)
+	if !hasPattern(positional, PatternRiYueFanBei) {
+		t.Fatalf("位置法口径下应命中日月反背，实际 %v", positional)
 	}
 }
 

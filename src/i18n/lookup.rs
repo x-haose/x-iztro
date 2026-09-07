@@ -43,7 +43,7 @@ const MARKER_PALACES: [(&str, [&str; 6]); 2] = [
     ),
     (
         "originalPalace",
-        ["来因", "来因", "origin", "来因", "라인", "Lai Nhân"],
+        ["来因", "来因", "origin", "来因", "래인", "Lai Nhân"],
     ),
 ];
 
@@ -212,7 +212,32 @@ pub fn key_of_in(text: &str, key_filter: &str) -> Option<&'static str> {
     key_of_matching(text, |key| key.contains(key_filter))
 }
 
+/// 星曜译名的限定别名
+///
+/// 韩文与越南语中若干星曜译名完全同形（如天相与天伤同作 `천상`），带汉字的别名
+/// 在反查时指定目标。别名先于逐语言扫描命中，且不受标识名限定影响——
+/// `key_of_in("천상(天相)", "Min")` 一样得到 `tianxiangMaj`，与 iztro `kot` 一致。
+const STAR_ALIASES: [(&str, &str); 14] = [
+    ("천상(天相)", "tianxiangMaj"),
+    ("천상(天傷)", "tianshang"),
+    ("천월(天鉞)", "tianyueMin"),
+    ("천월(天月)", "tianyue"),
+    ("겁살(劫殺)", "jieshaAdj"),
+    ("겁살(劫煞)", "jiesha"),
+    ("비렴(蜚廉)", "feilian"),
+    ("비렴(飛廉)", "faylian"),
+    ("관부(官府)", "guanfu"),
+    ("관부(官符)", "gwanfu"),
+    ("Kiếp Sát(劫殺)", "jieshaAdj"),
+    ("Kiếp Sát(劫煞)", "jiesha"),
+    ("Phi Liêm(蜚廉)", "feilian"),
+    ("Phi Liêm(飛廉)", "faylian"),
+];
+
 fn key_of_matching(text: &str, accept: impl Fn(&str) -> bool + Copy) -> Option<&'static str> {
+    if let Some((_, key)) = STAR_ALIASES.iter().find(|(alias, _)| *alias == text) {
+        return Some(key);
+    }
     LOOKUP_LANGS.iter().find_map(|lang| {
         ALL_KEYS
             .iter()

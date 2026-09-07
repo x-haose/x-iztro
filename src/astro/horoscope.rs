@@ -5,7 +5,9 @@
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
-use crate::astro::builder::{branch_of, parse_solar_date, stem_of, validate_time_index};
+use crate::astro::builder::{
+    branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
+};
 use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
 use crate::data::constants::TIGER_RULE;
@@ -218,7 +220,11 @@ pub fn get_horoscope(
     // ---- 2. 解析目标日期的农历信息 ----
     let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
 
-    let target_hour = time_index_to_hour(time_index);
+    // 目标时辰按 day_divide 归一：晚子归当天时，农历日期与日柱都算在当天而非次日
+    let target_hour = time_index_to_hour(effective_time_index(
+        astrolabe.config.day_divide,
+        time_index,
+    ));
     let target_solar = solar::from_ymdhms(target_year, target_month, target_day, target_hour, 0, 0);
     let target_lunar = lunar::from_solar(&target_solar);
 
@@ -234,10 +240,11 @@ pub fn get_horoscope(
     match astrolabe.config.age_divide {
         AgeDivide::Normal => nominal_age += 1,
         AgeDivide::Birthday => {
-            let passed_birthday = (target_lunar_year == birthday_lunar_year
-                && target_lunar_month == birthday_lunar_month
-                && target_lunar_day > birthday_lunar_day)
-                || target_lunar_month > birthday_lunar_month;
+            // 只比农历月日，不比年：目标年恒晚于出生年，把年份也纳入相等判断
+            // 会让「生日同月、生日之后」这一段在出生当年之后的每一年都少算一岁
+            let passed_birthday = target_lunar_month > birthday_lunar_month
+                || (target_lunar_month == birthday_lunar_month
+                    && target_lunar_day > birthday_lunar_day);
             if passed_birthday {
                 nominal_age += 1;
             }

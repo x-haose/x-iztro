@@ -5,7 +5,7 @@
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 - Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
 - Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
-- Birth-Year Mutagen: sun [A]→children, general [B]→wealth, moon [C]→friends, fortunate [D]→health
+- Birth-Year Mutagen: sun [A]→children, warrior [B]→wealth, moon [C]→friends, fortunate [D]→health
 
 ## Palace Overview
 | Palace | Major Stars | Minor Stars | Decadal |
@@ -14,7 +14,7 @@
 | siblings si | advisor([-1]) | — | 13-22 |
 | spouse chen [Original Palace] | marshal([+3]) | helper, impulsive([-3]) | 23-32 |
 | children mao | sun([+3]) [A], sage([+3]) | — | 33-42 |
-| wealth yin | general([+1]) [B], minister([+3]) | horse | 43-52 |
+| wealth yin | warrior([+1]) [B], minister([+3]) | horse | 43-52 |
 | health chou | fortunate([-2]) [D], advocator([-2]) | assistant, fickle | 53-62 |
 | surface zi | wolf([+2]) | spark([-3]) | 63-72 |
 | friends hai | moon([+3]) [C] | — | 73-82 |
@@ -33,7 +33,7 @@
 - Minor Stars: artist([-3])
 - Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
 - Trine & Opposite: Opposite surface · Trine wealth, career
-- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, warrior [D]→wealth
 - Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
 - Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 
@@ -50,7 +50,7 @@
 - Minor Stars: helper, impulsive([-3])
 - Adjective Stars: awarded, religious
 - Trine & Opposite: Opposite career · Trine surface, spirit
-- Stem geng Flying: sun [A]→children, general [B]→wealth, moon [C]→friends, fortunate [D]→health
+- Stem geng Flying: sun [A]→children, warrior [B]→wealth, moon [C]→friends, fortunate [D]→health
 - Twelve Gods: Changsheng·dead, Boshi·general, Suiqian·initial, Jiangqian·religious
 - Age Fortune Years: 7, 19, 31, 43, 55, 67, 79, 91, 103, 115
 
@@ -58,12 +58,12 @@
 - Major Stars: sun([+3]) [A], sage([+3])
 - Adjective Stars: serious
 - Trine & Opposite: Opposite property · Trine friends, parents
-- Stem ji Flying: general [A]→wealth, wolf [B]→surface, sage [C]→children, artist [D]→soul
+- Stem ji Flying: warrior [A]→wealth, wolf [B]→surface, sage [C]→children, artist [D]→soul
 - Twelve Gods: Changsheng·buried, Boshi·book, Suiqian·illness, Jiangqian·listless
 - Age Fortune Years: 8, 20, 32, 44, 56, 68, 80, 92, 104, 116
 
 ### wealth (wu yin) · Decadal 43-52
-- Major Stars: general([+1]) [B], minister([+3])
+- Major Stars: warrior([+1]) [B], minister([+3])
 - Minor Stars: horse
 - Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
 - Trine & Opposite: Opposite spirit · Trine career, soul
@@ -76,7 +76,7 @@
 - Minor Stars: assistant, fickle
 - Adjective Stars: blessed, lonely, broken, heaven
 - Trine & Opposite: Opposite parents · Trine property, siblings
-- Stem ji Flying: general [A]→wealth, wolf [B]→surface, sage [C]→children, artist [D]→soul
+- Stem ji Flying: warrior [A]→wealth, wolf [B]→surface, sage [C]→children, artist [D]→soul
 - Twelve Gods: Changsheng·embryo, Boshi·happiness, Suiqian·blessed, Jiangqian·admired
 - Age Fortune Years: 10, 22, 34, 46, 58, 70, 82, 94, 106, 118
 
@@ -120,7 +120,7 @@
 - Minor Stars: scholar([+1]), money
 - Adjective Stars: talented, honorable, fancied
 - Trine & Opposite: Opposite wealth · Trine spouse, surface
-- Stem jia Flying: judge [A]→career, rebel [B]→spirit, general [C]→wealth, sun [D]→children
+- Stem jia Flying: judge [A]→career, rebel [B]→spirit, warrior [C]→wealth, sun [D]→children
 - Twelve Gods: Changsheng·adulthood, Boshi·doctor, Suiqian·official, Jiangqian·insidious
 - Age Fortune Years: 3, 15, 27, 39, 51, 63, 75, 87, 99, 111
 

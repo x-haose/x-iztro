@@ -91,8 +91,8 @@
           "palaceIndex": 3
         },
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "mutagen": "禄",
           "mutagenKey": "sihuaLu",
@@ -132,8 +132,8 @@
       "scope": "decadal",
       "stars": [
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "mutagen": "禄",
           "mutagenKey": "sihuaLu",
@@ -375,8 +375,8 @@
           "palaceIndex": 3
         },
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "name": "太阴",
           "palaceIndex": 7
@@ -400,8 +400,8 @@
           "palaceIndex": 3
         },
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "name": "太阴",
           "palaceIndex": 7
@@ -528,8 +528,8 @@
           "palaceIndex": 3
         },
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "name": "太阴",
           "palaceIndex": 7
@@ -555,8 +555,8 @@
           "palaceIndex": 3
         },
         {
-          "brightness": "不",
-          "brightnessKey": "bu",
+          "brightness": "旺",
+          "brightnessKey": "wang",
           "key": "taiyinMaj",
           "name": "太阴",
           "palaceIndex": 7

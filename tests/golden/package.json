@@ -20,6 +20,6 @@
     "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3 && npm run gen:tier_edge && npm run gen:horoscope && npm run gen:variants && npm run gen:config && npm run gen:astrotype && npm run gen:contract && npm run gen:star && npm run gen:data && npm run gen:i18n && npm run gen:regression"
   },
   "dependencies": {
-    "iztro": "2.5.8"
+    "iztro": "2.6.1"
   }
 }

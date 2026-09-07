@@ -328,6 +328,56 @@
   "hourly": [
     {
       "broken": false,
+      "key": "ri_yue_bing_ming",
+      "name": "日月并明",
+      "palaceIndex": 3,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太阳",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "太阴",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "dan_chi_gui_chi",
+      "name": "丹墀桂墀",
+      "palaceIndex": 3,
+      "palaceName": "命宫",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "太阳",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "旺",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "太阴",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
       "key": "yang_liang_chang_lu",
       "name": "阳梁昌禄",
       "palaceIndex": 3,
