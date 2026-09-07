@@ -5,9 +5,10 @@ description: Where each public iztro API lands in the three x-iztro bindings, th
 
 *For: developers, especially anyone migrating from JS iztro*
 
-x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.1. Every public iztro API has
-an equivalent in all three bindings — Rust, Python and Go — with identical capability and a form
-that suits each language.
+x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.1. Public iztro APIs have
+equivalents in all three bindings — Rust, Python and Go — with identical capability and a form
+that suits each language. Four additions from v2.6.0 are not yet ported; see
+[Not yet ported](#not-yet-ported).
 
 This page is for people coming from iztro: when a name does not line up, look it up here. For how to
 use each API, see that language's API reference.
@@ -109,6 +110,20 @@ iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust a
 empty string (Go). If you were relying on "treat a miss as the original value and carry on", that
 has to change when migrating.
 </Callout>
+
+## Not yet ported
+
+Added in iztro v2.6.0; x-iztro intends to port them but has not yet:
+
+| iztro | What it is |
+| --- | --- |
+| `astrolabe.flankingPalaces(indexOrName)` | The two palaces flanking a target palace, as an object with `have` / `notHave` / `haveOneOf` / `haveMutagen` / `notHaveMutagen` |
+| `astrolabe.decadalList()` | The decadals in the order they start, with nominal-age and year ranges, scope stars and mutagens |
+| `astrolabe.yearlyList(indexOrName)` | The years within one decadal |
+| `astrolabe.monthlyList(year, fixLeap)` | The months of one year; with a leap month and `fixLeap` on, it splits into 14 entries |
+
+`toJSON()` (added to every functional class in v2.6.0) is not in this list: `to_json` / the DTOs in
+all three bindings are already its equivalent.
 
 ## The ones not provided
 

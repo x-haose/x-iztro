@@ -220,7 +220,8 @@ pub fn get_horoscope(
     // ---- 2. 解析目标日期的农历信息 ----
     let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
 
-    // 目标时辰按 day_divide 归一：晚子归当天时，农历日期与日柱都算在当天而非次日
+    // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
+    // （农历年月日与时辰无关，23:00 仍属同一公历日）
     let target_hour = time_index_to_hour(effective_time_index(
         astrolabe.config.day_divide,
         time_index,

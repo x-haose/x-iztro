@@ -232,7 +232,14 @@ const HOROSCOPE_COMBOS = {
   zz_hd: { algorithm: 'zhongzhou', horoscopeDivide: 'exact' },
   age_hd: { ageDivide: 'birthday', horoscopeDivide: 'exact' },
   zz_age_hd: { algorithm: 'zhongzhou', ageDivide: 'birthday', horoscopeDivide: 'exact' },
+  // dayDivide 只在晚子时改变结果，故这两组的目标时辰取 12（见 comboTargetTimeIndexes）
+  dd: { dayDivide: 'current' },
+  zz_dd: { algorithm: 'zhongzhou', dayDivide: 'current' },
 };
+
+/// dayDivide 组同时取早子与晚子：晚子验修正生效，早子验其余时辰不受影响。
+const comboTargetTimeIndexes = (overrides) =>
+  'dayDivide' in overrides ? [0, 8, 12] : [8];
 
 const comboHoroscopes = [];
 for (const [cfg, overrides] of Object.entries(HOROSCOPE_COMBOS)) {
@@ -252,7 +259,9 @@ for (const [cfg, overrides] of Object.entries(HOROSCOPE_COMBOS)) {
         `${year + 20}-9-9`,
       ];
       for (const td of targets) {
-        comboHoroscopes.push({ cfg, ...horoscopeCase(astrolabe, birth, td, 8) });
+        for (const tt of comboTargetTimeIndexes(overrides)) {
+          comboHoroscopes.push({ cfg, ...horoscopeCase(astrolabe, birth, td, tt) });
+        }
       }
     }
   }

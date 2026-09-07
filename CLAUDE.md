@@ -133,7 +133,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### 与 iztro 的 API 对齐
 - 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
   硬要求：iztro 每个公开 API 三侧都要有等价物，且三侧能力完全一致，形式各随语言习惯
-- 已全数覆盖。改动后逐条自查用这两条线索——三侧测试都发现不了它们：
+- 除 v2.6.0 新增的四组外已全数覆盖；**待补**：`flankingPalaces()`（夹宫对象，带
+  have/notHave/haveOneOf/haveMutagen/notHaveMutagen）、`decadalList()`、`yearlyList()`、
+  `monthlyList(year, fixLeap)`。`toJSON()` 已有等价物（`to_json`/DTO），不必新增。
+  改动后逐条自查用这两条线索——三侧测试都发现不了它们：
   - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
     等于对外不可用
   - 反查取值（`key_of` ≡ iztro `kot`）先查星曜别名表（`lookup.rs` 的 `STAR_ALIASES`，
@@ -223,7 +226,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 
 ### 测试
 - 全部金标数据由 JS iztro v2.6.1（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
+- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
@@ -262,7 +265,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     有意改口径后用 `UPDATE_PATTERN_SNAPSHOTS=1` 重跑该测试重建基线，`pattern_distribution`
     的 tally 金标随之更新）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
-  - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
+  - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,573 例（含 14 条星曜别名）对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`
   - 自定义四化/亮度表 → `config_overrides`；Rust 扩展 trait → `extension`
   - 三侧同盘同解 → `src/models/astrolabe.rs` 单测 + `python/tests/test_parity.py`

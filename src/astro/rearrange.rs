@@ -46,13 +46,8 @@ impl Astrolabe {
     ) -> Result<Astrolabe, IztroError> {
         let mut chart = self.clone();
 
-        // 晚子时算当天时按早子时安星，与排盘入口的处理一致
-        let effective_ti = if self.config.day_divide == DayDivide::Current && self.time_index >= 12
-        {
-            0
-        } else {
-            self.time_index
-        };
+        let effective_ti =
+            crate::astro::builder::effective_time_index(self.config.day_divide, self.time_index);
 
         let soul_index = earthly_branch_to_palace_index(from_branch);
         let body_index = fix_index((BODY_OFFSET[effective_ti as usize] + soul_index) as i32, 12);
