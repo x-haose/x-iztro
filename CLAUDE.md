@@ -146,6 +146,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `setLanguage`
   - `get_decadals_and_ages` 直接收命宫索引与五行局，比 iztro `getHoroscope` 的 `from` 更一般
   - 插件按语言惯用方式实现：Rust 扩展 trait、Python 类方法注入、Go 嵌入 `*Astrolabe`
+  - 运限宫位寻址收语言无关 key 或该盘语言的宫名，不做跨语言译名反查（iztro v2.6.1 起
+    用 `kot` 兜任意语言宫名，因其只有译名可传）：我们的 `palaceNameKeys` 就是跨语言的正解，
+    再接一层反查要么改 `PalaceIndexByName` 签名、要么把 wasm 故障伪装成「找不到」
 - 故意不做的（考察过，不是漏）：`astro/analyzer`（Palace/Surpalaces 方法的自由函数版）、
   `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（v2.5.8 里已是死代码，
   v2.6.1 已从包中删除）、`initStars`（空盘工厂，类型系统已给定长数组）、
