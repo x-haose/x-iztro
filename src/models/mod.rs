@@ -1,5 +1,7 @@
 /// 星盘结构
 pub mod astrolabe;
+/// 夹宫
+pub mod flanking;
 /// 运限结构
 pub mod horoscope;
 /// 宫位结构与查询方法

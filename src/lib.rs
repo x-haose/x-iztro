@@ -78,6 +78,7 @@ pub use knowledge::KnowledgePack;
 pub use models::astrolabe::{
     Astrolabe, PalaceRef, PalaceTarget, RawChineseDate, RawDates, RawLunarDate, StarRef,
 };
+pub use models::flanking::FlankingPalaces;
 pub use models::horoscope::{
     AgeItem, HoroscopeData, HoroscopeItem, HoroscopeRef, YearlyDecStar, YearlyItem,
 };

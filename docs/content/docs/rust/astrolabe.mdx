@@ -1,6 +1,6 @@
 ---
 title: 星盘对象
-description: Astrolabe 的字段、定位方法与三方四正判断。
+description: Astrolabe 的字段、定位方法，以及三方四正与夹宫。
 ---
 
 `Astrolabe` 是排盘的产物，也是一切查询的入口。它持有十二宫的全部数据，
@@ -330,6 +330,90 @@ true
 （「所有元素都满足」与「没有元素不满足」对空集都成立），
 `is_surrounded_one_of` 返回 `false`。调用前先确认列表非空。
 </Callout>
+
+---
+
+## flanking_palaces
+
+**用途**　取目标宫的夹宫：盘上紧邻它前后的两宫。
+
+**斗数含义**　「羊陀夹忌」「日月夹命」这类说法看的就是夹宫。
+夹宫与三方四正是两条不重叠的线索：三方四正问的是同一组能量彼此呼应，
+夹宫问的是这一宫左右两侧的处境。
+
+**签名**
+
+```rust
+pub fn flanking_palaces(&self, target: impl Into<PalaceTarget>) -> Option<FlankingPalaces<'_>>
+```
+
+**参数**　同 `palace`，四种定位写法都支持。
+
+**返回值**　`Option<FlankingPalaces<'_>>`，两个字段：
+
+| 字段 | 相对目标宫 | 类型 | 说明 |
+| --- | --- | --- | --- |
+| `previous` | -1 | `&PalaceData` | 前一宫 |
+| `next` | +1 | `&PalaceData` | 后一宫 |
+
+十二宫首尾相连，索引对 12 回绕：第 0 宫的前一宫是第 11 宫。
+另有 `astrolabe()` 取回两宫所属的星盘。
+
+五个判断方法与[三方四正](/zh/docs/rust/surpalaces)同名同义，只是作用范围换成这两宫：
+
+| 方法 | 语义 |
+| --- | --- |
+| `have(&[StarKey]) -> bool` | 两宫合起来含列表中每一颗 |
+| `not_have(&[StarKey]) -> bool` | 两宫一颗都不含 |
+| `have_one_of(&[StarKey]) -> bool` | 两宫合起来至少含一颗 |
+| `have_mutagen(Mutagen) -> bool` | 两宫中有任一宫带该生年四化 |
+| `not_have_mutagen(Mutagen) -> bool` | 两宫都不带 |
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let f = chart.flanking_palaces(Palace::Soul).unwrap();
+
+println!("{} / {}", translate_palace(f.previous.name, zh), translate_palace(f.next.name, zh));
+println!("{}", f.have(&[StarKey::TianjiMaj, StarKey::TuoluoMin]));
+println!("{}", f.have_one_of(&[StarKey::HuoxingMin]));
+
+let w = chart.flanking_palaces(Palace::Wealth).unwrap();
+println!("{} / {}", translate_palace(w.previous.name, zh), translate_palace(w.next.name, zh));
+println!("{} {}", w.have_mutagen(Mutagen::Lu), w.have_mutagen(Mutagen::Ji));
+```
+
+**输出**
+
+```text
+兄弟 / 父母
+true
+false
+疾厄 / 子女
+true true
+```
+
+命宫在午，夹它的是兄弟（巳）与父母（未）。天机坐兄弟、陀罗坐父母，分处两宫，
+`have` 仍然成立；火星坐夫妻，不在这两宫之内，因此 `have_one_of` 为 `false`。
+财帛在寅，夹它的疾厄坐天同、子女坐太阳，这张盘生年干庚使太阳化禄、天同化忌，
+于是禄与忌两问都为 `true`。
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="判定在两宫合计的集合上做">
+`have(&[A, B])` 问的是「A 和 B 都出现在这两宫里」，不要求它们同在其中一宫。
+要单看某一侧，直接对 `f.previous` / `f.next` 调宫位的
+[`has`](/zh/docs/rust/palace#has--not_have--has_one_of)。
+</Accordion>
+<Accordion title="没有「排在边上所以缺一侧」的宫">
+索引对 12 回绕，十二宫每一宫都有完整的前后两宫。
+</Accordion>
+<Accordion title="空列表的返回值">
+`have` 与 `not_have` 在空列表下返回 `true`，`have_one_of` 返回 `false`。
+</Accordion>
+</Accordions>
 
 ---
 

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::models::flanking::FlankingPalaces;
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::models::surpalaces::SurroundedPalaces;
@@ -281,6 +282,19 @@ impl Astrolabe {
     ) -> Option<SurroundedPalaces<'_>> {
         let palace = self.palace(target)?;
         Some(self.surrounded_at(palace.index))
+    }
+
+    /// 取指定宫位的夹宫：前后相邻的两宫；定位不到返回 `None`。
+    ///
+    /// 十二宫首尾相连，故首宫的前一宫是末宫。星耀与四化的判定在两宫合计的集合上做，
+    /// 见 [`FlankingPalaces`]。
+    pub fn flanking_palaces(&self, target: impl Into<PalaceTarget>) -> Option<FlankingPalaces<'_>> {
+        let palace = self.palace(target)?;
+        Some(FlankingPalaces {
+            previous: &self.palaces[fix_index(palace.index as i32 - 1, 12)],
+            next: &self.palaces[fix_index(palace.index as i32 + 1, 12)],
+            astrolabe: self,
+        })
     }
 
     /// 指定宫位的三方四正是否**全部**包含列出的星耀。

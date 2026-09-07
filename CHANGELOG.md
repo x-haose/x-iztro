@@ -26,6 +26,20 @@
 
 ### 新增
 
+- **夹宫**（iztro v2.6.0 新增）：`flanking_palaces(target)` 取某宫前后相邻的两宫，
+  带 `have` / `not_have` / `have_one_of` / `have_mutagen` / `not_have_mutagen` 五个判定。
+  十二宫首尾相连，故首宫的前一宫是末宫；星耀判定在**两宫合计**的集合上做，不要求同在一宫。
+  Rust `flanking_palaces`、Python `flanking_palaces`、Go `FlankingPalaces`，
+  bridge kind `flankingPalaces`。
+- **三个运限列表**（iztro v2.6.0 新增）：
+  - `decadal_list()` 按起运先后排列的十二个大限，每项带该限所在的本命宫名、起止虚岁与
+    起止农历年份，以及以该宫为命宫推排的十二宫名、该限四化与大限流曜。
+  - `yearly_list(target)` 某个大限内的十个流年；`target` 可写大限序号（0 起）或本命宫名。
+  - `monthly_list(year, fix_leap)` 某农历年的流月：无闰月 12 项；有闰月且 `fix_leap` 为真时
+    闰月拆成前后半月共 14 项，为假时闰月整月一项共 13 项。
+  三个列表都经与逐层查询相同的 `horoscope()` 算出，故列表值与单层查询零分歧；
+  列表用的时辰取自**时柱地支**而非出生入参——晚子时两者差 12，用入参会让晚子盘的列表
+  与逐层查询对不上。bridge kind `decadalList` / `yearlyList` / `monthlyList`。
 - **星曜反查别名**（iztro v2.6.0 起）：`key_of` / `key_of_in` 先查 14 条带汉字的限定别名
   （`천상(天相)` / `Kiếp Sát(劫煞)` 之类），命中即返回且不受标识名限定影响，用于消歧韩文与
   越南语中若干完全同形的星曜译名。金标 `i18n_kot.json` 已纳入这 14 条。

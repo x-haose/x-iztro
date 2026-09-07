@@ -776,3 +776,13 @@ const (
 	// BrightnessSourcePositional 按传统位置：太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗
 	BrightnessSourcePositional = "positional"
 )
+
+// 流月分段标识（MonthlyListItem.Part）：闰月在 fixLeap 为真时拆成前后两段。
+const (
+	// MonthPartNormal 为整月一段：非闰月，或闰月但未拆分
+	MonthPartNormal = "normal"
+	// MonthPartFirst 为闰月前半段（初一至十五）
+	MonthPartFirst = "first"
+	// MonthPartSecond 为闰月后半段（十六至月末）
+	MonthPartSecond = "second"
+)

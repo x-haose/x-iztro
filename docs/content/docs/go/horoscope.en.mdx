@@ -1,6 +1,6 @@
 ---
 title: Horoscope object
-description: The data structures of the six scopes, plus palace lookups that need not be handed the astrolabe again.
+description: The data structures of the six scopes, the three whole-scope lists, plus palace lookups that need not be handed the astrolabe again.
 ---
 
 A horoscope projects the natal chart onto a point in time. The same chart shows a different palace
@@ -146,6 +146,226 @@ age scope nominal age 26
 decadal mutagens [sun warrior moon fortunate]
 yearly Sui-qian gods [blessed sorrowing illness]
 ```
+
+---
+
+## The three lists
+
+`DecadalList` / `YearlyList` / `MonthlyList` are methods on `*Astrolabe`, not on the horoscope object:
+they return a whole scope in one call, sparing you from looping over dates with `Horoscope` and
+assembling the result yourself. All three item types embed `HoroscopeScope`, so the shared fields are
+read directly; each adds its own time coordinates:
+
+| Type | Extra fields | Description |
+| --- | --- | --- |
+| `DecadalListItem` | `PalaceName` / `PalaceNameKey`: `string` | The natal palace this decadal sits in |
+| | `AgeRange`: `[2]int` | First and last nominal age, both inclusive |
+| | `YearRange`: `[2]int` | First and last lunar year, both inclusive |
+| `YearlyListItem` | `Age`: `int` | The nominal age this year corresponds to |
+| | `Year`: `int` | Lunar year |
+| `MonthlyListItem` | `Age`: `int` | The nominal age this month falls in |
+| | `Year`: `int` | Lunar year |
+| | `Month`: `int` | Lunar month, 1 for the first; a leap month shares its number |
+| | `IsLeapMonth`: `bool` | Whether this item is the leap month |
+| | `Part`: `string` | Segment marker, one of the `MonthPart*` constants |
+| | `DayRange`: `[2]int` | The lunar days this segment covers, both inclusive |
+
+The three `MonthPart*` constants: `MonthPartNormal` for a whole month, `MonthPartFirst` for a leap
+month's first half and `MonthPartSecond` for its second half.
+
+Each of the three methods also has a `*Context` variant; `ctx` cancels the wait for a wasm instance.
+
+<Callout type="info" title="The lists use the hour pillar's branch">
+Every item in the three lists is computed from the hour matching the **hour pillar's earthly branch**,
+not the time index passed at charting time. The two differ only for the late zi hour: on a chart built
+with index 12, the hour pillar's branch is zi, so the lists use hour index 0.
+</Callout>
+
+---
+
+## DecadalList
+
+**Purpose** Get all twelve decadals of this chart at once, ordered by when they begin.
+
+**Zi Wei meaning** A decadal is a ten-year step walking the twelve palaces from the starting palace.
+Laid out flat, the line tells you which palace a given stretch of life falls in and which ten years it covers.
+
+**Signature**
+
+```go
+func (a *Astrolabe) DecadalList() ([]DecadalListItem, error)
+func (a *Astrolabe) DecadalListContext(ctx context.Context) ([]DecadalListItem, error)
+```
+
+**Return value** Always 12 items; index 0 is the first decadal. The order follows the starting nominal
+age, not the palace index — decadals run forwards or backwards depending on yin/yang and gender.
+
+**Example**
+
+```go
+dl, _ := chart.DecadalList()
+
+for _, d := range dl[:3] {
+    fmt.Println(d.PalaceName, d.HeavenlyStem, d.EarthlyBranch, d.AgeRange, d.YearRange)
+}
+fmt.Println(len(dl))
+```
+
+**Output**
+
+```text
+soul ren woo [3 12] [2002 2011]
+siblings xin si [13 22] [2012 2021]
+spouse geng chen [23 32] [2022 2031]
+12
+```
+
+This chart starts its decadals at nominal age 3, with the first one in the Soul palace.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Childhood is not in the list">
+The years before the first decadal begins are the childhood scope, which only appears when you query
+`Horoscope` for a specific date (`NameKey` is `childhood`). `DecadalList` lists the twelve decadals
+themselves, so every item's `NameKey` is `decadal`.
+</Callout>
+
+---
+
+## YearlyList / YearlyListByPalace
+
+**Purpose** Get every yearly scope inside one decadal.
+
+**Zi Wei meaning** Fix the decadal, then read year by year — the usual order in which a reading advances.
+A decadal spans ten years, and these are those ten.
+
+**Signature**
+
+```go
+func (a *Astrolabe) YearlyList(ordinal int) ([]YearlyListItem, error)
+func (a *Astrolabe) YearlyListByPalace(nameKey string) ([]YearlyListItem, error)
+```
+
+Both have a `*Context` variant.
+
+**Parameters**
+
+| Method | Parameter | Type | Description |
+| --- | --- | --- | --- |
+| `YearlyList` | `ordinal` | `int` | The decadal's ordinal, 0 for the first; out of range returns an error |
+| `YearlyListByPalace` | `nameKey` | `string` | The key of the natal palace it sits in (`PalaceSoul` and friends); an empty or unknown key returns an error |
+
+When both forms address the same decadal they return identical results; pick whichever you already hold.
+
+**Return value** 10 items ordered by nominal age.
+
+**Example**
+
+```go
+years, _ := chart.YearlyList(2)
+
+for _, y := range years[:3] {
+    fmt.Println(y.Age, y.Year, y.HeavenlyStem, y.EarthlyBranch, "->", y.Index)
+}
+
+byPalace, _ := chart.YearlyListByPalace(iztro.PalaceSpouse)
+fmt.Println(len(years), len(byPalace))
+```
+
+**Output**
+
+```text
+23 2022 ren yin -> 0
+24 2023 gui mao -> 1
+25 2024 jia chen -> 2
+10 10
+```
+
+Decadal 2 sits in the spouse palace, so both calls name the same one.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="There is no default decadal">
+`YearlyListByPalace("")` returns an error rather than falling back to some default decadal. Silently
+picking a default would turn a forgotten argument into a plausible-looking wrong answer.
+</Callout>
+
+---
+
+## MonthlyList
+
+**Purpose** Get every monthly scope of one lunar year.
+
+**Zi Wei meaning** The monthly scope sits below the yearly one and advances month by month. How to treat
+a leap month is a point where schools disagree, so whether to split it is the caller's decision.
+
+**Signature**
+
+```go
+func (a *Astrolabe) MonthlyList(lunarYear int, fixLeap *bool) ([]MonthlyListItem, error)
+func (a *Astrolabe) MonthlyListContext(ctx context.Context, lunarYear int, fixLeap *bool) ([]MonthlyListItem, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | The lunar year |
+| `fixLeap` | `*bool` | Yes | `nil` takes the core default (true) | Whether to split a leap month into two half-month items; pass `iztro.Bool(false)` to turn it off |
+
+**Return value** The length depends on whether the year has a leap month and on `fixLeap`:
+
+| That lunar year | `fixLeap` | Items | How the leap month is laid out |
+| --- | --- | --- | --- |
+| No leap month | any | 12 | — |
+| Has a leap month | `nil` or `Bool(true)` | 14 | Split into `MonthPartFirst` (days 1-15) and `MonthPartSecond` (day 16 to month end) |
+| Has a leap month | `Bool(false)` | 13 | One whole-month item with `Part` set to `MonthPartNormal` |
+
+The leap month follows the ordinary month of the same number. Each item is computed from the first day of
+its segment (day 16 for a second half).
+
+**Example**
+
+```go
+months, _ := chart.MonthlyList(2020, nil)
+
+fmt.Println(len(months))
+for _, m := range months[3:7] {
+    fmt.Println(m.Month, m.IsLeapMonth, m.Part, m.DayRange, m.HeavenlyStem, m.EarthlyBranch)
+}
+
+whole, _ := chart.MonthlyList(2020, iztro.Bool(false))
+plain, _ := chart.MonthlyList(2021, nil)
+fmt.Println(len(whole), len(plain))
+```
+
+**Output**
+
+```text
+14
+4 false normal [1 30] xin si
+4 true first [1 15] xin si
+4 true second [16 29] ren woo
+5 false normal [1 30] ren woo
+13 12
+```
+
+Lunar 2020 has a leap fourth month. Split apart, its first half shares the pillar of the fourth month
+(xin si) and its second half shares the fifth month's (ren woo) — which is what "the second half of a leap
+month counts as the next month" means. Lunar 2021 has no leap month, so it is always 12 items.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="This fixLeap is unrelated to the charting fixLeap">
+The `fixLeap` on the charting entry decides whether someone born in the second half of a leap month is
+placed by the next month's stars — it changes the natal layout. This one only decides whether this list
+splits the leap month. The two may differ and do not affect each other.
+</Callout>
+
+<Callout type="info" title="A leap month shares its number">
+The leap fourth month also has `Month == 4`; `IsLeapMonth` is what tells them apart. Deduplicating by
+`Month` drops the leap month.
+</Callout>
 
 ---
 

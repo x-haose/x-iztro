@@ -156,6 +156,14 @@ pub struct QueryInput {
     pub lunar_day: u32,
     /// 该农历月是否为闰月
     pub is_leap: bool,
+    /// 大限序号（0 为第一个大限）；`yearlyList` 与 `palace_key` 二选一，后者优先
+    pub decadal_ordinal: Option<usize>,
+    /// 农历年份，`monthlyList` 用
+    pub year: Option<i64>,
+    /// `monthlyList` 是否把闰月拆成前后半月；独立于排盘的 `fix_leap`，
+    /// 缺省为 true（与 iztro `monthlyList(year, fixLeap = true)` 一致）。
+    /// 复用排盘那个会让「盘按闰月下半月安星」与「列表拆不拆闰月」这两件事纠缠在一起
+    pub month_fix_leap: Option<bool>,
     /// 五行局标识
     pub five_elements_class: String,
     /// 四柱干支标识 [年, 月, 日, 时]，每柱为 [天干, 地支]
@@ -545,6 +553,9 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 知识包按盘取材 ----
         "knowledgeForChart" => knowledge_for_chart(input),
 
+        // ---- 夹宫与运限列表 ----
+        "flankingPalaces" | "decadalList" | "yearlyList" | "monthlyList" => chart_lists(input),
+
         // ---- 格局 ----
         "patterns" | "horoscopePatterns" => patterns(input),
 
@@ -901,6 +912,72 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     };
 
     Ok(json!(text))
+}
+
+/// 夹宫与三个运限列表。
+///
+/// 与格局、to_text 同样先按 `fromStem`/`fromBranch` 重排——重排改变十二宫名与大限干支，
+/// 漏转发会拿原盘的答案冒充重排盘的。
+fn chart_lists(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        parse_config(&input.config)?,
+    )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+
+    match input.kind.as_str() {
+        "flankingPalaces" => {
+            let target = parse_palace_target(input)?;
+            let flanking = astrolabe.flanking_palaces(target).ok_or_else(|| {
+                BridgeError::invalid_argument("palace not found on this chart".to_string())
+            })?;
+            serde_json::to_value(crate::dto::flanking_palaces_dto(&flanking, language))
+                .map_err(serialize_failed)
+        }
+        "decadalList" => serde_json::to_value(crate::dto::decadal_list_dto(
+            &astrolabe.decadal_list(),
+            language,
+        ))
+        .map_err(serialize_failed),
+        "yearlyList" => {
+            let target = parse_decadal_target(input)?;
+            let list = astrolabe.yearly_list(target)?;
+            serde_json::to_value(crate::dto::yearly_list_dto(&list, language))
+                .map_err(serialize_failed)
+        }
+        _ => {
+            let year = input.year.ok_or_else(|| {
+                BridgeError::invalid_argument("monthlyList requires 'year'".to_string())
+            })?;
+            let list = astrolabe.monthly_list(year, input.month_fix_leap.unwrap_or(true))?;
+            serde_json::to_value(crate::dto::monthly_list_dto(&list, language))
+                .map_err(serialize_failed)
+        }
+    }
+}
+
+/// 大限定位：`decadalOrdinal` 或 `palaceKey`（本命宫名），二者都缺省即报错。
+fn parse_decadal_target(
+    input: &QueryInput,
+) -> Result<crate::models::horoscope::DecadalTarget, BridgeError> {
+    use crate::models::horoscope::DecadalTarget;
+    if let Some(n) = input.decadal_ordinal {
+        return Ok(DecadalTarget::Ordinal(n));
+    }
+    if !input.palace_key.is_empty() {
+        let name = Palace::from_key(&input.palace_key).ok_or_else(|| {
+            BridgeError::invalid_argument(format!("unknown palace key '{}'", input.palace_key))
+        })?;
+        return Ok(DecadalTarget::Name(name));
+    }
+    Err(BridgeError::invalid_argument(
+        "decadal addressing is required: pass 'decadalOrdinal' or 'palaceKey'".to_string(),
+    ))
 }
 
 /// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`）。

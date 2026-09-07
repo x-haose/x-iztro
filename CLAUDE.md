@@ -125,6 +125,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro` 内嵌 `x_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
 - 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
+  **改了 `src/` 就要重跑这步再跑 Go 测试**——Go 侧读的是内嵌的那份，不重建就是拿旧内核测新绑定，
+  且症状是静默的：新增 kind 报 unknown、新增入参被无视后返回一份看着正常的结果
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
 - 布尔开关字段一律 `*bool` + omitempty（`PatternConfig.Borrow/FlowStars`、
   `ReverseCriteria.FixLeap` 先例）：nil＝省略键让内核取默认；裸 `bool` 的零值会静默
@@ -133,12 +135,17 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### 与 iztro 的 API 对齐
 - 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
   硬要求：iztro 每个公开 API 三侧都要有等价物，且三侧能力完全一致，形式各随语言习惯
-- 除 v2.6.0 新增的四组外已全数覆盖；**待补**：`flankingPalaces()`（夹宫对象，带
-  have/notHave/haveOneOf/haveMutagen/notHaveMutagen）、`decadalList()`、`yearlyList()`、
-  `monthlyList(year, fixLeap)`。`toJSON()` 已有等价物（`to_json`/DTO），不必新增。
-  改动后逐条自查用这两条线索——三侧测试都发现不了它们：
+- 已全数覆盖（`toJSON()` 的等价物是 `to_json`/DTO，不另设）。改动后逐条自查用这三条线索
+  ——三侧测试都发现不了它们（每一侧单独看都正常，只有横向比才看得出）：
   - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
-    等于对外不可用
+    等于对外不可用。注意 `binding_coverage` 只证明「kind 的字面量出现在绑定源码里」，
+    证明不了「包装完整」——返回对象少了方法、方法少了参数它都照样绿
+    （`FlankingPalaces` 在 Go 侧缺过五个判定方法）
+  - **iztro 的方法入参被绑定层偷换成排盘入参**：内核签名收得到、绑定层却拿排盘的同名字段顶上，
+    于是 Rust 原生能独立指定而 Python/Go 不能。`monthlyList` 的 `fixLeap` 犯过一次——
+    它与排盘的 `fix_leap` 同名不同义（前者只决定列表拆不拆闰月，后者决定闰月下半月按哪个月
+    安星），bridge 收独立的 `monthFixLeap` 才对。新增 kind 时逐个入参问：它是盘的属性，
+    还是这次调用的属性
   - 反查取值（`key_of` ≡ iztro `kot`）先查星曜别名表（`lookup.rs` 的 `STAR_ALIASES`，
     韩/越同形译名的带汉字限定名，命中即返回且不受标识名限定影响），未命中才按扫描顺序：
     iztro 按语言外层、locale 合并顺序内层，余下的同形译名靠它消歧。金标须拿 `kot` 实际取值
@@ -238,7 +245,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
   Config 开关（四个非默认取值 + 排盘层与运限层的组合、按节气时刻取样的四柱）11,388 / 中州派盘型 12,488 /
-  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）
+  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）/
+  夹宫与运限列表 5 盘（`chart_lists.json`：夹宫 12 宫、大限 12、流年 3×10、流月 6 组，
+  取样含晚子时与闰月出生）
 - tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
   （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；
   条目含星名/类型/范围/亮度/四化，排序等价性只在 BMP 内成立，注释里写了这个前提）；
@@ -263,6 +272,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
+  - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
+    大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、
     全星环测 34 剪枝臂、共享 key 十二神可用、1602 窗口、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）

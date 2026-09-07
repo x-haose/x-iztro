@@ -18,8 +18,8 @@ mod common;
 
 use serde_json::Value;
 use std::fs;
-use x_iztro::{by_solar, translate_earthly_branch, translate_heavenly_stem};
 use x_iztro::data::types::*;
+use x_iztro::{by_solar, translate_earthly_branch, translate_heavenly_stem};
 
 const GOLDEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden");
 const MAX_FAILURES: usize = 20;

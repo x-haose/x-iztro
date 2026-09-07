@@ -657,11 +657,17 @@ func (sp *SurroundedPalaces) NotHave(stars ...string) bool {
 
 // allStarIdentifiers 汇集四宫内所有星耀的 key 与翻译名。
 func (sp *SurroundedPalaces) allStarIdentifiers() map[string]struct{} {
-	ids := make(map[string]struct{})
 	if sp == nil {
-		return ids
+		return map[string]struct{}{}
 	}
-	for _, p := range []*Palace{sp.Target, sp.Opposite, sp.Wealth, sp.Career} {
+	return mergeStarIdentifiers(sp.Target, sp.Opposite, sp.Wealth, sp.Career)
+}
+
+// mergeStarIdentifiers 汇集若干宫位内所有星耀的 key 与翻译名，
+// 供三方四正、夹宫这类「多宫合计」的包含判断复用。
+func mergeStarIdentifiers(palaces ...*Palace) map[string]struct{} {
+	ids := make(map[string]struct{})
+	for _, p := range palaces {
 		for k := range p.starIdentifiers() {
 			ids[k] = struct{}{}
 		}

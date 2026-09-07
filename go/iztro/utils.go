@@ -298,7 +298,8 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 // 每个 ToText 都有 ToTextWith 形态：TextOptions.Knowledge 给释义来源时在事实节之后追加释义节
 // （星耀 / 格局 / 四化；运限为流耀与各层格局；单宫与三方四正为该宫星耀；格局文本为命中格局）。
 
-// textPayload 组装按盘查询（to_text 家族与知识包取材）的公共入参：排盘上下文 + 重排起点。
+// textPayload 组装按盘查询（to_text 家族、知识包取材与夹宫/运限列表）的公共入参：
+// 排盘上下文 + 重排起点。重排起点决定十二宫名与大限干支，漏带即拿到原盘的答案。
 func (a *Astrolabe) textPayload(kind string) map[string]any {
 	payload := map[string]any{
 		"kind":      kind,
