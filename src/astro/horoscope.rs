@@ -37,6 +37,9 @@ use crate::utils::{earthly_branch_to_palace_index, fix_index};
 
 /// 童限宫位名称：在大限未覆盖的童年时期使用
 /// 对应 TS: [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]
+///
+/// 末项官禄取不到：起运最晚的火六局在虚岁 6 即入第一个大限，童限最多到虚岁 5。
+/// 表与取模照 iztro 原样保留，不按可达范围裁剪。
 const CHILDHOOD_PALACES: [Palace; 6] = [
     Palace::Soul,
     Palace::Wealth,

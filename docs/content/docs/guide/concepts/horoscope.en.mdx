@@ -65,12 +65,16 @@ target year's branch.
 Decadals only begin at the nominal age set by the Five Elements class (2 for water 2nd, 6 for fire
 6th). The years before that belong to no decadal, and are derived as the **childhood scope**.
 
-The childhood scope cycles through six palaces by nominal age, by the mnemonic "first Soul, second
-Wealth, third Health, fourth Spouse, fifth Spirit, sixth Career":
+The childhood scope takes a palace per nominal age, by the mnemonic "first Soul, second Wealth,
+third Health, fourth Spouse, fifth Spirit, sixth Career":
 
-| Nominal age | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | … |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Childhood palace | soul | wealth | health | spouse | spirit | career | soul | wealth | cycles |
+| Nominal age | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Childhood palace | soul | wealth | health | spouse | spirit |
+
+The table stops at nominal age 5: the latest start is fire 6th, whose first decadal begins at 6, so
+age 6 onwards is never the childhood scope — the mnemonic's "sixth Career" never applies, and there
+is no cycling.
 
 When the target date falls before the decadals begin, the decadal field returns the childhood scope
 instead, with the scope name shown as `childhood`. The field structure is unchanged, so callers need
