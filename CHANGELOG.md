@@ -7,6 +7,17 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-08
+
+### 修正
+
+- 文档站页脚的分隔线在文档版式下横穿侧栏：侧栏是绝对定位、占满视口高度，而页脚横跨整行，
+  滚到底部时页脚的上边框正落在侧栏中部，两者又都是透明背景，线便从侧栏中间透了出来。
+  分隔线改为按 `--fd-sidebar-width` 起始，窄屏与首页版式下该变量为 0 或未定义，线回到最左。
+- 文档站「童限」一节的表列到虚岁 8 并标「循环」：童限不存在循环——起运最晚的火六局
+  虚岁 6 即入第一个大限，童限最多到虚岁 5，口诀里的「六官禄」永远取不到。表改到 5 为止。
+  `CHILDHOOD_PALACES` 与取模照 iztro 原样保留，只在注释里点明末项不可达。
+
 ## [0.6.0] - 2026-09-08
 
 ### 变更（breaking）
@@ -360,7 +371,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/x-haose/x-iztro/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/x-haose/x-iztro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/x-haose/x-iztro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/x-haose/x-iztro/compare/v0.3.0...v0.4.0

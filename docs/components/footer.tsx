@@ -64,7 +64,17 @@ export function Footer({ lang, className }: { lang: string; className?: string }
   const doc = (path: string) => `/${lang}/docs/${path}`;
 
   return (
-    <footer className={`border-t border-fd-border ${className ?? ''}`}>
+    <footer className={`relative ${className ?? ''}`}>
+      {/*
+        分隔线单独画，不用 footer 自己的 border-t：文档版式里侧栏是悬浮的
+        （absolute、占满视口高度），横贯整行的上边框会从侧栏中间穿过去。
+        线从侧栏右缘起，`--fd-sidebar-width` 在窄屏与首页版式下为 0，线即回到最左。
+        内容不跟着偏移——它按整行居中，与正文列的中心对齐。
+      */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 ms-[var(--fd-sidebar-width,0px)] border-t border-fd-border"
+      />
       <div className="mx-auto grid w-full max-w-5xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-2.5">
           <span className="text-sm font-semibold">x-iztro</span>
