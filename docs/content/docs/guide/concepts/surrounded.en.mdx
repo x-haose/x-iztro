@@ -1,6 +1,6 @@
 ---
 title: Surrounded palaces
-description: Why a palace is never read alone, which four palaces make up the surrounded set, and how to get them in each of the three programming languages.
+description: Why a palace is never read alone, which four palaces make up the surrounded set, how flanking palaces differ from it, and how to get both in each of the three programming languages.
 ---
 
 *For: everyone. Code and the predicate table are at the end of the page*
@@ -139,5 +139,120 @@ True False False
 
 This chart has Wenchang and Wenqu in the surrounded set, but it also sees some of Qingyang, Tuoluo,
 Huoxing and Lingxing, so the pattern does not hold.
+
+## Flanking palaces
+
+The **flanking palaces** (夹宫) of a target palace are the two **immediately either side** of it:
+slots `i - 1` and `i + 1`. The twelve palaces form a ring, so slots wrap modulo 12 — the palace
+before slot 0 is slot 11.
+
+```
+… ── i-1 (previous) ── i (the flanked palace) ── i+1 (next) ── …
+```
+
+Flanking and the surrounded set do **not overlap**: none of `i±1` coincides with `i+4`, `i+6` or
+`i+8`.
+
+| | Relation | Members | Slots |
+| --- | --- | --- | --- |
+| Surrounded palaces | Meeting across the chart (会照) | Target, opposite, career position, wealth position | `i` `i+6` `i+4` `i+8` |
+| Flanking palaces | Pressing from either side (相夹) | Previous, next | `i-1` `i+1` |
+
+Meeting is a resonance across the board: it asks which forces answer to one another. Flanking is
+pressure at close quarters: it asks what the palace is hemmed in by. Different images, so the two
+lines of evidence are read separately.
+
+The flanking set **excludes the target**: the surrounded set counts the target as one of its four
+members, while flanking holds only the two neighbours.
+
+### Predicates run on the union of the two
+
+The predicates share names and meaning with the surrounded ones; the range becomes the **union of
+the two flanking palaces**:
+
+| Method | Does |
+| --- | --- |
+| `have(stars)` | Do the two palaces together hold **all** the given stars |
+| `have_one_of(stars)` | Do they hold **any one** of them |
+| `not_have(stars)` | Do they hold **none** of them |
+| `have_mutagen(m)` | Does either palace carry the given mutagen |
+| `not_have_mutagen(m)` | Does neither carry it |
+
+<Callout title="have does not require both stars in the same palace">
+Flanking is one star on each side by definition. `have([Tianji, Tianyue])` is true when Tianji sits
+in the previous palace and Tianyue in the next — the predicate reads the union of the two, not which
+of them a star landed in.
+</Callout>
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let f = chart.flanking_palaces(Palace::Soul).unwrap();
+
+println!("{} / {}", translate_palace(f.previous.name, Language::EnUS),
+                    translate_palace(f.next.name, Language::EnUS));
+println!("{}", f.have(&[StarKey::TianjiMaj, StarKey::TianyueMin]));
+println!("{}", f.have_one_of(&[StarKey::QingyangMin, StarKey::TuoluoMin]));
+```
+
+```text
+siblings / parents
+true
+true
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+f = chart.flanking_palaces(PalaceName.SOUL)
+
+print(f.previous.name, f.next.name)
+print(f.have([MajorStar.TIANJI, MinorStar.TIANYUE]))
+print(f.have_one_of([MinorStar.QINGYANG, MinorStar.TUOLUO]))
+```
+
+```text
+siblings parents
+True
+True
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+f, _ := chart.FlankingPalaces(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+
+fmt.Println(f.Previous.Name, f.Next.Name)
+fmt.Println(f.Have(iztro.StarTianjiMaj, iztro.StarTianyueMin))
+fmt.Println(f.HaveOneOf(iztro.StarQingyangMin, iztro.StarTuoluoMin))
+```
+
+```text
+siblings parents
+true
+true
+```
+
+</Tab>
+</Tabs>
+
+On this chart the Soul palace is flanked by Siblings (Tianji) and Parents (Tianyue, Tuoluo). Tianji
+and Tianyue sit on opposite sides, so `have` still holds. Of Qingyang and Tuoluo only Tuoluo is
+present, so `have_one_of` is true while `have` is false — 羊陀夹命 does not form.
+
+### What it is used for
+
+Every "XX flanking life" pattern rests on this geometry: two stars in the palaces either side of the
+Soul palace. In the [pattern engine](/en/docs/guide/concepts/patterns) that covers 羊陀夹命, 日月夹命,
+左右夹命, 魁钺夹命, 劫空夹命, 昌曲夹命 and 科权禄夹, and also 紫府夹命 and 金舆扶驾. Why flanking
+and meeting must never be conflated is on the pattern page under
+[Easily misread points](/en/docs/guide/concepts/patterns#easily-misread-points).
+
+Flanking palaces have their own [semantic text](/en/docs/guide/guides/to-text) too: one section per
+side, structured like the surrounded-palace text, with the role headings "Previous Palace" and
+"Next Palace".
 
 Star classes and keys are on [Stars](/en/docs/guide/concepts/stars).

@@ -11,9 +11,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use x_iztro::data::types::*;
 use x_iztro::text::{
-    astrolabe_to_text, astrolabe_to_text_with, horoscope_to_text, horoscope_to_text_with,
-    palace_to_text, palace_to_text_with, patterns_to_text, patterns_to_text_with,
-    surrounded_palaces_to_text, surrounded_palaces_to_text_with,
+    astrolabe_to_text, astrolabe_to_text_with, decadal_list_to_text, decadal_list_to_text_with,
+    flanking_palaces_to_text, flanking_palaces_to_text_with, horoscope_to_text,
+    horoscope_to_text_with, palace_to_text, palace_to_text_with, patterns_to_text,
+    patterns_to_text_with, surrounded_palaces_to_text, surrounded_palaces_to_text_with,
 };
 use x_iztro::{KnowledgePack, TextOptions, by_solar, get_horoscope};
 
@@ -58,10 +59,18 @@ fn assert_snapshot(name: &str, actual: &str) {
     );
 }
 
-/// 五类输出的名称；带释义形态在名称后加 `_knowledge`
-const KINDS: [&str; 5] = ["astrolabe", "horoscope", "patterns", "palace", "surrounded"];
+/// 七类输出的名称；带释义形态在名称后加 `_knowledge`
+const KINDS: [&str; 7] = [
+    "astrolabe",
+    "horoscope",
+    "patterns",
+    "palace",
+    "surrounded",
+    "flanking",
+    "decadals",
+];
 
-/// 快照目录的文件集必须恰为五类输出 × 两种语言，外加五类带释义输出 × zh-CN
+/// 快照目录的文件集必须恰为七类输出 × 两种语言，外加七类带释义输出 × zh-CN
 /// （内嵌知识包只有 zh-CN），孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
@@ -164,7 +173,30 @@ fn surrounded_text_matches_snapshot() {
     }
 }
 
-/// 带释义的五类输出：同一固定盘按内嵌 zh-CN 知识包取材，逐字节比对。
+#[test]
+fn flanking_text_matches_snapshot() {
+    for (lang, tag) in LANGS {
+        let astrolabe = chart(lang);
+        let f = astrolabe.flanking_palaces(Palace::Soul).unwrap();
+        assert_snapshot(
+            &format!("flanking_{tag}"),
+            &flanking_palaces_to_text(&f, lang),
+        );
+    }
+}
+
+#[test]
+fn decadal_list_text_matches_snapshot() {
+    for (lang, tag) in LANGS {
+        let astrolabe = chart(lang);
+        assert_snapshot(
+            &format!("decadals_{tag}"),
+            &decadal_list_to_text(&astrolabe, lang),
+        );
+    }
+}
+
+/// 带释义的七类输出：同一固定盘按内嵌 zh-CN 知识包取材，逐字节比对。
 #[test]
 fn text_with_knowledge_matches_snapshot() {
     let lang = Language::ZhCN;
@@ -196,5 +228,14 @@ fn text_with_knowledge_matches_snapshot() {
     assert_snapshot(
         "surrounded_knowledge_zh-CN",
         &surrounded_palaces_to_text_with(&sp, &opts, lang),
+    );
+    let f = astrolabe.flanking_palaces(Palace::Soul).unwrap();
+    assert_snapshot(
+        "flanking_knowledge_zh-CN",
+        &flanking_palaces_to_text_with(&f, &opts, lang),
+    );
+    assert_snapshot(
+        "decadals_knowledge_zh-CN",
+        &decadal_list_to_text_with(&astrolabe, &opts, lang),
     );
 }

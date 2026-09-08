@@ -547,6 +547,8 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "horoscopeToText"
         | "palaceToText"
         | "surroundedPalacesToText"
+        | "flankingPalacesToText"
+        | "decadalListToText"
         | "patternsToText"
         | "horoscopePatternsToText" => to_text(input),
 
@@ -881,6 +883,14 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
             })?;
             crate::surrounded_palaces_to_text_with(&sp, &opts, language)
         }
+        "flankingPalacesToText" => {
+            let target = parse_palace_target(input)?;
+            let f = astrolabe.flanking_palaces(target).ok_or_else(|| {
+                BridgeError::invalid_argument("palace not found on this chart".to_string())
+            })?;
+            crate::flanking_palaces_to_text_with(&f, &opts, language)
+        }
+        "decadalListToText" => crate::decadal_list_to_text_with(&astrolabe, &opts, language),
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);

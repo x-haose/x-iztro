@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-// TestTextWithKnowledgeParity 断言五类带释义文本与 Rust 侧快照逐字节相同
-// （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded 取命宫，
+// TestTextWithKnowledgeParity 断言七类带释义文本与 Rust 侧快照逐字节相同
+// （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，
 // patterns 默认口径），并确认零值 Knowledge 的输出仍等于不带释义的原快照。
 func TestTextWithKnowledgeParity(t *testing.T) {
 	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
@@ -28,6 +28,10 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		"surrounded": func(o TextOptions) (string, error) {
 			return chart.SurroundedPalacesToTextWith(soul, o)
 		},
+		"flanking": func(o TextOptions) (string, error) {
+			return chart.FlankingPalacesToTextWith(soul, o)
+		},
+		"decadals": chart.DecadalListToTextWith,
 	}
 	for name, get := range cases {
 		got, err := get(TextOptions{Knowledge: BuiltinKnowledge()})

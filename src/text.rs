@@ -23,6 +23,7 @@ use crate::i18n::{
 };
 use crate::knowledge::KnowledgePack;
 use crate::models::astrolabe::{Astrolabe, PalaceRef};
+use crate::models::flanking::FlankingPalaces;
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
@@ -122,6 +123,7 @@ labels_table! {
     sec_palaces: ["十二宫", "十二宮", "Palaces", "十二宮", "십이궁", "Mười hai cung"],
     sec_patterns: ["格局", "格局", "Patterns", "格局", "격국", "Cách cục"],
     sec_mutagen_notes: ["四化释义", "四化釋義", "Mutagen Notes", "四化解説", "사화 해설", "Giải nghĩa tứ hóa"],
+    sec_star_notes: ["星耀释义", "星曜釋義", "Star Notes", "星曜解説", "성요 해설", "Giải nghĩa tinh diệu"],
 
     // ---- 基本信息 ----
     solar_date: ["阳历", "陽曆", "Solar", "新暦", "양력", "Dương lịch"],
@@ -154,6 +156,15 @@ labels_table! {
     opposite_palace: ["对宫", "對宮", "Opposite Palace", "対宮", "대궁", "Cung đối"],
     wealth_palace: ["财帛位", "財帛位", "Wealth Palace", "財帛位", "재백위", "Vị Tài bạch"],
     career_palace: ["官禄位", "官祿位", "Career Palace", "官禄位", "관록위", "Vị Quan lộc"],
+    flanking: ["夹宫", "夾宮", "Flanking Palaces", "挟宮", "협궁", "Cung kẹp"],
+    previous_palace: ["前宫", "前宮", "Previous Palace", "前宮", "전궁", "Cung trước"],
+    next_palace: ["后宫", "後宮", "Next Palace", "後宮", "후궁", "Cung sau"],
+    doc_decadals: ["大限一览", "大限一覽", "Decadal Timeline", "大限一覧", "대한 일람", "Tổng quan Đại hạn"],
+    col_decadal_no: ["序", "序", "No", "序", "순", "STT"],
+    col_natal_palace: ["本命宫", "本命宮", "Natal Palace", "本命宮", "본명궁", "Cung bản mệnh"],
+    col_stem_branch: ["干支", "干支", "Stem-Branch", "干支", "간지", "Can chi"],
+    col_age_range: ["虚岁", "虛歲", "Nominal Age", "数え年", "나이", "Tuổi ta"],
+    col_year_range: ["年份", "年份", "Years", "年", "연도", "Năm"],
     // 宫干飞化行的标签模板，`{}` 处填宫干
     stem_flying: ["宫干{}飞化", "宮干{}飛化", "Stem {} Flying", "宮干{}飛化", "궁간 {} 비화", "Can cung {} phi hóa"],
     twelve_gods: ["十二神", "十二神", "Twelve Gods", "十二神", "십이신", "Mười hai thần"],
@@ -851,6 +862,99 @@ pub fn surrounded_palaces_to_text_with(
     out
 }
 
+/// 夹宫的语义化文本（默认口径，只含事实）。
+pub fn flanking_palaces_to_text(f: &FlankingPalaces, lang: Language) -> String {
+    flanking_palaces_to_text_with(f, &TextOptions::default(), lang)
+}
+
+/// 夹宫的语义化文本：前后两宫各一段，与三方四正同构，角色写「前宫」「后宫」。
+///
+/// 判定方法（`have` 等）看的是两宫合计，文本按宫分段是为了读得出各宫自己的星与飞化；
+/// 要合看就读两段。
+pub fn flanking_palaces_to_text_with(
+    f: &FlankingPalaces,
+    opts: &TextOptions,
+    lang: Language,
+) -> String {
+    let l = labels(lang);
+    let mut out = format!("## {}\n", l.flanking);
+    for (role, p) in [(l.previous_palace, f.previous), (l.next_palace, f.next)] {
+        out.push('\n');
+        out.push_str(&palace_section(
+            f.astrolabe(),
+            p,
+            Some(role),
+            opts,
+            &l,
+            lang,
+        ));
+    }
+    out
+}
+
+/// 大限一览的语义化文本（默认口径）。
+pub fn decadal_list_to_text(astrolabe: &Astrolabe, lang: Language) -> String {
+    decadal_list_to_text_with(astrolabe, &TextOptions::default(), lang)
+}
+
+/// 大限一览的语义化文本：十二个大限一张表，按起运先后排。
+///
+/// 不展开每限的流年——十二限各十年会撑到一百二十行，一眼看完一生的十二个十年才是这张表
+/// 要做的事；某一限的流年用 [`Astrolabe::yearly_list`] 单取。
+/// 带知识包时表后附各限四化星的释义（同一颗星只出一次）。
+pub fn decadal_list_to_text_with(
+    astrolabe: &Astrolabe,
+    opts: &TextOptions,
+    lang: Language,
+) -> String {
+    let l = labels(lang);
+    let list = astrolabe.decadal_list();
+    let mut out = format!("# {}\n\n", l.doc_decadals);
+
+    out.push_str(&format!(
+        "| {} | {} | {} | {} | {} | {} |\n|---|---|---|---|---|---|\n",
+        l.col_decadal_no,
+        l.col_natal_palace,
+        l.col_age_range,
+        l.col_year_range,
+        l.col_stem_branch,
+        l.mutagen_fly,
+    ));
+    for (n, d) in list.iter().enumerate() {
+        out.push_str(&format!(
+            "| {} | {} | {}-{} | {}-{} | {} | {} |\n",
+            n + 1,
+            translate_palace(d.palace_name, lang),
+            d.age_range.0,
+            d.age_range.1,
+            d.year_range.0,
+            d.year_range.1,
+            stem_branch(d.heavenly_stem, d.earthly_branch, &l, lang),
+            mutagen_stars_with_places(astrolabe, &d.mutagen, true, &l, lang),
+        ));
+    }
+
+    if let Some(pack) = opts.knowledge_pack() {
+        let mut seen: Vec<StarKey> = Vec::new();
+        let mut notes = String::new();
+        for d in &list {
+            for key in &d.mutagen {
+                if seen.contains(key) {
+                    continue;
+                }
+                seen.push(*key);
+                if let Some(intro) = pack.star(*key).and_then(|e| e.intro.as_deref()) {
+                    note(&mut notes, translate_star(*key, lang), intro);
+                }
+            }
+        }
+        if !notes.is_empty() {
+            out.push_str(&format!("\n## {}\n\n{notes}", l.sec_star_notes));
+        }
+    }
+    out
+}
+
 // ============================================================
 // 运限
 // ============================================================
@@ -1195,6 +1299,16 @@ impl Astrolabe {
     pub fn to_text_with(&self, opts: &TextOptions) -> String {
         astrolabe_to_text_with(self, opts, self.language)
     }
+
+    /// 大限一览的语义化文本（按排盘语言）；[`decadal_list_to_text`] 的便捷形态
+    pub fn decadal_list_to_text(&self) -> String {
+        decadal_list_to_text(self, self.language)
+    }
+
+    /// 大限一览文本，按选项附释义；[`decadal_list_to_text_with`] 的便捷形态
+    pub fn decadal_list_to_text_with(&self, opts: &TextOptions) -> String {
+        decadal_list_to_text_with(self, opts, self.language)
+    }
 }
 
 impl HoroscopeRef<'_> {
@@ -1223,6 +1337,18 @@ impl PalaceRef<'_> {
     /// 本宫文本，按选项附释义；[`palace_to_text_with`] 的便捷形态
     pub fn to_text_with(&self, opts: &TextOptions) -> String {
         palace_to_text_with(self, opts, self.astrolabe().language)
+    }
+}
+
+impl FlankingPalaces<'_> {
+    /// 夹宫的语义化文本（按星盘排盘语言）；[`flanking_palaces_to_text`] 的便捷形态
+    pub fn to_text(&self) -> String {
+        flanking_palaces_to_text(self, self.astrolabe().language)
+    }
+
+    /// 夹宫文本，按选项附释义；[`flanking_palaces_to_text_with`] 的便捷形态
+    pub fn to_text_with(&self, opts: &TextOptions) -> String {
+        flanking_palaces_to_text_with(self, opts, self.astrolabe().language)
     }
 }
 

@@ -522,6 +522,26 @@ class Astrolabe:
         data = self._context_query("decadalList")
         return [DecadalListItem._from_dict(d) for d in data]
 
+    def decadal_list_to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+    ) -> str:
+        """
+        大限一览的语义化文本：十二个大限一张表，按起运先后排。
+
+        与 `decadal_list` 同一套数据，输出面向语言模型与人的文本而非结构化列表；
+        不展开每限的流年，某一限的流年用 `yearly_list` 单取。
+
+        Args:
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各限四化星的释义
+
+        Raises:
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+        """
+        return self._context_query("decadalListToText", knowledge=knowledge)
+
     def yearly_list(
         self, decadal: int | PalaceName | str | None = None
     ) -> list[YearlyListItem]:

@@ -442,3 +442,59 @@ func (a *Astrolabe) SurroundedPalacesToTextWithContext(ctx context.Context, targ
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
+
+// FlankingPalacesToText 生成指定宫位夹宫的语义化文本。
+func (a *Astrolabe) FlankingPalacesToText(target PalaceTarget) (string, error) {
+	return a.FlankingPalacesToTextContext(context.Background(), target)
+}
+
+// FlankingPalacesToTextContext 为 FlankingPalacesToText 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) FlankingPalacesToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
+	return a.FlankingPalacesToTextWithContext(ctx, target, TextOptions{})
+}
+
+// FlankingPalacesToTextWith 生成指定宫位夹宫的语义化文本并按 opts.Knowledge 追加两夹宫星耀的释义节。
+func (a *Astrolabe) FlankingPalacesToTextWith(target PalaceTarget, opts TextOptions) (string, error) {
+	return a.FlankingPalacesToTextWithContext(context.Background(), target, opts)
+}
+
+// FlankingPalacesToTextWithContext 为 FlankingPalacesToTextWith 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) FlankingPalacesToTextWithContext(ctx context.Context, target PalaceTarget, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("flankingPalacesToText: nil astrolabe")
+	}
+	payload := a.textPayload("flankingPalacesToText")
+	target.apply(payload)
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// DecadalListToText 生成大限一览的语义化文本：十二个大限一张表，按起运先后排。
+// 不展开每限的流年，某一限的流年用 YearlyList 单取。
+func (a *Astrolabe) DecadalListToText() (string, error) {
+	return a.DecadalListToTextContext(context.Background())
+}
+
+// DecadalListToTextContext 为 DecadalListToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) DecadalListToTextContext(ctx context.Context) (string, error) {
+	return a.DecadalListToTextWithContext(ctx, TextOptions{})
+}
+
+// DecadalListToTextWith 生成大限一览的语义化文本并按 opts.Knowledge 在表后追加各限四化星的释义节。
+func (a *Astrolabe) DecadalListToTextWith(opts TextOptions) (string, error) {
+	return a.DecadalListToTextWithContext(context.Background(), opts)
+}
+
+// DecadalListToTextWithContext 为 DecadalListToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("decadalListToText: nil astrolabe")
+	}
+	payload := a.textPayload("decadalListToText")
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}

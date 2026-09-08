@@ -19,6 +19,8 @@ description: 把一张盘、一段运限或一个宫位投影成 Markdown 文本
 | 运限 `to_text` | 运限：大限、小限、流年、流月、流日、流时各一节，各层四化、流耀与格局 |
 | 宫位 `to_text` | 单个宫位，与本命盘详解里该宫的段落逐字一致 |
 | 三方四正 `to_text` | 本宫、对宫、财帛位、官禄位四宫各一段 |
+| 夹宫 `to_text` | 目标宫前后相邻的两宫各一段 |
+| 大限一览 `to_text` | 十二个大限一张表：本命宫、虚岁、年份、干支、四化 |
 | `patterns_to_text` | 格局命中列表单独成文，本命与运限视角皆可 |
 
 全部按**盘面语言**生成：中文盘出中文，英文盘出英文。带[知识包](#带释义的文本)时，
@@ -53,6 +55,8 @@ fortune, _ := h.ToText()
 ```python
 chart.palace("命宫").to_text()                 # 单宫
 chart.surrounded_palaces("命宫").to_text()      # 三方四正
+chart.flanking_palaces("命宫").to_text()        # 夹宫
+chart.decadal_list_to_text()                    # 大限一览
 chart.patterns_to_text()                        # 本命格局
 h.patterns_to_text("yearly")                    # 流年视角格局
 ```
@@ -60,13 +64,17 @@ h.patterns_to_text("yearly")                    # 流年视角格局
 ```go
 chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.FlankingPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.DecadalListToText()
 chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
-Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()` 与
+Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
+`FlankingPalaces::to_text()`、`Astrolabe::decadal_list_to_text()` 与
 `text` 模块的自由函数（`astrolabe_to_text` / `horoscope_to_text` /
-`palace_to_text` / `surrounded_palaces_to_text` / `patterns_to_text`），
+`palace_to_text` / `surrounded_palaces_to_text` / `flanking_palaces_to_text` /
+`decadal_list_to_text` / `patterns_to_text`），
 便捷方法按排盘语言输出，自由函数可指定语言，见 [Rust — TextOptions](/zh/docs/rust/astro#textoptions)。
 三语言输出逐字节一致。
 
@@ -241,6 +249,8 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()` 与
 | `- 主星: 空宫` | 无主星的宫写「空宫」；辅星、杂耀为空时整行省略 |
 | `- 三方四正: 对宫 迁移 · 三合 财帛, 官禄` | 本宫的对宫，与三合的另外两宫，固定按财帛位、官禄位的顺序（[三方四正](/zh/docs/guide/concepts/surrounded)） |
 | `### 本宫 · 命宫 (壬午) · 大限 3-12` | 三方四正文本的宫段标题：宫名前多一个角色——`本宫`、`对宫`、`财帛位`、`官禄位` |
+| `### 前宫 · 兄弟 (辛巳) · 大限 13-22` | 夹宫文本的宫段标题：角色是 `前宫`、`后宫`，事实行与三方四正逐字同构 |
+| `\| 序 \| 本命宫 \| 虚岁 \| 年份 \| 干支 \| 四化 \|` | 大限一览的表头：十二行一行一限，按起运先后排；四化列的箭头指向本命宫 |
 | `- 宫干壬飞化: 天梁化禄→子女, …` | 以本宫宫干起的[飞星四化](/zh/docs/guide/concepts/mutagen#飞星)：四化星与各自落宫 |
 | `- 十二神: 长生·衰, 博士·青龙, 岁前·丧门, 将前·灾煞` | 四组各一位，写「组名·神名」，固定顺序长生 12、博士 12、岁前 12、将前 12；流年表的十二神列只有岁前、将前两组 |
 | `- 小限虚岁: 5, 17, 29, …` | 小限落在本宫的虚岁 |
@@ -262,7 +272,7 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()` 与
 
 日期字段原样回显入参，不补零：传 `"2000-8-16"` 输出就是 `阳历: 2000-8-16`。
 
-## 五个入口
+## 七个入口
 
 | 入口 | 输出 |
 | --- | --- |
@@ -270,7 +280,12 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()` 与
 | 运限 | 上面的完整运限文本；本命信息不重复，两段拼起来就是一份完整上下文 |
 | 宫位 | 本命详解里该宫的那一段（`### 宫名 …` 起的一段），逐字一致，可从本命文本里 `contains` 到 |
 | 三方四正 | `## 命宫 三方四正` 标题 + 本宫、对宫、财帛位、官禄位四宫各一段；每段标题带角色前缀（`### 本宫 · 命宫 …`），事实行与单宫文本逐字一致 |
+| 夹宫 | `## 夹宫` 标题 + [前后两宫](/zh/docs/guide/concepts/surrounded#夹宫)各一段，与三方四正同构，角色前缀是 `前宫` / `后宫` |
+| 大限一览 | `# 大限一览` 标题 + 十二行的表，一行一限 |
 | `patterns_to_text` | 只有格局行，每条一行；本命视角与运限各层视角皆可 |
+
+八个 bridge kind 与之对应：`patterns_to_text` 的本命视角与运限视角是两个 kind
+（`patternsToText` / `horoscopePatternsToText`），其余六个入口一个入口一个 kind。
 
 单宫与三方四正：
 
@@ -302,7 +317,47 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()` 与
 （事实行同单宫）
 ```
 
-单宫文本就是去掉角色前缀的其中一段（`### 命宫 (壬午) · 大限 3-12` 起）。格局文本：
+单宫文本就是去掉角色前缀的其中一段（`### 命宫 (壬午) · 大限 3-12` 起）。
+
+命宫的夹宫 —— 兄弟宫与父母宫，事实行与单宫文本同款：
+
+```text
+## 夹宫
+
+### 前宫 · 兄弟 (辛巳) · 大限 13-22
+- 主星: 天机(平)
+- 杂耀: 天喜, 天空, 孤辰
+- 三方四正: 对宫 仆役 · 三合 疾厄, 田宅
+- 宫干辛飞化: 巨门化禄→疾厄, 太阳化权→子女, 文曲化科→命宫, 文昌化忌→福德
+- 十二神: 长生·病, 博士·小耗, 岁前·晦气, 将前·劫煞
+- 小限虚岁: 6, 18, 30, 42, 54, 66, 78, 90, 102, 114
+
+### 后宫 · 父母 (癸未) · 大限 113-122
+- 主星: 空宫
+- 辅星: 天钺, 陀罗(庙)
+- 杂耀: 天姚, 空亡
+- 三方四正: 对宫 疾厄 · 三合 子女, 仆役
+- 宫干癸飞化: 破军化禄→福德, 巨门化权→疾厄, 太阴化科→仆役, 贪狼化忌→迁移
+- 十二神: 长生·帝旺, 博士·力士, 岁前·贯索, 将前·天煞
+- 小限虚岁: 4, 16, 28, 40, 52, 64, 76, 88, 100, 112
+```
+
+大限一览是一张十二行的表，一行一限（截前三行，其余九行同款）：
+
+```text
+# 大限一览
+
+| 序 | 本命宫 | 虚岁 | 年份 | 干支 | 四化 |
+|---|---|---|---|---|---|
+| 1 | 命宫 | 3-12 | 2002-2011 | 壬午 | 天梁化禄→本命子女, 紫微化权→本命命宫, 左辅化科→本命官禄, 武曲化忌→本命财帛 |
+| 2 | 兄弟 | 13-22 | 2012-2021 | 辛巳 | 巨门化禄→本命疾厄, 太阳化权→本命子女, 文曲化科→本命命宫, 文昌化忌→本命福德 |
+| 3 | 夫妻 | 23-32 | 2022-2031 | 庚辰 | 太阳化禄→本命子女, 武曲化权→本命财帛, 太阴化科→本命仆役, 天同化忌→本命疾厄 |
+```
+
+这张表**不展开每限的流年** —— 十二限各十年会撑到一百二十行，它要做的是一眼看完一生的
+十二个十年。某一限的流年用 `yearly_list` 单取。
+
+格局文本：
 
 ```text
 # 格局
@@ -324,10 +379,12 @@ chart.to_text(knowledge=my_pack)       # 或任意 KnowledgePack
 h.to_text(knowledge=True)
 chart.palace("命宫").to_text(knowledge=True)
 chart.surrounded_palaces("命宫").to_text(knowledge=True)
+chart.flanking_palaces("命宫").to_text(knowledge=True)
+chart.decadal_list_to_text(knowledge=True)
 chart.patterns_to_text(knowledge=True)
 h.patterns_to_text("yearly", knowledge=True)
 
-chart.to_text(knowledge=True, config=PatternConfig(borrow=False))   # 四处 to_text 都收 config
+chart.to_text(knowledge=True, config=PatternConfig(borrow=False))   # 五处 to_text 都收 config
 ```
 
 ```rust
@@ -338,6 +395,8 @@ chart.to_text_with(&opts);
 h.to_text_with(&opts);
 chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
+chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
+chart.decadal_list_to_text_with(&opts);
 text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
 let cfg = PatternConfig { borrow: false, ..PatternConfig::default() };
@@ -351,6 +410,8 @@ chart.ToTextWith(opts)
 h.ToTextWith(opts)
 chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
+chart.FlankingPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
+chart.DecadalListToTextWith(opts)
 chart.PatternsToTextWith(opts)
 h.PatternsToTextWith(iztro.ScopeYearly, opts)
 
@@ -360,7 +421,7 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 
 格局判定口径（`config` / `pattern_config` / `PatternConfig`）与 `patterns(config)` 同一入参，
 同时作用于文本里的格局节与格局释义：口径变了，命中的格局与紧跟其后的释义一起变。
-不传取默认口径。
+不传取默认口径。大限一览没有格局节，故不收这个入参。
 
 ### 插入位置与去重
 
@@ -370,6 +431,8 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 | 运限 | 大限与流年的十二宫表之后、流月及以下各层的事实行之后：该层流耀各一条、该层命中格局各一条 |
 | 宫位 | 该宫事实行之后：该宫每颗星一条 |
 | 三方四正 | 四宫各自的事实行之后 |
+| 夹宫 | 前后两宫各自的事实行之后 |
+| 大限一览 | 表之后 `## 星耀释义`：各限四化星每颗一条，同一颗星在多限重复出现时只出一次 |
 | `patterns_to_text` | 格局列表之后 |
 
 - 释义条目写作 `**标题**: 正文`，标题就是事实行里那颗星的写法（`**紫微(庙)**`、`**太阳(庙)化禄**`），
@@ -424,13 +487,16 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 
 | 入口 | 只有事实 | 带释义 |
 | --- | --- | --- |
-| 本命盘 | 3,389 | 20,767 |
-| 运限 | 2,457 | 8,458 |
+| 本命盘 | 3,389 | 20,765 |
+| 运限 | 2,697 | 8,698 |
 | 单宫（命宫） | 222 | 1,141 |
 | 三方四正（命宫） | 924 | 6,312 |
-| 格局 | 30 | 322 |
+| 夹宫（命宫） | 436 | 1,874 |
+| 大限一览 | 1,045 | 6,447 |
+| 格局 | 36 | 328 |
 
-英文盘更长（星名是单词而非两字，且多一套结构标签）：本命 6,757、运限 5,726、单宫 464、三方四正 1,911、格局 83。
+英文盘更长（星名是单词而非两字，且多一套结构标签）：本命 6,757、运限 6,378、单宫 464、
+三方四正 1,911、夹宫 895、大限一览 1,893、格局 95。
 任何主流模型的上下文窗口都装得下，通常不必裁剪。本命盘的释义占大头是因为盘上每颗主星、辅星、杂耀都有条目。
 只要某几个宫的释义，用宫位或三方四正的入口；要自己排版，用
 [`for_astrolabe`](/zh/docs/guide/guides/knowledge-pack#按盘取材) 取出这张盘的子包自己拼。

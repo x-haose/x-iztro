@@ -40,6 +40,16 @@
   三个列表都经与逐层查询相同的 `horoscope()` 算出，故列表值与单层查询零分歧；
   列表用的时辰取自**时柱地支**而非出生入参——晚子时两者差 12，用入参会让晚子盘的列表
   与逐层查询对不上。bridge kind `decadalList` / `yearlyList` / `monthlyList`。
+- **两个新的 to_text 入口**（x-iztro 扩展，to_text 家族从六个扩到八个）：
+  - **夹宫文本** `flanking_palaces_to_text(_with)` / Python `FlankingPalaces.to_text` /
+    Go `Astrolabe.FlankingPalacesToText`，与三方四正文本同构：前后两宫各一段，
+    角色标题写「前宫」「后宫」。bridge kind `flankingPalacesToText`。
+  - **大限一览** `decadal_list_to_text(_with)` / Python `Astrolabe.decadal_list_to_text` /
+    Go `Astrolabe.DecadalListToText`：十二行一张表（序 / 本命宫 / 虚岁 / 年份 / 干支 / 四化），
+    一眼看完一生的十二个十年。不展开每限的流年——十二限各十年会撑到一百二十行，
+    某限的流年用 `yearly_list` 单取。带知识包时表后附各限四化星的释义。
+    bridge kind `decadalListToText`。
+  文本快照扩为 21 份（七类 × zh-CN/en-US + 七类带释义 × zh-CN），三侧读同一批。
 - **星曜反查别名**（iztro v2.6.0 起）：`key_of` / `key_of_in` 先查 14 条带汉字的限定别名
   （`천상(天相)` / `Kiếp Sát(劫煞)` 之类），命中即返回且不受标识名限定影响，用于消歧韩文与
   越南语中若干完全同形的星曜译名。金标 `i18n_kot.json` 已纳入这 14 条。

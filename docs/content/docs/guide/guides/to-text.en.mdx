@@ -22,6 +22,8 @@ well, so pasting it into a chat box loses no structure.
 | Horoscope `to_text` | The horoscope: one section each for decadal, age fortune, yearly, monthly, daily and hourly, with each scope's mutagens, flowing stars and patterns |
 | Palace `to_text` | A single palace, character-for-character identical to that palace's section in the natal text |
 | Surrounded palaces `to_text` | The target palace, its opposite, and the wealth and career positions, one section each |
+| Flanking palaces `to_text` | The two palaces immediately either side of the target, one section each |
+| Decadal timeline `to_text` | All twelve decadals in one table: natal palace, nominal ages, years, stem-branch, mutagens |
 | `patterns_to_text` | The pattern-hit list on its own, from the natal or any horoscope perspective |
 
 Everything generates in the **chart language**: a Chinese chart yields Chinese text, an English
@@ -57,6 +59,8 @@ The finer-grained entries:
 ```python
 chart.palace("soul").to_text()                  # one palace
 chart.surrounded_palaces("soul").to_text()      # surrounded palaces
+chart.flanking_palaces("soul").to_text()        # flanking palaces
+chart.decadal_list_to_text()                    # decadal timeline
 chart.patterns_to_text()                        # natal patterns
 h.patterns_to_text("yearly")                    # patterns from the yearly perspective
 ```
@@ -64,15 +68,18 @@ h.patterns_to_text("yearly")                    # patterns from the yearly persp
 ```go
 chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.FlankingPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+chart.DecadalListToText()
 chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
-On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text()` and the free
-functions of the `text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
-`surrounded_palaces_to_text` / `patterns_to_text`); the convenience methods emit in the chart
-language, the free functions take an explicit language — see
-[Rust — TextOptions](/en/docs/rust/astro#textoptions). All three languages emit identical text.
+On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text()`,
+`FlankingPalaces::to_text()`, `Astrolabe::decadal_list_to_text()` and the free functions of the
+`text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
+`surrounded_palaces_to_text` / `flanking_palaces_to_text` / `decadal_list_to_text` /
+`patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
+explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). All three languages emit identical text.
 
 ## Structure at a glance
 
@@ -260,6 +267,8 @@ different reading semantics.
 | `- Major Stars: Empty` | A palace with no major star says `Empty`; the minor and adjective lines are omitted when empty |
 | `- Trine & Opposite: Opposite surface · Trine wealth, career` | This palace's opposite, and the other two palaces of its trine, always in wealth-position, career-position order ([surrounded palaces](/en/docs/guide/concepts/surrounded)) |
 | `### Target Palace · soul (ren woo) · Decadal 3-12` | A palace heading in the surrounded-palaces text: the palace name is preceded by its role — `Target Palace`, `Opposite Palace`, `Wealth Palace`, `Career Palace` |
+| `### Previous Palace · siblings (xin si) · Decadal 13-22` | A palace heading in the flanking-palaces text: the roles are `Previous Palace` and `Next Palace`, and the fact lines match the surrounded-palaces text |
+| `\| # \| Natal Palace \| Nominal Age \| Years \| Stem-Branch \| Mutagen \|` | The decadal timeline's header: twelve rows, one per decadal, in starting order; the arrows in the Mutagen column point at natal palaces |
 | `- Stem ren Flying: sage [A]→children, …` | The [flying-star mutagens](/en/docs/guide/concepts/mutagen#flying-stars) driven by this palace's stem: the mutagen stars and where each lands |
 | `- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery` | One god from each of the four groups, written `group·god`, always in the order Changsheng-12, Boshi-12, Sui-qian-12, Jiang-qian-12; the yearly table's Twelve Gods column holds only the Sui-qian and Jiang-qian pair |
 | `- Age Fortune Years: 5, 17, 29, …` | The [nominal ages](/en/docs/guide/concepts#four-concepts-to-get-straight-first) (虚岁) at which age fortune lands on this palace |
@@ -292,7 +301,7 @@ key, never by parsing the name.
 Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` and you get
 `Solar: 2000-8-16`.
 
-## The five entries
+## The seven entries
 
 | Entry | Output |
 | --- | --- |
@@ -300,7 +309,12 @@ Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` an
 | Horoscope | The complete horoscope text above; natal information is not repeated, so the two concatenated make one full context |
 | Palace | That palace's section from the natal detail (from its `### ` heading on), character-for-character — the natal text `contains` it |
 | Surrounded palaces | A `## soul Trine & Opposite` heading plus one section each for the target, its opposite, and the wealth and career positions; each heading carries a role prefix (`### Target Palace · soul …`), and the fact lines are character-for-character the palace text |
+| Flanking palaces | A `## Flanking Palaces` heading plus one section each for the [two neighbours](/en/docs/guide/concepts/surrounded#flanking-palaces), structured like the surrounded text with the role prefixes `Previous Palace` / `Next Palace` |
+| Decadal timeline | A `# Decadal Timeline` heading plus a twelve-row table, one row per decadal |
 | `patterns_to_text` | Pattern lines only, one per hit; from the natal perspective or any horoscope scope |
+
+Eight bridge kinds map onto these: `patterns_to_text` splits into a natal and a horoscope kind
+(`patternsToText` / `horoscopePatternsToText`), and each of the other six entries is one kind.
 
 Surrounded palaces and a single palace:
 
@@ -333,7 +347,49 @@ Surrounded palaces and a single palace:
 ```
 
 The palace text is one of those sections without the role prefix (from
-`### soul (ren woo) · Decadal 3-12` on). The pattern text:
+`### soul (ren woo) · Decadal 3-12` on).
+
+The Soul palace's flanking palaces — Siblings and Parents — with fact lines in the same shape:
+
+```text
+## Flanking Palaces
+
+### Previous Palace · siblings (xin si) · Decadal 13-22
+- Major Stars: advisor([-1])
+- Adjective Stars: cheerful, utopian, alone
+- Trine & Opposite: Opposite friends · Trine health, property
+- Stem xin Flying: advocator [A]→health, sun [B]→children, artist [C]→soul, scholar [D]→spirit
+- Twelve Gods: Changsheng·sick, Boshi·consumer, Suiqian·unlucky, Jiangqian·robbed
+- Age Fortune Years: 6, 18, 30, 42, 54, 66, 78, 90, 102, 114
+
+### Next Palace · parents (gui wei) · Decadal 113-122
+- Major Stars: Empty
+- Minor Stars: aide, tangled([+3])
+- Adjective Stars: social, bottomless
+- Trine & Opposite: Opposite health · Trine children, friends
+- Stem gui Flying: rebel [A]→spirit, advocator [B]→health, moon [C]→friends, wolf [D]→surface
+- Twelve Gods: Changsheng·prime, Boshi·sumo, Suiqian·tied, Jiangqian·condemned
+- Age Fortune Years: 4, 16, 28, 40, 52, 64, 76, 88, 100, 112
+```
+
+The decadal timeline is one twelve-row table, one row per decadal (first three rows shown, the other
+nine are the same shape):
+
+```text
+# Decadal Timeline
+
+| # | Natal Palace | Nominal Age | Years | Stem-Branch | Mutagen |
+|---|---|---|---|---|---|
+| 1 | soul | 3-12 | 2002-2011 | ren woo | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+| 2 | siblings | 13-22 | 2012-2021 | xin si | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 3 | spouse | 23-32 | 2022-2031 | geng chen | sun [A]→Natal children, warrior [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health |
+```
+
+That table deliberately **does not expand each decadal's years** — twelve decadals of ten years each
+would run to a hundred and twenty rows, whereas the point of this table is to take in all twelve
+decades of a life at once. For the years within one decadal, use `yearly_list`.
+
+The pattern text:
 
 ```text
 # Patterns
@@ -357,10 +413,12 @@ chart.to_text(knowledge=my_pack)       # or any KnowledgePack
 h.to_text(knowledge=True)
 chart.palace("soul").to_text(knowledge=True)
 chart.surrounded_palaces("soul").to_text(knowledge=True)
+chart.flanking_palaces("soul").to_text(knowledge=True)
+chart.decadal_list_to_text(knowledge=True)
 chart.patterns_to_text(knowledge=True)
 h.patterns_to_text("yearly", knowledge=True)
 
-chart.to_text(knowledge=True, config=PatternConfig(borrow=False))   # all four to_text take config
+chart.to_text(knowledge=True, config=PatternConfig(borrow=False))   # all five to_text take config
 ```
 
 ```rust
@@ -371,6 +429,8 @@ chart.to_text_with(&opts);
 h.to_text_with(&opts);
 chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
+chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
+chart.decadal_list_to_text_with(&opts);
 text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
 let cfg = PatternConfig { borrow: false, ..PatternConfig::default() };
@@ -384,6 +444,8 @@ chart.ToTextWith(opts)
 h.ToTextWith(opts)
 chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
+chart.FlankingPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
+chart.DecadalListToTextWith(opts)
 chart.PatternsToTextWith(opts)
 h.PatternsToTextWith(iztro.ScopeYearly, opts)
 
@@ -394,7 +456,7 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 The pattern criteria (`config` / `pattern_config` / `PatternConfig`) are the same argument as
 `patterns(config)` and act on both the text's pattern section and the pattern readings: change the
 criteria and the hits and the readings that follow them change together. Omitted, the default
-criteria apply.
+criteria apply. The decadal timeline has no pattern section, so it does not take the argument.
 
 ### Where readings go, and deduplication
 
@@ -404,6 +466,8 @@ criteria apply.
 | Horoscope | After the decadal and yearly twelve-palace tables, and after the fact lines of the monthly and finer scopes: one entry per scope star of that scope, one per pattern hit at that scope |
 | Palace | After that palace's fact lines: one entry per star |
 | Surrounded palaces | After each of the four palaces' fact lines |
+| Flanking palaces | After each of the two palaces' fact lines |
+| Decadal timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across decadals read only once |
 | `patterns_to_text` | After the pattern list |
 
 - A reading entry is written `**heading**: body`; the heading is the star exactly as written on its
@@ -465,14 +529,17 @@ chart (Chinese chart, default pack):
 
 | Entry | Facts only | With readings |
 | --- | --- | --- |
-| Natal chart | 3,389 | 20,767 |
-| Horoscope | 2,457 | 8,458 |
+| Natal chart | 3,389 | 20,765 |
+| Horoscope | 2,697 | 8,698 |
 | Palace (Soul) | 222 | 1,141 |
 | Surrounded palaces (Soul) | 924 | 6,312 |
-| Patterns | 30 | 322 |
+| Flanking palaces (Soul) | 436 | 1,874 |
+| Decadal timeline | 1,045 | 6,447 |
+| Patterns | 36 | 328 |
 
 An English chart is longer (star names are words rather than two characters, and the structural
-labels are longer): natal 6,757, horoscope 5,726, palace 464, surrounded palaces 1,911, patterns 83.
+labels are longer): natal 6,757, horoscope 6,378, palace 464, surrounded palaces 1,911, flanking
+palaces 895, decadal timeline 1,893, patterns 95.
 Any mainstream model's context window holds either comfortably; trimming is normally unnecessary.
 The natal chart's readings dominate because every major, minor and adjective star on the chart has
 an entry. For readings on a few palaces only, use the palace or surrounded-palaces entry; to lay
