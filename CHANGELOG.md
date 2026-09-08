@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-08
+
 ### 变更（breaking）
 
 对齐上游 iztro v2.6.1（金标基准从 v2.5.8 升级，全部 716,314 例重新生成）。以下四项会改变
@@ -358,7 +360,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/x-haose/x-iztro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/x-haose/x-iztro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/x-haose/x-iztro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/x-haose/x-iztro/compare/v0.2.0...v0.3.0
