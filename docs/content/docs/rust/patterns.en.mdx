@@ -225,7 +225,7 @@ impl Astrolabe {
 **Example**　The same chart under both Sun/Moon brightness readings:
 
 ```rust
-let chart = by_solar("1985-1-5", 11, Gender::Female, true, en, Config::default())?;
+let chart = by_solar("1985-6-10", 8, Gender::Female, true, en, Config::default())?;
 let cfg = PatternConfig {
     brightness_source: BrightnessSource::Positional,
     ..Default::default()
@@ -240,8 +240,8 @@ println!("{:?}", chart.patterns_with(&cfg).iter()
 **Output**
 
 ```text
-["Money and Horse Galloping Together", "Officer and Helper Flanking Life", "Sitting on and Facing Nobility"]
-["Sun and Moon Both Bright", "Money and Horse Galloping Together", "Officer and Helper Flanking Life", "Sitting on and Facing Nobility"]
+[]
+["Sun and Moon Both Dim"]
 ```
 
 ---

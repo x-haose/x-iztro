@@ -7,6 +7,70 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-08
+
+### 变更（breaking）
+
+对齐上游 iztro v2.6.1（金标基准从 v2.5.8 升级，全部 716,314 例重新生成）。以下四项会改变
+既有盘的输出，升级后同一生辰的结果与 v0.5.0 不同：
+
+- **太阳、太阴、七杀在酉宫的亮度修正**（iztro v2.6.1 修）：太阳「陷」→「平」、太阴「不」→「旺」、
+  七杀「庙」→「旺」。连带改变日月类格局的判定——日月并明与丹墀桂墀命中增多、日月反背与
+  日月藏辉减少（tier1 全量分布：102/56/60/24，原为 76/40/80/30）。iztro-docs《日月并明》
+  《丹墀桂墀》两张示例盘从此在默认亮度表口径下即成格，与页面把它们列为该格局示例一致。
+- **武曲的英文译名 `general` → `warrior`，岁破的英文译名 `wastrel` → `breaker`**
+  （iztro v2.6.1 改，避免与将军 `general`、大耗 `wastrel` 重名）。按英文译名做展示或反查的
+  下游需同步。语言无关标识 `wuquMaj` / `suipo` 不变。
+- **来因宫的韩文译名 `라인` → `래인`**（iztro v2.6.1 修）。
+- **`age_divide=Birthday` 的虚岁修正**（iztro v2.6.1 修）：此前判断「是否过了农历生日」时把
+  出生年也纳入相等比较，导致出生当年之后的每一年里，落在生日同月且已过生日的日期少算一岁。
+  现只比农历月日。
+
+### 新增
+
+- **夹宫**（iztro v2.6.0 新增）：`flanking_palaces(target)` 取某宫前后相邻的两宫，
+  带 `have` / `not_have` / `have_one_of` / `have_mutagen` / `not_have_mutagen` 五个判定。
+  十二宫首尾相连，故首宫的前一宫是末宫；星耀判定在**两宫合计**的集合上做，不要求同在一宫。
+  Rust `flanking_palaces`、Python `flanking_palaces`、Go `FlankingPalaces`，
+  bridge kind `flankingPalaces`。
+- **三个运限列表**（iztro v2.6.0 新增）：
+  - `decadal_list()` 按起运先后排列的十二个大限，每项带该限所在的本命宫名、起止虚岁与
+    起止农历年份，以及以该宫为命宫推排的十二宫名、该限四化与大限流曜。
+  - `yearly_list(target)` 某个大限内的十个流年；`target` 可写大限序号（0 起）或本命宫名。
+  - `monthly_list(year, fix_leap)` 某农历年的流月：无闰月 12 项；有闰月且 `fix_leap` 为真时
+    闰月拆成前后半月共 14 项，为假时闰月整月一项共 13 项。
+  三个列表都经与逐层查询相同的 `horoscope()` 算出，故列表值与单层查询零分歧；
+  列表用的时辰取自**时柱地支**而非出生入参——晚子时两者差 12，用入参会让晚子盘的列表
+  与逐层查询对不上。bridge kind `decadalList` / `yearlyList` / `monthlyList`。
+- **两个新的 to_text 入口**（x-iztro 扩展，to_text 家族从六个扩到八个）：
+  - **夹宫文本** `flanking_palaces_to_text(_with)` / Python `FlankingPalaces.to_text` /
+    Go `Astrolabe.FlankingPalacesToText`，与三方四正文本同构：前后两宫各一段，
+    角色标题写「前宫」「后宫」。bridge kind `flankingPalacesToText`。
+  - **大限一览** `decadal_list_to_text(_with)` / Python `Astrolabe.decadal_list_to_text` /
+    Go `Astrolabe.DecadalListToText`：十二行一张表（序 / 本命宫 / 虚岁 / 年份 / 干支 / 四化），
+    一眼看完一生的十二个十年。不展开每限的流年——十二限各十年会撑到一百二十行，
+    某限的流年用 `yearly_list` 单取。带知识包时表后附各限四化星的释义。
+    bridge kind `decadalListToText`。
+  文本快照扩为 21 份（七类 × zh-CN/en-US + 七类带释义 × zh-CN），三侧读同一批。
+- **星曜反查别名**（iztro v2.6.0 起）：`key_of` / `key_of_in` 先查 14 条带汉字的限定别名
+  （`천상(天相)` / `Kiếp Sát(劫煞)` 之类），命中即返回且不受标识名限定影响，用于消歧韩文与
+  越南语中若干完全同形的星曜译名。金标 `i18n_kot.json` 已纳入这 14 条。
+
+### 修正
+
+- **`horoscope_divide=Exact` 的月柱在节气当天静默算错**：构造日期对象用的是整点 0 分，
+  而 lunar-lite 用的是整点后 30 分（`Solar.fromYmdHms(…, 30, 0)`）。按节气取月柱是时刻级
+  比较，节气落在 `HH:00`~`HH:30` 的日子两边判到节气两侧——1984-2043 间有 196 个
+  (日期, 时辰) 组合受影响。影响面不止展示字段：运限流月的干支与四化整组错，而流月宫名
+  与流曜不变、肉眼看不出；反推走同一条路径，用标准排盘软件算出的八字在这些日子会漏解。
+  年柱按立春是日期级比较、日柱分界在 23:00，两个分钟数同侧，均不受影响。
+  金标新增按节气时刻取样的 `config_jieqi.json`（1,404 例）——此前 `horoscopeDivide=exact`
+  只按固定日期抽样，结构上抓不到这类日子。0.5.0 及更早版本均受影响。
+- **运限查询未遵守晚子时日期分界**（iztro v2.6.1 同修）：`day_divide=Current` 时目标时辰未做
+  归一，晚子时（23:00 起）的日柱与随之推算的时柱进位到次日，流日与流时两层的干支和宫位
+  因此落错。农历年月日不受影响（23:00 仍属同一公历日）。四处时辰归一（排盘上下文、运限、
+  重排、反推剪枝）合并为 `builder::effective_time_index` 一份，不再各留副本。
+
 ## [0.5.0] - 2026-09-04
 
 ### 变更（breaking）
@@ -296,7 +360,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/x-haose/x-iztro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/x-haose/x-iztro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/x-haose/x-iztro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/x-haose/x-iztro/compare/v0.2.0...v0.3.0

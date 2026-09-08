@@ -1,6 +1,6 @@
 ---
 title: 运限对象
-description: 六个运限层级的数据结构，以及不必再传星盘的宫位查询方法。
+description: 六个运限层级的数据结构、整层取回的三个列表，以及不必再传星盘的宫位查询方法。
 ---
 
 运限把本命盘投影到某个时间点上。同一张盘，不同年份看到的宫位分布不同——
@@ -109,6 +109,236 @@ println!("小限虚岁 {}", h.age.nominal_age);
 流时 落在宫位 8 干支 戊子
 小限虚岁 26
 ```
+
+---
+
+## 三个列表
+
+`decadal_list` / `yearly_list` / `monthly_list` 是 `Astrolabe` 上的方法，不在运限对象上：
+它们一次取回整层的运限项，省去按日期逐个调 `horoscope` 再自己拼。
+每项都在通用的 `HoroscopeItem` 之外多带该层的时间坐标：
+
+```rust
+pub struct DecadalHoroscope {
+    pub base: HoroscopeItem,
+    pub palace_name: Palace,     // 该大限所在的本命宫名
+    pub age_range: (u32, u32),   // 起止虚岁，含两端
+    pub year_range: (i64, i64),  // 起止农历年份，含两端
+}
+
+pub struct YearlyHoroscope {
+    pub base: HoroscopeItem,
+    pub age: u32,                // 该流年对应的虚岁
+    pub year: i64,               // 农历年份
+}
+
+pub struct MonthlyHoroscope {
+    pub base: HoroscopeItem,
+    pub age: u32,                // 该流月对应的虚岁
+    pub year: i64,               // 农历年份
+    pub month: u32,              // 农历月份，正月为 1；闰月与同号常规月的 month 相同
+    pub is_leap_month: bool,     // 该项是否闰月
+    pub part: MonthPart,         // Normal 整月 / First 闰月前半 / Second 闰月后半
+    pub day_range: (u32, u32),   // 该段覆盖的农历日，含两端
+}
+```
+
+三者都实现 `Deref<Target = HoroscopeItem>`，通用字段直接读（`d.heavenly_stem`、`d.palace_names`），
+需要整个 `HoroscopeItem` 时取 `.base`。四个类型与 `MonthPart` 都在 crate 根重导出。
+
+<Callout type="info" title="列表里的运限按时柱地支起">
+三个列表的每一项都以**时柱地支**对应的时辰计算，而不是排盘时传入的 `time_index`。
+两者只在晚子时不同：入参 12 的盘，时柱地支是子，列表按时辰 0 起运限。
+</Callout>
+
+---
+
+## decadal_list
+
+**用途**　一次取回本盘十二个大限，按起运先后排列。
+
+**斗数含义**　大限十年一步，从命宫或其他起限宫顺逆行走十二宫。
+把整条线摊平看，才知道某一段人生落在哪一宫、对应哪十年。
+
+**签名**
+
+```rust
+pub fn decadal_list(&self) -> Vec<DecadalHoroscope>
+```
+
+**返回值**　定长 12 项，第 0 项是第一个大限。顺序按起运虚岁排，
+与宫位索引顺序无关（大限顺行逆行取决于阴阳男女）。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+
+for d in chart.decadal_list().iter().take(3) {
+    println!("{} {}{} {}-{} {}-{}",
+        translate_palace(d.palace_name, zh),
+        translate_heavenly_stem(d.heavenly_stem, zh),
+        translate_earthly_branch(d.earthly_branch, zh),
+        d.age_range.0, d.age_range.1, d.year_range.0, d.year_range.1);
+}
+println!("{}", chart.decadal_list().len());
+```
+
+**输出**
+
+```text
+命宫 壬午 3-12 2002-2011
+兄弟 辛巳 13-22 2012-2021
+夫妻 庚辰 23-32 2022-2031
+12
+```
+
+这张盘三岁起运，第一个大限落在命宫。
+
+**边界与陷阱**
+
+<Callout type="info" title="列表里没有童限">
+起运之前的那几年是童限，只有按具体日期查 `horoscope` 才会出现（`name_key` 为 `Childhood`）。
+`decadal_list` 列的是十二个大限本身，每项的 `name_key` 恒为 `Decadal`。
+</Callout>
+
+---
+
+## yearly_list
+
+**用途**　取一个大限内的全部流年。
+
+**斗数含义**　定了大限再逐年细看，是斗数常规的推运顺序。
+一个大限十年，对应的就是这十个流年。
+
+**签名**
+
+```rust
+pub fn yearly_list(&self, target: impl Into<DecadalTarget>) -> Result<Vec<YearlyHoroscope>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<DecadalTarget>` | 是 | — | 大限序号（`usize`，0 为第一个大限）或该限所在的本命宫名（`Palace`） |
+
+```rust
+pub enum DecadalTarget {
+    Ordinal(usize),  // 起运先后序号
+    Name(Palace),    // 该大限所在的本命宫名
+}
+```
+
+两种写法定位到同一个大限时结果完全相同，选哪个取决于手上已有什么。
+
+**返回值**　`Result<Vec<YearlyHoroscope>, IztroError>`，10 项，按虚岁先后排列。
+序号越界或宫名定位不到时返回 `Err`。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let list = chart.yearly_list(2usize)?;
+
+for y in list.iter().take(3) {
+    println!("{} {} {}{} -> {}", y.age, y.year,
+        translate_heavenly_stem(y.heavenly_stem, zh),
+        translate_earthly_branch(y.earthly_branch, zh), y.index);
+}
+println!("{} {}", list.len(), chart.yearly_list(Palace::Spouse)?.len());
+```
+
+**输出**
+
+```text
+23 2022 壬寅 -> 0
+24 2023 癸卯 -> 1
+25 2024 甲辰 -> 2
+10 10
+```
+
+第 2 个大限落在夫妻宫，因此 `yearly_list(2)` 与 `yearly_list(Palace::Spouse)` 是同一个大限。
+
+**边界与陷阱**
+
+<Callout type="warn" title="没有默认大限">
+两种定位必须给一个，没有「不传就取当前大限」的行为——静默取一个默认值会把漏传
+变成看起来成功的错答案。
+</Callout>
+
+---
+
+## monthly_list
+
+**用途**　取一个农历年的全部流月。
+
+**斗数含义**　流月是流年之下的一层，逐月推移。闰月怎么算是一个流派分歧点，
+因此拆不拆由调用方定。
+
+**签名**
+
+```rust
+pub fn monthly_list(&self, year: i64, fix_leap: bool) -> Result<Vec<MonthlyHoroscope>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年份 |
+| `fix_leap` | `bool` | 是 | — | 闰月是否拆成前后半月两项 |
+
+**返回值**　`Result<Vec<MonthlyHoroscope>, IztroError>`，长度取决于该年有无闰月与 `fix_leap`：
+
+| 该农历年 | `fix_leap` | 项数 | 闰月怎么排 |
+| --- | --- | --- | --- |
+| 无闰月 | 任意 | 12 | — |
+| 有闰月 | `true` | 14 | 闰月拆成 `First`（初一至十五）与 `Second`（十六至月末）两项 |
+| 有闰月 | `false` | 13 | 闰月整月一项，`part` 为 `Normal` |
+
+闰月排在同月号的常规月之后。每项按该段首日算出（后半段取十六）。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let list = chart.monthly_list(2020, true)?;
+
+println!("{}", list.len());
+for m in list.iter().skip(3).take(4) {
+    println!("{} {} {} {}-{} {}{}", m.month, m.is_leap_month, m.part.as_key(),
+        m.day_range.0, m.day_range.1,
+        translate_heavenly_stem(m.heavenly_stem, zh),
+        translate_earthly_branch(m.earthly_branch, zh));
+}
+println!("{} {}", chart.monthly_list(2020, false)?.len(), chart.monthly_list(2021, true)?.len());
+```
+
+**输出**
+
+```text
+14
+4 false normal 1-30 辛巳
+4 true first 1-15 辛巳
+4 true second 16-29 壬午
+5 false normal 1-30 壬午
+13 12
+```
+
+农历 2020 年有闰四月。拆开之后，闰四月前半与四月同干支（辛巳），后半跟五月同干支（壬午）
+——这正是「闰月下半月算下一个月」的意思。农历 2021 年无闰月，恒为 12 项。
+
+**边界与陷阱**
+
+<Callout type="warn" title="这个 fix_leap 与排盘的 fix_leap 无关">
+排盘入口那个 `fix_leap` 决定闰月出生的人下半月按下个月安星，改的是本命盘布局；
+这里这个只决定本列表拆不拆闰月。两者可以取不同的值，互不影响。
+</Callout>
+
+<Callout type="info" title="闰月与常规月的 month 相同">
+闰四月的 `month` 也是 `4`，靠 `is_leap_month` 区分。按 `month` 去重会把闰月弄丢。
+</Callout>
 
 ---
 

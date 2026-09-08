@@ -35,7 +35,7 @@ def _snapshot(name: str) -> str:
 
 
 def _texts(chart, horoscope, **kw) -> dict[str, str]:
-    """五类语义化文本，键与快照文件名前缀一致。"""
+    """七类语义化文本，键与快照文件名前缀一致。"""
     soul = chart.palace(PalaceName.SOUL)
     return {
         "astrolabe": chart.to_text(**kw),
@@ -43,6 +43,8 @@ def _texts(chart, horoscope, **kw) -> dict[str, str]:
         "patterns": chart.patterns_to_text(**kw),
         "palace": soul.to_text(**kw),
         "surrounded": soul.surrounded_palaces().to_text(**kw),
+        "flanking": chart.flanking_palaces(PalaceName.SOUL).to_text(**kw),
+        "decadals": chart.decadal_list_to_text(**kw),
     }
 
 
@@ -111,7 +113,7 @@ def test_merge_overrides_only_given_fields(pack):
 
 
 def test_text_with_builtin_knowledge_matches_rust_snapshots(chart, horoscope):
-    """`knowledge=True` 的五类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
+    """`knowledge=True` 的七类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
     for kind, text in _texts(chart, horoscope, knowledge=True).items():
         assert text == _snapshot(f"{kind}_knowledge_zh-CN"), kind
 
@@ -166,14 +168,14 @@ def test_for_horoscope_extends_the_natal_subpack(chart, horoscope, pack):
 def test_for_chart_honours_pattern_config(pack):
     """子包格局按传入口径判定：位置法亮度改判日月类格局，本命与运限子包都随之变化；
     省略与显式 None 同为默认口径。"""
-    chart = Astro().by_solar("1985-1-3", 7, "female")
+    chart = Astro().by_solar("1985-6-10", 8, "female")
     horoscope = chart.horoscope("2025-1-1", 0)
     positional = PatternConfig(brightness_source=BrightnessSource.POSITIONAL)
 
     natal_keys = {e.key for e in pack.for_astrolabe(chart, positional).patterns()}
     assert natal_keys == {h.key for h in chart.patterns(positional)}
-    assert PatternKey.RI_YUE_BING_MING in natal_keys
-    assert PatternKey.RI_YUE_BING_MING not in {e.key for e in pack.for_astrolabe(chart).patterns()}
+    assert PatternKey.RI_YUE_FAN_BEI in natal_keys
+    assert PatternKey.RI_YUE_FAN_BEI not in {e.key for e in pack.for_astrolabe(chart).patterns()}
     assert pack.for_astrolabe(chart, None).to_dict() == pack.for_astrolabe(chart).to_dict()
 
     flow_keys = {e.key for e in pack.for_horoscope(horoscope, positional).patterns()}

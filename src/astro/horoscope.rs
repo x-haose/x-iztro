@@ -5,7 +5,9 @@
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
-use crate::astro::builder::{branch_of, parse_solar_date, stem_of, validate_time_index};
+use crate::astro::builder::{
+    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
+};
 use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
 use crate::data::constants::TIGER_RULE;
@@ -15,8 +17,10 @@ use crate::error::IztroError;
 use crate::i18n::{translate_horoscope_name, translate_star};
 use crate::models::astrolabe::{Astrolabe, PalaceRef};
 use crate::models::horoscope::{
-    AgeItem, HoroscopeData, HoroscopeItem, HoroscopeRef, YearlyDecStar, YearlyItem,
+    AgeItem, DecadalHoroscope, DecadalTarget, HoroscopeData, HoroscopeItem, HoroscopeRef,
+    MonthPart, MonthlyHoroscope, YearlyDecStar, YearlyHoroscope, YearlyItem,
 };
+use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::models::surpalaces::SurroundedPalaces;
 use crate::star::decorative::get_yearly12;
@@ -24,6 +28,7 @@ use crate::star::location::{
     get_chang_qu_index_by_stem, get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index,
     get_nianjie_index,
 };
+use crate::utils::get_mutagens_by_heavenly_stem;
 use crate::utils::{earthly_branch_to_palace_index, fix_index};
 
 // ============================================================
@@ -206,7 +211,14 @@ pub fn get_horoscope(
     let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
 
     let birth_hour = time_index_to_hour(astrolabe.time_index);
-    let birth_solar = solar::from_ymdhms(birth_year, birth_month, birth_day, birth_hour, 0, 0);
+    let birth_solar = solar::from_ymdhms(
+        birth_year,
+        birth_month,
+        birth_day,
+        birth_hour,
+        CHART_MINUTE,
+        0,
+    );
     let birth_lunar = lunar::from_solar(&birth_solar);
 
     let birth_ymd = lunar_table::ymd_of(&birth_lunar)?;
@@ -218,8 +230,20 @@ pub fn get_horoscope(
     // ---- 2. 解析目标日期的农历信息 ----
     let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
 
-    let target_hour = time_index_to_hour(time_index);
-    let target_solar = solar::from_ymdhms(target_year, target_month, target_day, target_hour, 0, 0);
+    // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
+    // （农历年月日与时辰无关，23:00 仍属同一公历日）
+    let target_hour = time_index_to_hour(effective_time_index(
+        astrolabe.config.day_divide,
+        time_index,
+    ));
+    let target_solar = solar::from_ymdhms(
+        target_year,
+        target_month,
+        target_day,
+        target_hour,
+        CHART_MINUTE,
+        0,
+    );
     let target_lunar = lunar::from_solar(&target_solar);
 
     let target_ymd = lunar_table::ymd_of(&target_lunar)?;
@@ -234,10 +258,11 @@ pub fn get_horoscope(
     match astrolabe.config.age_divide {
         AgeDivide::Normal => nominal_age += 1,
         AgeDivide::Birthday => {
-            let passed_birthday = (target_lunar_year == birthday_lunar_year
-                && target_lunar_month == birthday_lunar_month
-                && target_lunar_day > birthday_lunar_day)
-                || target_lunar_month > birthday_lunar_month;
+            // 只比农历月日，不比年：目标年恒晚于出生年，把年份也纳入相等判断
+            // 会让「生日同月、生日之后」这一段在出生当年之后的每一年都少算一岁
+            let passed_birthday = target_lunar_month > birthday_lunar_month
+                || (target_lunar_month == birthday_lunar_month
+                    && target_lunar_day > birthday_lunar_day);
             if passed_birthday {
                 nominal_age += 1;
             }
@@ -705,6 +730,156 @@ impl Astrolabe {
 }
 
 impl Astrolabe {
+    /// 逐层运限查询用的时辰索引：由时柱地支反查，而不是出生入参 `time_index`。
+    ///
+    /// 晚子时（入参 12）的时柱地支是子，反查得 0——列表里的每一层都按这个时辰起运限，
+    /// 与 iztro 的 `EARTHLY_BRANCHES.indexOf(kot(chineseDate.hourly[1]))` 同源。
+    /// 直接用入参会让晚子时盘的列表与逐层查询对不上。
+    fn list_time_index(&self) -> u8 {
+        self.raw_dates.chinese_date.hourly.1.index() as u8
+    }
+
+    /// 按起运先后排列的大限列表，第 0 项为第一个大限。
+    ///
+    /// 每项带该限所在的本命宫名、起止虚岁与起止农历年份，以及以该宫为命宫推排的
+    /// 十二宫名、该限四化与大限流曜。
+    pub fn decadal_list(&self) -> Vec<DecadalHoroscope> {
+        let birth_year = self.raw_dates.lunar_date.lunar_year;
+        let mut palaces: Vec<&PalaceData> = self.palaces.iter().collect();
+        palaces.sort_by_key(|p| p.decadal.range.0);
+        palaces
+            .into_iter()
+            .map(|p| {
+                let (stem, branch) = (p.decadal.heavenly_stem, p.decadal.earthly_branch);
+                let (start, end) = p.decadal.range;
+                DecadalHoroscope {
+                    base: HoroscopeItem {
+                        index: p.index,
+                        name: translate_horoscope_name(HoroscopeName::Decadal, self.language)
+                            .to_string(),
+                        name_key: HoroscopeName::Decadal,
+                        heavenly_stem: stem,
+                        earthly_branch: branch,
+                        palace_names: get_palace_names(p.index).to_vec(),
+                        mutagen: get_mutagens_by_heavenly_stem(stem, &self.config).to_vec(),
+                        stars: Some(
+                            get_horoscope_stars(stem, branch, Scope::Decadal, self.language)
+                                .to_vec(),
+                        ),
+                    },
+                    palace_name: p.name,
+                    age_range: (start, end),
+                    year_range: (birth_year + start as i64 - 1, birth_year + end as i64 - 1),
+                }
+            })
+            .collect()
+    }
+
+    /// 定位一个大限的起止虚岁。
+    fn decadal_range(&self, target: DecadalTarget) -> Result<(u32, u32), IztroError> {
+        let palace = match target {
+            DecadalTarget::Ordinal(n) => {
+                let mut sorted: Vec<&PalaceData> = self.palaces.iter().collect();
+                sorted.sort_by_key(|p| p.decadal.range.0);
+                sorted.get(n).copied().ok_or_else(|| {
+                    IztroError::InvalidArgument(format!(
+                        "decadal ordinal {n} is out of range (0-11)"
+                    ))
+                })?
+            }
+            DecadalTarget::Name(name) => {
+                self.palaces
+                    .iter()
+                    .find(|p| p.name == name)
+                    .ok_or_else(|| {
+                        IztroError::InvalidArgument(format!("palace '{}' not found", name.as_key()))
+                    })?
+            }
+        };
+        Ok(palace.decadal.range)
+    }
+
+    /// 指定大限内的全部流年，按虚岁先后排列。
+    ///
+    /// `target` 可写大限序号（0 为第一个大限）或本命宫名。每个流年经与逐层查询相同的
+    /// [`Astrolabe::horoscope`] 算出，取该农历年六月初一为目标日期。
+    ///
+    /// # Errors
+    /// 大限序号越界、宫名定位不到，或某一年的目标日期落在支持范围外时返回 [`IztroError`]。
+    pub fn yearly_list(
+        &self,
+        target: impl Into<DecadalTarget>,
+    ) -> Result<Vec<YearlyHoroscope>, IztroError> {
+        let (start, end) = self.decadal_range(target.into())?;
+        let birth_year = self.raw_dates.lunar_date.lunar_year;
+        let time_index = self.list_time_index();
+        (start..=end)
+            .map(|age| {
+                let year = birth_year + age as i64 - 1;
+                let date = lunar_table::solar_date_of(year, 6, 1);
+                let h = get_horoscope(self, &date, time_index, self.language)?;
+                Ok(YearlyHoroscope {
+                    base: h.yearly.base,
+                    age,
+                    year,
+                })
+            })
+            .collect()
+    }
+
+    /// 指定农历年的全部流月，按月份先后排列。
+    ///
+    /// 无闰月返回 12 项；有闰月且 `fix_leap` 为真时，闰月按前后半月拆成两项（共 14 项），
+    /// 为假时闰月整月一项（共 13 项）。每个流月经 [`Astrolabe::horoscope`] 算出，
+    /// 目标日期取该段的首日（后半段取十六）。
+    ///
+    /// # Errors
+    /// 该农历年不存在，或某一段的目标日期落在支持范围外时返回 [`IztroError`]。
+    pub fn monthly_list(
+        &self,
+        year: i64,
+        fix_leap: bool,
+    ) -> Result<Vec<MonthlyHoroscope>, IztroError> {
+        let age = (year - self.raw_dates.lunar_date.lunar_year + 1).max(1) as u32;
+        let time_index = self.list_time_index();
+        let leap = lunar_table::leap_month(year);
+
+        let mut out = Vec::new();
+        for month in 1..=12u32 {
+            // 闰月排在同月号的常规月之后
+            let mut signed = vec![month as i64];
+            if leap == Some(month as i64) {
+                signed.push(-(month as i64));
+            }
+            for sm in signed {
+                let is_leap = sm < 0;
+                let Some(day_count) = lunar_table::month_day_count(year, sm) else {
+                    continue;
+                };
+                let last = day_count as u32;
+                let segments: Vec<(MonthPart, (u32, u32))> = if is_leap && fix_leap {
+                    vec![(MonthPart::First, (1, 15)), (MonthPart::Second, (16, last))]
+                } else {
+                    vec![(MonthPart::Normal, (1, last))]
+                };
+                for (part, day_range) in segments {
+                    let date = lunar_table::solar_date_of(year, sm, day_range.0 as i64);
+                    let h = get_horoscope(self, &date, time_index, self.language)?;
+                    out.push(MonthlyHoroscope {
+                        base: h.monthly,
+                        age,
+                        year,
+                        month,
+                        is_leap_month: is_leap,
+                        part,
+                        day_range,
+                    });
+                }
+            }
+        }
+        Ok(out)
+    }
+
     /// 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
     ///
     /// # Errors

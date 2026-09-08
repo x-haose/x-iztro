@@ -1,6 +1,6 @@
 ---
 title: 三方四正
-description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，以及在三种编程语言里怎么取。
+description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，夹宫与它有什么不同，以及在三种编程语言里怎么取。
 ---
 
 *适合：所有人。代码与判断方法表在页尾*
@@ -131,5 +131,113 @@ True False False
 ```
 
 这张盘的三方四正里有文昌文曲，但也见了羊陀火铃中的某几颗，所以不成立。
+
+## 夹宫
+
+**夹宫**是目标宫**前后相邻**的两宫：索引 `i - 1` 与 `i + 1`。十二宫在盘上首尾相连，
+索引对 12 回绕 —— 第 0 宫的前一宫是第 11 宫。
+
+```
+… ── i-1 (前宫) ── i (被夹的宫) ── i+1 (后宫) ── …
+```
+
+夹宫与三方四正是两套**不重叠**的取象：`i±1` 与 `i+4` / `i+6` / `i+8` 没有一个位置相同。
+
+| | 关系 | 成员 | 位置 |
+| --- | --- | --- | --- |
+| 三方四正 | 会照 | 本宫、对宫、官禄位、财帛位 | `i` `i+6` `i+4` `i+8` |
+| 夹宫 | 相夹 | 前宫、后宫 | `i-1` `i+1` |
+
+「会照」是隔着盘面遥相呼应，问的是同一组能量彼此照应；「相夹」是贴身左右挤住，
+问的是这一宫被什么样的力量围住。取象不同，所以两条线索要分开读。
+
+夹宫**不含本宫**：三方四正把本宫算作四个成员之一，夹宫只有前后两宫。
+
+### 判定在两宫合计上做
+
+判断方法与三方四正同名同义，检查范围换成**两个夹宫的并集**：
+
+| 方法 | 作用 |
+| --- | --- |
+| `have(stars)` | 两宫合起来是否包含**全部**指定星耀 |
+| `have_one_of(stars)` | 是否包含**任意一颗** |
+| `not_have(stars)` | 是否**一颗都不包含** |
+| `have_mutagen(m)` | 两宫中是否有任一宫带指定四化 |
+| `not_have_mutagen(m)` | 两宫都没有指定四化 |
+
+<Callout title="have 不要求两颗星同在一宫">
+「夹」本来就是一边一颗。`have([天机, 天钺])` 在天机落前宫、天钺落后宫时为真 ——
+判定看的是两宫合计的集合，不看它们分在哪一宫。
+</Callout>
+
+<Tabs items={['Rust', 'Python', 'Go']}>
+<Tab value="Rust">
+
+```rust
+let f = chart.flanking_palaces(Palace::Soul).unwrap();
+
+println!("{} / {}", translate_palace(f.previous.name, Language::ZhCN),
+                    translate_palace(f.next.name, Language::ZhCN));
+println!("{}", f.have(&[StarKey::TianjiMaj, StarKey::TianyueMin]));
+println!("{}", f.have_one_of(&[StarKey::QingyangMin, StarKey::TuoluoMin]));
+```
+
+```text
+兄弟 / 父母
+true
+true
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+f = chart.flanking_palaces(PalaceName.SOUL)
+
+print(f.previous.name, f.next.name)
+print(f.have([MajorStar.TIANJI, MinorStar.TIANYUE]))
+print(f.have_one_of([MinorStar.QINGYANG, MinorStar.TUOLUO]))
+```
+
+```text
+兄弟 父母
+True
+True
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+f, _ := chart.FlankingPalaces(iztro.PalaceTarget{Key: iztro.PalaceSoul})
+
+fmt.Println(f.Previous.Name, f.Next.Name)
+fmt.Println(f.Have(iztro.StarTianjiMaj, iztro.StarTianyueMin))
+fmt.Println(f.HaveOneOf(iztro.StarQingyangMin, iztro.StarTuoluoMin))
+```
+
+```text
+兄弟 父母
+true
+true
+```
+
+</Tab>
+</Tabs>
+
+这张盘的命宫被兄弟宫（天机）与父母宫（天钺、陀罗）夹住。天机与天钺分居两侧，
+`have` 仍为真；羊陀只见陀罗一颗，`have_one_of` 为真而 `have` 为假 ——
+所以不成羊陀夹命。
+
+### 命理上的用法
+
+「XX 夹命」这一类格局用的就是这个几何：两颗星分居命宫前后邻宫。
+[格局引擎](/zh/docs/guide/concepts/patterns)里的羊陀夹命、日月夹命、左右夹命、
+魁钺夹命、劫空夹命、昌曲夹命、科权禄夹都判在夹宫上，紫府夹命、金舆扶驾亦然。
+「夹」与「会照」为什么必须分开算，见格局页的
+[几处容易误解的地方](/zh/docs/guide/concepts/patterns#几处容易误解的地方)。
+
+夹宫也有自己的[语义化文本](/zh/docs/guide/guides/to-text)：前后两宫各一段，
+与三方四正文本同构，角色标题写「前宫」「后宫」。
 
 星耀的分类与标识见[星耀](/zh/docs/guide/concepts/stars)。

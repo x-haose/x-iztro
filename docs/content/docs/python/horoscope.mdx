@@ -1,6 +1,6 @@
 ---
 title: 运限对象
-description: 六个运限层级的数据结构，以及不必再传星盘的宫位查询方法。
+description: 六个运限层级的数据结构、整层取回的三个列表，以及不必再传星盘的宫位查询方法。
 ---
 
 运限把本命盘投影到某个时间点上。同一张盘，不同年份看到的宫位分布不同——
@@ -113,6 +113,207 @@ print("大限四化", h.decadal.mutagen)
 小限虚岁 26
 大限四化 ['太阳', '武曲', '太阴', '天同']
 ```
+
+---
+
+## 三个列表
+
+`decadal_list` / `yearly_list` / `monthly_list` 是 `Astrolabe` 上的方法，不在运限对象上：
+它们一次取回整层的运限项，省去按日期逐个调 `horoscope` 再自己拼。
+三种列表项都继承 `HoroscopeItem`，通用字段直接访问，各自多带该层的时间坐标：
+
+| 类型 | 多出的字段 | 说明 |
+| --- | --- | --- |
+| `DecadalListItem` | `palace_name` / `palace_name_key`: `str` | 该大限所在的本命宫名 |
+| | `age_range`: `tuple[int, int]` | 起止虚岁，含两端 |
+| | `year_range`: `tuple[int, int]` | 起止农历年份，含两端 |
+| `YearlyListItem` | `age`: `int` | 该流年对应的虚岁 |
+| | `year`: `int` | 农历年份 |
+| `MonthlyListItem` | `age`: `int` | 该流月对应的虚岁 |
+| | `year`: `int` | 农历年份 |
+| | `month`: `int` | 农历月份，正月为 1；闰月与同号常规月的 `month` 相同 |
+| | `is_leap_month`: `bool` | 该项是否闰月 |
+| | `part`: `str` | 分段标识，取值见 `MonthPart` 枚举 |
+| | `day_range`: `tuple[int, int]` | 该段覆盖的农历日，含两端 |
+
+`MonthPart` 三个取值：`NORMAL` 整月一段、`FIRST` 闰月前半、`SECOND` 闰月后半。
+
+<Callout type="info" title="列表里的运限按时柱地支起">
+三个列表的每一项都以**时柱地支**对应的时辰计算，而不是排盘时传入的 `time_index`。
+两者只在晚子时不同：入参 12 的盘，时柱地支是子，列表按时辰 0 起运限。
+</Callout>
+
+---
+
+## decadal_list
+
+**用途**　一次取回本盘十二个大限，按起运先后排列。
+
+**斗数含义**　大限十年一步，从起限宫顺逆行走十二宫。
+把整条线摊平看，才知道某一段人生落在哪一宫、对应哪十年。
+
+**签名**
+
+```python
+def decadal_list(self) -> list[DecadalListItem]
+```
+
+**返回值**　定长 12 项，第 0 项是第一个大限。顺序按起运虚岁排，
+与宫位索引顺序无关（大限顺行逆行取决于阴阳男女）。
+
+**示例**
+
+```python
+for d in chart.decadal_list()[:3]:
+    print(d.palace_name, d.heavenly_stem, d.earthly_branch, d.age_range, d.year_range)
+
+print(len(chart.decadal_list()))
+```
+
+**输出**
+
+```text
+命宫 壬 午 (3, 12) (2002, 2011)
+兄弟 辛 巳 (13, 22) (2012, 2021)
+夫妻 庚 辰 (23, 32) (2022, 2031)
+12
+```
+
+这张盘三岁起运，第一个大限落在命宫。
+
+**边界与陷阱**
+
+<Callout type="info" title="列表里没有童限">
+起运之前的那几年是童限，只有按具体日期查 `horoscope` 才会出现（`name_key` 为 `childhood`）。
+`decadal_list` 列的是十二个大限本身，每项的 `name_key` 恒为 `decadal`。
+</Callout>
+
+---
+
+## yearly_list
+
+**用途**　取一个大限内的全部流年。
+
+**斗数含义**　定了大限再逐年细看，是斗数常规的推运顺序。
+一个大限十年，对应的就是这十个流年。
+
+**签名**
+
+```python
+def yearly_list(self, decadal: int | PalaceName | str | None = None) -> list[YearlyListItem]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `decadal` | `int \| PalaceName \| str \| None` | 是 | `None` | 大限序号（`int`，0 为第一个大限）或该限所在的本命宫名标识 |
+
+两种写法定位到同一个大限时结果完全相同，选哪个取决于手上已有什么。
+
+**返回值**　10 项，按虚岁先后排列。
+
+**异常**　未给出定位、大限序号越界、宫名定位不到时抛 `IztroError`。
+
+**示例**
+
+```python
+years = chart.yearly_list(2)
+
+for y in years[:3]:
+    print(y.age, y.year, y.heavenly_stem, y.earthly_branch, "->", y.index)
+
+print(len(years), len(chart.yearly_list("spousePalace")))
+```
+
+**输出**
+
+```text
+23 2022 壬 寅 -> 0
+24 2023 癸 卯 -> 1
+25 2024 甲 辰 -> 2
+10 10
+```
+
+第 2 个大限落在夫妻宫，因此 `yearly_list(2)` 与 `yearly_list("spousePalace")` 是同一个大限。
+
+**边界与陷阱**
+
+<Callout type="warn" title="参数虽有默认值，但不给就报错">
+`decadal=None` 不是「取当前大限」，而是抛 `IztroError`——静默取一个默认值会把漏传
+变成看起来成功的错答案。
+</Callout>
+
+---
+
+## monthly_list
+
+**用途**　取一个农历年的全部流月。
+
+**斗数含义**　流月是流年之下的一层，逐月推移。闰月怎么算是一个流派分歧点，
+因此拆不拆由调用方定。
+
+**签名**
+
+```python
+def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem]
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年份 |
+| `fix_leap` | `bool` | 否 | `True` | 闰月是否拆成前后半月两项 |
+
+**返回值**　长度取决于该年有无闰月与 `fix_leap`：
+
+| 该农历年 | `fix_leap` | 项数 | 闰月怎么排 |
+| --- | --- | --- | --- |
+| 无闰月 | 任意 | 12 | — |
+| 有闰月 | `True` | 14 | 闰月拆成 `first`（初一至十五）与 `second`（十六至月末）两项 |
+| 有闰月 | `False` | 13 | 闰月整月一项，`part` 为 `normal` |
+
+闰月排在同月号的常规月之后。每项按该段首日算出（后半段取十六）。
+
+**异常**　该农历年不存在，或某一段的目标日期落在支持范围外时抛 `IztroError`。
+
+**示例**
+
+```python
+months = chart.monthly_list(2020)
+
+print(len(months))
+for m in months[3:7]:
+    print(m.month, m.is_leap_month, m.part, m.day_range, m.heavenly_stem, m.earthly_branch)
+
+print(len(chart.monthly_list(2020, fix_leap=False)), len(chart.monthly_list(2021)))
+```
+
+**输出**
+
+```text
+14
+4 False normal (1, 30) 辛 巳
+4 True first (1, 15) 辛 巳
+4 True second (16, 29) 壬 午
+5 False normal (1, 30) 壬 午
+13 12
+```
+
+农历 2020 年有闰四月。拆开之后，闰四月前半与四月同干支（辛巳），后半跟五月同干支（壬午）
+——这正是「闰月下半月算下一个月」的意思。农历 2021 年无闰月，恒为 12 项。
+
+**边界与陷阱**
+
+<Callout type="warn" title="这个 fix_leap 与排盘的 fix_leap 无关">
+排盘入口那个 `fix_leap` 决定闰月出生的人下半月按下个月安星，改的是本命盘布局；
+这里这个只决定本列表拆不拆闰月。两者可以取不同的值，互不影响。
+</Callout>
+
+<Callout type="info" title="闰月与常规月的 month 相同">
+闰四月的 `month` 也是 `4`，靠 `is_leap_month` 区分。按 `month` 去重会把闰月弄丢。
+</Callout>
 
 ---
 

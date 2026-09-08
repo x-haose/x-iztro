@@ -76,7 +76,7 @@ struct Case {
 ///
 /// 后两张挑的是「换了口径结果就变」的盘，口径才真被这批快照覆盖：
 /// 中州派那张在默认派下多一条生不逢时（破军形态），位置法那张在亮度表口径下
-/// 没有日月并明与丹墀桂墀。
+/// 没有日月反背（太阳酉表判「平」不算暗）。两者各由一条守卫盯着不退化。
 fn cases() -> Vec<Case> {
     vec![
         Case {
@@ -108,8 +108,8 @@ fn cases() -> Vec<Case> {
         },
         Case {
             name: "female_positional",
-            solar_date: "1985-1-3",
-            time_index: 7,
+            solar_date: "1985-6-10",
+            time_index: 8,
             gender: Gender::Female,
             config: Config::default(),
             pattern_config: PatternConfig {
@@ -268,6 +268,39 @@ fn hourly_layer_depends_on_target_time_index() {
         "全部用例盘的流时层在目标时辰 {TARGET_TIME_INDEX} 与 0 下相同：\
          该层没把 targetTimeIndex 变成承重入参，应换目标日期或时辰"
     );
+}
+
+/// 每张带非默认口径的用例盘，都必须真的因为那个口径而与全默认口径产出不同的命中，
+/// 否则这批快照对该口径失去断言能力——绑定层整个丢掉该字段也照样全绿。
+#[test]
+fn non_default_readings_change_the_snapshot() {
+    for case in cases() {
+        if case.pattern_config == PatternConfig::default()
+            && case.config.algorithm == Algorithm::Default
+        {
+            continue;
+        }
+        let baseline = Case {
+            name: case.name,
+            solar_date: case.solar_date,
+            time_index: case.time_index,
+            gender: case.gender,
+            config: Config::default(),
+            pattern_config: PatternConfig::default(),
+        };
+        // 只比命中层：`params` 原样回显口径，带上它这条断言就恒真
+        let (mine, theirs) = (
+            snapshot_value(&case, Language::ZhCN),
+            snapshot_value(&baseline, Language::ZhCN),
+        );
+        let differs = LAYERS.iter().any(|(layer, _)| mine[layer] != theirs[layer]);
+        assert!(
+            differs,
+            "用例盘 {} 在其口径与全默认口径下六层命中完全相同：该口径没被这批快照覆盖，\
+             应换一张真有分歧的盘",
+            case.name
+        );
+    }
 }
 
 /// 快照本身的自洽：语言只改译文，不改 key、宫位、证据与视角。

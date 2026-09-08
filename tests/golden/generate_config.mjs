@@ -17,7 +17,7 @@
  */
 import { astro } from 'iztro';
 import { solar2lunar, lunar2solar } from 'lunar-lite';
-import { LunarYear } from 'lunar-typescript';
+import { LunarYear, Solar } from 'lunar-typescript';
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -232,7 +232,14 @@ const HOROSCOPE_COMBOS = {
   zz_hd: { algorithm: 'zhongzhou', horoscopeDivide: 'exact' },
   age_hd: { ageDivide: 'birthday', horoscopeDivide: 'exact' },
   zz_age_hd: { algorithm: 'zhongzhou', ageDivide: 'birthday', horoscopeDivide: 'exact' },
+  // dayDivide 只在晚子时改变结果，故这两组的目标时辰取 12（见 comboTargetTimeIndexes）
+  dd: { dayDivide: 'current' },
+  zz_dd: { algorithm: 'zhongzhou', dayDivide: 'current' },
 };
+
+/// dayDivide 组同时取早子与晚子：晚子验修正生效，早子验其余时辰不受影响。
+const comboTargetTimeIndexes = (overrides) =>
+  'dayDivide' in overrides ? [0, 8, 12] : [8];
 
 const comboHoroscopes = [];
 for (const [cfg, overrides] of Object.entries(HOROSCOPE_COMBOS)) {
@@ -252,10 +259,58 @@ for (const [cfg, overrides] of Object.entries(HOROSCOPE_COMBOS)) {
         `${year + 20}-9-9`,
       ];
       for (const td of targets) {
-        comboHoroscopes.push({ cfg, ...horoscopeCase(astrolabe, birth, td, 8) });
+        for (const tt of comboTargetTimeIndexes(overrides)) {
+          comboHoroscopes.push({ cfg, ...horoscopeCase(astrolabe, birth, td, tt) });
+        }
       }
     }
   }
 }
 writeFileSync(join(__dirname, 'config_combos_horoscope.json'), JSON.stringify(comboHoroscopes));
 console.log(`horoscope combos: ${comboHoroscopes.length} cases`);
+
+// ============================================================
+// 7. horoscopeDivide=exact：按节气时刻取样的本命四柱
+// ============================================================
+// 按节气取月柱是「时刻级」比较，而排盘构造时刻用的是时辰整点后 30 分。
+// 节气落在 HH:00~HH:30 的那些日子，分钟数取 0 会判到节气的另一侧、月柱差一个月。
+// 按固定日期抽样从结构上就抓不到这类日子，故直接按每个「节」的实际时刻取样：
+// 节气当天 × 该时刻所属的时辰。中气不换月柱，不取。
+
+const JIE = [
+  '立春', '惊蛰', '清明', '立夏', '芒种', '小暑',
+  '立秋', '白露', '寒露', '立冬', '大雪', '小寒',
+];
+
+/** 小时数落在哪个时辰：与 lunar-lite 的 `max(ti*2-1, 0)` 互逆。 */
+const hourToTimeIndex = (h) => (h === 0 ? 0 : h === 23 ? 12 : Math.floor((h + 1) / 2));
+
+astro.config({ ...DEFAULTS, horoscopeDivide: 'exact' });
+
+const jieCases = [];
+const jieSkipped = [];
+for (let year = 1984; year <= 2043; year++) {
+  const table = Solar.fromYmd(year, 6, 1).getLunar().getJieQiTable();
+  for (const name of JIE) {
+    const s = table[name];
+    if (!s || s.getYear() !== year) continue;
+    const ti = hourToTimeIndex(s.getHour());
+    // 节气时刻落在构造时刻（HH:30:00）前后一分钟内的，两个天文库的秒级差异会跨越
+    // 构造时刻，判到节气两侧：lunar-typescript 与 lunar_rust 对同一节气可差数十秒
+    // （白露 2043 一个算 01:30:13、一个算 01:29:44）。这类边界不属于实现差异，不取。
+    if (s.getMinute() === 30 || (s.getMinute() === 29 && s.getSecond() >= 30)) {
+      jieSkipped.push(`${name} ${s.toYmdHms()}`);
+      continue;
+    }
+    const d = `${s.getYear()}-${s.getMonth()}-${s.getDay()}`;
+    for (const g of [0, 1]) {
+      const a = astro.bySolar(d, ti, GENDERS[g], true, 'zh-CN');
+      jieCases.push({ d, t: ti, g, cd: a.rawDates.chineseDate });
+    }
+  }
+}
+writeFileSync(join(__dirname, 'config_jieqi.json'), JSON.stringify(jieCases));
+console.log(
+  `horoscopeDivide=exact 节气取样: ${jieCases.length} cases` +
+    `（跳过 ${jieSkipped.length} 个骑在构造时刻上的节气，两个天文库秒级差异所致）`
+);

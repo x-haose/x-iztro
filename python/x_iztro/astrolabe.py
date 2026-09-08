@@ -14,12 +14,17 @@ from typing import Any
 
 from x_iztro.config import ChartConfig
 from x_iztro.enums import PalaceName
-from x_iztro.horoscope import Horoscope
+from x_iztro.horoscope import (
+    DecadalListItem,
+    Horoscope,
+    MonthlyListItem,
+    YearlyListItem,
+)
 from x_iztro.knowledge import KnowledgePack, _wire
 from x_iztro.palace import Palace
 from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
-from x_iztro.surpalaces import SurroundedPalaces
+from x_iztro.surpalaces import FlankingPalaces, SurroundedPalaces
 
 
 @dataclass(frozen=True, slots=True)
@@ -362,6 +367,26 @@ class Astrolabe:
             career=self.palaces[(index + 4) % 12],
         )
 
+    def flanking_palaces(
+        self, index_or_name: int | PalaceName | str
+    ) -> FlankingPalaces | None:
+        """
+        获取指定宫位的夹宫：前后相邻的两宫。
+
+        Args:
+            index_or_name: 宫位索引 (0-11)、`PalaceName` 枚举，或当前语言的宫名
+
+        Returns:
+            FlankingPalaces；宫位定位不到时返回 None
+        """
+        palace = self.palace(index_or_name)
+        if palace is None:
+            return None
+        data = self._context_query("flankingPalaces", palace_index=palace.index)
+        pair = [Palace._from_dict(data["previous"]), Palace._from_dict(data["next"])]
+        self._link(pair)
+        return FlankingPalaces(previous=pair[0], next=pair[1])
+
     def is_surrounded(
         self, index_or_name: int | PalaceName | str, stars: list[str]
     ) -> bool:
@@ -483,6 +508,82 @@ class Astrolabe:
             target_time_index=target_time_index,
         )
         return Horoscope._from_dict(data, self, target_time_index)
+
+    def decadal_list(self) -> list[DecadalListItem]:
+        """
+        本盘的全部大限，按起运先后排列，第 0 项为第一个大限。
+
+        每项带该限所在的本命宫名、起止虚岁与起止农历年份，以及以该宫为命宫
+        推排的十二宫名、该限四化与大限流曜。
+
+        Returns:
+            12 项大限列表
+        """
+        data = self._context_query("decadalList")
+        return [DecadalListItem._from_dict(d) for d in data]
+
+    def decadal_list_to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+    ) -> str:
+        """
+        大限一览的语义化文本：十二个大限一张表，按起运先后排。
+
+        与 `decadal_list` 同一套数据，输出面向语言模型与人的文本而非结构化列表；
+        不展开每限的流年，某一限的流年用 `yearly_list` 单取。
+
+        Args:
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各限四化星的释义
+
+        Raises:
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+        """
+        return self._context_query("decadalListToText", knowledge=knowledge)
+
+    def yearly_list(
+        self, decadal: int | PalaceName | str | None = None
+    ) -> list[YearlyListItem]:
+        """
+        指定大限内的全部流年，按虚岁先后排列。
+
+        每个流年与 `horoscope` 同一套算法算出，取该农历年六月初一为目标日期。
+
+        Args:
+            decadal: 大限序号（int，0 为第一个大限）或该限所在的本命宫名标识
+                （`PalaceName` 枚举值域）。定位是硬要求，缺省即报错——
+                静默取某个默认大限会把漏传变成貌似成功的错答案
+
+        Returns:
+            10 项流年列表
+
+        Raises:
+            IztroError: 未给出定位、大限序号越界、宫名定位不到，
+                或某一年的目标日期落在支持范围外
+        """
+        ordinal = decadal if isinstance(decadal, int) else None
+        key = None if ordinal is not None or decadal is None else str(decadal)
+        data = self._context_query("yearlyList", decadal_ordinal=ordinal, palace_key=key)
+        return [YearlyListItem._from_dict(d) for d in data]
+
+    def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem]:
+        """
+        指定农历年的全部流月，按月份先后排列。
+
+        每个流月与 `horoscope` 同一套算法算出，目标日期取该段首日（后半段取十六）。
+
+        Args:
+            year: 农历年份
+            fix_leap: 闰月是否拆段。与排盘的同名开关无关——那个决定闰月下半月按下月安星，
+                这个只决定本列表拆不拆：无闰月 12 项；有闰月时拆为前后半月两项（共 14 项），
+                不拆则闰月整月一项（共 13 项）
+
+        Raises:
+            IztroError: 该农历年不存在，或某一段的目标日期落在支持范围外
+        """
+        data = self._context_query("monthlyList", year=year, month_fix_leap=fix_leap)
+        return [MonthlyListItem._from_dict(m) for m in data]
 
     def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]:
         """

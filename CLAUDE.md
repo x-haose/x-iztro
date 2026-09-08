@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.5.8。
+x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.1。
 支持 Rust / Python(PyO3) / Go(C FFI) 三语言调用。
 
 ## 决策标准
@@ -125,6 +125,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro` 内嵌 `x_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
 - 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
+  **改了 `src/` 就要重跑这步再跑 Go 测试**——Go 侧读的是内嵌的那份，不重建就是拿旧内核测新绑定，
+  且症状是静默的：新增 kind 报 unknown、新增入参被无视后返回一份看着正常的结果
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`
 - 布尔开关字段一律 `*bool` + omitempty（`PatternConfig.Borrow/FlowStars`、
   `ReverseCriteria.FixLeap` 先例）：nil＝省略键让内核取默认；裸 `bool` 的零值会静默
@@ -133,20 +135,33 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### 与 iztro 的 API 对齐
 - 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
   硬要求：iztro 每个公开 API 三侧都要有等价物，且三侧能力完全一致，形式各随语言习惯
-- 已全数覆盖。改动后逐条自查用这两条线索——三侧测试都发现不了它们：
+- 已全数覆盖（`toJSON()` 的等价物是 `to_json`/DTO，不另设）。改动后逐条自查用这三条线索
+  ——三侧测试都发现不了它们（每一侧单独看都正常，只有横向比才看得出）：
   - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
-    等于对外不可用
-  - 反查取值（`key_of` ≡ iztro `kot`）依赖扫描顺序：iztro 按语言外层、locale 合并顺序内层，
-    8 处同形译名靠它消歧。金标须拿 `kot` 实际取值逐条对照（`tests/golden/i18n_kot.json`），
-    写成「反查到某个译文相同的标识」这类松断言查不出顺序分叉
+    等于对外不可用。注意 `binding_coverage` 只证明「kind 的字面量出现在绑定源码里」，
+    证明不了「包装完整」——返回对象少了方法、方法少了参数它都照样绿
+    （`FlankingPalaces` 在 Go 侧缺过五个判定方法）
+  - **iztro 的方法入参被绑定层偷换成排盘入参**：内核签名收得到、绑定层却拿排盘的同名字段顶上，
+    于是 Rust 原生能独立指定而 Python/Go 不能。`monthlyList` 的 `fixLeap` 犯过一次——
+    它与排盘的 `fix_leap` 同名不同义（前者只决定列表拆不拆闰月，后者决定闰月下半月按哪个月
+    安星），bridge 收独立的 `monthFixLeap` 才对。新增 kind 时逐个入参问：它是盘的属性，
+    还是这次调用的属性
+  - 反查取值（`key_of` ≡ iztro `kot`）先查星曜别名表（`lookup.rs` 的 `STAR_ALIASES`，
+    韩/越同形译名的带汉字限定名，命中即返回且不受标识名限定影响），未命中才按扫描顺序：
+    iztro 按语言外层、locale 合并顺序内层，余下的同形译名靠它消歧。金标须拿 `kot` 实际取值
+    逐条对照（`tests/golden/i18n_kot.json`），写成「反查到某个译文相同的标识」这类松断言
+    查不出顺序分叉
 - 换了形状而非照抄的几处，别改回去：
   - `astroType` 收进 `Config`（iztro 放在 `withOptions`，因其 `config()` 是全局单例装不下按盘变化的值）
   - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `setLanguage`
   - `get_decadals_and_ages` 直接收命宫索引与五行局，比 iztro `getHoroscope` 的 `from` 更一般
   - 插件按语言惯用方式实现：Rust 扩展 trait、Python 类方法注入、Go 嵌入 `*Astrolabe`
+  - 运限宫位寻址收语言无关 key 或该盘语言的宫名，不做跨语言译名反查（iztro v2.6.1 起
+    用 `kot` 兜任意语言宫名，因其只有译名可传）：我们的 `palaceNameKeys` 就是跨语言的正解，
+    再接一层反查要么改 `PalaceIndexByName` 签名、要么把 wasm 故障伪装成「找不到」
 - 故意不做的（考察过，不是漏）：`astro/analyzer`（Palace/Surpalaces 方法的自由函数版）、
-  `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（iztro v2.5.8 里已是死代码，
-  活路径走 lunar-lite）、`initStars`（空盘工厂，类型系统已给定长数组）、
+  `calendar/*` 与 `star/star.js`、`star/decorationStar.js`（v2.5.8 里已是死代码，
+  v2.6.1 已从包中删除）、`initStars`（空盘工厂，类型系统已给定长数组）、
   `astrolabeBySolarDate` / `astrolabeByLunarDate`（v2.0.5 起废弃的别名）、
   `fixEarthlyBranchIndex`（与 `earthlyBranchIndexToPalaceIndex` 同义）、
   `setPalace` / `setAstrolabe`（建链是内部行为）、i18next 实例、`Astrolabe.copyright`
@@ -159,8 +174,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 规则来源 iztro-docs《格局》页（MIT）63 条，火贪/铃贪分列为 64 个 `PatternKey`；无金标，口径自守：
   每条规则函数的文档注释就是口径与出处，多口径一律以 `PatternHit.variant` 报出、不设 strict/loose 开关，
   「破格/加杀平常」只置 `broken` 不否决，「身命」类命宫身宫各判、命中哪宫 `palace` 记哪宫
-- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），页面《日月并明》示例太阴在酉、
-  表为「不」故按表不成格；`Positional` 口径复现传统位置判法。`PatternConfig` 只放会改变事实判定的开关
+- 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），`Positional` 口径复现传统
+  位置判法。两口径在 iztro v2.6.1 表下只剩一处差集——太阳酉宫（表判「平」不算暗、位置法算暗），
+  落在「暗」侧，故日月反背有分歧而日月并明没有：表法比位置法多认的太阴寅宫，安星几何上必配
+  太阳子宫（陷），两边都不成格。找两口径的差异只能从「暗」侧入手。
+  `PatternConfig` 只放会改变事实判定的开关
 - 本命与运限共用同一套规则：`ChartView::at` 以该层命宫为命宫、合并该层流曜（流曜等同对应本命辅星）
   与该层四化；`Scope::Origin` 等同本命；两条行运格（禄衰马困、风云际会）只在运限视角报，
   风云际会只在大限视角报一次
@@ -176,6 +194,13 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   都走这一层；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
 - 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
   （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
+- 构造日期对象一律带 `builder::CHART_MINUTE`（30 分），与 lunar-lite 的
+  `Solar.fromYmdHms(…, 30, 0)` 同刻——按节气取月柱是**时刻级**比较，用 0 分会让节气落在
+  `HH:00`~`HH:30` 的日子判到另一侧、`horoscope_divide=Exact` 下月柱静默差一个月
+  （守护：`golden_config_jieqi_pillars`，按每个「节」的实际时刻取样，固定日期抽样抓不到）。
+  节气时刻本身骑在 30 分上的极少数日子（六十年 18 个）两边仍会分歧——lunar_rust 与
+  lunar-typescript 对同一节气可差数十秒（白露 2043：01:29:44 vs 01:30:13），
+  属天文算法精度差异，金标不取
 
 ### 反推（x-iztro 扩展）
 - 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
@@ -214,13 +239,15 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 映射类字段允许写 `null`（Go nil map 默认序列化）
 
 ### 测试
-- 全部金标数据由 JS iztro v2.5.8（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,559 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
+- 全部金标数据由 JS iztro v2.6.1（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
+- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
-  Config 开关（四个非默认取值 + 排盘层与运限层的组合）9,696 / 中州派盘型 12,488 /
-  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）
+  Config 开关（四个非默认取值 + 排盘层与运限层的组合、按节气时刻取样的四柱）11,388 / 中州派盘型 12,488 /
+  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）/
+  夹宫与运限列表 5 盘（`chart_lists.json`：夹宫 12 宫、大限 12、流年 3×10、流月 6 组，
+  取样含晚子时与闰月出生）
 - tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
   （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；
   条目含星名/类型/范围/亮度/四化，排序等价性只在 BMP 内成立，注释里写了这个前提）；
@@ -245,6 +272,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
   - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
+  - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
+    大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、
     全星环测 34 剪枝臂、共享 key 十二神可用、1602 窗口、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
@@ -254,7 +283,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     有意改口径后用 `UPDATE_PATTERN_SNAPSHOTS=1` 重跑该测试重建基线，`pattern_distribution`
     的 tally 金标随之更新）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
-  - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,559 例对 `kot` 实际取值）
+  - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,573 例（含 14 条星曜别名）对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`
   - 自定义四化/亮度表 → `config_overrides`；Rust 扩展 trait → `extension`
   - 三侧同盘同解 → `src/models/astrolabe.rs` 单测 + `python/tests/test_parity.py`

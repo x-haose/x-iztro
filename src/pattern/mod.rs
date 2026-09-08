@@ -30,7 +30,11 @@ pub enum BrightnessSource {
     #[default]
     Table,
     /// 按传统位置：太阳寅至午为明、酉至丑为暗；太阴酉至丑为明、卯至未为暗。
-    /// 用于与页面示例一致的传统口径 —— iztro 亮度表太阴酉为「不」，按表判《日月并明》示例不成格。
+    ///
+    /// 与亮度表口径的差集只有两格：太阳酉（表判「平」不算暗、位置法算暗）落在「暗」侧，
+    /// 太阴寅（表判「旺」为明、位置法中性）落在「明」侧。日月并明一类「皆明」的格局
+    /// 两口径不可能分歧——太阴在寅时太阳必在子（表判陷），两边都不成格；分歧只出现在
+    /// 日月反背一类「皆暗」的格局上。
     Positional,
 }
 
@@ -317,10 +321,10 @@ mod tests {
 
     #[test]
     fn positional_brightness_flips_sun_moon_judgement() {
-        // 太阴在酉：表判「不」，位置法判明
+        // 太阴在寅：表判「旺」即明，位置法只认酉至丑为月明、寅为中性
         let a = find_chart(|a| {
             a.palaces.iter().any(|p| {
-                p.earthly_branch == crate::data::types::EarthlyBranch::You
+                p.earthly_branch == crate::data::types::EarthlyBranch::Yin
                     && p.has(&[StarKey::TaiyinMaj])
             })
         });
@@ -332,10 +336,10 @@ mod tests {
                 ..Default::default()
             },
         );
-        let you = (0..12)
-            .find(|i| table.branch(*i) == crate::data::types::EarthlyBranch::You)
+        let yin = (0..12)
+            .find(|i| table.branch(*i) == crate::data::types::EarthlyBranch::Yin)
             .unwrap();
-        assert!(!table.sun_moon_bright(you, StarKey::TaiyinMaj));
-        assert!(pos.sun_moon_bright(you, StarKey::TaiyinMaj));
+        assert!(table.sun_moon_bright(yin, StarKey::TaiyinMaj));
+        assert!(!pos.sun_moon_bright(yin, StarKey::TaiyinMaj));
     }
 }

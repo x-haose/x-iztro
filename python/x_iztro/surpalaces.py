@@ -1,8 +1,9 @@
 """
-三方四正。
+三方四正与夹宫。
 
-紫微斗数不单看一宫：本宫、对宫、财帛位、官禄位四宫合看，
-`SurroundedPalaces` 把这四宫打包，判断方法对四宫取并集。
+紫微斗数不单看一宫：本宫、对宫、财帛位、官禄位四宫合看，`SurroundedPalaces`
+把这四宫打包；`FlankingPalaces` 打包目标宫前后相邻的两宫。
+两者的判断方法都对打包的诸宫取并集。
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from x_iztro.palace import Palace
 from x_iztro.star_object import _star_identifiers
 
 if TYPE_CHECKING:
+    from x_iztro.astrolabe import Astrolabe
     from x_iztro.pattern import PatternConfig
     from x_iztro.knowledge import KnowledgePack
 
@@ -99,6 +101,88 @@ class SurroundedPalaces:
     def _all_star_identifiers(self) -> set[str]:
         out: set[str] = set()
         for p in self._all_palaces():
+            out |= _star_identifiers(
+                p.major_stars + p.minor_stars + p.adjective_stars
+            )
+        return out
+
+
+@dataclass(frozen=True, slots=True)
+class FlankingPalaces:
+    """夹宫：目标宫前后相邻的两宫。十二宫首尾相连，故首宫的前一宫是末宫"""
+
+    previous: Palace
+    """前一宫（索引 -1）"""
+
+    next: Palace
+    """后一宫（索引 +1）"""
+
+    def astrolabe(self) -> Astrolabe | None:
+        """两宫所属的星盘"""
+        return self.previous.astrolabe()
+
+    def to_text(
+        self,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        config: PatternConfig | None = None,
+    ) -> str:
+        """
+        夹宫的语义化文本：前后两宫各一节的完整描述。
+
+        从两宫所属星盘的排盘上下文（含重排起点）无状态再发起计算，
+        文本是 Markdown 子集，按排盘语言输出。
+
+        Args:
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时每宫事实之后紧跟该宫星耀的释义
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
+
+        Raises:
+            ValueError: 两宫脱离星盘单独构造，无排盘上下文可转发
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+        """
+        astrolabe = self.astrolabe()
+        if astrolabe is None:
+            raise ValueError(
+                "to_text 需要所属星盘：请从 Astrolabe.flanking_palaces 获取夹宫"
+            )
+        from x_iztro.pattern import _pattern_config
+
+        return astrolabe._context_query(
+            "flankingPalacesToText",
+            # 被夹的宫是前一宫的下一宫；十二宫首尾相连，索引对 12 回绕
+            palace_index=(self.previous.index + 1) % 12,
+            knowledge=knowledge,
+            pattern_config=_pattern_config(config),
+        )
+
+    def have(self, stars: list[str]) -> bool:
+        """判断两夹宫合计是否包含指定的 **所有** 星耀（接受星耀枚举或当前语言的星名）"""
+        identifiers = self._all_star_identifiers()
+        return all(s in identifiers for s in stars)
+
+    def not_have(self, stars: list[str]) -> bool:
+        """判断两夹宫是否都 **不** 包含指定的所有星耀"""
+        identifiers = self._all_star_identifiers()
+        return all(s not in identifiers for s in stars)
+
+    def have_one_of(self, stars: list[str]) -> bool:
+        """判断两夹宫合计是否包含指定星耀中的 **至少一颗**"""
+        identifiers = self._all_star_identifiers()
+        return any(s in identifiers for s in stars)
+
+    def have_mutagen(self, mutagen: Mutagen) -> bool:
+        """判断两夹宫中是否有任一宫带指定四化"""
+        return self.previous.has_mutagen(mutagen) or self.next.has_mutagen(mutagen)
+
+    def not_have_mutagen(self, mutagen: Mutagen) -> bool:
+        """判断两夹宫是否都没有指定四化"""
+        return not self.have_mutagen(mutagen)
+
+    def _all_star_identifiers(self) -> set[str]:
+        out: set[str] = set()
+        for p in (self.previous, self.next):
             out |= _star_identifiers(
                 p.major_stars + p.minor_stars + p.adjective_stars
             )

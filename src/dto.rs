@@ -27,7 +27,10 @@ use crate::i18n::{
     translate_pattern, translate_star,
 };
 use crate::models::astrolabe::Astrolabe;
-use crate::models::horoscope::{HoroscopeData, HoroscopeItem};
+use crate::models::flanking::FlankingPalaces;
+use crate::models::horoscope::{
+    DecadalHoroscope, HoroscopeData, HoroscopeItem, MonthlyHoroscope, YearlyHoroscope,
+};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 
@@ -287,6 +290,67 @@ pub struct HoroscopeScopeDto {
     /// 流耀在十二宫的分布；无流耀的层级省略该键
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stars: Option<Vec<Vec<StarDto>>>,
+}
+
+/// 大限列表项 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DecadalListDto {
+    /// 通用运限字段
+    #[serde(flatten)]
+    pub base: HoroscopeScopeDto,
+    /// 该大限所在的本命宫名（按排盘语言翻译）
+    pub palace_name: String,
+    /// 本命宫名的语言无关标识
+    pub palace_name_key: String,
+    /// 起止虚岁 [起, 止]（含两端）
+    pub age_range: [u32; 2],
+    /// 起止农历年份 [起, 止]（含两端）
+    pub year_range: [i64; 2],
+}
+
+/// 流年列表项 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YearlyListDto {
+    /// 通用运限字段
+    #[serde(flatten)]
+    pub base: HoroscopeScopeDto,
+    /// 该流年对应的虚岁
+    pub age: u32,
+    /// 农历年份
+    pub year: i64,
+}
+
+/// 流月列表项 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonthlyListDto {
+    /// 通用运限字段
+    #[serde(flatten)]
+    pub base: HoroscopeScopeDto,
+    /// 该流月对应的虚岁
+    pub age: u32,
+    /// 农历年份
+    pub year: i64,
+    /// 农历月份（正月为 1）
+    pub month: u32,
+    /// 是否闰月
+    pub is_leap_month: bool,
+    /// 分段标识："normal" 整月、"first" 闰月前半、"second" 闰月后半
+    pub part: String,
+    /// 该段覆盖的农历日区间 [起, 止]（含两端）
+    pub day_range: [u32; 2],
+}
+
+/// 夹宫 DTO：目标宫前后相邻的两宫。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FlankingPalacesDto {
+    /// 前一宫（索引 -1）
+    pub previous: PalaceDto,
+    /// 后一宫（索引 +1）
+    pub next: PalaceDto,
 }
 
 /// 小限 DTO。
@@ -723,6 +787,53 @@ impl Astrolabe {
             language: lang.as_code().to_string(),
             config: self.config.clone().into(),
         }
+    }
+}
+
+/// 大限列表 DTO。
+pub fn decadal_list_dto(list: &[DecadalHoroscope], lang: Language) -> Vec<DecadalListDto> {
+    list.iter()
+        .map(|d| DecadalListDto {
+            base: scope_dto(&d.base, lang),
+            palace_name: translate_palace(d.palace_name, lang).to_string(),
+            palace_name_key: d.palace_name.as_key().to_string(),
+            age_range: [d.age_range.0, d.age_range.1],
+            year_range: [d.year_range.0, d.year_range.1],
+        })
+        .collect()
+}
+
+/// 流年列表 DTO。
+pub fn yearly_list_dto(list: &[YearlyHoroscope], lang: Language) -> Vec<YearlyListDto> {
+    list.iter()
+        .map(|y| YearlyListDto {
+            base: scope_dto(&y.base, lang),
+            age: y.age,
+            year: y.year,
+        })
+        .collect()
+}
+
+/// 流月列表 DTO。
+pub fn monthly_list_dto(list: &[MonthlyHoroscope], lang: Language) -> Vec<MonthlyListDto> {
+    list.iter()
+        .map(|m| MonthlyListDto {
+            base: scope_dto(&m.base, lang),
+            age: m.age,
+            year: m.year,
+            month: m.month,
+            is_leap_month: m.is_leap_month,
+            part: m.part.as_key().to_string(),
+            day_range: [m.day_range.0, m.day_range.1],
+        })
+        .collect()
+}
+
+/// 夹宫 DTO。
+pub fn flanking_palaces_dto(f: &FlankingPalaces<'_>, lang: Language) -> FlankingPalacesDto {
+    FlankingPalacesDto {
+        previous: palace_dto(f.previous, lang),
+        next: palace_dto(f.next, lang),
     }
 }
 

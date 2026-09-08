@@ -262,6 +262,17 @@ class Scope(StrEnum):
     """流时"""
 
 
+class MonthPart(StrEnum):
+    """流月分段（`MonthlyListItem.part`）：闰月在修正闰月的盘上拆成前后两段"""
+
+    NORMAL = "normal"
+    """整月一段（非闰月，或闰月但不拆分）"""
+    FIRST = "first"
+    """闰月前半段（初一至十五）"""
+    SECOND = "second"
+    """闰月后半段（十六至月末）"""
+
+
 class MajorStar(StrEnum):
     """十四主星（对应 `Star.key`）"""
 

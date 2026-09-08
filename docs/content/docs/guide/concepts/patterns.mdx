@@ -231,21 +231,21 @@ for _, x := range hits {
 | 亮度表（默认） | 星盘自带的亮度，庙旺为明，陷与「不」为暗 | `table` |
 | 传统位置 | 太阳寅至午为明、酉至丑为暗；太阴酉至丑为明、卯至未为暗 | `positional` |
 
-<Callout type="warn" title="默认与来源页示例不一致，这是有意的">
-x-iztro 的亮度表与 iztro **逐值一致**，这是整个库的红线。
-按这张表，太阴在酉宫是「不」（不算明）——
-而来源页《日月并明》的两张示例盘，太阴恰好都在酉。
-所以按默认口径，那两张示例判为**不成格**。
+<Callout title="两个口径的差别只在两格上">
+x-iztro 的亮度表与 iztro **逐值一致**，这是整个库的红线。它与传统位置法的差集只有两格：
 
-传统上多数亮度表把太阴酉记作旺，页面示例依据的是这一说。
-想复现传统判法，把口径切到 `positional`：结论与页面示例一致，
-且不用改动亮度表、不影响排盘与 iztro 的对齐。
+- **太阳在酉**：表判「平」，既不算明也不算暗；位置法算暗
+- **太阴在寅**：表判「旺」即明；位置法算中性
+
+所以分歧只可能出现在**「皆暗」**一类格局（日月反背、日月藏辉）上。
+「皆明」一类（日月并明、丹墀桂墀）两个口径**不可能**有分歧——安星几何决定了
+太阴在寅时太阳必在子（表判陷），两边都不成格。
 </Callout>
 
 ```python
 from x_iztro import Astro, PatternConfig, BrightnessSource
 
-chart = Astro().by_solar("1985-1-5", 11, "female")
+chart = Astro().by_solar("1985-6-10", 8, "female")
 
 print([h.name for h in chart.patterns()])
 print([h.name for h in chart.patterns(
@@ -253,8 +253,8 @@ print([h.name for h in chart.patterns(
 ```
 
 ```text
-['禄马交驰', '左右夹命', '坐贵向贵']
-['日月并明', '禄马交驰', '左右夹命', '坐贵向贵']
+[]
+['日月反背']
 ```
 
 ## 三个口径开关

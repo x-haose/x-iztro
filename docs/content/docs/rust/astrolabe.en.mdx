@@ -1,6 +1,6 @@
 ---
 title: Astrolabe object
-description: The fields of Astrolabe, its lookup methods, and the surrounded-palace predicates.
+description: The fields of Astrolabe, its lookup methods, and the surrounded and flanking palaces.
 ---
 
 `Astrolabe` is what charting produces and the entry point for every query. It holds all the data of
@@ -345,6 +345,91 @@ With an empty `stars` slice, `is_surrounded` and `not_surrounded` return `true` 
 satisfy" and "no element fails" both hold vacuously) while `is_surrounded_one_of` returns `false`.
 Make sure the list is non-empty before calling.
 </Callout>
+
+---
+
+## flanking_palaces
+
+**Purpose** Get a palace's flanking pair: the two palaces immediately before and after it on the chart.
+
+**Zi Wei meaning** Phrases like "Qing Yang and Tuo Luo flank Ji" or "Sun and Moon flank the Soul palace"
+are about exactly this pair. Flanking and the surrounded set are two non-overlapping lines of evidence:
+the surrounded set asks how one group of energies echoes itself, flanking asks what stands on either side.
+
+**Signature**
+
+```rust
+pub fn flanking_palaces(&self, target: impl Into<PalaceTarget>) -> Option<FlankingPalaces<'_>>
+```
+
+**Parameters** Same as `palace`; all four addressing forms work.
+
+**Return value** `Option<FlankingPalaces<'_>>`, with two fields:
+
+| Field | Offset | Type | Description |
+| --- | --- | --- | --- |
+| `previous` | -1 | `&PalaceData` | The preceding palace |
+| `next` | +1 | `&PalaceData` | The following palace |
+
+The twelve palaces form a ring — indices wrap modulo 12, so palace 0 is preceded by palace 11.
+`astrolabe()` gives back the chart the pair belongs to.
+
+The five predicates are named and defined exactly as on the
+[surrounded set](/en/docs/rust/surpalaces); only the scope changes to these two palaces:
+
+| Method | Meaning |
+| --- | --- |
+| `have(&[StarKey]) -> bool` | The two palaces together hold every star in the list |
+| `not_have(&[StarKey]) -> bool` | Neither palace holds any of them |
+| `have_one_of(&[StarKey]) -> bool` | The two together hold at least one |
+| `have_mutagen(Mutagen) -> bool` | Either palace carries that natal mutagen |
+| `not_have_mutagen(Mutagen) -> bool` | Neither one does |
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let f = chart.flanking_palaces(Palace::Soul).unwrap();
+
+println!("{} / {}", translate_palace(f.previous.name, en), translate_palace(f.next.name, en));
+println!("{}", f.have(&[StarKey::TianjiMaj, StarKey::TuoluoMin]));
+println!("{}", f.have_one_of(&[StarKey::HuoxingMin]));
+
+let w = chart.flanking_palaces(Palace::Wealth).unwrap();
+println!("{} / {}", translate_palace(w.previous.name, en), translate_palace(w.next.name, en));
+println!("{} {}", w.have_mutagen(Mutagen::Lu), w.have_mutagen(Mutagen::Ji));
+```
+
+**Output**
+
+```text
+siblings / parents
+true
+false
+health / children
+true true
+```
+
+The Soul palace sits in woo, flanked by siblings (si) and parents (wei). Tianji sits in siblings and
+Tuoluo in parents — different palaces, yet `have` still holds. Huoxing sits in spouse, outside the pair,
+so `have_one_of` is `false`. Wealth sits in yin, flanked by health (Tiantong) and children (Taiyang);
+this chart's natal stem geng turns Taiyang to Lu and Tiantong to Ji, so both mutagen questions are `true`.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Predicates run on the union of both palaces">
+`have(&[A, B])` means "A and B both appear across these two palaces", not that they sit together in one.
+To look at a single side, call the palace's
+[`has`](/en/docs/rust/palace#has--not_have--has_one_of) on `f.previous` or `f.next`.
+</Accordion>
+<Accordion title="No palace is missing a side">
+Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
+</Accordion>
+<Accordion title="What an empty list returns">
+`have` and `not_have` return `true` for an empty list; `have_one_of` returns `false`.
+</Accordion>
+</Accordions>
 
 ---
 

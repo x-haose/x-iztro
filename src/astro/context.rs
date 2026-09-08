@@ -53,14 +53,18 @@ pub fn derive(
     crate::astro::builder::validate_time_index(time_index)?;
     let (year, month, day) = crate::astro::builder::parse_solar_date(solar_date)?;
 
-    let effective_time_index = if config.day_divide == DayDivide::Current && time_index >= 12 {
-        0
-    } else {
-        time_index
-    };
+    let effective_time_index =
+        crate::astro::builder::effective_time_index(config.day_divide, time_index);
 
     let hour = crate::astro::builder::time_index_to_hour(effective_time_index);
-    let solar_with_time = solar::from_ymdhms(year, month, day, hour, 0, 0);
+    let solar_with_time = solar::from_ymdhms(
+        year,
+        month,
+        day,
+        hour,
+        crate::astro::builder::CHART_MINUTE,
+        0,
+    );
     let lunar_ref = lunar::from_solar(&solar_with_time);
 
     let lunar_ymd = lunar_table::ymd_of(&lunar_ref)?;

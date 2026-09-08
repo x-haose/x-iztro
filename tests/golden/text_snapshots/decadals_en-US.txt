@@ -1,0 +1,16 @@
+# Decadal Timeline
+
+| No | Natal Palace | Nominal Age | Years | Stem-Branch | Mutagen |
+|---|---|---|---|---|---|
+| 1 | soul | 3-12 | 2002-2011 | ren woo | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+| 2 | siblings | 13-22 | 2012-2021 | xin si | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 3 | spouse | 23-32 | 2022-2031 | geng chen | sun [A]→Natal children, warrior [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health |
+| 4 | children | 33-42 | 2032-2041 | ji mao | warrior [A]→Natal wealth, wolf [B]→Natal surface, sage [C]→Natal children, artist [D]→Natal soul |
+| 5 | wealth | 43-52 | 2042-2051 | wu yin | wolf [A]→Natal surface, moon [B]→Natal friends, helper [C]→Natal spouse, advisor [D]→Natal siblings |
+| 6 | health | 53-62 | 2052-2061 | ji chou | warrior [A]→Natal wealth, wolf [B]→Natal surface, sage [C]→Natal children, artist [D]→Natal soul |
+| 7 | surface | 63-72 | 2062-2071 | wu zi | wolf [A]→Natal surface, moon [B]→Natal friends, helper [C]→Natal spouse, advisor [D]→Natal siblings |
+| 8 | friends | 73-82 | 2072-2081 | ding hai | moon [A]→Natal friends, fortunate [B]→Natal health, advisor [C]→Natal siblings, advocator [D]→Natal health |
+| 9 | career | 83-92 | 2082-2091 | bing xu | fortunate [A]→Natal health, advisor [B]→Natal siblings, scholar [C]→Natal spirit, judge [D]→Natal career |
+| 10 | property | 93-102 | 2092-2101 | yi you | advisor [A]→Natal siblings, sage [B]→Natal children, emperor [C]→Natal soul, moon [D]→Natal friends |
+| 11 | spirit | 103-112 | 2102-2111 | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+| 12 | parents | 113-122 | 2112-2121 | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |

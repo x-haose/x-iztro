@@ -298,7 +298,8 @@ func MergeStars(groups ...[][]Star) ([][]Star, error) {
 // 每个 ToText 都有 ToTextWith 形态：TextOptions.Knowledge 给释义来源时在事实节之后追加释义节
 // （星耀 / 格局 / 四化；运限为流耀与各层格局；单宫与三方四正为该宫星耀；格局文本为命中格局）。
 
-// textPayload 组装按盘查询（to_text 家族与知识包取材）的公共入参：排盘上下文 + 重排起点。
+// textPayload 组装按盘查询（to_text 家族、知识包取材与夹宫/运限列表）的公共入参：
+// 排盘上下文 + 重排起点。重排起点决定十二宫名与大限干支，漏带即拿到原盘的答案。
 func (a *Astrolabe) textPayload(kind string) map[string]any {
 	payload := map[string]any{
 		"kind":      kind,
@@ -437,6 +438,62 @@ func (a *Astrolabe) SurroundedPalacesToTextWithContext(ctx context.Context, targ
 	}
 	payload := a.textPayload("surroundedPalacesToText")
 	target.apply(payload)
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// FlankingPalacesToText 生成指定宫位夹宫的语义化文本。
+func (a *Astrolabe) FlankingPalacesToText(target PalaceTarget) (string, error) {
+	return a.FlankingPalacesToTextContext(context.Background(), target)
+}
+
+// FlankingPalacesToTextContext 为 FlankingPalacesToText 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) FlankingPalacesToTextContext(ctx context.Context, target PalaceTarget) (string, error) {
+	return a.FlankingPalacesToTextWithContext(ctx, target, TextOptions{})
+}
+
+// FlankingPalacesToTextWith 生成指定宫位夹宫的语义化文本并按 opts.Knowledge 追加两夹宫星耀的释义节。
+func (a *Astrolabe) FlankingPalacesToTextWith(target PalaceTarget, opts TextOptions) (string, error) {
+	return a.FlankingPalacesToTextWithContext(context.Background(), target, opts)
+}
+
+// FlankingPalacesToTextWithContext 为 FlankingPalacesToTextWith 的 Context 变体；
+// ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) FlankingPalacesToTextWithContext(ctx context.Context, target PalaceTarget, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("flankingPalacesToText: nil astrolabe")
+	}
+	payload := a.textPayload("flankingPalacesToText")
+	target.apply(payload)
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// DecadalListToText 生成大限一览的语义化文本：十二个大限一张表，按起运先后排。
+// 不展开每限的流年，某一限的流年用 YearlyList 单取。
+func (a *Astrolabe) DecadalListToText() (string, error) {
+	return a.DecadalListToTextContext(context.Background())
+}
+
+// DecadalListToTextContext 为 DecadalListToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) DecadalListToTextContext(ctx context.Context) (string, error) {
+	return a.DecadalListToTextWithContext(ctx, TextOptions{})
+}
+
+// DecadalListToTextWith 生成大限一览的语义化文本并按 opts.Knowledge 在表后追加各限四化星的释义节。
+func (a *Astrolabe) DecadalListToTextWith(opts TextOptions) (string, error) {
+	return a.DecadalListToTextWithContext(context.Background(), opts)
+}
+
+// DecadalListToTextWithContext 为 DecadalListToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("decadalListToText: nil astrolabe")
+	}
+	payload := a.textPayload("decadalListToText")
 	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)

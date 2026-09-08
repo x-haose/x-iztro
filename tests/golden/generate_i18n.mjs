@@ -13,6 +13,7 @@
  */
 import fs from 'node:fs';
 import { kot } from 'iztro/lib/i18n/index.js';
+import { STAR_ALIASES } from 'iztro/lib/i18n/starAliases.js';
 import zhCN from 'iztro/lib/i18n/locales/zh-CN/index.js';
 import zhTW from 'iztro/lib/i18n/locales/zh-TW/index.js';
 import enUS from 'iztro/lib/i18n/locales/en-US/index.js';
@@ -58,6 +59,12 @@ for (const key of keys) {
     if (typeof text !== 'string') continue;
     lookups.push({ text, lang, key, kot: kot(text) });
   }
+}
+
+// 星曜限定别名：不在翻译表里，但 kot 认它们（韩/越同形译名的带汉字限定名）。
+// 逐条纳入，别名的反查取值同样由金标守着。
+for (const [text, key] of Object.entries(STAR_ALIASES)) {
+  lookups.push({ text, lang: 'alias', key, kot: kot(text) });
 }
 
 fs.writeFileSync('i18n_kot.json', JSON.stringify(lookups, null, 2));

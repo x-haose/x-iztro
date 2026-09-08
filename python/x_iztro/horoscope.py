@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
 from x_iztro.enums import _MUTAGEN_INDEX, Mutagen, PalaceName, Scope, ScopeLiteral
@@ -96,6 +96,16 @@ class HoroscopeItem:
         )
 
 
+def _base_fields(d: dict) -> dict[str, Any]:
+    """通用运限字段（`HoroscopeItem` 的全部字段）的关键字形态。
+
+    带扩展字段的运限类都以通用字段打底，由本函数一次取全，
+    基类新增字段时不必逐个类补抄。
+    """
+    base = HoroscopeItem._from_dict(d)
+    return {f.name: getattr(base, f.name) for f in fields(HoroscopeItem)}
+
+
 # ============================================================
 # YearlyDecStar
 # ============================================================
@@ -139,20 +149,8 @@ class HoroscopeYearly(HoroscopeItem):
 
     @classmethod
     def _from_dict(cls, d: dict) -> HoroscopeYearly:
-        base = HoroscopeItem._from_dict(d)
         return cls(
-            index=base.index,
-            name=base.name,
-            name_key=base.name_key,
-            heavenly_stem=base.heavenly_stem,
-            heavenly_stem_key=base.heavenly_stem_key,
-            earthly_branch=base.earthly_branch,
-            earthly_branch_key=base.earthly_branch_key,
-            palace_names=base.palace_names,
-            palace_name_keys=base.palace_name_keys,
-            mutagen=base.mutagen,
-            mutagen_star_keys=base.mutagen_star_keys,
-            stars=base.stars,
+            **_base_fields(d),
             yearly_dec_star=YearlyDecStar._from_dict(d["yearlyDecStar"]),
         )
 
@@ -166,21 +164,87 @@ class AgeItem(HoroscopeItem):
 
     @classmethod
     def _from_dict(cls, d: dict) -> AgeItem:
-        base = HoroscopeItem._from_dict(d)
+        return cls(**_base_fields(d), nominal_age=d["nominalAge"])
+
+
+# ============================================================
+# 运限列表项
+# ============================================================
+
+@dataclass(frozen=True, slots=True)
+class DecadalListItem(HoroscopeItem):
+    """大限列表项：一整个大限，含起止虚岁与起止农历年份"""
+
+    palace_name: str = ""
+    """该大限所在的本命宫名（按排盘语言翻译）"""
+
+    palace_name_key: str = ""
+    """本命宫名的语言无关标识（`PalaceName` 枚举值域）"""
+
+    age_range: tuple[int, int] = (0, 0)
+    """起止虚岁 (起, 止)，含两端"""
+
+    year_range: tuple[int, int] = (0, 0)
+    """起止农历年份 (起, 止)，含两端"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> DecadalListItem:
         return cls(
-            index=base.index,
-            name=base.name,
-            name_key=base.name_key,
-            heavenly_stem=base.heavenly_stem,
-            heavenly_stem_key=base.heavenly_stem_key,
-            earthly_branch=base.earthly_branch,
-            earthly_branch_key=base.earthly_branch_key,
-            palace_names=base.palace_names,
-            palace_name_keys=base.palace_name_keys,
-            mutagen=base.mutagen,
-            mutagen_star_keys=base.mutagen_star_keys,
-            stars=base.stars,
-            nominal_age=d["nominalAge"],
+            **_base_fields(d),
+            palace_name=d["palaceName"],
+            palace_name_key=d["palaceNameKey"],
+            age_range=(d["ageRange"][0], d["ageRange"][1]),
+            year_range=(d["yearRange"][0], d["yearRange"][1]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class YearlyListItem(HoroscopeItem):
+    """流年列表项：某个大限内的一个流年"""
+
+    age: int = 0
+    """该流年对应的虚岁"""
+
+    year: int = 0
+    """农历年份"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> YearlyListItem:
+        return cls(**_base_fields(d), age=d["age"], year=d["year"])
+
+
+@dataclass(frozen=True, slots=True)
+class MonthlyListItem(HoroscopeItem):
+    """流月列表项：某个农历年的一个流月段"""
+
+    age: int = 0
+    """该流月对应的虚岁"""
+
+    year: int = 0
+    """农历年份"""
+
+    month: int = 0
+    """农历月份（正月为 1）；闰月与同月号的常规月共用本字段，以 `is_leap_month` 区分"""
+
+    is_leap_month: bool = False
+    """本段是否属于闰月"""
+
+    part: str = ""
+    """分段标识（`MonthPart` 枚举值域）：整月、闰月前半、闰月后半"""
+
+    day_range: tuple[int, int] = (0, 0)
+    """本段覆盖的农历日区间 (起, 止)，含两端"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> MonthlyListItem:
+        return cls(
+            **_base_fields(d),
+            age=d["age"],
+            year=d["year"],
+            month=d["month"],
+            is_leap_month=d["isLeapMonth"],
+            part=d["part"],
+            day_range=(d["dayRange"][0], d["dayRange"][1]),
         )
 
 

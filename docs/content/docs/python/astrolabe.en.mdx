@@ -1,6 +1,6 @@
 ---
 title: Astrolabe object
-description: The fields of Astrolabe, its lookup methods, and the surrounded-palace predicates.
+description: The fields of Astrolabe, its lookup methods, and the surrounded and flanking palaces.
 ---
 
 `Astrolabe` is what charting produces and the entry point for every query. It is a `frozen=True`
@@ -381,6 +381,93 @@ With an empty `stars` list, `is_surrounded` and `not_surrounded` return `True` (
 and "no element fails" both hold vacuously) while `is_surrounded_one_of` returns `False`.
 Make sure the list is non-empty before calling.
 </Callout>
+
+---
+
+## flanking_palaces
+
+**Purpose** Get a palace's flanking pair: the two palaces immediately before and after it on the chart.
+
+**Zi Wei meaning** Phrases like "Qing Yang and Tuo Luo flank Ji" or "Sun and Moon flank the Soul palace"
+are about exactly this pair. Flanking and the surrounded set are two non-overlapping lines of evidence:
+the surrounded set asks how one group of energies echoes itself, flanking asks what stands on either side.
+
+**Signature**
+
+```python
+def flanking_palaces(self, index_or_name: int | PalaceName | str) -> FlankingPalaces | None
+```
+
+**Parameters** Same as `palace`; all four spellings are supported.
+
+**Return value** `FlankingPalaces | None`, holding two `Palace` fields. Returns `None` when the palace
+cannot be located.
+
+| Field | Offset | Description |
+| --- | --- | --- |
+| `previous` | -1 | The preceding palace |
+| `next` | +1 | The following palace |
+
+The twelve palaces form a ring — indices wrap modulo 12, so palace 0 is preceded by palace 11.
+`astrolabe()` gives back the chart the pair belongs to.
+
+The five predicates are named and defined exactly as on the
+[surrounded set](/en/docs/python/surpalaces); only the scope changes to these two palaces:
+
+| Method | Meaning |
+| --- | --- |
+| `have(stars: list[str]) -> bool` | The two palaces together hold every star in the list |
+| `not_have(stars: list[str]) -> bool` | Neither palace holds any of them |
+| `have_one_of(stars: list[str]) -> bool` | The two together hold at least one |
+| `have_mutagen(mutagen: Mutagen) -> bool` | Either palace carries that natal mutagen |
+| `not_have_mutagen(mutagen: Mutagen) -> bool` | Neither one does |
+
+Stars may be written as `MajorStar` / `MinorStar` enum members or as star names in the chart's language.
+
+**Example**
+
+```python
+f = chart.flanking_palaces("soulPalace")
+
+print(f.previous.name, "/", f.next.name)
+print(f.have(["tianjiMaj", "tuoluoMin"]))
+print(f.have_one_of(["huoxingMin"]))
+
+w = chart.flanking_palaces("wealthPalace")
+print(w.previous.name, "/", w.next.name)
+print(w.have_mutagen("sihuaLu"), w.have_mutagen("sihuaJi"))
+```
+
+**Output**
+
+```text
+siblings / parents
+True
+False
+health / children
+True True
+```
+
+The Soul palace sits in woo, flanked by siblings (si) and parents (wei). Tianji sits in siblings and
+Tuoluo in parents — different palaces, yet `have` still holds. Huoxing sits in spouse, outside the pair,
+so `have_one_of` is `False`. Wealth sits in yin, flanked by health (Tiantong) and children (Taiyang);
+this chart's natal stem geng turns Taiyang to Lu and Tiantong to Ji, so both mutagen questions are `True`.
+
+**Edge cases and pitfalls**
+
+<Accordions>
+<Accordion title="Predicates run on the union of both palaces">
+`have(["A", "B"])` means "A and B both appear across these two palaces", not that they sit together in one.
+To look at a single side, call the palace's
+[`has`](/en/docs/python/palace#has--not_have--has_one_of) on `f.previous` or `f.next`.
+</Accordion>
+<Accordion title="No palace is missing a side">
+Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
+</Accordion>
+<Accordion title="What an empty list returns">
+`have` and `not_have` return `True` for an empty list; `have_one_of` returns `False`.
+</Accordion>
+</Accordions>
 
 ---
 

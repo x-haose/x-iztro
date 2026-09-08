@@ -15,7 +15,7 @@ use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 use serde::{Deserialize, Serialize};
 
-use crate::astro::builder::{by_solar, four_pillars};
+use crate::astro::builder::{by_solar, effective_time_index, four_pillars};
 use crate::astro::lunar_table;
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
 use crate::data::stars::StarKey;
@@ -442,18 +442,6 @@ fn matches_criteria(chart: &Astrolabe, criteria: &ReverseCriteria, config: &Conf
             .star(p.star)
             .is_some_and(|s| s.palace().earthly_branch == p.branch)
     })
-}
-
-/// 参与日敏感安星的生效时辰，与正排上下文派生的 `effective_time_index` 同一语义：
-/// `Current` 分界下晚子（>=12）按早子（0）参与推算。紫微起宫（`get_start_index`）与
-/// 日系杂耀（`get_daily_star_index`）区分 t=12 与 t=0，日层剪枝必须收归一后的值；
-/// 其余安星函数对时辰做模 12 处理、早晚子同位，收原始时辰即可。
-fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 {
-    if day_divide == DayDivide::Current && time_index >= 12 {
-        0
-    } else {
-        time_index
-    }
 }
 
 /// 农历年编号 `year` 下，候选的安星年干支。

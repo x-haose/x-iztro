@@ -1,6 +1,6 @@
 ---
 title: Horoscope object
-description: The data structures of the six scopes, plus palace lookups that need not be handed the astrolabe again.
+description: The data structures of the six scopes, the three whole-scope lists, plus palace lookups that need not be handed the astrolabe again.
 ---
 
 A horoscope projects the natal chart onto a point in time. The same chart shows a different palace
@@ -115,8 +115,219 @@ monthly lands on palace 3 with pillar renwoo
 daily lands on palace 8 with pillar xinchou
 hourly lands on palace 8 with pillar wuzi
 age scope nominal age 26
-decadal mutagens ['sun', 'general', 'moon', 'fortunate']
+decadal mutagens ['sun', 'warrior', 'moon', 'fortunate']
 ```
+
+---
+
+## The three lists
+
+`decadal_list` / `yearly_list` / `monthly_list` are methods on `Astrolabe`, not on the horoscope object:
+they return a whole scope in one call, sparing you from looping over dates with `horoscope` and
+assembling the result yourself. All three item types inherit `HoroscopeItem`, so the shared fields are
+read directly; each adds its own time coordinates:
+
+| Type | Extra fields | Description |
+| --- | --- | --- |
+| `DecadalListItem` | `palace_name` / `palace_name_key`: `str` | The natal palace this decadal sits in |
+| | `age_range`: `tuple[int, int]` | First and last nominal age, both inclusive |
+| | `year_range`: `tuple[int, int]` | First and last lunar year, both inclusive |
+| `YearlyListItem` | `age`: `int` | The nominal age this year corresponds to |
+| | `year`: `int` | Lunar year |
+| `MonthlyListItem` | `age`: `int` | The nominal age this month falls in |
+| | `year`: `int` | Lunar year |
+| | `month`: `int` | Lunar month, 1 for the first; a leap month shares its number |
+| | `is_leap_month`: `bool` | Whether this item is the leap month |
+| | `part`: `str` | Segment marker; values are in the `MonthPart` enum |
+| | `day_range`: `tuple[int, int]` | The lunar days this segment covers, both inclusive |
+
+`MonthPart` has three values: `NORMAL` for a whole month, `FIRST` for a leap month's first half and
+`SECOND` for its second half.
+
+<Callout type="info" title="The lists use the hour pillar's branch">
+Every item in the three lists is computed from the hour matching the **hour pillar's earthly branch**,
+not the `time_index` passed at charting time. The two differ only for the late zi hour: on a chart
+built with index 12, the hour pillar's branch is zi, so the lists use hour index 0.
+</Callout>
+
+---
+
+## decadal_list
+
+**Purpose** Get all twelve decadals of this chart at once, ordered by when they begin.
+
+**Zi Wei meaning** A decadal is a ten-year step walking the twelve palaces from the starting palace.
+Laid out flat, the line tells you which palace a given stretch of life falls in and which ten years it covers.
+
+**Signature**
+
+```python
+def decadal_list(self) -> list[DecadalListItem]
+```
+
+**Return value** Always 12 items; index 0 is the first decadal. The order follows the starting nominal
+age, not the palace index — decadals run forwards or backwards depending on yin/yang and gender.
+
+**Example**
+
+```python
+for d in chart.decadal_list()[:3]:
+    print(d.palace_name, d.heavenly_stem, d.earthly_branch, d.age_range, d.year_range)
+
+print(len(chart.decadal_list()))
+```
+
+**Output**
+
+```text
+soul ren woo (3, 12) (2002, 2011)
+siblings xin si (13, 22) (2012, 2021)
+spouse geng chen (23, 32) (2022, 2031)
+12
+```
+
+This chart starts its decadals at nominal age 3, with the first one in the Soul palace.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Childhood is not in the list">
+The years before the first decadal begins are the childhood scope, which only appears when you query
+`horoscope` for a specific date (`name_key` is `childhood`). `decadal_list` lists the twelve decadals
+themselves, so every item's `name_key` is `decadal`.
+</Callout>
+
+---
+
+## yearly_list
+
+**Purpose** Get every yearly scope inside one decadal.
+
+**Zi Wei meaning** Fix the decadal, then read year by year — the usual order in which a reading advances.
+A decadal spans ten years, and these are those ten.
+
+**Signature**
+
+```python
+def yearly_list(self, decadal: int | PalaceName | str | None = None) -> list[YearlyListItem]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `decadal` | `int \| PalaceName \| str \| None` | Yes | `None` | The decadal's ordinal (`int`, 0 for the first) or the key of the natal palace it sits in |
+
+When both forms address the same decadal they return identical results; pick whichever you already hold.
+
+**Return value** 10 items ordered by nominal age.
+
+**Raises** `IztroError` when no addressing is given, the ordinal is out of range, or the palace name
+cannot be matched.
+
+**Example**
+
+```python
+years = chart.yearly_list(2)
+
+for y in years[:3]:
+    print(y.age, y.year, y.heavenly_stem, y.earthly_branch, "->", y.index)
+
+print(len(years), len(chart.yearly_list("spousePalace")))
+```
+
+**Output**
+
+```text
+23 2022 ren yin -> 0
+24 2023 gui mao -> 1
+25 2024 jia chen -> 2
+10 10
+```
+
+Decadal 2 sits in the spouse palace, so `yearly_list(2)` and `yearly_list("spousePalace")` name the same one.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="The parameter has a default, but omitting it raises">
+`decadal=None` does not mean "the current decadal" — it raises `IztroError`. Silently picking a default
+would turn a forgotten argument into a plausible-looking wrong answer.
+</Callout>
+
+---
+
+## monthly_list
+
+**Purpose** Get every monthly scope of one lunar year.
+
+**Zi Wei meaning** The monthly scope sits below the yearly one and advances month by month. How to treat
+a leap month is a point where schools disagree, so whether to split it is the caller's decision.
+
+**Signature**
+
+```python
+def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem]
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | The lunar year |
+| `fix_leap` | `bool` | No | `True` | Whether to split a leap month into two half-month items |
+
+**Return value** The length depends on whether the year has a leap month and on `fix_leap`:
+
+| That lunar year | `fix_leap` | Items | How the leap month is laid out |
+| --- | --- | --- | --- |
+| No leap month | either | 12 | — |
+| Has a leap month | `True` | 14 | Split into `first` (days 1-15) and `second` (day 16 to month end) |
+| Has a leap month | `False` | 13 | One whole-month item with `part` set to `normal` |
+
+The leap month follows the ordinary month of the same number. Each item is computed from the first day of
+its segment (day 16 for a second half).
+
+**Raises** `IztroError` when that lunar year does not exist, or a segment's target date falls outside the
+supported range.
+
+**Example**
+
+```python
+months = chart.monthly_list(2020)
+
+print(len(months))
+for m in months[3:7]:
+    print(m.month, m.is_leap_month, m.part, m.day_range, m.heavenly_stem, m.earthly_branch)
+
+print(len(chart.monthly_list(2020, fix_leap=False)), len(chart.monthly_list(2021)))
+```
+
+**Output**
+
+```text
+14
+4 False normal (1, 30) xin si
+4 True first (1, 15) xin si
+4 True second (16, 29) ren woo
+5 False normal (1, 30) ren woo
+13 12
+```
+
+Lunar 2020 has a leap fourth month. Split apart, its first half shares the pillar of the fourth month
+(xin si) and its second half shares the fifth month's (ren woo) — which is what "the second half of a leap
+month counts as the next month" means. Lunar 2021 has no leap month, so it is always 12 items.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="This fix_leap is unrelated to the charting fix_leap">
+The `fix_leap` on the charting entry decides whether someone born in the second half of a leap month is
+placed by the next month's stars — it changes the natal layout. This one only decides whether this list
+splits the leap month. The two may differ and do not affect each other.
+</Callout>
+
+<Callout type="info" title="A leap month shares its number">
+The leap fourth month also has `month == 4`; `is_leap_month` is what tells them apart. Deduplicating by
+`month` drops the leap month.
+</Callout>
 
 ---
 
@@ -371,7 +582,7 @@ print(h.decadal.mutagen)
 
 ```text
 False
-['sun', 'general', 'moon', 'fortunate']
+['sun', 'warrior', 'moon', 'fortunate']
 ```
 
 The decadal stem is geng, and geng sends lu to Taiyang, quan to Wuqu, ke to Taiyin and ji to

@@ -5,7 +5,7 @@ description: iztro 每个公开 API 在 x-iztro 三侧的落点，换了形状�
 
 *适合：开发者，尤其是从 JS iztro 迁移过来的*
 
-x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.5.8 的移植。
+x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.6.1 的移植。
 iztro 的每个公开 API 在 Rust、Python、Go 三侧都有等价物，
 三侧能力完全一致，形式各随语言习惯。
 
@@ -21,6 +21,10 @@ iztro 的每个公开 API 在 Rust、Python、Go 三侧都有等价物，
 | `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
 | `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
 | `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
+| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` |
+| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` |
+| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` |
+| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` |
 | `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
 | `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
 | `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
@@ -111,7 +115,7 @@ iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
 | `util.fixEarthlyBranchIndex` | 与 `earthlyBranchIndexToPalaceIndex` 同义 |
 | `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | 建立对象间引用是内部行为，三侧在解析后自动完成 |
 | `astro/analyzer` 模块 | 里面 11 个函数是宫位与三方四正方法的自由函数版（`hasStars` 即 `palace.has`），能力已由对象方法覆盖 |
-| `calendar` 模块 | 在 iztro v2.5.8 里已是死代码：活的代码路径全部改走 `lunar-lite` 依赖，该模块也不在包的根导出里 |
+| `calendar` 模块 | 在 iztro v2.5.8 里已是死代码——活的代码路径全部改走 `lunar-lite` 依赖，该模块也不在包的根导出里；v2.6.1 已把它从包中删除 |
 | `i18n` 默认导出的 i18next 实例 | 不转手第三方库实例；翻译与反查由 `translate` / `key_of` 覆盖 |
 | `Astrolabe.copyright` | iztro 自身的版权声明字符串 |
 

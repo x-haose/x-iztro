@@ -5,7 +5,7 @@ description: Where each public iztro API lands in the three x-iztro bindings, th
 
 *For: developers, especially anyone migrating from JS iztro*
 
-x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.5.8. Every public iztro API has
+x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.1. Every public iztro API has
 an equivalent in all three bindings — Rust, Python and Go — with identical capability and a form
 that suits each language.
 
@@ -21,6 +21,10 @@ use each API, see that language's API reference.
 | `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
 | `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
 | `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
+| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` |
+| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` |
+| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` |
+| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` |
 | `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
 | `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
 | `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
@@ -119,7 +123,7 @@ has to change when migrating.
 | `util.fixEarthlyBranchIndex` | Synonymous with `earthlyBranchIndexToPalaceIndex` |
 | `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | Wiring references between objects is internal behaviour, done automatically after parsing in all three bindings |
 | The `astro/analyzer` module | Its 11 functions are free-function versions of palace and surrounded-palace methods (`hasStars` is `palace.has`); the capability is already covered by the object methods |
-| The `calendar` module | Dead code in iztro v2.5.8: every live code path goes through the `lunar-lite` dependency instead, and the module is not in the package's root exports |
+| The `calendar` module | Dead code as of iztro v2.5.8 — every live code path goes through the `lunar-lite` dependency instead, and the module was not in the package's root exports; v2.6.1 removed it from the package |
 | The i18next instance in `i18n`'s default export | Third-party library instances are not passed through; translation and reverse lookup are covered by `translate` / `key_of` |
 | `Astrolabe.copyright` | iztro's own copyright notice string |
 

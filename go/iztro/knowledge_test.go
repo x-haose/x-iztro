@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-// TestTextWithKnowledgeParity 断言五类带释义文本与 Rust 侧快照逐字节相同
-// （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded 取命宫，
+// TestTextWithKnowledgeParity 断言七类带释义文本与 Rust 侧快照逐字节相同
+// （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，
 // patterns 默认口径），并确认零值 Knowledge 的输出仍等于不带释义的原快照。
 func TestTextWithKnowledgeParity(t *testing.T) {
 	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
@@ -28,6 +28,10 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		"surrounded": func(o TextOptions) (string, error) {
 			return chart.SurroundedPalacesToTextWith(soul, o)
 		},
+		"flanking": func(o TextOptions) (string, error) {
+			return chart.FlankingPalacesToTextWith(soul, o)
+		},
+		"decadals": chart.DecadalListToTextWith,
 	}
 	for name, get := range cases {
 		got, err := get(TextOptions{Knowledge: BuiltinKnowledge()})
@@ -239,8 +243,9 @@ func TestKnowledgeForChartSources(t *testing.T) {
 // TestKnowledgeForChartPatternConfig 校验取材时的格局口径随 config 传给内核：
 // 子包 patterns 键集合恰等于同口径 Patterns 命中 key 的去重集合。
 func TestKnowledgeForChartPatternConfig(t *testing.T) {
-	// 1990-1-10 子时男：默认亮度表口径无格，位置口径命中日月并明
-	chart, err := BySolar("1990-1-10", 0, GenderMale, true, LanguageZhCN, nil)
+	// 1985-6-10 辰时女：命宫三方四正的太阳在酉，亮度表判「平」不算暗故默认口径无格，
+	// 位置法判暗、命中日月反背
+	chart, err := BySolar("1985-6-10", 8, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,8 +286,8 @@ func TestKnowledgeForChartPatternConfig(t *testing.T) {
 	if got := packKeys(positionalSub); !reflect.DeepEqual(got, positionalHits) {
 		t.Fatalf("positional sub pack patterns %v, hits %v", got, positionalHits)
 	}
-	if _, ok := positionalSub.Patterns[PatternRiYueBingMing]; !ok {
-		t.Fatalf("positional sub pack should carry 日月并明, got %v", packKeys(positionalSub))
+	if _, ok := positionalSub.Patterns[PatternRiYueFanBei]; !ok {
+		t.Fatalf("positional sub pack should carry 日月反背, got %v", packKeys(positionalSub))
 	}
 }
 

@@ -1,4 +1,4 @@
-//! 紫微斗数排盘核心库，移植自 JS iztro v2.5.8。
+//! 紫微斗数排盘核心库，移植自 JS iztro v2.6.1。
 //!
 //! 入口：[`by_solar`] / [`by_lunar`] 排盘，[`get_horoscope`] 计算运限，
 //! [`astrolabe_to_text`] / [`horoscope_to_text`] 生成语义化文本（星盘对象也有
@@ -78,6 +78,7 @@ pub use knowledge::KnowledgePack;
 pub use models::astrolabe::{
     Astrolabe, PalaceRef, PalaceTarget, RawChineseDate, RawDates, RawLunarDate, StarRef,
 };
+pub use models::flanking::FlankingPalaces;
 pub use models::horoscope::{
     AgeItem, HoroscopeData, HoroscopeItem, HoroscopeRef, YearlyDecStar, YearlyItem,
 };
@@ -88,9 +89,11 @@ pub use pattern::{
     ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
 };
 pub use text::{
-    TextOptions, astrolabe_to_text, astrolabe_to_text_with, horoscope_to_text,
-    horoscope_to_text_with, palace_to_text, palace_to_text_with, patterns_to_text,
-    patterns_to_text_with, surrounded_palaces_to_text, surrounded_palaces_to_text_with,
+    TextOptions, astrolabe_to_text, astrolabe_to_text_with, decadal_list_to_text,
+    decadal_list_to_text_with, flanking_palaces_to_text, flanking_palaces_to_text_with,
+    horoscope_to_text, horoscope_to_text_with, palace_to_text, palace_to_text_with,
+    patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
+    surrounded_palaces_to_text_with,
 };
 
 /// 便捷函数：排盘并返回 JSON

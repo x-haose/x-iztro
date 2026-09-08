@@ -172,7 +172,7 @@ for _, h := range hits {
 按口径判：
 
 ```go
-chart, _ := iztro.BySolar("1985-1-5", 11, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
+chart, _ := iztro.BySolar("1985-6-10", 8, iztro.GenderFemale, true, iztro.LanguageZhCN, nil)
 
 cfg := &iztro.PatternConfig{BrightnessSource: iztro.BrightnessSourcePositional}
 
@@ -183,8 +183,8 @@ fmt.Println(names(b))
 ```
 
 ```text
-[禄马交驰 左右夹命 坐贵向贵]
-[日月并明 禄马交驰 左右夹命 坐贵向贵]
+[]
+[日月反背]
 ```
 
 **边界与陷阱**

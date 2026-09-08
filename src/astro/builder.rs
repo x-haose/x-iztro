@@ -230,6 +230,25 @@ pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32 {
     }
 }
 
+/// 参与推算的时辰索引：`day_divide=Current` 时晚子（>=12）归零按当日早子算，其余原样。
+/// 入参与展示仍用原始时辰。排盘上下文、运限、重排、反推剪枝四处共用此一份，不另抄副本——
+/// 手抄的第二份一旦与这里漂移，晚子时的盘会静默按另一天排。
+pub(crate) fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 {
+    if day_divide == DayDivide::Current && time_index >= 12 {
+        0
+    } else {
+        time_index
+    }
+}
+
+/// 构造时刻用的分钟数。
+///
+/// lunar-lite 取时辰整点后的 30 分（`ganzhi.js` 的 `Solar.fromYmdHms(…, 30, 0)`）。
+/// 按节气取干支是时刻级比较：用 0 分会让节气时刻落在 `HH:00`~`HH:30` 的那些日子
+/// 判到节气的另一侧，`horoscope_divide=Exact` 下的月柱静默差一个月。
+/// 农历年月日与日柱不受影响——前者是日期级，后者分界在 23:00，两个分钟数同侧。
+pub(crate) const CHART_MINUTE: i64 = 30;
+
 /// 时辰索引转小时数（用于 lunar_rust 日期创建）
 pub(crate) fn time_index_to_hour(time_index: u8) -> i64 {
     match time_index {
@@ -494,7 +513,7 @@ pub(crate) fn four_pillars(
         month,
         day,
         time_index_to_hour(ctx.effective_time_index),
-        0,
+        CHART_MINUTE,
         0,
     ));
     let pillars = build_pillars(&ctx, &lunar_ref, config)?;
@@ -537,7 +556,7 @@ pub fn by_solar(
         month,
         day,
         time_index_to_hour(ctx.effective_time_index),
-        0,
+        CHART_MINUTE,
         0,
     ));
 

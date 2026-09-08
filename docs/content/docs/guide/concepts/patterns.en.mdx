@@ -250,22 +250,23 @@ traditions for deciding that, which do not always agree:
 | Brightness table (default) | The chart's own brightness: Miao and Wang are bright, Xian and Bu are dim | `table` |
 | Traditional position | Sun bright in Yin–Wu and dim in You–Chou; Moon bright in You–Chou and dim in Mao–Wei | `positional` |
 
-<Callout type="warn" title="The default disagrees with the source page's examples, deliberately">
+<Callout title="The two readings differ in exactly two placements">
 x-iztro's brightness table matches iztro **value for value**, which is a hard line for the whole
-library. By that table the Moon in the You palace is Bu, i.e. not bright — and the Moon in both
-example charts on the source page's 日月并明 entry sits in exactly that palace. So under the default
-reading those two examples do **not** form the pattern.
+library. It differs from the traditional position rule in exactly two placements:
 
-Most traditional brightness tables record the Moon in You as Wang, which is what the page's examples
-rely on. To reproduce the traditional judgement, switch the reading to `positional`: the conclusion
-then matches the page's examples, without touching the brightness table and without affecting chart
-casting's parity with iztro.
+- **Sun in You**: the table says Ping — neither bright nor dim; the position rule calls it dim
+- **Moon in Yin**: the table says Wang, i.e. bright; the position rule treats it as neutral
+
+So the two readings can only disagree on the **"both dim"** patterns (Sun and Moon Both Dim, Sun and
+Moon Hiding Their Light). The **"both bright"** ones (Sun and Moon Both Bright, Cinnabar and Cassia
+Steps) can never disagree: star placement geometry puts the Sun in Zi whenever the Moon is in Yin,
+and the table calls that Xian, so neither reading forms the pattern.
 </Callout>
 
 ```python
 from x_iztro import Astro, PatternConfig, BrightnessSource
 
-chart = Astro().by_solar("1985-1-5", 11, "female", language="en-US")
+chart = Astro().by_solar("1985-6-10", 8, "female", language="en-US")
 
 print([h.name for h in chart.patterns()])
 print([h.name for h in chart.patterns(
@@ -273,8 +274,8 @@ print([h.name for h in chart.patterns(
 ```
 
 ```text
-['Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
-['Sun and Moon Both Bright', 'Money and Horse Galloping Together', 'Officer and Helper Flanking Life', 'Sitting on and Facing Nobility']
+[]
+['Sun and Moon Both Dim']
 ```
 
 ## The three switches

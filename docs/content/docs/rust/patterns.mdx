@@ -217,7 +217,7 @@ impl Astrolabe {
 **示例**　同一张盘按两种日月明暗口径判：
 
 ```rust
-let chart = by_solar("1985-1-5", 11, Gender::Female, true, zh, Config::default())?;
+let chart = by_solar("1985-6-10", 8, Gender::Female, true, zh, Config::default())?;
 let cfg = PatternConfig {
     brightness_source: BrightnessSource::Positional,
     ..Default::default()
@@ -232,8 +232,8 @@ println!("{:?}", chart.patterns_with(&cfg).iter()
 **输出**
 
 ```text
-["禄马交驰", "左右夹命", "坐贵向贵"]
-["日月并明", "禄马交驰", "左右夹命", "坐贵向贵"]
+[]
+["日月反背"]
 ```
 
 ---

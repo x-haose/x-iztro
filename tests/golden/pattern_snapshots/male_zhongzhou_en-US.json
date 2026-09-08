@@ -328,6 +328,56 @@
   "hourly": [
     {
       "broken": false,
+      "key": "ri_yue_bing_ming",
+      "name": "Sun and Moon Both Bright",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "sun",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "moon",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
+      "key": "dan_chi_gui_chi",
+      "name": "Cinnabar and Cassia Steps",
+      "palaceIndex": 3,
+      "palaceName": "soul",
+      "palaceNameKey": "soulPalace",
+      "scope": "hourly",
+      "stars": [
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyangMaj",
+          "name": "sun",
+          "palaceIndex": 3
+        },
+        {
+          "brightness": "[+2]",
+          "brightnessKey": "wang",
+          "key": "taiyinMaj",
+          "name": "moon",
+          "palaceIndex": 7
+        }
+      ]
+    },
+    {
+      "broken": false,
       "key": "yang_liang_chang_lu",
       "name": "Sun, Sage, Scholar and Money",
       "palaceIndex": 3,

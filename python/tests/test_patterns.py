@@ -134,16 +134,15 @@ def test_horoscope_scope_selects_layer_and_rejects_unknown(chart):
 
 def test_pattern_config_changes_judgement():
     """口径经绑定层传到内核：位置法亮度会改判日月类格局。"""
-    # 该盘命宫三方四正的太阴在酉：亮度表判「不」不成格，位置法判明成格
-    chart = astro.by_solar("1985-1-3", 7, "female")
+    # 该盘命宫三方四正的太阳在酉：亮度表判「平」不算暗，日月反背不成格；位置法判暗成格
+    chart = astro.by_solar("1985-6-10", 8, "female")
     positional = PatternConfig(brightness_source=BrightnessSource.POSITIONAL)
 
     table_keys = {h.key for h in chart.patterns()}
     positional_keys = {h.key for h in chart.patterns(positional)}
 
-    assert PatternKey.RI_YUE_BING_MING not in table_keys
-    assert PatternKey.RI_YUE_BING_MING in positional_keys
-    assert PatternKey.DAN_CHI_GUI_CHI in positional_keys
+    assert PatternKey.RI_YUE_FAN_BEI not in table_keys
+    assert PatternKey.RI_YUE_FAN_BEI in positional_keys
     assert PatternConfig().to_dict() == {
         "brightnessSource": "table",
         "borrow": True,

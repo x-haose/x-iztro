@@ -27,6 +27,121 @@ pub struct HoroscopeItem {
     pub stars: Option<Vec<Vec<Star>>>,
 }
 
+/// 农历月在流月列表中的分段。
+///
+/// 闰月在 `fix_leap` 打开时按前后半月拆成两段分别起运限，其余情形整月一段。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MonthPart {
+    /// 整月一段（非闰月，或闰月但不拆分）
+    Normal,
+    /// 闰月前半段（初一至十五）
+    First,
+    /// 闰月后半段（十六至月末）
+    Second,
+}
+
+impl MonthPart {
+    /// 语言无关标识。
+    pub fn as_key(&self) -> &'static str {
+        match self {
+            MonthPart::Normal => "normal",
+            MonthPart::First => "first",
+            MonthPart::Second => "second",
+        }
+    }
+}
+
+/// 大限定位方式：按起运先后的序号，或该限所在的本命宫名。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecadalTarget {
+    /// 起运先后序号（0 为第一个大限）
+    Ordinal(usize),
+    /// 该大限所在的本命宫名
+    Name(Palace),
+}
+
+impl From<usize> for DecadalTarget {
+    fn from(ordinal: usize) -> Self {
+        DecadalTarget::Ordinal(ordinal)
+    }
+}
+
+impl From<Palace> for DecadalTarget {
+    fn from(name: Palace) -> Self {
+        DecadalTarget::Name(name)
+    }
+}
+
+/// 大限列表项：通用运限字段之外，带该限所在的本命宫名与虚岁、年份区间。
+///
+/// 通用字段经 `Deref` 直接可读（`d.heavenly_stem`、`d.palace_names`）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DecadalHoroscope {
+    /// 通用运限字段
+    pub base: HoroscopeItem,
+    /// 该大限所在的本命宫名
+    pub palace_name: Palace,
+    /// 起止虚岁（含两端）
+    pub age_range: (u32, u32),
+    /// 起止农历年份（含两端）
+    pub year_range: (i64, i64),
+}
+
+impl std::ops::Deref for DecadalHoroscope {
+    type Target = HoroscopeItem;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+/// 流年列表项：通用运限字段之外，带该年对应的虚岁与农历年份。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct YearlyHoroscope {
+    /// 通用运限字段
+    pub base: HoroscopeItem,
+    /// 该流年对应的虚岁
+    pub age: u32,
+    /// 农历年份
+    pub year: i64,
+}
+
+impl std::ops::Deref for YearlyHoroscope {
+    type Target = HoroscopeItem;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+/// 流月列表项：在流年字段之外，带农历月份、闰月标记与该段的农历日区间。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonthlyHoroscope {
+    /// 通用运限字段
+    pub base: HoroscopeItem,
+    /// 该流月对应的虚岁
+    pub age: u32,
+    /// 农历年份
+    pub year: i64,
+    /// 农历月份（正月为 1，闰月与否见 `is_leap_month`）
+    pub month: u32,
+    /// 是否闰月
+    pub is_leap_month: bool,
+    /// 整月一段，还是闰月的前后半段
+    pub part: MonthPart,
+    /// 该段覆盖的农历日区间（含两端）
+    pub day_range: (u32, u32),
+}
+
+impl std::ops::Deref for MonthlyHoroscope {
+    type Target = HoroscopeItem;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
 /// 小限数据。
 ///
 /// 通用运限字段经 `Deref` 直接可读（`age.index`、`age.heavenly_stem`），

@@ -1,6 +1,6 @@
 ---
 title: Horoscope object
-description: The data structures of the six scopes, plus palace lookups that need not be handed the astrolabe again.
+description: The data structures of the six scopes, the three whole-scope lists, plus palace lookups that need not be handed the astrolabe again.
 ---
 
 A horoscope projects the natal chart onto a point in time. The same chart shows a different palace
@@ -114,6 +114,245 @@ daily lands on palace 8 with pillar xin chou
 hourly lands on palace 8 with pillar wu zi
 age scope nominal age 26
 ```
+
+---
+
+## The three lists
+
+`decadal_list` / `yearly_list` / `monthly_list` are methods on `Astrolabe`, not on the horoscope object:
+they return a whole scope in one call, sparing you from looping over dates with `horoscope` and
+assembling the result yourself. Each item carries that scope's time coordinates on top of the shared
+`HoroscopeItem`:
+
+```rust
+pub struct DecadalHoroscope {
+    pub base: HoroscopeItem,
+    pub palace_name: Palace,     // the natal palace this decadal sits in
+    pub age_range: (u32, u32),   // first and last nominal age, both inclusive
+    pub year_range: (i64, i64),  // first and last lunar year, both inclusive
+}
+
+pub struct YearlyHoroscope {
+    pub base: HoroscopeItem,
+    pub age: u32,                // the nominal age this year corresponds to
+    pub year: i64,               // lunar year
+}
+
+pub struct MonthlyHoroscope {
+    pub base: HoroscopeItem,
+    pub age: u32,                // the nominal age this month falls in
+    pub year: i64,               // lunar year
+    pub month: u32,              // lunar month, 1 for the first; a leap month shares its number
+    pub is_leap_month: bool,     // whether this item is the leap month
+    pub part: MonthPart,         // Normal whole month / First leap first half / Second leap second half
+    pub day_range: (u32, u32),   // the lunar days this segment covers, both inclusive
+}
+```
+
+All three implement `Deref<Target = HoroscopeItem>`, so the shared fields read straight through
+(`d.heavenly_stem`, `d.palace_names`); take `.base` when you want the whole `HoroscopeItem`.
+The four types and `MonthPart` are all re-exported from the crate root.
+
+<Callout type="info" title="The lists use the hour pillar's branch">
+Every item in the three lists is computed from the hour matching the **hour pillar's earthly branch**,
+not the `time_index` passed at charting time. The two differ only for the late zi hour: on a chart
+built with index 12, the hour pillar's branch is zi, so the lists use hour index 0.
+</Callout>
+
+---
+
+## decadal_list
+
+**Purpose** Get all twelve decadals of this chart at once, ordered by when they begin.
+
+**Zi Wei meaning** A decadal is a ten-year step walking the twelve palaces from the starting palace.
+Laid out flat, the line tells you which palace a given stretch of life falls in and which ten years it covers.
+
+**Signature**
+
+```rust
+pub fn decadal_list(&self) -> Vec<DecadalHoroscope>
+```
+
+**Return value** Always 12 items; index 0 is the first decadal. The order follows the starting nominal
+age, not the palace index — decadals run forwards or backwards depending on yin/yang and gender.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+
+for d in chart.decadal_list().iter().take(3) {
+    println!("{} {} {} {}-{} {}-{}",
+        translate_palace(d.palace_name, en),
+        translate_heavenly_stem(d.heavenly_stem, en),
+        translate_earthly_branch(d.earthly_branch, en),
+        d.age_range.0, d.age_range.1, d.year_range.0, d.year_range.1);
+}
+println!("{}", chart.decadal_list().len());
+```
+
+**Output**
+
+```text
+soul ren woo 3-12 2002-2011
+siblings xin si 13-22 2012-2021
+spouse geng chen 23-32 2022-2031
+12
+```
+
+This chart starts its decadals at nominal age 3, with the first one in the Soul palace.
+
+**Edge cases and pitfalls**
+
+<Callout type="info" title="Childhood is not in the list">
+The years before the first decadal begins are the childhood scope, which only appears when you query
+`horoscope` for a specific date (`name_key` is `Childhood`). `decadal_list` lists the twelve decadals
+themselves, so every item's `name_key` is `Decadal`.
+</Callout>
+
+---
+
+## yearly_list
+
+**Purpose** Get every yearly scope inside one decadal.
+
+**Zi Wei meaning** Fix the decadal, then read year by year — the usual order in which a reading advances.
+A decadal spans ten years, and these are those ten.
+
+**Signature**
+
+```rust
+pub fn yearly_list(&self, target: impl Into<DecadalTarget>) -> Result<Vec<YearlyHoroscope>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `target` | `impl Into<DecadalTarget>` | Yes | — | The decadal's ordinal (`usize`, 0 for the first) or the natal palace it sits in (`Palace`) |
+
+```rust
+pub enum DecadalTarget {
+    Ordinal(usize),  // ordinal by starting age
+    Name(Palace),    // the natal palace this decadal sits in
+}
+```
+
+When both forms address the same decadal they return identical results; pick whichever you already hold.
+
+**Return value** `Result<Vec<YearlyHoroscope>, IztroError>` with 10 items ordered by nominal age.
+An out-of-range ordinal or an unmatched palace name returns `Err`.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let list = chart.yearly_list(2usize)?;
+
+for y in list.iter().take(3) {
+    println!("{} {} {} {} -> {}", y.age, y.year,
+        translate_heavenly_stem(y.heavenly_stem, en),
+        translate_earthly_branch(y.earthly_branch, en), y.index);
+}
+println!("{} {}", list.len(), chart.yearly_list(Palace::Spouse)?.len());
+```
+
+**Output**
+
+```text
+23 2022 ren yin -> 0
+24 2023 gui mao -> 1
+25 2024 jia chen -> 2
+10 10
+```
+
+Decadal 2 sits in the spouse palace, so `yearly_list(2)` and `yearly_list(Palace::Spouse)` name the same one.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="There is no default decadal">
+One of the two addressing forms is mandatory; there is no "omit it and get the current decadal" behaviour.
+Silently picking a default would turn a forgotten argument into a plausible-looking wrong answer.
+</Callout>
+
+---
+
+## monthly_list
+
+**Purpose** Get every monthly scope of one lunar year.
+
+**Zi Wei meaning** The monthly scope sits below the yearly one and advances month by month. How to treat
+a leap month is a point where schools disagree, so whether to split it is the caller's decision.
+
+**Signature**
+
+```rust
+pub fn monthly_list(&self, year: i64, fix_leap: bool) -> Result<Vec<MonthlyHoroscope>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | The lunar year |
+| `fix_leap` | `bool` | Yes | — | Whether to split a leap month into two half-month items |
+
+**Return value** `Result<Vec<MonthlyHoroscope>, IztroError>`; the length depends on whether the year has a
+leap month and on `fix_leap`:
+
+| That lunar year | `fix_leap` | Items | How the leap month is laid out |
+| --- | --- | --- | --- |
+| No leap month | either | 12 | — |
+| Has a leap month | `true` | 14 | Split into `First` (days 1-15) and `Second` (day 16 to month end) |
+| Has a leap month | `false` | 13 | One whole-month item with `part` set to `Normal` |
+
+The leap month follows the ordinary month of the same number. Each item is computed from the first day of
+its segment (day 16 for a second half).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let list = chart.monthly_list(2020, true)?;
+
+println!("{}", list.len());
+for m in list.iter().skip(3).take(4) {
+    println!("{} {} {} {}-{} {} {}", m.month, m.is_leap_month, m.part.as_key(),
+        m.day_range.0, m.day_range.1,
+        translate_heavenly_stem(m.heavenly_stem, en),
+        translate_earthly_branch(m.earthly_branch, en));
+}
+println!("{} {}", chart.monthly_list(2020, false)?.len(), chart.monthly_list(2021, true)?.len());
+```
+
+**Output**
+
+```text
+14
+4 false normal 1-30 xin si
+4 true first 1-15 xin si
+4 true second 16-29 ren woo
+5 false normal 1-30 ren woo
+13 12
+```
+
+Lunar 2020 has a leap fourth month. Split apart, its first half shares the pillar of the fourth month
+(xin si) and its second half shares the fifth month's (ren woo) — which is what "the second half of a leap
+month counts as the next month" means. Lunar 2021 has no leap month, so it is always 12 items.
+
+**Edge cases and pitfalls**
+
+<Callout type="warn" title="This fix_leap is unrelated to the charting fix_leap">
+The `fix_leap` on the charting entry decides whether someone born in the second half of a leap month is
+placed by the next month's stars — it changes the natal layout. This one only decides whether this list
+splits the leap month. The two may differ and do not affect each other.
+</Callout>
+
+<Callout type="info" title="A leap month shares its number">
+The leap fourth month also has `month == 4`; `is_leap_month` is what tells them apart. Deduplicating by
+`month` drops the leap month.
+</Callout>
 
 ---
 
@@ -356,10 +595,10 @@ println!("{:?}", h.decadal.mutagen.iter()
 
 ```text
 false
-["sun", "general", "moon", "fortunate"]
+["sun", "warrior", "moon", "fortunate"]
 ```
 
-The decadal stem is geng, and geng sends lu to Taiyang (`sun`), quan to Wuqu (`general`), ke to Taiyin
+The decadal stem is geng, and geng sends lu to Taiyang (`sun`), quan to Wuqu (`warrior`), ke to Taiyin
 (`moon`) and ji to Tiantong (`fortunate`).
 
 **Edge cases and pitfalls**
@@ -449,7 +688,7 @@ for line in h.to_text().lines().take(5) {
 # Horoscope 2025-1-1 (二〇二四年腊月初二)
 
 ## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
-- Mutagen: sun [A]→Natal children, general [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
+- Mutagen: sun [A]→Natal children, warrior [B]→Natal wealth, moon [C]→Natal friends, fortunate [D]→Natal health
 - Patterns: Marshal, Rebel and Wolf (soul), Meeting of Wind and Cloud (soul)
 ```
 
