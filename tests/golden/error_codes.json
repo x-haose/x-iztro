@@ -1,0 +1,9 @@
+{
+  "description": "IztroError::code() 的稳定机器可读错误码，顺序与枚举变体一致。引擎错误的形状是 {code, message}：code 取自 engineCodes，message 是面向人的说明。",
+  "engineCodes": [
+    "invalid_date",
+    "invalid_time_index",
+    "invalid_argument",
+    "internal"
+  ]
+}

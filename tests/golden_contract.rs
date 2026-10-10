@@ -3,7 +3,8 @@
 //! 数据由 tests/golden/generate_contract.mjs 生成（多语言、双算法、晚子时、
 //! 闰月命盘及各自的运限对象）。Rust 侧 `to_dto()` 序列化后与 JS 对象做深度
 //! 对比：JS 的每个键值必须一致；Rust 侧仅允许在声明的路径上多出声明的扩展键
-//! （排盘上下文与语言无关标识，见 extension_keys）。
+//! （排盘上下文与语言无关标识，见 extension_keys）。白名单同时钉在
+//! `tests/golden/extension_keys.json`，与表不一致则 `extension_keys_match_snapshot` 失败。
 
 mod common;
 
@@ -16,27 +17,38 @@ const DATA_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/tests/golden/contract_data.json"
 );
+const EXTENSION_KEYS_SNAPSHOT: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/golden/extension_keys.json"
+);
 
-/// DTO 相对 JS 输出允许多出的扩展键，按其所在对象的路径限定。
+/// 星耀对象（主星/辅星/杂耀/流耀）的标识字段。
+const STAR: &[&str] = &["key", "brightnessKey", "mutagenKey"];
+/// 运限层级对象的标识字段。
+const SCOPE: &[&str] = &[
+    "nameKey",
+    "heavenlyStemKey",
+    "earthlyBranchKey",
+    "palaceNameKeys",
+    "mutagenStarKeys",
+];
+
+/// 某一规范化路径上允许的扩展键。
+struct ExtensionPath {
+    /// 规范化 DTO 路径：根为 `astrolabe` / `horoscope`，数组下标一律记作 `[]`。
+    path: &'static str,
+    /// 该路径上相对 JS 输出允许多出的键。
+    keys: &'static [&'static str],
+}
+
+/// 扩展键白名单的全部路径，顺序即 `tests/golden/extension_keys.json` 的顺序。
 ///
-/// `path` 为规范化 DTO 路径：根为 `astrolabe` / `horoscope`，数组下标一律
-/// 记作 `[]`。扩展键分两类——排盘上下文（genderKey/timeIndex/fixLeap/
-/// language/config）只挂在命盘根上，语言无关标识（各 `*key`/`*Key(s)`）
-/// 只挂在其对应的宿主对象上。路径不匹配的多余键即为契约偏离。
-fn extension_keys(path: &str) -> &'static [&'static str] {
-    /// 星耀对象（主星/辅星/杂耀/流耀）的标识字段
-    const STAR: &[&str] = &["key", "brightnessKey", "mutagenKey"];
-    /// 运限层级对象的标识字段
-    const SCOPE: &[&str] = &[
-        "nameKey",
-        "heavenlyStemKey",
-        "earthlyBranchKey",
-        "palaceNameKeys",
-        "mutagenStarKeys",
-    ];
-
-    match path {
-        "astrolabe" => &[
+/// 扩展键分两类——排盘上下文（genderKey/timeIndex/fixLeap/language/config）
+/// 只挂在命盘根上，语言无关标识（各 `*key`/`*Key(s)`）只挂在其对应的宿主对象上。
+const EXTENSION_PATHS: &[ExtensionPath] = &[
+    ExtensionPath {
+        path: "astrolabe",
+        keys: &[
             "genderKey",
             "timeIndex",
             "fixLeap",
@@ -50,10 +62,14 @@ fn extension_keys(path: &str) -> &'static [&'static str] {
             "signKey",
             "zodiacKey",
         ],
-        "astrolabe.rawDates.chineseDate" => {
-            &["yearlyKeys", "monthlyKeys", "dailyKeys", "hourlyKeys"]
-        }
-        "astrolabe.palaces[]" => &[
+    },
+    ExtensionPath {
+        path: "astrolabe.rawDates.chineseDate",
+        keys: &["yearlyKeys", "monthlyKeys", "dailyKeys", "hourlyKeys"],
+    },
+    ExtensionPath {
+        path: "astrolabe.palaces[]",
+        keys: &[
             "nameKey",
             "heavenlyStemKey",
             "earthlyBranchKey",
@@ -63,21 +79,86 @@ fn extension_keys(path: &str) -> &'static [&'static str] {
             "suiqian12Key",
             "mutagenStarKeys",
         ],
-        "astrolabe.palaces[].decadal" => &["heavenlyStemKey", "earthlyBranchKey"],
-        "astrolabe.palaces[].majorStars[]"
-        | "astrolabe.palaces[].minorStars[]"
-        | "astrolabe.palaces[].adjectiveStars[]" => STAR,
-        "horoscope.decadal" | "horoscope.age" | "horoscope.yearly" | "horoscope.monthly"
-        | "horoscope.daily" | "horoscope.hourly" => SCOPE,
-        "horoscope.decadal.stars[][]"
-        | "horoscope.age.stars[][]"
-        | "horoscope.yearly.stars[][]"
-        | "horoscope.monthly.stars[][]"
-        | "horoscope.daily.stars[][]"
-        | "horoscope.hourly.stars[][]" => STAR,
-        "horoscope.yearly.yearlyDecStar" => &["suiqian12Keys", "jiangqian12Keys"],
-        _ => &[],
-    }
+    },
+    ExtensionPath {
+        path: "astrolabe.palaces[].decadal",
+        keys: &["heavenlyStemKey", "earthlyBranchKey"],
+    },
+    ExtensionPath {
+        path: "astrolabe.palaces[].majorStars[]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "astrolabe.palaces[].minorStars[]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "astrolabe.palaces[].adjectiveStars[]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.decadal",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.age",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.yearly",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.monthly",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.daily",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.hourly",
+        keys: SCOPE,
+    },
+    ExtensionPath {
+        path: "horoscope.decadal.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.age.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.yearly.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.monthly.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.daily.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.hourly.stars[][]",
+        keys: STAR,
+    },
+    ExtensionPath {
+        path: "horoscope.yearly.yearlyDecStar",
+        keys: &["suiqian12Keys", "jiangqian12Keys"],
+    },
+];
+
+/// 取 `path` 上允许多出的扩展键；未声明的路径不允许任何额外键。
+///
+/// `path` 为规范化 DTO 路径。路径不匹配的多余键即为契约偏离。
+fn extension_keys(path: &str) -> &'static [&'static str] {
+    EXTENSION_PATHS
+        .iter()
+        .find(|entry| entry.path == path)
+        .map(|entry| entry.keys)
+        .unwrap_or(&[])
 }
 
 fn parse_lang(s: &str) -> Language {
@@ -218,4 +299,51 @@ fn golden_contract_json() {
         "Golden contract: all {} cases match the JS JSON!",
         cases.len()
     );
+}
+
+/// `tests/golden/extension_keys.json` 与 `EXTENSION_PATHS` 逐路径、逐键、按顺序一致。
+///
+/// 快照是下游钉契约用的稳定列表。改白名单必须同时改快照，否则失败。
+/// 未声明的路径仍然不允许额外键。
+#[test]
+fn extension_keys_match_snapshot() {
+    let raw = fs::read_to_string(EXTENSION_KEYS_SNAPSHOT)
+        .unwrap_or_else(|e| panic!("读取 {EXTENSION_KEYS_SNAPSHOT} 失败: {e}"));
+    let file: Value = serde_json::from_str(&raw)
+        .unwrap_or_else(|e| panic!("{EXTENSION_KEYS_SNAPSHOT} 不是合法 JSON: {e}"));
+    let obj = file
+        .as_object()
+        .unwrap_or_else(|| panic!("{EXTENSION_KEYS_SNAPSHOT} 必须是对象"));
+    let top: Vec<&str> = obj.keys().map(String::as_str).collect();
+    assert_eq!(
+        top,
+        ["description", "paths"],
+        "extension_keys.json 顶层只允许 description 与 paths"
+    );
+    let description = obj["description"].as_str().unwrap_or("");
+    assert!(
+        !description.trim().is_empty(),
+        "extension_keys.json 的 description 必须说明这是扩展键白名单"
+    );
+
+    let actual: Vec<Value> = EXTENSION_PATHS
+        .iter()
+        .map(|entry| {
+            serde_json::json!({
+                "path": entry.path,
+                "keys": entry.keys,
+            })
+        })
+        .collect();
+    assert_eq!(
+        &obj["paths"],
+        &Value::Array(actual),
+        "扩展键白名单与 {EXTENSION_KEYS_SNAPSHOT} 不一致"
+    );
+
+    let mut seen = std::collections::HashSet::new();
+    for entry in EXTENSION_PATHS {
+        assert!(seen.insert(entry.path), "扩展键路径重复: {}", entry.path);
+    }
+    assert!(extension_keys("not.a.path").is_empty());
 }

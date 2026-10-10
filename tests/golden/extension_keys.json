@@ -1,0 +1,143 @@
+{
+  "description": "DTO 相对 JS iztro JSON 允许多出的扩展键。path 是规范化对象路径（数组下标写作 []），keys 是该路径上允许的额外字段，顺序与 tests/golden_contract.rs 的白名单一致。",
+  "paths": [
+    {
+      "path": "astrolabe",
+      "keys": [
+        "genderKey",
+        "timeIndex",
+        "fixLeap",
+        "language",
+        "config",
+        "earthlyBranchOfSoulPalaceKey",
+        "earthlyBranchOfBodyPalaceKey",
+        "soulKey",
+        "bodyKey",
+        "fiveElementsClassKey",
+        "signKey",
+        "zodiacKey"
+      ]
+    },
+    {
+      "path": "astrolabe.rawDates.chineseDate",
+      "keys": ["yearlyKeys", "monthlyKeys", "dailyKeys", "hourlyKeys"]
+    },
+    {
+      "path": "astrolabe.palaces[]",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "changsheng12Key",
+        "boshi12Key",
+        "jiangqian12Key",
+        "suiqian12Key",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "astrolabe.palaces[].decadal",
+      "keys": ["heavenlyStemKey", "earthlyBranchKey"]
+    },
+    {
+      "path": "astrolabe.palaces[].majorStars[]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "astrolabe.palaces[].minorStars[]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "astrolabe.palaces[].adjectiveStars[]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.decadal",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.age",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.yearly",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.monthly",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.daily",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.hourly",
+      "keys": [
+        "nameKey",
+        "heavenlyStemKey",
+        "earthlyBranchKey",
+        "palaceNameKeys",
+        "mutagenStarKeys"
+      ]
+    },
+    {
+      "path": "horoscope.decadal.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.age.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.yearly.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.monthly.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.daily.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.hourly.stars[][]",
+      "keys": ["key", "brightnessKey", "mutagenKey"]
+    },
+    {
+      "path": "horoscope.yearly.yearlyDecStar",
+      "keys": ["suiqian12Keys", "jiangqian12Keys"]
+    }
+  ]
+}

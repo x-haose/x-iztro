@@ -98,3 +98,105 @@ impl fmt::Display for BridgeError {
 }
 
 impl std::error::Error for BridgeError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ERROR_CODES_SNAPSHOT: &str =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/error_codes.json");
+
+    /// 按枚举声明顺序收集每个变体的 `code()`。
+    ///
+    /// 匹配必须穷尽，所以新增变体时这里先无法编译。每个变体还要有代表值：
+    /// 漏构造则对应槽位仍是 `None`，本函数 panic。枚举标了 `non_exhaustive`，
+    /// 这段匹配只能放在本 crate 里——crate 外必须写兜底臂，新增变体会被兜底吞掉。
+    fn engine_codes() -> Vec<&'static str> {
+        let samples = [
+            IztroError::InvalidDate(String::new()),
+            IztroError::InvalidTimeIndex(0),
+            IztroError::InvalidArgument(String::new()),
+            IztroError::Internal(String::new()),
+        ];
+        let mut invalid_date = None;
+        let mut invalid_time_index = None;
+        let mut invalid_argument = None;
+        let mut internal = None;
+        for error in &samples {
+            match error {
+                IztroError::InvalidDate(_) => invalid_date = Some(error.code()),
+                IztroError::InvalidTimeIndex(_) => invalid_time_index = Some(error.code()),
+                IztroError::InvalidArgument(_) => invalid_argument = Some(error.code()),
+                IztroError::Internal(_) => internal = Some(error.code()),
+            }
+        }
+        [
+            invalid_date.expect("InvalidDate 没有代表值"),
+            invalid_time_index.expect("InvalidTimeIndex 没有代表值"),
+            invalid_argument.expect("InvalidArgument 没有代表值"),
+            internal.expect("Internal 没有代表值"),
+        ]
+        .to_vec()
+    }
+
+    /// `tests/golden/error_codes.json` 的 `engineCodes` 与 `IztroError::code()` 一致。
+    ///
+    /// 快照是下游钉契约用的稳定列表。改码或新增变体必须同时改快照，否则失败。
+    #[test]
+    fn engine_error_codes_match_snapshot() {
+        let raw = std::fs::read_to_string(ERROR_CODES_SNAPSHOT)
+            .unwrap_or_else(|e| panic!("读取 {ERROR_CODES_SNAPSHOT} 失败: {e}"));
+        let file: serde_json::Value = serde_json::from_str(&raw)
+            .unwrap_or_else(|e| panic!("{ERROR_CODES_SNAPSHOT} 不是合法 JSON: {e}"));
+        let obj = file
+            .as_object()
+            .unwrap_or_else(|| panic!("{ERROR_CODES_SNAPSHOT} 必须是对象"));
+        let top: Vec<&str> = obj.keys().map(String::as_str).collect();
+        assert_eq!(
+            top,
+            ["description", "engineCodes"],
+            "error_codes.json 顶层只允许 description 与 engineCodes"
+        );
+        let description = obj["description"].as_str().unwrap_or("");
+        assert!(
+            !description.trim().is_empty(),
+            "error_codes.json 的 description 必须说明这些码来自 IztroError::code()"
+        );
+
+        let snapshot: Vec<&str> = obj["engineCodes"]
+            .as_array()
+            .unwrap_or_else(|| panic!("engineCodes 必须是数组"))
+            .iter()
+            .map(|v| {
+                v.as_str()
+                    .unwrap_or_else(|| panic!("engineCodes 的元素必须是字符串"))
+            })
+            .collect();
+        let codes = engine_codes();
+        assert_eq!(
+            snapshot, codes,
+            "IztroError::code() 与 {ERROR_CODES_SNAPSHOT} 不一致"
+        );
+
+        let paired = [
+            IztroError::InvalidDate("bad date".into()),
+            IztroError::InvalidTimeIndex(13),
+            IztroError::InvalidArgument("bad argument".into()),
+            IztroError::Internal("boom".into()),
+        ];
+        for error in paired {
+            let bridge = BridgeError::from(error.clone());
+            assert_eq!(bridge.code, error.code());
+            assert_eq!(bridge.message, error.to_string());
+            assert!(!bridge.message.is_empty());
+        }
+        assert_eq!(
+            BridgeError::invalid_argument("probe").code,
+            IztroError::InvalidArgument("probe".into()).code()
+        );
+        assert_eq!(
+            BridgeError::internal("probe").code,
+            IztroError::Internal("probe".into()).code()
+        );
+    }
+}
