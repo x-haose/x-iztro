@@ -27,6 +27,10 @@ Vercel 项目连着本仓库，Root Directory 为 `docs`：推到 `main` 即发�
 其它分支与 PR 各得一个预览地址。站点绝对地址默认取 `lib/site.ts` 里的正式域名，
 预览环境可用 `NEXT_PUBLIC_SITE_URL` 覆盖。
 
+`/mcp`、`/mcp/*`、`/healthz`、`/install` 在构建期反代到 Dokploy 上的 MCP 源站，
+默认 `https://xziwei-xziwei-e0rno8-e6d7d0-161-118-223-190.sslip.io`，
+可用 `ZIWEI_MCP_ORIGIN` 覆盖。文档首页 `/` 不在反代范围内。
+
 ## 目录
 
 | 路径 | 内容 |
