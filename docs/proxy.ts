@@ -43,7 +43,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   /**
-   * 跳过内部资源与带扩展名的路径。
+   * 跳过内部资源、带扩展名的路径，以及反代到 MCP 源站的入口。
    *
    * `_next` 与 `api` 是框架内部路由；`llms.mdx` 是单页 Markdown 的内部
    * 重写目标，不该再被语言协商重定向到 `/zh/...`。
@@ -55,6 +55,12 @@ export const config = {
    *
    * 带语言前缀的 `/{lang}/llms.txt` 与 `/{lang}/llms-full.txt` 因此也不进
    * 中间件：路径已带合法语言段，本就无须协商。
+   *
+   * `mcp`、`healthz`、`install` 由 next.config 的 beforeFiles 反代到源站。
+   * 语言协商跑在 rewrite 之前，若先把它们重定向到 `/{lang}/...`，反代就接不到
+   * 原始路径。只排除这三段本身及其子路径（含末尾斜杠），首页 `/` 仍进协商。
    */
-  matcher: ['/((?!api|_next|llms\\.mdx|.*\\.(?!mdx?$)[^/.]+$).*)'],
+  matcher: [
+    '/((?!mcp(?:/|$)|healthz(?:/|$)|install(?:/|$)|api|_next|llms\\.mdx|.*\\.(?!mdx?$)[^/.]+$).*)',
+  ],
 };
