@@ -26,7 +26,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, 'tier_1602');
 
 const GENDERS = ['男', '女'];
-const HASH_LEN = 32;
 
 if (process.argv[2] === '--inspect') {
   const [date, t, gender, fl] = process.argv.slice(3);
@@ -57,7 +56,7 @@ for (const dateStr of windowDates()) {
     for (let gi = 0; gi < GENDERS.length; gi++) {
       for (const fl of fixLeaps) {
         const result = astro.bySolar(dateStr, t, GENDERS[gi], fl === 1, 'zh-CN');
-        lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+        lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result)}`);
       }
     }
   }

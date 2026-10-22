@@ -424,7 +424,7 @@ true true
 **签名**
 
 ```rust
-pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope(&self, target_date: &str, target_time_index: impl Into<Option<u8>>) -> Result<HoroscopeRef<'_>, IztroError>
 pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 ```
 
@@ -432,10 +432,10 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `target_date` | `&str` | 是 | — | 目标公历日期，格式 `YYYY-M-D` |
-| `target_time_index` | `u8` | 是 | — | 目标时辰索引 0–12，决定流时 |
+| `target_date` | `&str` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`） |
+| `target_time_index` | `impl Into<Option<u8>>` | 是 | — | 传数字或 `None`：目标时辰索引 0–12，决定流时；`None` 时按目标日期的时间换算（23 点为晚子），不带时间即早子时 |
 
-`horoscope_now` 取本地时钟的当前日期与当前时辰，无参数。
+`horoscope_now` 取本地时钟的此刻（日期与时辰），无参数。
 
 **返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘。
 详见[运限对象](/zh/docs/rust/horoscope)。

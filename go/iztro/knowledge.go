@@ -220,8 +220,7 @@ func (k Knowledge) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope
 		return nil, invalidArgument("knowledgeForChart: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := horoscope.astrolabe.textPayload("knowledgeForChart")
-	payload["targetDate"] = horoscope.SolarDate
-	payload["targetTimeIndex"] = horoscope.targetTimeIndex
+	horoscope.addTarget(payload)
 	return k.forChart(ctx, payload, config)
 }
 

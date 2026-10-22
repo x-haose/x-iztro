@@ -440,7 +440,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 **Signature**
 
 ```rust
-pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope(&self, target_date: &str, target_time_index: impl Into<Option<u8>>) -> Result<HoroscopeRef<'_>, IztroError>
 pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 ```
 
@@ -448,8 +448,8 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `target_date` | `&str` | Yes | — | Target solar date in `YYYY-M-D` |
-| `target_time_index` | `u8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
+| `target_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed) |
+| `target_time_index` | `impl Into<Option<u8>>` | Yes | — | A number or `None`: Target hour index 0–12, which fixes the hourly scope; with `None` it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time means the early Zi hour |
 
 `horoscope_now` takes the current date and hour from the local clock and has no parameters.
 

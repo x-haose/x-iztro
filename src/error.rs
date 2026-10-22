@@ -19,7 +19,7 @@ const INTERNAL: &str = "internal";
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum IztroError {
-    /// 日期字符串非法：格式不是 "YYYY-M-D"、该日期不存在，
+    /// 日期字符串非法：写法不符（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`）、该日期不存在，
     /// 或超出支持范围（公历 1583-9999 年）。
     InvalidDate(String),
     /// 时辰索引超出 0-12（0=早子时，12=晚子时）。

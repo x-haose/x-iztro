@@ -42,7 +42,7 @@ pub fn by_solar(
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零。支持 1583–9999 年 |
+| `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零；分隔符也可用 `/` 或 `.`（同一串内一致），可带 ` HH:mm` 或 ` HH:mm:ss`（不参与排盘），`solar_date` 原样回显。支持 1583–9999 年 |
 | `time_index` | `u8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
 | `gender` | `Gender` | 是 | — | `Gender::Male` 或 `Gender::Female`。决定大限顺逆与长生、博士十二神的排列方向 |
 | `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十六日起按下月算（晚子时除外，见下） |
@@ -131,7 +131,7 @@ pub fn by_lunar(
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `lunar_date` | `&str` | 是 | — | 农历日期，格式 `YYYY-M-D`，月份写正数（闰月由下一参数标记） |
+| `lunar_date` | `&str` | 是 | — | 农历日期，格式 `YYYY-M-D`（分隔符与时间部分同公历），月份写正数（闰月由下一参数标记） |
 | `leap` | `LeapMonth` | 是 | — | `NotLeap` 非闰月；`Leap` 闰月、按闰月本身排；`LeapFixed` 闰月且十五之后视作次月（iztro `fixLeap`）。标为闰月但那年那月没有闰月时按普通月处理 |
 
 **返回值**　同 `by_solar`。
@@ -315,7 +315,7 @@ Rust 侧要做进一步分析时用 `by_solar` 拿 `Astrolabe`，能用上全部
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
-    time_index: u8,
+    time_index: impl Into<Option<u8>>,
     language: Language,
 ) -> Result<HoroscopeData, IztroError>
 ```
@@ -325,8 +325,8 @@ pub fn get_horoscope(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | 是 | — | 本命盘 |
-| `solar_date` | `&str` | 是 | — | 目标公历日期，格式 `YYYY-M-D`，支持 1583–9999 年 |
-| `time_index` | `u8` | 是 | — | 目标时辰索引 0–12 |
+| `solar_date` | `&str` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`），支持 1583–9999 年 |
+| `time_index` | `impl Into<Option<u8>>` | 是 | — | 传数字或 `None`：目标时辰索引 0–12，决定流时；`None` 时按目标日期的时间换算（23 点为晚子），不带时间即早子时 |
 | `language` | `Language` | 是 | — | 输出语言 |
 
 **返回值**　`Result<HoroscopeData, IztroError>`。详见[运限对象](/zh/docs/rust/horoscope)。

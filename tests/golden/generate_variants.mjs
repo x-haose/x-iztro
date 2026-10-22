@@ -24,7 +24,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const START_YEAR = 1984;
 const END_YEAR = 2043;
-const HASH_LEN = 32;
 const GENDERS = ['男', '女'];
 
 if (process.argv[2] === '--inspect-zhongzhou') {
@@ -55,7 +54,7 @@ for (let year = START_YEAR; year <= END_YEAR; year++) {
   for (const [month, day, il] of [[7, 17, 0], [7, 17, 1]]) {
     for (const g of [0, 1]) {
       const result = astro.byLunar(`${year}-${month}-${day}`, 2, GENDERS[g], il === 1, true, 'zh-CN');
-      const hash = hashAstrolabe(result).slice(0, HASH_LEN);
+      const hash = hashAstrolabe(result);
       bylunarLines.push(`${year}-${month}-${day},2,${g},${il},1,${hash}`);
     }
   }
@@ -74,7 +73,7 @@ for (let year = START_YEAR; year <= END_YEAR; year++) {
         for (const t of [0, 6, 12]) {
           const ld = `${year}-${leapMonth}-${day}`;
           const result = astro.byLunar(ld, t, '女', il === 1, fl === 1, 'zh-CN');
-          const hash = hashAstrolabe(result).slice(0, HASH_LEN);
+          const hash = hashAstrolabe(result);
           bylunarLines.push(`${ld},${t},1,${il},${fl},${hash}`);
         }
       }
@@ -146,7 +145,7 @@ for (let year = START_YEAR; year <= END_YEAR; year++) {
     for (let t = 0; t <= 12; t++) {
       for (const g of [0, 1]) {
         const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
-        const hash = hashAstrolabe(result).slice(0, HASH_LEN);
+        const hash = hashAstrolabe(result);
         zzLines.push(`${dateStr},${t},${g},${hash}`);
       }
     }

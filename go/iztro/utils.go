@@ -361,8 +361,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 		return "", invalidArgument("horoscopeToText: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := h.astrolabe.textPayload("horoscopeToText")
-	payload["targetDate"] = h.SolarDate
-	payload["targetTimeIndex"] = h.targetTimeIndex
+	h.addTarget(payload)
 	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)

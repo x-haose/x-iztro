@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+from datetime import date, datetime
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -26,6 +27,15 @@ from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
 from x_iztro.surpalaces import FlankingPalaces, SurroundedPalaces
 
+
+
+def _date_param(value: str | datetime | date) -> str:
+    """把目标日期落成绑定层的日期串：`datetime` 带时分秒，`date` 只有年月日，字符串原样。"""
+    if isinstance(value, datetime):
+        return f"{value.year}-{value.month}-{value.day} {value.hour}:{value.minute}:{value.second}"
+    if isinstance(value, date):
+        return f"{value.year}-{value.month}-{value.day}"
+    return value
 
 @dataclass(frozen=True, slots=True)
 class RawLunarDate:
@@ -465,17 +475,17 @@ class Astrolabe:
 
     def horoscope(
         self,
-        target_date: str | None = None,
+        target_date: str | datetime | date | None = None,
         target_time_index: int | None = None,
     ) -> Horoscope:
         """
         以本命盘为起点计算目标日期的运限，结果持有本盘。
 
-        两个参数都可省略，省略时取本地时钟的当前日期与当前时辰。
-
         Args:
-            target_date: 目标阳历日期，如 "2024-1-1"；不传取今天
-            target_time_index: 目标时辰索引 (0-12)；不传取此刻所属时辰
+            target_date: 目标阳历日期。字符串写作 "2024-1-1"（分隔符可为 `-` `/` `.`，
+                可带 " 13:20" 或 " 13:20:05"）；也可传 `datetime` / `date`。不传取此刻
+            target_time_index: 目标时辰索引 (0-12)。不传时按目标日期的时间换算，
+                不带时间（字符串无时间部分、或传 `date`）即早子时
 
         Returns:
             Horoscope 运限对象；其查询方法不必再传星盘
@@ -484,17 +494,8 @@ class Astrolabe:
             IztroError: 目标日期或时辰索引非法
         """
         from x_iztro._bridge import horoscope as bridge_horoscope
-        from x_iztro.utils import time_to_index
 
-        if target_date is None or target_time_index is None:
-            from datetime import datetime
-
-            now = datetime.now()
-            if target_date is None:
-                target_date = f"{now.year}-{now.month}-{now.day}"
-            if target_time_index is None:
-                target_time_index = time_to_index(now.hour)
-
+        target = _date_param(datetime.now() if target_date is None else target_date)
         data = bridge_horoscope(
             solar_date=self.solar_date,
             time_index=self.time_index,
@@ -504,10 +505,10 @@ class Astrolabe:
             config=self._config_payload(),
             from_stem=self._from_stem,
             from_branch=self._from_branch,
-            target_date=target_date,
+            target_date=target,
             target_time_index=target_time_index,
         )
-        return Horoscope._from_dict(data, self, target_time_index)
+        return Horoscope._from_dict(data, self, target, target_time_index)
 
     def decadal_list(self) -> list[DecadalListItem]:
         """

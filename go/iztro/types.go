@@ -783,8 +783,18 @@ type Horoscope struct {
 	// astrolabe 为发起这次运限查询的本命盘。
 	// 运限依附于某一张盘，宫位与流耀查询都要落回盘上，因此运限随身携带它。
 	astrolabe *Astrolabe
-	// targetTimeIndex 为发起这次查询的目标时辰索引；再次发起运限层计算（如格局）时用。
-	targetTimeIndex uint8
+	// targetDate 为发起这次查询的目标日期串（原样，可带时间）；再次发起运限层计算（如格局）时原样转发。
+	targetDate string
+	// targetTimeIndex 为发起这次查询的目标时辰索引；nil 表示由 targetDate 的时间换算，再次发起计算时同样省略。
+	targetTimeIndex *uint8
+}
+
+// addTarget 把发起这次运限查询的目标日期与时辰写进再次发起计算的入参。
+func (h *Horoscope) addTarget(payload map[string]any) {
+	payload["targetDate"] = h.targetDate
+	if h.targetTimeIndex != nil {
+		payload["targetTimeIndex"] = *h.targetTimeIndex
+	}
 }
 
 // Astrolabe 返回发起这次运限查询的本命盘。

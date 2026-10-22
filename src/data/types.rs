@@ -774,7 +774,8 @@ impl ConfigPatch {
     }
 }
 
-/// 反序列化即绑定线协议的部分键补丁，见 [`ConfigPatch`] 的约定。
+/// 反序列化即绑定层的 config JSON：部分键补丁，缺省键取默认值，未知键报错；
+/// `mutagens` / `brightness` 的写法同序列化输出。
 impl<'de> serde::Deserialize<'de> for Config {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         ConfigPatch::deserialize(deserializer)?

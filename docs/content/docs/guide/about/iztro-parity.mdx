@@ -62,6 +62,21 @@ iztro 的 `astro.config()`、`i18n.setLanguage()` 改的是模块级单例，
 x-iztro 没有全局状态：配置与语言都随每次调用传入，由调用方自己持有。
 所以不提供 `getConfig`、`resetConfig`、`setLanguage`、`getLanguage` —— 想读回来，读你自己那份就是。
 
+### 运限的目标时刻
+
+iztro 的 `horoscope(targetDate?, timeIndex?)` 两个参数都可省略：省略时辰时按目标日期的时间换算，
+不带时间即早子时；目标日期还可以是 `Date` 对象。三侧对应如下，各随语言习惯：
+
+| iztro | Rust | Python | Go |
+| --- | --- | --- | --- |
+| `horoscope(date, i)` | `horoscope(date, i)` | `horoscope(date, i)` | `Horoscope(date, i)` |
+| `horoscope(date)` | `horoscope(date, None)` | `horoscope(date)` | `HoroscopeAt(date)` |
+| `horoscope(new Date(…))` | 自行格式化成 `"Y-M-D H:m"` 传入 | `horoscope(datetime(…))` | `HoroscopeAtTime(t)` |
+| `horoscope()` | `horoscope_now()` | `horoscope()` | `HoroscopeNow()` |
+
+日期串的写法与 iztro 相同：分隔符可用 `-` `/` `.`、可带 ` HH:mm(:ss)`；排盘时时间部分不参与计算，
+星盘的 `solarDate` 原样回显输入。
+
 ### 大限小限
 
 `astro/palace` 的 `getHoroscope(param)` 收一份 `AstrolabeParam`。

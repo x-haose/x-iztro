@@ -286,8 +286,11 @@ class Horoscope:
     _raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
     """绑定层返回的原始 DTO，供 `to_dict` / `to_json` 导出"""
 
-    _target_time_index: int = field(default=0, compare=False, repr=False)
-    """发起本次查询的目标时辰索引；再次发起运限层计算（如格局）时用"""
+    _target_date: str = field(default="", compare=False, repr=False)
+    """发起本次查询的目标日期串（原样，可带时间）；再次发起运限层计算（如格局）时原样转发"""
+
+    _target_time_index: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标时辰索引；`None` 表示由目标日期串换算，再次发起计算时同样转发"""
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -359,7 +362,7 @@ class Horoscope:
             )
         return chart._context_query(
             kind,
-            target_date=self.solar_date,
+            target_date=self._target_date,
             target_time_index=self._target_time_index,
             **extra,
         )
@@ -580,10 +583,15 @@ class Horoscope:
 
     @classmethod
     def _from_dict(
-        cls, d: dict, astrolabe: Astrolabe | None = None, target_time_index: int = 0
+        cls,
+        d: dict,
+        astrolabe: Astrolabe | None,
+        target_date: str,
+        target_time_index: int | None,
     ) -> Horoscope:
         return cls(
             _raw=d,
+            _target_date=target_date,
             _target_time_index=target_time_index,
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],

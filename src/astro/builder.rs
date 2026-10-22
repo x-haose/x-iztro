@@ -8,6 +8,7 @@ use lunar_rust::solar::SolarRefHelper;
 use lunar_rust::{lunar, solar};
 
 use crate::astro::context::{self, AstroContext};
+use crate::astro::date_input::{self, DateInput};
 use crate::astro::lunar_table;
 use crate::astro::palace::{get_decadals_and_ages, get_palace_names};
 use crate::data::constants::{SIGNS, TIGER_RULE, TIME_RANGES, ZODIAC};
@@ -93,19 +94,16 @@ pub(crate) fn validate_time_index(time_index: u8) -> Result<(), IztroError> {
     Ok(())
 }
 
-/// 解析并校验 "YYYY-M-D" 公历日期串，返回 (年, 月, 日)。
-/// 拒绝格式错误、不存在的日期与超出 [`SUPPORTED_YEARS`] 的年份。
-pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), IztroError> {
+/// 解析并校验公历日期串（文法见 [`date_input`]），返回年月日与时间部分的小时。
+/// 拒绝文法不符、不存在的日期与超出 [`SUPPORTED_YEARS`] 的年份。
+pub(crate) fn parse_solar_input(solar_date: &str) -> Result<DateInput, IztroError> {
     let err = |detail: &str| {
         IztroError::InvalidDate(format!("invalid solar date '{solar_date}': {detail}"))
     };
-    let parts: Vec<&str> = solar_date.split('-').collect();
-    if parts.len() != 3 {
-        return Err(err("expected 'YYYY-M-D'"));
-    }
-    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
-    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
-    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    let input = date_input::parse(solar_date).map_err(err)?;
+    let DateInput {
+        year, month, day, ..
+    } = input;
     if !SUPPORTED_YEARS.contains(&year) {
         return Err(err(&format!(
             "year must be within {}-{}",
@@ -119,10 +117,15 @@ pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), Iztr
     if day < 1 || day > days_in_month(year, month) {
         return Err(err("day is out of range for that month"));
     }
-    Ok((year, month, day))
+    Ok(input)
 }
 
-/// 解析并校验 "YYYY-M-D" 农历日期串，返回 (年, 带符号月, 日)。
+/// 解析并校验公历日期串，只取年月日；时间部分不参与排盘。
+pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), IztroError> {
+    parse_solar_input(solar_date).map(|d| (d.year, d.month, d.day))
+}
+
+/// 解析并校验农历日期串（文法见 [`date_input`]，时间部分不参与排盘），返回 (年, 带符号月, 日)。
 /// 月为负值表示闰月；该年该月并非闰月时 `is_leap_month` 不生效，
 /// 与 JS iztro 行为一致。日按修正后的农历月表校验（大月 30 / 小月 29，
 /// 见 [`lunar_table`]）。
@@ -130,13 +133,9 @@ fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, 
     let err = |detail: &str| {
         IztroError::InvalidDate(format!("invalid lunar date '{lunar_date}': {detail}"))
     };
-    let parts: Vec<&str> = lunar_date.split('-').collect();
-    if parts.len() != 3 {
-        return Err(err("expected 'YYYY-M-D'"));
-    }
-    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
-    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
-    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    let DateInput {
+        year, month, day, ..
+    } = date_input::parse(lunar_date).map_err(err)?;
     if !SUPPORTED_YEARS.contains(&year) {
         return Err(err(&format!(
             "year must be within {}-{}",
@@ -528,7 +527,7 @@ pub(crate) fn four_pillars(
 /// 通过阳历日期排盘
 ///
 /// # 参数
-/// - `solar_date`: 阳历日期字符串，格式 "YYYY-M-D"（支持 1583-9999 年）
+/// - `solar_date`: 阳历日期字符串（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`；时间不参与排盘，支持 1583-9999 年），原样记入星盘的 `solar_date`
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
 /// - `fix_leap`: 是否修正闰月
@@ -653,7 +652,7 @@ fn rearrange_from_palace(
 /// 通过农历日期排盘
 ///
 /// # 参数
-/// - `lunar_date`: 农历日期字符串，格式 "YYYY-M-D"
+/// - `lunar_date`: 农历日期字符串（写法同公历）
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
 /// - `leap`: 输入月是否闰月及闰月处理方式（见 [`LeapMonth`]）

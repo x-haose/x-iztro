@@ -453,7 +453,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 
 ---
 
-## Horoscope / HoroscopeNow
+## Horoscope / HoroscopeAt / HoroscopeAtTime / HoroscopeNow
 
 **Purpose** Compute the horoscope for a target date, starting from this chart.
 
@@ -461,6 +461,8 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 
 ```go
 func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAt(targetDate string) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAtTime(t time.Time) (*Horoscope, error)
 func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 ```
 
@@ -468,10 +470,13 @@ func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `targetDate` | `string` | Yes | — | Target solar date in `YYYY-M-D` |
+| `targetDate` | `string` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed) |
 | `targetTimeIndex` | `uint8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
 
-`HoroscopeNow` takes the current date and hour from the local clock and has no parameters.
+`HoroscopeAt` takes no hour index: it is derived from the time part of `targetDate` (23:00 is the late Zi
+hour), and a date without a time means the early Zi hour — iztro's `horoscope(targetDate)` with `timeIndex`
+omitted. `HoroscopeAtTime` takes the date and hour of the instant `t` (read in `t`'s own time zone) — iztro's
+`horoscope` with a `Date` object. `HoroscopeNow` is `HoroscopeAtTime(time.Now())`. Each has a `…Context` variant.
 
 **Return value** `*Horoscope` — a horoscope object holding this chart, so palace lookups across the
 six scopes need not be passed the astrolabe again.

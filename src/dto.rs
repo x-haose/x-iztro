@@ -205,7 +205,7 @@ pub struct ConfigDto {
 pub struct AstrolabeDto {
     /// 性别（按排盘语言翻译）
     pub gender: String,
-    /// 阳历日期（"YYYY-M-D"）
+    /// 阳历日期（排盘入参原样回显）
     pub solar_date: String,
     /// 农历日期（按排盘语言：简繁中文为中文数字写法，其余语言为数字写法）
     pub lunar_date: String,
@@ -396,7 +396,7 @@ pub struct YearlyDto {
 pub struct HoroscopeDto {
     /// 农历日期中文表示
     pub lunar_date: String,
-    /// 阳历日期（"YYYY-M-D"）
+    /// 目标阳历日期（规范为 "Y-M-D"，不带时间）
     pub solar_date: String,
     /// 大限（未起运时为童限）
     pub decadal: HoroscopeScopeDto,

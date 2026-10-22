@@ -436,7 +436,7 @@ true true
 
 ---
 
-## Horoscope / HoroscopeNow
+## Horoscope / HoroscopeAt / HoroscopeAtTime / HoroscopeNow
 
 **用途**　以本盘为起点计算目标日期的运限。
 
@@ -444,6 +444,8 @@ true true
 
 ```go
 func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAt(targetDate string) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAtTime(t time.Time) (*Horoscope, error)
 func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 ```
 
@@ -451,10 +453,12 @@ func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `targetDate` | `string` | 是 | — | 目标公历日期，格式 `YYYY-M-D` |
+| `targetDate` | `string` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`） |
 | `targetTimeIndex` | `uint8` | 是 | — | 目标时辰索引 0–12，决定流时 |
 
-`HoroscopeNow` 取本地时钟的当前日期与当前时辰，无参数。
+`HoroscopeAt` 不收时辰：按 `targetDate` 的时间部分换算（23 点为晚子），不带时间即早子时，
+对应 iztro 省略 `timeIndex` 的 `horoscope(targetDate)`。`HoroscopeAtTime` 取时刻 `t` 的年月日与小时（按 `t` 自身的时区），
+对应 iztro 传 `Date` 对象。`HoroscopeNow` 即 `HoroscopeAtTime(time.Now())`。四者各有 `…Context` 变体。
 
 **返回值**　`*Horoscope`——持有本盘的运限对象，六个层级的宫位查询不必再传星盘。
 详见[运限对象](/zh/docs/go/horoscope)。

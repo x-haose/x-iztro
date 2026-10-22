@@ -165,7 +165,7 @@ func (a *Astrolabe) RearrangedContext(ctx context.Context, fromStemKey string, f
 
 // Horoscope 以本命盘为起点计算目标日期的运限，返回的运限持有本盘。
 //
-//   - targetDate: 目标阳历日期，"YYYY-M-D"
+//   - targetDate: 目标阳历日期，"YYYY-M-D"（分隔符可为 - / .，可带 " HH:mm" 或 " HH:mm:ss"）
 //   - targetTimeIndex: 目标时辰索引 0-12
 //
 // 排盘上下文（出生日期、时辰、性别、闰月修正、语言、配置）取自本盘，
@@ -176,18 +176,58 @@ func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horosc
 
 // HoroscopeContext 为 Horoscope 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
+	return a.horoscope(ctx, targetDate, &targetTimeIndex)
+}
+
+// HoroscopeAt 以本命盘为起点计算目标日期的运限，时辰由 targetDate 的时间部分换算
+// （23 点为晚子），不带时间即早子时；对应 iztro 省略 timeIndex 的 horoscope(targetDate)。
+func (a *Astrolabe) HoroscopeAt(targetDate string) (*Horoscope, error) {
+	return a.HoroscopeAtContext(context.Background(), targetDate)
+}
+
+// HoroscopeAtContext 为 HoroscopeAt 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeAtContext(ctx context.Context, targetDate string) (*Horoscope, error) {
+	return a.horoscope(ctx, targetDate, nil)
+}
+
+// HoroscopeAtTime 以本命盘为起点计算时刻 t 的运限：日期取 t 的年月日，时辰由 t 的小时换算；
+// 对应 iztro 传 Date 对象的 horoscope(date)。时区按 t 自身的时区读年月日时。
+func (a *Astrolabe) HoroscopeAtTime(t time.Time) (*Horoscope, error) {
+	return a.HoroscopeAtTimeContext(context.Background(), t)
+}
+
+// HoroscopeAtTimeContext 为 HoroscopeAtTime 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeAtTimeContext(ctx context.Context, t time.Time) (*Horoscope, error) {
+	date := fmt.Sprintf("%d-%d-%d %d:%d:%d", t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second())
+	return a.horoscope(ctx, date, nil)
+}
+
+// HoroscopeNow 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
+func (a *Astrolabe) HoroscopeNow() (*Horoscope, error) {
+	return a.HoroscopeNowContext(context.Background())
+}
+
+// HoroscopeNowContext 为 HoroscopeNow 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeNowContext(ctx context.Context) (*Horoscope, error) {
+	return a.HoroscopeAtTimeContext(ctx, time.Now())
+}
+
+// horoscope 发起运限计算；targetTimeIndex 为 nil 时省略该键，由内核按 targetDate 的时间换算。
+func (a *Astrolabe) horoscope(ctx context.Context, targetDate string, targetTimeIndex *uint8) (*Horoscope, error) {
 	if a == nil {
 		return nil, invalidArgument("horoscope: nil astrolabe")
 	}
 	payload := map[string]any{
-		"solarDate":       a.SolarDate,
-		"timeIndex":       a.TimeIndex,
-		"gender":          a.GenderKey,
-		"fixLeap":         a.FixLeap,
-		"language":        a.Language,
-		"config":          a.requestConfig(),
-		"targetDate":      targetDate,
-		"targetTimeIndex": targetTimeIndex,
+		"solarDate":  a.SolarDate,
+		"timeIndex":  a.TimeIndex,
+		"gender":     a.GenderKey,
+		"fixLeap":    a.FixLeap,
+		"language":   a.Language,
+		"config":     a.requestConfig(),
+		"targetDate": targetDate,
+	}
+	if targetTimeIndex != nil {
+		payload["targetTimeIndex"] = *targetTimeIndex
 	}
 	a.addRearrange(payload)
 	raw, err := callWasm(ctx, fnHoroscope, payload)
@@ -199,22 +239,7 @@ func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, tar
 		return nil, internalError("decode horoscope: " + err.Error())
 	}
 	out.astrolabe = a
+	out.targetDate = targetDate
 	out.targetTimeIndex = targetTimeIndex
 	return &out, nil
-}
-
-// HoroscopeNow 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
-func (a *Astrolabe) HoroscopeNow() (*Horoscope, error) {
-	return a.HoroscopeNowContext(context.Background())
-}
-
-// HoroscopeNowContext 为 HoroscopeNow 的 Context 变体；ctx 用于取消等待 wasm 实例。
-func (a *Astrolabe) HoroscopeNowContext(ctx context.Context) (*Horoscope, error) {
-	now := time.Now()
-	date := fmt.Sprintf("%d-%d-%d", now.Year(), int(now.Month()), now.Day())
-	timeIndex, err := TimeToIndex(uint8(now.Hour()))
-	if err != nil {
-		return nil, err
-	}
-	return a.HoroscopeContext(ctx, date, timeIndex)
 }

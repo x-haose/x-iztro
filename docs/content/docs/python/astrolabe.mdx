@@ -458,7 +458,7 @@ True True
 ```python
 def horoscope(
     self,
-    target_date: str | None = None,
+    target_date: str | datetime | date | None = None,
     target_time_index: int | None = None,
 ) -> Horoscope
 ```
@@ -467,8 +467,8 @@ def horoscope(
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `target_date` | `str \| None` | 否 | `None` | 目标公历日期；不传取今天 |
-| `target_time_index` | `int \| None` | 否 | `None` | 目标时辰索引；不传取此刻所属时辰 |
+| `target_date` | `str \| datetime \| date \| None` | 否 | `None` | 目标公历日期：字符串（写法同排盘入参，可带 ` HH:mm`）或 `datetime` / `date`；不传取此刻 |
+| `target_time_index` | `int \| None` | 否 | `None` | 目标时辰索引；不传时按目标日期的时间换算（23 点为晚子），不带时间（无时间部分或传 `date`）即早子时 |
 
 **返回值**　`Horoscope`——持有本盘的运限对象，六个层级的宫位查询不必再传星盘。
 详见[运限对象](/zh/docs/python/horoscope)。

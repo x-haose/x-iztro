@@ -22,9 +22,9 @@ import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalAstrolabe, hashAstrolabe } from './canonical.mjs';
+import { horoscopeCase } from './horoscope_case.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const HASH_LEN = 32;
 const GENDERS = ['男', '女'];
 
 const DEFAULTS = {
@@ -42,43 +42,6 @@ if (process.argv[2] === '--inspect') {
   process.exit(0);
 }
 
-/** 单个运限层级的紧凑导出（宫位名序列原序，流耀分布每宫排序）。 */
-function scopeItem(item) {
-  const out = {
-    i: item.index,
-    n: item.name,
-    hs: item.heavenlyStem,
-    eb: item.earthlyBranch,
-    pn: item.palaceNames,
-    m: item.mutagen,
-  };
-  if (item.stars) {
-    out.s = item.stars.map((g) => g.map((s) => s.name).sort());
-  }
-  return out;
-}
-
-/** 完整运限用例导出（与 generate_horoscope.mjs 同构）。 */
-function horoscopeCase(astrolabe, birth, td, tt) {
-  const h = astrolabe.horoscope(td, tt);
-  return {
-    p: birth,
-    td,
-    tt,
-    ld: h.lunarDate,
-    dec: scopeItem(h.decadal),
-    age: { ...scopeItem(h.age), na: h.age.nominalAge },
-    yr: {
-      ...scopeItem(h.yearly),
-      sq: h.yearly.yearlyDecStar.suiqian12,
-      jq: h.yearly.yearlyDecStar.jiangqian12,
-    },
-    mo: scopeItem(h.monthly),
-    da: scopeItem(h.daily),
-    hr: scopeItem(h.hourly),
-  };
-}
-
 // ============================================================
 // 1. yearDivide=exact：立春/初一分歧窗口逐日
 // ============================================================
@@ -94,7 +57,7 @@ for (let year = 1984; year <= 2043; year++) {
       for (const t of [0, 6]) {
         for (const g of [0, 1]) {
           const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
-          ydLines.push(`${dateStr},${t},${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+          ydLines.push(`${dateStr},${t},${g},${hashAstrolabe(result)}`);
         }
       }
     }
@@ -125,7 +88,7 @@ for (let year = 1984; year <= 2043; year++) {
   for (const dateStr of dates) {
     for (const g of [0, 1]) {
       const result = astro.bySolar(dateStr, 12, GENDERS[g], true, 'zh-CN');
-      ddLines.push(`${dateStr},12,${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+      ddLines.push(`${dateStr},12,${g},${hashAstrolabe(result)}`);
     }
   }
 }
@@ -213,7 +176,7 @@ for (const [cfg, overrides] of Object.entries(CHART_COMBOS)) {
       for (const t of [0, 12]) {
         for (const g of [0, 1]) {
           const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
-          comboLines.push(`${cfg},${dateStr},${t},${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+          comboLines.push(`${cfg},${dateStr},${t},${g},${hashAstrolabe(result)}`);
         }
       }
     }

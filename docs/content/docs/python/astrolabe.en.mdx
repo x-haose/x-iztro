@@ -480,7 +480,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 ```python
 def horoscope(
     self,
-    target_date: str | None = None,
+    target_date: str | datetime | date | None = None,
     target_time_index: int | None = None,
 ) -> Horoscope
 ```
@@ -489,8 +489,8 @@ def horoscope(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `target_date` | `str \| None` | No | `None` | Target solar date; today when omitted |
-| `target_time_index` | `int \| None` | No | `None` | Target hour index; the current hour when omitted |
+| `target_date` | `str \| datetime \| date \| None` | No | `None` | Target solar date: a string (spelled as for charting, a ` HH:mm` time allowed) or a `datetime` / `date`; now when omitted |
+| `target_time_index` | `int \| None` | No | `None` | Target hour index; when omitted it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time (or a `date`) means the early Zi hour |
 
 **Return value** `Horoscope` — a horoscope object holding this chart, so palace lookups across the six
 scopes need not be passed the astrolabe again.

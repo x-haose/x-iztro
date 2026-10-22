@@ -16,7 +16,7 @@ required; the last three have defaults.
 
 | Parameter | Meaning | Accepts |
 | --- | --- | --- |
-| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`. Gregorian range 1583–9999 |
+| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`; `/` or `.` separators and a ` HH:mm` time are accepted too (the time does not affect the chart). Gregorian range 1583–9999 |
 | `time_index` | Hour of birth | Integer 0–12, see the table below |
 | `gender` | Gender | `"male"` / `"female"` (a `Gender` enum in Rust) |
 | `fix_leap` | Correct for leap months | Boolean, defaults to `true` |

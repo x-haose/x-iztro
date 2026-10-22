@@ -73,7 +73,7 @@ iztro: invalid solar date '2000-2-30': day is out of range for that month
 
 | 情形 | 例 | 消息主体 |
 | --- | --- | --- |
-| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| 写法不符（分隔符混用、用 `T` 连接时间等） | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
 | 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
 | 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |

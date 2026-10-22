@@ -3,6 +3,8 @@
 pub mod builder;
 /// 出生数据到安星中间量的派生
 pub mod context;
+/// 日期入参的文法（公历、农历、运限目标日期共用）
+pub(crate) mod date_input;
 /// 运限计算
 pub mod horoscope;
 /// 农历月表读取口（对 lunar_rust 月界数据缺陷的修正视图）

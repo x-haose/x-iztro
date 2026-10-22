@@ -46,7 +46,7 @@ pub fn by_solar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1583–9999 |
 | `time_index` | `u8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `Gender` | Yes | — | `Gender::Male` or `Gender::Female`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | Yes | — | Whether to correct for lunar leap months. When `true`, days after the fifteenth of a leap month count as the next month (except in the late Zi hour, see below) |
@@ -148,7 +148,7 @@ Identical to `by_solar` apart from the following two; `by_solar`'s `fix_leap` is
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `lunar_date` | `&str` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `lunar_date` | `&str` | Yes | — | Lunar date in `YYYY-M-D` (separators and time part as for solar dates); write the month as a positive number (leap months are flagged by the next parameter) |
 | `leap` | `LeapMonth` | Yes | — | `NotLeap` — not a leap month; `Leap` — leap month, charted as itself; `LeapFixed` — leap month, and days after the 15th are treated as the next month (iztro `fixLeap`). Flagging a leap month that does not exist in that year falls back to the ordinary month |
 
 **Return value** Same as `by_solar`.
@@ -346,7 +346,7 @@ onto the natal chart, each with its own starting palace, pillar and scope stars.
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
-    time_index: u8,
+    time_index: impl Into<Option<u8>>,
     language: Language,
 ) -> Result<HoroscopeData, IztroError>
 ```
@@ -356,8 +356,8 @@ pub fn get_horoscope(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | Yes | — | The natal chart |
-| `solar_date` | `&str` | Yes | — | Target solar date in `YYYY-M-D`, years 1583–9999 |
-| `time_index` | `u8` | Yes | — | Target hour index 0–12 |
+| `solar_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed), years 1583–9999 |
+| `time_index` | `impl Into<Option<u8>>` | Yes | — | A number or `None`: Target hour index 0–12, which fixes the hourly scope; with `None` it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time means the early Zi hour |
 | `language` | `Language` | Yes | — | Output language |
 
 **Return value** `Result<HoroscopeData, IztroError>`. Details on

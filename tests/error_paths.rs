@@ -37,7 +37,8 @@ fn by_solar_rejects_malformed_dates() {
     for date in [
         "",
         "not-a-date",
-        "2000/8/16",
+        "2000-8/16",
+        "2000-8-16T10:30",
         "2000-8",
         "2000-8-16-1",
         "两千-8-16",
@@ -144,7 +145,14 @@ fn by_lunar_handles_nonexistent_leap_month() {
 fn get_horoscope_rejects_invalid_targets() {
     let astrolabe = solar("2000-8-16", 2).unwrap();
 
-    for date in ["", "garbage", "2025/1/1", "2025-2-30", "2025-13-1"] {
+    for date in [
+        "",
+        "garbage",
+        "2025/1-1",
+        "2025-1-1 24:00",
+        "2025-2-30",
+        "2025-13-1",
+    ] {
         assert!(
             matches!(
                 get_horoscope(&astrolabe, date, 0, LANG),

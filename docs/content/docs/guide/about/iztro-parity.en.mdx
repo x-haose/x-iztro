@@ -66,6 +66,22 @@ x-iztro has no global state: both the config and the language are passed on ever
 the caller. So `getConfig`, `resetConfig`, `setLanguage` and `getLanguage` are not provided — to read
 the value back, read your own copy.
 
+### The target instant of a horoscope
+
+iztro's `horoscope(targetDate?, timeIndex?)` takes both arguments optionally: with the hour index omitted it
+is derived from the target date's time, and a date without a time means the early Zi hour; the target date
+may also be a `Date` object. The three bindings map it in their own idiom:
+
+| iztro | Rust | Python | Go |
+| --- | --- | --- | --- |
+| `horoscope(date, i)` | `horoscope(date, i)` | `horoscope(date, i)` | `Horoscope(date, i)` |
+| `horoscope(date)` | `horoscope(date, None)` | `horoscope(date)` | `HoroscopeAt(date)` |
+| `horoscope(new Date(…))` | format it as `"Y-M-D H:m"` yourself | `horoscope(datetime(…))` | `HoroscopeAtTime(t)` |
+| `horoscope()` | `horoscope_now()` | `horoscope()` | `HoroscopeNow()` |
+
+Date strings are spelled as in iztro: `-`, `/` or `.` as the separator and an optional ` HH:mm(:ss)`; the time
+part plays no role in charting, and the chart's `solarDate` echoes the input verbatim.
+
 ### Decadals and age fortune
 
 `getHoroscope(param)` in `astro/palace` takes an `AstrolabeParam`. x-iztro's

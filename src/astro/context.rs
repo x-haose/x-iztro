@@ -43,7 +43,7 @@ pub struct AstroContext {
 
 /// 由公历日期推出排盘上下文
 ///
-/// `solar_date` 为 `YYYY-M-D`，`time_index` 为 0-12；两者的合法性在此校验。
+/// `solar_date` 为 `Y-M-D`（分隔符可为 `-` `/` `.`，可带时间部分），`time_index` 为 0-12；两者的合法性在此校验。
 pub fn derive(
     solar_date: &str,
     time_index: u8,

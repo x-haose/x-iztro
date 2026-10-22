@@ -6,7 +6,8 @@ use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
 
 use crate::astro::builder::{
-    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
+    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, parse_solar_input, stem_of,
+    validate_time_index,
 };
 use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
@@ -29,7 +30,7 @@ use crate::star::location::{
     get_nianjie_index,
 };
 use crate::utils::get_mutagens_by_heavenly_stem;
-use crate::utils::{earthly_branch_to_palace_index, fix_index};
+use crate::utils::{earthly_branch_to_palace_index, fix_index, time_to_index};
 
 // ============================================================
 // 童限宫位映射
@@ -195,8 +196,9 @@ fn time_index_to_hour(time_index: u8) -> i64 {
 ///
 /// # 参数
 /// - `astrolabe`: 出生星盘
-/// - `solar_date`: 目标阳历日期，格式 "YYYY-M-D"（支持 1583-9999 年）
-/// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)
+/// - `solar_date`: 目标阳历日期（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`，支持 1583-9999 年）
+/// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)；`None` 时按目标日期串的小时换算，
+///   不带时间即早子时（与 iztro 省略 `timeIndex` 时一致）
 /// - `language`: 语言
 ///
 /// # Errors
@@ -205,10 +207,17 @@ fn time_index_to_hour(time_index: u8) -> i64 {
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
-    time_index: u8,
+    time_index: impl Into<Option<u8>>,
     language: Language,
 ) -> Result<HoroscopeData, IztroError> {
-    validate_time_index(time_index)?;
+    let target = parse_solar_input(solar_date)?;
+    let time_index = match time_index.into() {
+        Some(index) => {
+            validate_time_index(index)?;
+            index
+        }
+        None => time_to_index(target.hour.map_or(0, |h| h as u8)),
+    };
 
     // ---- 1. 解析出生日期的农历信息 ----
     let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
@@ -231,7 +240,7 @@ pub fn get_horoscope(
     let birthday_is_leap = birth_ymd.month < 0;
 
     // ---- 2. 解析目标日期的农历信息 ----
-    let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
+    let (target_year, target_month, target_day) = (target.year, target.month, target.day);
 
     // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
     // （农历年月日与时辰无关，23:00 仍属同一公历日）
@@ -492,13 +501,13 @@ pub fn get_horoscope(
     // ---- 11. 农历日期字符串（月/日名取修正后的农历日期，闰月带「闰」前缀） ----
     let lunar_date_str = format!(
         "{}年{}月{}",
-        target_lunar.get_year_in_chinese(),
+        lunar_table::year_in_chinese(target_lunar_year as i64),
         lunar_table::month_in_chinese(target_lunar_month as u32, target_is_leap),
         lunar_table::day_in_chinese(target_lunar_day),
     );
 
     Ok(HoroscopeData {
-        solar_date: solar_date.to_string(),
+        solar_date: format!("{target_year}-{target_month}-{target_day}"),
         lunar_date: lunar_date_str,
         decadal,
         age,
@@ -715,15 +724,15 @@ impl HoroscopeData {
 impl Astrolabe {
     /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘。
     ///
-    /// - `target_date`: 目标阳历日期，"YYYY-M-D"
-    /// - `target_time_index`: 目标时辰索引 0-12
+    /// - `target_date`: 目标阳历日期，可带 ` HH:mm(:ss)`（文法见 [`get_horoscope`]）
+    /// - `target_time_index`: 目标时辰索引 0-12，可传 `None`：按目标日期串的小时换算，不带时间即早子时
     ///
     /// # Errors
     /// 目标日期非法或目标时辰越界时返回 [`IztroError`]。
     pub fn horoscope(
         &self,
         target_date: &str,
-        target_time_index: u8,
+        target_time_index: impl Into<Option<u8>>,
     ) -> Result<HoroscopeRef<'_>, IztroError> {
         Ok(HoroscopeRef {
             data: get_horoscope(self, target_date, target_time_index, self.language)?,
@@ -888,11 +897,8 @@ impl Astrolabe {
     /// # Errors
     /// 本地日期落在支持范围（公历 1583-9999）之外时返回 [`IztroError`]。
     pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError> {
-        let now = chrono::Local::now();
-        let date = now.format("%Y-%-m-%-d").to_string();
-        let time_index =
-            crate::utils::time_to_index(now.format("%H").to_string().parse().unwrap_or(0));
-        self.horoscope(&date, time_index)
+        let now = chrono::Local::now().format("%Y-%-m-%-d %H:%M").to_string();
+        self.horoscope(&now, None)
     }
 }
 

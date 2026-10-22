@@ -70,7 +70,7 @@ branching on `code()` is unaffected either way.
 
 | Situation | Example | Message |
 | --- | --- | --- |
-| The format is not `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
+| The spelling is wrong (mixed separators, a `T` before the time, …) | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
 | Month out of range | `"2000-13-1"` | `month must be within 1-12` |
 | That month has no such day | `"2000-2-30"` | `day is out of range for that month` |

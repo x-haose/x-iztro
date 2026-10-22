@@ -46,7 +46,7 @@ pub struct RawDates {
 pub struct Astrolabe {
     /// 性别
     pub gender: Gender,
-    /// 阳历日期（与排盘入参一致，"YYYY-M-D"）
+    /// 阳历日期（排盘入参原样回显，可带分隔符变体与时间部分）
     pub solar_date: String,
     /// 农历日期展示串：简繁中文为中文数字写法（如「二〇〇〇年七月十七」），其余语言为该语言的数字写法（如 `Lunar 2000-7-17`）
     pub lunar_date: String,

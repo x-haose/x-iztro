@@ -25,7 +25,6 @@ const outDir = join(__dirname, 'tier_edge');
 
 const GENDERS = ['男', '女'];
 const DAYS = [1, 15, 28];
-const HASH_LEN = 32;
 
 /** 早期与晚期两段各每 10 年一个采样年，2100 作为区间末端单列。 */
 function sampleYears() {
@@ -62,7 +61,7 @@ for (const year of sampleYears()) {
         for (let gi = 0; gi < GENDERS.length; gi++) {
           for (const fl of fixLeaps) {
             const result = astro.bySolar(dateStr, t, GENDERS[gi], fl === 1, 'zh-CN');
-            lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+            lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result)}`);
           }
         }
       }

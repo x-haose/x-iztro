@@ -28,7 +28,6 @@ const outDir = join(__dirname, 'tier3');
 const START_YEAR = 1984;
 const END_YEAR = 2043;
 const GENDERS = ['男', '女'];
-const HASH_LEN = 32;
 
 function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
@@ -68,7 +67,7 @@ for (let year = rangeStart; year <= rangeEnd; year++) {
         for (let gi = 0; gi < GENDERS.length; gi++) {
           for (const fl of fixLeaps) {
             const result = astro.bySolar(dateStr, t, GENDERS[gi], fl === 1, 'zh-CN');
-            const hash = hashAstrolabe(result).slice(0, HASH_LEN);
+            const hash = hashAstrolabe(result);
             lines.push(`${dateStr},${t},${gi},${fl},${hash}`);
           }
         }

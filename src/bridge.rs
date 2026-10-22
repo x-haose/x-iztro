@@ -31,7 +31,7 @@ use crate::star::query::{self as star_query, StarParam};
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SolarChartInput {
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -53,7 +53,7 @@ pub struct SolarChartInput {
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct LunarChartInput {
-    /// 农历日期，格式 `YYYY-M-D`
+    /// 农历日期，写法同公历
     pub lunar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -77,7 +77,7 @@ pub struct LunarChartInput {
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct HoroscopeInput {
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -89,10 +89,10 @@ pub struct HoroscopeInput {
     pub language: String,
     /// 排盘配置，部分键对象；省略取默认
     pub config: Option<Value>,
-    /// 运限目标日期，格式 `YYYY-M-D`
+    /// 运限目标日期，格式 `YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`）
     pub target_date: String,
-    /// 运限目标时辰索引 0-12
-    pub target_time_index: u8,
+    /// 运限目标时辰索引 0-12；省略时按目标日期串的小时换算，不带时间即早子时
+    pub target_time_index: Option<u8>,
     /// 重排起点天干标识；与 `from_branch` 同时给出时先按该干支重排星盘再算运限
     pub from_stem: Option<String>,
     /// 重排起点地支标识；与 `from_stem` 同时给出
@@ -109,9 +109,9 @@ pub struct QueryInput {
     /// 查询种类，决定调用哪个函数
     pub kind: String,
 
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
-    /// 农历日期，格式 `YYYY-M-D`
+    /// 农历日期，写法同公历
     pub lunar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -185,10 +185,10 @@ pub struct QueryInput {
     pub key_filter: String,
 
     // Prompt 与运限用
-    /// 运限目标日期，格式 `YYYY-M-D`
+    /// 运限目标日期，格式 `YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`）
     pub target_date: String,
-    /// 运限目标时辰索引 0-12
-    pub target_time_index: u8,
+    /// 运限目标时辰索引 0-12；省略时按目标日期串的小时换算，不带时间即早子时
+    pub target_time_index: Option<u8>,
 
     // 格局用
     /// 格局判定口径，部分键对象（brightnessSource/borrow/flowStars）；省略取默认

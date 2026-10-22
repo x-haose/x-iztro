@@ -74,6 +74,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   serde 表示即标识。模型结构（星盘、宫位、星耀、运限）不派生 serde，DTO 是唯一序列化形态；
   派生或手写 serde 只留给本身就是线协议的类型：`Config`（即绑定 config JSON：部分键补丁、拒未知键、
   含自定义表，`dto::parse_config_*` 是薄包装）、`PatternConfig`、反推结果、知识包
+- 日期入参文法与 iztro 同（`Y-M-D`，分隔符 `-` `/` `.` 前后一致，可带 ` HH:mm(:ss)`），只在 `astro::date_input` 实现一处，
+  公历、农历、运限共用；排盘时时间部分不参与计算、`solar_date` 原样回显；运限时辰为 `impl Into<Option<u8>>`，
+  `None` 按目标串的小时换算（无时间即早子），运限 `solar_date` 规范为 `Y-M-D`
 - `Cargo.toml` 的 lib crate-type 同时有 `cdylib`（FFI）和 `rlib`（Rust 依赖）
 - `python` feature 启用 PyO3 + pythonize
 
@@ -91,6 +94,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 强类型层基于标识字段：Python 枚举（enums.py）与 Go 常量（keys.go）的值即这些 key，
   判断方法在任何输出语言的星盘上结果一致
 - 绑定接口无状态：运限/to_text/格局 直接收排盘参数（含 config JSON 部分键补丁），不做星盘 JSON 往返；
+  运限对象再发起计算（运限 to_text、格局、按盘取材）时转发调用方原始的 `targetDate`/`targetTimeIndex`，
+  不能用 DTO 里规范化后的 `solarDate`——省略时辰时它已丢掉时间部分，会静默换成早子时；
   重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/各 to_text kind 的
   payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
