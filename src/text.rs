@@ -8,13 +8,16 @@
 //!
 //! 覆盖对象：本命盘（[`astrolabe_to_text`]）、运限（[`horoscope_to_text`]）、
 //! 格局命中（[`patterns_to_text`]）、单宫（[`palace_to_text`]）、
-//! 三方四正（[`surrounded_palaces_to_text`]）。各对象另有同名 `to_text` 便捷方法。
-//! `*_to_text_with` 收 [`TextOptions`]：带知识包时，每宫事实之后紧跟该宫星耀的释义，
-//! 格局列表之后紧跟格局释义，文末附四化释义——事实与解读同处一屏。
+//! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览。各对象另有同名 `to_text` 便捷方法。
+//! `*_to_text_with` 收 [`TextOptions`]，两个开关互相独立：[`TextDetail`] 管事实写到多细，
+//! [`KnowledgeDepth`] 管释义写多长。释义随段落而不随表格——宫位段落之后紧跟该宫星耀的释义，
+//! 格局列表之后紧跟格局释义，运限各层级段之后紧跟流耀与格局释义，本命文末附四化释义，
+//! 事实与解读同处一屏。
 
 use crate::data::constants::CHINESE_TIME;
 use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
+use crate::error::IztroError;
 use crate::i18n::lookup::translate_key;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
@@ -40,25 +43,89 @@ const ARROW: &str = "→";
 /// 空列表的占位（表格单元格不能留空）
 const NONE_MARK: &str = "—";
 
-/// 文本投影的选项：释义材料来源与格局判定口径；一切影响输出内容的开关都收在这里。
+/// 事实写到多细。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TextDetail {
+    /// 总览：本命只写基本信息、十二宫总览表与格局，不写十二宫详解；运限各层（小限除外）
+    /// 写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落（单宫、三方四正、夹宫）
+    /// 只写主星、辅星与杂耀。格局与大限一览本身就是总览，不受影响。
+    Overview,
+    /// 完整：全部事实
+    #[default]
+    Full,
+}
+
+crate::data::keyed::keyed_enum!(TextDetail, "text detail" {
+    Overview => "overview",
+    Full => "full",
+});
+
+/// 释义写多长（带知识包时）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum KnowledgeDepth {
+    /// 摘要：条目的摘要，或本身不超过 [`crate::knowledge::SUMMARY_FALLBACK_WIDTH`] 的正文；
+    /// 格局不附成立条件
+    Summary,
+    /// 完整：正文全文，格局附成立条件
+    #[default]
+    Full,
+}
+
+crate::data::keyed::keyed_enum!(KnowledgeDepth, "knowledge depth" {
+    Summary => "summary",
+    Full => "full",
+});
+
+/// 文本投影的选项：事实详略、释义材料与深度、格局判定口径；一切影响输出内容的开关都收在这里。
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TextOptions<'a> {
+    /// 事实写到多细
+    detail: TextDetail,
     /// 释义材料来源；`None` 即只输出事实
     knowledge: Option<&'a KnowledgePack>,
+    /// 释义深度；只有经 [`TextOptions::knowledge_summary`] 校验过的包才会配上 `Summary`
+    depth: KnowledgeDepth,
     /// 格局判定口径；`None` 取 [`PatternConfig::default`]
     pattern_config: Option<&'a PatternConfig>,
 }
 
 impl<'a> TextOptions<'a> {
-    /// 只输出盘面事实、默认格局口径。
+    /// 完整事实、不带释义、默认格局口径。
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// 按盘从 `pack` 取释义：每宫事实之后附该宫星耀的释义、格局之后附格局释义、文末附四化释义。
+    /// 事实写到多细，见 [`TextDetail`]。
+    pub fn detail(mut self, detail: TextDetail) -> Self {
+        self.detail = detail;
+        self
+    }
+
+    /// 按盘从 `pack` 取释义全文：宫位段落之后附该宫星耀的释义、格局之后附格局释义与成立条件、
+    /// 本命文末附四化释义。
     pub fn knowledge(mut self, pack: &'a KnowledgePack) -> Self {
         self.knowledge = Some(pack);
+        self.depth = KnowledgeDepth::Full;
         self
+    }
+
+    /// 按盘从 `pack` 取摘要层释义，附着位置同 [`Self::knowledge`]。
+    ///
+    /// # Errors
+    /// 包里有正文超过 [`crate::knowledge::SUMMARY_FALLBACK_WIDTH`] 却没有摘要的条目时返回
+    /// [`IztroError::InvalidArgument`]，列出全部缺项（[`KnowledgePack::missing_summaries`]）。
+    pub fn knowledge_summary(mut self, pack: &'a KnowledgePack) -> Result<Self, IztroError> {
+        let missing = pack.missing_summaries();
+        if !missing.is_empty() {
+            return Err(IztroError::InvalidArgument(format!(
+                "knowledge pack '{}' cannot serve the summary layer: no summary for {}",
+                pack.id,
+                missing.join(", ")
+            )));
+        }
+        self.knowledge = Some(pack);
+        self.depth = KnowledgeDepth::Summary;
+        Ok(self)
     }
 
     /// 格局按 `config` 口径判定；与 [`Astrolabe::patterns_with`] 及按盘取材的子包配同一口径。
@@ -75,6 +142,65 @@ impl<'a> TextOptions<'a> {
     /// 生效的格局判定口径。
     fn effective_pattern_config(&self) -> PatternConfig {
         self.pattern_config.cloned().unwrap_or_default()
+    }
+
+    /// 带释义时的取材口；不带知识包为 `None`
+    fn notes(&self) -> Option<Notes<'a>> {
+        self.knowledge.map(|pack| Notes {
+            pack,
+            depth: self.depth,
+        })
+    }
+}
+
+/// 按释义深度从知识包取各类条目的文本：完整层取正文，摘要层取摘要或不超过上限的正文。
+/// 摘要层的包已在 [`TextOptions::knowledge_summary`] 校验过，`None` 只表示条目没有正文。
+#[derive(Clone, Copy)]
+struct Notes<'p> {
+    pack: &'p KnowledgePack,
+    depth: KnowledgeDepth,
+}
+
+impl<'p> Notes<'p> {
+    /// 星耀的解读
+    fn star(&self, key: StarKey) -> Option<&'p str> {
+        let e = self.pack.star(key)?;
+        match self.depth {
+            KnowledgeDepth::Full => e.intro.as_deref(),
+            KnowledgeDepth::Summary => e.brief(),
+        }
+    }
+
+    /// 同宫两颗主星的组合解读；包里只记在一方名下也取得到
+    fn combination(&self, a: StarKey, b: StarKey) -> Option<&'p str> {
+        let one_side = |x: StarKey, y: StarKey| {
+            let e = self.pack.star(x)?;
+            match self.depth {
+                KnowledgeDepth::Full => e.combinations.get(y.as_key()).map(String::as_str),
+                KnowledgeDepth::Summary => e.combination_brief(y.as_key()),
+            }
+        };
+        one_side(a, b).or_else(|| one_side(b, a))
+    }
+
+    /// 格局的解读与成立条件；成立条件只在完整层给出
+    fn pattern(&self, key: PatternKey) -> (Option<&'p str>, Option<&'p str>) {
+        let Some(e) = self.pack.pattern(key) else {
+            return (None, None);
+        };
+        match self.depth {
+            KnowledgeDepth::Full => (e.intro.as_deref(), e.conditions.as_deref()),
+            KnowledgeDepth::Summary => (e.brief(), None),
+        }
+    }
+
+    /// 四化的含义
+    fn mutagen(&self, m: Mutagen) -> Option<&'p str> {
+        let e = self.pack.mutagen(m)?;
+        match self.depth {
+            KnowledgeDepth::Full => e.intro.as_deref(),
+            KnowledgeDepth::Summary => e.brief(),
+        }
     }
 }
 
@@ -443,8 +569,14 @@ fn palace_heading(p: &PalaceData, role: Option<&str>, l: &Labels, lang: Language
     )
 }
 
-/// 一宫的事实行：主星（空宫写明）、辅星、杂耀、三方四正、宫干飞化、十二神、小限
-fn palace_facts(astrolabe: &Astrolabe, p: &PalaceData, l: &Labels, lang: Language) -> String {
+/// 一宫的事实行：主星（空宫写明）、辅星、杂耀；完整层另有三方四正、宫干飞化、十二神、小限
+fn palace_facts(
+    astrolabe: &Astrolabe,
+    p: &PalaceData,
+    detail: TextDetail,
+    l: &Labels,
+    lang: Language,
+) -> String {
     let mut out = String::new();
     out.push_str(&format!(
         "- {}: {}\n",
@@ -456,6 +588,9 @@ fn palace_facts(astrolabe: &Astrolabe, p: &PalaceData, l: &Labels, lang: Languag
     }
     if let Some(s) = star_list(&p.adjective_stars, l, lang) {
         out.push_str(&format!("- {}: {s}\n", l.adjective_stars));
+    }
+    if detail == TextDetail::Overview {
+        return out;
     }
     out.push_str(&surround_line(astrolabe, p, l, lang));
     out.push_str(&flying_line(astrolabe, p, l, lang));
@@ -474,16 +609,12 @@ fn palace_facts(astrolabe: &Astrolabe, p: &PalaceData, l: &Labels, lang: Languag
 
 /// 一宫的释义：同宫主星的组合解读在前（每对一次，包里只记在一方名下也查得到），
 /// 再按主星、辅星、杂耀顺序逐星释义；十二神不释义。无材料时返回空串
-fn palace_notes(p: &PalaceData, pack: &KnowledgePack, l: &Labels, lang: Language) -> String {
+fn palace_notes(p: &PalaceData, notes: Notes, l: &Labels, lang: Language) -> String {
     let mut out = String::new();
     let majors: Vec<StarKey> = p.major_stars.iter().map(|s| s.key).collect();
     for (i, a) in majors.iter().enumerate() {
         for b in &majors[i + 1..] {
-            let combo = pack
-                .star(*a)
-                .and_then(|e| e.combinations.get(b.as_key()))
-                .or_else(|| pack.star(*b).and_then(|e| e.combinations.get(a.as_key())));
-            if let Some(text) = combo {
+            if let Some(text) = notes.combination(*a, *b) {
                 let heading = format!(
                     "{} × {} ({})",
                     translate_star(*a, lang),
@@ -500,14 +631,14 @@ fn palace_notes(p: &PalaceData, pack: &KnowledgePack, l: &Labels, lang: Language
         .chain(&p.minor_stars)
         .chain(&p.adjective_stars)
     {
-        if let Some(intro) = pack.star_intro(star.key) {
-            note(&mut out, &star_token(star, l, lang), intro);
+        if let Some(text) = notes.star(star.key) {
+            note(&mut out, &star_token(star, l, lang), text);
         }
     }
     out
 }
 
-/// 一宫的完整段落：标题（可带角色）、事实，带包时加释义
+/// 一宫的段落：标题（可带角色）、按详略写事实，带包时加释义
 fn palace_section(
     astrolabe: &Astrolabe,
     p: &PalaceData,
@@ -517,12 +648,12 @@ fn palace_section(
     lang: Language,
 ) -> String {
     let mut out = palace_heading(p, role, l, lang);
-    out.push_str(&palace_facts(astrolabe, p, l, lang));
-    if let Some(pack) = opts.knowledge {
-        let notes = palace_notes(p, pack, l, lang);
-        if !notes.is_empty() {
+    out.push_str(&palace_facts(astrolabe, p, opts.detail, l, lang));
+    if let Some(notes) = opts.notes() {
+        let text = palace_notes(p, notes, l, lang);
+        if !text.is_empty() {
             out.push('\n');
-            out.push_str(&notes);
+            out.push_str(&text);
         }
     }
     out
@@ -586,10 +717,10 @@ fn pattern_list(
     out
 }
 
-/// 格局释义：解读正文与成立条件，同一格局只出一次；`seen` 跨节共享
+/// 格局释义：解读与（完整层的）成立条件，同一格局只出一次；`seen` 跨节共享
 fn pattern_notes(
     hits: &[PatternHit],
-    pack: &KnowledgePack,
+    notes: Notes,
     seen: &mut Vec<PatternKey>,
     l: &Labels,
     lang: Language,
@@ -600,11 +731,9 @@ fn pattern_notes(
             continue;
         }
         seen.push(hit.key);
-        let Some(entry) = pack.pattern(hit.key) else {
-            continue;
-        };
-        let mut body = entry.intro.clone().unwrap_or_default();
-        if let Some(conditions) = entry.conditions.as_deref() {
+        let (reading, conditions) = notes.pattern(hit.key);
+        let mut body = reading.unwrap_or_default().to_string();
+        if let Some(conditions) = conditions {
             if !body.is_empty() {
                 body.push_str("\n\n");
             }
@@ -634,22 +763,22 @@ pub fn patterns_to_text_with(
     } else {
         out.push_str(&list);
     }
-    if let Some(pack) = opts.knowledge {
-        let notes = pattern_notes(hits, pack, &mut Vec::new(), &l, lang);
-        if !notes.is_empty() {
+    if let Some(notes) = opts.notes() {
+        let text = pattern_notes(hits, notes, &mut Vec::new(), &l, lang);
+        if !text.is_empty() {
             out.push('\n');
-            out.push_str(&notes);
+            out.push_str(&text);
         }
     }
     out
 }
 
 /// 四化释义（禄权科忌四条）；无材料返回空串
-fn mutagen_notes(pack: &KnowledgePack, l: &Labels, lang: Language) -> String {
+fn mutagen_notes(notes: Notes, l: &Labels, lang: Language) -> String {
     let mut out = String::new();
     for m in MUTAGEN {
-        if let Some(intro) = pack.mutagen(m).and_then(|e| e.intro.as_deref()) {
-            note(&mut out, translate_mutagen(m, lang), intro);
+        if let Some(text) = notes.mutagen(m) {
+            note(&mut out, translate_mutagen(m, lang), text);
         }
     }
     if out.is_empty() {
@@ -667,10 +796,12 @@ pub fn astrolabe_to_text(astrolabe: &Astrolabe, lang: Language) -> String {
     astrolabe_to_text_with(astrolabe, &TextOptions::default(), lang)
 }
 
-/// 本命盘的语义化文本：基本信息、十二宫总览表、格局、从命宫起的十二宫详解；
-/// 带知识包时每宫附该宫星耀释义、格局附释义、文末附四化释义
+/// 本命盘的语义化文本：基本信息、十二宫总览表、格局，完整层另有从命宫起的十二宫详解；
+/// 带知识包时每宫详解附该宫星耀释义、格局附释义、文末附四化释义
 pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: Language) -> String {
     let l = labels(lang);
+    // 各节以换行结尾、节与节之间空一行
+    let mut sections: Vec<String> = Vec::new();
     let mut out = String::new();
     let hour = by_key(CHINESE_TIME[astrolabe.time_index as usize], lang);
 
@@ -740,10 +871,11 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
     // 生年四化由本命年干决定，年干即四柱年柱的天干
     let birth_stars = astrolabe.config.mutagens_of(cd.yearly.0);
     out.push_str(&format!(
-        "- {}: {}\n\n",
+        "- {}: {}\n",
         l.birth_mutagen,
         mutagen_stars_with_places(astrolabe, &birth_stars, false, &l, lang)
     ));
+    sections.push(std::mem::take(&mut out));
 
     // ---- 十二宫总览 ----
     let order = reading_order(astrolabe);
@@ -770,7 +902,7 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
             p.decadal.range.1,
         ));
     }
-    out.push('\n');
+    sections.push(std::mem::take(&mut out));
 
     // ---- 格局 ----
     let hits = astrolabe.patterns_with(&opts.effective_pattern_config());
@@ -778,40 +910,42 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
         let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
         out.push_str(&format!("## {}\n", l.sec_patterns));
         out.push_str(&pattern_list(&hits, &names, &l, lang));
-        if let Some(pack) = opts.knowledge {
-            let notes = pattern_notes(&hits, pack, &mut Vec::new(), &l, lang);
-            if !notes.is_empty() {
+        if let Some(notes) = opts.notes() {
+            let text = pattern_notes(&hits, notes, &mut Vec::new(), &l, lang);
+            if !text.is_empty() {
                 out.push('\n');
-                out.push_str(&notes);
+                out.push_str(&text);
             }
         }
-        out.push('\n');
+        sections.push(std::mem::take(&mut out));
     }
 
     // ---- 十二宫详解 ----
-    out.push_str(&format!("## {}\n", l.sec_palaces));
-    for &i in &order {
-        out.push('\n');
-        out.push_str(&palace_section(
-            astrolabe,
-            &astrolabe.palaces[i],
-            None,
-            opts,
-            &l,
-            lang,
-        ));
+    if opts.detail == TextDetail::Full {
+        out.push_str(&format!("## {}\n", l.sec_palaces));
+        for &i in &order {
+            out.push('\n');
+            out.push_str(&palace_section(
+                astrolabe,
+                &astrolabe.palaces[i],
+                None,
+                opts,
+                &l,
+                lang,
+            ));
+        }
+        sections.push(std::mem::take(&mut out));
     }
 
     // ---- 附录：四化释义 ----
-    if let Some(pack) = opts.knowledge {
-        let notes = mutagen_notes(pack, &l, lang);
-        if !notes.is_empty() {
-            out.push('\n');
-            out.push_str(&notes);
+    if let Some(notes) = opts.notes() {
+        let text = mutagen_notes(notes, &l, lang);
+        if !text.is_empty() {
+            sections.push(text);
         }
     }
 
-    out
+    sections.join("\n")
 }
 
 // ============================================================
@@ -937,22 +1071,22 @@ pub fn decadal_list_to_text_with(
         ));
     }
 
-    if let Some(pack) = opts.knowledge_pack() {
+    if let Some(notes) = opts.notes() {
         let mut seen: Vec<StarKey> = Vec::new();
-        let mut notes = String::new();
+        let mut text = String::new();
         for d in &list {
             for key in &d.mutagen {
                 if seen.contains(key) {
                     continue;
                 }
                 seen.push(*key);
-                if let Some(intro) = pack.star(*key).and_then(|e| e.intro.as_deref()) {
-                    note(&mut notes, translate_star(*key, lang), intro);
+                if let Some(reading) = notes.star(*key) {
+                    note(&mut text, translate_star(*key, lang), reading);
                 }
             }
         }
-        if !notes.is_empty() {
-            out.push_str(&format!("\n## {}\n\n{notes}", l.sec_star_notes));
+        if !text.is_empty() {
+            out.push_str(&format!("\n## {}\n\n{text}", l.sec_star_notes));
         }
     }
     out
@@ -1129,10 +1263,52 @@ fn scope_table(
     out
 }
 
+/// 运限层级段的事实部分。`table` 给出时（值为是否加岁前/将前列）写四化、格局与该层十二宫表；
+/// 不给时写宫名对照、四化、流耀与格局，不逐宫展开
+fn scope_facts(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    item: &HoroscopeItem,
+    hits: &[PatternHit],
+    table: Option<bool>,
+    l: &Labels,
+    lang: Language,
+) -> String {
+    let label = l.scope_label(item.name_key);
+    let mut out = scope_heading(label, item, astrolabe, l, lang);
+    match table {
+        Some(yearly_gods) => {
+            out.push_str(&scope_mutagen_line(astrolabe, item, l, lang));
+            out.push_str(&scope_pattern_line(hits, item, l, lang));
+            out.push('\n');
+            out.push_str(&scope_table(
+                astrolabe,
+                horoscope,
+                item,
+                label,
+                yearly_gods,
+                l,
+                lang,
+            ));
+        }
+        None => {
+            out.push_str(&format!(
+                "- {}: {}\n",
+                l.palace_names,
+                scope_palace_map(astrolabe, item.index, &item.palace_names, l, lang)
+            ));
+            out.push_str(&scope_mutagen_line(astrolabe, item, l, lang));
+            out.push_str(&scope_stars_line(item, l, lang));
+            out.push_str(&scope_pattern_line(hits, item, l, lang));
+        }
+    }
+    out
+}
+
 /// 层级的流耀释义：跨层级按星去重；无材料返回空串
 fn flow_notes(
     item: &HoroscopeItem,
-    pack: &KnowledgePack,
+    notes: Notes,
     seen: &mut Vec<StarKey>,
     l: &Labels,
     lang: Language,
@@ -1143,8 +1319,8 @@ fn flow_notes(
             continue;
         }
         seen.push(star.key);
-        if let Some(intro) = pack.star_intro(star.key) {
-            note(&mut out, &star_token(star, l, lang), intro);
+        if let Some(text) = notes.star(star.key) {
+            note(&mut out, &star_token(star, l, lang), text);
         }
     }
     out
@@ -1159,8 +1335,8 @@ pub fn horoscope_to_text(
     horoscope_to_text_with(astrolabe, horoscope, &TextOptions::default(), lang)
 }
 
-/// 运限的语义化文本：大限、小限、流年、流月、流日、流时各一节，
-/// 大限与流年展开十二宫表；带知识包时各层附流耀与格局释义（跨层去重）
+/// 运限的语义化文本：大限、小限、流年、流月、流日、流时各一节，完整层的大限与流年展开
+/// 十二宫表、总览层与其余各层同写宫名对照与流耀行；带知识包时各层附流耀与格局释义（跨层去重）
 pub fn horoscope_to_text_with(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
@@ -1172,41 +1348,35 @@ pub fn horoscope_to_text_with(
     let mut seen_stars: Vec<StarKey> = Vec::new();
     let mut seen_patterns: Vec<PatternKey> = Vec::new();
     let mut out = String::new();
+    let full = opts.detail == TextDetail::Full;
 
     out.push_str(&format!(
         "# {} {} ({})\n",
         l.doc_horoscope, horoscope.solar_date, horoscope.lunar_date
     ));
 
-    // 带释义时某层级的释义块：流耀在前、格局在后
-    let mut notes_for = |item: &HoroscopeItem, hits: &[PatternHit]| -> String {
-        let Some(pack) = opts.knowledge else {
-            return String::new();
-        };
-        let mut s = flow_notes(item, pack, &mut seen_stars, &l, lang);
-        s.push_str(&pattern_notes(hits, pack, &mut seen_patterns, &l, lang));
-        if s.is_empty() { s } else { format!("\n{s}") }
+    // 一个层级段：事实，带释义时再接该层的流耀释义与格局释义
+    let mut scope_section = |item: &HoroscopeItem, scope: Scope, table: Option<bool>| -> String {
+        let hits = hits_of(&scope_hits, scope);
+        let mut s = scope_facts(astrolabe, horoscope, item, hits, table, &l, lang);
+        if let Some(notes) = opts.notes() {
+            let mut text = flow_notes(item, notes, &mut seen_stars, &l, lang);
+            text.push_str(&pattern_notes(hits, notes, &mut seen_patterns, &l, lang));
+            if !text.is_empty() {
+                s.push('\n');
+                s.push_str(&text);
+            }
+        }
+        s
     };
 
     // ---- 大限（未起运时为童限）----
-    let decadal = &horoscope.decadal;
-    let decadal_label = l.scope_label(decadal.name_key);
     out.push('\n');
-    out.push_str(&scope_heading(decadal_label, decadal, astrolabe, &l, lang));
-    out.push_str(&scope_mutagen_line(astrolabe, decadal, &l, lang));
-    let hits = hits_of(&scope_hits, Scope::Decadal);
-    out.push_str(&scope_pattern_line(hits, decadal, &l, lang));
-    out.push('\n');
-    out.push_str(&scope_table(
-        astrolabe,
-        horoscope,
-        decadal,
-        decadal_label,
-        false,
-        &l,
-        lang,
+    out.push_str(&scope_section(
+        &horoscope.decadal,
+        Scope::Decadal,
+        full.then_some(false),
     ));
-    out.push_str(&notes_for(decadal, hits));
 
     // ---- 小限：落宫、虚岁、宫名、四化与该宫星耀 ----
     let age = &horoscope.age;
@@ -1238,51 +1408,22 @@ pub fn horoscope_to_text_with(
         }
     }
 
-    // ---- 流年：落宫、四化、格局、十二宫表（含岁前/将前）----
-    let yearly = &horoscope.yearly;
-    let yearly_label = l.scope_label(yearly.name_key);
+    // ---- 流年（完整层的十二宫表加岁前/将前）----
     out.push('\n');
-    out.push_str(&scope_heading(
-        yearly_label,
-        &yearly.base,
-        astrolabe,
-        &l,
-        lang,
+    out.push_str(&scope_section(
+        &horoscope.yearly.base,
+        Scope::Yearly,
+        full.then_some(true),
     ));
-    out.push_str(&scope_mutagen_line(astrolabe, &yearly.base, &l, lang));
-    let hits = hits_of(&scope_hits, Scope::Yearly);
-    out.push_str(&scope_pattern_line(hits, &yearly.base, &l, lang));
-    out.push('\n');
-    out.push_str(&scope_table(
-        astrolabe,
-        horoscope,
-        &yearly.base,
-        yearly_label,
-        true,
-        &l,
-        lang,
-    ));
-    out.push_str(&notes_for(&yearly.base, hits));
 
-    // ---- 流月/流日/流时：落宫、重排宫名、四化、流耀与格局，不逐宫展开 ----
+    // ---- 流月/流日/流时：不逐宫展开 ----
     for (item, scope) in [
         (&horoscope.monthly, Scope::Monthly),
         (&horoscope.daily, Scope::Daily),
         (&horoscope.hourly, Scope::Hourly),
     ] {
-        let label = l.scope_label(item.name_key);
         out.push('\n');
-        out.push_str(&scope_heading(label, item, astrolabe, &l, lang));
-        out.push_str(&format!(
-            "- {}: {}\n",
-            l.palace_names,
-            scope_palace_map(astrolabe, item.index, &item.palace_names, &l, lang)
-        ));
-        out.push_str(&scope_mutagen_line(astrolabe, item, &l, lang));
-        out.push_str(&scope_stars_line(item, &l, lang));
-        let hits = hits_of(&scope_hits, scope);
-        out.push_str(&scope_pattern_line(hits, item, &l, lang));
-        out.push_str(&notes_for(item, hits));
+        out.push_str(&scope_section(item, scope, None));
     }
 
     out

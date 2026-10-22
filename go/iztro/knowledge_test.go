@@ -50,6 +50,34 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		}
 	}
 
+	for name, get := range cases {
+		got, err := get(TextOptions{Knowledge: BuiltinKnowledge(), KnowledgeDepth: KnowledgeDepthSummary})
+		if err != nil {
+			t.Fatalf("%s summary: %v", name, err)
+		}
+		if want := textSnapshot(t, name+"_summary_zh-CN"); got != want {
+			t.Errorf("%s 摘要层文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
+		}
+	}
+
+	// 摘要层要有知识包，且包里的长正文都要有摘要：缺了即报错并列出缺项，不回退全文
+	if _, err := chart.ToTextWith(TextOptions{KnowledgeDepth: KnowledgeDepthSummary}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("summary without knowledge should be ErrInvalidArgument, got %v", err)
+	}
+	pack, err := BuiltinKnowledgePack(LanguageZhCN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mine, err := pack.Merged(&KnowledgePack{Schema: 1, ID: "mine", Version: "1", Language: "zh-CN",
+		Stars: map[string]StarEntry{StarZiweiMaj: {Intro: strings.Repeat("长", 121)}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = chart.ToTextWith(TextOptions{Knowledge: KnowledgeFrom(mine), KnowledgeDepth: KnowledgeDepthSummary})
+	if !errors.Is(err, ErrInvalidArgument) || !strings.Contains(err.Error(), "stars.ziweiMaj") {
+		t.Fatalf("pack missing a summary should be rejected naming the entry, got %v", err)
+	}
+
 	// 英文盘没有内嵌包：报错而非静默回退
 	en, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageEnUS, nil)
 	if err != nil {

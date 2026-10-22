@@ -21,6 +21,7 @@ from x_iztro.enums import (
     MajorStar,
     Mutagen,
     PalaceName,
+    TextDetail,
 )
 
 
@@ -943,6 +944,14 @@ def test_to_text_matches_rust_snapshots(language: str):
     assert soul.surrounded_palaces().to_text() == snapshot("surrounded")
     assert chart.flanking_palaces(PalaceName.SOUL).to_text() == snapshot("flanking")
     assert chart.decadal_list_to_text() == snapshot("decadals")
+
+    overview = TextDetail.OVERVIEW
+    assert chart.to_text(detail=overview) == snapshot("astrolabe_overview")
+    assert chart.horoscope("2025-1-1", 0).to_text(detail=overview) == snapshot("horoscope_overview")
+    assert soul.to_text(detail=overview) == snapshot("palace_overview")
+    assert soul.surrounded_palaces().to_text(detail=overview) == snapshot("surrounded_overview")
+    flanking = chart.flanking_palaces(PalaceName.SOUL)
+    assert flanking.to_text(detail=overview) == snapshot("flanking_overview")
 
 
 def test_str_is_to_text():

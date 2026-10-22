@@ -200,6 +200,10 @@ pub struct QueryInput {
     /// to_text 家族的释义材料来源：字符串 `"builtin"` 取盘语言的内嵌包，
     /// 或直接给一个知识包对象（自定义/合并后的包）；省略则只输出盘面事实
     pub knowledge: Option<Value>,
+    /// to_text 家族的事实详略标识（`overview` / `full`）；空串取 `full`
+    pub detail: String,
+    /// to_text 家族的释义深度标识（`summary` / `full`）；空串取 `full`，`summary` 须同时给 `knowledge`
+    pub knowledge_depth: String,
 
     // 反推用
     /// 反推范围起始公历年（含）
@@ -832,8 +836,35 @@ fn knowledge_for_chart(input: &QueryInput) -> Result<Value, BridgeError> {
     serde_json::to_value(sub).map_err(serialize_failed)
 }
 
+/// 事实详略：空串取默认（完整）
+fn parse_text_detail(s: &str) -> Result<crate::TextDetail, BridgeError> {
+    use crate::TextDetail;
+    if s.is_empty() {
+        return Ok(TextDetail::default());
+    }
+    TextDetail::from_key(s).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message("detail", s, TextDetail::KEYS))
+    })
+}
+
+/// 释义深度：空串取默认（完整）
+fn parse_knowledge_depth(s: &str) -> Result<crate::KnowledgeDepth, BridgeError> {
+    use crate::KnowledgeDepth;
+    if s.is_empty() {
+        return Ok(KnowledgeDepth::default());
+    }
+    KnowledgeDepth::from_key(s).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message(
+            "knowledgeDepth",
+            s,
+            KnowledgeDepth::KEYS,
+        ))
+    })
+}
+
 /// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
-/// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时追加按盘取材的释义节
+/// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时按 `knowledgeDepth` 附按盘取材的释义，
+/// 事实详略按 `detail`
 fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
@@ -848,9 +879,19 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
     let pack = parse_knowledge(&input.knowledge, language)?;
     let pattern_config = parse_pattern_config(&input.pattern_config)?;
-    let mut opts = crate::TextOptions::new().pattern_config(&pattern_config);
-    if let Some(k) = pack.as_deref() {
-        opts = opts.knowledge(k);
+    let depth = parse_knowledge_depth(&input.knowledge_depth)?;
+    let mut opts = crate::TextOptions::new()
+        .pattern_config(&pattern_config)
+        .detail(parse_text_detail(&input.detail)?);
+    match (pack.as_deref(), depth) {
+        (Some(k), crate::KnowledgeDepth::Full) => opts = opts.knowledge(k),
+        (Some(k), crate::KnowledgeDepth::Summary) => opts = opts.knowledge_summary(k)?,
+        (None, crate::KnowledgeDepth::Summary) => {
+            return Err(BridgeError::invalid_argument(
+                "knowledgeDepth 'summary' requires knowledge: pass \"builtin\" or a knowledge pack object",
+            ));
+        }
+        (None, crate::KnowledgeDepth::Full) => {}
     }
 
     let text = match input.kind.as_str() {

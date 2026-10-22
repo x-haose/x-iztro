@@ -318,15 +318,19 @@ for _, hit := range hits {
 
 **Purpose**　Output options for the `ToTextWith` family (`ToTextWith` / `PalaceToTextWith` /
 `SurroundedPalacesToTextWith` / `PatternsToTextWith`, and the same-named methods on `Horoscope`):
-the source of readings and the pattern criteria. The zero value emits the chart facts only under
-the default criteria, byte-identical to the method without `With`.
+level of detail, source and depth of readings, and the pattern criteria. The zero value writes the
+full facts without readings under the default criteria, byte-identical to the method without
+`With`. What the two switches keep and how long the results are is on
+[Layers](/en/docs/guide/guides/to-text#layers).
 
 **Definition**
 
 ```go
 type TextOptions struct {
-    Knowledge     Knowledge
-    PatternConfig *PatternConfig
+    Knowledge      Knowledge
+    Detail         string
+    KnowledgeDepth string
+    PatternConfig  *PatternConfig
 }
 ```
 
@@ -335,6 +339,8 @@ type TextOptions struct {
 | Field | Type | Description |
 | --- | --- | --- |
 | `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | Source of readings; the zero value adds none. When given, each palace's star readings follow that palace's fact lines, the pattern readings follow the pattern list, and the natal text closes with `## Mutagen Notes` — see [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
+| `Detail` | `string` | Level of detail: with `TextDetailOverview` the natal text keeps basic info, the palace overview table and the patterns; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace sections give major, minor and adjective stars only. `TextDetailFull` or empty means full. No effect on patterns or the decadal timeline |
+| `KnowledgeDepth` | `string` | Depth of readings: `KnowledgeDepthSummary` uses the summary layer (an entry's summary, or a body short enough on its own; patterns without their conditions), `KnowledgeDepthFull` or empty the full bodies. The summary layer needs `Knowledge`, and a pack with a long body lacking its summary returns `ErrInvalidArgument` listing every missing entry |
 | `PatternConfig` | [`*PatternConfig`](/en/docs/go/patterns#patternconfig) | Pattern criteria, the same argument as `Patterns(config)`; acts on both the text's pattern section and the pattern readings. `nil` takes the core default |
 
 **Example** (on a zh-CN chart, since the bundled pack is Chinese)
@@ -353,7 +359,7 @@ byPosition, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnow
 **Output**
 
 ```text
-true 3389 20767
+true 3389 20552
 ```
 
 ---

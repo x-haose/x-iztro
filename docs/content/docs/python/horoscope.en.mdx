@@ -675,6 +675,8 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -684,6 +686,8 @@ def to_text(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
+| `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each scope (age fortune aside) palace names, mutagens, scope stars and patterns without the twelve-palace table; `FULL` writes everything |
+| `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers) (an entry's summary, or a body short enough on its own; patterns without their conditions), `FULL` the full bodies. `SUMMARY` needs `knowledge`, and a pack with a long body lacking its summary raises `IztroError` (`invalid_argument`) listing every missing entry |
 | `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
 **Return value** `str` — a Markdown subset in the chart's charting language: a

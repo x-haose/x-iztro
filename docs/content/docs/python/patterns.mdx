@@ -357,15 +357,16 @@ print(json.dumps(hit.to_dict(), ensure_ascii=False, indent=2))
 **签名**
 
 ```python
-def patterns_to_text(self, config: PatternConfig | None = None, *, knowledge=None) -> str          # Astrolabe
-def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None) -> str           # Horoscope
+def patterns_to_text(self, config: PatternConfig | None = None, *, knowledge=None, knowledge_depth=KnowledgeDepth.FULL) -> str  # Astrolabe
+def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None, knowledge_depth=KnowledgeDepth.FULL) -> str  # Horoscope
 ```
 
 与 `patterns` 同一套判定（含重排上下文与判定口径）；运限版本的宫名
 按该层重排后的宫名书写。`knowledge`（`bool | KnowledgePack | None`）：`True` 取排盘语言的
 内嵌默认包，`KnowledgePack` 用该包；给出时命中列表之后紧跟每条命中格局的释义
 （`**格局名**: ` 正文加 `成立条件: ` 段，同一格局只出一次），见
-[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
+[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。`knowledge_depth=KnowledgeDepth.SUMMARY`
+改用摘要、不附成立条件，见[分层](/zh/docs/guide/guides/to-text#分层)。
 
 **示例**
 

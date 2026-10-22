@@ -12,7 +12,15 @@ import json
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
-from x_iztro.enums import _MUTAGEN_INDEX, Mutagen, PalaceName, Scope, ScopeLiteral
+from x_iztro.enums import (
+    _MUTAGEN_INDEX,
+    KnowledgeDepth,
+    Mutagen,
+    PalaceName,
+    Scope,
+    ScopeLiteral,
+    TextDetail,
+)
 from x_iztro.star_object import Star, _star_identifiers
 
 if TYPE_CHECKING:
@@ -315,6 +323,8 @@ class Horoscope:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -326,11 +336,16 @@ class Horoscope:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时各层事实之后紧跟该层流耀释义与格局释义
+            detail: 事实详略：`TextDetail.OVERVIEW` 各层只写宫名对照、四化、流耀与格局，
+                不展开十二宫表，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config
 
@@ -338,6 +353,8 @@ class Horoscope:
             "horoscopeToText",
             None,
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
         )
 
@@ -544,6 +561,7 @@ class Horoscope:
         astrolabe: Astrolabe | None = None,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         某运限层视角格局命中的语义化文本。
@@ -557,10 +575,13 @@ class Horoscope:
             astrolabe: 星盘；省略时取发起本次运限查询的那张盘
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时格局列表之后紧跟各格局的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config, _scope_key
 
@@ -570,6 +591,7 @@ class Horoscope:
             scope=_scope_key(scope),
             pattern_config=_pattern_config(config),
             knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
         )
 
     def _collect_horoscope_star_identifiers(self, palace_idx: int) -> set[str]:

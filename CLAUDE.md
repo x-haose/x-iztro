@@ -104,16 +104,22 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
   记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
   开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
-  覆盖六个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
-  /`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
+  覆盖八个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+  /`flankingPalacesToText`/`decadalListToText`/`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
   bodyPalace/originalPalace）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
   Go 是 `ToText()`
 - 知识包只作为**参数**融入 to_text：选项对象 `TextOptions`（Rust `to_text_with(&TextOptions::new()
   .knowledge(&pack))`，Go `ToTextWith(TextOptions{Knowledge})`，Python 关键字参数
-  `to_text(knowledge=True|pack)`），将来的分层等开关也加在这里。bridge 六个 kind 的可选入参
+  `to_text(knowledge=True|pack)`），一切影响输出的开关都收在这里。bridge 八个 kind 的可选入参
   `knowledge`（`"builtin"` 取盘语言内嵌包，无该语言包即报错不回退；或直接给包对象）。带包时释义
-  **内联**：每宫事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；十二神不释义），
-  格局列表后跟格局释义，文末附四化释义。
+  **内联**、随段落不随表格：宫位段落的事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；
+  十二神不释义），格局列表后跟格局释义，运限各层级段后跟流耀与格局释义，本命文末附四化释义。
+- 两个互相独立的分层开关：`TextDetail`（bridge `detail`，Overview 省十二宫详解 / 运限十二宫表 /
+  宫位段落的三方四正、飞化、十二神、小限）与 `KnowledgeDepth`（bridge `knowledgeDepth`，Summary 取
+  条目摘要或够短的正文、格局不附成立条件）。默认 Full/Full 与无开关时逐字节相同。Summary 只能经
+  `TextOptions::knowledge_summary` 设上（整包校验缺摘要即 `InvalidArgument`），渲染处据此不再判缺摘要；
+  bridge 收 `knowledgeDepth: "summary"` 而无 `knowledge` 报错。`detail` 对格局与大限一览不起作用，
+  Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那两类文本被忽略
   结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
   `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
   命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
@@ -293,8 +299,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - 语义化文本 → `text_snapshot`（Markdown 形态的本命/运限/格局/单宫/三方四正五类输出 × zh-CN/en-US，
-    外加五类带释义输出 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+  - 语义化文本 → `text_snapshot`（Markdown 形态的七类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
+    外加七类全文释义与七类摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
     有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）

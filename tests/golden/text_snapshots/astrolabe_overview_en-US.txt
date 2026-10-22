@@ -1,0 +1,27 @@
+# Natal Chart 2000-8-16 Tiger hour female
+
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
+- Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
+- Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
+- Birth-Year Mutagen: sun [A]→children, warrior [B]→wealth, moon [C]→friends, fortunate [D]→health
+
+## Palace Overview
+| Palace | Major Stars | Minor Stars | Decadal |
+|---|---|---|---|
+| **soul** woo | emperor([+3]) | artist([-3]) | 3-12 |
+| siblings si | advisor([-1]) | — | 13-22 |
+| spouse chen [Original Palace] | marshal([+3]) | helper, impulsive([-3]) | 23-32 |
+| children mao | sun([+3]) [A], sage([+3]) | — | 33-42 |
+| wealth yin | warrior([+1]) [B], minister([+3]) | horse | 43-52 |
+| health chou | fortunate([-2]) [D], advocator([-2]) | assistant, fickle | 53-62 |
+| surface zi | wolf([+2]) | spark([-3]) | 63-72 |
+| friends hai | moon([+3]) [C] | — | 73-82 |
+| career xu [Body Palace] | judge([0]), empress([+3]) | officer | 83-92 |
+| property you | — | ideologue, driven([-3]) | 93-102 |
+| spirit shen | rebel([+1]) | scholar([+1]), money | 103-112 |
+| parents wei | — | aide, tangled([+3]) | 113-122 |
+
+## Patterns
+- **Empress and Minister Facing the Palace** (soul): empress([+3]), minister([+3])

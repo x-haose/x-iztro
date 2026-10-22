@@ -505,6 +505,8 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -514,6 +516,8 @@ def to_text(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包（自定义或合并后的包）；给出时释义内联在事实之后——格局列表后跟格局释义（含成立条件），每宫事实后跟该宫星耀释义（同宫主星组合在前），文末附 `## 四化释义` |
+| `detail` | `TextDetail` | 否 | `TextDetail.FULL` | 事实详略：`OVERVIEW` 只写基本信息、十二宫总览表与格局（没有十二宫详解，因而不附星耀释义），`FULL` 为完整 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用[摘要层](/zh/docs/guide/guides/to-text#分层)（条目摘要，或本身够短的正文；格局不附成立条件），`FULL` 用全文。`SUMMARY` 须同时给 `knowledge`，所给包有长正文缺摘要时抛 `IztroError`（`invalid_argument`）并列出缺项 |
 | `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
 
 **返回值**　`str`——按排盘语言输出的 Markdown 子集：`# 命盘 …` 标题、`## 基本信息`、
@@ -535,7 +539,7 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ```text
 # 命盘 2000-8-16 寅时 女
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 

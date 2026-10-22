@@ -777,6 +777,23 @@ const (
 	BrightnessSourcePositional = "positional"
 )
 
+// 语义化文本的事实详略（TextOptions.Detail）。
+const (
+	// TextDetailOverview 为总览：本命只写基本信息、十二宫总览表与格局；运限各层只写宫名对照、四化、流耀与格局；
+	// 宫位段落只写主星、辅星与杂耀。格局与大限一览文本不受影响
+	TextDetailOverview = "overview"
+	// TextDetailFull 为完整：全部事实
+	TextDetailFull = "full"
+)
+
+// 语义化文本的释义深度（TextOptions.KnowledgeDepth），给了 Knowledge 才有意义。
+const (
+	// KnowledgeDepthSummary 为摘要层：条目摘要，或本身够短的正文；格局不附成立条件。包缺摘要即报 ErrInvalidArgument
+	KnowledgeDepthSummary = "summary"
+	// KnowledgeDepthFull 为全文：正文全文，格局附成立条件
+	KnowledgeDepthFull = "full"
+)
+
 // 流月分段标识（MonthlyListItem.Part）：闰月在 fixLeap 为真时拆成前后两段。
 const (
 	// MonthPartNormal 为整月一段：非闰月，或闰月但未拆分

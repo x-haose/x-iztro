@@ -24,7 +24,8 @@ description: 把一张盘、一段运限或一个宫位投影成 Markdown 文本
 | `patterns_to_text` | 格局命中列表单独成文，本命与运限视角皆可 |
 
 全部按**盘面语言**生成：中文盘出中文，英文盘出英文。带[知识包](#带释义的文本)时，
-释义内联在对应事实旁，不另起附录（四化释义除外）。
+释义内联在对应事实旁，不另起附录（四化释义除外）。事实写到多细、释义写多长各有一个开关，
+见[分层](#分层)。
 
 ## 用法
 
@@ -436,11 +437,12 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 | `patterns_to_text` | 格局列表之后 |
 
 - 释义条目写作 `**标题**: 正文`，标题就是事实行里那颗星的写法（`**紫微(庙)**`、`**太阳(庙)化禄**`），
-  正文是知识包里的 `intro` 原文（Markdown，一字不裁），条目之间空一行。
+  全文层的正文是知识包里的 `intro` 原文（Markdown，一字不裁），条目之间空一行。
 - 同宫主星之间的组合解读（知识包 `combinations`）写作 `**紫微 × 天府 (同宫)**: …`，
   放在该宫释义的最前面；两个方向都查，组合解读只写在其中一方名下同样会出，每对只出一次。
 - 每宫按主星、辅星、杂耀的顺序逐星释义；**十二神不释义**。
 - 格局释义是 `intro` 正文，末尾另起一段 `成立条件: …`。
+- 摘要层把上面的正文换成摘要（本身够短的正文照用），格局不附成立条件，插入位置与去重规则不变。
 - 运限文本里只释义流耀与各层格局，本命星耀不重复（本命盘的释义在本命盘文本里）；
   同一颗流耀、同一个格局在多层出现时只在第一次出现的层释义（跨层去重）。
 - 知识包里没有条目的星或格局，不写条目也不留占位。
@@ -483,23 +485,9 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 
 ### 篇幅
 
-释义给全文，裁剪归应用层。同一张盘的实测字符数（中文盘，默认包）：
-
-| 入口 | 只有事实 | 带释义 |
-| --- | --- | --- |
-| 本命盘 | 3,389 | 20,765 |
-| 运限 | 2,697 | 8,698 |
-| 单宫（命宫） | 222 | 1,141 |
-| 三方四正（命宫） | 924 | 6,312 |
-| 夹宫（命宫） | 436 | 1,874 |
-| 大限一览 | 1,045 | 6,447 |
-| 格局 | 36 | 328 |
-
-英文盘更长（星名是单词而非两字，且多一套结构标签）：本命 6,757、运限 6,378、单宫 464、
-三方四正 1,911、夹宫 895、大限一览 1,893、格局 95。
-任何主流模型的上下文窗口都装得下，通常不必裁剪。本命盘的释义占大头是因为盘上每颗主星、辅星、杂耀都有条目。
-只要某几个宫的释义，用宫位或三方四正的入口；要自己排版，用
-[`for_astrolabe`](/zh/docs/guide/guides/knowledge-pack#按盘取材) 取出这张盘的子包自己拼。
+全文释义原文照录，本命盘的释义占大头，因为盘上每颗主星、辅星、杂耀都有条目。
+要短，用[分层](#分层)的总览与摘要层，篇幅见那一节；只要某几个宫的释义，用宫位或三方四正的入口；
+要自己排版，用 [`for_astrolabe`](/zh/docs/guide/guides/knowledge-pack#按盘取材) 取出这张盘的子包自己拼。
 
 ### 自定义包
 
@@ -517,6 +505,57 @@ chart.to_text(knowledge=pack)
 `KnowledgePack::builtin(Language::EnUS)` 报 `invalid_argument`，不会静默退回到无释义。
 显式传一份包即可——包的语言不受盘语言限制，英文盘配中文包得到英文标题、中文正文。
 </Callout>
+
+## 分层
+
+两个开关互相独立：**事实详略**管事实写到多细，**释义深度**管释义写多长。默认都是完整，输出与上文一致。
+
+| 开关 | 取值 | 作用 |
+| --- | --- | --- |
+| 事实详略 | 总览 / 完整（默认） | 总览：本命只写基本信息、十二宫总览表与格局，不写十二宫详解；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；单宫、三方四正、夹宫每宫只写主星、辅星与杂耀。格局与大限一览本身就是总览，不受影响 |
+| 释义深度 | 摘要 / 全文（默认） | 摘要：用知识包条目的[摘要](/zh/docs/guide/guides/knowledge-pack#摘要)，本身够短的正文直接用；格局不附成立条件。带知识包时才有意义，包里有长正文缺摘要即报错并列出缺项 |
+
+释义随段落、不随表格：本命总览没有十二宫详解，所以不附星耀释义，只附格局与四化释义；
+单宫、三方四正、夹宫的总览仍是宫位段落，照附星耀释义；运限总览的各层照附流耀与格局释义。
+
+```python
+from x_iztro import KnowledgeDepth, TextDetail
+
+chart.to_text(detail=TextDetail.OVERVIEW)                                   # 总览，只有事实
+chart.to_text(knowledge=True, knowledge_depth=KnowledgeDepth.SUMMARY)       # 完整事实 + 摘要
+chart.palace("命宫").to_text(detail=TextDetail.OVERVIEW, knowledge=True, knowledge_depth=KnowledgeDepth.SUMMARY)
+```
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+
+chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview));
+chart.to_text_with(&TextOptions::new().knowledge_summary(pack)?);            // 包缺摘要即 Err
+chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview).knowledge_summary(pack)?);
+```
+
+```go
+chart.ToTextWith(iztro.TextOptions{Detail: iztro.TextDetailOverview})
+chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
+```
+
+`knowledge_depth` 收在全部八个 to_text 入口上；`detail` 只收在受它影响的五个（星盘、运限、宫位、三方四正、夹宫），
+Go 的 `TextOptions.Detail` 对格局与大限一览不起作用。
+
+同一张盘各形态的实测字符数（中文盘，默认包）：
+
+| 入口 | 完整事实 | 完整 + 摘要 | 完整 + 全文 | 总览 | 总览 + 摘要 | 总览 + 全文 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 本命盘 | 3,389 | 8,385 | 20,552 | 756 | 1,054 | 3,545 |
+| 运限 | 2,697 | 6,132 | 8,698 | 1,932 | 5,367 | 7,933 |
+| 单宫（命宫） | 222 | 654 | 1,141 | 71 | 503 | 990 |
+| 三方四正（命宫） | 924 | 2,721 | 6,314 | 319 | 2,116 | 5,709 |
+| 夹宫（命宫） | 436 | 963 | 1,874 | 133 | 660 | 1,571 |
+| 大限一览 | 1,045 | 1,936 | 6,447 | — | — | — |
+| 格局 | 36 | 95 | 328 | — | — | — |
+
+英文盘的事实部分更长（星名是单词而非两字，且多一套结构标签）：完整事实本命 6,757、运限 6,378、单宫 464、
+三方四正 1,911、夹宫 895、大限一览 1,893、格局 95；总览本命 1,374、运限 5,112、单宫 164、三方四正 710、夹宫 299。
 
 ## 六种语言
 
@@ -559,6 +598,8 @@ user = f"""{chart.to_text()}
 
 要让模型按某一家的说法解读而不是自由发挥，把 `chart.to_text()` 换成
 `chart.to_text(knowledge=True)`（或传你的包），释义随盘一起进上下文。
+客户端对工具返回有篇幅上限时，先给总览、再按问题取单宫或三方四正，
+释义用摘要层，见[分层](#分层)。
 文本是 Markdown，模型能直接把「十二宫总览」当表读、把 `### ` 当宫段边界，
 要求它「引用宫段」时也有稳定的锚点。
 更完整的接法（工具调用、别让模型自己排盘）见[让 AI 解读命盘](/zh/docs/guide/guides/llm)。

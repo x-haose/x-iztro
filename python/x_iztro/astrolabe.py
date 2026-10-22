@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from x_iztro.config import ChartConfig
-from x_iztro.enums import PalaceName
+from x_iztro.enums import KnowledgeDepth, PalaceName, TextDetail
 from x_iztro.horoscope import (
     DecadalListItem,
     Horoscope,
@@ -303,6 +303,8 @@ class Astrolabe:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -316,16 +318,23 @@ class Astrolabe:
             knowledge: 释义材料。True 取排盘语言的内嵌知识包，KnowledgePack 用该包
                 （自定义或合并后的包）；给出时每宫事实之后紧跟该宫星耀释义、格局之后
                 紧跟格局释义，文末另起四化释义一节，不给只输出盘面事实
+            detail: 事实详略：`TextDetail.OVERVIEW` 只写基本信息、十二宫总览表与格局
+                （没有十二宫详解，因而不附星耀释义），默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config
 
         return self._context_query(
             "astrolabeToText",
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
         )
 
@@ -527,6 +536,7 @@ class Astrolabe:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         大限一览的语义化文本：十二个大限一张表，按起运先后排。
@@ -537,11 +547,16 @@ class Astrolabe:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时表后附各限四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
-        return self._context_query("decadalListToText", knowledge=knowledge)
+        return self._context_query(
+            "decadalListToText", knowledge=knowledge, knowledge_depth=str(knowledge_depth)
+        )
 
     def yearly_list(
         self, decadal: int | PalaceName | str | None = None
@@ -610,6 +625,7 @@ class Astrolabe:
         config: PatternConfig | None = None,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         本命盘格局命中的语义化文本。
@@ -621,9 +637,12 @@ class Astrolabe:
             config: 判定口径；不传取默认
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时格局列表之后紧跟各格局的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config
 
@@ -631,6 +650,7 @@ class Astrolabe:
             "patternsToText",
             pattern_config=_pattern_config(config),
             knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
         )
 
     def _link(self, palaces: list[Palace]) -> None:

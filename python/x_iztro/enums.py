@@ -806,6 +806,25 @@ class BrightnessSource(StrEnum):
     """按传统位置：太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗"""
 
 
+class TextDetail(StrEnum):
+    """语义化文本的事实详略（`to_text(detail=...)`）"""
+
+    OVERVIEW = "overview"
+    """总览：本命只写基本信息、十二宫总览表与格局；运限各层只写宫名对照、四化、流耀与格局；
+    宫位段落只写主星、辅星与杂耀"""
+    FULL = "full"
+    """完整：全部事实"""
+
+
+class KnowledgeDepth(StrEnum):
+    """语义化文本的释义深度（`to_text(knowledge_depth=...)`，给了 `knowledge` 才有意义）"""
+
+    SUMMARY = "summary"
+    """摘要层：条目摘要，或本身够短的正文；格局不附成立条件。包缺摘要即报错"""
+    FULL = "full"
+    """全文：正文全文，格局附成立条件"""
+
+
 TimeIndexType = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 GenderType = Literal["male", "female"]
 LanguageType = Literal["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"]

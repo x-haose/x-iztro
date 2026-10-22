@@ -170,6 +170,11 @@ func (k Knowledge) apply(payload map[string]any) {
 type TextOptions struct {
 	// Knowledge 为释义材料来源；零值不带释义
 	Knowledge Knowledge
+	// Detail 为事实详略：TextDetailOverview 或 TextDetailFull；空串取完整
+	Detail string
+	// KnowledgeDepth 为释义深度：KnowledgeDepthSummary 或 KnowledgeDepthFull；空串取全文。
+	// 取摘要层须同时给 Knowledge，所给包缺摘要时报 ErrInvalidArgument 并列出缺项
+	KnowledgeDepth string
 	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
 	PatternConfig *PatternConfig
 }
@@ -177,6 +182,12 @@ type TextOptions struct {
 // apply 把全部选项写进查询入参；零值不加任何键。
 func (o TextOptions) apply(payload map[string]any) {
 	o.Knowledge.apply(payload)
+	if o.Detail != "" {
+		payload["detail"] = o.Detail
+	}
+	if o.KnowledgeDepth != "" {
+		payload["knowledgeDepth"] = o.KnowledgeDepth
+	}
 	if o.PatternConfig != nil {
 		payload["patternConfig"] = o.PatternConfig
 	}

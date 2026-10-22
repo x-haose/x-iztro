@@ -467,10 +467,11 @@ print!("{}", chart.to_text());
 
 ## TextOptions
 
-**用途**　to_text 家族的输出选项：释义材料来源与格局判定口径。默认只输出盘面事实、按默认口径判格局；
-给知识包后，每宫事实之后紧跟该宫星耀的释义
-（同宫主星组合 `**A × B (同宫)**: ` 在前），格局列表之后紧跟格局释义（含 `成立条件: ` 段），
+**用途**　to_text 家族的输出选项：事实详略、释义材料与深度、格局判定口径。默认写完整事实、不带释义、
+按默认口径判格局。给知识包后，宫位段落的事实之后紧跟该宫星耀的释义
+（同宫主星组合 `**A × B (同宫)**: ` 在前），格局列表之后紧跟格局释义（全文层含 `成立条件: ` 段），
 本命文本末尾附 `## 四化释义`，运限文本各层附该层流耀与格局的释义（跨层去重）。十二神不释义。
+两个开关的取舍与篇幅见[分层](/zh/docs/guide/guides/to-text#分层)。
 
 **签名**（`x_iztro::text`，从 crate 根 re-export）
 
@@ -480,22 +481,30 @@ pub struct TextOptions<'a> { /* 字段私有 */ }
 
 impl<'a> TextOptions<'a> {
     pub fn new() -> Self
+    pub fn detail(self, detail: TextDetail) -> Self
     pub fn knowledge(self, pack: &'a KnowledgePack) -> Self
+    pub fn knowledge_summary(self, pack: &'a KnowledgePack) -> Result<Self, IztroError>
     pub fn pattern_config(self, config: &'a PatternConfig) -> Self
     pub fn knowledge_pack(&self) -> Option<&'a KnowledgePack>
 }
+
+pub enum TextDetail { Overview, Full }        // 默认 Full；标识 "overview" / "full"
+pub enum KnowledgeDepth { Summary, Full }     // 默认 Full；标识 "summary" / "full"
 ```
 
 **方法**
 
 | 方法 | 说明 |
 | --- | --- |
-| `new()` / `default()` | 只输出事实、默认格局口径的选项 |
-| `knowledge(&pack)` | 按盘从 `pack` 取释义；`pack` 是内嵌默认包或合并覆盖包之后的自定义包，借用期须覆盖选项本身 |
+| `new()` / `default()` | 完整事实、不带释义、默认格局口径的选项 |
+| `detail(TextDetail)` | 事实详略：`Overview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。格局与大限一览不受影响 |
+| `knowledge(&pack)` | 按盘从 `pack` 取释义全文；`pack` 是内嵌默认包或合并覆盖包之后的自定义包，借用期须覆盖选项本身 |
+| `knowledge_summary(&pack)` | 同上，取摘要层：条目的摘要，或本身不超过 [`SUMMARY_FALLBACK_WIDTH`](/zh/docs/rust/knowledge#summary_fallback_width) 的正文；格局不附成立条件。包里有长正文缺摘要时返回 `IztroError::InvalidArgument` 并列出全部缺项 |
 | `pattern_config(&config)` | 格局按 `config` 口径判定，与 [`patterns_with`](/zh/docs/rust/patterns#patterns_with) 同一入参；同时作用于文本的格局节与格局释义。不设即 `PatternConfig::default()` |
 | `knowledge_pack()` | 当前的释义材料来源；`None` 即只输出事实 |
 
-`Copy`，同一份选项可传给任意多个 `to_text_with`。释义正文是包里的 Markdown 原文，
+`Copy`，同一份选项可传给任意多个 `to_text_with`。`knowledge` 与 `knowledge_summary` 以后调用的为准。
+释义正文是包里的 Markdown 原文，
 条目标题（星名、格局名、四化名）按输出语言翻译。取材规则与
 [`KnowledgePack::for_astrolabe`](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope) 相同，
 插入位置与去重规则见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
@@ -511,6 +520,10 @@ let noted = chart.to_text_with(&opts);
 println!("{} {}", plain.chars().count(), noted.chars().count());
 assert!(plain.lines().all(|l| noted.contains(l)));
 
+let overview = chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview));
+let brief = chart.to_text_with(&TextOptions::new().knowledge_summary(pack)?);
+println!("{} {}", overview.chars().count(), brief.chars().count());
+
 let positional = PatternConfig { brightness_source: BrightnessSource::Positional, ..PatternConfig::default() };
 let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // 格局节与格局释义都按该口径
 ```
@@ -518,7 +531,8 @@ let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // �
 **输出**
 
 ```text
-3389 20767
+3389 20552
+756 8385
 ```
 
 内嵌默认包只有 zh-CN，其他语言 `KnowledgePack::builtin` 返回 `None`；英文盘要带释义须显式传一份包，

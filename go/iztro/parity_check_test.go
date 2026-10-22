@@ -638,6 +638,24 @@ func TestTextParity(t *testing.T) {
 				t.Errorf("%s %s 文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, name, got, want)
 			}
 		}
+
+		overview := TextOptions{Detail: TextDetailOverview}
+		soul := PalaceTarget{Key: PalaceSoul}
+		for name, get := range map[string]func() (string, error){
+			"astrolabe":  func() (string, error) { return chart.ToTextWith(overview) },
+			"horoscope":  func() (string, error) { return horoscope.ToTextWith(overview) },
+			"palace":     func() (string, error) { return chart.PalaceToTextWith(soul, overview) },
+			"surrounded": func() (string, error) { return chart.SurroundedPalacesToTextWith(soul, overview) },
+			"flanking":   func() (string, error) { return chart.FlankingPalacesToTextWith(soul, overview) },
+		} {
+			got, err := get()
+			if err != nil {
+				t.Fatalf("%s %s overview: %v", lang, name, err)
+			}
+			if want := textSnapshot(t, name+"_overview_"+string(lang)); got != want {
+				t.Errorf("%s %s 总览文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, name, got, want)
+			}
+		}
 	}
 
 	// 非法运限目标应返回 error

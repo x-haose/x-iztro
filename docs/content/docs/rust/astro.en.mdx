@@ -505,13 +505,14 @@ Wiring it to a model is covered on [Docs for AI](/en/docs/guide/guides/llm).
 
 ## TextOptions
 
-**Purpose** Output options for the to_text family: the source of readings and the pattern
-criteria. By default only the chart's facts are emitted and patterns are judged under the default
-criteria; with a knowledge pack, each palace's facts are followed by readings of that palace's stars
-(same-palace major-star combinations `**A × B (same palace)**: ` first), the pattern list is
-followed by pattern readings (with a `Conditions: ` line), the natal text closes with
-`## Mutagen Notes`, and each horoscope scope carries readings of its flowing stars and patterns
-(deduplicated across scopes). The twelve gods carry no readings.
+**Purpose** Output options for the to_text family: level of detail, source and depth of readings,
+and the pattern criteria. By default the full facts are written, without readings, and patterns are
+judged under the default criteria. With a knowledge pack, each palace section's facts are followed by
+readings of that palace's stars (same-palace major-star combinations `**A × B (same palace)**: `
+first), the pattern list is followed by pattern readings (with a `Conditions: ` line at the full
+layer), the natal text closes with `## Mutagen Notes`, and each horoscope scope carries readings of
+its flowing stars and patterns (deduplicated across scopes). The twelve gods carry no readings. What
+the two switches keep and how long the results are is on [Layers](/en/docs/guide/guides/to-text#layers).
 
 **Signature** (`x_iztro::text`, re-exported from the crate root)
 
@@ -521,22 +522,30 @@ pub struct TextOptions<'a> { /* private fields */ }
 
 impl<'a> TextOptions<'a> {
     pub fn new() -> Self
+    pub fn detail(self, detail: TextDetail) -> Self
     pub fn knowledge(self, pack: &'a KnowledgePack) -> Self
+    pub fn knowledge_summary(self, pack: &'a KnowledgePack) -> Result<Self, IztroError>
     pub fn pattern_config(self, config: &'a PatternConfig) -> Self
     pub fn knowledge_pack(&self) -> Option<&'a KnowledgePack>
 }
+
+pub enum TextDetail { Overview, Full }        // default Full; keys "overview" / "full"
+pub enum KnowledgeDepth { Summary, Full }     // default Full; keys "summary" / "full"
 ```
 
 **Methods**
 
 | Method | Description |
 | --- | --- |
-| `new()` / `default()` | Facts-only options under the default pattern criteria |
-| `knowledge(&pack)` | Pick readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
+| `new()` / `default()` | Full facts, no readings, default pattern criteria |
+| `detail(TextDetail)` | Level of detail: with `Overview` the natal text keeps basic info, the palace overview table and the patterns; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace sections give major, minor and adjective stars only. Patterns and the decadal timeline are unaffected |
+| `knowledge(&pack)` | Pick full readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
+| `knowledge_summary(&pack)` | As above, at the summary layer: an entry's summary, or a body no wider than [`SUMMARY_FALLBACK_WIDTH`](/en/docs/rust/knowledge#summary_fallback_width); patterns without their conditions. Returns `IztroError::InvalidArgument` listing every missing entry when a long body lacks its summary |
 | `pattern_config(&config)` | Judge patterns under `config`, the same argument as [`patterns_with`](/en/docs/rust/patterns#patterns_with); acts on both the text's pattern section and the pattern readings. Unset means `PatternConfig::default()` |
 | `knowledge_pack()` | The current source of readings; `None` means facts only |
 
-`Copy`, so one value can be handed to any number of `to_text_with` calls. Reading bodies are the
+`Copy`, so one value can be handed to any number of `to_text_with` calls. Of `knowledge` and
+`knowledge_summary`, the later call wins. Reading bodies are the
 pack's Markdown verbatim; entry headings (star, pattern and mutagen names) are translated into the
 output language. Selection follows the same rule as
 [`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); placement
@@ -553,6 +562,10 @@ let noted = chart.to_text_with(&opts);
 println!("{} {}", plain.chars().count(), noted.chars().count());
 assert!(plain.lines().all(|l| noted.contains(l)));
 
+let overview = chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview));
+let brief = chart.to_text_with(&TextOptions::new().knowledge_summary(pack)?);
+println!("{} {}", overview.chars().count(), brief.chars().count());
+
 let positional = PatternConfig { brightness_source: BrightnessSource::Positional, ..PatternConfig::default() };
 let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pattern section and readings both follow it
 ```
@@ -560,7 +573,8 @@ let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pa
 **Output**
 
 ```text
-3389 20767
+3389 20552
+756 8385
 ```
 
 The bundled default pack is zh-CN only; `KnowledgePack::builtin` returns `None` for the other

@@ -7,7 +7,15 @@ from pathlib import Path
 import pytest
 
 from x_iztro import Astro, IztroError, KnowledgePack, PatternKey
-from x_iztro.enums import BrightnessSource, MajorStar, Mutagen, PalaceName, Scope
+from x_iztro.enums import (
+    BrightnessSource,
+    KnowledgeDepth,
+    MajorStar,
+    Mutagen,
+    PalaceName,
+    Scope,
+    TextDetail,
+)
 from x_iztro.pattern import PatternConfig
 
 SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "text_snapshots"
@@ -118,6 +126,35 @@ def test_text_with_builtin_knowledge_matches_rust_snapshots(chart, horoscope):
     """`knowledge=True` 的七类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
     for kind, text in _texts(chart, horoscope, knowledge=True).items():
         assert text == _snapshot(f"{kind}_knowledge_zh-CN"), kind
+
+
+def test_text_with_summary_knowledge_matches_rust_snapshots(chart, horoscope):
+    """摘要层的七类输出与 Rust 快照逐字节相同。"""
+    summary = KnowledgeDepth.SUMMARY
+    for kind, text in _texts(chart, horoscope, knowledge=True, knowledge_depth=summary).items():
+        assert text == _snapshot(f"{kind}_summary_zh-CN"), kind
+
+
+def test_summary_layer_needs_a_pack_with_summaries(chart, pack):
+    """摘要层要有知识包，且包里的长正文都要有摘要：缺了即报错并列出缺项，不回退全文。"""
+    with pytest.raises(IztroError) as info:
+        chart.to_text(knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert info.value.code == "invalid_argument"
+    mine = pack.merged(
+        {
+            "schema": 1,
+            "id": "mine",
+            "version": "1",
+            "language": "zh-CN",
+            "stars": {"ziweiMaj": {"intro": "长" * 121}},
+        }
+    )
+    with pytest.raises(IztroError) as info:
+        chart.to_text(knowledge=mine, knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert "stars.ziweiMaj" in str(info.value)
+    with pytest.raises(IztroError):
+        chart.to_text(detail="brief")
+    assert chart.to_text(detail=TextDetail.FULL) == _snapshot("astrolabe_zh-CN")
 
 
 def test_text_with_pack_instance_equals_builtin_flag(chart, horoscope, pack):
