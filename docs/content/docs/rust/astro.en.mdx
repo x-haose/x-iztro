@@ -580,3 +580,55 @@ let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pa
 The bundled default pack is zh-CN only; `KnowledgePack::builtin` returns `None` for the other
 languages. An English chart needs an explicit pack for readings — a pack's language is not tied to
 the chart's, so an English chart with the Chinese pack gives English headings and Chinese bodies.
+
+---
+
+## topic_to_text
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature** (`x_iztro::text`, re-exported from the crate root)
+
+```rust
+pub fn topic_to_text(
+    astrolabe: &Astrolabe,
+    topic: &str,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError>
+
+impl Astrolabe {
+    pub fn topic_to_text(&self, topic: &str, opts: &TextOptions) -> Result<String, IztroError>
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `&str` | Topic slug, a key of the pack's `topics` section |
+| `opts` | `&TextOptions` | Must carry a pack (`knowledge` or `knowledge_summary`); the topic definition and the readings both come from it. Detail and pattern criteria work as for the other texts |
+| `lang` | `Language` | Output language; the convenience method uses the charting language |
+
+**Returns**　`Result<String, IztroError>` — a `# Topic · Natal Chart …` title and the topic
+description, one trine & opposite section per `surround` palace, the `palaces` under
+`## Related Palaces` (no palace twice), then the patterns landing in those palaces and the mutagen
+notes. No pack in `opts`, an unknown topic or an unknown palace key in the topic returns
+`IztroError::InvalidArgument`.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.topic_to_text("romance", &TextOptions::new().knowledge_summary(pack)?)?;
+println!("{}", text.lines().next().unwrap());
+println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>().join(" "));
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```

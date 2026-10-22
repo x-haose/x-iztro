@@ -84,7 +84,7 @@ pub use text::{
     decadal_list_to_text, decadal_list_to_text_with, flanking_palaces_to_text,
     flanking_palaces_to_text_with, horoscope_to_text, horoscope_to_text_with, palace_to_text,
     palace_to_text_with, patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
-    surrounded_palaces_to_text_with,
+    surrounded_palaces_to_text_with, topic_to_text,
 };
 
 /// 便捷函数：排盘并返回 JSON

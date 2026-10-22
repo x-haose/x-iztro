@@ -204,6 +204,8 @@ pub struct QueryInput {
     pub detail: String,
     /// to_text 家族的释义深度标识（`summary` / `full`）；空串取 `full`，`summary` 须同时给 `knowledge`
     pub knowledge_depth: String,
+    /// `topicToText` 的主题 slug（知识包 `topics` 段的键）
+    pub topic: String,
 
     // 反推用
     /// 反推范围起始公历年（含）
@@ -549,7 +551,8 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "flankingPalacesToText"
         | "decadalListToText"
         | "patternsToText"
-        | "horoscopePatternsToText" => to_text(input),
+        | "horoscopePatternsToText"
+        | "topicToText" => to_text(input),
 
         // ---- 知识包按盘取材 ----
         "knowledgeForChart" => knowledge_for_chart(input),
@@ -763,15 +766,12 @@ fn parse_palace_target(
             })?;
         return Ok(PalaceTarget::Index(index));
     }
-    match input.palace_key.as_str() {
-        "bodyPalace" => Ok(PalaceTarget::Body),
-        "originalPalace" => Ok(PalaceTarget::Original),
-        key => Palace::from_key(key).map(PalaceTarget::Name).ok_or_else(|| {
-            BridgeError::invalid_argument(format!(
-                "invalid palaceKey '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
-            ))
-        }),
-    }
+    let key = input.palace_key.as_str();
+    PalaceTarget::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!(
+            "invalid palaceKey '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
+        ))
+    })
 }
 
 /// 释义材料来源：`"builtin"` 取盘语言的内嵌包（无该语言内嵌包即报错，不静默回退），
@@ -927,6 +927,7 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
             crate::flanking_palaces_to_text_with(&f, &opts, language)
         }
         "decadalListToText" => crate::decadal_list_to_text_with(&astrolabe, &opts, language),
+        "topicToText" => crate::topic_to_text(&astrolabe, &input.topic, &opts, language)?,
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);

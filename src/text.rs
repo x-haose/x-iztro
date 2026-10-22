@@ -25,7 +25,7 @@ use crate::i18n::{
     translate_palace, translate_pattern, translate_star,
 };
 use crate::knowledge::KnowledgePack;
-use crate::models::astrolabe::{Astrolabe, PalaceRef};
+use crate::models::astrolabe::{Astrolabe, PalaceRef, PalaceTarget};
 use crate::models::flanking::FlankingPalaces;
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
 use crate::models::palace::PalaceData;
@@ -283,6 +283,8 @@ labels_table! {
     wealth_palace: ["财帛位", "財帛位", "Wealth Palace", "財帛位", "재백위", "Vị Tài bạch"],
     career_palace: ["官禄位", "官祿位", "Career Palace", "官禄位", "관록위", "Vị Quan lộc"],
     flanking: ["夹宫", "夾宮", "Flanking Palaces", "挟宮", "협궁", "Cung kẹp"],
+    // 主题文本里只取本宫的那组宫位
+    related_palaces: ["相关宫位", "相關宮位", "Related Palaces", "関連宮位", "관련 궁위", "Cung liên quan"],
     previous_palace: ["前宫", "前宮", "Previous Palace", "前宮", "전궁", "Cung trước"],
     next_palace: ["后宫", "後宮", "Next Palace", "後宮", "후궁", "Cung sau"],
     doc_decadals: ["大限一览", "大限一覽", "Decadal Timeline", "大限一覧", "대한 일람", "Tổng quan Đại hạn"],
@@ -1430,6 +1432,167 @@ pub fn horoscope_to_text_with(
 }
 
 // ============================================================
+// 主题
+// ============================================================
+
+/// 一组三方四正：本宫、对宫、财帛位、官禄位各一段，跳过 `rendered` 里已经写过的宫并记下新写的；
+/// 四宫都已写过返回 `None`
+fn surround_group(
+    astrolabe: &Astrolabe,
+    index: usize,
+    rendered: &mut Vec<usize>,
+    opts: &TextOptions,
+    l: &Labels,
+    lang: Language,
+) -> Option<String> {
+    let sp = astrolabe
+        .surrounded_palaces(index)
+        .expect("宫位索引来自本盘");
+    let mut body = String::new();
+    for (role, p) in [
+        (l.target_palace, sp.target),
+        (l.opposite_palace, sp.opposite),
+        (l.wealth_palace, sp.wealth),
+        (l.career_palace, sp.career),
+    ] {
+        if rendered.contains(&p.index) {
+            continue;
+        }
+        rendered.push(p.index);
+        body.push('\n');
+        body.push_str(&palace_section(astrolabe, p, Some(role), opts, l, lang));
+    }
+    if body.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "## {} {}\n{body}",
+        translate_palace(sp.target.name, lang),
+        l.surround
+    ))
+}
+
+/// 主题的语义化文本：按知识包里该主题的定义选宫——`surround` 的各宫连同三方四正各成一组，
+/// `palaces` 的各宫只取本宫、归入「相关宫位」一节，同一宫只出一次——每宫一段，详略与释义深度随
+/// `opts`；主题说明写在标题下（摘要层取摘要），文末附落在选中宫内的格局与四化释义。
+/// 主题定义与释义都取自 `opts` 的知识包。
+///
+/// # Errors
+/// `opts` 没有知识包、包里没有名为 `topic` 的主题、或主题里有不认识的宫位标识时返回
+/// [`IztroError::InvalidArgument`]。
+pub fn topic_to_text(
+    astrolabe: &Astrolabe,
+    topic: &str,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError> {
+    let notes = opts.notes().ok_or_else(|| {
+        IztroError::InvalidArgument(
+            "topic text requires a knowledge pack: topics are defined in the pack".to_string(),
+        )
+    })?;
+    let entry = notes.pack.topic(topic).ok_or_else(|| {
+        let known: Vec<&str> = notes.pack.topics.keys().map(String::as_str).collect();
+        IztroError::InvalidArgument(format!(
+            "unknown topic '{topic}': the pack defines {}",
+            if known.is_empty() {
+                "no topics".to_string()
+            } else {
+                known.join(", ")
+            }
+        ))
+    })?;
+    // 宫位标识落到盘上的索引；来因宫不在盘上时没有对应的宫，略过
+    let indexes = |keys: &Option<Vec<String>>| -> Result<Vec<usize>, IztroError> {
+        let mut out = Vec::new();
+        for key in keys.iter().flatten() {
+            let target = PalaceTarget::from_key(key).ok_or_else(|| {
+                IztroError::InvalidArgument(format!(
+                    "topic '{topic}' has an invalid palace key '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
+                ))
+            })?;
+            if let Some(p) = astrolabe.palace(target) {
+                out.push(p.index);
+            }
+        }
+        Ok(out)
+    };
+    let surround = indexes(&entry.surround)?;
+    let singles = indexes(&entry.palaces)?;
+
+    let l = labels(lang);
+    let hour = by_key(CHINESE_TIME[astrolabe.time_index as usize], lang);
+    // 各节以换行结尾、节与节之间空一行
+    let mut sections: Vec<String> = Vec::new();
+    let mut head = format!(
+        "# {} · {} {} {} {}\n",
+        entry.title.as_deref().unwrap_or(topic),
+        l.doc_chart,
+        astrolabe.solar_date,
+        hour,
+        translate_gender(astrolabe.gender, lang),
+    );
+    let description = match notes.depth {
+        KnowledgeDepth::Full => entry.intro.as_deref(),
+        KnowledgeDepth::Summary => entry.brief(),
+    };
+    if let Some(text) = description {
+        head.push('\n');
+        head.push_str(text.trim());
+        head.push('\n');
+    }
+    sections.push(head);
+
+    let mut rendered: Vec<usize> = Vec::new();
+    for index in surround {
+        if let Some(group) = surround_group(astrolabe, index, &mut rendered, opts, &l, lang) {
+            sections.push(group);
+        }
+    }
+    let mut related = String::new();
+    for index in singles {
+        if rendered.contains(&index) {
+            continue;
+        }
+        rendered.push(index);
+        related.push('\n');
+        related.push_str(&palace_section(
+            astrolabe,
+            &astrolabe.palaces[index],
+            None,
+            opts,
+            &l,
+            lang,
+        ));
+    }
+    if !related.is_empty() {
+        sections.push(format!("## {}\n{related}", l.related_palaces));
+    }
+
+    let hits: Vec<PatternHit> = astrolabe
+        .patterns_with(&opts.effective_pattern_config())
+        .into_iter()
+        .filter(|h| rendered.contains(&h.palace))
+        .collect();
+    if !hits.is_empty() {
+        let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
+        let mut out = format!("## {}\n", l.sec_patterns);
+        out.push_str(&pattern_list(&hits, &names, &l, lang));
+        let text = pattern_notes(&hits, notes, &mut Vec::new(), &l, lang);
+        if !text.is_empty() {
+            out.push('\n');
+            out.push_str(&text);
+        }
+        sections.push(out);
+    }
+    let text = mutagen_notes(notes, &l, lang);
+    if !text.is_empty() {
+        sections.push(text);
+    }
+    Ok(sections.join("\n"))
+}
+
+// ============================================================
 // 便捷方法
 // ============================================================
 
@@ -1452,6 +1615,14 @@ impl Astrolabe {
     /// 大限一览文本，按选项附释义；[`decadal_list_to_text_with`] 的便捷形态
     pub fn decadal_list_to_text_with(&self, opts: &TextOptions) -> String {
         decadal_list_to_text_with(self, opts, self.language)
+    }
+
+    /// 主题文本（按排盘语言）；[`topic_to_text`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`topic_to_text`]。
+    pub fn topic_to_text(&self, topic: &str, opts: &TextOptions) -> Result<String, IztroError> {
+        topic_to_text(self, topic, opts, self.language)
     }
 }
 

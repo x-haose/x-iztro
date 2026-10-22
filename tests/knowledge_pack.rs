@@ -279,6 +279,51 @@ fn builtin_summaries_follow_authoring_rules() {
     }
 }
 
+/// 默认包的主题：宫位标识都认得、每个主题至少取一宫，且在测试盘上两种释义深度都渲染得出。
+#[test]
+fn builtin_topics_resolve_on_a_chart() {
+    use x_iztro::models::astrolabe::PalaceTarget;
+    use x_iztro::{TextOptions, by_solar};
+
+    let p = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    assert!(!p.topics.is_empty());
+    let chart = by_solar(
+        "2000-8-16",
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        Config::default(),
+    )
+    .unwrap();
+    let full = TextOptions::new().knowledge(p);
+    let summary = TextOptions::new().knowledge_summary(p).unwrap();
+    for (slug, topic) in &p.topics {
+        let keys: Vec<&String> = topic
+            .surround
+            .iter()
+            .chain(&topic.palaces)
+            .flatten()
+            .collect();
+        assert!(!keys.is_empty(), "topics.{slug} 没有取任何宫");
+        for key in keys {
+            assert!(
+                PalaceTarget::from_key(key).is_some(),
+                "topics.{slug} 的宫位标识 {key} 不认识"
+            );
+        }
+        assert!(
+            topic.title.is_some() && topic.intro.is_some(),
+            "topics.{slug}"
+        );
+        for opts in [&full, &summary] {
+            chart
+                .topic_to_text(slug, opts)
+                .unwrap_or_else(|e| panic!("topics.{slug}: {e}"));
+        }
+    }
+}
+
 #[test]
 fn ffi_returns_builtin_and_merges_overlays() {
     let builtin = query(json!({"kind": "knowledgePack", "language": "zh-CN"})).unwrap();

@@ -78,6 +78,26 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		t.Fatalf("pack missing a summary should be rejected naming the entry, got %v", err)
 	}
 
+	// 主题文本（婚恋）两种释义深度
+	for depth, name := range map[string]string{"": "topic_knowledge_zh-CN", KnowledgeDepthSummary: "topic_summary_zh-CN"} {
+		got, err := chart.TopicToText("romance", TextOptions{Knowledge: BuiltinKnowledge(), KnowledgeDepth: depth})
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if want := textSnapshot(t, name); got != want {
+			t.Errorf("%s 主题文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
+		}
+	}
+	if romance := pack.Topic("romance"); romance == nil || romance.Title != "婚恋" || len(romance.Surround) != 1 {
+		t.Fatalf("romance topic entry: %+v", romance)
+	}
+	if _, err := chart.TopicToText("nope", TextOptions{Knowledge: BuiltinKnowledge()}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("unknown topic should be ErrInvalidArgument, got %v", err)
+	}
+	if _, err := chart.TopicToText("romance", TextOptions{}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("topic text without knowledge should be ErrInvalidArgument, got %v", err)
+	}
+
 	// 英文盘没有内嵌包：报错而非静默回退
 	en, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageEnUS, nil)
 	if err != nil {

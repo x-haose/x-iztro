@@ -497,3 +497,23 @@ func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextO
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
 }
+
+// TopicToText 生成按主题取材的语义化文本：按知识包里该主题的定义选宫——Surround 的各宫连同三方四正
+// 各成一组，Palaces 的各宫只取本宫，同一宫只出一次——每宫一段，标题下写主题说明，文末附落在选中宫内的
+// 格局与四化释义。主题定义与释义都取自 opts.Knowledge，零值 Knowledge 报 ErrInvalidArgument；
+// 包里没有该主题、主题里有不认识的宫位标识同样报 ErrInvalidArgument。
+func (a *Astrolabe) TopicToText(topic string, opts TextOptions) (string, error) {
+	return a.TopicToTextContext(context.Background(), topic, opts)
+}
+
+// TopicToTextContext 为 TopicToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) TopicToTextContext(ctx context.Context, topic string, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("topicToText: nil astrolabe")
+	}
+	payload := a.textPayload("topicToText")
+	payload["topic"] = topic
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}

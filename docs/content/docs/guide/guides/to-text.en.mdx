@@ -25,6 +25,7 @@ well, so pasting it into a chat box loses no structure.
 | Flanking palaces `to_text` | The two palaces immediately either side of the target, one section each |
 | Decadal timeline `to_text` | All twelve decadals in one table: natal palace, nominal ages, years, stem-branch, mutagens |
 | `patterns_to_text` | The pattern-hit list on its own, from the natal or any horoscope perspective |
+| `topic_to_text` | Material by question: the palaces a knowledge-pack topic names (romance takes the spouse palace with its trine & opposite, plus soul, body and children) — see [Text by topic](#text-by-topic) |
 
 Everything generates in the **chart language**: a Chinese chart yields Chinese text, an English
 chart English text. With a [knowledge pack](#text-with-readings), readings are inlined next to the
@@ -551,6 +552,59 @@ The bundled default pack is zh-CN only. On an English chart (or any of the other
 pack's language is not tied to the chart's, so an English chart with the Chinese pack gives English
 headings and Chinese bodies.
 </Callout>
+
+## Text by topic
+
+A user asks about romance, or about money, and each question reads different palaces. Topic text
+selects palaces by a knowledge-pack [topic](/en/docs/guide/guides/knowledge-pack#topics): each palace
+in `surround` forms a group with its trine & opposite (target, opposite, wealth and career positions),
+the palaces in `palaces` go under "Related Palaces", and no palace appears twice; the topic's
+description sits under the title, and the patterns landing in those palaces plus the mutagen notes
+close the text. Topics are defined in the pack, so a pack is required.
+
+```python
+chart.topic_to_text("romance")                                              # knowledge defaults to True
+chart.topic_to_text("wealth", knowledge_depth=KnowledgeDepth.SUMMARY)
+pack.topics()                                                               # the topics a pack defines
+```
+
+```rust
+let opts = TextOptions::new().knowledge_summary(pack)?;
+chart.topic_to_text("romance", &opts)?;                    // the free function text::topic_to_text takes a language
+```
+
+```go
+chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
+```
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+
+看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。
+
+## 夫妻 三方四正
+
+### 本宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+…
+### 对宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+…
+## 相关宫位
+
+### 命宫 (壬午) · 大限 3-12
+…
+### 子女 (己卯) · 大限 33-42
+…
+## 格局
+…
+## 四化释义
+…
+```
+
+On this chart the body palace is the career palace, already shown in the spouse palace's trine &
+opposite, so "Related Palaces" does not repeat it. Topic text takes both [layer](#layers) switches:
+the romance topic is 3,758 characters with full facts and summaries, 2,851 as an overview with
+summaries, 11,390 with full facts and full readings. An unknown topic, an unknown palace key in the
+topic, or no pack at all is `invalid_argument`.
 
 ## Layers
 

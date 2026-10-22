@@ -157,6 +157,21 @@ def test_summary_layer_needs_a_pack_with_summaries(chart, pack):
     assert chart.to_text(detail=TextDetail.FULL) == _snapshot("astrolabe_zh-CN")
 
 
+def test_topic_text_matches_rust_snapshots(chart, pack):
+    """主题文本（婚恋）两种释义深度与 Rust 快照逐字节相同；主题定义可从包上读到。"""
+    assert chart.topic_to_text("romance") == _snapshot("topic_knowledge_zh-CN")
+    summary = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert summary == _snapshot("topic_summary_zh-CN")
+    romance = pack.topic("romance")
+    assert romance.title == "婚恋" and romance.surround == [PalaceName.SPOUSE]
+    assert {t.slug for t in pack.topics()} >= {"overall", "romance", "wealth", "career"}
+    with pytest.raises(IztroError) as info:
+        chart.topic_to_text("nope")
+    assert info.value.code == "invalid_argument" and "romance" in str(info.value)
+    with pytest.raises(IztroError):
+        chart.topic_to_text("romance", knowledge=False)
+
+
 def test_text_with_pack_instance_equals_builtin_flag(chart, horoscope, pack):
     """传 `KnowledgePack.builtin()` 实例与传 True 同解（实例走 "builtin" 短路）。"""
     assert _texts(chart, horoscope, knowledge=pack) == _texts(chart, horoscope, knowledge=True)

@@ -603,6 +603,57 @@ explicitly with `KnowledgeFrom(pack)`.
 
 ---
 
+## TopicToText
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature**
+
+```go
+func (a *Astrolabe) TopicToText(topic string, opts TextOptions) (string, error)
+func (a *Astrolabe) TopicToTextContext(ctx context.Context, topic string, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `string` | Topic slug, a key of the pack's `Topics` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | `Knowledge` is required (source of the topic definition and readings); `Detail`, `KnowledgeDepth` and `PatternConfig` work as for the other texts |
+
+**Returns**　`string` — a `# Topic · Natal Chart …` title and the topic description, one trine &
+opposite section per `Surround` palace, the `Palaces` under `## Related Palaces` (no palace twice),
+then the patterns landing in those palaces and the mutagen notes. A zero `Knowledge`, an unknown
+topic or an unknown palace key in the topic returns `ErrInvalidArgument`.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+text, _ := chart.TopicToText("romance", iztro.TextOptions{
+    Knowledge:      iztro.BuiltinKnowledge(),
+    KnowledgeDepth: iztro.KnowledgeDepthSummary,
+})
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+var heads []string
+for _, l := range lines {
+    if strings.HasPrefix(l, "## ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
+
+---
+
 ## How it relates to JSON
 
 `Astrolabe` and every type beneath it carry `json` tags whose names match the field contract of JS

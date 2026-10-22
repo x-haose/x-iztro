@@ -555,6 +555,60 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ---
 
+## topic_to_text
+
+**用途**　按问题取材的语义化文本：按知识包里[主题](/zh/docs/guide/guides/knowledge-pack#主题)的定义选宫，
+见[按主题取材](/zh/docs/guide/guides/to-text#按主题取材)。
+
+**签名**
+
+```python
+def topic_to_text(
+    self,
+    topic: str,
+    *,
+    knowledge: bool | KnowledgePack = True,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    config: PatternConfig | None = None,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `topic` | `str` | 是 | — | 主题 slug，知识包 `topics` 段的键；默认包有哪些见 `KnowledgePack.topics()` |
+| `knowledge` | `bool \| KnowledgePack` | 否 | `True` | 主题定义与释义的来源：`True` 取排盘语言的内嵌包，或给 `KnowledgePack` |
+| `detail` | `TextDetail` | 否 | `TextDetail.FULL` | 事实详略：`OVERVIEW` 每宫只写主星、辅星与杂耀 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用摘要层，`FULL` 用全文 |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参 |
+
+**返回值**　`str`——`# 主题 · 命盘 …` 标题、主题说明，`surround` 各宫的三方四正各一节，`palaces` 各宫归入
+`## 相关宫位`，同一宫只出一次，文末是落在这些宫内的格局与四化释义。
+
+**异常**　`IztroError`（`invalid_argument`）——包里没有该主题、主题里有不认识的宫位标识、`knowledge=False`、
+排盘语言没有内嵌包，或 `SUMMARY` 而所给的包缺摘要。
+
+**示例**
+
+```python
+from x_iztro import KnowledgeDepth
+
+text = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+print(text.splitlines()[0])
+print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
+```
+
+**输出**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
+
+---
+
 ## to_dict / to_json
 
 **用途**　把星盘导出成与 JS iztro 字段契约一致的 JSON。

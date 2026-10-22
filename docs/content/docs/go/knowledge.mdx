@@ -35,6 +35,7 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 | `Palaces` | `map[string]TextEntry` | 宫位条目，键为宫位标识 |
 | `Mutagens` | `map[string]TextEntry` | 四化条目，键为四化标识 |
 | `Concepts` | `map[string]ConceptEntry` | 术语条目，键为 slug |
+| `Topics` | `map[string]TopicEntry` | 解读主题，键为 slug |
 
 ### KnowledgeSource
 
@@ -72,6 +73,11 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 ### TextEntry / ConceptEntry
 
 `TextEntry`（宫位、四化）有 `Name`、`Intro` 与 `Summary`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
+
+### TopicEntry
+
+解读主题：`Title`、`Surround`（`[]string`，连同三方四正一起取的宫位标识）、`Palaces`（`[]string`，只取本宫的宫位标识，
+可含 `bodyPalace` / `originalPalace`）、`Intro`、`Summary`；[`TopicToText`](/zh/docs/go/astrolabe#topictotext) 按它选宫。
 
 <Callout type="warn" title="缺省一律是零值">
 Go 侧不用指针区分「没写」与「写了空串」，字段缺省即空串 / nil。
@@ -230,9 +236,9 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept
+## Star / Pattern / Palace / Mutagen / Concept / Topic
 
-**用途**　按语言无关标识取条目。
+**用途**　按语言无关标识（术语与主题按 slug）取条目。
 
 **签名**
 
@@ -242,6 +248,7 @@ func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
 func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+func (p *KnowledgePack) Topic(slug string) *TopicEntry
 ```
 
 **返回值**　包里没有该条目时返回 `nil`；接收者为 `nil` 时同样返回 `nil`，不会 panic。

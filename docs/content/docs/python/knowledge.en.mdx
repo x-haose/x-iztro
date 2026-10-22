@@ -49,8 +49,8 @@ Holds the raw pack object (a dict); the lookups return typed entries.
 | `to_dict()` | A deep copy of the pack object |
 | `to_json(**kwargs)` | JSON text; `kwargs` are passed through to `json.dumps` |
 | `merged(*overlays)` | Layer overlays on, returning a new pack |
-| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | One entry, or `None` |
-| `stars()` / `patterns()` | All star / pattern entries |
+| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` / `topic(slug)` | One entry, or `None` |
+| `stars()` / `patterns()` / `topics()` | All star / pattern / topic entries |
 | `star_intro(key)` / `pattern_intro(key)` | The reading text directly |
 | `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | Pick by chart: a sub-pack holding only that chart's entries |
 
@@ -84,6 +84,10 @@ each object's `to_text`).
 `PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`, `summary`.
 
 `TextEntry` (palaces, transformations): `key`, `name`, `intro`, `summary`.
+`TopicEntry` (topics): `slug`, `title`, `surround` (palace keys taken with their trine & opposite,
+`list[str] | None`), `palaces` (palace keys taken on their own, `bodyPalace` / `originalPalace`
+allowed), `intro`, `summary`; [`Astrolabe.topic_to_text`](/en/docs/python/astrolabe#topic_to_text)
+selects palaces by it.
 `ConceptEntry` (glossary): `slug`, `title`, `intro`.
 
 `Source`: `name`, `url`, `commit`, `license`, `author`, `retrieved_at`, `adapted` (adaptation note).

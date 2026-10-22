@@ -254,6 +254,35 @@ class ConceptEntry:
         return cls(slug=slug, title=d.get("title"), intro=d.get("intro"))
 
 
+@dataclass(frozen=True, slots=True)
+class TopicEntry:
+    """解读主题（如婚恋、财运）：读这类问题要看哪些宫，由 `Astrolabe.topic_to_text` 按它选宫"""
+
+    slug: str
+    """主题 slug"""
+    title: str | None = None
+    """显示名"""
+    surround: list[str] | None = None
+    """连同各自三方四正一起取的宫位标识，按出现顺序渲染"""
+    palaces: list[str] | None = None
+    """只取本宫的宫位标识（可含 `bodyPalace` / `originalPalace`），排在 `surround` 各组之后"""
+    intro: str | None = None
+    """这个主题看什么、为什么取这些宫"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
+
+    @classmethod
+    def _from_dict(cls, slug: str, d: dict) -> TopicEntry:
+        return cls(
+            slug=slug,
+            title=d.get("title"),
+            surround=list(d["surround"]) if d.get("surround") is not None else None,
+            palaces=list(d["palaces"]) if d.get("palaces") is not None else None,
+            intro=d.get("intro"),
+            summary=d.get("summary"),
+        )
+
+
 class KnowledgePack:
     """
     一份知识包。持有原始 dict（`to_dict()` 深拷贝导出），查询方法返回类型化条目。
@@ -428,6 +457,15 @@ class KnowledgePack:
         """术语条目"""
         d = (self._raw.get("concepts") or {}).get(slug)
         return ConceptEntry._from_dict(slug, d) if d is not None else None
+
+    def topic(self, slug: str) -> TopicEntry | None:
+        """主题条目"""
+        d = (self._raw.get("topics") or {}).get(slug)
+        return TopicEntry._from_dict(slug, d) if d is not None else None
+
+    def topics(self) -> list[TopicEntry]:
+        """全部主题条目"""
+        return [TopicEntry._from_dict(k, v) for k, v in (self._raw.get("topics") or {}).items()]
 
     def stars(self) -> list[StarEntry]:
         """全部星耀条目"""

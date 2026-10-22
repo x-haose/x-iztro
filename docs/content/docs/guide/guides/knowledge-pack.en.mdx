@@ -43,6 +43,7 @@ enters into it.
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
 | `concepts` | 50 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
+| `topics` | 13 | Reading topics: which palaces each kind of question looks at — see [Topics](#topics) |
 
 The content comes from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long), pinned to a
@@ -143,6 +144,49 @@ few thousand.
 If a pack has even one body wider than 240 without a summary, asking for the summary layer fails and
 lists every missing entry — nothing is truncated, and the full text is never substituted. A pack you
 write supports the summary layer once it follows these rules.
+
+## Topics
+
+Which palaces to read for romance, which for wealth — that is a school's method and schools differ,
+so topics live in the pack too (the `topics` section); the core only selects palaces by the
+definition and writes the [topic text](/en/docs/guide/guides/to-text#text-by-topic). A topic has two
+palace groups: those in `surround` are taken together with their trine & opposite, those in
+`palaces` on their own (`bodyPalace` and `originalPalace` are allowed).
+
+```json
+"topics": {
+  "romance": {
+    "title": "婚恋",
+    "surround": ["spousePalace"],
+    "palaces": ["soulPalace", "bodyPalace", "childrenPalace"],
+    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。"
+  }
+}
+```
+
+The default pack's 13 topics:
+
+| slug | Topic | With trine & opposite | Palace only |
+| --- | --- | --- | --- |
+| `overall` | 总论 overall | soul | body, spirit |
+| `personality` | 性格 personality | — | soul, surface, spirit, body |
+| `wealth` | 财运 wealth | wealth | property |
+| `career` | 事业 career | career | — |
+| `romance` | 婚恋 romance | spouse | soul, body, children |
+| `children` | 子女 children | children | soul |
+| `parents` | 父母 parents | parents | siblings, soul |
+| `siblings` | 兄弟 siblings | siblings | soul |
+| `friends` | 交友 friends | friends | soul |
+| `property` | 田宅 property | property | wealth |
+| `travel` | 迁移 travel | surface | — |
+| `spirit` | 精神 spirit | spirit | soul, body |
+| `health` | 健康 health | health | soul |
+
+The choices follow the default pack's palace readings: accumulated wealth is read in the property
+palace, the relationship with the mother in the siblings palace, romance in the children palace.
+Topics read the natal palaces; questions about a period use the horoscope text. To disagree with a
+topic's palaces, rewrite `surround` / `palaces` as a whole in an overlay (arrays are replaced
+wholesale), or add topics of your own.
 
 ## Reading a pack
 
@@ -481,4 +525,4 @@ layer, not to this library.
 The readings in the default pack come from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
 protocol, the editorial rewrite of the default pack, the 55 cross-reference entries such as the
-flowing stars, every summary and the three-language API are x-iztro's own work.
+flowing stars, every summary, the 13 topics and the three-language API are x-iztro's own work.

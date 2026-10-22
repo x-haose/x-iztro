@@ -36,6 +36,7 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `palaces` | `BTreeMap<String, TextEntry>` | 宫位条目，键为 `Palace::as_key` |
 | `mutagens` | `BTreeMap<String, TextEntry>` | 四化条目，键为 `Mutagen::as_key` |
 | `concepts` | `BTreeMap<String, ConceptEntry>` | 术语条目，键为 slug |
+| `topics` | `BTreeMap<String, TopicEntry>` | 解读主题，键为 slug |
 
 实现 `Clone`、`Default`、`PartialEq`、`Eq`、`Debug`、`Serialize`、`Deserialize`。
 
@@ -91,6 +92,20 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 
 `TextEntry`（宫位、四化）有 `name`、`intro` 与 `summary`；`ConceptEntry`（术语）有 `title` 与 `intro`，
 都是 `Option<String>`。
+
+### TopicEntry
+
+解读主题：读这类问题要看哪些宫，[`topic_to_text`](/zh/docs/rust/astro#topic_to_text) 按它选宫。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `title` | `Option<String>` | 显示名 |
+| `surround` | `Option<Vec<String>>` | 连同各自三方四正一起取的宫位标识，按出现顺序渲染 |
+| `palaces` | `Option<Vec<String>>` | 只取本宫的宫位标识（可含 `bodyPalace` / `originalPalace`），排在 `surround` 各组之后 |
+| `intro` | `Option<String>` | 这个主题看什么、为什么取这些宫 |
+| `summary` | `Option<String>` | 正文的摘要 |
+
+另有 `brief()`，规则同 [`StarEntry::brief`](#brief--combination_brief--missing_summaries)。
 
 ### SCHEMA_VERSION
 
@@ -316,9 +331,9 @@ impl KnowledgePack {
 
 ---
 
-## star / pattern / palace / mutagen
+## star / pattern / palace / mutagen / topic
 
-**用途**　按语言无关标识取条目。
+**用途**　按语言无关标识（主题按 slug）取条目。
 
 **签名**
 
@@ -328,10 +343,11 @@ impl KnowledgePack {
     pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+    pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
 }
 ```
 
-**返回值**　包里没有该条目时为 `None`。四个方法都是在对应 `BTreeMap` 上按
+**返回值**　包里没有该条目时为 `None`。前四个方法都是在对应 `BTreeMap` 上按
 `as_key()` 取值，等价于自己写 `pack.stars.get(key.as_key())`；
 术语没有专门的方法，直接 `pack.concepts.get(slug)`。
 

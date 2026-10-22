@@ -39,6 +39,7 @@ iteration order is stable and sorted by key.
 | `palaces` | `BTreeMap<String, TextEntry>` | Palace entries, keyed by `Palace::as_key` |
 | `mutagens` | `BTreeMap<String, TextEntry>` | Transformation entries, keyed by `Mutagen::as_key` |
 | `concepts` | `BTreeMap<String, ConceptEntry>` | Glossary entries, keyed by slug |
+| `topics` | `BTreeMap<String, TopicEntry>` | Reading topics, keyed by slug |
 
 Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deserialize`.
 
@@ -94,6 +95,21 @@ the [guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-he
 
 `TextEntry` (palaces, transformations) has `name`, `intro` and `summary`; `ConceptEntry` (glossary) has `title`
 and `intro`. All are `Option<String>`.
+
+### TopicEntry
+
+A reading topic: which palaces a kind of question looks at; [`topic_to_text`](/en/docs/rust/astro#topic_to_text)
+selects palaces by it.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `title` | `Option<String>` | Display name |
+| `surround` | `Option<Vec<String>>` | Palace keys taken with their trine & opposite, rendered in order |
+| `palaces` | `Option<Vec<String>>` | Palace keys taken on their own (`bodyPalace` / `originalPalace` allowed), after the `surround` groups |
+| `intro` | `Option<String>` | What the topic reads and why these palaces |
+| `summary` | `Option<String>` | Summary of the intro |
+
+`brief()` follows the same rule as [`StarEntry::brief`](#brief--combination_brief--missing_summaries).
 
 ### SCHEMA_VERSION
 
@@ -326,9 +342,9 @@ already hold a mutable pack and are layering many overlays, to skip the clone.
 
 ---
 
-## star / pattern / palace / mutagen
+## star / pattern / palace / mutagen / topic
 
-**Purpose**　Look up an entry by language-independent key.
+**Purpose**　Look up an entry by language-independent key (a topic by slug).
 
 **Signature**
 
@@ -338,10 +354,11 @@ impl KnowledgePack {
     pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+    pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
 }
 ```
 
-**Returns**　`None` when the pack has no such entry. All four look the key up in the corresponding
+**Returns**　`None` when the pack has no such entry. The first four look the key up in the corresponding
 `BTreeMap` by `as_key()`, exactly as `pack.stars.get(key.as_key())` would; the glossary has no
 dedicated method, use `pack.concepts.get(slug)`.
 

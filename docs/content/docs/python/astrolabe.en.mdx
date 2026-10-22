@@ -583,6 +583,62 @@ For single-palace and surrounded-palace text see `palace(...).to_text()` and
 
 ---
 
+## topic_to_text
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature**
+
+```python
+def topic_to_text(
+    self,
+    topic: str,
+    *,
+    knowledge: bool | KnowledgePack = True,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    config: PatternConfig | None = None,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `topic` | `str` | yes | — | Topic slug, a key of the pack's `topics` section; see `KnowledgePack.topics()` for the bundled ones |
+| `knowledge` | `bool \| KnowledgePack` | no | `True` | Source of the topic definition and readings: `True` takes the bundled pack for the charting language, or pass a `KnowledgePack` |
+| `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each palace major, minor and adjective stars only |
+| `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the summary layer, `FULL` the full bodies |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)` |
+
+**Returns**　`str` — a `# Topic · Natal Chart …` title and the topic description, one trine &
+opposite section per `surround` palace, the `palaces` under `## Related Palaces` (no palace twice),
+then the patterns landing in those palaces and the mutagen notes.
+
+**Raises**　`IztroError` (`invalid_argument`) — the pack has no such topic, the topic names an
+unknown palace key, `knowledge=False`, the charting language has no bundled pack, or `SUMMARY` with a
+pack lacking summaries.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```python
+from x_iztro import KnowledgeDepth
+
+text = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+print(text.splitlines()[0])
+print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
+
+---
+
 ## to_dict / to_json
 
 **Purpose** Export the chart as JSON matching the field contract of JS iztro.

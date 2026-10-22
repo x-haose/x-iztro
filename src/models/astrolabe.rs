@@ -104,6 +104,19 @@ pub enum PalaceTarget {
     Original,
 }
 
+impl PalaceTarget {
+    /// 由宫位标识解析：宫名标识（`Palace::as_key`，如 `soulPalace`）、`bodyPalace` 或
+    /// `originalPalace`；不认识的标识返回 `None`。绑定层的 `palaceKey` 与知识包主题的宫位
+    /// 列表都用这一套写法。
+    pub fn from_key(key: &str) -> Option<Self> {
+        match key {
+            "bodyPalace" => Some(PalaceTarget::Body),
+            "originalPalace" => Some(PalaceTarget::Original),
+            _ => Palace::from_key(key).map(PalaceTarget::Name),
+        }
+    }
+}
+
 impl From<usize> for PalaceTarget {
     fn from(index: usize) -> Self {
         PalaceTarget::Index(index)

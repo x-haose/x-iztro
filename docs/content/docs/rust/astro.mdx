@@ -537,3 +537,53 @@ let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // �
 
 内嵌默认包只有 zh-CN，其他语言 `KnowledgePack::builtin` 返回 `None`；英文盘要带释义须显式传一份包，
 包的语言不受盘语言限制——英文盘配中文包得到英文标题、中文正文。
+
+---
+
+## topic_to_text
+
+**用途**　按问题取材的语义化文本：按知识包里[主题](/zh/docs/guide/guides/knowledge-pack#主题)的定义选宫，
+见[按主题取材](/zh/docs/guide/guides/to-text#按主题取材)。
+
+**签名**（`x_iztro::text`，从 crate 根 re-export）
+
+```rust
+pub fn topic_to_text(
+    astrolabe: &Astrolabe,
+    topic: &str,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError>
+
+impl Astrolabe {
+    pub fn topic_to_text(&self, topic: &str, opts: &TextOptions) -> Result<String, IztroError>
+}
+```
+
+**参数**
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `topic` | `&str` | 主题 slug，知识包 `topics` 段的键 |
+| `opts` | `&TextOptions` | 必须带知识包（`knowledge` 或 `knowledge_summary`），主题定义与释义都取自它；详略与格局口径同其他文本 |
+| `lang` | `Language` | 输出语言；便捷方法取排盘语言 |
+
+**返回值**　`Result<String, IztroError>`——`# 主题 · 命盘 …` 标题、主题说明，`surround` 各宫的三方四正各一节，
+`palaces` 各宫归入 `## 相关宫位`，同一宫只出一次，文末是落在这些宫内的格局与四化释义。
+`opts` 没有知识包、包里没有该主题、主题里有不认识的宫位标识时返回 `IztroError::InvalidArgument`。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.topic_to_text("romance", &TextOptions::new().knowledge_summary(pack)?)?;
+println!("{}", text.lines().next().unwrap());
+println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>().join(" "));
+```
+
+**输出**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```

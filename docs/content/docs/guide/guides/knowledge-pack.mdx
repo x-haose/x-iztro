@@ -39,6 +39,7 @@ x-iztro 把这两件事分开：内核只做事实判定（排盘、运限、格
 | `palaces` | 12 | 十二宫各自的含义 |
 | `mutagens` | 4 | 禄权科忌各自的含义 |
 | `concepts` | 50 | 术语与基础概念（同宫、本宫、身宫、地支六合、三方四正、飞星四化…） |
+| `topics` | 13 | 解读主题：每类问题看哪些宫，见[主题](#主题) |
 
 释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
 （MIT License，作者 Sylar Long），锁定来源 commit（`source.commit`），文本经 x-iztro 整理改写为第三人称释义口吻（`source.adapted` 注明），
@@ -125,6 +126,45 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
 
 包里只要有一条「正文超过 240 却没有摘要」，请求摘要层就报错并列出全部缺项，不截断、也不改用全文。
 自己写的包要支持摘要层，按这几条补齐即可。
+
+## 主题
+
+「婚恋看哪些宫」「财运看哪些宫」是论法，各家说法不一，所以主题也写在包里（`topics` 段），
+内核只按定义选宫，生成[主题文本](/zh/docs/guide/guides/to-text#按主题取材)。一个主题有两组宫位：
+`surround` 的宫连同各自的三方四正一起取，`palaces` 的宫只取本宫（可写 `bodyPalace`、`originalPalace`）。
+
+```json
+"topics": {
+  "romance": {
+    "title": "婚恋",
+    "surround": ["spousePalace"],
+    "palaces": ["soulPalace", "bodyPalace", "childrenPalace"],
+    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。"
+  }
+}
+```
+
+默认包的 13 个主题：
+
+| slug | 主题 | 连三方四正 | 只取本宫 |
+| --- | --- | --- | --- |
+| `overall` | 总论 | 命宫 | 身宫、福德 |
+| `personality` | 性格 | — | 命宫、迁移、福德、身宫 |
+| `wealth` | 财运 | 财帛 | 田宅 |
+| `career` | 事业 | 官禄 | — |
+| `romance` | 婚恋 | 夫妻 | 命宫、身宫、子女 |
+| `children` | 子女 | 子女 | 命宫 |
+| `parents` | 父母 | 父母 | 兄弟、命宫 |
+| `siblings` | 兄弟 | 兄弟 | 命宫 |
+| `friends` | 交友 | 仆役 | 命宫 |
+| `property` | 田宅 | 田宅 | 财帛 |
+| `travel` | 迁移 | 迁移 | — |
+| `spirit` | 精神 | 福德 | 命宫、身宫 |
+| `health` | 健康 | 疾厄 | 命宫 |
+
+选宫依据默认包宫位条目的释义：财富的积累看田宅宫、与母亲的相处看兄弟宫、桃花看子女宫。
+主题按本命盘的宫位取材，运限问题用运限文本。不同意某个主题的取宫，用覆盖包整组改写
+`surround` / `palaces`（数组整体替换），或者新增自己的主题。
 
 ## 读一份包
 
@@ -446,4 +486,4 @@ iztro-docs 星耀卡片本身就对不上：
 
 默认包的释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
 MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写、流耀等 55 条对照性条目、
-全部摘要与三语言 API 是 x-iztro 的实现。
+全部摘要、13 个主题与三语言 API 是 x-iztro 的实现。

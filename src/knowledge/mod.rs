@@ -229,6 +229,35 @@ pub struct ConceptEntry {
     pub intro: Option<String>,
 }
 
+/// 一个解读主题（如婚恋、财运）：读这类问题要看哪些宫。主题取哪些宫属于论法，故放在包里由门派表态，
+/// 内核只按定义选宫渲染（[`crate::text::topic_to_text`]）。
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TopicEntry {
+    /// 显示名（如「婚恋」）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// 连同各自三方四正一起取的宫位，宫位标识（`Palace::as_key`），按出现顺序渲染
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub surround: Option<Vec<String>>,
+    /// 只取本宫的宫位：宫位标识，或 `bodyPalace` / `originalPalace`；排在 `surround` 各组之后
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub palaces: Option<Vec<String>>,
+    /// 这个主题看什么、为什么取这些宫
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intro: Option<String>,
+    /// 正文的摘要（单段）；正文不超过 [`SUMMARY_FALLBACK_WIDTH`] 的条目不写
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+}
+
+impl TopicEntry {
+    /// 摘要层的说明，规则同 [`StarEntry::brief`]。
+    pub fn brief(&self) -> Option<&str> {
+        brief(self.intro.as_deref()?, self.summary.as_deref())
+    }
+}
+
 /// 一份知识包。
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -261,6 +290,9 @@ pub struct KnowledgePack {
     /// 术语与基础概念，键为 slug
     #[serde(deserialize_with = "null_as_default")]
     pub concepts: BTreeMap<String, ConceptEntry>,
+    /// 解读主题，键为 slug
+    #[serde(deserialize_with = "null_as_default")]
+    pub topics: BTreeMap<String, TopicEntry>,
 }
 
 /// 允许 JSON 里把映射类字段写成 `null`（等同缺省），便于各语言的默认序列化产物直接互通。
@@ -361,6 +393,9 @@ impl KnowledgePack {
         for (k, e) in &overlay.concepts {
             merge_entry(self.concepts.entry(k.clone()).or_default(), e);
         }
+        for (k, e) in &overlay.topics {
+            merge_entry(self.topics.entry(k.clone()).or_default(), e);
+        }
         if !overlay.id.is_empty() {
             self.id = overlay.id.clone();
         }
@@ -386,7 +421,7 @@ impl KnowledgePack {
 
     /// 按本命盘取材（默认格局口径）：只含盘上出现的星（十二宫的主辅杂与四组十二神；
     /// 同宫主星之间的双星组合解读一并保留，不同宫的组合剔除）、命中的格局、四化四条。
-    /// 宫位与术语条目与盘无关，不进子包，按需从整包直接查。
+    /// 宫位、术语与主题条目与盘无关，不进子包，按需从整包直接查。
     ///
     /// 返回的是标准 [`KnowledgePack`]（元信息沿用本包），可继续合并、序列化或按 key 查。
     pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack {
@@ -456,6 +491,7 @@ impl KnowledgePack {
             palaces: BTreeMap::new(),
             mutagens: BTreeMap::new(),
             concepts: BTreeMap::new(),
+            topics: BTreeMap::new(),
         }
     }
 
@@ -508,6 +544,11 @@ impl KnowledgePack {
         self.mutagens.get(mutagen.as_key())
     }
 
+    /// 主题条目。
+    pub fn topic(&self, slug: &str) -> Option<&TopicEntry> {
+        self.topics.get(slug)
+    }
+
     /// 星耀解读正文。
     pub fn star_intro(&self, key: StarKey) -> Option<&str> {
         self.star(key)?.intro.as_deref()
@@ -519,7 +560,7 @@ impl KnowledgePack {
     }
 
     /// 摘要层缺摘要的条目路径（正文超过 [`SUMMARY_FALLBACK_WIDTH`] 却没有摘要），形如
-    /// `stars.ziweiMaj`、`stars.ziweiMaj.combinations.tianfuMaj`、`patterns.zi_fu_tong_gong`；
+    /// `stars.ziweiMaj`、`stars.ziweiMaj.combinations.tianfuMaj`、`patterns.zi_fu_tong_gong`、`topics.marriage`；
     /// 按段、按键排序。空列表即整包可用于摘要层；术语条目不进文本，不在检查之列。
     pub fn missing_summaries(&self) -> Vec<String> {
         let mut out = Vec::new();
@@ -543,6 +584,11 @@ impl KnowledgePack {
                 if e.intro.is_some() && e.brief().is_none() {
                     out.push(format!("{section}.{key}"));
                 }
+            }
+        }
+        for (key, e) in &self.topics {
+            if e.intro.is_some() && e.brief().is_none() {
+                out.push(format!("topics.{key}"));
             }
         }
         out

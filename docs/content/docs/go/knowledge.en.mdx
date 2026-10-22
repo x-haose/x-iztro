@@ -38,6 +38,7 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 | `Palaces` | `map[string]TextEntry` | Palace entries, keyed by palace key |
 | `Mutagens` | `map[string]TextEntry` | Transformation entries, keyed by transformation key |
 | `Concepts` | `map[string]ConceptEntry` | Glossary entries, keyed by slug |
+| `Topics` | `map[string]TopicEntry` | Reading topics, keyed by slug |
 
 ### KnowledgeSource
 
@@ -76,6 +77,12 @@ data, which is value-for-value identical to iztro's. The reason is in the
 
 `TextEntry` (palaces, transformations) has `Name`, `Intro` and `Summary`; `ConceptEntry` (glossary) has `Title`
 and `Intro`.
+
+### TopicEntry
+
+A reading topic: `Title`, `Surround` (`[]string`, palace keys taken with their trine & opposite),
+`Palaces` (`[]string`, palace keys taken on their own, `bodyPalace` / `originalPalace` allowed),
+`Intro`, `Summary`; [`TopicToText`](/en/docs/go/astrolabe#topictotext) selects palaces by it.
 
 <Callout type="warn" title="Absent means the zero value">
 The Go side does not use pointers to separate "not written" from "written as empty". An absent field
@@ -237,9 +244,9 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept
+## Star / Pattern / Palace / Mutagen / Concept / Topic
 
-**Purpose**　Look up an entry by language-independent key.
+**Purpose**　Look up an entry by language-independent key (glossary entries and topics by slug).
 
 **Signature**
 
@@ -249,6 +256,7 @@ func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
 func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+func (p *KnowledgePack) Topic(slug string) *TopicEntry
 ```
 
 **Returns**　`nil` when the pack has no such entry, and `nil` for a nil receiver rather than a

@@ -22,6 +22,7 @@ description: 把一张盘、一段运限或一个宫位投影成 Markdown 文本
 | 夹宫 `to_text` | 目标宫前后相邻的两宫各一段 |
 | 大限一览 `to_text` | 十二个大限一张表：本命宫、虚岁、年份、干支、四化 |
 | `patterns_to_text` | 格局命中列表单独成文，本命与运限视角皆可 |
+| `topic_to_text` | 按问题取材：按知识包里主题的定义选宫（如婚恋取夫妻宫三方四正与命身、子女），见[按主题取材](#按主题取材) |
 
 全部按**盘面语言**生成：中文盘出中文，英文盘出英文。带[知识包](#带释义的文本)时，
 释义内联在对应事实旁，不另起附录（四化释义除外）。事实写到多细、释义写多长各有一个开关，
@@ -505,6 +506,54 @@ chart.to_text(knowledge=pack)
 `KnowledgePack::builtin(Language::EnUS)` 报 `invalid_argument`，不会静默退回到无释义。
 显式传一份包即可——包的语言不受盘语言限制，英文盘配中文包得到英文标题、中文正文。
 </Callout>
+
+## 按主题取材
+
+用户问的是「婚恋怎么样」「财运怎么样」，要看的宫各不相同。主题文本按知识包里[主题](/zh/docs/guide/guides/knowledge-pack#主题)的定义选宫：
+`surround` 的宫连同三方四正各成一组（本宫、对宫、财帛位、官禄位），`palaces` 的宫归入「相关宫位」一节，
+同一宫只出一次；标题下写主题说明，文末附落在这些宫内的格局与四化释义。主题定义在知识包里，所以必须带包。
+
+```python
+chart.topic_to_text("romance")                                              # knowledge 默认 True
+chart.topic_to_text("wealth", knowledge_depth=KnowledgeDepth.SUMMARY)
+pack.topics()                                                               # 包里有哪些主题
+```
+
+```rust
+let opts = TextOptions::new().knowledge_summary(pack)?;
+chart.topic_to_text("romance", &opts)?;                    // 自由函数 text::topic_to_text 可指定语言
+```
+
+```go
+chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
+```
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+
+看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。
+
+## 夫妻 三方四正
+
+### 本宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+…
+### 对宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+…
+## 相关宫位
+
+### 命宫 (壬午) · 大限 3-12
+…
+### 子女 (己卯) · 大限 33-42
+…
+## 格局
+…
+## 四化释义
+…
+```
+
+这张盘身宫在官禄，已在夫妻宫的三方四正里出现过，「相关宫位」便不再重复。主题文本同样收[分层](#分层)的两个开关：
+婚恋主题完整事实 + 摘要 3,758 字，总览 + 摘要 2,851 字，完整事实 + 全文 11,390 字。
+包里没有该主题、主题里有不认识的宫位标识，或没给知识包，都报 `invalid_argument`。
 
 ## 分层
 

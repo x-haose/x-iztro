@@ -8,7 +8,8 @@
 //! 只有显式设 `UPDATE_TEXT_SNAPSHOTS=1` 跑本测试才写入当前输出作为基线。
 //!
 //! 命名：`{类}_{语言}` 为完整事实；`{类}_overview_{语言}` 为总览层；`{类}_knowledge_zh-CN`
-//! 与 `{类}_summary_zh-CN` 为完整事实配内嵌包的全文与摘要层释义。
+//! 与 `{类}_summary_zh-CN` 为完整事实配内嵌包的全文与摘要层释义。主题文本（`topic`，取婚恋主题）
+//! 必须带知识包，只有后两种。
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -35,6 +36,8 @@ const BIRTH_DATE: &str = "2000-8-16";
 const BIRTH_TIME_INDEX: u8 = 2;
 const TARGET_DATE: &str = "2025-1-1";
 const TARGET_TIME_INDEX: u8 = 0;
+/// 主题文本取的主题：夫妻宫连三方四正，另有命宫、身宫与子女宫，覆盖两组宫位与去重
+const TOPIC: &str = "romance";
 
 /// 与已有快照逐字节比对；`UPDATE_TEXT_SNAPSHOTS=1` 时改为覆盖写入基线。
 fn assert_snapshot(name: &str, actual: &str) {
@@ -77,7 +80,7 @@ const KINDS: [&str; 7] = [
 const DETAIL_KINDS: [&str; 5] = ["astrolabe", "horoscope", "palace", "surrounded", "flanking"];
 
 /// 快照目录的文件集必须恰为：七类输出 × 两种语言、五类总览输出 × 两种语言、
-/// 七类全文释义与七类摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
+/// 七类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
     let expected: std::collections::BTreeSet<String> = ["zh-CN", "en-US"]
@@ -92,7 +95,7 @@ fn snapshot_dir_matches_expected_set() {
                         .map(move |kind| format!("{kind}_overview_{tag}.txt")),
                 )
         })
-        .chain(KINDS.iter().flat_map(|kind| {
+        .chain(KINDS.iter().chain(&["topic"]).flat_map(|kind| {
             ["knowledge", "summary"]
                 .iter()
                 .map(move |depth| format!("{kind}_{depth}_zh-CN.txt"))
@@ -246,6 +249,10 @@ fn text_with_knowledge_matches_snapshot() {
         &flanking_palaces_to_text_with(&f, &opts, lang),
     );
     assert_snapshot(
+        "topic_knowledge_zh-CN",
+        &astrolabe.topic_to_text(TOPIC, &opts).unwrap(),
+    );
+    assert_snapshot(
         "decadals_knowledge_zh-CN",
         &decadal_list_to_text_with(&astrolabe, &opts, lang),
     );
@@ -312,6 +319,7 @@ fn text_with_summary_knowledge_matches_snapshot() {
             "decadals",
             decadal_list_to_text_with(&astrolabe, &opts, lang),
         ),
+        ("topic", astrolabe.topic_to_text(TOPIC, &opts).unwrap()),
     ] {
         assert_snapshot(&format!("{kind}_summary_zh-CN"), &text);
     }

@@ -104,9 +104,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
   记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
   开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
-  覆盖八个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
-  /`flankingPalacesToText`/`decadalListToText`/`patternsToText`/`horoscopePatternsToText`；宫位寻址收 `palaceKey`（宫名 key 或
-  bodyPalace/originalPalace）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
+  覆盖九个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+  /`flankingPalacesToText`/`decadalListToText`/`patternsToText`/`horoscopePatternsToText`/`topicToText`；
+  宫位寻址收 `palaceKey`（宫名 key 或 bodyPalace/originalPalace，解析只在 `PalaceTarget::from_key` 一处，
+  知识包主题的宫位列表同用）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
   Go 是 `ToText()`
 - 知识包只作为**参数**融入 to_text：选项对象 `TextOptions`（Rust `to_text_with(&TextOptions::new()
   .knowledge(&pack))`，Go `ToTextWith(TextOptions{Knowledge})`，Python 关键字参数
@@ -120,6 +121,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `TextOptions::knowledge_summary` 设上（整包校验缺摘要即 `InvalidArgument`），渲染处据此不再判缺摘要；
   bridge 收 `knowledgeDepth: "summary"` 而无 `knowledge` 报错。`detail` 对格局与大限一览不起作用，
   Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那两类文本被忽略
+- 按主题取材：主题是论法，定义在知识包 `topics` 段（`surround` 连三方四正、`palaces` 只取本宫），内核
+  `topic_to_text` 通用执行——主题定义与释义都取自 `TextOptions` 的包，无包、无此主题、宫位标识不认识一律
+  `InvalidArgument`（略过会静默少一宫）。只按本命宫位取材，运限问题走运限文本；按运限层取宫（`scope`）
+  将来做时是新增可选字段
   结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
   `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
   命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
@@ -300,12 +305,12 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
   - 语义化文本 → `text_snapshot`（Markdown 形态的七类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
-    外加七类全文释义与七类摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+    外加七类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
     有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
-  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/摘要写作规则/FFI 合并语义）+ Python `test_knowledge.py`
+  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/摘要写作规则/主题宫位可解析且可渲染/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
   - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
     大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`

@@ -111,6 +111,20 @@ type ConceptEntry struct {
 	Intro string `json:"intro,omitempty"`
 }
 
+// TopicEntry 为一个解读主题（如婚恋、财运）：读这类问题要看哪些宫，由 Astrolabe.TopicToText 按它选宫。
+type TopicEntry struct {
+	// Title 为显示名
+	Title string `json:"title,omitempty"`
+	// Surround 为连同各自三方四正一起取的宫位标识，按出现顺序渲染
+	Surround []string `json:"surround,omitempty"`
+	// Palaces 为只取本宫的宫位标识（可含 bodyPalace / originalPalace），排在 Surround 各组之后
+	Palaces []string `json:"palaces,omitempty"`
+	// Intro 为这个主题看什么、为什么取这些宫
+	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
+}
+
 // KnowledgePack 为一份知识包。
 type KnowledgePack struct {
 	// Schema 为格式版本
@@ -135,6 +149,8 @@ type KnowledgePack struct {
 	Mutagens map[string]TextEntry `json:"mutagens"`
 	// Concepts 为术语与基础概念，键为 slug
 	Concepts map[string]ConceptEntry `json:"concepts"`
+	// Topics 为解读主题，键为 slug
+	Topics map[string]TopicEntry `json:"topics"`
 }
 
 // Knowledge 为语义化文本（ToTextWith 家族）的释义材料来源。零值表示不带释义，
@@ -372,6 +388,17 @@ func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry {
 		return nil
 	}
 	if e, ok := p.Mutagens[mutagenKey]; ok {
+		return &e
+	}
+	return nil
+}
+
+// Topic 取主题条目，没有返回 nil。
+func (p *KnowledgePack) Topic(slug string) *TopicEntry {
+	if p == nil {
+		return nil
+	}
+	if e, ok := p.Topics[slug]; ok {
 		return &e
 	}
 	return nil

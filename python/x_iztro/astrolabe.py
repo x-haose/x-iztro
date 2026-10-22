@@ -338,6 +338,43 @@ class Astrolabe:
             pattern_config=_pattern_config(config),
         )
 
+    def topic_to_text(
+        self,
+        topic: str,
+        *,
+        knowledge: bool | KnowledgePack = True,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+        config: PatternConfig | None = None,
+    ) -> str:
+        """
+        按主题取材的语义化文本：按知识包里该主题的定义选宫——`surround` 的各宫连同三方四正各成一组，
+        `palaces` 的各宫只取本宫，同一宫只出一次——每宫一段，标题下写主题说明，文末附落在选中宫内的
+        格局与四化释义。主题定义与释义都取自 `knowledge`。
+
+        Args:
+            topic: 主题 slug（知识包 `topics` 段的键，默认包见 `KnowledgePack.topics()`）
+            knowledge: 主题定义与释义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+            detail: 事实详略：`TextDetail.OVERVIEW` 每宫只写主星、辅星与杂耀，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
+
+        Raises:
+            IztroError: 包里没有该主题、主题里有不认识的宫位标识、`knowledge=True` 而排盘语言
+                没有内嵌包（目前只有 zh-CN），或 `SUMMARY` 而所给的包缺摘要
+        """
+        from x_iztro.pattern import _pattern_config
+
+        return self._context_query(
+            "topicToText",
+            topic=topic,
+            knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
+            pattern_config=_pattern_config(config),
+        )
+
     def __str__(self) -> str:
         return self.to_text()
 
