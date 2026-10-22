@@ -2,6 +2,15 @@
 
 use std::fmt;
 
+/// 日期非法的错误码。
+const INVALID_DATE: &str = "invalid_date";
+/// 时辰越界的错误码。
+const INVALID_TIME_INDEX: &str = "invalid_time_index";
+/// 其余入参或配置非法的错误码。
+const INVALID_ARGUMENT: &str = "invalid_argument";
+/// 库内部缺陷的错误码。
+const INTERNAL: &str = "internal";
+
 /// 排盘与运限入口的参数错误。
 ///
 /// 入口函数对全部外部输入做前置校验并以本类型报错，库内部不因非法参数
@@ -28,10 +37,10 @@ impl IztroError {
     /// 机器可读的错误分类标识，随错误 JSON 的 `code` 字段跨语言传递。
     pub fn code(&self) -> &'static str {
         match self {
-            Self::InvalidDate(_) => "invalid_date",
-            Self::InvalidTimeIndex(_) => "invalid_time_index",
-            Self::InvalidArgument(_) => "invalid_argument",
-            Self::Internal(_) => "internal",
+            Self::InvalidDate(_) => INVALID_DATE,
+            Self::InvalidTimeIndex(_) => INVALID_TIME_INDEX,
+            Self::InvalidArgument(_) => INVALID_ARGUMENT,
+            Self::Internal(_) => INTERNAL,
         }
     }
 }
@@ -68,7 +77,7 @@ impl BridgeError {
     /// 入参或配置非法（`invalid_argument`）。
     pub fn invalid_argument(message: impl Into<String>) -> Self {
         Self {
-            code: "invalid_argument",
+            code: INVALID_ARGUMENT,
             message: message.into(),
         }
     }
@@ -76,7 +85,7 @@ impl BridgeError {
     /// 库内部缺陷，含 `catch_unwind` 兜住的 panic（`internal`）。
     pub fn internal(message: impl Into<String>) -> Self {
         Self {
-            code: "internal",
+            code: INTERNAL,
             message: message.into(),
         }
     }
