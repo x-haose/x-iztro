@@ -251,20 +251,12 @@ const hourToTimeIndex = (h) => (h === 0 ? 0 : h === 23 ? 12 : Math.floor((h + 1)
 astro.config({ ...DEFAULTS, horoscopeDivide: 'exact' });
 
 const jieCases = [];
-const jieSkipped = [];
 for (let year = 1984; year <= 2043; year++) {
   const table = Solar.fromYmd(year, 6, 1).getLunar().getJieQiTable();
   for (const name of JIE) {
     const s = table[name];
     if (!s || s.getYear() !== year) continue;
     const ti = hourToTimeIndex(s.getHour());
-    // 节气时刻落在构造时刻（HH:30:00）前后一分钟内的，两个天文库的秒级差异会跨越
-    // 构造时刻，判到节气两侧：lunar-typescript 与 lunar_rust 对同一节气可差数十秒
-    // （白露 2043 一个算 01:30:13、一个算 01:29:44）。这类边界不属于实现差异，不取。
-    if (s.getMinute() === 30 || (s.getMinute() === 29 && s.getSecond() >= 30)) {
-      jieSkipped.push(`${name} ${s.toYmdHms()}`);
-      continue;
-    }
     const d = `${s.getYear()}-${s.getMonth()}-${s.getDay()}`;
     for (const g of [0, 1]) {
       const a = astro.bySolar(d, ti, GENDERS[g], true, 'zh-CN');
@@ -273,7 +265,4 @@ for (let year = 1984; year <= 2043; year++) {
   }
 }
 writeFileSync(join(__dirname, 'config_jieqi.json'), JSON.stringify(jieCases));
-console.log(
-  `horoscopeDivide=exact 节气取样: ${jieCases.length} cases` +
-    `（跳过 ${jieSkipped.length} 个骑在构造时刻上的节气，两个天文库秒级差异所致）`
-);
+console.log(`horoscopeDivide=exact 节气取样: ${jieCases.length} cases`);

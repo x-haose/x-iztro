@@ -6,7 +6,6 @@
 //!
 //! 本模块提供的重排以任意干支为命宫重来一遍这几步，其余星耀沿用原盘。
 
-use crate::astro::lunar_table;
 use crate::astro::palace::{get_decadals_and_ages, get_five_elements_class, get_palace_names};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
@@ -62,7 +61,7 @@ impl Astrolabe {
         } else {
             lunar.lunar_month as i64
         };
-        let month_day_count = lunar_table::month_day_count(lunar.lunar_year, signed_month)
+        let month_day_count = crate::calendar::month_day_count(lunar.lunar_year, signed_month)
             .ok_or_else(|| {
                 IztroError::Internal(format!(
                     "raw_dates 的农历月不存在于月表：{}年{}月（闰月={}）",

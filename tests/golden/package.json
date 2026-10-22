@@ -18,10 +18,14 @@
     "gen:i18n": "node generate_i18n.mjs",
     "gen:chart_lists": "node generate_chart_lists.mjs",
     "gen:regression": "node generate_regression.mjs",
-    "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3 && npm run gen:tier_edge && npm run gen:horoscope && npm run gen:variants && npm run gen:config && npm run gen:astrotype && npm run gen:contract && npm run gen:star && npm run gen:data && npm run gen:i18n && npm run gen:chart_lists && npm run gen:regression && npm run gen:inputs",
-    "gen:inputs": "node generate_inputs.mjs"
+    "gen:all": "npm run gen:tier1 && npm run gen:tier2 && npm run gen:tier3 && npm run gen:tier_edge && npm run gen:horoscope && npm run gen:variants && npm run gen:config && npm run gen:astrotype && npm run gen:contract && npm run gen:star && npm run gen:data && npm run gen:i18n && npm run gen:chart_lists && npm run gen:regression && npm run gen:inputs && npm run gen:calendar_tables && npm run gen:calendar",
+    "gen:inputs": "node generate_inputs.mjs",
+    "gen:calendar": "node generate_calendar.mjs",
+    "gen:calendar_tables": "node generate_calendar_tables.mjs"
   },
   "dependencies": {
-    "iztro": "2.6.3"
+    "iztro": "2.6.3",
+    "lunar-lite": "0.2.8",
+    "lunar-typescript": "1.8.6"
   }
 }

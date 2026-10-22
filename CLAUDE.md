@@ -25,7 +25,9 @@ x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/
 ```bash
 cargo build --release                    # 构建（含 cdylib + rlib）
 cargo test                               # 常规测试（~1min，含除 Tier 3 外的全部金标）
-cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586,430 例，~70s）
+cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586,430 例，~20s）
+cargo test --release --lib calendar -- --ignored        # 历法全量（公历 1-9999 年逐日，~10s，CI 也跑）
+cargo test --release --test full_domain -- --ignored    # 1-9999 年每天排盘不报错（~10s）
 
 # Python 绑定
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
@@ -45,6 +47,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - `data/` — 枚举、常量、天干地支、星耀数据表
   - `models/` — Astrolabe、Palace、Star、Horoscope 结构体
   - `astro/` — 排盘、运限、三方四正算法；`reverse.rs` 反推（八字四柱/星盘特征 → 候选生辰）
+  - `calendar/` — 历法（公历 ↔ 农历、节气、八字各柱），逐函数移植 lunar-typescript，农历与干支的唯一来源
   - `knowledge/` — 知识包（`KnowledgePack`：解析/合并/查询），内嵌默认包 `data/knowledge/iztro_docs.zh-CN.json`
   - `pattern/` — 格局判定引擎（`view.rs` 把本命盘与运限合成盘统一成 `ChartView`，
     `rules/` 五组 64 条规则每条一个函数并注明口径来源，`keys.rs` 语言无关 `PatternKey`）
@@ -68,7 +71,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `by_lunar` 收三态 `LeapMonth`（NotLeap/Leap/LeapFixed）而非 iztro 的 `isLeapMonth`+`fixLeap` 两个相邻布尔（写反不报错）；
   绑定层 JSON 线协议仍是两个布尔键，Go 用 `LeapMonth` 具名常量、Python 用关键字参数；Go 的 `gender`/`language` 也是具名类型
 - 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
-- 入口返回 `Result<_, IztroError>`：全部外部输入前置校验（日期格式与存在性、公历 1583-9999、时辰 0-12），非法输入不 panic——wasm 下 panic 即 trap 且累积损耗实例栈空间，绑定层 catch_unwind 仅兜底库内部缺陷
+- 入口返回 `Result<_, IztroError>`：全部外部输入前置校验（日期格式与存在性、1-9999 年且 1582-10-15 前按儒略历、改历空缺 10-05…14 非法、时辰 0-12），非法输入不 panic——wasm 下 panic 即 trap 且累积损耗实例栈空间，绑定层 catch_unwind 仅兜底库内部缺陷
 - 带语言无关标识的枚举一律用 `data::keyed::keyed_enum!` 写一张「变体 => 标识」表，由它生成
   `KEYS`/`as_key`/`from_key`、按标识的 serde 与 `schemars` feature 下的 JsonSchema，不手写对照表；
   serde 表示即标识。模型结构（星盘、宫位、星耀、运限）不派生 serde，DTO 是唯一序列化形态；
@@ -176,7 +179,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `fixEarthlyBranchIndex`（与 `earthlyBranchIndexToPalaceIndex` 同义）、
   `setPalace` / `setAstrolabe`（建链是内部行为）、i18next 实例、`Astrolabe.copyright`
 - 复刻的反直觉语义：星盘 `lunarDate` 随排盘语言（简繁中文为中文数字写法，其余语言为「农历」一词加数字模板），
-  运限 `lunarDate` 恒为中文写法；to_text 基本信息行已有标签，取不带「农历」一词的写法（`lunar_table::lunar_date_body`）；`fliesTo` 星列表为空返回 false，而 `fliesOneOfTo` / `notFlyTo` 返回 true；
+  运限 `lunarDate` 恒为中文写法；to_text 基本信息行已有标签，取不带「农历」一词的写法（`i18n::translate_lunar_date_body`）；`fliesTo` 星列表为空返回 false，而 `fliesOneOfTo` / `notFlyTo` 返回 true；
   `getPalace` 额外接受 `bodyPalace` / `originalPalace`；`getMajorStarBySolarDate` 命宫空宫时借对宫；
   iztro 在本命层级把红鸾误写为 `hongluanMin`，x-iztro 用正确的 `hongluan`
 - 用户视角的对应关系写在文档站「关于 → 与 iztro 的对应」一页
@@ -197,21 +200,27 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   强制 64 个 key 都有规则）；正例用 `pattern::testutil::find_chart` 在真实盘上搜；
   规范文档 `docs/plan/2026-08-19-pattern-rules.md` 是本地过程文件（gitignore），不要在代码注释里引用它
 
-### 农历换算
-- `src/astro/lunar_table.rs` 是仓库读取农历月结构（公历↔农历、月天数、中文月/日名）的
-  **唯一入口**——lunar_rust 1.0.1 的 1602 年闰二月合朔晚一天（月表自相矛盾：二月 31 天），
-  该层按权威历表真值修正并带在场探测（依赖将来修好即自动停用）。新代码不许绕过它
-  直读 lunar_rust 的月表——公历↔农历、月天数、闰月归属（`leap_month`）、中文月/日名
-  都走这一层；日柱/时柱与节气类取值不经月表，仍直接调 lunar_rust
-- 守护：`golden_1602`（受影响窗口 2,444 例 vs JS 逐字节）+ `tests/lunar_table.rs`
-  （窗口边界、by_lunar 口径；1583-9999 全域扫描标 `#[ignore]`，改换算层后实跑一遍）
-- 构造日期对象一律带 `builder::CHART_MINUTE`（30 分），与 lunar-lite 的
+### 历法
+- `src/calendar/` 是仓库内一切农历与干支取值的**唯一来源**（公历↔农历、月天数、闰月、节气、
+  年月日时各柱、星座、日柱甲子序），逐函数移植 lunar-typescript（iztro 经 lunar-lite 所用）：
+  运算顺序照抄（浮点加法不满足结合律，改写算式会让个别节气秒数或合朔日分叉）；先后比较照抄
+  JS 的定宽串字典序（年份 10000 排在 9999 之前，9999 年末的精确月柱因此与时间先后不一致，
+  iztro 现行行为）；三角函数取 `libm`，各平台同一实现，全量金标一个平台通过即对所有平台成立
+- 不引入第三方 Rust 历法库：取值须与 lunar-typescript 逐日一致，第三方移植没有这个保证
+  （lunar_rust 1.0.1 实测 1583-9999 年 540 天农历日期、23 个节气时点的精确月柱与之不同）
+- 数据表 `tables.rs` 由 `generate_calendar_tables.mjs` 从 lunar-typescript 运行时取值生成，勿手改；
+  lunar-typescript 升版时重跑 `npm run gen:calendar_tables` 与 `gen:calendar`
+- 推算农历年的月表约 0.13 ms、节气表约 0.3 ms（逐个迭代高精度星历）：`calendar::lunar_year` 对
+  0-9999 年进程级记忆化（每年至多算一次，各线程共享），节气表在 `LunarYear` 内惰性计算，
+  只有 `year_divide` / `horoscope_divide` 取 `exact` 时才用到（`calendar::year_by_li_chun` / `month_exact`）
+- 守护：`calendar::golden`（`calendar.csv`：1-9999 逐年月表与节气时刻、逐日农历日期与年月日柱和星座、
+  每个「节」当天 13 个排盘时刻的月日时柱；默认层抽样约 140 年覆盖每条算法分支与易错年份，
+  全量 `--ignored` 进 CI release）+ `full_domain`（每天可排盘，守「农历日期所在月在农历年月表里
+  查得到天数」这条跨表不变量）
+- 排盘时刻一律用 `builder::chart_moment`（时辰首个整点后 `CHART_MINUTE`=30 分），与 lunar-lite 的
   `Solar.fromYmdHms(…, 30, 0)` 同刻——按节气取月柱是**时刻级**比较，用 0 分会让节气落在
   `HH:00`~`HH:30` 的日子判到另一侧、`horoscope_divide=Exact` 下月柱静默差一个月
-  （守护：`golden_config_jieqi_pillars`，按每个「节」的实际时刻取样，固定日期抽样抓不到）。
-  节气时刻本身骑在 30 分上的极少数日子（六十年 18 个）两边仍会分歧——lunar_rust 与
-  lunar-typescript 对同一节气可差数十秒（白露 2043：01:29:44 vs 01:30:13），
-  属天文算法精度差异，金标不取
+  （守护：`golden_config_jieqi_pillars`，按每个「节」的实际时刻取样，固定日期抽样抓不到）
 
 ### 反推（x-iztro 扩展）
 - 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
@@ -227,7 +236,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   反推不收性别；`year_range` 是候选公历日期所属年份的闭区间；`reverse_chart` 条件为空、
   含流耀或含纯十二神 key 报 `InvalidArgument`（咸池/华盖/天德/龙德/大耗兼作宫内杂耀，
   不在拒绝之列），`limit`（默认 512）截断兜住宽条件
-- 日柱用「lunar_rust 锚点校准 + 儒略日纯算术」推 60 周期，避免逐日构造农历对象
+- 日柱用 `calendar::day_cycle`（正午儒略日纯算术）推 60 周期，避免逐日构造农历对象；
+  逐日枚举按 `calendar::days_in_month` / `is_reform_gap`（儒略历与改历空缺），不另抄历法规则
 
 ### 知识包（x-iztro 扩展）
 - 边界：内核只做事实判定，星耀解读、格局释义、宫位/四化含义、门派属性（阴阳五行化气别号等）全在知识包；
@@ -251,23 +261,25 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 
 ### 测试
 - 全部金标数据由 JS iztro v2.6.3（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
+- 历法层另行全量：公历 1-9999 年逐日 3,652,061 天、农历年月表与节气时刻逐年 9,999 年（`calendar.csv`）
+- 排盘层覆盖矩阵（合计 747,572 例；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
-  边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/
+  边界年代哈希 78,156（1-1551 每 50 年、1582、1583-1983 与 2044-2094 每 10 年、2100，另加儒略历特例日，
+  补 tier1/2/3 只覆盖 1984-2043 的盲区）/
   运限 5,760 / 变体（by_lunar 闰月逐日、中州派、六语言）14,268 /
-  Config 开关（四个非默认取值 + 排盘层与运限层的组合、按节气时刻取样的四柱）11,388 / 中州派盘型 12,488 /
-  1602 闰二月窗口 2,444（lunar_table 修正层专属，逐字段全比对）/
+  Config 开关（四个非默认取值 + 排盘层与运限层的组合、按节气时刻取样的四柱）11,424 / 中州派盘型 12,488 /
+  日期写法 46（分隔符、补零、时间部分、运限省略时辰）/
   夹宫与运限列表 5 盘（`chart_lists.json`：夹宫 12 宫、大限 12、流年 3×10、流月 6 组，
   取样含晚子时与闰月出生）
 - tier3、边界年代、变体、astrotype、Config 排盘层的哈希都基于规范化串
   （`tests/golden/canonical.mjs` ≡ `tests/common/mod.rs`，逐字节同构；
   条目含星名/类型/范围/亮度/四化，排序等价性只在 BMP 内成立，注释里写了这个前提）；
   不一致时用生成器 `--inspect*` 重放 JS 单例与 Rust 输出 diff
-- `cargo test` 跑除 tier3 外的全部层（~1min）；tier3 全量用
-  `cargo test --release --test golden_tier3 -- --ignored`（~70s）
+- `cargo test` 跑除 tier3 与历法全量外的全部层（~1min）；全量命令见「构建与测试」
 - 哪条结论由哪个测试守着：
-  - 排盘数值 → `golden_tier1/2/3`、`golden_edge`（1583-1983 / 2044-2100 抽样）、
-    `golden_variants`、`golden_horoscope`；农历换算修正层 → `golden_1602` + `lunar_table`
+  - 历法 → `calendar::golden`（逐日逐年全量）+ `full_domain`
+  - 排盘数值 → `golden_tier1/2/3`、`golden_edge`（1-2100 年代抽样，含儒略历）、
+    `golden_variants`、`golden_horoscope`
   - 序列化契约 → `golden_contract`（对 JS 的 `JSON.stringify` 逐键逐值；
     扩展键白名单按 DTO 路径限定，多在别处的键即判为契约偏离）
   - 单盘全接口面 → `regression`（工具函数、十二宫、三方四正、运限查询方法，
@@ -286,7 +298,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
     大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、
-    全星环测 34 剪枝臂、共享 key 十二神可用、1602 窗口、limit 截断、错误路径、FFI kind）
+    全星环测 34 剪枝臂、共享 key 十二神可用、儒略历与改历前后往返、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
     + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，

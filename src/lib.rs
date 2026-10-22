@@ -19,6 +19,8 @@ pub(crate) mod bridge;
 
 /// 排盘与运限主流程
 pub mod astro;
+/// 历法：公历 ↔ 农历、节气、八字各柱
+pub(crate) mod calendar;
 /// 枚举、常量与星耀数据表
 pub mod data;
 /// 跨语言绑定的序列化 DTO（camelCase + 翻译值 + 语言无关标识）

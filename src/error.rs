@@ -19,17 +19,17 @@ const INTERNAL: &str = "internal";
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum IztroError {
-    /// 日期字符串非法：写法不符（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`）、该日期不存在，
-    /// 或超出支持范围（公历 1583-9999 年）。
+    /// 日期字符串非法：写法不符（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`）、该日期不存在
+    /// （含改历空缺 1582-10-05 至 10-14），或超出支持范围（1-9999 年）。
     InvalidDate(String),
     /// 时辰索引超出 0-12（0=早子时，12=晚子时）。
     InvalidTimeIndex(u8),
     /// 入参不合法：干支阴阳不配、反推条件为空或包含流耀、年份范围颠倒等
     /// 无法归入日期与时辰两类的调用方错误。
     InvalidArgument(String),
-    /// 依赖的历法库未能给出本应存在的干支或星座取值。
-    /// 属于库内部缺陷而非调用方过错，以错误返回而非 panic——
-    /// wasm 上 panic 会 trap 并损耗实例栈空间。
+    /// 库内部的不变量不成立：农历年月表里查不到本应存在的月份，或星盘的 `raw_dates`
+    /// 带着月表中不存在的农历月（只可能来自反序列化或手工构造的星盘）。属于缺陷而非调用方
+    /// 过错，以错误返回而非 panic——wasm 上 panic 会 trap 并损耗实例栈空间。
     Internal(String),
 }
 

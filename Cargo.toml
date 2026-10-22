@@ -22,11 +22,17 @@ include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE", "/include/*.h"]
 name = "x_iztro"
 crate-type = ["cdylib", "rlib"]
 
+# 历法模块的星历级数系数里有 3.14、3.14159 之类的相位常数（四舍五入后的数据值，不是在近似 π），
+# approx_constant 无法区分；本 crate 的浮点运算只在历法模块，π 一律取 std::f64::consts::PI。
+[lints.clippy]
+approx_constant = "allow"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-lunar_rust = "1.0"
-# 仅 horoscope_now 用到本地时钟；lunar_rust 已依赖 chrono，不引入额外编译体积
+# 历法的三角函数：各平台同一实现，节气与合朔时刻逐位一致
+libm = "0.2.16"
+# 仅 horoscope_now 取本地时钟与时区
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 [dependencies.pyo3]

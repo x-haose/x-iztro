@@ -9,15 +9,11 @@
 //! 因此结果与正向排盘零分歧。星盘布局与性别无关（性别只影响大限行进方向），
 //! 反推的目标是生辰，故不收性别。
 
-use std::sync::OnceLock;
-
-use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::{lunar, solar};
 use serde::Serialize;
 
-use crate::astro::builder::{by_solar, effective_time_index, four_pillars};
-use crate::astro::lunar_table;
+use crate::astro::builder::{SUPPORTED_YEARS, by_solar, effective_time_index, four_pillars};
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
+use crate::calendar;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::IztroError;
@@ -27,9 +23,6 @@ use crate::star::location::{
     get_lu_yang_tuo_ma_index, get_luan_xi_index, get_start_index, get_zuo_you_index,
 };
 use crate::utils::{fix_index, get_mutagens_by_heavenly_stem};
-
-/// 支持反推的公历年范围（与排盘一致）。
-const SUPPORTED_YEARS: std::ops::RangeInclusive<i64> = 1583..=9999;
 
 /// [`ReverseCriteria::limit`] 为 0 时采用的候选数上限。
 pub const DEFAULT_REVERSE_LIMIT: usize = 512;
@@ -55,7 +48,7 @@ pub struct BirthCandidate {
 /// 因此任何盘的四柱反查结果必包含该盘的生辰。八字精确到时辰，一组四柱在范围内
 /// 通常每约 60 年出现一次；子时因早晚子之分可能给出两个候选。
 ///
-/// `year_range` 为公历年闭区间（含两端），须落在 1583-9999 内。
+/// `year_range` 为公历年闭区间（含两端），须落在 1-9999 内。
 ///
 /// # Errors
 /// 干支阴阳不配（如甲丑）、年份范围非法时返回 [`IztroError::InvalidArgument`]。
@@ -92,13 +85,16 @@ pub fn solar_dates_by_bazi(
         {
             continue;
         }
-        for month in 1..=12u32 {
-            for day in 1..=days_in_month(year, month) {
+        for month in 1..=12 {
+            for day in 1..=calendar::days_in_month(year, month) {
+                if calendar::is_reform_gap(year, month, day) {
+                    continue;
+                }
                 // 日柱粗筛（纯算术 60 周期）。子时的日柱归属随 `day_divide`：
                 // 晚子归次日（Forward）时 t=12 的日柱取次日干支；晚子归当天（Current）时
                 // 正排把 t>=12 归一为早子，(D,0) 与 (D,12) 四柱完全相同，日柱匹配当日即
                 // 同时给出两个时辰。非子时只匹配当日。
-                let day60 = day_sexagenary_index(year, month, day);
+                let day60 = calendar::day_cycle(year, month, day) as usize;
                 let hour_branch = hourly.1;
                 let mut candidates: [Option<u8>; 2] = [None, None];
                 if hour_branch == EarthlyBranch::Zi {
@@ -150,44 +146,6 @@ fn sexagenary_index((stem, branch): (HeavenlyStem, EarthlyBranch)) -> usize {
     fix_index(6 * stem.index() as i32 - 5 * branch.index() as i32, 60)
 }
 
-/// 公历日期的日柱六十甲子序：以 lunar_rust 给出的锚点日校准后纯算术推算。
-fn day_sexagenary_index(year: i64, month: u32, day: u32) -> usize {
-    static ANCHOR: OnceLock<i64> = OnceLock::new();
-    let anchor = *ANCHOR.get_or_init(|| {
-        // 锚点：2000-01-01 正午的日干支（正午不受晚子归属影响）
-        let l = lunar::from_solar(&solar::from_ymdhms(2000, 1, 1, 12, 0, 0));
-        let stem = crate::astro::builder::parse_heavenly_stem(&l.get_day_gan()).expect("锚点日干");
-        let branch =
-            crate::astro::builder::parse_earthly_branch(&l.get_day_zhi()).expect("锚点日支");
-        sexagenary_index((stem, branch)) as i64 - jdn(2000, 1, 1)
-    });
-    fix_index((anchor + jdn(year, month, day)) as i32, 60)
-}
-
-/// 格里历儒略日数（Fliegel-Van Flandern）。
-fn jdn(year: i64, month: u32, day: u32) -> i64 {
-    let (y, m, d) = (year, month as i64, day as i64);
-    let a = (14 - m) / 12;
-    let y2 = y + 4800 - a;
-    let m2 = m + 12 * a - 3;
-    d + (153 * m2 + 2) / 5 + 365 * y2 + y2 / 4 - y2 / 100 + y2 / 400 - 32045
-}
-
-/// 格里历每月天数。
-fn days_in_month(year: i64, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        _ => {
-            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
-                29
-            } else {
-                28
-            }
-        }
-    }
-}
-
 fn validate_year_range((start, end): (i64, i64)) -> Result<(), IztroError> {
     if start > end || !SUPPORTED_YEARS.contains(&start) || !SUPPORTED_YEARS.contains(&end) {
         return Err(IztroError::InvalidArgument(format!(
@@ -226,7 +184,7 @@ pub struct ReverseCriteria {
     pub stars: Vec<StarPosition>,
     /// 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个
     pub mutagens: [Option<StarKey>; 4],
-    /// 候选公历日期所属年份的闭区间（含两端），须落在 1583-9999 内
+    /// 候选公历日期所属年份的闭区间（含两端），须落在 1-9999 内
     pub year_range: (i64, i64),
     /// 是否修正闰月（与排盘入参同义）
     pub fix_leap: bool,
@@ -319,8 +277,8 @@ pub fn reverse_chart(
         if stems.is_empty() {
             continue;
         }
-        // 闰月只查一次修正视图：非闰月年直接跳过全部闰月试探
-        let leap_month = lunar_table::leap_month(year);
+        // 闰月只查一次：非闰月年直接跳过全部闰月试探
+        let leap_month = calendar::leap_month(year);
         for month in 1..=12i64 {
             if let Some(months) = &domains.months
                 && !months.contains(&month)
@@ -332,9 +290,8 @@ pub fn reverse_chart(
                     continue;
                 }
                 let signed_month = if is_leap { -month } else { month };
-                // 月天数走 lunar_table 修正视图（lunar_rust 的 1602 闰二月月界缺陷在
-                // 那里归位），枚举的农历日标签与正排上下文完全同源
-                let Some(month_day_count) = lunar_table::month_day_count(year, signed_month) else {
+                // 月天数与正排上下文同源（同一农历年月表）
+                let Some(month_day_count) = calendar::month_day_count(year, signed_month) else {
                     continue;
                 };
                 let month_day_count = month_day_count as u32;
@@ -368,16 +325,13 @@ pub fn reverse_chart(
                         {
                             continue;
                         }
-                        // 日已在 1..=month_day_count 内，满足 solar_date_of 的调用前提
-                        let date = lunar_table::solar_date_of(year, signed_month, day as i64);
-                        let solar_year: i64 = date
-                            .split('-')
-                            .next()
-                            .and_then(|y| y.parse().ok())
-                            .expect("solar_date_of 返回自产 Y-M-D 格式，首段恒为年份数字");
+                        let (solar_year, solar_month, solar_day) =
+                            calendar::solar_date_of(year, signed_month, i64::from(day))
+                                .expect("日在 1..=month_day_count 内，该农历月存在");
                         if solar_year < start_year || solar_year > end_year {
                             continue;
                         }
+                        let date = format!("{solar_year}-{solar_month}-{solar_day}");
                         // 终验：农历转公历后完整排盘，逐条核对全部条件
                         let Ok(chart) = by_solar(
                             &date,

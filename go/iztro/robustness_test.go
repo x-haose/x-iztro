@@ -29,10 +29,10 @@ func TestErrorClassification(t *testing.T) {
 		},
 		{
 			name:     "公历下限",
-			call:     func() error { _, err := BySolar("1500-8-16", 2, GenderMale, true, LanguageZhCN, nil); return err },
+			call:     func() error { _, err := BySolar("0-8-16", 2, GenderMale, true, LanguageZhCN, nil); return err },
 			sentinel: ErrInvalidDate,
 			code:     CodeInvalidDate,
-			message:  "year must be within 1583-9999",
+			message:  "year must be within 1-9999",
 		},
 		{
 			name:     "时辰越界",

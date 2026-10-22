@@ -4,12 +4,12 @@
 //! 中间要先落成一组量：生效时辰、农历年月日、两套年干支、月索引、命身宫、五行局。
 //! 排盘主流程与 `star` 模块的各安星入口都从这一步出发，因此单独成型。
 
-use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::{lunar, solar};
-
-use crate::astro::builder::{branch_of, fix_lunar_month_index, stem_of};
-use crate::astro::lunar_table;
+use crate::astro::builder::{
+    chart_moment, effective_time_index, fix_lunar_month_index, parse_solar_date,
+    validate_time_index,
+};
 use crate::astro::palace::{SoulAndBody, get_five_elements_class, get_soul_and_body};
+use crate::calendar::{self, Lunar, SolarTime};
 use crate::data::types::*;
 use crate::error::IztroError;
 
@@ -17,6 +17,8 @@ use crate::error::IztroError;
 pub struct AstroContext {
     /// 参与推算的时辰索引；`day_divide=current` 且为晚子时（>=12）时归零，展示仍用原始时辰
     pub effective_time_index: u8,
+    /// 农历年（正月初一换年）
+    pub lunar_year: i64,
     /// 农历日
     pub lunar_day: u32,
     /// 农历月（闰月取正数月份，闰否见 `is_leap`）
@@ -39,6 +41,10 @@ pub struct AstroContext {
     pub soul_body: SoulAndBody,
     /// 五行局
     pub five_elements_class: FiveElementsClass,
+    /// 排盘时刻：出生日期加生效时辰的代表时刻
+    pub(crate) moment: SolarTime,
+    /// 排盘时刻的农历日期与各柱
+    pub(crate) lunar: Lunar,
 }
 
 /// 由公历日期推出排盘上下文
@@ -50,47 +56,25 @@ pub fn derive(
     fix_leap: bool,
     config: &Config,
 ) -> Result<AstroContext, IztroError> {
-    crate::astro::builder::validate_time_index(time_index)?;
-    let (year, month, day) = crate::astro::builder::parse_solar_date(solar_date)?;
+    validate_time_index(time_index)?;
+    let (year, month, day) = parse_solar_date(solar_date)?;
 
-    let effective_time_index =
-        crate::astro::builder::effective_time_index(config.day_divide, time_index);
+    let effective_time_index = effective_time_index(config.day_divide, time_index);
+    let moment = chart_moment(year, month, day, effective_time_index);
+    let lunar = calendar::lunar_of(&moment);
+    let lunar_date = lunar.date;
+    let is_leap = lunar_date.month < 0; // 负值表示闰月
+    let lunar_month = lunar_date.month.unsigned_abs() as u32;
+    let lunar_day = lunar_date.day as u32;
 
-    let hour = crate::astro::builder::time_index_to_hour(effective_time_index);
-    let solar_with_time = solar::from_ymdhms(
-        year,
-        month,
-        day,
-        hour,
-        crate::astro::builder::CHART_MINUTE,
-        0,
-    );
-    let lunar_ref = lunar::from_solar(&solar_with_time);
-
-    let lunar_ymd = lunar_table::ymd_of(&lunar_ref)?;
-    let is_leap = lunar_ymd.month < 0; // 负值表示闰月
-    let lunar_month = lunar_ymd.month.unsigned_abs() as u32;
-    let lunar_day = lunar_ymd.day as u32;
-
-    let (yearly_stem_str, yearly_branch_str) = match config.year_divide {
-        YearDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
-        YearDivide::Exact => (
-            lunar_ref.get_year_gan_by_li_chun(),
-            lunar_ref.get_year_zhi_by_li_chun(),
-        ),
+    let (yearly_stem, yearly_branch) = match config.year_divide {
+        YearDivide::Normal => lunar.year,
+        YearDivide::Exact => calendar::year_by_li_chun(&moment, lunar_date.year),
     };
-    let yearly_stem = stem_of(&yearly_stem_str, "birth year")?;
-    let yearly_branch = branch_of(&yearly_branch_str, "birth year")?;
-
-    let (flow_stem_str, flow_branch_str) = match config.horoscope_divide {
-        HoroscopeDivide::Normal => (lunar_ref.get_year_gan(), lunar_ref.get_year_zhi()),
-        HoroscopeDivide::Exact => (
-            lunar_ref.get_year_gan_by_li_chun(),
-            lunar_ref.get_year_zhi_by_li_chun(),
-        ),
+    let (flow_yearly_stem, flow_yearly_branch) = match config.horoscope_divide {
+        HoroscopeDivide::Normal => lunar.year,
+        HoroscopeDivide::Exact => calendar::year_by_li_chun(&moment, lunar_date.year),
     };
-    let flow_yearly_stem = stem_of(&flow_stem_str, "flow year")?;
-    let flow_yearly_branch = branch_of(&flow_branch_str, "flow year")?;
 
     let month_index = fix_lunar_month_index(
         lunar_month,
@@ -106,16 +90,19 @@ pub fn derive(
         soul_body.earthly_branch_of_soul,
     );
 
+    // 月天数取农历年 lunar_date.year 的月表（与 iztro 的 getTotalDaysOfLunarMonth 同源），
+    // 农历日期取自公历年的月表；两表在 1-9999 年的取值路径上一致
     let month_day_count =
-        lunar_table::month_day_count(lunar_ymd.year, lunar_ymd.month).ok_or_else(|| {
+        calendar::month_day_count(lunar_date.year, lunar_date.month).ok_or_else(|| {
             IztroError::Internal(format!(
                 "lunar month {} does not exist in lunar year {}",
-                lunar_ymd.month, lunar_ymd.year
+                lunar_date.month, lunar_date.year
             ))
         })? as u32;
 
     Ok(AstroContext {
         effective_time_index,
+        lunar_year: lunar_date.year,
         lunar_day,
         lunar_month,
         is_leap,
@@ -127,5 +114,7 @@ pub fn derive(
         month_index,
         soul_body,
         five_elements_class,
+        moment,
+        lunar,
     })
 }

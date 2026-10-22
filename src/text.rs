@@ -12,15 +12,14 @@
 //! `*_to_text_with` 收 [`TextOptions`]：带知识包时，每宫事实之后紧跟该宫星耀的释义，
 //! 格局列表之后紧跟格局释义，文末附四化释义——事实与解读同处一屏。
 
-use crate::astro::lunar_table;
 use crate::data::constants::CHINESE_TIME;
 use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
 use crate::i18n::lookup::translate_key;
 use crate::i18n::{
     translate_brightness, translate_earthly_branch, translate_five_elements_class,
-    translate_gender, translate_heavenly_stem, translate_mutagen, translate_palace,
-    translate_pattern, translate_star,
+    translate_gender, translate_heavenly_stem, translate_lunar_date_body, translate_mutagen,
+    translate_palace, translate_pattern, translate_star,
 };
 use crate::knowledge::KnowledgePack;
 use crate::models::astrolabe::{Astrolabe, PalaceRef};
@@ -692,7 +691,10 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
         l.solar_date,
         astrolabe.solar_date,
         l.lunar_date,
-        lunar_table::lunar_date_body(&astrolabe.raw_dates.lunar_date, lang),
+        {
+            let d = &astrolabe.raw_dates.lunar_date;
+            translate_lunar_date_body(d.lunar_year, d.lunar_month, d.lunar_day, d.is_leap, lang)
+        },
         l.time,
         hour,
         astrolabe.time_range,

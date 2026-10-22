@@ -2,15 +2,11 @@
 //!
 //! 根据出生星盘和目标日期，计算大限、小限、流年、流月、流日、流时。
 
-use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::{lunar, solar};
-
 use crate::astro::builder::{
-    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, parse_solar_input, stem_of,
-    validate_time_index,
+    chart_moment, effective_time_index, parse_solar_date, parse_solar_input, validate_time_index,
 };
-use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
+use crate::calendar;
 use crate::data::constants::TIGER_RULE;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
@@ -183,20 +179,11 @@ pub fn get_horoscope_stars(
 // 主函数
 // ============================================================
 
-/// 时辰索引转小时数（用于 lunar_rust 日期创建）
-fn time_index_to_hour(time_index: u8) -> i64 {
-    match time_index {
-        0 => 0,
-        12 => 23,
-        i => (i as i64) * 2 - 1,
-    }
-}
-
 /// 根据出生星盘和目标阳历日期计算运限
 ///
 /// # 参数
 /// - `astrolabe`: 出生星盘
-/// - `solar_date`: 目标阳历日期（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`，支持 1583-9999 年）
+/// - `solar_date`: 目标阳历日期（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`，支持 1-9999 年）
 /// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)；`None` 时按目标日期串的小时换算，
 ///   不带时间即早子时（与 iztro 省略 `timeIndex` 时一致）
 /// - `language`: 语言
@@ -222,18 +209,7 @@ pub fn get_horoscope(
     // ---- 1. 解析出生日期的农历信息 ----
     let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
 
-    let birth_hour = time_index_to_hour(astrolabe.time_index);
-    let birth_solar = solar::from_ymdhms(
-        birth_year,
-        birth_month,
-        birth_day,
-        birth_hour,
-        CHART_MINUTE,
-        0,
-    );
-    let birth_lunar = lunar::from_solar(&birth_solar);
-
-    let birth_ymd = lunar_table::ymd_of(&birth_lunar)?;
+    let birth_ymd = calendar::lunar_date_of(birth_year, birth_month, birth_day);
     let birthday_lunar_year = birth_ymd.year;
     let birthday_lunar_month = birth_ymd.month.unsigned_abs() as i32;
     let birthday_lunar_day = birth_ymd.day as u32;
@@ -244,21 +220,15 @@ pub fn get_horoscope(
 
     // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
     // （农历年月日与时辰无关，23:00 仍属同一公历日）
-    let target_hour = time_index_to_hour(effective_time_index(
-        astrolabe.config.day_divide,
-        time_index,
-    ));
-    let target_solar = solar::from_ymdhms(
+    let target_moment = chart_moment(
         target_year,
         target_month,
         target_day,
-        target_hour,
-        CHART_MINUTE,
-        0,
+        effective_time_index(astrolabe.config.day_divide, time_index),
     );
-    let target_lunar = lunar::from_solar(&target_solar);
+    let target_lunar = calendar::lunar_of(&target_moment);
 
-    let target_ymd = lunar_table::ymd_of(&target_lunar)?;
+    let target_ymd = target_lunar.date;
     let target_lunar_year = target_ymd.year;
     let target_is_leap = target_ymd.month < 0;
     let target_lunar_month = target_ymd.month.unsigned_abs() as i32;
@@ -266,7 +236,7 @@ pub fn get_horoscope(
 
     // ---- 3. 计算虚岁（分界点由配置决定） ----
     //     自然年分界：跨农历年即加一岁；生日分界：过了农历生日才加一岁
-    let mut nominal_age = (target_lunar_year - birthday_lunar_year) as i64;
+    let mut nominal_age = target_lunar_year - birthday_lunar_year;
     match astrolabe.config.age_divide {
         AgeDivide::Normal => nominal_age += 1,
         AgeDivide::Birthday => {
@@ -286,20 +256,10 @@ pub fn get_horoscope(
     //     初一分界：年按正月初一换年，月按初一以五虎遁推算（闰月下半月归下月）；
     //     节气分界：年按立春换年，月按节气精确时刻推算。
     //     日柱晚子时归次日；时柱天干随日柱推算
-    let (target_year_gan_str, target_year_zhi_str) = match astrolabe.config.horoscope_divide {
-        HoroscopeDivide::Normal => (target_lunar.get_year_gan(), target_lunar.get_year_zhi()),
-        HoroscopeDivide::Exact => (
-            target_lunar.get_year_gan_by_li_chun(),
-            target_lunar.get_year_zhi_by_li_chun(),
-        ),
+    let (target_year_stem, target_year_branch) = match astrolabe.config.horoscope_divide {
+        HoroscopeDivide::Normal => target_lunar.year,
+        HoroscopeDivide::Exact => calendar::year_by_li_chun(&target_moment, target_lunar_year),
     };
-    let target_day_gan_str = target_lunar.get_day_gan_exact();
-    let target_day_zhi_str = target_lunar.get_day_zhi_exact();
-    let target_time_gan_str = target_lunar.get_time_gan();
-    let target_time_zhi_str = target_lunar.get_time_zhi();
-
-    let target_year_stem = stem_of(&target_year_gan_str, "target year")?;
-    let target_year_branch = branch_of(&target_year_zhi_str, "target year")?;
 
     let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
         HoroscopeDivide::Normal => {
@@ -320,20 +280,10 @@ pub fn get_horoscope(
                 )),
             )
         }
-        HoroscopeDivide::Exact => {
-            let gan = target_lunar.get_month_gan_exact();
-            let zhi = target_lunar.get_month_zhi_exact();
-            (
-                stem_of(&gan, "target month")?,
-                branch_of(&zhi, "target month")?,
-            )
-        }
+        HoroscopeDivide::Exact => calendar::month_exact(&target_moment, target_lunar_year),
     };
-
-    let target_day_stem = stem_of(&target_day_gan_str, "target day")?;
-    let target_day_branch = branch_of(&target_day_zhi_str, "target day")?;
-    let target_time_stem = stem_of(&target_time_gan_str, "target time")?;
-    let target_time_branch = branch_of(&target_time_zhi_str, "target time")?;
+    let (target_day_stem, target_day_branch) = target_lunar.day_exact;
+    let (target_time_stem, target_time_branch) = target_lunar.time;
 
     // ---- 5. 大限 ----
     //     虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
@@ -498,12 +448,12 @@ pub fn get_horoscope(
         stars: Some(hourly_stars.to_vec()),
     };
 
-    // ---- 11. 农历日期字符串（月/日名取修正后的农历日期，闰月带「闰」前缀） ----
-    let lunar_date_str = format!(
-        "{}年{}月{}",
-        lunar_table::year_in_chinese(target_lunar_year as i64),
-        lunar_table::month_in_chinese(target_lunar_month as u32, target_is_leap),
-        lunar_table::day_in_chinese(target_lunar_day),
+    // ---- 11. 农历日期字符串（恒为中文写法，闰月带「闰」前缀） ----
+    let lunar_date_str = calendar::chinese_lunar_date(
+        target_lunar_year,
+        target_lunar_month as u32,
+        target_lunar_day,
+        target_is_leap,
     );
 
     Ok(HoroscopeData {
@@ -828,8 +778,10 @@ impl Astrolabe {
         (start..=end)
             .map(|age| {
                 let year = birth_year + age as i64 - 1;
-                let date = lunar_table::solar_date_of(year, 6, 1);
-                let h = get_horoscope(self, &date, time_index, self.language)?;
+                let (sy, sm, sd) = calendar::solar_date_of(year, 6, 1).ok_or_else(|| {
+                    IztroError::Internal(format!("lunar year {year} has no sixth month"))
+                })?;
+                let h = get_horoscope(self, &format!("{sy}-{sm}-{sd}"), time_index, self.language)?;
                 Ok(YearlyHoroscope {
                     base: h.yearly.base,
                     age,
@@ -854,7 +806,7 @@ impl Astrolabe {
     ) -> Result<Vec<MonthlyHoroscope>, IztroError> {
         let age = (year - self.raw_dates.lunar_date.lunar_year + 1).max(1) as u32;
         let time_index = self.list_time_index();
-        let leap = lunar_table::leap_month(year);
+        let leap = calendar::leap_month(year);
 
         let mut out = Vec::new();
         for month in 1..=12u32 {
@@ -865,7 +817,7 @@ impl Astrolabe {
             }
             for sm in signed {
                 let is_leap = sm < 0;
-                let Some(day_count) = lunar_table::month_day_count(year, sm) else {
+                let Some(day_count) = calendar::month_day_count(year, sm) else {
                     continue;
                 };
                 let last = day_count as u32;
@@ -875,8 +827,14 @@ impl Astrolabe {
                     vec![(MonthPart::Normal, (1, last))]
                 };
                 for (part, day_range) in segments {
-                    let date = lunar_table::solar_date_of(year, sm, day_range.0 as i64);
-                    let h = get_horoscope(self, &date, time_index, self.language)?;
+                    let (sy, smo, sd) = calendar::solar_date_of(year, sm, day_range.0 as i64)
+                        .expect("段首日在该农历月的天数之内");
+                    let h = get_horoscope(
+                        self,
+                        &format!("{sy}-{smo}-{sd}"),
+                        time_index,
+                        self.language,
+                    )?;
                     out.push(MonthlyHoroscope {
                         base: h.monthly,
                         age,
@@ -895,7 +853,7 @@ impl Astrolabe {
     /// 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
     ///
     /// # Errors
-    /// 本地日期落在支持范围（公历 1583-9999）之外时返回 [`IztroError`]。
+    /// 本地日期落在支持范围（公历 1-9999）之外时返回 [`IztroError`]。
     pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError> {
         let now = chrono::Local::now().format("%Y-%-m-%-d %H:%M").to_string();
         self.horoscope(&now, None)

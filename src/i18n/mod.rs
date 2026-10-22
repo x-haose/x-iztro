@@ -165,6 +165,46 @@ pub fn translate_zodiac(branch: EarthlyBranch, lang: Language) -> &'static str {
     }
 }
 
+/// 星盘的农历日期展示串（对应 iztro 的 `lunarDate`）：简繁中文为「二〇〇〇年七月十七」式，
+/// 其余语言为「农历」一词加 [`translate_lunar_date_body`]。`month` 为 1-12，闰月由 `is_leap` 标出。
+pub(crate) fn translate_lunar_date(
+    year: i64,
+    month: u32,
+    day: u32,
+    is_leap: bool,
+    lang: Language,
+) -> String {
+    match lang {
+        Language::ZhCN | Language::ZhTW => {
+            crate::calendar::chinese_lunar_date(year, month, day, is_leap)
+        }
+        Language::EnUS => en_us::lunar_date(year, month, day, is_leap),
+        Language::JaJP => ja_jp::lunar_date(year, month, day, is_leap),
+        Language::KoKR => ko_kr::lunar_date(year, month, day, is_leap),
+        Language::ViVN => vi_vn::lunar_date(year, month, day, is_leap),
+    }
+}
+
+/// 农历日期不带「农历」一词的写法，用于已有标签的场合（如语义化文本的基本信息行）；
+/// 简繁中文的写法本就不带该词，与 [`translate_lunar_date`] 相同。
+pub(crate) fn translate_lunar_date_body(
+    year: i64,
+    month: u32,
+    day: u32,
+    is_leap: bool,
+    lang: Language,
+) -> String {
+    match lang {
+        Language::ZhCN | Language::ZhTW => {
+            crate::calendar::chinese_lunar_date(year, month, day, is_leap)
+        }
+        Language::EnUS => en_us::lunar_date_body(year, month, day, is_leap),
+        Language::JaJP => ja_jp::lunar_date_body(year, month, day, is_leap),
+        Language::KoKR => ko_kr::lunar_date_body(year, month, day, is_leap),
+        Language::ViVN => vi_vn::lunar_date_body(year, month, day, is_leap),
+    }
+}
+
 /// 格局名称（按语言）
 pub fn translate_pattern(key: crate::pattern::PatternKey, lang: Language) -> &'static str {
     patterns::pattern_name(key, lang)
