@@ -1,10 +1,8 @@
 //! 格局标识：语言无关的 key、全表与反查。
 
-use serde::{Deserialize, Serialize};
-
 /// 格局标识。变体名与 iztro-docs《格局》页的条目一一对应；
 /// `as_key` 给出 snake_case 的语言无关字符串，是绑定层与知识包引用格局的唯一锚点。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PatternKey {
     /// 君臣庆会
     JunChenQingHui,
@@ -136,6 +134,73 @@ pub enum PatternKey {
     JiaDiDengYong,
 }
 
+crate::data::keyed::keyed_enum!(PatternKey, "pattern" {
+    JunChenQingHui => "jun_chen_qing_hui",
+    ZiFuTongGong => "zi_fu_tong_gong",
+    JinYuFuJia => "jin_yu_fu_jia",
+    ZiFuJiaMing => "zi_fu_jia_ming",
+    JiXiangLiMing => "ji_xiang_li_ming",
+    JiJuMaoYou => "ji_ju_mao_you",
+    JiYueTongLiang => "ji_yue_tong_liang",
+    ShanYinChaoGang => "shan_yin_chao_gang",
+    JiJuTongLin => "ji_ju_tong_lin",
+    JiJuJuMao => "ji_ju_ju_mao",
+    RiYueTongGong => "ri_yue_tong_gong",
+    JuRiTongGong => "ju_ri_tong_gong",
+    RiZhaoLeiMen => "ri_zhao_lei_men",
+    RiYueBingMing => "ri_yue_bing_ming",
+    RiYueFanBei => "ri_yue_fan_bei",
+    RiYueZhaoBi => "ri_yue_zhao_bi",
+    JinCanGuangHui => "jin_can_guang_hui",
+    RiYueCangHui => "ri_yue_cang_hui",
+    DanChiGuiChi => "dan_chi_gui_chi",
+    RiYueJiaMing => "ri_yue_jia_ming",
+    RiYueJiaCai => "ri_yue_jia_cai",
+    YueLangTianMen => "yue_lang_tian_men",
+    YueShengCangHai => "yue_sheng_cang_hai",
+    MingZhuChuHai => "ming_zhu_chu_hai",
+    WuTanTongXing => "wu_tan_tong_xing",
+    LingChangTuoWu => "ling_chang_tuo_wu",
+    XingQiuJiaYin => "xing_qiu_jia_yin",
+    ShengBuFengShi => "sheng_bu_feng_shi",
+    XiongSuChaoYuan => "xiong_su_chao_yuan",
+    FuXiangChaoYuan => "fu_xiang_chao_yuan",
+    HuoTan => "huo_tan",
+    LingTan => "ling_tan",
+    ShiZhongYinYu => "shi_zhong_yin_yu",
+    LiangMaPiaoDang => "liang_ma_piao_dang",
+    YangLiangChangLu => "yang_liang_chang_lu",
+    ShaPoLang => "sha_po_lang",
+    QiShaChaoDou => "qi_sha_chao_dou",
+    LuShuaiMaKun => "lu_shuai_ma_kun",
+    YingXingRuMiao => "ying_xing_ru_miao",
+    ZhongShuiChaoDong => "zhong_shui_chao_dong",
+    SanQiJiaHui => "san_qi_jia_hui",
+    LuMaJiaoChi => "lu_ma_jiao_chi",
+    LuHeYuanYang => "lu_he_yuan_yang",
+    MingLuAnLu => "ming_lu_an_lu",
+    LuMaPeiYin => "lu_ma_pei_yin",
+    LiangChongHuaGai => "liang_chong_hua_gai",
+    FengYunJiHui => "feng_yun_ji_hui",
+    YangTuoJiaMing => "yang_tuo_jia_ming",
+    MaTouDaiJian => "ma_tou_dai_jian",
+    ZuoYouTongGong => "zuo_you_tong_gong",
+    ZuoYouJiaMing => "zuo_you_jia_ming",
+    FuBiGongZhu => "fu_bi_gong_zhu",
+    KuiYueJiaMing => "kui_yue_jia_ming",
+    ZuoGuiXiangGui => "zuo_gui_xiang_gui",
+    JieKongJiaMing => "jie_kong_jia_ming",
+    LuFengLiangSha => "lu_feng_liang_sha",
+    WenGuiWenHua => "wen_gui_wen_hua",
+    WenXingChaoMing => "wen_xing_chao_ming",
+    ChangQuJiaMing => "chang_qu_jia_ming",
+    WenXingAnGong => "wen_xing_an_gong",
+    QuanLuShengFeng => "quan_lu_sheng_feng",
+    KeMingAnLu => "ke_ming_an_lu",
+    KeQuanLuJia => "ke_quan_lu_jia",
+    JiaDiDengYong => "jia_di_deng_yong",
+});
+
 /// 全部格局，按 iztro-docs《格局》页的条目顺序。
 pub const ALL_PATTERNS: [PatternKey; 64] = [
     PatternKey::JunChenQingHui,
@@ -205,81 +270,6 @@ pub const ALL_PATTERNS: [PatternKey; 64] = [
 ];
 
 impl PatternKey {
-    /// 语言无关标识（snake_case 拼音）。
-    pub fn as_key(self) -> &'static str {
-        match self {
-            PatternKey::JunChenQingHui => "jun_chen_qing_hui",
-            PatternKey::ZiFuTongGong => "zi_fu_tong_gong",
-            PatternKey::JinYuFuJia => "jin_yu_fu_jia",
-            PatternKey::ZiFuJiaMing => "zi_fu_jia_ming",
-            PatternKey::JiXiangLiMing => "ji_xiang_li_ming",
-            PatternKey::JiJuMaoYou => "ji_ju_mao_you",
-            PatternKey::JiYueTongLiang => "ji_yue_tong_liang",
-            PatternKey::ShanYinChaoGang => "shan_yin_chao_gang",
-            PatternKey::JiJuTongLin => "ji_ju_tong_lin",
-            PatternKey::JiJuJuMao => "ji_ju_ju_mao",
-            PatternKey::RiYueTongGong => "ri_yue_tong_gong",
-            PatternKey::JuRiTongGong => "ju_ri_tong_gong",
-            PatternKey::RiZhaoLeiMen => "ri_zhao_lei_men",
-            PatternKey::RiYueBingMing => "ri_yue_bing_ming",
-            PatternKey::RiYueFanBei => "ri_yue_fan_bei",
-            PatternKey::RiYueZhaoBi => "ri_yue_zhao_bi",
-            PatternKey::JinCanGuangHui => "jin_can_guang_hui",
-            PatternKey::RiYueCangHui => "ri_yue_cang_hui",
-            PatternKey::DanChiGuiChi => "dan_chi_gui_chi",
-            PatternKey::RiYueJiaMing => "ri_yue_jia_ming",
-            PatternKey::RiYueJiaCai => "ri_yue_jia_cai",
-            PatternKey::YueLangTianMen => "yue_lang_tian_men",
-            PatternKey::YueShengCangHai => "yue_sheng_cang_hai",
-            PatternKey::MingZhuChuHai => "ming_zhu_chu_hai",
-            PatternKey::WuTanTongXing => "wu_tan_tong_xing",
-            PatternKey::LingChangTuoWu => "ling_chang_tuo_wu",
-            PatternKey::XingQiuJiaYin => "xing_qiu_jia_yin",
-            PatternKey::ShengBuFengShi => "sheng_bu_feng_shi",
-            PatternKey::XiongSuChaoYuan => "xiong_su_chao_yuan",
-            PatternKey::FuXiangChaoYuan => "fu_xiang_chao_yuan",
-            PatternKey::HuoTan => "huo_tan",
-            PatternKey::LingTan => "ling_tan",
-            PatternKey::ShiZhongYinYu => "shi_zhong_yin_yu",
-            PatternKey::LiangMaPiaoDang => "liang_ma_piao_dang",
-            PatternKey::YangLiangChangLu => "yang_liang_chang_lu",
-            PatternKey::ShaPoLang => "sha_po_lang",
-            PatternKey::QiShaChaoDou => "qi_sha_chao_dou",
-            PatternKey::LuShuaiMaKun => "lu_shuai_ma_kun",
-            PatternKey::YingXingRuMiao => "ying_xing_ru_miao",
-            PatternKey::ZhongShuiChaoDong => "zhong_shui_chao_dong",
-            PatternKey::SanQiJiaHui => "san_qi_jia_hui",
-            PatternKey::LuMaJiaoChi => "lu_ma_jiao_chi",
-            PatternKey::LuHeYuanYang => "lu_he_yuan_yang",
-            PatternKey::MingLuAnLu => "ming_lu_an_lu",
-            PatternKey::LuMaPeiYin => "lu_ma_pei_yin",
-            PatternKey::LiangChongHuaGai => "liang_chong_hua_gai",
-            PatternKey::FengYunJiHui => "feng_yun_ji_hui",
-            PatternKey::YangTuoJiaMing => "yang_tuo_jia_ming",
-            PatternKey::MaTouDaiJian => "ma_tou_dai_jian",
-            PatternKey::ZuoYouTongGong => "zuo_you_tong_gong",
-            PatternKey::ZuoYouJiaMing => "zuo_you_jia_ming",
-            PatternKey::FuBiGongZhu => "fu_bi_gong_zhu",
-            PatternKey::KuiYueJiaMing => "kui_yue_jia_ming",
-            PatternKey::ZuoGuiXiangGui => "zuo_gui_xiang_gui",
-            PatternKey::JieKongJiaMing => "jie_kong_jia_ming",
-            PatternKey::LuFengLiangSha => "lu_feng_liang_sha",
-            PatternKey::WenGuiWenHua => "wen_gui_wen_hua",
-            PatternKey::WenXingChaoMing => "wen_xing_chao_ming",
-            PatternKey::ChangQuJiaMing => "chang_qu_jia_ming",
-            PatternKey::WenXingAnGong => "wen_xing_an_gong",
-            PatternKey::QuanLuShengFeng => "quan_lu_sheng_feng",
-            PatternKey::KeMingAnLu => "ke_ming_an_lu",
-            PatternKey::KeQuanLuJia => "ke_quan_lu_jia",
-            PatternKey::JiaDiDengYong => "jia_di_deng_yong",
-        }
-    }
-
-    /// 由语言无关标识反查；未知字符串返回 `None`。
-    pub fn from_key(key: &str) -> Option<Self> {
-        ALL_PATTERNS.iter().copied().find(|p| p.as_key() == key)
-    }
-
     /// 是否行运格：只在运限视角下判定，本命盘不报。
     pub fn is_horoscope_only(self) -> bool {
         matches!(self, PatternKey::LuShuaiMaKun | PatternKey::FengYunJiHui)

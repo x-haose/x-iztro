@@ -165,7 +165,7 @@ fn snapshot_value(case: &Case, language: Language) -> Value {
             "timeIndex": case.time_index,
             "gender": gender_key(case.gender),
             "fixLeap": true,
-            "language": language.as_code(),
+            "language": language.as_key(),
             "config": config_json(&case.config),
             "patternConfig": serde_json::to_value(pc).expect("口径可序列化"),
             "targetDate": TARGET_DATE,
@@ -217,7 +217,7 @@ fn expected_files() -> BTreeSet<String> {
         .flat_map(|case| {
             LANGUAGES
                 .iter()
-                .map(|l| format!("{}_{}.json", case.name, l.as_code()))
+                .map(|l| format!("{}_{}.json", case.name, l.as_key()))
         })
         .collect()
 }
@@ -227,7 +227,7 @@ fn pattern_dto_matches_snapshots() {
     for case in cases() {
         for language in LANGUAGES {
             assert_snapshot(
-                &format!("{}_{}", case.name, language.as_code()),
+                &format!("{}_{}", case.name, language.as_key()),
                 &snapshot_value(&case, language),
             );
         }
@@ -320,7 +320,7 @@ fn snapshots_differ_only_by_translation() {
                     b.len(),
                     "{} {layer}：{} 与 zh-CN 的命中数不一致",
                     case.name,
-                    language.as_code()
+                    language.as_key()
                 );
                 for (x, y) in a.iter().zip(b) {
                     for field in ["key", "scope", "palaceIndex", "palaceNameKey", "broken"] {
@@ -329,7 +329,7 @@ fn snapshots_differ_only_by_translation() {
                             y[field],
                             "{} {layer}：{} 的 {field} 与 zh-CN 不一致",
                             case.name,
-                            language.as_code()
+                            language.as_key()
                         );
                     }
                     assert_eq!(x["variant"], y["variant"]);

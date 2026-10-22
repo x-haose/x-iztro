@@ -13,15 +13,16 @@ The common enums are re-exported at the crate root, so `use x_iztro::*;` is enou
 
 ## Enums
 
-Nineteen enums plus `StarKey`. All of them implement `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq` and
-serde's `Serialize` / `Deserialize`, so they compare directly and go straight into collections.
+Nineteen enums plus `StarKey`. All of them implement `Debug`, `Clone`, `Copy`, `PartialEq` and `Eq`,
+so they compare directly and go straight into collections.
 
-### Language-independent keys: as_key / from_key
+### Language-independent keys: as_key / from_key / KEYS
 
-Most of the enums carry a mutually inverse pair of methods converting between a variant and its iztro
-i18n key string. These keys are exactly the values of the `*Key` fields in the DTO, and the values of
-the Python enums and Go constants — write the same string on any of the three sides and the predicates
-agree.
+Every enum except yin-yang and the five elements carries a set of language-independent keys — iztro i18n
+key strings: `as_key()` gives the key, `from_key(&str)` restores the variant, and `KEYS` lists every key in
+variant declaration order. These keys are exactly the values of the `*Key` fields in the DTO and of the
+binding wire protocol, and the values of the Python enums and Go constants — write the same string on any
+of the three sides and the predicates agree.
 
 | Enum | Variants | To key | From key | Example keys |
 | --- | --- | --- | --- | --- |
@@ -32,8 +33,11 @@ agree.
 | `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
 | `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
 | `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
-| `StarType` | 8 | `as_key()` | — | `major`, `lucun` |
+| `StarType` | 8 | `as_key()` | `from_key(&str)` | `major`, `lucun` |
 | `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`, `decadal` |
+| `HoroscopeName` | 7 | `as_key()` | `from_key(&str)` | `decadal`, `childhood`, `turn` (the age scope) |
+| `Gender` | 2 | `as_key()` | `from_key(&str)` | `male` / `female` |
+| `Language` | 6 | `as_key()` | `from_key(&str)` | `zh-CN`, `en-US` |
 | `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
@@ -44,6 +48,13 @@ agree.
 
 `from_key` always returns an `Option`, giving `None` for an unknown key — which is how the bindings
 reject invalid input.
+
+**The serde form is the key**: these enums serialize to the `as_key()` string and deserialize only the
+spellings in `KEYS`; an unknown value is an error that lists the valid ones (beyond twelve values it only
+names the kind of key). With the `schemars` feature they also implement `schemars::JsonSchema`, producing a
+string enum over all of `KEYS`, so downstream code can derive input schemas from the core types instead of
+copying the value lists. The chart, palace, star and horoscope structs do not implement serde: for JSON use
+the [DTO](/en/docs/rust/astrolabe#to_dto), the one serialized form.
 
 ```rust
 println!("{}", StarKey::ZiweiMaj.as_key());
@@ -72,7 +83,7 @@ Some(Current)
 | `Palace` | `index() -> usize` / `from_index(usize)` | The name's ordinal within `PALACES`: Soul = 0, Parents = 1, …, Siblings = 11. **Not a position on the chart**; `from_index` takes the value modulo 12 and returns no `Option` |
 | `FiveElementsClass` | `value() -> usize` | The class number: water 2nd 2, wood 3rd 3, metal 4th 4, earth 5th 5, fire 6th 6 |
 | `Gender` | `yin_yang() -> YinYang` | Male is yang, female yin; it sets the direction of the decadal scope and the Changsheng gods |
-| `Language` | `as_code() -> &'static str` / `from_code(&str)` | Language codes such as `zh-CN`; `from_code` is case-insensitive and treats hyphen and underscore alike (`zh_cn` is accepted too) |
+| `Language` | `from_code(&str)` | Restores a hand-written language code: case-insensitive, hyphen and underscore alike (`zh_cn` is accepted too); `from_key` and serde accept only the canonical spelling |
 | `YinYang` | `as_str() -> &'static str` | `阳` / `阴`, not internationalized |
 | `FiveElements` | `as_str() -> &'static str` | `木` `金` `水` `火` `土`, not internationalized |
 
@@ -81,7 +92,7 @@ println!("{} {}", HeavenlyStem::Gui.index(), EarthlyBranch::Hai.index());
 println!("{:?}", Palace::from_index(4));
 println!("{}", FiveElementsClass::Wood3rd.value());
 println!("{:?} {}", Gender::Female.yin_yang(), Gender::Female.yin_yang().as_str());
-println!("{} {:?}", Language::JaJP.as_code(), Language::from_code("ZH-cn"));
+println!("{} {:?}", Language::JaJP.as_key(), Language::from_code("ZH-cn"));
 ```
 
 **Output**
@@ -147,11 +158,21 @@ the JS iztro defaults.
 The meaning of the six switches and the schools behind them are on
 [Config in depth](/en/docs/guide/guides/config).
 
-<Callout type="info" title="overrides takes no part in serialization">
-`overrides` is marked `#[serde(skip)]`: it is charting **input** rather than result, and putting it in
-the DTO would break the field contract with JS iztro. The `config` object in the JSON output therefore
-holds only the six switches, and the custom tables are not echoed back.
-</Callout>
+### Serialization
+
+The serde form of `Config` is the binding layer's config JSON:
+
+- Deserialization is a **partial patch**: missing keys take their defaults, and **unknown keys are an error**
+  (a misspelled key is never silently ignored);
+- the six switches take their keys (`"yearDivide": "exact"`); the custom tables are written as
+  `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}` and
+  `"brightness": {"ziweiMaj": ["miao", "", …]}` (twelve entries by palace index with Yin = 0; an empty string
+  means no brightness);
+- serialization writes the six switches and every overridden table, and deserializes back unchanged — the
+  custom tables survive the round trip.
+
+The `config` inside the chart DTO records only the six switches and does not echo the custom tables: they are
+an input to charting, not part of the result.
 
 ### Construction methods
 

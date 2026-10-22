@@ -18,7 +18,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::stars::{MUTAGEN, StarKey};
+use crate::data::stars::MUTAGEN;
 use crate::data::types::*;
 use crate::error::BridgeError;
 use crate::i18n::{
@@ -181,22 +181,22 @@ pub struct RawDatesDto {
     pub chinese_date: RawChineseDateDto,
 }
 
-/// 排盘配置 DTO（字符串取值，与 JS iztro 的 config() 取值一致）。
+/// 排盘配置 DTO：六个开关，取值为语言无关标识（与 JS iztro 的 config() 取值一致）。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigDto {
-    /// "normal" | "exact"
-    pub year_divide: String,
-    /// "normal" | "exact"
-    pub horoscope_divide: String,
-    /// "normal" | "birthday"
-    pub age_divide: String,
-    /// "forward" | "current"
-    pub day_divide: String,
-    /// "default" | "zhongzhou"
-    pub algorithm: String,
-    /// "heaven" | "earth" | "human"
-    pub astro_type: String,
+    /// 年分界点
+    pub year_divide: YearDivide,
+    /// 运限分界点
+    pub horoscope_divide: HoroscopeDivide,
+    /// 虚岁分界点
+    pub age_divide: AgeDivide,
+    /// 晚子时归属
+    pub day_divide: DayDivide,
+    /// 算法派别
+    pub algorithm: Algorithm,
+    /// 排盘视角
+    pub astro_type: AstroType,
 }
 
 /// 星盘 DTO。
@@ -443,147 +443,41 @@ pub(crate) fn panic_message(panic: &(dyn std::any::Any + Send)) -> &str {
         .unwrap_or("computation panicked")
 }
 
-/// config JSON 的部分键补丁：缺省键取默认值。
-#[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-struct ConfigPatch {
-    year_divide: Option<String>,
-    horoscope_divide: Option<String>,
-    age_divide: Option<String>,
-    day_divide: Option<String>,
-    algorithm: Option<String>,
-    astro_type: Option<String>,
-    /// 天干标识 → 四化星标识数组（禄权科忌四项）
-    mutagens: Option<std::collections::HashMap<String, Vec<String>>>,
-    /// 星耀标识 → 十二宫亮度标识数组（十二项，空串表示该宫无亮度）
-    brightness: Option<std::collections::HashMap<String, Vec<String>>>,
-}
-
-/// 解析绑定层的 config JSON（如 `{"algorithm":"zhongzhou"}`）。
-/// `None` 或空串返回默认配置；未出现的键取默认值；非法取值报错。
+/// 解析绑定层的 config JSON（如 `{"algorithm":"zhongzhou"}`），语义即 [`Config`] 的反序列化：
+/// 部分键补丁，缺省键取默认值，未知键与非法取值报错。`None` 或空串返回默认配置。
 ///
 /// # Errors
-/// JSON 语法错误或任一键取值不在允许集合内时返回 `invalid_argument`。
+/// JSON 语法错误、未知键或任一取值不在允许集合内时返回 `invalid_argument`。
 pub fn parse_config_json(json: Option<&str>) -> Result<Config, BridgeError> {
-    let json = match json {
-        None => return Ok(Config::default()),
-        Some(s) if s.trim().is_empty() => return Ok(Config::default()),
-        Some(s) => s,
-    };
-    let patch: ConfigPatch = serde_json::from_str(json)
-        .map_err(|e| BridgeError::invalid_argument(format!("invalid config JSON: {e}")))?;
-    config_from_patch(patch)
+    match json {
+        None => Ok(Config::default()),
+        Some(s) if s.trim().is_empty() => Ok(Config::default()),
+        Some(s) => serde_json::from_str(s).map_err(invalid_config),
+    }
 }
 
-/// 由已反序列化的补丁构造配置，供 `parse_config_json` 与 `serde_json::Value`
-/// 入参共用——后者不必先序列化回字符串再解析一遍。
+/// 由已解析的 JSON 值构造配置，语义同 [`parse_config_json`]。
 ///
 /// # Errors
-/// 任一键取值不在允许集合内时返回 `invalid_argument`。
+/// 未知键或任一取值不在允许集合内时返回 `invalid_argument`。
 pub fn parse_config_value(value: &serde_json::Value) -> Result<Config, BridgeError> {
-    let patch: ConfigPatch = serde_json::from_value(value.clone())
-        .map_err(|e| BridgeError::invalid_argument(format!("invalid config: {e}")))?;
-    config_from_patch(patch)
+    Config::deserialize(value).map_err(invalid_config)
 }
 
-/// 开关键取值非法的统一报错：`invalid <field> '<value>': expected <expected>`
-fn bad_switch(field: &str, value: &str, expected: &str) -> BridgeError {
-    BridgeError::invalid_argument(format!("invalid {field} '{value}': expected {expected}"))
-}
-
-fn config_from_patch(patch: ConfigPatch) -> Result<Config, BridgeError> {
-    let mut config = Config::default();
-    if let Some(v) = patch.year_divide {
-        config.year_divide = YearDivide::from_key(&v)
-            .ok_or_else(|| bad_switch("yearDivide", &v, "'normal' or 'exact'"))?;
-    }
-    if let Some(v) = patch.horoscope_divide {
-        config.horoscope_divide = HoroscopeDivide::from_key(&v)
-            .ok_or_else(|| bad_switch("horoscopeDivide", &v, "'normal' or 'exact'"))?;
-    }
-    if let Some(v) = patch.age_divide {
-        config.age_divide = AgeDivide::from_key(&v)
-            .ok_or_else(|| bad_switch("ageDivide", &v, "'normal' or 'birthday'"))?;
-    }
-    if let Some(v) = patch.day_divide {
-        config.day_divide = DayDivide::from_key(&v)
-            .ok_or_else(|| bad_switch("dayDivide", &v, "'forward' or 'current'"))?;
-    }
-    if let Some(v) = patch.algorithm {
-        config.algorithm = Algorithm::from_key(&v)
-            .ok_or_else(|| bad_switch("algorithm", &v, "'default' or 'zhongzhou'"))?;
-    }
-    if let Some(v) = patch.astro_type {
-        config.astro_type = AstroType::from_key(&v)
-            .ok_or_else(|| bad_switch("astroType", &v, "'heaven', 'earth' or 'human'"))?;
-    }
-
-    // 自定义四化与亮度表：键与值都是语言无关标识
-    if let Some(map) = patch.mutagens {
-        for (stem_key, star_keys) in map {
-            let stem = HeavenlyStem::from_key(&stem_key).ok_or_else(|| {
-                BridgeError::invalid_argument(format!(
-                    "invalid mutagens key '{stem_key}': unknown heavenly stem"
-                ))
-            })?;
-            if star_keys.len() != 4 {
-                return Err(BridgeError::invalid_argument(format!(
-                    "invalid mutagens for '{stem_key}': expected 4 stars (lu, quan, ke, ji), got {}",
-                    star_keys.len()
-                )));
-            }
-            let mut stars = [StarKey::ZiweiMaj; 4];
-            for (i, key) in star_keys.iter().enumerate() {
-                stars[i] = StarKey::from_key(key).ok_or_else(|| {
-                    BridgeError::invalid_argument(format!(
-                        "invalid mutagens for '{stem_key}': unknown star '{key}'"
-                    ))
-                })?;
-            }
-            config = config.with_mutagens(stem, stars);
-        }
-    }
-    if let Some(map) = patch.brightness {
-        for (star_key, brightness_keys) in map {
-            let star = StarKey::from_key(&star_key).ok_or_else(|| {
-                BridgeError::invalid_argument(format!(
-                    "invalid brightness key '{star_key}': unknown star"
-                ))
-            })?;
-            if brightness_keys.len() != 12 {
-                return Err(BridgeError::invalid_argument(format!(
-                    "invalid brightness for '{star_key}': expected 12 entries, got {}",
-                    brightness_keys.len()
-                )));
-            }
-            let mut table = [None; 12];
-            for (i, key) in brightness_keys.iter().enumerate() {
-                // 空串表示该宫位无亮度
-                if key.is_empty() {
-                    continue;
-                }
-                table[i] = Some(Brightness::from_key(key).ok_or_else(|| {
-                    BridgeError::invalid_argument(format!(
-                        "invalid brightness for '{star_key}': unknown brightness '{key}'"
-                    ))
-                })?);
-            }
-            config = config.with_brightness(star, table);
-        }
-    }
-
-    Ok(config)
+/// config 解析失败统一归为 `invalid_argument`，正文以 `config:` 标明出处。
+fn invalid_config(e: serde_json::Error) -> BridgeError {
+    BridgeError::invalid_argument(format!("config: {e}"))
 }
 
 impl From<Config> for ConfigDto {
     fn from(c: Config) -> Self {
         ConfigDto {
-            year_divide: c.year_divide.as_key().to_string(),
-            horoscope_divide: c.horoscope_divide.as_key().to_string(),
-            age_divide: c.age_divide.as_key().to_string(),
-            day_divide: c.day_divide.as_key().to_string(),
-            algorithm: c.algorithm.as_key().to_string(),
-            astro_type: c.astro_type.as_key().to_string(),
+            year_divide: c.year_divide,
+            horoscope_divide: c.horoscope_divide,
+            age_divide: c.age_divide,
+            day_divide: c.day_divide,
+            algorithm: c.algorithm,
+            astro_type: c.astro_type,
         }
     }
 }
@@ -777,14 +671,10 @@ impl Astrolabe {
                 .to_string(),
             five_elements_class_key: self.five_elements_class.as_key().to_string(),
             palaces: self.palaces.iter().map(|p| palace_dto(p, lang)).collect(),
-            gender_key: match self.gender {
-                Gender::Male => "male",
-                Gender::Female => "female",
-            }
-            .to_string(),
+            gender_key: self.gender.as_key().to_string(),
             time_index: self.time_index,
             fix_leap: self.fix_leap,
-            language: lang.as_code().to_string(),
+            language: lang.as_key().to_string(),
             config: self.config.clone().into(),
         }
     }

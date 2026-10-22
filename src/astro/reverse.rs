@@ -13,7 +13,7 @@ use std::sync::OnceLock;
 
 use lunar_rust::lunar::LunarRefHelper;
 use lunar_rust::{lunar, solar};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::astro::builder::{by_solar, effective_time_index, four_pillars};
 use crate::astro::lunar_table;
@@ -35,7 +35,7 @@ const SUPPORTED_YEARS: std::ops::RangeInclusive<i64> = 1583..=9999;
 pub const DEFAULT_REVERSE_LIMIT: usize = 512;
 
 /// 一个候选生辰：公历日期与时辰索引，可直接交给排盘入口。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BirthCandidate {
     /// 公历日期，`YYYY-M-D`
@@ -204,8 +204,7 @@ fn validate_year_range((start, end): (i64, i64)) -> Result<(), IztroError> {
 // ============================================================
 
 /// 一颗星与其落宫地支：星盘特征反推的原子条件。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StarPosition {
     /// 星耀（须为本命盘星耀，流耀不接受）
     pub star: StarKey,
@@ -215,8 +214,7 @@ pub struct StarPosition {
 
 /// 星盘特征反推的条件集。全部字段可选，但至少要给一个条件；
 /// 条件越具体（尤其命宫地支、生年四化、主星落宫），反推越快。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReverseCriteria {
     /// 命宫地支
     pub soul_branch: Option<EarthlyBranch>,
@@ -252,7 +250,7 @@ impl Default for ReverseCriteria {
 }
 
 /// 星盘特征反推的结果。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReverseResult {
     /// 满足全部条件的候选生辰，按枚举序排列：农历年升序，年内依 月→时辰→日；

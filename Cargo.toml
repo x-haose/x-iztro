@@ -38,8 +38,16 @@ optional = true
 version = "0.23"
 optional = true
 
+# 带语言无关标识的枚举的 JSON Schema（取值即全部标识），供下游从内核类型派生入参 schema
+[dependencies.schemars]
+version = "1"
+default-features = false
+features = ["std"]
+optional = true
+
 [features]
 python = ["pyo3", "pythonize"]
+schemars = ["dep:schemars"]
 
 [dev-dependencies]
 pretty_assertions = "1"

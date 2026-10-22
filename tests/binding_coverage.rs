@@ -4,9 +4,9 @@
 //! Python/Go 没有写类型化包装」这类漏洞在任何一侧都测不出来——对外等于该
 //! 能力不存在。星耀标识同理：枚举漏一个，用户就没法用类型化方式引用它。
 //!
-//! 本测试不调用被测代码，而是读源码文本做交叉核对：从 `src/bridge.rs` 抽出
-//! 全部查询 kind、从 `src/data/stars.rs` 抽出全部星耀 key，再要求每个字符串
-//! 以带引号的形式出现在绑定层的非测试源码中。
+//! 查询 kind 没有运行期清单，从 `src/bridge.rs` 的源码文本抽取；星耀与格局标识取
+//! `StarKey::KEYS` / `PatternKey::KEYS`。再要求每个字符串以带引号的形式出现在绑定层的
+//! 非测试源码中。
 
 use std::fs;
 use std::path::Path;
@@ -122,28 +122,18 @@ fn bridge_query_kinds() -> Vec<String> {
     kinds
 }
 
-/// StarKey::as_key 表里的全部星耀标识。
 fn star_keys() -> Vec<String> {
-    let src = read("src/data/stars.rs");
-    let keys = identifier_literals(&fn_body(&src, "    pub fn as_key(&self) -> &'static str {"));
-    assert!(
-        keys.len() > 150,
-        "只抽出 {} 个星耀 key，抽取逻辑与 stars.rs 结构脱节了",
-        keys.len()
-    );
-    keys
+    x_iztro::StarKey::KEYS
+        .iter()
+        .map(|k| k.to_string())
+        .collect()
 }
 
-/// PatternKey::as_key 表里的全部格局标识（64 个 snake_case key）。
 fn pattern_keys() -> Vec<String> {
-    let src = read("src/pattern/keys.rs");
-    let keys = identifier_literals(&fn_body(&src, "    pub fn as_key(self) -> &'static str {"));
-    assert!(
-        keys.len() == 64,
-        "抽出 {} 个格局 key（应为 64），抽取逻辑与 pattern/keys.rs 结构脱节了",
-        keys.len()
-    );
-    keys
+    x_iztro::PatternKey::KEYS
+        .iter()
+        .map(|k| k.to_string())
+        .collect()
 }
 
 fn report_missing(label: &str, idents: &[String], src: &str) -> Vec<String> {

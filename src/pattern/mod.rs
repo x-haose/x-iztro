@@ -23,8 +23,7 @@ pub use keys::{ALL_PATTERNS, PatternKey};
 pub use view::ChartView;
 
 /// 日月亮度的判定依据。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BrightnessSource {
     /// 按星盘亮度表（与 iztro 逐值一致）：庙旺为明，陷与「不」为暗。
     #[default]
@@ -37,6 +36,11 @@ pub enum BrightnessSource {
     /// 日月反背一类「皆暗」的格局上。
     Positional,
 }
+
+crate::data::keyed::keyed_enum!(BrightnessSource, "brightnessSource" {
+    Table => "table",
+    Positional => "positional",
+});
 
 /// 格局判定的口径开关。字段极少：多口径的格局一律以 [`PatternHit::variant`] 报出，
 /// 这里只放会改变「事实判定」本身的数据口径。
@@ -62,8 +66,7 @@ impl Default for PatternConfig {
 }
 
 /// 一颗参与成格的星及其落宫。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StarAt {
     /// 星耀
     pub star: StarKey,
@@ -76,8 +79,7 @@ pub struct StarAt {
 }
 
 /// 一次格局命中。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternHit {
     /// 格局
     pub key: PatternKey,

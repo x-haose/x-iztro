@@ -12,13 +12,14 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 
 ## 枚举
 
-十九个枚举 + `StarKey`。所有枚举都实现 `Debug`、`Clone`、`Copy`、`PartialEq`、`Eq`
-与 serde 的 `Serialize` / `Deserialize`，可以直接比较、直接放进集合。
+十九个枚举 + `StarKey`。所有枚举都实现 `Debug`、`Clone`、`Copy`、`PartialEq`、`Eq`，
+可以直接比较、直接放进集合。
 
-### 语言无关标识：as_key / from_key
+### 语言无关标识：as_key / from_key / KEYS
 
-绝大多数枚举带一对互逆的方法，把变体与 iztro i18n key 字符串来回换。
-这套 key 就是 DTO 里 `*Key` 字段的取值，也是 Python 枚举与 Go 常量的值——
+除阴阳与五行外，每个枚举都带一套语言无关标识，即 iztro i18n key 字符串：`as_key()` 取标识，
+`from_key(&str)` 由标识还原，`KEYS` 是按变体声明顺序排列的全部标识。
+这套 key 就是 DTO 里 `*Key` 字段的取值、绑定线协议的取值，也是 Python 枚举与 Go 常量的值——
 三侧写同一个字符串，判断结果一致。
 
 | 枚举 | 变体数 | 取标识 | 由标识还原 | key 举例 |
@@ -30,8 +31,11 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
 | `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
 | `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
-| `StarType` | 8 | `as_key()` | — | `major`、`lucun` |
+| `StarType` | 8 | `as_key()` | `from_key(&str)` | `major`、`lucun` |
 | `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`、`decadal` |
+| `HoroscopeName` | 7 | `as_key()` | `from_key(&str)` | `decadal`、`childhood`、`turn`（小限） |
+| `Gender` | 2 | `as_key()` | `from_key(&str)` | `male` / `female` |
+| `Language` | 6 | `as_key()` | `from_key(&str)` | `zh-CN`、`en-US` |
 | `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
@@ -41,6 +45,12 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
+
+**serde 表示就是标识**：这些枚举序列化为 `as_key()` 的字符串，反序列化只认 `KEYS` 里的写法，
+未知取值报错并列出合法取值（取值超过十二个时只指明是哪类标识）。
+启用 `schemars` feature 后它们还实现 `schemars::JsonSchema`，生成的 schema 是列出全部 `KEYS` 的字符串枚举，
+下游可以直接用内核类型派生入参 schema，不必再抄一份取值表。
+星盘、宫位、星耀、运限这些结构不实现 serde：要 JSON 用 [DTO](/zh/docs/rust/astrolabe#to_dto)，它是唯一的序列化形态。
 
 ```rust
 println!("{}", StarKey::ZiweiMaj.as_key());
@@ -69,7 +79,7 @@ Some(Current)
 | `Palace` | `index() -> usize` / `from_index(usize)` | 宫名在 `PALACES` 里的序号，命宫 = 0、父母 = 1 …… 兄弟 = 11。**不是盘上位置**；`from_index` 对 12 取模、不返回 `Option` |
 | `FiveElementsClass` | `value() -> usize` | 局数：水二局 2、木三局 3、金四局 4、土五局 5、火六局 6 |
 | `Gender` | `yin_yang() -> YinYang` | 男为阳、女为阴，决定大限与长生十二神的顺逆 |
-| `Language` | `as_code() -> &'static str` / `from_code(&str)` | 语言代码 `zh-CN` 等；`from_code` 大小写不敏感，连字符与下划线等价（`zh_cn` 也接受） |
+| `Language` | `from_code(&str)` | 由人写的语言代码还原：大小写不敏感，连字符与下划线等价（`zh_cn` 也接受）；`from_key` 与 serde 只认规范写法 |
 | `YinYang` | `as_str() -> &'static str` | 「阳」/「阴」，不参与国际化 |
 | `FiveElements` | `as_str() -> &'static str` | 「木」「金」「水」「火」「土」，不参与国际化 |
 
@@ -78,7 +88,7 @@ println!("{} {}", HeavenlyStem::Gui.index(), EarthlyBranch::Hai.index());
 println!("{:?}", Palace::from_index(4));
 println!("{}", FiveElementsClass::Wood3rd.value());
 println!("{:?} {}", Gender::Female.yin_yang(), Gender::Female.yin_yang().as_str());
-println!("{} {:?}", Language::JaJP.as_code(), Language::from_code("ZH-cn"));
+println!("{} {:?}", Language::JaJP.as_key(), Language::from_code("ZH-cn"));
 ```
 
 **输出**
@@ -139,11 +149,16 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 
 六个开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
 
-<Callout type="info" title="overrides 不参与序列化">
-`overrides` 标了 `#[serde(skip)]`：它是排盘的**输入**而不是结果，
-放进 DTO 会破坏与 JS iztro 的字段契约。因此 JSON 输出里的 `config` 对象只有六个开关，
-自定义表不会回显。
-</Callout>
+### 序列化
+
+`Config` 的 serde 表示就是绑定层的 config JSON：
+
+- 反序列化是**部分键补丁**：缺省的键取默认值；**未知键报错**（拼错的键不会被静默忽略）；
+- 六个开关取标识（`"yearDivide": "exact"`），自定义表写作 `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}`
+  与 `"brightness": {"ziweiMaj": ["miao", "", …]}`（十二项按宫位索引、寅宫为 0，空串表示无亮度）；
+- 序列化写出六个开关与已覆盖的表，能被原样反序列化回来，自定义表往返不丢。
+
+星盘 DTO 里的 `config` 只记六个开关，不回显自定义表——自定义表是排盘的输入，不是结果。
 
 ### 构造方法
 

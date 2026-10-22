@@ -1,12 +1,10 @@
-use serde::{Deserialize, Serialize};
-
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
 
 /// 单个运限层级（大限/流年/流月/流日/流时）的数据。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct HoroscopeItem {
     /// 该运限所在宫位索引（0-11，寅宫为 0）
     pub index: usize,
@@ -30,8 +28,7 @@ pub struct HoroscopeItem {
 /// 农历月在流月列表中的分段。
 ///
 /// 闰月在 `fix_leap` 打开时按前后半月拆成两段分别起运限，其余情形整月一段。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MonthPart {
     /// 整月一段（非闰月，或闰月但不拆分）
     Normal,
@@ -41,16 +38,11 @@ pub enum MonthPart {
     Second,
 }
 
-impl MonthPart {
-    /// 语言无关标识。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            MonthPart::Normal => "normal",
-            MonthPart::First => "first",
-            MonthPart::Second => "second",
-        }
-    }
-}
+crate::data::keyed::keyed_enum!(MonthPart, "month part" {
+    Normal => "normal",
+    First => "first",
+    Second => "second",
+});
 
 /// 大限定位方式：按起运先后的序号，或该限所在的本命宫名。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +68,7 @@ impl From<Palace> for DecadalTarget {
 /// 大限列表项：通用运限字段之外，带该限所在的本命宫名与虚岁、年份区间。
 ///
 /// 通用字段经 `Deref` 直接可读（`d.heavenly_stem`、`d.palace_names`）。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DecadalHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -97,7 +89,7 @@ impl std::ops::Deref for DecadalHoroscope {
 }
 
 /// 流年列表项：通用运限字段之外，带该年对应的虚岁与农历年份。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -116,7 +108,7 @@ impl std::ops::Deref for YearlyHoroscope {
 }
 
 /// 流月列表项：在流年字段之外，带农历月份、闰月标记与该段的农历日区间。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MonthlyHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -146,10 +138,9 @@ impl std::ops::Deref for MonthlyHoroscope {
 ///
 /// 通用运限字段经 `Deref` 直接可读（`age.index`、`age.heavenly_stem`），
 /// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct AgeItem {
     /// 通用运限字段
-    #[serde(flatten)]
     pub base: HoroscopeItem,
     /// 虚岁
     pub nominal_age: u32,
@@ -164,7 +155,7 @@ impl std::ops::Deref for AgeItem {
 }
 
 /// 流年十二神：按目标年支起的岁前十二神与将前十二神。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyDecStar {
     /// 将前十二神（按宫位索引排列）
     pub jiangqian12: Vec<StarKey>,
@@ -176,10 +167,9 @@ pub struct YearlyDecStar {
 ///
 /// 通用运限字段经 `Deref` 直接可读（`yearly.mutagen`、`yearly.palace_names`），
 /// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyItem {
     /// 通用运限字段
-    #[serde(flatten)]
     pub base: HoroscopeItem,
     /// 流年十二神
     pub yearly_dec_star: YearlyDecStar,
@@ -194,7 +184,7 @@ impl std::ops::Deref for YearlyItem {
 }
 
 /// 一次运限查询的完整结果。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct HoroscopeData {
     /// 目标阳历日期（与查询入参一致）
     pub solar_date: String,

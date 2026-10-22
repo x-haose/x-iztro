@@ -4,6 +4,8 @@ pub mod constants;
 pub mod earthly_branches;
 /// 天干信息（阴阳五行与四化表）
 pub mod heavenly_stems;
+/// 带语言无关标识的枚举的标识映射、serde 与 JSON Schema 生成
+pub(crate) mod keyed;
 /// 星耀标识与亮度表
 pub mod stars;
 /// 基础枚举与排盘配置

@@ -171,7 +171,7 @@ The vocabularies are not a resource file you can drop in; they are static tables
 library. Adding a language touches four places:
 
 <Steps>
-<Step>Add a variant to the `Language` enum in `src/data/types.rs`, and add its language code to `as_code` / `from_code`</Step>
+<Step>Add a variant to the `Language` enum in `src/data/types.rs`, and add its language code to the `keyed_enum!` key table right after it</Step>
 <Step>Add a vocabulary file under `src/i18n/`, implementing the same set of functions as the existing files (star names, palace names, stem and branch names, brightness, mutagens, …)</Step>
 <Step>Add a dispatch arm to the `match` in every translation function in `src/i18n/mod.rs` — this is per function, not one place</Step>
 <Step>Add an entry to `lang_index` and to the reverse-lookup scan order table in `src/i18n/lookup.rs`; the scan order decides which key a homographic name resolves to, and has to be checked against the golden data</Step>

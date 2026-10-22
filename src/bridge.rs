@@ -12,6 +12,7 @@ use serde_json::{Value, json};
 use crate::data::constants::*;
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::heavenly_stems::get_heavenly_stem_info;
+use crate::data::keyed::unknown_key_message;
 use crate::data::stars::{STARS_WITH_INFO, StarKey, get_star_info};
 use crate::data::types::*;
 use crate::dto::parse_config_value;
@@ -224,21 +225,17 @@ fn serialize_failed(e: serde_json::Error) -> BridgeError {
     BridgeError::internal(format!("failed to serialize result: {e}"))
 }
 
+/// 性别标识，大小写不敏感（`Male` 与 `male` 等价）
 fn parse_gender(s: &str) -> Result<Gender, BridgeError> {
-    match s.to_ascii_lowercase().as_str() {
-        "male" => Ok(Gender::Male),
-        "female" => Ok(Gender::Female),
-        _ => Err(BridgeError::invalid_argument(format!(
-            "invalid gender '{s}': expected 'male' or 'female'"
-        ))),
-    }
+    Gender::from_key(&s.to_ascii_lowercase()).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message("gender", s, Gender::KEYS))
+    })
 }
 
+/// 语言代码，宽松写法见 [`Language::from_code`]
 fn parse_language(s: &str) -> Result<Language, BridgeError> {
     Language::from_code(s).ok_or_else(|| {
-        BridgeError::invalid_argument(format!(
-            "invalid language '{s}': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN"
-        ))
+        BridgeError::invalid_argument(unknown_key_message("language", s, Language::KEYS))
     })
 }
 
@@ -405,9 +402,7 @@ fn parse_branch_key(key: &str) -> Result<EarthlyBranch, BridgeError> {
 
 fn parse_scope_key(key: &str) -> Result<Scope, BridgeError> {
     Scope::from_key(key).ok_or_else(|| {
-        BridgeError::invalid_argument(format!(
-            "unknown scope '{key}' (expected one of: origin, decadal, yearly, monthly, daily, hourly)"
-        ))
+        BridgeError::invalid_argument(unknown_key_message("scope", key, Scope::KEYS))
     })
 }
 
@@ -790,7 +785,7 @@ fn parse_knowledge(
             .ok_or_else(|| {
                 BridgeError::invalid_argument(format!(
                     "no builtin knowledge pack for language '{}'",
-                    language.as_code()
+                    language.as_key()
                 ))
             }),
         Some(Value::String(other)) => Err(BridgeError::invalid_argument(format!(

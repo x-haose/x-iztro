@@ -142,7 +142,7 @@ fn bridge_horoscope_patterns_needs_scope_and_target() {
         json!({"targetDate": "2026-8-19", "targetTimeIndex": 3, "scope": "nope"}),
     )
     .unwrap_err();
-    assert!(err.contains("unknown scope"), "{err}");
+    assert!(err.contains("invalid scope"), "{err}");
 }
 
 #[test]
