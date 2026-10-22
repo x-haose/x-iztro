@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.1。
+x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.3。
 支持 Rust / Python(PyO3) / Go(C FFI) 三语言调用。
 
 ## 决策标准
@@ -158,7 +158,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     查不出顺序分叉
 - 换了形状而非照抄的几处，别改回去：
   - `astroType` 收进 `Config`（iztro 放在 `withOptions`，因其 `config()` 是全局单例装不下按盘变化的值）
-  - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `setLanguage`
+  - 配置显式随调用传入，无全局单例，故不提供 `getConfig` / `resetConfig` / `setLanguage` / `getLanguage`
   - `get_decadals_and_ages` 直接收命宫索引与五行局，比 iztro `getHoroscope` 的 `from` 更一般
   - 插件按语言惯用方式实现：Rust 扩展 trait、Python 类方法注入、Go 嵌入 `*Astrolabe`
   - 运限宫位寻址收语言无关 key 或该盘语言的宫名，不做跨语言译名反查（iztro v2.6.1 起
@@ -170,7 +170,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `astrolabeBySolarDate` / `astrolabeByLunarDate`（v2.0.5 起废弃的别名）、
   `fixEarthlyBranchIndex`（与 `earthlyBranchIndexToPalaceIndex` 同义）、
   `setPalace` / `setAstrolabe`（建链是内部行为）、i18next 实例、`Astrolabe.copyright`
-- 复刻的反直觉语义：`fliesTo` 星列表为空返回 false，而 `fliesOneOfTo` / `notFlyTo` 返回 true；
+- 复刻的反直觉语义：星盘 `lunarDate` 随排盘语言（简繁中文为中文数字写法，其余语言为「农历」一词加数字模板），
+  运限 `lunarDate` 恒为中文写法；to_text 基本信息行已有标签，取不带「农历」一词的写法（`lunar_table::lunar_date_body`）；`fliesTo` 星列表为空返回 false，而 `fliesOneOfTo` / `notFlyTo` 返回 true；
   `getPalace` 额外接受 `bodyPalace` / `originalPalace`；`getMajorStarBySolarDate` 命宫空宫时借对宫；
   iztro 在本命层级把红鸾误写为 `hongluanMin`，x-iztro 用正确的 `hongluan`
 - 用户视角的对应关系写在文档站「关于 → 与 iztro 的对应」一页
@@ -180,7 +181,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   每条规则函数的文档注释就是口径与出处，多口径一律以 `PatternHit.variant` 报出、不设 strict/loose 开关，
   「破格/加杀平常」只置 `broken` 不否决，「身命」类命宫身宫各判、命中哪宫 `palace` 记哪宫
 - 亮度红线：日月明暗默认按 iztro 亮度表（`BrightnessSource::Table`），`Positional` 口径复现传统
-  位置判法。两口径在 iztro v2.6.1 表下只剩一处差集——太阳酉宫（表判「平」不算暗、位置法算暗），
+  位置判法。两口径在 iztro v2.6.3 表下只剩一处差集——太阳酉宫（表判「平」不算暗、位置法算暗），
   落在「暗」侧，故日月反背有分歧而日月并明没有：表法比位置法多认的太阴寅宫，安星几何上必配
   太阳子宫（陷），两边都不成格。找两口径的差异只能从「暗」侧入手。
   `PatternConfig` 只放会改变事实判定的开关
@@ -244,7 +245,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 映射类字段允许写 `null`（Go nil map 默认序列化）
 
 ### 测试
-- 全部金标数据由 JS iztro v2.6.1（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
+- 全部金标数据由 JS iztro v2.6.3（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
 - 覆盖矩阵（九层合计 716,314 例，约 72 万；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 46,228（1583-1983 与 2044-2100 每 10 年抽样，补 tier1/2/3 只覆盖 1984-2043 的盲区）/

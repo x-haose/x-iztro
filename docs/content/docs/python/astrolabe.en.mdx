@@ -26,7 +26,7 @@ identifiers and the results of every predicate method stay the same.
 | --- | --- | --- |
 | `gender` | `str` | Translated gender |
 | `solar_date` | `str` | Solar date, as passed in |
-| `lunar_date` | `str` | The lunar date written in Chinese |
+| `lunar_date` | `str` | The lunar date in the chart language: `Lunar 2000-7-17` in English, `二〇〇〇年七月十七` in Chinese |
 | `chinese_date` | `str` | Display string of the four pillars |
 | `time` | `str` | Hour name |
 | `time_range` | `str` | The clock range of that hour |
@@ -623,7 +623,7 @@ print(len(chart.to_json()) > 10000, chart.to_json()[:1])
 ```text
 2000-8-16 soulPalace
 normal female 2
-{"gender": "female", "solarDate": "2000-8-16", "lunarDate": "二〇〇〇年七月十七"}
+{"gender": "female", "solarDate": "2000-8-16", "lunarDate": "Lunar 2000-7-17"}
 True {
 ```
 

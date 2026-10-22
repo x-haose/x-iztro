@@ -11,8 +11,8 @@
     "zh-CN": "童限",
     "zh-TW": "童限",
     "ja-JP": "子供",
-    "ko-KR": "어린",
-    "vi-VN": "đứa trẻ Hạn"
+    "ko-KR": "동한",
+    "vi-VN": "Vận hạn thời thơ ấu"
   },
   "yearly": {
     "zh-CN": "流年",
@@ -90,7 +90,7 @@
     "zh-CN": "龙",
     "zh-TW": "龍",
     "en-US": "dragon",
-    "ja-JP": "龍",
+    "ja-JP": "竜",
     "ko-KR": "용",
     "vi-VN": "Rồng"
   },
@@ -130,7 +130,7 @@
     "zh-CN": "鸡",
     "zh-TW": "雞",
     "en-US": "rooster",
-    "ja-JP": "雞",
+    "ja-JP": "鶏",
     "ko-KR": "닭",
     "vi-VN": "Gà"
   },
@@ -250,7 +250,7 @@
     "zh-CN": "晚子时",
     "zh-TW": "晚子時",
     "en-US": "late Rat hour",
-    "ja-JP": "晚子時",
+    "ja-JP": "晩子時",
     "ko-KR": "밤에 자시",
     "vi-VN": "Giờ tý muộn"
   },
@@ -618,15 +618,15 @@
     "zh-CN": "陷",
     "zh-TW": "陷",
     "en-US": "[-3]",
-    "ja-JP": "陷",
+    "ja-JP": "陥",
     "ko-KR": "[-3]",
-    "vi-VN": "Hạn"
+    "vi-VN": "Hãm"
   },
   "sihuaLu": {
     "zh-CN": "禄",
     "zh-TW": "祿",
     "en-US": "A",
-    "ja-JP": "祿",
+    "ja-JP": "禄",
     "ko-KR": "록",
     "vi-VN": "Lộc"
   },
@@ -634,7 +634,7 @@
     "zh-CN": "权",
     "zh-TW": "權",
     "en-US": "B",
-    "ja-JP": "權",
+    "ja-JP": "権",
     "ko-KR": "권",
     "vi-VN": "Quyền"
   },
@@ -802,7 +802,7 @@
     "zh-CN": "禄存",
     "zh-TW": "祿存",
     "en-US": "money",
-    "ja-JP": "祿存",
+    "ja-JP": "禄存",
     "ko-KR": "록존",
     "vi-VN": "Lộc Tồn"
   },
@@ -843,7 +843,7 @@
     "zh-TW": "鈴星",
     "en-US": "spark",
     "ja-JP": "鈴星",
-    "ko-KR": "령성",
+    "ko-KR": "영성",
     "vi-VN": "Linh Tinh"
   },
   "tiankuiMin": {
@@ -962,7 +962,7 @@
     "zh-CN": "天虚",
     "zh-TW": "天虛",
     "en-US": "frail",
-    "ja-JP": "天虛",
+    "ja-JP": "天虚",
     "ko-KR": "천허",
     "vi-VN": "Thiên Hư"
   },
@@ -970,7 +970,7 @@
     "zh-CN": "龙池",
     "zh-TW": "龍池",
     "en-US": "talented",
-    "ja-JP": "龍池",
+    "ja-JP": "竜池",
     "ko-KR": "용지",
     "vi-VN": "Long Trì"
   },
@@ -1098,7 +1098,7 @@
     "zh-CN": "天寿",
     "zh-TW": "天壽",
     "en-US": "ageless",
-    "ja-JP": "天壽",
+    "ja-JP": "天寿",
     "ko-KR": "천수",
     "vi-VN": "Thiên Thọ"
   },
@@ -1107,7 +1107,7 @@
     "zh-TW": "截空",
     "en-US": "interrupted",
     "ja-JP": "截空",
-    "ko-KR": "절중",
+    "ko-KR": "절공",
     "vi-VN": "Triệt Không"
   },
   "xunzhong": {
@@ -1146,7 +1146,7 @@
     "zh-CN": "月德",
     "zh-TW": "月德",
     "en-US": "peaceful",
-    "ja-JP": "月德",
+    "ja-JP": "月徳",
     "ko-KR": "월덕",
     "vi-VN": "Nguyệt Đức"
   },
@@ -1170,7 +1170,7 @@
     "zh-CN": "天厨",
     "zh-TW": "天廚",
     "en-US": "gourmet",
-    "ja-JP": "天廚",
+    "ja-JP": "天厨",
     "ko-KR": "천주",
     "vi-VN": "Thiên Trù"
   },
@@ -1188,13 +1188,13 @@
     "en-US": "infancy",
     "ja-JP": "沐浴",
     "ko-KR": "목욕",
-    "vi-VN": "Mục Dục"
+    "vi-VN": "Mộc Dục"
   },
   "guandai": {
     "zh-CN": "冠带",
     "zh-TW": "冠帶",
     "en-US": "adolescence",
-    "ja-JP": "冠帶",
+    "ja-JP": "冠帯",
     "ko-KR": "관대",
     "vi-VN": "Quan Đới"
   },
@@ -1250,7 +1250,7 @@
     "zh-CN": "绝",
     "zh-TW": "絕",
     "en-US": "dissipated",
-    "ja-JP": "絕",
+    "ja-JP": "絶",
     "ko-KR": "절",
     "vi-VN": "Tuyệt"
   },
@@ -1290,7 +1290,7 @@
     "zh-CN": "青龙",
     "zh-TW": "青龍",
     "en-US": "dragon",
-    "ja-JP": "青龍",
+    "ja-JP": "青竜",
     "ko-KR": "청룡",
     "vi-VN": "Thanh Long"
   },
@@ -1306,7 +1306,7 @@
     "zh-CN": "将军",
     "zh-TW": "將軍",
     "en-US": "general",
-    "ja-JP": "將軍",
+    "ja-JP": "将軍",
     "ko-KR": "장군",
     "vi-VN": "Tướng Quân"
   },
@@ -1354,8 +1354,8 @@
     "zh-CN": "岁破",
     "zh-TW": "歲破",
     "en-US": "breaker",
-    "ja-JP": "歲破",
-    "ko-KR": "태파",
+    "ja-JP": "歳破",
+    "ko-KR": "세파",
     "vi-VN": "Tuế Phá"
   },
   "fubing": {
@@ -1378,7 +1378,7 @@
     "zh-CN": "岁建",
     "zh-TW": "歲建",
     "en-US": "initial",
-    "ja-JP": "歲建",
+    "ja-JP": "歳建",
     "ko-KR": "태세",
     "vi-VN": "Tuế Kiện"
   },
@@ -1386,7 +1386,7 @@
     "zh-CN": "晦气",
     "zh-TW": "晦氣",
     "en-US": "unlucky",
-    "ja-JP": "晦氣",
+    "ja-JP": "晦気",
     "ko-KR": "회기",
     "vi-VN": "Hối Khí"
   },
@@ -1418,7 +1418,7 @@
     "zh-CN": "龙德",
     "zh-TW": "龍德",
     "en-US": "virtuous",
-    "ja-JP": "龍德",
+    "ja-JP": "竜徳",
     "ko-KR": "용덕",
     "vi-VN": "Long Đức"
   },
@@ -1434,8 +1434,8 @@
     "zh-CN": "天德",
     "zh-TW": "天德",
     "en-US": "blessed",
-    "ja-JP": "天德",
-    "ko-KR": "복덕",
+    "ja-JP": "天徳",
+    "ko-KR": "천덕",
     "vi-VN": "Thiên Đức"
   },
   "diaoke": {
@@ -1450,7 +1450,7 @@
     "zh-CN": "将星",
     "zh-TW": "將星",
     "en-US": "capable",
-    "ja-JP": "將星",
+    "ja-JP": "将星",
     "ko-KR": "장성",
     "vi-VN": "Tướng Tinh"
   },
@@ -1466,7 +1466,7 @@
     "zh-CN": "岁驿",
     "zh-TW": "歲驛",
     "en-US": "varied",
-    "ja-JP": "歲驛",
+    "ja-JP": "歳駅",
     "ko-KR": "세역",
     "vi-VN": "Tuế Dịch"
   },
@@ -1554,7 +1554,7 @@
     "zh-CN": "运钺",
     "zh-TW": "運鉞",
     "en-US": "aide(D)",
-    "ja-JP": "限の钺",
+    "ja-JP": "限の鉞",
     "ko-KR": "천월(십년)",
     "vi-VN": "Vận Việt"
   },
@@ -1578,7 +1578,7 @@
     "zh-CN": "运鸾",
     "zh-TW": "運鸞",
     "en-US": "attractive(D)",
-    "ja-JP": "限の鸾",
+    "ja-JP": "限の鸞",
     "ko-KR": "홍란(십년)",
     "vi-VN": "Vận Loan"
   },
@@ -1594,7 +1594,7 @@
     "zh-CN": "运禄",
     "zh-TW": "運祿",
     "en-US": "money(D)",
-    "ja-JP": "限の祿",
+    "ja-JP": "限の禄",
     "ko-KR": "록존(십년)",
     "vi-VN": "Vận Lộc"
   },
@@ -1634,7 +1634,7 @@
     "zh-CN": "流钺",
     "zh-TW": "流鉞",
     "en-US": "aide(Y)",
-    "ja-JP": "年の钺",
+    "ja-JP": "年の鉞",
     "ko-KR": "천월(년)",
     "vi-VN": "Lưu Việt"
   },
@@ -1658,7 +1658,7 @@
     "zh-CN": "流鸾",
     "zh-TW": "流鸞",
     "en-US": "attractive(Y)",
-    "ja-JP": "年の鸾",
+    "ja-JP": "年の鸞",
     "ko-KR": "홍란(년)",
     "vi-VN": "Lưu Loan"
   },
@@ -1674,7 +1674,7 @@
     "zh-CN": "流禄",
     "zh-TW": "流祿",
     "en-US": "money(Y)",
-    "ja-JP": "年の祿",
+    "ja-JP": "年の禄",
     "ko-KR": "록존(년)",
     "vi-VN": "Lưu Lộc"
   },
@@ -1722,9 +1722,9 @@
     "zh-CN": "月钺",
     "zh-TW": "月鉞",
     "en-US": "aide(M)",
-    "ja-JP": "月の钺",
+    "ja-JP": "月の鉞",
     "ko-KR": "천월(월)",
-    "vi-VN": "Thiên Nguyệt(M)"
+    "vi-VN": "Thiên Việt(M)"
   },
   "yuechang": {
     "zh-CN": "月昌",
@@ -1746,7 +1746,7 @@
     "zh-CN": "月鸾",
     "zh-TW": "月鸞",
     "en-US": "attractive(M)",
-    "ja-JP": "月の鸾",
+    "ja-JP": "月の鸞",
     "ko-KR": "홍란(월)",
     "vi-VN": "Hồng Loan(M)"
   },
@@ -1762,7 +1762,7 @@
     "zh-CN": "月禄",
     "zh-TW": "月祿",
     "en-US": "money(M)",
-    "ja-JP": "月の祿",
+    "ja-JP": "月の禄",
     "ko-KR": "록존(월)",
     "vi-VN": "Lộc Tồn(M)"
   },
@@ -1802,9 +1802,9 @@
     "zh-CN": "日钺",
     "zh-TW": "日鉞",
     "en-US": "aide(d)",
-    "ja-JP": "日の钺",
+    "ja-JP": "日の鉞",
     "ko-KR": "천월(일)",
-    "vi-VN": "Thiên Nguyệt(d)"
+    "vi-VN": "Thiên Việt(d)"
   },
   "richang": {
     "zh-CN": "日昌",
@@ -1826,7 +1826,7 @@
     "zh-CN": "日鸾",
     "zh-TW": "日鸞",
     "en-US": "attractive(d)",
-    "ja-JP": "日の鸾",
+    "ja-JP": "日の鸞",
     "ko-KR": "홍란(일)",
     "vi-VN": "Hồng Loan(d)"
   },
@@ -1842,7 +1842,7 @@
     "zh-CN": "日禄",
     "zh-TW": "日祿",
     "en-US": "money(d)",
-    "ja-JP": "日の祿",
+    "ja-JP": "日の禄",
     "ko-KR": "록존(일)",
     "vi-VN": "Lộc Tồn(d)"
   },
@@ -1882,9 +1882,9 @@
     "zh-CN": "时钺",
     "zh-TW": "時鉞",
     "en-US": "aide(H)",
-    "ja-JP": "時の钺",
+    "ja-JP": "時の鉞",
     "ko-KR": "천월(시)",
-    "vi-VN": "Thiên Nguyệt(H)"
+    "vi-VN": "Thiên Việt(H)"
   },
   "shichang": {
     "zh-CN": "时昌",
@@ -1906,7 +1906,7 @@
     "zh-CN": "时鸾",
     "zh-TW": "時鸞",
     "en-US": "attractive(H)",
-    "ja-JP": "時の鸾",
+    "ja-JP": "時の鸞",
     "ko-KR": "홍란(시)",
     "vi-VN": "Hồng Loan(H)"
   },
@@ -1922,7 +1922,7 @@
     "zh-CN": "时禄",
     "zh-TW": "時祿",
     "en-US": "money(H)",
-    "ja-JP": "時の祿",
+    "ja-JP": "時の禄",
     "ko-KR": "록존(시)",
     "vi-VN": "Lộc Tồn(H)"
   },
@@ -2018,7 +2018,7 @@
     "zh-CN": "仆役",
     "zh-TW": "僕役",
     "en-US": "friends",
-    "ja-JP": "僕役",
+    "ja-JP": "奴僕",
     "ko-KR": "노복",
     "vi-VN": "Nô Bộc"
   },
@@ -2026,7 +2026,7 @@
     "zh-CN": "官禄",
     "zh-TW": "官祿",
     "en-US": "career",
-    "ja-JP": "官祿",
+    "ja-JP": "官禄",
     "ko-KR": "관록",
     "vi-VN": "Quan Lộc"
   },
@@ -2042,7 +2042,7 @@
     "zh-CN": "福德",
     "zh-TW": "福德",
     "en-US": "spirit",
-    "ja-JP": "福德",
+    "ja-JP": "福徳",
     "ko-KR": "복덕",
     "vi-VN": "Phúc Đức"
   },

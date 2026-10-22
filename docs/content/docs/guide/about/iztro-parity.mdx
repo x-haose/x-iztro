@@ -5,7 +5,7 @@ description: iztro 每个公开 API 在 x-iztro 三侧的落点，换了形状�
 
 *适合：开发者，尤其是从 JS iztro 迁移过来的*
 
-x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.6.1 的移植。
+x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.6.3 的移植。
 iztro 的每个公开 API 在 Rust、Python、Go 三侧都有等价物，
 三侧能力完全一致，形式各随语言习惯。
 
@@ -57,10 +57,10 @@ chart = Astro().by_solar("2000-8-16", 2, "female",
 ### 没有全局配置与全局语言
 
 iztro 的 `astro.config()`、`i18n.setLanguage()` 改的是模块级单例，
-因此还需要 `astro.getConfig()` 把值读回来。
+因此还需要 `astro.getConfig()`、`astro.resetConfig()`、`i18n.getLanguage()` 读回或复位。
 
 x-iztro 没有全局状态：配置与语言都随每次调用传入，由调用方自己持有。
-所以不提供 `getConfig` 与 `setLanguage` —— 想读回来，读你自己那份就是。
+所以不提供 `getConfig`、`resetConfig`、`setLanguage`、`getLanguage` —— 想读回来，读你自己那份就是。
 
 ### 大限小限
 

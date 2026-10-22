@@ -22,7 +22,10 @@ use lunar_rust::lunar_month::LunarMonthRefHelper;
 use lunar_rust::lunar_year::{self, LunarYearRefHelper};
 use lunar_rust::solar::{self, SolarRefHelper};
 
+use crate::data::types::Language;
 use crate::error::IztroError;
+use crate::i18n;
+use crate::models::astrolabe::RawLunarDate;
 
 /// 缺陷所在的农历年。
 const DEFECT_YEAR: i64 = 1602;
@@ -129,6 +132,61 @@ pub(crate) fn solar_date_of(year: i64, signed_month: i64, day: i64) -> String {
         solar_ref.get_year(),
         solar_ref.get_month(),
         solar_ref.get_day(),
+    )
+}
+
+/// 农历年的中文写法：逐位数字换成「〇一二…九」，与 lunar_rust 的 `get_year_in_chinese` 同表同格式。
+pub(crate) fn year_in_chinese(year: i64) -> String {
+    const DIGIT: [char; 10] = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    year.to_string()
+        .chars()
+        .map(|c| DIGIT[c.to_digit(10).expect("年份只含十进制数字") as usize])
+        .collect()
+}
+
+/// 星盘的农历日期展示串：简繁中文为「二〇〇〇年七月十七」式，其余语言为「农历」一词加
+/// [`lunar_date_body`]（与 iztro 的 `lunarDate` 一致）。运限的农历日期恒为中文写法，不经此处。
+pub(crate) fn lunar_date_text(date: &RawLunarDate, lang: Language) -> String {
+    let (y, m, d, leap) = (
+        date.lunar_year,
+        date.lunar_month,
+        date.lunar_day,
+        date.is_leap,
+    );
+    match lang {
+        Language::ZhCN | Language::ZhTW => chinese_lunar_date(date),
+        Language::EnUS => i18n::en_us::lunar_date(y, m, d, leap),
+        Language::JaJP => i18n::ja_jp::lunar_date(y, m, d, leap),
+        Language::KoKR => i18n::ko_kr::lunar_date(y, m, d, leap),
+        Language::ViVN => i18n::vi_vn::lunar_date(y, m, d, leap),
+    }
+}
+
+/// 农历日期不带「农历」一词的写法，用于已有标签的场合（如语义化文本的基本信息行）；
+/// 简繁中文的写法本就不带该词，与 [`lunar_date_text`] 相同。
+pub(crate) fn lunar_date_body(date: &RawLunarDate, lang: Language) -> String {
+    let (y, m, d, leap) = (
+        date.lunar_year,
+        date.lunar_month,
+        date.lunar_day,
+        date.is_leap,
+    );
+    match lang {
+        Language::ZhCN | Language::ZhTW => chinese_lunar_date(date),
+        Language::EnUS => i18n::en_us::lunar_date_body(y, m, d, leap),
+        Language::JaJP => i18n::ja_jp::lunar_date_body(y, m, d, leap),
+        Language::KoKR => i18n::ko_kr::lunar_date_body(y, m, d, leap),
+        Language::ViVN => i18n::vi_vn::lunar_date_body(y, m, d, leap),
+    }
+}
+
+/// 中文写法：「二〇〇〇年七月十七」，闰月作「闰四月」。
+fn chinese_lunar_date(date: &RawLunarDate) -> String {
+    format!(
+        "{}年{}月{}",
+        year_in_chinese(date.lunar_year),
+        month_in_chinese(date.lunar_month, date.is_leap),
+        day_in_chinese(date.lunar_day)
     )
 }
 

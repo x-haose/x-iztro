@@ -5,7 +5,7 @@ description: Where each public iztro API lands in the three x-iztro bindings, th
 
 *For: developers, especially anyone migrating from JS iztro*
 
-x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.1. Every public iztro API has
+x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.3. Every public iztro API has
 an equivalent in all three bindings — Rust, Python and Go — with identical capability and a form
 that suits each language.
 
@@ -60,11 +60,11 @@ method `rearranged(stem, branch)` in all three bindings.
 ### No global config and no global language
 
 iztro's `astro.config()` and `i18n.setLanguage()` mutate module-level singletons, which is why
-`astro.getConfig()` also has to exist to read the value back.
+`astro.getConfig()`, `astro.resetConfig()` and `i18n.getLanguage()` also have to exist to read them back or reset them.
 
 x-iztro has no global state: both the config and the language are passed on every call and held by
-the caller. So `getConfig` and `setLanguage` are not provided — to read the value back, read your
-own copy.
+the caller. So `getConfig`, `resetConfig`, `setLanguage` and `getLanguage` are not provided — to read
+the value back, read your own copy.
 
 ### Decadals and age fortune
 

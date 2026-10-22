@@ -589,17 +589,18 @@ pub fn by_solar(
     );
 
     // 5. 展示字段：星座、生肖、时辰、农历日期串
-    //    （月/日名取修正后的农历日期，闰月带「闰」前缀；年名不经月表，直接取）
+    //    （农历日期串按排盘语言，由修正后的农历年月日生成）
     let sign_index = parse_sign_index(&solar_ref.get_xing_zuo())?;
+    let raw_lunar_date = RawLunarDate {
+        lunar_year: lunar_ref.get_year(),
+        lunar_month: ctx.lunar_month,
+        lunar_day: ctx.lunar_day,
+        is_leap: ctx.is_leap,
+    };
     let chart = Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
-        lunar_date: format!(
-            "{}年{}月{}",
-            lunar_ref.get_year_in_chinese(),
-            lunar_table::month_in_chinese(ctx.lunar_month, ctx.is_leap),
-            lunar_table::day_in_chinese(ctx.lunar_day),
-        ),
+        lunar_date: lunar_table::lunar_date_text(&raw_lunar_date, language),
         chinese_date,
         time: translate_time(time_index, language).to_string(),
         time_range: TIME_RANGES[time_index as usize].to_string(),
@@ -614,12 +615,7 @@ pub fn by_solar(
         five_elements_class: ctx.five_elements_class,
         palaces,
         raw_dates: RawDates {
-            lunar_date: RawLunarDate {
-                lunar_year: lunar_ref.get_year(),
-                lunar_month: ctx.lunar_month,
-                lunar_day: ctx.lunar_day,
-                is_leap: ctx.is_leap,
-            },
+            lunar_date: raw_lunar_date,
             chinese_date: RawChineseDate {
                 yearly: (ctx.yearly_stem, ctx.yearly_branch),
                 monthly: pillars.monthly,

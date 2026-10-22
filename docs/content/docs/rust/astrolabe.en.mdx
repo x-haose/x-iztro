@@ -26,7 +26,7 @@ another language changes those strings only; the `*_key` fields and every predic
 | --- | --- | --- |
 | `gender` | `Gender` | Gender |
 | `solar_date` | `String` | Solar date, as passed in |
-| `lunar_date` | `String` | The lunar date written in Chinese numerals, e.g. `二〇〇〇年七月十七` — "the 17th day of the 7th lunar month of 2000" |
+| `lunar_date` | `String` | The lunar date in the chart language: `Lunar 2000-7-17` in English (a leap month reads `leap-4`), `二〇〇〇年七月十七` in Chinese |
 | `chinese_date` | `String` | Display string of the four pillars, e.g. `geng chen - jia shen - bing woo - geng yin` |
 | `time` | `String` | Hour name, e.g. `Tiger hour` |
 | `time_range` | `String` | The clock range of that hour, e.g. `03:00~05:00` |
@@ -517,7 +517,7 @@ for line in chart.to_text().lines().take(5) {
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 ```
 

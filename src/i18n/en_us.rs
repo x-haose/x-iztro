@@ -329,3 +329,14 @@ pub fn horoscope_name(n: HoroscopeName) -> &'static str {
         HoroscopeName::Hourly => "hourly",
     }
 }
+
+/// 星盘的农历日期写法：「农历」一词加 [`lunar_date_body`]（对应 iztro 的 `lunarDate` 模板）
+pub fn lunar_date(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    format!("Lunar {}", lunar_date_body(year, month, day, is_leap))
+}
+
+/// 农历日期去掉「农历」一词的部分：数字年月日，闰月带前缀；用于已有标签的场合
+pub fn lunar_date_body(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    let leap = if is_leap { "leap-" } else { "" };
+    format!("{year}-{leap}{month}-{day}")
+}

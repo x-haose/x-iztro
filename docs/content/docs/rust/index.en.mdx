@@ -27,7 +27,7 @@ fn main() -> Result<(), IztroError> {
     let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS, Config::default())?;
 
     println!("{} {}", chart.solar_date, chart.lunar_date);
-    // 2000-8-16 二〇〇〇年七月十七
+    // 2000-8-16 Lunar 2000-7-17
 
     let soul = chart.palace(Palace::Soul).unwrap();
     println!("{}", soul.data().major_stars.iter().map(|s| s.name.as_str()).collect::<Vec<_>>().join(" "));
@@ -37,8 +37,8 @@ fn main() -> Result<(), IztroError> {
 }
 ```
 
-`lunar_date` is a lunar date written in Chinese numerals in every output language — `二〇〇〇年七月十七`
-is "the 17th day of the 7th lunar month of 2000".
+`lunar_date` follows the chart language: `Lunar 2000-7-17` is the 17th day of the 7th lunar month of
+2000; a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 
 ## Crate layout
 

@@ -24,7 +24,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 | --- | --- | --- |
 | `gender` | `Gender` | 性别 |
 | `solar_date` | `String` | 公历日期，与入参一致 |
-| `lunar_date` | `String` | 农历日期的中文写法，如「二〇〇〇年七月十七」 |
+| `lunar_date` | `String` | 农历日期，随盘面语言：中文为「二〇〇〇年七月十七」，英文为 `Lunar 2000-7-17`（闰月写作 `leap-4`） |
 | `chinese_date` | `String` | 四柱展示串，如「庚辰 甲申 丙午 庚寅」 |
 | `time` | `String` | 时辰名，如「寅时」 |
 | `time_range` | `String` | 时辰对应的钟点区间，如「03:00~05:00」 |

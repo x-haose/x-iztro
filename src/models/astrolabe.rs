@@ -48,7 +48,7 @@ pub struct Astrolabe {
     pub gender: Gender,
     /// 阳历日期（与排盘入参一致，"YYYY-M-D"）
     pub solar_date: String,
-    /// 农历日期中文表示（如「二〇〇〇年七月十七」）
+    /// 农历日期展示串：简繁中文为中文数字写法（如「二〇〇〇年七月十七」），其余语言为该语言的数字写法（如 `Lunar 2000-7-17`）
     pub lunar_date: String,
     /// 干支纪日四柱展示串（按排盘语言）
     pub chinese_date: String,

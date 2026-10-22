@@ -12,6 +12,7 @@
 //! `*_to_text_with` 收 [`TextOptions`]：带知识包时，每宫事实之后紧跟该宫星耀的释义，
 //! 格局列表之后紧跟格局释义，文末附四化释义——事实与解读同处一屏。
 
+use crate::astro::lunar_table;
 use crate::data::constants::CHINESE_TIME;
 use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
@@ -691,7 +692,7 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
         l.solar_date,
         astrolabe.solar_date,
         l.lunar_date,
-        astrolabe.lunar_date,
+        lunar_table::lunar_date_body(&astrolabe.raw_dates.lunar_date, lang),
         l.time,
         hour,
         astrolabe.time_range,
@@ -1484,7 +1485,7 @@ mod tests {
     fn label_sep_matches_language_convention() {
         for (lang, heading, mutagen) in [
             (Language::ZhTW, "命宮: 本命", "化祿"),
-            (Language::JaJP, "命宮: 本命", "化祿"),
+            (Language::JaJP, "命宮: 本命", "化禄"),
             (Language::KoKR, "명궁: 본명 ", " 화록"),
             (Language::ViVN, "Cung Mệnh: Bản mệnh ", " hóa Lộc"),
             (Language::EnUS, "Soul Palace: Natal ", " [A]"),

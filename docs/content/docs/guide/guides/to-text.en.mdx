@@ -118,7 +118,7 @@ follow in the same shape:
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 - Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
 - Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
@@ -171,10 +171,10 @@ spirit, parents) — not by cell position on the chart. The `Patterns` section l
 [pattern engine](/en/docs/guide/concepts/patterns) on the natal chart, one per line: pattern name,
 landing palace, forming stars; with no hits the section is omitted.
 
-<Callout title="Lunar dates stay in Chinese">
-`Lunar` is the one field that is not localized: the lunar date is written with Chinese numerals
-whatever the chart language. `二〇二四年腊月初二` below is the 2nd day of the 12th lunar month,
-2024. `Pillars` is the four pillars in iztro's romanization (午 renders as `woo` to keep it apart
+<Callout title="How lunar dates are written">
+`Lunar` follows the chart language: `2000-7-17` is the 17th day of the 7th lunar month, 2000 (a leap
+month reads `leap-4`). The lunar date in a horoscope heading is written with Chinese numerals in every
+language, as in iztro: `二〇二四年腊月初二` below is the 2nd day of the 12th lunar month, 2024. `Pillars` is the four pillars in iztro's romanization (午 renders as `woo` to keep it apart
 from 戊 `wu`).
 </Callout>
 
@@ -570,10 +570,11 @@ headings and Chinese bodies.
 The structural labels (`Basic Info`, `Major Stars`, `Trine & Opposite`, `Decadal`, …) exist in six
 sets — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN — and star names, palace names, stems and branches,
 brightness, mutagens and pattern names are translated into the chart language. The same chart in
-all six languages has a line-for-line matching skeleton; only the words differ. The lunar date is
-written with Chinese numerals in every language (`二〇〇〇年七月十七`).
+all six languages has a line-for-line matching skeleton; only the words differ. The natal lunar date
+follows the language (`2000-7-17`, `2000年7月17日`, `2000년 7월 17일`, `ngày 17 tháng 7 năm 2000`;
+Chinese numerals in Chinese); the horoscope heading keeps Chinese numerals in every language.
 
-The mutagen mark follows the language: Chinese writes `化禄` and Japanese `化祿`, English `[A]`
+The mutagen mark follows the language: Simplified Chinese and Japanese write `化禄`, Traditional Chinese `化祿`, English `[A]`
 (`[A]`/`[B]`/`[C]`/`[D]` are Lu, Quan, Ke, Ji), Korean `화록`, Vietnamese `hóa Lộc`. Word spacing
 follows the language too: in Latin-script languages a space separates the star name from its
 mutagen mark and the stem from the branch (English `sun [A]`, `### soul (ren woo)`; Vietnamese

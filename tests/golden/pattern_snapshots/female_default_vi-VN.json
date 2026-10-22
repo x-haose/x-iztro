@@ -91,7 +91,7 @@
           "palaceIndex": 6
         },
         {
-          "brightness": "Hạn",
+          "brightness": "Hãm",
           "brightnessKey": "xian",
           "key": "wenquMin",
           "name": "Văn Khúc",
@@ -116,7 +116,7 @@
           "palaceIndex": 6
         },
         {
-          "brightness": "Hạn",
+          "brightness": "Hãm",
           "brightnessKey": "xian",
           "key": "wenquMin",
           "name": "Văn Khúc",
@@ -305,7 +305,7 @@
       "scope": "monthly",
       "stars": [
         {
-          "brightness": "Hạn",
+          "brightness": "Hãm",
           "brightnessKey": "xian",
           "key": "lingxingMin",
           "name": "Linh Tinh",
@@ -494,7 +494,7 @@
           "palaceIndex": 5
         },
         {
-          "brightness": "Hạn",
+          "brightness": "Hãm",
           "brightnessKey": "xian",
           "key": "qingyangMin",
           "name": "Kình Dương",

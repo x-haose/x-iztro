@@ -27,7 +27,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::QingyangMin => "경양",
         StarKey::TuoluoMin => "타라",
         StarKey::HuoxingMin => "화성",
-        StarKey::LingxingMin => "령성",
+        StarKey::LingxingMin => "영성",
         StarKey::TiankuiMin => "천괴",
         StarKey::TianyueMin => "천월",
         StarKey::DikongMin => "지공",
@@ -60,7 +60,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Tiangui => "천귀",
         StarKey::Tiancai => "천재",
         StarKey::Tianshou => "천수",
-        StarKey::Jiekong => "절중",
+        StarKey::Jiekong => "절공",
         StarKey::Xunzhong => "순중",
         StarKey::Xunkong => "순공",
         StarKey::Kongwang => "공망",
@@ -91,7 +91,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Xishen => "희신",
         StarKey::Bingfu => "병부",
         StarKey::Dahao => "대모",
-        StarKey::Suipo => "태파",
+        StarKey::Suipo => "세파",
         StarKey::Fubing => "복병",
         StarKey::Guanfu => "관부",
         StarKey::Suijian => "태세",
@@ -101,7 +101,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Gwanfu => "관부",
         StarKey::Longde => "용덕",
         StarKey::Baihu => "백호",
-        StarKey::Tiande => "복덕",
+        StarKey::Tiande => "천덕",
         StarKey::Diaoke => "조객",
         StarKey::Jiangxing => "장성",
         StarKey::Panan => "반안",
@@ -331,11 +331,22 @@ pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
 pub fn horoscope_name(n: HoroscopeName) -> &'static str {
     match n {
         HoroscopeName::Decadal => "대한",
-        HoroscopeName::Childhood => "어린",
+        HoroscopeName::Childhood => "동한",
         HoroscopeName::Age => "소한",
         HoroscopeName::Yearly => "유년",
         HoroscopeName::Monthly => "유월",
         HoroscopeName::Daily => "유일",
         HoroscopeName::Hourly => "유시",
     }
+}
+
+/// 星盘的农历日期写法：「农历」一词加 [`lunar_date_body`]（对应 iztro 的 `lunarDate` 模板）
+pub fn lunar_date(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    format!("음력 {}", lunar_date_body(year, month, day, is_leap))
+}
+
+/// 农历日期去掉「农历」一词的部分：数字年月日，闰月带前缀；用于已有标签的场合
+pub fn lunar_date_body(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    let leap = if is_leap { "윤" } else { "" };
+    format!("{year}년 {leap}{month}월 {day}일")
 }

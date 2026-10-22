@@ -207,7 +207,7 @@ pub struct AstrolabeDto {
     pub gender: String,
     /// 阳历日期（"YYYY-M-D"）
     pub solar_date: String,
-    /// 农历日期中文表示
+    /// 农历日期（按排盘语言：简繁中文为中文数字写法，其余语言为数字写法）
     pub lunar_date: String,
     /// 干支纪日四柱展示串
     pub chinese_date: String,

@@ -24,7 +24,7 @@ The return value of a charting entry point.
 | `gender` | string | Gender, translated text |
 | `genderKey` | string | `"male"` / `"female"` |
 | `solarDate` | string | Gregorian birthday, echoing the input |
-| `lunarDate` | string | The lunar birthday written out (always Chinese numerals) |
+| `lunarDate` | string | The lunar birthday written out: Chinese numerals in Chinese charts (`二〇〇〇年七月十七`), otherwise the word for "lunar" plus numbers (`Lunar 2000-7-17`) |
 | `chineseDate` | string | The four pillars as a display string |
 | `rawDates` | [RawDates](#rawdates) | Structured lunar birthday and four pillars |
 | `time` | string | Hour name, e.g. `Tiger hour` |
@@ -210,7 +210,7 @@ entries of `palaces` elided):
   "gender": "female",
   "genderKey": "female",
   "solarDate": "2000-8-16",
-  "lunarDate": "二〇〇〇年七月十七",
+  "lunarDate": "Lunar 2000-7-17",
   "chineseDate": "geng chen - jia shen - bing woo - geng yin",
   "rawDates": {
     "lunarDate": { "lunarYear": 2000, "lunarMonth": 7, "lunarDay": 17, "isLeap": false },
@@ -244,11 +244,11 @@ entries of `palaces` elided):
 }
 ```
 
-<Callout title="Two fields stay Chinese in an English chart">
-`lunarDate` is rendered with Chinese numerals whatever the language — `二〇〇〇年七月十七` is the 17th
-day of the 7th lunar month, 2000. And the stems and branches under `rawDates.chineseDate` are
-deliberately unlocalized originals; the localized form is the top-level `chineseDate`, romanized in
-pinyin for English.
+<Callout title="What stays Chinese in an English chart">
+The stems and branches under `rawDates.chineseDate` are deliberately unlocalized originals; the
+localized form is the top-level `chineseDate`, romanized in pinyin for English. `lunarDate` follows the
+chart language (`Lunar 2000-7-17` is the 17th day of the 7th lunar month, 2000), while the horoscope's
+`lunarDate` is written in Chinese numerals in every language.
 </Callout>
 
 ### One palace
