@@ -200,6 +200,21 @@ fn get_horoscope_rejects_invalid_targets() {
     assert!(get_horoscope(&astrolabe, "2025-1-1", 12, LANG).is_ok());
 }
 
+#[test]
+fn monthly_list_rejects_years_outside_supported_range() {
+    let astrolabe = solar("2000-8-16", 2).unwrap();
+    for year in [0, 10000, -1] {
+        assert!(
+            matches!(
+                astrolabe.monthly_list(year, true),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "monthly_list({year}) should be rejected"
+        );
+    }
+    assert!(astrolabe.monthly_list(1, true).is_ok());
+}
+
 /// `rearranged` 对非法 `raw_dates` 报错而非 panic：排盘入口产出的盘不会触发，
 /// 反序列化或手工构造的盘把农历月改成月表中不存在的月份时，
 /// 必须走 `IztroError::Internal`——wasm 上 panic 即 trap 且损耗共享实例。

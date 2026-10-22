@@ -276,7 +276,7 @@ def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem
 
 闰月排在同月号的常规月之后。每项按该段首日算出（后半段取十六）。
 
-**异常**　该农历年不存在，或某一段的目标日期落在支持范围外时抛 `IztroError`。
+**异常**　年份不在 1–9999，或某一段的目标日期落在支持范围外（9999 年末几个月对应公历 10000 年）时抛 `IztroError`。
 
 **示例**
 

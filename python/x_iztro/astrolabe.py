@@ -581,7 +581,7 @@ class Astrolabe:
                 不拆则闰月整月一项（共 13 项）
 
         Raises:
-            IztroError: 该农历年不存在，或某一段的目标日期落在支持范围外
+            IztroError: 年份不在 1-9999，或某一段的目标日期落在支持范围外
         """
         data = self._context_query("monthlyList", year=year, month_fix_leap=fix_leap)
         return [MonthlyListItem._from_dict(m) for m in data]

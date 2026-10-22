@@ -286,8 +286,8 @@ def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem
 The leap month follows the ordinary month of the same number. Each item is computed from the first day of
 its segment (day 16 for a second half).
 
-**Raises** `IztroError` when that lunar year does not exist, or a segment's target date falls outside the
-supported range.
+**Raises** `IztroError` when the year is outside 1–9999, or a segment's target date falls outside the
+supported range (the last months of 9999 fall in the solar year 10000).
 
 **Example**
 

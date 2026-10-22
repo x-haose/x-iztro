@@ -3,7 +3,8 @@
 //! 根据出生星盘和目标日期，计算大限、小限、流年、流月、流日、流时。
 
 use crate::astro::builder::{
-    chart_moment, effective_time_index, parse_solar_date, parse_solar_input, validate_time_index,
+    SUPPORTED_YEARS, chart_moment, effective_time_index, parse_solar_date, parse_solar_input,
+    validate_time_index,
 };
 use crate::astro::palace::get_palace_names;
 use crate::calendar;
@@ -798,12 +799,20 @@ impl Astrolabe {
     /// 目标日期取该段的首日（后半段取十六）。
     ///
     /// # Errors
-    /// 该农历年不存在，或某一段的目标日期落在支持范围外时返回 [`IztroError`]。
+    /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]（与 iztro 的前置校验一致）；
+    /// 某一段的目标日期落在支持范围外（9999 年末几个月对应公历 10000 年）时返回 [`IztroError`]。
     pub fn monthly_list(
         &self,
         year: i64,
         fix_leap: bool,
     ) -> Result<Vec<MonthlyHoroscope>, IztroError> {
+        if !SUPPORTED_YEARS.contains(&year) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid year {year}: expected {}-{}",
+                SUPPORTED_YEARS.start(),
+                SUPPORTED_YEARS.end()
+            )));
+        }
         let age = (year - self.raw_dates.lunar_date.lunar_year + 1).max(1) as u32;
         let time_index = self.list_time_index();
         let leap = calendar::leap_month(year);
