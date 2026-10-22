@@ -318,9 +318,10 @@ Details: [documentation](https://ziwei.x-haose.com/en/docs/guide/guides/reverse)
 The core only judges facts; how to *interpret* them differs by school (a
 lineage of tradition). So reading texts and school-specific star attributes
 live in a swappable JSON pack, not in the code. A default pack ships inside —
-107 stars, 64 patterns, 12 palaces, 4 transformations, 49 glossary entries,
-adapted from [iztro-docs](https://docs.iztro.com) (MIT, Sylar Long) — and any
-entry can be replaced with an overlay pack. It doubles as a ready-made RAG
+all 162 stars, 64 patterns, 12 palaces, 4 transformations, 50 glossary entries,
+the longer ones with summaries, readings adapted from
+[iztro-docs](https://docs.iztro.com) (MIT, Sylar Long) — and any entry can be
+replaced with an overlay pack. It doubles as a ready-made RAG
 corpus, **in Chinese**: the built-in pack is zh-CN only (note the quote below
 stays Chinese even on an English chart), so English products bring an overlay.
 

@@ -72,16 +72,18 @@ each object's `to_text`).
 | `group` | `str \| None` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes |
 | `intro` | `str \| None` | Reading (Markdown) |
+| `summary` | `str \| None` | Summary of the reading; absent when the reading is within the summary-layer limit (display width 240, 120 Chinese characters) |
 | `combinations` | `dict[str, str]` | Reading for sharing a palace with another major star, keyed by that star |
+| `combination_summaries` | `dict[str, str]` | Summaries of the pairing readings, keyed like `combinations` |
 
 `StarAttributes`: `yin_yang` (`yin` / `yang`), `five_elements`
 (`wood` / `fire` / `earth` / `metal` / `water`), `stem` (`jia`…`gui`), `five_elements_note`,
 `dipper`, `chemistry`, `career`, `duty`, `aliases` (`list[str] | None`), `element_color`,
 `energy_color`.
 
-`PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`.
+`PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`, `summary`.
 
-`TextEntry` (palaces, transformations): `key`, `name`, `intro`.
+`TextEntry` (palaces, transformations): `key`, `name`, `intro`, `summary`.
 `ConceptEntry` (glossary): `slug`, `title`, `intro`.
 
 `Source`: `name`, `url`, `commit`, `license`, `author`, `retrieved_at`, `adapted` (adaptation note).
@@ -214,8 +216,9 @@ is newer than this library supports.
 
 The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
 key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `attributes` and
-`combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
-the Rust core, so all three languages agree.
+`combinations` merge field by field, array fields are replaced wholesale; when an overlay entry
+replaces a reading without the matching summary, the base's old summary is dropped. The merge itself
+runs in the Rust core, so all three languages agree.
 
 **Example**
 

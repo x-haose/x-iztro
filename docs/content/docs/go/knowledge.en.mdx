@@ -52,7 +52,9 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 | `Group` | `string` | Grouping: the adjective star's category, the decorative star's group |
 | `Attributes` | `StarAttributes` | School attributes |
 | `Intro` | `string` | Reading (Markdown) |
+| `Summary` | `string` | Summary of the reading; empty when the reading is within the summary-layer limit (display width 240, 120 Chinese characters) |
 | `Combinations` | `map[string]string` | Reading for sharing a palace with another major star, keyed by that star |
+| `CombinationSummaries` | `map[string]string` | Summaries of the pairing readings, keyed like `Combinations` |
 
 ### StarAttributes
 
@@ -68,11 +70,11 @@ data, which is value-for-value identical to iztro's. The reason is in the
 
 ### PatternEntry
 
-`Name`, `Quotes` (`[]string`), `Conditions`, `Intro`.
+`Name`, `Quotes` (`[]string`), `Conditions`, `Intro`, `Summary`.
 
 ### TextEntry / ConceptEntry
 
-`TextEntry` (palaces, transformations) has `Name` and `Intro`; `ConceptEntry` (glossary) has `Title`
+`TextEntry` (palaces, transformations) has `Name`, `Intro` and `Summary`; `ConceptEntry` (glossary) has `Title`
 and `Intro`.
 
 <Callout type="warn" title="Absent means the zero value">
@@ -123,7 +125,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-162 64 12 4 49
+162 64 12 4 50
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -201,8 +203,9 @@ here) all return an `ErrInvalidArgument`-class error.
 
 The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
 key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `Attributes` and
-`Combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
-the wasm core, so all three languages agree.
+`Combinations` merge field by field, array fields are replaced wholesale; when an overlay entry
+replaces a reading without the matching summary, the base's old summary is dropped. The merge itself
+runs in the wasm core, so all three languages agree.
 
 **Example**
 

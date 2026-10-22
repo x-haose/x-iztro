@@ -63,7 +63,7 @@ type StarAttributes struct {
 type StarEntry struct {
 	// Name 为该语言的显示名
 	Name string `json:"name,omitempty"`
-	// Category 为类别（major / minor / adjective / dec）
+	// Category 为类别（major / minor / adjective / dec / flow）
 	Category string `json:"category,omitempty"`
 	// Group 为分组（杂耀的分类、神煞的组别）
 	Group string `json:"group,omitempty"`
@@ -71,8 +71,12 @@ type StarEntry struct {
 	Attributes StarAttributes `json:"attributes"`
 	// Intro 为解读正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目为空
+	Summary string `json:"summary,omitempty"`
 	// Combinations 为与另一颗主星同宫的组合解读，键为对方星耀标识
 	Combinations map[string]string `json:"combinations,omitempty"`
+	// CombinationSummaries 为组合解读的摘要，与 Combinations 同键成对
+	CombinationSummaries map[string]string `json:"combinationSummaries,omitempty"`
 }
 
 // PatternEntry 为一条格局的知识条目。
@@ -85,6 +89,8 @@ type PatternEntry struct {
 	Conditions string `json:"conditions,omitempty"`
 	// Intro 为解读正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
 }
 
 // TextEntry 为只有名称与正文的条目（宫位、四化）。
@@ -93,6 +99,8 @@ type TextEntry struct {
 	Name string `json:"name,omitempty"`
 	// Intro 为正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
 }
 
 // ConceptEntry 为术语与基础概念条目。
@@ -285,7 +293,8 @@ func ParseKnowledgePack(data []byte) (*KnowledgePack, error) {
 
 // Merged 以本包为底依次叠加覆盖包，返回新包（本包不变）。
 // 合并规则见 knowledge/SCHEMA.md：覆盖包的非空字段覆盖同键条目的对应字段，
-// attributes / combinations 逐字段合并，数组字段整体替换。
+// attributes / combinations 逐字段合并，数组字段整体替换；覆盖条目换了正文却没给
+// 对应摘要时，合并结果去掉描述旧正文的摘要。
 func (p *KnowledgePack) Merged(overlays ...*KnowledgePack) (*KnowledgePack, error) {
 	return p.MergedContext(context.Background(), overlays...)
 }

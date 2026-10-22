@@ -42,13 +42,15 @@ enters into it.
 | `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
-| `concepts` | 49 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
+| `concepts` | 50 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
 
 The content comes from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long), pinned to a
 source commit; the pack's `source` section records the origin, commit, licence and author in full.
 The text has been edited by x-iztro into third-person reference prose (declared in
-`source.adapted`). Text fields are Markdown.
+`source.adapted`). Text fields are Markdown. The 134 longer bodies (28 major and minor stars,
+48 pairings, 43 patterns, 11 palaces, 4 transformations) also carry a [summary](#summaries) of at most
+50 Chinese characters.
 
 <Callout type="warn" title="The default pack is zh-CN only">
 There is no bundled pack for the other five languages: Rust's `KnowledgePack::builtin` returns
@@ -101,7 +103,9 @@ repository. Every entry and every field is optional — what is missing simply w
         "energyColor": "紫光"
       },
       "intro": "紫微星号称 `帝王星`，并非指紫微坐命者能成帝王……",
-      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
+      "summary": "帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；……",
+      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" },
+      "combinationSummaries": { "tianfuMaj": "双帝星加重控制占有欲，虚荣与务实相冲难决断；……" }
     }
   },
   "patterns": {
@@ -120,6 +124,25 @@ repository. Every entry and every field is optional — what is missing simply w
 
 Keys are always language-independent; the values above are Chinese because the bundled pack is
 zh-CN.
+
+## Summaries
+
+A body can carry a summary: `intro` pairs with `summary`, and every entry in `combinations` pairs with
+the same key in `combinationSummaries`. Text with readings uses the summaries in place of the bodies
+at the summary layer, bringing one chart's readings down from tens of thousands of characters to a
+few thousand.
+
+- Length is measured in display width: CJK characters, kana, hangul and full-width punctuation count
+  2, every other character 1;
+- A body no wider than 240 (120 Chinese characters) is already summary-sized; the summary layer uses
+  it as is, and no separate summary is written;
+- A longer body needs a summary: one paragraph, no wider than 100 (50 Chinese characters), condensing
+  the original without adding or removing content;
+- A pattern's `conditions` stay out of the summary layer.
+
+If a pack has even one body wider than 240 without a summary, asking for the summary layer fails and
+lists every missing entry — nothing is truncated, and the full text is never substituted. A pack you
+write supports the summary layer once it follows these rules.
 
 ## Reading a pack
 
@@ -419,6 +442,9 @@ is merged key by key:
 - Keys the base does not have are added
 - Writing a field explicitly as `null` does **not** delete the base content (absent and null mean
   the same thing); to delete, replace the whole pack
+- The one case that removes content: when an overlay entry replaces `intro` (or a pairing reading)
+  without supplying the matching summary, the base's old summary is dropped — it describes the text
+  that was replaced, and keeping it would make the summary layer speak for the old school
 - After merging, `id`, `version`, `language` and `source` come from the overlay when non-empty,
   while `extends` stays the base's
 
@@ -452,6 +478,7 @@ layer, not to this library.
 
 ## Sources and credit
 
-Every text in the default pack comes from the 学习 (Learn) pages of
+The readings in the default pack come from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
-protocol, the editorial rewrite of the default pack and the three-language API are x-iztro's own work.
+protocol, the editorial rewrite of the default pack, the 55 cross-reference entries such as the
+flowing stars, every summary and the three-language API are x-iztro's own work.

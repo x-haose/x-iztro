@@ -63,7 +63,9 @@ Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deseria
 | `group` | `Option<String>` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes; all `None` when absent |
 | `intro` | `Option<String>` | Reading (Markdown) |
+| `summary` | `Option<String>` | Summary of the reading; absent when the reading is no wider than `SUMMARY_FALLBACK_WIDTH` |
 | `combinations` | `BTreeMap<String, String>` | Reading for sharing a palace with another major star, keyed by that star |
+| `combination_summaries` | `BTreeMap<String, String>` | Summaries of the pairing readings, keyed like `combinations` |
 
 ### StarAttributes
 
@@ -86,10 +88,11 @@ the [guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-he
 | `quotes` | `Option<Vec<String>>` | Classical quotations |
 | `conditions` | `Option<String>` | The source's prose description of the conditions |
 | `intro` | `Option<String>` | Reading |
+| `summary` | `Option<String>` | Summary of the reading |
 
 ### TextEntry / ConceptEntry
 
-`TextEntry` (palaces, transformations) has `name` and `intro`; `ConceptEntry` (glossary) has `title`
+`TextEntry` (palaces, transformations) has `name`, `intro` and `summary`; `ConceptEntry` (glossary) has `title`
 and `intro`. All are `Option<String>`.
 
 ### SCHEMA_VERSION
@@ -99,6 +102,17 @@ pub const SCHEMA_VERSION: u32 = 1;
 ```
 
 The highest format version this library supports. Parsing a higher `schema` is an error.
+
+### SUMMARY_FALLBACK_WIDTH
+
+```rust
+pub const SUMMARY_FALLBACK_WIDTH: usize = 240;
+```
+
+The summary layer's limit on a reading, in display width (CJK characters, kana, hangul and
+full-width punctuation count 2, everything else 1; 120 Chinese characters). A reading within it is
+used as is at the summary layer; an entry with a longer reading must carry a summary — see the
+[guide](/en/docs/guide/guides/knowledge-pack#summaries).
 
 ---
 
@@ -263,7 +277,8 @@ impl KnowledgePack {
 **Returns**　A `KnowledgePack`; neither this pack nor the overlays change. The rules are in the
 [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section, key by key, an
 overlay's non-`None` fields replace the same-keyed entry's fields, `attributes` and `combinations`
-merge field by field, array fields are replaced wholesale.
+merge field by field, array fields are replaced wholesale; when an overlay entry replaces a reading
+without the matching summary, the base's old summary is dropped.
 
 **Example**
 
@@ -388,6 +403,59 @@ for hit in chart.patterns() {
 ```text
 府相朝垣 “食禄千锺”的断语使
 ```
+
+---
+
+## brief / combination_brief / missing_summaries
+
+**Purpose**　Pick material by the summary-layer rule, and check whether a pack can serve the summary
+layer.
+
+**Signature**
+
+```rust
+impl StarEntry {
+    pub fn brief(&self) -> Option<&str>
+    pub fn combination_brief(&self, other: &str) -> Option<&str>
+}
+impl PatternEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl TextEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl KnowledgePack {
+    pub fn missing_summaries(&self) -> Vec<String>
+}
+```
+
+**Returns**　`brief` gives the summary when there is one, otherwise the reading itself when it is no
+wider than `SUMMARY_FALLBACK_WIDTH`, and `None` for a long reading without a summary;
+`combination_brief` does the same for the pairing with `other` (the partner's star key). Once a pack
+passes `missing_summaries` (an empty list), `None` only means there is no reading.
+`missing_summaries` lists the paths of entries whose reading exceeds the limit without a summary,
+such as `stars.ziweiMaj`, `stars.ziweiMaj.combinations.tianfuMaj` or `patterns.zi_fu_tong_gong`,
+sorted by section and key; glossary entries never reach the text and are not checked.
+
+**Example**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{}", ziwei.brief().unwrap());
+println!("{}", pack.star(StarKey::Hongluan).unwrap().brief().unwrap());
+println!("{:?}", pack.missing_summaries());
+```
+
+**Output**
+
+```text
+帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+红鸾星会增加亲切感，同时会比较含蓄，看起来给人一种比较端庄、温柔贤淑的感觉。不过这只是一种观感，实际如何须结合主星和辅星一起判断。
+[]
+```
+
+Hongluan's reading is within the limit, so the summary layer uses it as is.
 
 ---
 

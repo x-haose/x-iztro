@@ -38,11 +38,12 @@ x-iztro 把这两件事分开：内核只做事实判定（排盘、运限、格
 | `patterns` | 64 | 每条带古籍引文、成立条件的文字描述与解读正文 |
 | `palaces` | 12 | 十二宫各自的含义 |
 | `mutagens` | 4 | 禄权科忌各自的含义 |
-| `concepts` | 49 | 术语与基础概念（同宫、本宫、身宫、地支六合、三方四正、飞星四化…） |
+| `concepts` | 50 | 术语与基础概念（同宫、本宫、身宫、地支六合、三方四正、飞星四化…） |
 
-内容取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
+释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
 （MIT License，作者 Sylar Long），锁定来源 commit（`source.commit`），文本经 x-iztro 整理改写为第三人称释义口吻（`source.adapted` 注明），
 包的 `source` 段完整记录来源、commit、许可与作者。文本字段是 Markdown。
+正文较长的 134 条（主辅星 28、双星组合 48、格局 43、宫位 11、四化 4）另有不超过 50 字的[摘要](#摘要)。
 
 <Callout type="warn" title="默认包目前只有 zh-CN">
 其他五种语言没有内嵌默认包：Rust 的 `KnowledgePack::builtin` 返回 `None`，
@@ -93,7 +94,9 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
         "energyColor": "紫光"
       },
       "intro": "紫微星号称 `帝王星`，并非指紫微坐命者能成帝王……",
-      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
+      "summary": "帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；……",
+      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" },
+      "combinationSummaries": { "tianfuMaj": "双帝星加重控制占有欲，虚荣与务实相冲难决断；……" }
     }
   },
   "patterns": {
@@ -109,6 +112,19 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
   "concepts": { "tong-gong": { "title": "遇、加、逢、同宫、同度", "intro": "指星曜在同一个宫位里面……" } }
 }
 ```
+
+## 摘要
+
+正文可以配一段摘要：`intro` 配 `summary`，`combinations` 里的每一条配 `combinationSummaries` 里同键的一条。
+带释义的 to_text 在摘要层用摘要代替正文，一张盘的释义从两万字量级降到几千字。
+
+- 长度按显示宽度计：汉字、假名、谚文与全角标点计 2，其余字符计 1；
+- 正文宽度不超过 240（中文 120 字）的条目，正文本身就是摘要的长度，摘要层直接用正文，不另写摘要；
+- 正文更长的条目要写摘要：单段，宽度不超过 100（中文 50 字），只压缩原文，不增减内容；
+- 格局的成立条件（`conditions`）不进摘要层。
+
+包里只要有一条「正文超过 240 却没有摘要」，请求摘要层就报错并列出全部缺项，不截断、也不改用全文。
+自己写的包要支持摘要层，按这几条补齐即可。
 
 ## 读一份包
 
@@ -396,6 +412,8 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 - 数组字段（`aliases`、`quotes`）整体替换，不做逐项合并
 - 底包没有的键直接新增
 - 把某字段显式写成 `null` **不会删除**底包内容（缺省与 null 同义）；要删除请整包替换
+- 唯一会删掉内容的情况：覆盖条目换了 `intro`（或某条组合解读）却没给对应的摘要，合并结果去掉底包的旧摘要——
+  它描述的是被换掉的正文，留着会让摘要层说的是旧门派的话
 - 合并后的 `id` / `version` / `language` / `source` 取覆盖包的（若非空），`extends` 保留底包的
 
 `schema` 高于本库支持的版本直接报错，不做降级解析。
@@ -426,5 +444,6 @@ iztro-docs 星耀卡片本身就对不上：
 
 ## 来源与署名
 
-默认包的全部文本取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
-MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写与三语言 API 是 x-iztro 的实现。
+默认包的释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
+MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写、流耀等 55 条对照性条目、
+全部摘要与三语言 API 是 x-iztro 的实现。

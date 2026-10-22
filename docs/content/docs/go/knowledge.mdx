@@ -49,7 +49,9 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 | `Group` | `string` | 分组：杂耀的分类、神煞的组别 |
 | `Attributes` | `StarAttributes` | 门派属性 |
 | `Intro` | `string` | 解读正文（Markdown） |
+| `Summary` | `string` | 正文的摘要；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目为空 |
 | `Combinations` | `map[string]string` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `CombinationSummaries` | `map[string]string` | 组合解读的摘要，与 `Combinations` 同键成对 |
 
 ### StarAttributes
 
@@ -65,11 +67,11 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 
 ### PatternEntry
 
-`Name`、`Quotes`（`[]string`）、`Conditions`、`Intro`。
+`Name`、`Quotes`（`[]string`）、`Conditions`、`Intro`、`Summary`。
 
 ### TextEntry / ConceptEntry
 
-`TextEntry`（宫位、四化）有 `Name` 与 `Intro`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
+`TextEntry`（宫位、四化）有 `Name`、`Intro` 与 `Summary`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
 
 <Callout type="warn" title="缺省一律是零值">
 Go 侧不用指针区分「没写」与「写了空串」，字段缺省即空串 / nil。
@@ -118,7 +120,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-162 64 12 4 49
+162 64 12 4 50
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -196,7 +198,7 @@ func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*Knowledg
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`Attributes` 与 `Combinations` 逐字段合并，
-数组字段整体替换。合并本身在 wasm 内核里算，三语言结果一致。
+数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 wasm 内核里算，三语言结果一致。
 
 **示例**
 

@@ -246,7 +246,13 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   合并（覆盖包按字段覆盖、数组整体替换）只在 `src/knowledge/mod.rs` 实现一处，Python/Go 经 bridge kind
   `mergeKnowledgePacks` 复用；`knowledgePack` kind 透传内嵌默认包 JSON（解析结果有缓存）。
   条目合并是 JSON 值递归（`merge_entry`），schema 新增字段自动参与——不许再写逐字段
-  手抄的合并清单，那种清单在加字段时会静默漏合并且测试全绿
+  手抄的合并清单，那种清单在加字段时会静默漏合并且测试全绿。Go 侧的包是结构体往返
+  （`KnowledgeFrom(pack)` 发回内核的是结构体序列化结果），schema 新增字段不在 Go 结构体里建模就会静默丢掉
+- 摘要：正文显示宽度超过 240（`SUMMARY_FALLBACK_WIDTH`，中文 120 字）的条目带 `summary` /
+  `combinationSummaries`，不超过的正文本身充当摘要；`missing_summaries` 是摘要层的整包校验（缺项即报错、
+  不截断不回退全文）。合并时覆盖条目换了正文没给摘要，`drop_stale_summaries` 按成对表
+  `SUMMARY_OF` / `SUMMARY_MAP_OF` 清掉旧摘要——新增配摘要的正文字段要加进这两张表。默认包摘要单段、
+  宽度不超过 100、只压缩原意，由 `builtin_summaries_follow_authoring_rules` 守
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
@@ -293,7 +299,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
     有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
   - 语义 key 契约 → `semantic_contract`（译文字段必有配套语言无关 key，规则见「绑定契约」节）
-  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/FFI 合并语义）+ Python `test_knowledge.py`
+  - 知识包 → `knowledge_pack`（默认包完整性/键与内核标识一致/摘要写作规则/FFI 合并语义）+ Python `test_knowledge.py`
     + Go `knowledge_test.go`
   - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
     大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`

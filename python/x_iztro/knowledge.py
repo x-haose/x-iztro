@@ -162,15 +162,19 @@ class StarEntry:
     name: str | None = None
     """该语言的显示名"""
     category: str | None = None
-    """类别（major / minor / adjective / dec）"""
+    """类别（major / minor / adjective / dec / flow）"""
     group: str | None = None
     """分组（杂耀的分类、神煞的组别）"""
     attributes: StarAttributes = field(default_factory=StarAttributes)
     """门派属性"""
     intro: str | None = None
     """解读正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目不写"""
     combinations: dict[str, str] = field(default_factory=dict)
     """与另一颗主星同宫的组合解读，键为对方星耀标识"""
+    combination_summaries: dict[str, str] = field(default_factory=dict)
+    """组合解读的摘要，与 `combinations` 同键成对"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> StarEntry:
@@ -181,7 +185,9 @@ class StarEntry:
             group=d.get("group"),
             attributes=StarAttributes._from_dict(d.get("attributes")),
             intro=d.get("intro"),
+            summary=d.get("summary"),
             combinations=dict(d.get("combinations") or {}),
+            combination_summaries=dict(d.get("combinationSummaries") or {}),
         )
 
 
@@ -199,6 +205,8 @@ class PatternEntry:
     """来源对成立条件的文字描述"""
     intro: str | None = None
     """解读正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> PatternEntry:
@@ -208,6 +216,7 @@ class PatternEntry:
             quotes=list(d["quotes"]) if d.get("quotes") is not None else None,
             conditions=d.get("conditions"),
             intro=d.get("intro"),
+            summary=d.get("summary"),
         )
 
 
@@ -221,10 +230,12 @@ class TextEntry:
     """该语言的显示名"""
     intro: str | None = None
     """正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> TextEntry:
-        return cls(key=key, name=d.get("name"), intro=d.get("intro"))
+        return cls(key=key, name=d.get("name"), intro=d.get("intro"), summary=d.get("summary"))
 
 
 @dataclass(frozen=True, slots=True)
@@ -348,7 +359,8 @@ class KnowledgePack:
         以本包为底，依次叠加覆盖包，返回新包（本包不变）。
 
         合并规则见 knowledge/SCHEMA.md：覆盖包的非空字段覆盖同键条目的对应字段，
-        `attributes` / `combinations` 逐字段合并，数组字段整体替换。
+        `attributes` / `combinations` 逐字段合并，数组字段整体替换；覆盖条目换了正文却没给
+        对应摘要时，合并结果去掉描述旧正文的摘要。
 
         Raises:
             IztroError: 某个包不符合格式或格式版本过新

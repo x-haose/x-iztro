@@ -306,6 +306,11 @@ func TestBuiltinKnowledgePack(t *testing.T) {
 	if _, ok := zi.Combinations[StarTianfuMaj]; !ok {
 		t.Fatal("ziwei should have tianfu combination")
 	}
+	// 摘要字段经结构体往返不丢：KnowledgeFrom(pack) 发回内核的是结构体序列化结果
+	if zi.Summary == "" || zi.CombinationSummaries[StarTianfuMaj] == "" ||
+		p.Pattern(PatternZiFuTongGong).Summary == "" || p.Mutagen(MutagenJi).Summary == "" {
+		t.Fatalf("summaries: %+v", zi)
+	}
 	if p.Pattern(PatternZiFuTongGong) == nil || p.PatternIntro(PatternZiFuTongGong) == "" {
 		t.Fatal("pattern entry")
 	}
@@ -316,7 +321,7 @@ func TestBuiltinKnowledgePack(t *testing.T) {
 		t.Fatalf("patterns: %d", len(p.Patterns))
 	}
 	// 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
-	if len(p.Concepts) != 49 {
+	if len(p.Concepts) != 50 {
 		t.Fatalf("concepts: %d", len(p.Concepts))
 	}
 	if p.Star("nope") != nil || p.StarIntro("nope") != "" {

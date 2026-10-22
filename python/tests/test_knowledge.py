@@ -58,13 +58,15 @@ def test_builtin_metadata_and_entries(pack):
     assert ziwei.attributes.yin_yang == "yin" and ziwei.attributes.five_elements == "earth"
     assert "帝王星" in (ziwei.attributes.aliases or [])
     assert MajorStar.TIANFU in ziwei.combinations
+    assert ziwei.summary and ziwei.combination_summaries[MajorStar.TIANFU]
+    assert pack.pattern(PatternKey.ZI_FU_TONG_GONG).summary and pack.mutagen(Mutagen.JI).summary
     assert pack.pattern(PatternKey.ZI_FU_TONG_GONG).name == "紫府同宫"
     assert pack.pattern_intro(PatternKey.ZI_FU_TONG_GONG)
     assert pack.palace(PalaceName.SOUL).name == "命宫"
     assert pack.mutagen(Mutagen.JI).intro
     assert pack.concept("tong-gong") is not None
     # 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
-    assert len(pack.to_dict()["concepts"]) == 49
+    assert len(pack.to_dict()["concepts"]) == 50
     assert len(pack.patterns()) == 64
     assert pack.star("nope") is None
     with pytest.raises(IztroError):

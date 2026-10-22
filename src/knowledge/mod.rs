@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
+use unicode_width::UnicodeWidthStr;
 
 use crate::data::stars::StarKey;
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace};
@@ -37,6 +38,16 @@ pub(crate) fn palace_star_keys(palace: &PalaceData) -> impl Iterator<Item = Star
 
 /// 当前支持的知识包格式版本。
 pub const SCHEMA_VERSION: u32 = 1;
+
+/// 摘要层的正文上限，单位是显示宽度（UAX #11：宽字符与全角字符计 2，其余计 1；中文 120 字）。
+/// 不超过它的正文本身就是摘要长度，条目不另写摘要；超过它的正文要在摘要层出现，条目必须带摘要。
+pub const SUMMARY_FALLBACK_WIDTH: usize = 240;
+
+/// 一段正文在摘要层的取材：有摘要取摘要，否则正文不超过 [`SUMMARY_FALLBACK_WIDTH`] 时取正文本身；
+/// 正文过长又无摘要返回 `None`。
+fn brief<'a>(body: &'a str, summary: Option<&'a str>) -> Option<&'a str> {
+    summary.or_else(|| (body.width() <= SUMMARY_FALLBACK_WIDTH).then_some(body))
+}
 
 /// 包的来源与许可信息。
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -111,7 +122,7 @@ pub struct StarEntry {
     /// 该语言的显示名
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// 类别（`major` / `minor` / `adjective` / `dec`）
+    /// 类别（`major` / `minor` / `adjective` / `dec` / `flow`）
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     /// 分组（杂耀的分类、神煞的组别）
@@ -123,12 +134,37 @@ pub struct StarEntry {
     /// 解读正文
     #[serde(skip_serializing_if = "Option::is_none")]
     pub intro: Option<String>,
+    /// 正文的摘要（单段）；正文不超过 [`SUMMARY_FALLBACK_WIDTH`] 的条目不写，摘要层直接取正文
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
     /// 与另一颗主星同宫的组合解读，键为对方星耀标识
     #[serde(
         skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "null_as_default"
     )]
     pub combinations: BTreeMap<String, String>,
+    /// 组合解读的摘要，与 `combinations` 同键成对
+    #[serde(
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "null_as_default"
+    )]
+    pub combination_summaries: BTreeMap<String, String>,
+}
+
+impl StarEntry {
+    /// 摘要层的解读：摘要，或不超过上限的正文。包已通过 [`KnowledgePack::missing_summaries`]
+    /// 校验时，`None` 只表示没有正文。
+    pub fn brief(&self) -> Option<&str> {
+        brief(self.intro.as_deref()?, self.summary.as_deref())
+    }
+
+    /// 与对方主星 `other`（星耀标识）同宫的组合解读在摘要层的取材，规则同 [`Self::brief`]。
+    pub fn combination_brief(&self, other: &str) -> Option<&str> {
+        brief(
+            self.combinations.get(other)?,
+            self.combination_summaries.get(other).map(String::as_str),
+        )
+    }
 }
 
 /// 一条格局的知识条目。
@@ -147,6 +183,16 @@ pub struct PatternEntry {
     /// 解读正文
     #[serde(skip_serializing_if = "Option::is_none")]
     pub intro: Option<String>,
+    /// 正文的摘要（单段）；正文不超过 [`SUMMARY_FALLBACK_WIDTH`] 的条目不写
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+}
+
+impl PatternEntry {
+    /// 摘要层的解读，规则同 [`StarEntry::brief`]；成立条件不在摘要层。
+    pub fn brief(&self) -> Option<&str> {
+        brief(self.intro.as_deref()?, self.summary.as_deref())
+    }
 }
 
 /// 只有名称与正文的条目（宫位、四化）。
@@ -159,6 +205,16 @@ pub struct TextEntry {
     /// 正文
     #[serde(skip_serializing_if = "Option::is_none")]
     pub intro: Option<String>,
+    /// 正文的摘要（单段）；正文不超过 [`SUMMARY_FALLBACK_WIDTH`] 的条目不写
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+}
+
+impl TextEntry {
+    /// 摘要层的正文，规则同 [`StarEntry::brief`]。
+    pub fn brief(&self) -> Option<&str> {
+        brief(self.intro.as_deref()?, self.summary.as_deref())
+    }
 }
 
 /// 术语与基础概念条目。
@@ -286,7 +342,8 @@ impl KnowledgePack {
     }
 
     /// 把覆盖包合并到本包：逐段按键合并，覆盖包的非空字段覆盖同键条目的对应字段，
-    /// `attributes` 与 `combinations` 逐字段合并，数组字段整体替换。
+    /// `attributes` 与 `combinations` 逐字段合并，数组字段整体替换；覆盖条目换了正文
+    /// （`intro` 或某条组合解读）却没给对应摘要时，去掉合并结果里描述旧正文的摘要。
     /// 合并后 `id` / `version` / `language` / `source` 取覆盖包的（若非空），`extends` 保留本包的。
     pub fn merge(&mut self, overlay: &KnowledgePack) {
         for (k, e) in &overlay.stars {
@@ -403,7 +460,7 @@ impl KnowledgePack {
     }
 
     /// 把一颗星的条目复制进子包；`same_palace_majors` 是该星同宫的主星，
-    /// 双星组合解读只保留对方主星确在同宫的那些。已复制过的星不重复处理。
+    /// 双星组合解读及其摘要只保留对方主星确在同宫的那些。已复制过的星不重复处理。
     fn copy_star(&self, out: &mut KnowledgePack, star: StarKey, same_palace_majors: &[StarKey]) {
         let key = star.as_key();
         if out.stars.contains_key(key) {
@@ -413,9 +470,11 @@ impl KnowledgePack {
             return;
         };
         let mut entry = entry.clone();
+        let same_palace = |other: &String| same_palace_majors.iter().any(|m| m.as_key() == other);
+        entry.combinations.retain(|other, _| same_palace(other));
         entry
-            .combinations
-            .retain(|other, _| same_palace_majors.iter().any(|m| m.as_key() == other));
+            .combination_summaries
+            .retain(|other, _| same_palace(other));
         out.stars.insert(key.to_string(), entry);
     }
 
@@ -458,6 +517,36 @@ impl KnowledgePack {
     pub fn pattern_intro(&self, key: PatternKey) -> Option<&str> {
         self.pattern(key)?.intro.as_deref()
     }
+
+    /// 摘要层缺摘要的条目路径（正文超过 [`SUMMARY_FALLBACK_WIDTH`] 却没有摘要），形如
+    /// `stars.ziweiMaj`、`stars.ziweiMaj.combinations.tianfuMaj`、`patterns.zi_fu_tong_gong`；
+    /// 按段、按键排序。空列表即整包可用于摘要层；术语条目不进文本，不在检查之列。
+    pub fn missing_summaries(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        for (key, e) in &self.stars {
+            if e.intro.is_some() && e.brief().is_none() {
+                out.push(format!("stars.{key}"));
+            }
+            for other in e.combinations.keys() {
+                if e.combination_brief(other).is_none() {
+                    out.push(format!("stars.{key}.combinations.{other}"));
+                }
+            }
+        }
+        for (key, e) in &self.patterns {
+            if e.intro.is_some() && e.brief().is_none() {
+                out.push(format!("patterns.{key}"));
+            }
+        }
+        for (section, entries) in [("palaces", &self.palaces), ("mutagens", &self.mutagens)] {
+            for (key, e) in entries {
+                if e.intro.is_some() && e.brief().is_none() {
+                    out.push(format!("{section}.{key}"));
+                }
+            }
+        }
+        out
+    }
 }
 
 /// JSON 值合并：对象逐键递归，数组与标量整体覆盖。
@@ -479,13 +568,55 @@ fn merge_json(target: &mut serde_json::Value, overlay: &serde_json::Value) {
     }
 }
 
+/// 条目里正文字段与其摘要字段的对应（JSON 键）。
+const SUMMARY_OF: [(&str, &str); 1] = [("intro", "summary")];
+/// 条目里正文映射与其摘要映射的对应：两个映射同键成对。
+const SUMMARY_MAP_OF: [(&str, &str); 1] = [("combinations", "combinationSummaries")];
+
+/// 合并后去掉过期摘要：覆盖条目给了与底条目不同的正文却没给对应摘要时，合并结果里的摘要
+/// 描述的是被换掉的旧正文，删去。`before` 是合并前的底条目。
+fn drop_stale_summaries(
+    merged: &mut serde_json::Value,
+    before: &serde_json::Value,
+    overlay: &serde_json::Value,
+) {
+    for (body, summary) in SUMMARY_OF {
+        let rewritten = overlay
+            .get(body)
+            .is_some_and(|text| before.get(body) != Some(text));
+        if rewritten
+            && overlay.get(summary).is_none()
+            && let Some(m) = merged.as_object_mut()
+        {
+            m.remove(summary);
+        }
+    }
+    for (bodies, summaries) in SUMMARY_MAP_OF {
+        let Some(changed) = overlay.get(bodies).and_then(|v| v.as_object()) else {
+            continue;
+        };
+        for (key, text) in changed {
+            let rewritten = before.get(bodies).and_then(|m| m.get(key)) != Some(text);
+            let given = overlay.get(summaries).and_then(|m| m.get(key)).is_some();
+            if rewritten
+                && !given
+                && let Some(m) = merged.get_mut(summaries).and_then(|v| v.as_object_mut())
+            {
+                m.remove(key);
+            }
+        }
+    }
+}
+
 /// 把覆盖条目的非空字段并进底条目：经 JSON 值合并再落回类型——
 /// 合并逻辑与结构体字段定义永不脱节，schema 新增字段自动参与合并，
-/// 无须（也不许再有）逐字段手抄的合并清单。
+/// 无须（也不许再有）逐字段手抄的合并清单。合并后按正文与摘要的成对关系去掉过期摘要。
 fn merge_entry<T: serde::Serialize + serde::de::DeserializeOwned>(target: &mut T, overlay: &T) {
-    let mut tv = serde_json::to_value(&*target).expect("知识包条目只含普通可序列化字段");
+    let before = serde_json::to_value(&*target).expect("知识包条目只含普通可序列化字段");
     let ov = serde_json::to_value(overlay).expect("知识包条目只含普通可序列化字段");
+    let mut tv = before.clone();
     merge_json(&mut tv, &ov);
+    drop_stale_summaries(&mut tv, &before, &ov);
     *target = serde_json::from_value(tv).expect("合并结果仍符合条目结构");
 }
 
@@ -567,6 +698,94 @@ mod tests {
             "空串视为有值并覆盖"
         );
         assert!(m.stars.contains_key("notAStar"), "未知键参与合并后仍保留");
+    }
+
+    /// 覆盖包换了正文没给摘要，旧摘要随之去掉；正文没变或同时给了摘要则保留覆盖后的值。
+    /// 组合解读与组合摘要按键成对，同一规则。
+    #[test]
+    fn merge_drops_summaries_of_rewritten_bodies() {
+        let base = KnowledgePack::from_json(
+            r#"{"schema":1,"id":"b","version":"1","language":"zh-CN",
+                "stars":{"ziweiMaj":{"intro":"底正文","summary":"底摘要",
+                          "combinations":{"tianfuMaj":"底组合","pojunMaj":"底紫破"},
+                          "combinationSummaries":{"tianfuMaj":"底组合摘要","pojunMaj":"底紫破摘要"}},
+                         "tianjiMaj":{"intro":"天机正文","summary":"天机摘要"},
+                         "taiyangMaj":{"intro":"太阳正文","summary":"太阳摘要"}},
+                "patterns":{"zi_fu_tong_gong":{"intro":"底格局","summary":"底格局摘要"}}}"#,
+        )
+        .unwrap();
+        let overlay = KnowledgePack::from_json(
+            r#"{"schema":1,"id":"o","version":"1","language":"zh-CN",
+                "stars":{"ziweiMaj":{"intro":"新正文","combinations":{"tianfuMaj":"新组合"}},
+                         "tianjiMaj":{"intro":"天机正文"},
+                         "taiyangMaj":{"intro":"新太阳","summary":"新太阳摘要"}},
+                "patterns":{"zi_fu_tong_gong":{"intro":"新格局"}}}"#,
+        )
+        .unwrap();
+        let m = base.merged(&[&overlay]);
+        let zi = m.star(StarKey::ZiweiMaj).unwrap();
+        assert_eq!(zi.summary, None);
+        assert_eq!(zi.combination_summaries.get("tianfuMaj"), None);
+        assert_eq!(
+            zi.combination_summaries.get("pojunMaj").map(String::as_str),
+            Some("底紫破摘要")
+        );
+        let tianji = m.star(StarKey::TianjiMaj).unwrap();
+        assert_eq!(tianji.summary.as_deref(), Some("天机摘要"), "正文未变");
+        let taiyang = m.star(StarKey::TaiyangMaj).unwrap();
+        assert_eq!(taiyang.summary.as_deref(), Some("新太阳摘要"));
+        assert_eq!(m.pattern(PatternKey::ZiFuTongGong).unwrap().summary, None);
+    }
+
+    /// 摘要层取材：有摘要取摘要；无摘要时正文不超过上限取正文，超过即缺项。
+    /// 上限按显示宽度：120 个汉字恰好到上限，240 个拉丁字母同样到上限。
+    #[test]
+    fn brief_falls_back_to_short_bodies_only() {
+        let short = "字".repeat(120);
+        let long = "字".repeat(121);
+        let latin = "a".repeat(240);
+        let entry = |intro: &str, summary: Option<&str>| StarEntry {
+            intro: Some(intro.to_string()),
+            summary: summary.map(str::to_string),
+            ..StarEntry::default()
+        };
+        assert_eq!(entry(&short, None).brief(), Some(short.as_str()));
+        assert_eq!(entry(&latin, None).brief(), Some(latin.as_str()));
+        assert_eq!(entry(&long, None).brief(), None);
+        assert_eq!(entry(&long, Some("摘要")).brief(), Some("摘要"));
+        assert_eq!(StarEntry::default().brief(), None);
+
+        let mut pack =
+            KnowledgePack::from_json(r#"{"schema":1,"id":"x","version":"1","language":"zh-CN"}"#)
+                .unwrap();
+        let mut zi = entry(&short, None);
+        zi.combinations.insert("tianfuMaj".into(), long.clone());
+        zi.combinations.insert("pojunMaj".into(), short.clone());
+        pack.stars.insert("ziweiMaj".into(), zi);
+        pack.stars.insert("tianjiMaj".into(), entry(&long, None));
+        pack.patterns.insert(
+            "zi_fu_tong_gong".into(),
+            PatternEntry {
+                intro: Some(long.clone()),
+                ..PatternEntry::default()
+            },
+        );
+        pack.mutagens.insert(
+            "sihuaLu".into(),
+            TextEntry {
+                intro: Some(long.clone()),
+                summary: Some("禄".into()),
+                ..TextEntry::default()
+            },
+        );
+        assert_eq!(
+            pack.missing_summaries(),
+            [
+                "stars.tianjiMaj",
+                "stars.ziweiMaj.combinations.tianfuMaj",
+                "patterns.zi_fu_tong_gong"
+            ]
+        );
     }
 
     #[test]

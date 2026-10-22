@@ -34,6 +34,8 @@ serde_json = "1"
 libm = "0.2.16"
 # 仅 horoscope_now 取本地时钟与时区
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# 知识包正文的显示宽度（UAX #11）：摘要层的长度口径对中文与拉丁字母文本同样适用
+unicode-width = "0.2.2"
 
 [dependencies.pyo3]
 version = "0.23"

@@ -60,7 +60,9 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `group` | `Option<String>` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性，缺省为全 `None` |
 | `intro` | `Option<String>` | 解读正文（Markdown） |
+| `summary` | `Option<String>` | 正文的摘要；正文不超过 `SUMMARY_FALLBACK_WIDTH` 的条目不写 |
 | `combinations` | `BTreeMap<String, String>` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `combination_summaries` | `BTreeMap<String, String>` | 组合解读的摘要，与 `combinations` 同键成对 |
 
 ### StarAttributes
 
@@ -83,10 +85,11 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `quotes` | `Option<Vec<String>>` | 古籍引文 |
 | `conditions` | `Option<String>` | 来源对成立条件的文字描述 |
 | `intro` | `Option<String>` | 解读正文 |
+| `summary` | `Option<String>` | 正文的摘要 |
 
 ### TextEntry / ConceptEntry
 
-`TextEntry`（宫位、四化）有 `name` 与 `intro`；`ConceptEntry`（术语）有 `title` 与 `intro`，
+`TextEntry`（宫位、四化）有 `name`、`intro` 与 `summary`；`ConceptEntry`（术语）有 `title` 与 `intro`，
 都是 `Option<String>`。
 
 ### SCHEMA_VERSION
@@ -96,6 +99,15 @@ pub const SCHEMA_VERSION: u32 = 1;
 ```
 
 本库支持的最高格式版本。解析到更高的 `schema` 会报错。
+
+### SUMMARY_FALLBACK_WIDTH
+
+```rust
+pub const SUMMARY_FALLBACK_WIDTH: usize = 240;
+```
+
+摘要层的正文上限，单位是显示宽度（汉字、假名、谚文与全角标点计 2，其余计 1；中文 120 字）。
+正文不超过它时，摘要层直接用正文；超过它的条目必须带摘要，见[指南](/zh/docs/guide/guides/knowledge-pack#摘要)。
 
 ---
 
@@ -255,7 +267,8 @@ impl KnowledgePack {
 **返回值**　`KnowledgePack`，本包与覆盖包都不变。
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：
 逐段按键合并，覆盖包的非 `None` 字段覆盖同键条目的对应字段，
-`attributes` 与 `combinations` 逐字段合并，数组字段整体替换。
+`attributes` 与 `combinations` 逐字段合并，数组字段整体替换；
+覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。
 
 **示例**
 
@@ -380,6 +393,56 @@ for hit in chart.patterns() {
 ```text
 府相朝垣 “食禄千锺”的断语使
 ```
+
+---
+
+## brief / combination_brief / missing_summaries
+
+**用途**　按摘要层的规则取材，以及检查一份包能否用于摘要层。
+
+**签名**
+
+```rust
+impl StarEntry {
+    pub fn brief(&self) -> Option<&str>
+    pub fn combination_brief(&self, other: &str) -> Option<&str>
+}
+impl PatternEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl TextEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl KnowledgePack {
+    pub fn missing_summaries(&self) -> Vec<String>
+}
+```
+
+**返回值**　`brief` 有摘要取摘要，没有摘要且正文不超过 `SUMMARY_FALLBACK_WIDTH` 取正文本身，
+正文过长又无摘要为 `None`；`combination_brief` 对 `other`（对方主星标识）的组合解读同理。
+包通过 `missing_summaries` 检查（返回空列表）时，`None` 只表示没有正文。
+`missing_summaries` 列出「正文超过上限却没有摘要」的条目路径，如 `stars.ziweiMaj`、
+`stars.ziweiMaj.combinations.tianfuMaj`、`patterns.zi_fu_tong_gong`，按段、按键排序；术语条目不进文本，不在检查之列。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{}", ziwei.brief().unwrap());
+println!("{}", pack.star(StarKey::Hongluan).unwrap().brief().unwrap());
+println!("{:?}", pack.missing_summaries());
+```
+
+**输出**
+
+```text
+帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+红鸾星会增加亲切感，同时会比较含蓄，看起来给人一种比较端庄、温柔贤淑的感觉。不过这只是一种观感，实际如何须结合主星和辅星一起判断。
+[]
+```
+
+红鸾的正文本身不超过上限，摘要层直接用正文。
 
 ---
 

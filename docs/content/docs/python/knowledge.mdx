@@ -69,16 +69,18 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | `group` | `str \| None` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性 |
 | `intro` | `str \| None` | 解读正文（Markdown） |
+| `summary` | `str \| None` | 正文的摘要；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目不写 |
 | `combinations` | `dict[str, str]` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `combination_summaries` | `dict[str, str]` | 组合解读的摘要，与 `combinations` 同键成对 |
 
 `StarAttributes`：`yin_yang`（`yin` / `yang`）、
 `five_elements`（`wood` / `fire` / `earth` / `metal` / `water`）、`stem`（`jia`…`gui`）、
 `five_elements_note`、`dipper`、`chemistry`、`career`、`duty`、`aliases`（`list[str] | None`）、
 `element_color`、`energy_color`。
 
-`PatternEntry`：`key`、`name`、`quotes`（`list[str] | None`）、`conditions`、`intro`。
+`PatternEntry`：`key`、`name`、`quotes`（`list[str] | None`）、`conditions`、`intro`、`summary`。
 
-`TextEntry`（宫位、四化）：`key`、`name`、`intro`。
+`TextEntry`（宫位、四化）：`key`、`name`、`intro`、`summary`。
 `ConceptEntry`（术语）：`slug`、`title`、`intro`。
 
 `Source`：`name`、`url`、`commit`、`license`、`author`、`retrieved_at`、`adapted`（改编说明）。
@@ -210,7 +212,7 @@ def merged(self, *overlays: KnowledgePack | dict[str, Any]) -> KnowledgePack
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`attributes` 与 `combinations` 逐字段合并，
-数组字段整体替换。合并本身在 Rust 内核里算，三语言结果一致。
+数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 Rust 内核里算，三语言结果一致。
 
 **示例**
 
