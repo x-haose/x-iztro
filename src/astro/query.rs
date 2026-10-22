@@ -162,7 +162,7 @@ fn major_star_source_index(astrolabe: &Astrolabe) -> usize {
 
 /// 命宫主星的语言无关标识列表。
 ///
-/// 借宫规则与 [`major_stars_of_soul_palace`] 完全一致：命宫为空宫时借对宫主星，
+/// 借宫规则与 [`get_major_star_by_solar_date`] 相同：命宫为空宫时借对宫主星，
 /// 对宫也无主星时返回空列表。译文形态接不上知识包，按 key 消费用本函数。
 pub fn major_star_keys_of_soul_palace(astrolabe: &Astrolabe) -> Vec<String> {
     astrolabe.palaces[major_star_source_index(astrolabe)]

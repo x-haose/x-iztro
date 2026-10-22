@@ -5,7 +5,7 @@
 //! 返回能排出满足全部特征星盘的候选生辰。
 //!
 //! 两者都是「剪枝枚举 + 正排终验」：剪枝只用便宜的查表快判缩小范围（保守，宁多留不错杀），
-//! 每个幸存候选再用与正排完全相同的函数（[`four_pillars`] / [`by_solar`]）验证，
+//! 每个幸存候选再用与正排完全相同的函数（排四柱 / [`crate::by_solar`]）验证，
 //! 因此结果与正向排盘零分歧。星盘布局与性别无关（性别只影响大限行进方向），
 //! 反推的目标是生辰，故不收性别。
 
@@ -602,7 +602,7 @@ impl Domains {
 
 /// 主星相对紫微/天府的位次：`(位次, 是否天府系)`；非主星返回 `None`。
 ///
-/// 位次直接取安星表（`star::major` 的 [`ZIWEI_GROUP`]/[`TIANFU_GROUP`]），
+/// 位次直接取安星表（[`crate::star::major::ZIWEI_GROUP`] / [`crate::star::major::TIANFU_GROUP`]），
 /// 不另抄一份——手抄副本与安星表漂移时，剪枝会静默错杀真解。
 fn major_offset(key: StarKey) -> Option<(i32, bool)> {
     use crate::star::major::{TIANFU_GROUP, ZIWEI_GROUP};

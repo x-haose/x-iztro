@@ -1,8 +1,6 @@
 //! 六语言词表与翻译入口。
 
-/// 标识与译名的双向查找
 pub mod lookup;
-/// 格局名称词表
 pub mod patterns;
 
 /// 英文词表

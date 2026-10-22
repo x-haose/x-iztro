@@ -224,7 +224,7 @@ impl Labels {
 // 基础写法
 // ============================================================
 
-/// 四化标记：中文「化禄」、英文「[A]」
+/// 四化标记：中文「化禄」、英文「\[A\]」
 fn mutagen_mark(l: &Labels, m: Mutagen, lang: Language) -> String {
     l.mutagen_mark.replace("{}", translate_mutagen(m, lang))
 }

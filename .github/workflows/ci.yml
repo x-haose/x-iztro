@@ -25,6 +25,11 @@ jobs:
         run: cargo fmt --check
       - name: Clippy（零告警）
         run: cargo clippy --all-targets -- -D warnings
+      # docs.rs 按默认特性渲染公开文档；坏的文档内链接编译与测试都不报，只有 rustdoc 报
+      - name: API 文档（零告警）
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
       - name: 测试（常规层金标）
         run: cargo test
       # 历法移植错误可能只在个别年份出现，抽样层抓不到；全量 release 下约 10 秒，
