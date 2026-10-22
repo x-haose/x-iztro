@@ -41,7 +41,7 @@ func BySolar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1583–9999 |
+| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `timeIndex` | `uint8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` (the literals `"male"`/`"female"` also work). Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fixLeap` | `bool` | Yes | — | Whether to correct for lunar leap months. When true, the sixteenth of a leap month onward counts as the next month (the late Zi hour excepted, see below) |

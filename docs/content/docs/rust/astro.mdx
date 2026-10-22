@@ -42,7 +42,7 @@ pub fn by_solar(
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零；分隔符也可用 `/` 或 `.`（同一串内一致），可带 ` HH:mm` 或 ` HH:mm:ss`（不参与排盘），`solar_date` 原样回显。支持 1583–9999 年 |
+| `solar_date` | `&str` | 是 | — | 公历日期，格式 `YYYY-M-D`，月日不必补零；分隔符也可用 `/` 或 `.`（同一串内一致），可带 ` HH:mm` 或 ` HH:mm:ss`（不参与排盘），`solar_date` 原样回显。支持 1–9999 年（1582-10-15 以前按儒略历） |
 | `time_index` | `u8` | 是 | — | 时辰索引 0–12。0 为早子时（00:00–01:00），12 为晚子时（23:00–24:00） |
 | `gender` | `Gender` | 是 | — | `Gender::Male` 或 `Gender::Female`。决定大限顺逆与长生、博士十二神的排列方向 |
 | `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十六日起按下月算（晚子时除外，见下） |
@@ -93,9 +93,9 @@ println!("命主 {} 身主 {}",
 因此只有农历闰月下半月出生的人，`true` 与 `false` 会得到不同的月索引，
 进而影响左辅右弼与全部月系星。
 </Accordion>
-<Accordion title="年份下限是 1583">
-1582 年格里历改革留下了不存在的日期空洞，底层历法库在这些日期上会 panic。
-crate 因此把公历支持范围收在 1583–9999，超出范围返回 `IztroError::InvalidDate`。
+<Accordion title="1582 年以前按儒略历">
+支持 1–9999 年，与 iztro 一致。1582-10-04（儒略历）的次日是 1582-10-15（格里历），
+其间十天不存在；这十天与范围之外的年份返回 `IztroError::InvalidDate`。
 </Accordion>
 <Accordion title="language 不影响判断逻辑">
 星盘上所有判断方法（`has`、`flies_to`、`with_mutagen` 等）都基于语言无关标识，
@@ -325,7 +325,7 @@ pub fn get_horoscope(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | 是 | — | 本命盘 |
-| `solar_date` | `&str` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`），支持 1583–9999 年 |
+| `solar_date` | `&str` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`），支持 1–9999 年 |
 | `time_index` | `impl Into<Option<u8>>` | 是 | — | 传数字或 `None`：目标时辰索引 0–12，决定流时；`None` 时按目标日期的时间换算（23 点为晚子），不带时间即早子时 |
 | `language` | `Language` | 是 | — | 输出语言 |
 

@@ -10,13 +10,13 @@ input yields an error value rather than a panic.
 ```rust
 #[non_exhaustive]
 pub enum IztroError {
-    /// Malformed date string, non-existent date, or outside the solar range 1583–9999
+    /// Malformed date string, non-existent date (the 1582-10-05..14 reform gap included), or outside years 1–9999
     InvalidDate(String),
     /// Hour index outside 0–12
     InvalidTimeIndex(u8),
     /// Invalid reverse-lookup input: mismatched pillar polarity, empty criteria, bad year range
     InvalidArgument(String),
-    /// The calendar library did not return a pillar or sign value that should exist
+    /// An internal invariant does not hold (only reachable from a deserialized or hand-built chart)
     Internal(String),
 }
 
@@ -70,11 +70,11 @@ branching on `code()` is unaffected either way.
 
 | Situation | Example | Message |
 | --- | --- | --- |
-| The spelling is wrong (mixed separators, a `T` before the time, …) | `"2000-8/16"` | `expected 'YYYY-M-D'` |
-| Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
+| The spelling is wrong (mixed separators, a `T` before the time, non-digits, a year of more than four digits, …) | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | Month out of range | `"2000-13-1"` | `month must be within 1-12` |
 | That month has no such day | `"2000-2-30"` | `day is out of range for that month` |
-| Year outside the supported range | `"1500-1-1"` | `year must be within 1583-9999` |
+| The 1582 reform gap | `"1582-10-10"` | `1582-10-05 to 1582-10-14 do not exist` |
+| Year outside the supported range | `"0-1-1"` | `year must be within 1-9999` |
 
 Lunar-only (reachable from `by_lunar`, `get_sign_by_lunar_date` and `get_major_star_by_lunar_date`):
 
@@ -91,7 +91,7 @@ Lunar messages are prefixed `invalid lunar date '<input>': ` and solar ones
 ```rust
 let cfg = Config::default();
 
-for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
+for date in ["2000-13-1", "2000-2-30", "1582-10-10"] {
     match by_solar(date, 2, Gender::Female, true, Language::EnUS, cfg.clone()) {
         Ok(_) => println!("{date}: ok"),
         Err(e) => println!("{e}"),
@@ -104,7 +104,7 @@ for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
 ```text
 invalid solar date '2000-13-1': month must be within 1-12
 invalid solar date '2000-2-30': day is out of range for that month
-invalid solar date '1500-1-1': year must be within 1583-9999
+invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)
 ```
 
 The message carries the original input, so batch jobs can pinpoint which record failed.
@@ -112,13 +112,14 @@ The message carries the original input, so batch jobs can pinpoint which record 
 **Edge cases and pitfalls**
 
 <Accordions>
-<Accordion title="Where the 1583 lower bound comes from">
-The Gregorian reform year of 1582 contains a stretch of dates that never existed. The underlying
-calendar library has no definition for them, so support starts from 1583, after the reform. The upper
-bound of 9999 is where the lunar data tables end.
+<Accordion title="The Julian calendar before 1582">
+The supported range is years 1–9999, as in iztro. 1582-10-04 (Julian) is followed by 1582-10-15
+(Gregorian); the ten days between never existed. Before 1600 every fourth year is a leap year, so
+`"1500-2-29"` is a valid date and `"1700-2-29"` is not.
 </Accordion>
 <Accordion title="No zero padding needed">
-Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
+Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator may be `-`, `/` or `.`, the same
+one throughout.
 </Accordion>
 <Accordion title="Validation of lunar leap months">
 `by_lunar` checks whether that month really exists in that lunar year and how many days it has (30 in
@@ -167,7 +168,7 @@ guaranteed to land in the legal range.
 | Pillar stem/branch polarity mismatch | 甲丑 (yang stem, yin branch) | `invalid yearly pillar: stem and branch must have the same polarity` |
 | Empty reverse criteria | `ReverseCriteria::default()` | `reverse criteria must contain at least one condition` |
 | A horoscope-scope flow star among the criteria | 流禄 | `star 'liulu' is a horoscope-scope star and never appears on the natal chart` |
-| Invalid year range | `(2100, 1900)` | `invalid year range 2100-1900: expected 1583-9999 with start <= end` |
+| Invalid year range | `(2100, 1900)` | `invalid year range 2100-1900: expected 1-9999 with start <= end` |
 
 **Example**
 
@@ -196,8 +197,10 @@ The semantics of the reverse-lookup entry points are on
 
 ## Internal
 
-**Trigger** The calendar library `lunar_rust` did not hand back a pillar or zodiac-sign value that
-should exist. This is a defect inside the library rather than a caller's mistake.
+**Trigger** An internal invariant does not hold: a month that should exist is missing from the lunar
+month table, or a chart's `raw_dates` carry a lunar month the table does not have — the latter is only
+possible for a deserialized or hand-built chart (calling `rearranged` on it, for instance). This is a
+defect rather than a caller's mistake.
 
 **Why not panic** On the wasm target a panic is a trap, and every trap permanently consumes stack
 space in the module instance. Turning such cases into error values keeps invalid calls from
@@ -206,8 +209,9 @@ accumulating damage in the wasm instance on the Go side.
 **Message shape** `internal error: <detail>`, with `code()` returning `internal`.
 
 <Callout type="warn">
-This variant has never been triggered on any date covered by the golden tests. If you do hit it,
-please report it as a bug together with the full charting parameters.
+The charting entry points do not trigger this variant on any day of years 1–9999 (a day-by-day scan of
+the whole range guards that). If you do hit it, please report it as a bug together with the full
+charting parameters.
 </Callout>
 
 ---

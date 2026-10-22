@@ -8,7 +8,7 @@
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <a href="https://ziwei.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-716%2C314-2da44e?style=flat-square" alt="金标用例 716,314"></a>
+  <a href="https://ziwei.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-747%2C572-2da44e?style=flat-square" alt="金标用例 747,572"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
@@ -23,7 +23,7 @@
 x-iztro 把生日算成一张完整的紫微斗数命盘，再变成大模型能直接读的文字——
 **排盘归它算，解读归 AI**。十二宫、约百颗星连同亮度与四化、六个运限层级、
 64 条格局判定、可替换的解读文本，每一项既有译名又有语言无关的稳定标识。
-排盘结果与 JS iztro v2.6.3 逐字段零差异（716,314 例金标守着这条线），
+排盘结果与 JS iztro v2.6.3 逐字段零差异（747,572 例金标守着这条线），
 默认口径与 iztro 一致，中州派与各分界点可切换。
 Rust 核心，Rust、Python、Go 三种语言直接调用。
 
@@ -88,7 +88,7 @@ JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键�
 
 |                                          | iztro v2.6.3 (JS) | x-iztro                              |
 | ---------------------------------------- | ----------------- | ------------------------------------ |
-| 排盘、十二宫（含身宫、来因宫）、六层运限 | ✅                | ✅ 逐字段零差异，716,314 例金标      |
+| 排盘、十二宫（含身宫、来因宫）、六层运限 | ✅                | ✅ 逐字段零差异，747,572 例金标      |
 | 宫位查询、三方四正、飞星                 | ✅                | ✅                                   |
 | 序列化输出                               | `JSON.stringify`  | iztro 的每个键逐值一致，另加声明的扩展键 |
 | 格局判定（64 条）                        | 无                | ✅                                   |
@@ -351,39 +351,42 @@ for c in result.candidates:
 本就众多，配置开关与自定义四化表、亮度表就是为此准备的。整套对照你自己就能重跑：
 
 ```bash
-cargo test                                               # 下表除 Tier 3 外的全部层，约 1 分钟
-cargo test --release --test golden_tier3 -- --ignored    # Tier 3 全量：586,430 张盘，约 70 秒
+cargo test                                               # 下表除 Tier 3 外的全部层与历法抽样，约 1 分钟
+cargo test --release --test golden_tier3 -- --ignored    # Tier 3 全量：586,430 张盘，约 15 秒
+cargo test --release --lib calendar -- --ignored         # 历法全量：公历 1–9999 年逐日，约 10 秒
 ```
 
-716,314 例金标用例，分九层（表中「60 年」均指 1984–2043，一个甲子）：
+历法层先单独全量核对：公历 1–9999 年逐日 3,652,061 天的农历日期、年月日柱与星座，
+每个农历年的月表与 31 个节气时刻，每个「节」所在日 13 个时辰的月日时柱。
+排盘层 747,572 例金标，分九层（表中「60 年」均指 1984–2043，一个甲子）：
 
 | 层级      | 用例数  | 覆盖范围                                                 |
 |-----------|---------|----------------------------------------------------------|
 | Tier 1    | 1,560   | 60 年 × 13 时辰 × 男女，全字段逐一比对                   |
 | Tier 2    | 37,440  | 60 年 × 每月 1/15 号 × 13 时辰 × 男女                    |
 | Tier 3    | 586,430 | 60 年**每一天** × 13 时辰 × 男女，闰月日期另跑 fix_leap 双份；哈希 |
-| 边界年代  | 46,228  | 1583–1983 与 2044–2100 抽样，闰月与历表最吃紧的地方      |
+| 边界年代  | 78,156  | 公元 1 年至 2100 年抽样，含儒略历年代与 1582 年改历前后  |
 | Horoscope | 5,760   | 360 命盘 × 16 目标日期，六个运限层级全字段               |
 | Variants  | 14,268  | 农历排盘逐日（含闰月组合）、中州派、六语言               |
-| Config    | 9,696   | 各分界开关取非默认值，排盘层与运限层                     |
+| Config    | 11,424  | 各分界开关取非默认值，排盘层与运限层，含逐个交节时刻取样 |
 | 中州派盘型 | 12,488  | 天盘 / 地盘 / 人盘三种视角                               |
-| 1602 窗口 | 2,444   | 1602 闰二月修正窗口逐日全时辰，哈希                      |
+| 日期写法  | 46      | 分隔符、补零、时间部分与运限省略时辰，含非法写法的报错   |
 
 此外：序列化契约与 JS 的 `JSON.stringify` 逐键逐值对照；翻译反查与 iztro 的
-`kot`（其翻译反查函数）实际取值对照 1,559 例；三侧绑定交叉验证，同一组出生
+`kot`（其翻译反查函数）实际取值对照 1,573 例；三侧绑定交叉验证，同一组出生
 数据在 Rust、Python、Go 得到同一份结论。
 
-**「零容忍」是什么意思，举一个例子。** Rust 侧的农历依赖库在 1602 年
-（明万历三十年）的月表自相矛盾——二月 31 天——导致 1 天直接 panic、另有 28 天
-静默排出错盘。x-iztro 在农历月表的唯一读取入口加了修正层：真值经
-lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三个独立来源交叉确认，
-窗口由 2,444 例金标锁死，另有 1583–9999 全域逐日扫描（约 614 万张盘）未发现
-第二个同类窗口。修正层带上游探测：依赖库一旦修好，自动停用。
+**「零容忍」是什么意思，举一个例子。** 早先 Rust 侧借用的农历库，在逐日全量核对下
+暴露出移植错误：公式里 `t -= A + B` 被译成了 `t = t - A + B`，ΔT 外推也不同——
+效果只在万年里的个别日子冒头（某次合朔离午夜只差几十秒、某个节气离时辰的 30 分
+只差几秒），1583–9999 年共 540 天农历日期、23 个时点的节气月柱与 iztro 不一致，
+抽样测试一个也没抓到。x-iztro 于是把历法换成逐函数移植 lunar-typescript（iztro
+自己用的历法库）的自有内核，公历 1–9999 年逐日零差异，这层核对在 CI 里全量运行。
 
 ## 放进生产
 
 - **无全局状态**——配置与语言随每次调用传入，不同流派、不同语言的盘并发互不干扰。
-- **非法输入是错误，不是 panic**——日期格式与存在性都校验，公历 1583–9999，
+- **非法输入是错误，不是 panic**——日期格式与存在性都校验，1–9999 年（1582-10-15 以前按儒略历），
   时辰索引 0–12。Rust 返回 `Err(IztroError)`，Python 抛 `x_iztro.IztroError`
   （继承 `ValueError`，带 `.code`），Go 返回可用 `errors.Is` 匹配的 `error`，
   C FFI 返回错误 JSON。每种失败都带机器可读的类别。
@@ -396,7 +399,7 @@ lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三�
   落盘缓存命中后 20–30 ms；缓存在 `os.UserCacheDir()` 下，取不到时退化为
   每进程编译）。稳态单次排盘约 0.5 ms（`go/iztro` 下 `go test -bench` 可复现），
   `Warmup` 可把冷启动挪到启动阶段。
-- **Rust**——MSRV 1.88；直接依赖只有 `serde`、`serde_json`、`lunar_rust` 与
+- **Rust**——MSRV 1.88；直接依赖只有 `serde`、`serde_json`、`libm`（历法的三角函数）与
   `chrono`（仅 `horoscope_now` 用到时钟）。
 - **1.0 之前的稳定性**——序列化 JSON 契约、to_text 文本格式与错误码都有快照测试
   守着；破坏性变更在 [CHANGELOG](CHANGELOG.md) 里显式列出。

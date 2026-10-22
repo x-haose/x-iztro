@@ -46,7 +46,7 @@ pub fn by_solar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1583–9999 |
+| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | `u8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `Gender` | Yes | — | `Gender::Male` or `Gender::Female`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | Yes | — | Whether to correct for lunar leap months. When `true`, days after the fifteenth of a leap month count as the next month (except in the late Zi hour, see below) |
@@ -107,10 +107,9 @@ hour). Miss any one and the month index is that of the month itself.
 Only for someone born in a lunar leap month after the fifteenth do `true` and `false` give different
 month indices, which in turn affects Zuofu, Youbi and every month-based star.
 </Accordion>
-<Accordion title="The lower year bound is 1583">
-The Gregorian reform of 1582 left a hole of dates that never existed, and the underlying calendar
-library panics on them. The crate therefore limits solar support to 1583–9999 and returns
-`IztroError::InvalidDate` outside that range.
+<Accordion title="The Julian calendar before 1582">
+Years 1–9999 are supported, as in iztro. 1582-10-04 (Julian) is followed by 1582-10-15 (Gregorian);
+those ten missing days and years outside the range return `IztroError::InvalidDate`.
 </Accordion>
 <Accordion title="language does not affect predicates">
 Every predicate on the chart (`has`, `flies_to`, `with_mutagen` and so on) rests on
@@ -356,7 +355,7 @@ pub fn get_horoscope(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | Yes | — | The natal chart |
-| `solar_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed), years 1583–9999 |
+| `solar_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed), years 1–9999 |
 | `time_index` | `impl Into<Option<u8>>` | Yes | — | A number or `None`: Target hour index 0–12, which fixes the hourly scope; with `None` it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time means the early Zi hour |
 | `language` | `Language` | Yes | — | Output language |
 

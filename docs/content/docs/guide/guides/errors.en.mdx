@@ -16,7 +16,7 @@ it, do not parse the message**.
 
 | Category | Meaning |
 | --- | --- |
-| `invalid_date` | Malformed date, a date that does not exist, or one outside the supported range (Gregorian 1583–9999) |
+| `invalid_date` | Malformed date, a date that does not exist (the 1582 reform gap included), or one outside the supported range (years 1–9999) |
 | `invalid_time_index` | Hour index out of range (0–12 are legal) |
 | `invalid_argument` | Any other invalid argument or config: unknown gender, chart language, star key, switch value, a wrong override-table length; or reverse-lookup input — mismatched pillar polarity, empty or flow-star criteria, a bad year range |
 | `internal` | A defect or runtime failure inside the library. Not the caller's fault; please report it |
@@ -37,7 +37,7 @@ match by_solar(date, ti, Gender::Female, true, Language::EnUS, Config::default()
 
 ```text
 invalid_date         invalid solar date '2000-2-30': day is out of range for that month
-invalid_date         invalid solar date '1000-1-1': year must be within 1583-9999
+invalid_date         invalid solar date '0-1-1': year must be within 1-9999
 invalid_time_index   time_index must be 0-12, got 13
 ```
 
@@ -104,9 +104,10 @@ batch processing can pinpoint which record went wrong.
 
 | Input | Sample message |
 | --- | --- |
-| Gregorian date format | `invalid solar date 'not-a-date': year is not a number` |
+| Gregorian date format | `invalid solar date 'not-a-date': expected 'YYYY-M-D' ('-', '/' or '.' as the separator), optionally followed by ' HH:mm' or ' HH:mm:ss'` |
 | Gregorian date does not exist | `invalid solar date '2000-2-30': day is out of range for that month` |
-| Gregorian year range | `invalid solar date '1000-1-1': year must be within 1583-9999` |
+| The 1582 reform gap | `invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)` |
+| Year range | `invalid solar date '0-1-1': year must be within 1-9999` |
 | Lunar month | `invalid lunar date '2000-13-1': month must be within 1-12` |
 | Days in that lunar month | `invalid lunar date '2000-2-31': day is out of range for that lunar month` |
 | Hour index | `time_index must be 0-12, got 13` |

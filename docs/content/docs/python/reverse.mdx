@@ -59,7 +59,7 @@ frozen dataclass。星盘特征反推的条件集，全部字段可选，但至�
 | `five_elements_class` | `FiveElementsClass \| str \| None` | `None` | 五行局 |
 | `stars` | `list[StarPosition]` | `[]` | 星耀落宫条件，全部须同时满足 |
 | `mutagens` | 四元组，各项 `str \| None` | 全 `None` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星 |
-| `year_range` | `tuple[int, int]` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `year_range` | `tuple[int, int]` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1–9999 内 |
 | `fix_leap` | `bool` | `True` | 是否修正闰月，与排盘入参同义 |
 | `limit` | `int` | `0` | 候选数上限；`0` 取内核默认（512） |
 
@@ -118,7 +118,7 @@ for c in solar_dates_by_bazi(p.yearly_keys, p.monthly_keys, p.daily_keys, p.hour
 注意传的是标识（`yearly_keys` 等）而不是译名（`yearly` 等）——
 译名是显示文本，直接传会报 `unknown heavenly stem key '庚'`。
 
-**异常**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时抛
+**异常**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1–9999 时抛
 `IztroError`（`code` 为 `invalid_argument`），见[错误处理](/zh/docs/python/errors)。
 
 ---

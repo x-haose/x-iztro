@@ -14,7 +14,7 @@ x-iztro 把外部输入的校验放在尽量靠内的一层，三种编程语言
 
 | 分类 | 含义 |
 | --- | --- |
-| `invalid_date` | 日期格式非法、该日期不存在，或超出支持范围（公历 1583–9999） |
+| `invalid_date` | 日期格式非法、该日期不存在（含 1582 年改历空缺），或超出支持范围（1–9999 年） |
 | `invalid_time_index` | 时辰索引越界（合法值 0–12） |
 | `invalid_argument` | 其余入参或配置非法：未知的性别、盘面语言、星耀标识、开关取值、覆盖表长度错；反推的干支阴阳不配、条件为空或含流耀、年份范围非法 |
 | `internal` | 库内部缺陷或运行时故障，不是调用方的错，请上报 |
@@ -35,7 +35,7 @@ match by_solar(date, ti, Gender::Female, true, Language::ZhCN, Config::default()
 
 ```text
 invalid_date         invalid solar date '2000-2-30': day is out of range for that month
-invalid_date         invalid solar date '1000-1-1': year must be within 1583-9999
+invalid_date         invalid solar date '0-1-1': year must be within 1-9999
 invalid_time_index   time_index must be 0-12, got 13
 ```
 
@@ -101,9 +101,10 @@ C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<cod
 
 | 输入 | 消息样例 |
 | --- | --- |
-| 公历日期格式 | `invalid solar date 'not-a-date': year is not a number` |
+| 公历日期格式 | `invalid solar date 'not-a-date': expected 'YYYY-M-D' ('-', '/' or '.' as the separator), optionally followed by ' HH:mm' or ' HH:mm:ss'` |
 | 公历日期不存在 | `invalid solar date '2000-2-30': day is out of range for that month` |
-| 公历年份范围 | `invalid solar date '1000-1-1': year must be within 1583-9999` |
+| 公历改历空缺 | `invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)` |
+| 年份范围 | `invalid solar date '0-1-1': year must be within 1-9999` |
 | 农历月份 | `invalid lunar date '2000-13-1': month must be within 1-12` |
 | 农历该月天数 | `invalid lunar date '2000-2-31': day is out of range for that lunar month` |
 | 时辰索引 | `time_index must be 0-12, got 13` |

@@ -147,7 +147,7 @@ def by_solar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1583–9999 |
+| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | `int` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `str` | Yes | — | `"male"` or `"female"`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | No | `True` | Keyword-only. Whether to correct for lunar leap months. When true, days from the sixteenth of a leap month onward count as the next month (the late Zi hour excepted, see below) |

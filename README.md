@@ -8,7 +8,7 @@
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <a href="https://ziwei.x-haose.com/en/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/golden_cases-716%2C314-2da44e?style=flat-square" alt="716,314 golden cases"></a>
+  <a href="https://ziwei.x-haose.com/en/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/golden_cases-747%2C572-2da44e?style=flat-square" alt="747,572 golden cases"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
@@ -91,7 +91,7 @@ and held identical to it; the layers an AI pipeline needs on top are new.
 
 |                                                              | iztro v2.6.3 (JS) | x-iztro                                   |
 | ------------------------------------------------------------ | ----------------- | ----------------------------------------- |
-| Chart, twelve palaces (body and Original palace included), six horoscope levels | ✅ | ✅ field-for-field identical, 716,314 golden cases |
+| Chart, twelve palaces (body and Original palace included), six horoscope levels | ✅ | ✅ field-for-field identical, 747,572 golden cases |
 | Palace queries, surrounded palaces (三方四正), flying stars  | ✅                | ✅                                        |
 | Serialized output                                            | `JSON.stringify`  | every iztro key, key for key, plus documented extension keys |
 | Pattern judgement (64 rules)                                 | —                 | ✅                                        |
@@ -380,48 +380,54 @@ is what the configuration switches and custom transformation/brightness tables
 are for. And you can re-run the whole comparison yourself:
 
 ```bash
-cargo test                                               # every layer except Tier 3, about a minute
-cargo test --release --test golden_tier3 -- --ignored    # Tier 3 in full: 586,430 charts, ~70 s
+cargo test                                               # every layer except Tier 3, plus calendar samples, about a minute
+cargo test --release --test golden_tier3 -- --ignored    # Tier 3 in full: 586,430 charts, ~15 s
+cargo test --release --lib calendar -- --ignored         # the full calendar: every day of years 1–9999, ~10 s
 ```
 
-716,314 golden cases in nine layers ("60 years" below means 1984–2043, one
-sexagenary cycle):
+The calendar is checked on its own first, in full: the lunar date, year, month
+and day pillars and zodiac sign of all 3,652,061 days of Gregorian years
+1–9999; the month table and 31 solar-term moments of every lunar year; and the
+month, day and hour pillars at all 13 hours of every day carrying a "jie" solar
+term. Charts then have 747,572 golden cases in nine layers ("60 years" below
+means 1984–2043, one sexagenary cycle):
 
 | Layer       | Cases   | Coverage                                                                  |
 |-------------|---------|---------------------------------------------------------------------------|
 | Tier 1      | 1,560   | 60 years × 13 hours × both genders, every field compared individually     |
 | Tier 2      | 37,440  | 60 years × the 1st and 15th of each month × 13 hours × both genders       |
 | Tier 3      | 586,430 | **every day** of 60 years × 13 hours × both genders, plus a second `fix_leap` pass on leap-month days; hashed |
-| Edge years  | 46,228  | 1583–1983 and 2044–2100 sampled, where leap months and tables strain      |
+| Edge years  | 78,156  | year 1 to 2100 sampled, the Julian era and both sides of the 1582 reform included |
 | Horoscope   | 5,760   | 360 charts × 16 target dates, all six horoscope levels, every field       |
 | Variants    | 14,268  | lunar-date charts across leap months, Zhongzhou school, all six languages |
-| Config      | 9,696   | each boundary switch at its non-default value, chart and horoscope layers |
+| Config      | 11,424  | each boundary switch at its non-default value, chart and horoscope layers, sampled at every solar-term moment |
 | Astro type  | 12,488  | the heaven / earth / human chart perspectives                             |
-| 1602 window | 2,444   | the 1602 leap-month correction window, day by day, hashed                 |
+| Date spellings | 46   | separators, zero padding, the time part, an omitted horoscope hour, and the errors for bad spellings |
 
 On top of that: the serialization contract is compared key-by-key against JS
 `JSON.stringify`; translation reverse-lookup is checked against iztro's `kot`
-(its key-of-translation helper) on 1,559 entries; and the three bindings are
+(its key-of-translation helper) on 1,573 entries; and the three bindings are
 cross-checked so the same birth data yields the same answers in Rust, Python
 and Go.
 
-**One example of what zero tolerance means.** The Rust lunar-calendar
-dependency has a self-contradictory month table for the year 1602 (a 31-day
-second month), which made one date panic outright and 28 more days silently
-produce wrong charts. x-iztro adds a correction layer at its single
-lunar-table entry point, with the true values cross-confirmed against three
-independent sources — lunar-typescript, the Shou-Xing almanac (sxtwl) and the
-Korea Astronomy and Space Science Institute's tables — and the window locked
-by 2,444 golden cases. A full-domain scan of every date from 1583 to 9999
-(~6.1 million charts) found no second window of the same kind. The layer
-probes the dependency at runtime and disables itself once upstream is fixed.
+**One example of what zero tolerance means.** The Rust lunar-calendar crate
+x-iztro used to borrow turned out, under a day-by-day check of the whole range,
+to carry porting errors: `t -= A + B` had become `t = t - A + B`, and the ΔT
+extrapolation differed. The effect surfaces only on a handful of days in ten
+thousand years — a new moon a few dozen seconds from midnight, a solar term a
+few seconds from an hour's half-past mark — yet across 1583–9999 it put 540
+lunar dates and the solar-term month pillar at 23 moments out of line with
+iztro, and sampling caught none of them. x-iztro replaced it with its own
+calendar, a function-by-function port of lunar-typescript (the calendar library
+iztro itself uses), identical day by day across Gregorian years 1–9999, with
+that check running in full in CI.
 
 ## Running it in production
 
 - **No global state** — configuration and language travel with each call, so
   charts under different schools or locales never interfere.
 - **Invalid input is an error, never a panic** — date format and existence are
-  validated, solar years 1583–9999, hour index 0–12. Rust returns
+  validated, years 1–9999 (Julian calendar before 1582-10-15), hour index 0–12. Rust returns
   `Err(IztroError)`, Python raises `x_iztro.IztroError` (a `ValueError` with a
   `.code`), Go returns an `error` matchable with `errors.Is`, and the C FFI
   yields error JSON. Every failure carries a machine-readable category.
@@ -435,8 +441,8 @@ probes the dependency at runtime and disables itself once upstream is fixed.
   cache under `os.UserCacheDir()`; without one, each process recompiles).
   Steady state is ~0.5 ms per chart — reproduce with `go test -bench` in
   `go/iztro` — and `Warmup` moves the cold start to boot time.
-- **Rust** — MSRV 1.88; direct dependencies are `serde`, `serde_json`,
-  `lunar_rust` and `chrono` (clock only, for `horoscope_now`).
+- **Rust** — MSRV 1.88; direct dependencies are `serde`, `serde_json`, `libm`
+  (the calendar's trigonometry) and `chrono` (clock only, for `horoscope_now`).
 - **Pre-1.0 stability** — the serialized JSON contract, the to_text format and
   the error codes are snapshot-guarded by the test suite; breaking changes are
   called out explicitly in the [CHANGELOG](CHANGELOG.md).

@@ -63,7 +63,7 @@ type Pillar [2]string
 | `FiveElementsClass` | `string` | 五行局标识，空串不限 |
 | `Stars` | `[]StarPosition` | 星耀落宫条件，全部须同时满足 |
 | `Mutagens` | `[4]string` | 生年四化 [禄, 权, 科, 忌] 各自的星耀标识，空串表示该位不限 |
-| `YearRange` | `[2]int` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `YearRange` | `[2]int` | 公历年闭区间（含两端），须落在 1–9999 内 |
 | `FixLeap` | `*bool` | 是否修正闰月，与排盘入参同义；`nil` 取内核默认 `true` |
 | `Limit` | `int` | 候选数上限 |
 
@@ -119,7 +119,7 @@ for _, c := range cands {
 2060-8-1 2
 ```
 
-**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时返回
+**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1–9999 时返回
 `ErrInvalidArgument` 类错误（`errors.Is` 可匹配），见[错误处理](/zh/docs/go/errors)。
 
 ---

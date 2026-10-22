@@ -54,7 +54,7 @@ let cands = solar_dates_by_bazi(
 | `five_elements_class` | `Option<FiveElementsClass>` | `None` | 五行局 |
 | `stars` | `Vec<StarPosition>` | 空 | 星耀落宫条件，全部须同时满足 |
 | `mutagens` | `[Option<StarKey>; 4]` | 全 `None` | 生年四化 [禄, 权, 科, 忌] 各自是哪颗星 |
-| `year_range` | `(i64, i64)` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1583–9999 内 |
+| `year_range` | `(i64, i64)` | `(1900, 2100)` | 公历年闭区间（含两端），须落在 1–9999 内 |
 | `fix_leap` | `bool` | `true` | 是否修正闰月，与排盘入参同义 |
 | `limit` | `usize` | `0` | 候选数上限；`0` 取 `DEFAULT_REVERSE_LIMIT` |
 
@@ -115,7 +115,7 @@ for c in &cands {
 2060-8-1 2
 ```
 
-**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1583–9999 时返回
+**错误**　干支阴阳不配（如甲丑）、年份范围颠倒或超出 1–9999 时返回
 [`IztroError::InvalidArgument`](/zh/docs/rust/errors#invalidargument)。
 
 ---

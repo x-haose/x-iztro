@@ -16,7 +16,7 @@ required; the last three have defaults.
 
 | Parameter | Meaning | Accepts |
 | --- | --- | --- |
-| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`; `/` or `.` separators and a ` HH:mm` time are accepted too (the time does not affect the chart). Gregorian range 1583–9999 |
+| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`; `/` or `.` separators and a ` HH:mm` time are accepted too (the time does not affect the chart). Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | Hour of birth | Integer 0–12, see the table below |
 | `gender` | Gender | `"male"` / `"female"` (a `Gender` enum in Rust) |
 | `fix_leap` | Correct for leap months | Boolean, defaults to `true` |
@@ -91,7 +91,7 @@ language expects:
 | Go | Returns `*iztro.Error`, matchable against sentinels with `errors.Is` |
 | C FFI | Returns `{"error":"...","code":"..."}` as JSON |
 
-The core validates date format and real existence, the Gregorian range 1583–9999, and hour index
+The core validates date format and real existence (the 1582 reform gap included), the range 1–9999, and hour index
 0–12. Gender, chart language and configuration switches — the parameters passed as strings — are
 validated in the **binding layer** as they are parsed; in Rust they are enums to begin with, so
 there is no invalid value to reject.
