@@ -21,21 +21,8 @@ jobs:
           targets: wasm32-wasip1
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: 格式检查
-        run: cargo fmt --check
-      - name: Clippy（零告警）
-        run: cargo clippy --all-targets -- -D warnings
-      # docs.rs 按默认特性渲染公开文档；坏的文档内链接编译与测试都不报，只有 rustdoc 报
-      - name: API 文档（零告警）
-        run: cargo doc --no-deps
-        env:
-          RUSTDOCFLAGS: -D warnings
-      - name: 测试（常规层金标）
-        run: cargo test
-      # 历法移植错误可能只在个别年份出现，抽样层抓不到；全量 release 下约 10 秒，
-      # 并在 Linux 上复核三角函数取 libm 后各平台结果一致
-      - name: 历法全量金标（公历 1-9999 年逐日）
-        run: cargo test --release --lib calendar -- --ignored
+      - name: Rust 检查（含契约、API 文档与历法全量金标）
+        run: make check-rust
       - name: wasm 构建
         run: cargo build --release --target wasm32-wasip1
       - name: 上传 wasm 产物
@@ -63,14 +50,14 @@ jobs:
         with:
           go-version: "1.22"
       - name: Go 绑定金标测试（仓库内嵌 wasm）
-        run: cd go/iztro && go test ./...
+        run: cd go/iztro && go test -race ./...
       - name: 下载源码新编的 wasm
         uses: actions/download-artifact@v8
         with:
           name: wasm
           path: go/iztro
       - name: Go 绑定金标测试（源码新编 wasm，防内嵌陈旧）
-        run: cd go/iztro && go test ./...
+        run: cd go/iztro && go test -race ./...
       - name: Go 示例构建
         run: cd examples/go && go build .
 
@@ -89,16 +76,13 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - name: 构建并安装 Python 绑定
+      - name: 准备 Python 检查环境
         run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install maturin pytest
-          maturin develop --features python
-        env:
-          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
-      - name: Python 端到端金标测试
-        run: .venv/bin/pytest python/tests/ -q
+      - name: 构建 Python 绑定并运行端到端金标测试
+        run: make check-python
 
   # 矩阵作业上报的检查名带版本号（python-tests (3.10) 等），分支保护没法按固定名
   # 等待它们；这个聚合门以固定名 python 汇总矩阵结果，矩阵扩缩不需要再动保护规则。
@@ -122,7 +106,5 @@ jobs:
           cache-dependency-path: docs/package-lock.json
       - name: 安装依赖
         run: cd docs && npm ci
-      - name: 类型检查
-        run: cd docs && npx next typegen && npm run types:check
-      - name: 构建
-        run: cd docs && npm run build
+      - name: 文档类型检查与构建
+        run: make check-docs

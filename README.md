@@ -46,11 +46,11 @@ print(chart.to_text())
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 - Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
 - Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
-- Birth-Year Mutagen: sun [A]→children, general [B]→wealth, moon [C]→friends, fortunate [D]→health
+- Birth-Year Mutagen: sun [A]→children, warrior [B]→wealth, moon [C]→friends, fortunate [D]→health
 
 ## Palace Overview
 | Palace | Major Stars | Minor Stars | Decadal |
@@ -70,7 +70,7 @@ print(chart.to_text())
 - Minor Stars: artist([-3])
 - Adjective Stars: refined, lucky, intercepted, instigated, considery(Y)
 - Trine & Opposite: Opposite surface · Trine wealth, career
-- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, general [D]→wealth
+- Stem ren Flying: sage [A]→children, emperor [B]→soul, officer [C]→career, warrior [D]→wealth
 - Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery
 - Age Fortune Years: 5, 17, 29, 41, 53, 65, 77, 89, 101, 113
 
@@ -79,8 +79,8 @@ print(chart.to_text())
 
 Legend: `([+3])` is brightness on a −3…+3 scale; `[A]`–`[D]` are the four
 transformations (四化, "mutagens" in iztro's vocabulary) and `→children` names
-the palace the transformed star sits in. The lunar date stays in Chinese
-numerals by design. The same chart renders in six
+the palace the transformed star sits in. The natal lunar date follows the
+output language. The same chart renders in six
 languages; the underlying objects are typed, and `chart.to_json()` emits every
 key JS iztro emits, with the same values, plus documented extension keys.
 
@@ -107,13 +107,12 @@ the chart is headed for an LLM, use x-iztro.
 
 ## Install
 
-**Rust** — MSRV 1.88 (checked by a dedicated CI job), four direct dependencies
-(21 crates in the full tree). The core forbids `unsafe` via a crate-level
+**Rust** — MSRV 1.88 (checked by a dedicated CI job). The core forbids `unsafe` via a crate-level
 `#![deny(unsafe_code)]`; only the FFI/wasm boundary modules are exempt.
 
 ```toml
 [dependencies]
-x-iztro = "0.3"
+x-iztro = "0.6"
 ```
 
 **Python** — 3.10+, zero runtime dependencies, typed API (dataclasses +
@@ -442,8 +441,10 @@ that check running in full in CI.
   cache under `os.UserCacheDir()`; without one, each process recompiles).
   Steady state is ~0.5 ms per chart — reproduce with `go test -bench` in
   `go/iztro` — and `Warmup` moves the cold start to boot time.
-- **Rust** — MSRV 1.88; direct dependencies are `serde`, `serde_json`, `libm`
-  (the calendar's trigonometry) and `chrono` (clock only, for `horoscope_now`).
+- **Rust** — MSRV 1.88; default dependencies are `serde`, `serde_json`, `libm`
+  (calendar trigonometry), `chrono` (clock only, for `horoscope_now`) and
+  `unicode-width` (knowledge-summary display width). Python and JSON Schema
+  support are optional features.
 - **Pre-1.0 stability** — the serialized JSON contract, the to_text format and
   the error codes are snapshot-guarded by the test suite; breaking changes are
   called out explicitly in the [CHANGELOG](CHANGELOG.md).
@@ -495,6 +496,8 @@ cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
 
 Golden test data is generated from the JS iztro package:
 `cd tests/golden && npm ci && npm run gen:all`.
+
+Development checks and their prerequisites: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits
 

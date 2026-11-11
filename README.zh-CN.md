@@ -104,13 +104,12 @@ JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键�
 
 ## 安装
 
-**Rust** — MSRV 1.88（有独立的 CI 任务盯着），直接依赖四个（完整依赖树 21 个
-crate）。核心以 crate 级 `#![deny(unsafe_code)]` 禁用 `unsafe`，
+**Rust** — MSRV 1.88（有独立的 CI 任务检查）。核心以 crate 级 `#![deny(unsafe_code)]` 禁用 `unsafe`，
 仅 FFI/wasm 边界模块豁免。
 
 ```toml
 [dependencies]
-x-iztro = "0.3"
+x-iztro = "0.6"
 ```
 
 **Python** — 要求 3.10+，零运行时依赖，类型化 API（dataclass + StrEnum）。
@@ -399,8 +398,9 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
   落盘缓存命中后 20–30 ms；缓存在 `os.UserCacheDir()` 下，取不到时退化为
   每进程编译）。稳态单次排盘约 0.5 ms（`go/iztro` 下 `go test -bench` 可复现），
   `Warmup` 可把冷启动挪到启动阶段。
-- **Rust**——MSRV 1.88；直接依赖只有 `serde`、`serde_json`、`libm`（历法的三角函数）与
-  `chrono`（仅 `horoscope_now` 用到时钟）。
+- **Rust**——MSRV 1.88；默认依赖为 `serde`、`serde_json`、`libm`（历法三角函数）、
+  `chrono`（仅 `horoscope_now` 用到时钟）和 `unicode-width`（知识包摘要显示宽度）；
+  Python 与 JSON Schema 支持由可选 feature 启用。
 - **1.0 之前的稳定性**——序列化 JSON 契约、to_text 文本格式与错误码都有快照测试
   守着；破坏性变更在 [CHANGELOG](CHANGELOG.md) 里显式列出。
 
@@ -446,6 +446,8 @@ cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
 ```
 
 金标数据由 JS iztro 包生成：`cd tests/golden && npm ci && npm run gen:all`。
+
+开发检查与环境准备见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 

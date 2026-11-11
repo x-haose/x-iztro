@@ -3,7 +3,7 @@
 ## 项目概述
 
 x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.3。
-支持 Rust / Python(PyO3) / Go(C FFI) 三语言调用。
+支持 Rust / Python(PyO3) / Go(WASM) 三语言调用，另有 C FFI 边界。
 
 ## 决策标准
 
@@ -23,6 +23,8 @@ x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/
 ## 构建与测试
 
 ```bash
+make check                              # 三语言与文档检查；环境准备见 CONTRIBUTING.md
+make check-full                         # 另含 Tier 3 与全日期可排盘测试
 cargo build --release                    # 构建（含 cdylib + rlib）
 cargo test                               # 常规测试（~1min，含除 Tier 3 外的全部金标）
 cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586,430 例，~20s）
@@ -123,8 +125,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那两类文本被忽略
 - 按主题取材：主题是论法，定义在知识包 `topics` 段（`surround` 连三方四正、`palaces` 只取本宫），内核
   `topic_to_text` 通用执行——主题定义与释义都取自 `TextOptions` 的包，无包、无此主题、宫位标识不认识一律
-  `InvalidArgument`（略过会静默少一宫）。只按本命宫位取材，运限问题走运限文本；按运限层取宫（`scope`）
-  将来做时是新增可选字段
+  `InvalidArgument`（略过会静默少一宫）。只按本命宫位取材，运限问题走运限文本。
   结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
   `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
   命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
