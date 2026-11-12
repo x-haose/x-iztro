@@ -10,7 +10,7 @@
 //! 格局命中（[`patterns_to_text`]）、单宫（[`palace_to_text`]）、
 //! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览。各对象另有同名 `to_text` 便捷方法。
 //! `*_to_text_with` 收 [`TextOptions`]，两个开关互相独立：[`TextDetail`] 管事实写到多细，
-//! [`KnowledgeDepth`] 管释义写多长。释义随段落而不随表格——宫位段落之后紧跟该宫星耀的释义，
+//! [`KnowledgeDepth`] 管释义写多长；运限文本另有 [`TextOptions::horoscope_through`] 管写到哪一层。释义随段落而不随表格——宫位段落之后紧跟该宫星耀的释义，
 //! 格局列表之后紧跟格局释义，运限各层级段之后紧跟流耀与格局释义，本命文末附四化释义，
 //! 事实与解读同处一屏。
 
@@ -87,6 +87,8 @@ pub struct TextOptions<'a> {
     depth: KnowledgeDepth,
     /// 格局判定口径；`None` 取 [`PatternConfig::default`]
     pattern_config: Option<&'a PatternConfig>,
+    /// 运限文本写到哪一层为止；`None` 即写到流时
+    through: Option<Scope>,
 }
 
 impl<'a> TextOptions<'a> {
@@ -132,6 +134,33 @@ impl<'a> TextOptions<'a> {
     pub fn pattern_config(mut self, config: &'a PatternConfig) -> Self {
         self.pattern_config = Some(config);
         self
+    }
+
+    /// 运限文本写到 `scope` 这一层为止，更细的层级不写：大限只写大限；流年写大限、小限、流年；
+    /// 流月、流日、流时依次各多一层。不设即写到流时。只对运限文本起作用。
+    ///
+    /// 目标日期只精确到年或日时用它：流月以下随日期变、流时随时辰变，没给到的精度不该出现在文本里。
+    ///
+    /// # Errors
+    /// `scope` 为 [`Scope::Origin`] 时返回 [`IztroError::InvalidArgument`]：本命不是运限层级。
+    pub fn horoscope_through(mut self, scope: Scope) -> Result<Self, IztroError> {
+        if scope == Scope::Origin {
+            return Err(IztroError::InvalidArgument(
+                "horoscope text cannot stop at 'origin': expected decadal, yearly, monthly, daily or hourly"
+                    .to_string(),
+            ));
+        }
+        self.through = Some(scope);
+        Ok(self)
+    }
+
+    /// 运限文本是否写 `scope` 这一层；层级先后即 [`HOROSCOPE_SCOPES`] 的顺序。
+    fn writes_scope(&self, scope: Scope) -> bool {
+        let rank = |s: Scope| HOROSCOPE_SCOPES.iter().position(|x| *x == s);
+        match self.through {
+            None => true,
+            Some(through) => rank(scope) <= rank(through),
+        }
     }
 
     /// 当前的释义材料来源；`None` 即只输出事实。
@@ -1338,7 +1367,8 @@ pub fn horoscope_to_text(
 }
 
 /// 运限的语义化文本：大限、小限、流年、流月、流日、流时各一节，完整层的大限与流年展开
-/// 十二宫表、总览层与其余各层同写宫名对照与流耀行；带知识包时各层附流耀与格局释义（跨层去重）
+/// 十二宫表、总览层与其余各层同写宫名对照与流耀行；带知识包时各层附流耀与格局释义（跨层去重）。
+/// 写到哪一层为止由 [`TextOptions::horoscope_through`] 决定，小限随流年一起写或不写
 pub fn horoscope_to_text_with(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
@@ -1379,6 +1409,10 @@ pub fn horoscope_to_text_with(
         Scope::Decadal,
         full.then_some(false),
     ));
+
+    if !opts.writes_scope(Scope::Yearly) {
+        return out;
+    }
 
     // ---- 小限：落宫、虚岁、宫名、四化与该宫星耀 ----
     let age = &horoscope.age;
@@ -1424,6 +1458,9 @@ pub fn horoscope_to_text_with(
         (&horoscope.daily, Scope::Daily),
         (&horoscope.hourly, Scope::Hourly),
     ] {
+        if !opts.writes_scope(scope) {
+            break;
+        }
         out.push('\n');
         out.push_str(&scope_section(item, scope, None));
     }
@@ -1846,6 +1883,45 @@ mod tests {
         ] {
             assert!(text.contains(needle), "缺少 {needle:?}\n{text}");
         }
+    }
+
+    /// 写到某一层为止：该层及之前的节都在，之后的节都不在；小限随流年。不设与写到流时逐字节相同
+    #[test]
+    fn horoscope_text_stops_at_the_requested_scope() {
+        let lang = Language::ZhCN;
+        let astrolabe = chart(lang);
+        let horoscope = get_horoscope(&astrolabe, "2024-10-1", 0, lang).unwrap();
+        let sections = [
+            "## 大限 · ",
+            "## 小限 · ",
+            "## 流年 · ",
+            "## 流月 · ",
+            "## 流日 · ",
+            "## 流时 · ",
+        ];
+        for (through, kept) in [
+            (Scope::Decadal, 1),
+            (Scope::Yearly, 3),
+            (Scope::Monthly, 4),
+            (Scope::Daily, 5),
+            (Scope::Hourly, 6),
+        ] {
+            let opts = TextOptions::new().horoscope_through(through).unwrap();
+            let text = horoscope_to_text_with(&astrolabe, &horoscope, &opts, lang);
+            for (i, heading) in sections.iter().enumerate() {
+                assert_eq!(
+                    text.contains(heading),
+                    i < kept,
+                    "{through:?} {heading}\n{text}"
+                );
+            }
+        }
+        let hourly = TextOptions::new().horoscope_through(Scope::Hourly).unwrap();
+        assert_eq!(
+            horoscope_to_text_with(&astrolabe, &horoscope, &hourly, lang),
+            horoscope_to_text(&astrolabe, &horoscope, lang)
+        );
+        assert!(TextOptions::new().horoscope_through(Scope::Origin).is_err());
     }
 
     /// 未起运的盘（童限），大限段的标题写「童限」而非「大限」

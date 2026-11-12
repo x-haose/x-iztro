@@ -775,14 +775,10 @@ impl Astrolabe {
     ) -> Result<Vec<YearlyHoroscope>, IztroError> {
         let (start, end) = self.decadal_range(target.into())?;
         let birth_year = self.raw_dates.lunar_date.lunar_year;
-        let time_index = self.list_time_index();
         (start..=end)
             .map(|age| {
                 let year = birth_year + age as i64 - 1;
-                let (sy, sm, sd) = calendar::solar_date_of(year, 6, 1).ok_or_else(|| {
-                    IztroError::Internal(format!("lunar year {year} has no sixth month"))
-                })?;
-                let h = get_horoscope(self, &format!("{sy}-{sm}-{sd}"), time_index, self.language)?;
+                let h = self.horoscope_at_mid_year(year)?;
                 Ok(YearlyHoroscope {
                     base: h.yearly.base,
                     age,
@@ -790,6 +786,43 @@ impl Astrolabe {
                 })
             })
             .collect()
+    }
+
+    /// 指定农历年六月初一的运限，时辰同逐层列表（[`Self::list_time_index`]）。
+    fn horoscope_at_mid_year(&self, year: i64) -> Result<HoroscopeData, IztroError> {
+        let (sy, sm, sd) = calendar::solar_date_of(year, 6, 1)
+            .ok_or_else(|| IztroError::Internal(format!("lunar year {year} has no sixth month")))?;
+        get_horoscope(
+            self,
+            &format!("{sy}-{sm}-{sd}"),
+            self.list_time_index(),
+            self.language,
+        )
+    }
+
+    /// 指定农历年的运限：目标日期取该年六月初一，与 [`Self::yearly_list`] 同一约定。
+    ///
+    /// 只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
+    /// 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
+    /// `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
+    /// 流月、流日、流时也在结果里，是六月初一那一天的，文本可用
+    /// [`crate::text::TextOptions::horoscope_through`] 只写到流年。
+    ///
+    /// # Errors
+    /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]；该年六月初一落在支持范围外时返回
+    /// [`IztroError`]。
+    pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroError> {
+        if !SUPPORTED_YEARS.contains(&year) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid year {year}: expected {}-{}",
+                SUPPORTED_YEARS.start(),
+                SUPPORTED_YEARS.end()
+            )));
+        }
+        Ok(HoroscopeRef {
+            data: self.horoscope_at_mid_year(year)?,
+            astrolabe: self,
+        })
     }
 
     /// 指定农历年的全部流月，按月份先后排列。

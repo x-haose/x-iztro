@@ -271,3 +271,49 @@ mod ffi_kinds {
         assert_ne!(plain, rearranged, "重排后的大限列表应与原盘不同");
     }
 }
+
+/// 按农历年取运限：流年是该农历年的，而公历同年 1 月 1 日还在上一个农历年；
+/// 流年一层与流年列表里同一年的那项一致。
+#[test]
+fn horoscope_of_year_is_the_lunar_year_not_new_years_day() {
+    let a = chart("2000-8-16", 2);
+    let of_year = a.horoscope_of_year(2027).unwrap();
+    assert_eq!(
+        (of_year.yearly.heavenly_stem, of_year.yearly.earthly_branch),
+        (HeavenlyStem::Ding, EarthlyBranch::Wei),
+        "农历 2027 年是丁未年"
+    );
+    let new_years_day = a.horoscope("2027-1-1", 0).unwrap();
+    assert_eq!(
+        (
+            new_years_day.yearly.heavenly_stem,
+            new_years_day.yearly.earthly_branch
+        ),
+        (HeavenlyStem::Bing, EarthlyBranch::Wu),
+        "公历 2027-1-1 仍在丙午年"
+    );
+
+    let age = (2027 - 2000 + 1) as u32;
+    let listed = a
+        .decadal_list()
+        .iter()
+        .position(|d| d.age_range.0 <= age && age <= d.age_range.1)
+        .map(|ordinal| a.yearly_list(ordinal).unwrap())
+        .unwrap()
+        .into_iter()
+        .find(|y| y.year == 2027)
+        .unwrap();
+    assert_eq!(of_year.yearly.mutagen, listed.mutagen);
+    assert_eq!(of_year.yearly.index, listed.index);
+    assert_eq!(of_year.age.nominal_age, age);
+
+    for year in [0, 10000] {
+        assert!(
+            matches!(
+                a.horoscope_of_year(year),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "年份 {year} 越界应报错"
+        );
+    }
+}
