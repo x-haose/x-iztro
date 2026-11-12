@@ -551,7 +551,7 @@ const (
 	PalaceOriginal = "originalPalace"
 )
 
-// 运限层级标识（Star.Scope，以及 Horoscope 各查询方法的 scope 参数）。
+// 运限层级标识（Star.Scope、Horoscope 各查询方法的 scope 参数，以及 TextOptions.Through）。
 const (
 	// ScopeOrigin 为本命
 	ScopeOrigin = "origin"

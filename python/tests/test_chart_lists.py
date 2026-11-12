@@ -1,6 +1,6 @@
-"""夹宫与大限/流年/流月列表的端到端测试。
+"""夹宫、大限/流年/流月列表与按农历年取运限的端到端测试。
 
-四组查询都经绑定层无状态再发起排盘，因此这里同时盯两件事：返回值的项数与
+这些查询都经绑定层无状态再发起排盘，因此这里同时盯两件事：返回值的项数与
 字段类型符合契约，以及排盘上下文（重排起点、修正闰月开关）真的被转发——
 上下文丢失时结果仍是一份「看起来合理」的错答案，只有拿它同原盘结果对比才看得出来。
 
@@ -209,3 +209,35 @@ def test_monthly_list_fix_leap_is_independent_of_the_chart():
 def test_monthly_list_rejects_unsupported_year():
     with pytest.raises(IztroError):
         chart().monthly_list(99999)
+
+
+# ------ 按农历年取运限 ------
+
+
+def test_horoscope_of_year_is_the_lunar_year_not_new_years_day():
+    """流年是该农历年的；公历同年 1 月 1 日还在上一个农历年。"""
+    a = chart()
+    of_year = a.horoscope_of_year(2027)
+    assert (of_year.yearly.heavenly_stem_key, of_year.yearly.earthly_branch_key) == (
+        HeavenlyStem.DING,
+        EarthlyBranch.WEI,
+    )
+    new_years_day = a.horoscope("2027-1-1", 0)
+    assert (
+        new_years_day.yearly.heavenly_stem_key,
+        new_years_day.yearly.earthly_branch_key,
+    ) == (HeavenlyStem.BING, EarthlyBranch.WU)
+
+    for year in (0, 10000):
+        with pytest.raises(IztroError) as info:
+            a.horoscope_of_year(year)
+        assert info.value.code == "invalid_argument"
+
+
+def test_horoscope_of_year_recomputes_by_year():
+    """年份运限再发起计算时转发的是年份：文本与「六月初一 + 出生时辰（寅时，索引 2）」的运限同文。
+    转发 DTO 的 solar_date 会丢掉时辰、按早子时重算，流时一节随之不同。"""
+    a = chart()
+    of_year = a.horoscope_of_year(2027)
+    assert of_year.to_text() == a.horoscope(of_year.solar_date, 2).to_text()
+    assert of_year.to_text() != a.horoscope(of_year.solar_date).to_text()

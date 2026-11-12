@@ -539,9 +539,41 @@ class Astrolabe:
         Raises:
             IztroError: 目标日期或时辰索引非法
         """
+        target = _date_param(datetime.now() if target_date is None else target_date)
+        return self._horoscope(target_date=target, target_time_index=target_time_index)
+
+    def horoscope_of_year(self, year: int) -> Horoscope:
+        """
+        指定农历年的运限，结果持有本盘：目标日期取该年六月初一，与 `yearly_list` 同一约定。
+
+        只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
+        拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
+        `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
+        流月、流日、流时也在结果里，是六月初一那一天的，文本用 `to_text(through=Scope.YEARLY)`
+        只写到流年。
+
+        Args:
+            year: 农历年份 (1-9999)
+
+        Returns:
+            Horoscope 运限对象；它再发起的计算（`to_text`、格局、按盘取材）仍按该农历年取运限
+
+        Raises:
+            IztroError: 年份不在 1-9999，或该年六月初一落在支持范围外
+        """
+        return self._horoscope(target_year=year)
+
+    def _horoscope(
+        self,
+        *,
+        target_date: str | None = None,
+        target_time_index: int | None = None,
+        target_year: int | None = None,
+    ) -> Horoscope:
+        """按运限目标（日期与时辰，或农历年份）发起运限计算；目标入参原样记在返回的运限上，
+        供它再发起计算时转发。"""
         from x_iztro._bridge import horoscope as bridge_horoscope
 
-        target = _date_param(datetime.now() if target_date is None else target_date)
         data = bridge_horoscope(
             solar_date=self.solar_date,
             time_index=self.time_index,
@@ -551,10 +583,11 @@ class Astrolabe:
             config=self._config_payload(),
             from_stem=self._from_stem,
             from_branch=self._from_branch,
-            target_date=target,
+            target_date=target_date,
             target_time_index=target_time_index,
+            target_year=target_year,
         )
-        return Horoscope._from_dict(data, self, target, target_time_index)
+        return Horoscope._from_dict(data, self, target_date, target_time_index, target_year)
 
     def decadal_list(self) -> list[DecadalListItem]:
         """

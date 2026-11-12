@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from x_iztro import Astro, Astrolabe, ChartConfig
+from x_iztro import Astro, Astrolabe, ChartConfig, IztroError
 from x_iztro.enums import (
     AstroType,
     EarthlyBranch,
@@ -21,6 +21,7 @@ from x_iztro.enums import (
     MajorStar,
     Mutagen,
     PalaceName,
+    Scope,
     TextDetail,
 )
 
@@ -961,6 +962,24 @@ def test_str_is_to_text():
 
     assert str(chart) == chart.to_text()
     assert str(horoscope) == horoscope.to_text()
+
+
+def test_horoscope_text_stops_at_the_requested_scope():
+    """`through=Scope.YEARLY` 写到流年为止：大限、小限、流年三节在，流月、流日、流时不在；
+    本命层与不认识的层级报错。"""
+    horoscope = Astro().by_solar("2000-8-16", 2, "female").horoscope("2024-10-1", 0)
+
+    text = horoscope.to_text(through=Scope.YEARLY)
+    for heading in ("## 大限 · ", "## 小限 · ", "## 流年 · "):
+        assert heading in text
+    for heading in ("## 流月 · ", "## 流日 · ", "## 流时 · "):
+        assert heading not in text
+    assert horoscope.to_text(through=Scope.HOURLY) == horoscope.to_text()
+
+    for bad in (Scope.ORIGIN, "weekly"):
+        with pytest.raises(IztroError) as info:
+            horoscope.to_text(through=bad)
+        assert info.value.code == "invalid_argument"
 
 
 def test_childhood_decadal_name_key():

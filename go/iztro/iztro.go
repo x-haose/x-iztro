@@ -176,7 +176,7 @@ func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horosc
 
 // HoroscopeContext 为 Horoscope 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) HoroscopeContext(ctx context.Context, targetDate string, targetTimeIndex uint8) (*Horoscope, error) {
-	return a.horoscope(ctx, targetDate, &targetTimeIndex)
+	return a.horoscope(ctx, &Horoscope{targetDate: targetDate, targetTimeIndex: &targetTimeIndex})
 }
 
 // HoroscopeAt 以本命盘为起点计算目标日期的运限，时辰由 targetDate 的时间部分换算
@@ -187,7 +187,7 @@ func (a *Astrolabe) HoroscopeAt(targetDate string) (*Horoscope, error) {
 
 // HoroscopeAtContext 为 HoroscopeAt 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) HoroscopeAtContext(ctx context.Context, targetDate string) (*Horoscope, error) {
-	return a.horoscope(ctx, targetDate, nil)
+	return a.horoscope(ctx, &Horoscope{targetDate: targetDate})
 }
 
 // HoroscopeAtTime 以本命盘为起点计算时刻 t 的运限：日期取 t 的年月日，时辰由 t 的小时换算；
@@ -199,7 +199,7 @@ func (a *Astrolabe) HoroscopeAtTime(t time.Time) (*Horoscope, error) {
 // HoroscopeAtTimeContext 为 HoroscopeAtTime 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) HoroscopeAtTimeContext(ctx context.Context, t time.Time) (*Horoscope, error) {
 	date := fmt.Sprintf("%d-%d-%d %d:%d:%d", t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second())
-	return a.horoscope(ctx, date, nil)
+	return a.horoscope(ctx, &Horoscope{targetDate: date})
 }
 
 // HoroscopeNow 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
@@ -212,34 +212,48 @@ func (a *Astrolabe) HoroscopeNowContext(ctx context.Context) (*Horoscope, error)
 	return a.HoroscopeAtTimeContext(ctx, time.Now())
 }
 
-// horoscope 发起运限计算；targetTimeIndex 为 nil 时省略该键，由内核按 targetDate 的时间换算。
-func (a *Astrolabe) horoscope(ctx context.Context, targetDate string, targetTimeIndex *uint8) (*Horoscope, error) {
+// HoroscopeOfYear 返回指定农历年的运限，返回的运限持有本盘：目标日期取该年六月初一，
+// 与 YearlyList 同一约定。
+//
+// 只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
+// 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
+// Config.AgeDivide 取生日分界或 Config.HoroscopeDivide 取立春分界时年内仍会换层，结果是六月初一当天的。
+// 流月、流日、流时也在结果里，是六月初一那一天的，文本用 TextOptions{Through: ScopeYearly} 只写到流年。
+// 返回的运限再发起的计算（ToText、Patterns、按盘取材）仍按该农历年取运限。
+//
+// lunarYear 不在 1-9999 时返回 ErrInvalidArgument。
+func (a *Astrolabe) HoroscopeOfYear(lunarYear int) (*Horoscope, error) {
+	return a.HoroscopeOfYearContext(context.Background(), lunarYear)
+}
+
+// HoroscopeOfYearContext 为 HoroscopeOfYear 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (*Horoscope, error) {
+	return a.horoscope(ctx, &Horoscope{targetYear: &lunarYear})
+}
+
+// horoscope 按 out 上已填好的运限目标（targetDate 与 targetTimeIndex，或 targetYear）发起运限计算，
+// 把结果解进 out 并让它持有本盘；目标留在 out 上，供它再发起计算时转发。
+func (a *Astrolabe) horoscope(ctx context.Context, out *Horoscope) (*Horoscope, error) {
 	if a == nil {
 		return nil, invalidArgument("horoscope: nil astrolabe")
 	}
 	payload := map[string]any{
-		"solarDate":  a.SolarDate,
-		"timeIndex":  a.TimeIndex,
-		"gender":     a.GenderKey,
-		"fixLeap":    a.FixLeap,
-		"language":   a.Language,
-		"config":     a.requestConfig(),
-		"targetDate": targetDate,
+		"solarDate": a.SolarDate,
+		"timeIndex": a.TimeIndex,
+		"gender":    a.GenderKey,
+		"fixLeap":   a.FixLeap,
+		"language":  a.Language,
+		"config":    a.requestConfig(),
 	}
-	if targetTimeIndex != nil {
-		payload["targetTimeIndex"] = *targetTimeIndex
-	}
+	out.addTarget(payload)
 	a.addRearrange(payload)
 	raw, err := callWasm(ctx, fnHoroscope, payload)
 	if err != nil {
 		return nil, err
 	}
-	var out Horoscope
-	if err := json.Unmarshal(raw, &out); err != nil {
+	if err := json.Unmarshal(raw, out); err != nil {
 		return nil, internalError("decode horoscope: " + err.Error())
 	}
 	out.astrolabe = a
-	out.targetDate = targetDate
-	out.targetTimeIndex = targetTimeIndex
-	return &out, nil
+	return out, nil
 }

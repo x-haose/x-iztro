@@ -784,13 +784,22 @@ type Horoscope struct {
 	// 运限依附于某一张盘，宫位与流耀查询都要落回盘上，因此运限随身携带它。
 	astrolabe *Astrolabe
 	// targetDate 为发起这次查询的目标日期串（原样，可带时间）；再次发起运限层计算（如格局）时原样转发。
+	// 按农历年发起的运限不用它。
 	targetDate string
 	// targetTimeIndex 为发起这次查询的目标时辰索引；nil 表示由 targetDate 的时间换算，再次发起计算时同样省略。
 	targetTimeIndex *uint8
+	// targetYear 为发起这次查询的目标农历年份（Astrolabe.HoroscopeOfYear）；按日期发起的为 nil。
+	// 再次发起计算时转发年份而不是 SolarDate，内核按同一约定重新取该年的运限。
+	targetYear *int
 }
 
-// addTarget 把发起这次运限查询的目标日期与时辰写进再次发起计算的入参。
+// addTarget 把发起这次运限查询的目标写进入参：按农历年发起的写年份，否则写目标日期与时辰。
+// 首次计算与再次发起的计算（文本、格局、按盘取材）都经这里，目标键只在此一处写。
 func (h *Horoscope) addTarget(payload map[string]any) {
+	if h.targetYear != nil {
+		payload["targetYear"] = *h.targetYear
+		return
+	}
 	payload["targetDate"] = h.targetDate
 	if h.targetTimeIndex != nil {
 		payload["targetTimeIndex"] = *h.targetTimeIndex

@@ -246,7 +246,7 @@ class StarType(StrEnum):
 
 
 class Scope(StrEnum):
-    """作用范围（`Star.scope` 与运限查询方法的 scope 参数）"""
+    """作用范围（`Star.scope`、运限查询方法的 scope 参数与 `Horoscope.to_text` 的 through 参数）"""
 
     ORIGIN = "origin"
     """本命"""

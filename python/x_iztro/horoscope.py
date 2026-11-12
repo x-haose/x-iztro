@@ -294,11 +294,16 @@ class Horoscope:
     _raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
     """绑定层返回的原始 DTO，供 `to_dict` / `to_json` 导出"""
 
-    _target_date: str = field(default="", compare=False, repr=False)
-    """发起本次查询的目标日期串（原样，可带时间）；再次发起运限层计算（如格局）时原样转发"""
+    _target_date: str | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标日期串（原样，可带时间）；按农历年发起的为 `None`。
+    再次发起运限层计算（如格局）时原样转发"""
 
     _target_time_index: int | None = field(default=None, compare=False, repr=False)
     """发起本次查询的目标时辰索引；`None` 表示由目标日期串换算，再次发起计算时同样转发"""
+
+    _target_year: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标农历年份（`Astrolabe.horoscope_of_year`）；按日期发起的为 `None`。
+    再次发起计算时转发年份而不是 `solar_date`，内核按同一约定重新取该年的运限"""
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -325,6 +330,7 @@ class Horoscope:
         knowledge: bool | KnowledgePack | None = None,
         detail: TextDetail = TextDetail.FULL,
         knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+        through: Scope | ScopeLiteral | None = None,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -340,14 +346,18 @@ class Horoscope:
                 不展开十二宫表，默认 `FULL`
             knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
                 格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+            through: 写到哪一层为止，更细的层级不写：`Scope.DECADAL` 只写大限，`YEARLY` 写大限、
+                小限、流年，`MONTHLY` / `DAILY` / `HOURLY` 依次各多一层；默认 None 写到流时。
+                流月以下随日期变、流时随时辰变，目标只精确到年或日时用它略去没给到的精度
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
-                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要；
+                `through` 为 `Scope.ORIGIN` 或不是运限层级
         """
-        from x_iztro.pattern import _pattern_config
+        from x_iztro.pattern import _pattern_config, _scope_key
 
         return self._context_query(
             "horoscopeToText",
@@ -355,6 +365,7 @@ class Horoscope:
             knowledge=knowledge,
             detail=str(detail),
             knowledge_depth=str(knowledge_depth),
+            through=_scope_key(through) if through is not None else None,
             pattern_config=_pattern_config(config),
         )
 
@@ -371,7 +382,8 @@ class Horoscope:
 
     def _context_query(self, kind: str, astrolabe: Astrolabe | None, **extra: Any) -> Any:
         """以发起本次运限查询的排盘上下文调用绑定层：星盘上下文（含重排起点）
-        委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加目标日期。"""
+        委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加发起时的运限目标
+        （日期与时辰，或农历年份）。"""
         chart = self._chart(astrolabe)
         if chart is None:
             raise ValueError(
@@ -381,6 +393,7 @@ class Horoscope:
             kind,
             target_date=self._target_date,
             target_time_index=self._target_time_index,
+            target_year=self._target_year,
             **extra,
         )
 
@@ -608,13 +621,15 @@ class Horoscope:
         cls,
         d: dict,
         astrolabe: Astrolabe | None,
-        target_date: str,
+        target_date: str | None,
         target_time_index: int | None,
+        target_year: int | None,
     ) -> Horoscope:
         return cls(
             _raw=d,
             _target_date=target_date,
             _target_time_index=target_time_index,
+            _target_year=target_year,
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],
             decadal=HoroscopeItem._from_dict(d["decadal"]),

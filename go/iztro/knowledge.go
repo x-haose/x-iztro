@@ -191,6 +191,11 @@ type TextOptions struct {
 	// KnowledgeDepth 为释义深度：KnowledgeDepthSummary 或 KnowledgeDepthFull；空串取全文。
 	// 取摘要层须同时给 Knowledge，所给包缺摘要时报 ErrInvalidArgument 并列出缺项
 	KnowledgeDepth string
+	// Through 为运限文本写到哪一层为止，更细的层级不写：ScopeDecadal 只写大限，ScopeYearly 写大限、
+	// 小限、流年，ScopeMonthly / ScopeDaily / ScopeHourly 依次各多一层；空串写到流时。
+	// 流月以下随日期变、流时随时辰变，目标只精确到年或日时用它略去没给到的精度。
+	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin 与不是运限层级的取值报 ErrInvalidArgument
+	Through string
 	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
 	PatternConfig *PatternConfig
 }
@@ -203,6 +208,9 @@ func (o TextOptions) apply(payload map[string]any) {
 	}
 	if o.KnowledgeDepth != "" {
 		payload["knowledgeDepth"] = o.KnowledgeDepth
+	}
+	if o.Through != "" {
+		payload["through"] = o.Through
 	}
 	if o.PatternConfig != nil {
 		payload["patternConfig"] = o.PatternConfig

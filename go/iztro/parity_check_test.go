@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -665,6 +666,43 @@ func TestTextParity(t *testing.T) {
 	}
 	if _, err := chart.Horoscope("garbage", 0); !errors.Is(err, ErrInvalidDate) {
 		t.Fatalf("非法目标日期应报 ErrInvalidDate，实际 %v", err)
+	}
+}
+
+// TestHoroscopeTextThrough 校验 TextOptions.Through：写到流年为止时大限、小限、流年三节在，
+// 流月、流日、流时不在；写到流时与不设同文；本命层与不认识的层级报错。
+func TestHoroscopeTextThrough(t *testing.T) {
+	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	horoscope, err := chart.Horoscope("2024-10-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	text, err := horoscope.ToTextWith(TextOptions{Through: ScopeYearly})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, heading := range []string{"## 大限 · ", "## 小限 · ", "## 流年 · ", "## 流月 · ", "## 流日 · ", "## 流时 · "} {
+		if got, want := strings.Contains(text, heading), i < 3; got != want {
+			t.Errorf("写到流年时 %q 是否出现应为 %v", heading, want)
+		}
+	}
+
+	full, err := horoscope.ToText()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hourly, err := horoscope.ToTextWith(TextOptions{Through: ScopeHourly}); err != nil || hourly != full {
+		t.Errorf("写到流时应与不设同文（err=%v）", err)
+	}
+
+	for _, bad := range []string{ScopeOrigin, "weekly"} {
+		if _, err := horoscope.ToTextWith(TextOptions{Through: bad}); !errors.Is(err, ErrInvalidArgument) {
+			t.Errorf("Through=%q 应报 ErrInvalidArgument，实际 %v", bad, err)
+		}
 	}
 }
 

@@ -1,12 +1,13 @@
 package iztro
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
 
-// 夹宫与三个运限列表的行为测试：项数、字段自洽、两种大限定位等价、
-// 定位缺省报错，以及重排上下文是否随查询转发。
+// 夹宫、三个运限列表与按农历年取运限的行为测试：项数、字段自洽、两种大限定位等价、
+// 定位缺省报错，以及重排上下文与运限目标是否随查询转发。
 
 // listChart 排出测试用盘：2000-8-16 寅时女命，fixLeap 决定闰月是否拆段。
 func listChart(t *testing.T, fixLeap bool) *Astrolabe {
@@ -290,6 +291,55 @@ func TestFlankingPalacesJudgements(t *testing.T) {
 		if f.NotHaveMutagen(m) == want {
 			t.Errorf("NotHaveMutagen(%s) 应为 %v", m, !want)
 		}
+	}
+}
+
+// TestHoroscopeOfYear 校验按农历年取运限：流年是该农历年的（公历同年 1 月 1 日还在上一个农历年），
+// 越界年份报错，返回的运限再发起计算时转发的仍是年份。
+func TestHoroscopeOfYear(t *testing.T) {
+	a := listChart(t, true)
+
+	ofYear, err := a.HoroscopeOfYear(2027)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ofYear.Yearly.HeavenlyStemKey != StemDing || ofYear.Yearly.EarthlyBranchKey != BranchWei {
+		t.Errorf("农历 2027 年应为丁未，实际 %s %s", ofYear.Yearly.HeavenlyStemKey, ofYear.Yearly.EarthlyBranchKey)
+	}
+	newYearsDay, err := a.Horoscope("2027-1-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newYearsDay.Yearly.HeavenlyStemKey != StemBing || newYearsDay.Yearly.EarthlyBranchKey != BranchWu {
+		t.Errorf("公历 2027-1-1 应仍在丙午年，实际 %s %s",
+			newYearsDay.Yearly.HeavenlyStemKey, newYearsDay.Yearly.EarthlyBranchKey)
+	}
+
+	for _, year := range []int{0, 10000} {
+		if _, err := a.HoroscopeOfYear(year); !errors.Is(err, ErrInvalidArgument) {
+			t.Errorf("年份 %d 越界应报 ErrInvalidArgument，实际 %v", year, err)
+		}
+	}
+
+	// 文本与「六月初一 + 出生时辰（寅时，索引 2）」的运限同文；转发 DTO 的 SolarDate 会丢掉时辰、
+	// 按早子时重算，流时一节随之不同
+	text, err := ofYear.ToText()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sameHour, err := a.Horoscope(ofYear.SolarDate, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want, err := sameHour.ToText(); err != nil || text != want {
+		t.Errorf("年份运限的文本应与六月初一出生时辰的运限同文（err=%v）", err)
+	}
+	earlyZi, err := a.HoroscopeAt(ofYear.SolarDate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if other, err := earlyZi.ToText(); err != nil || text == other {
+		t.Errorf("年份运限的文本不应等于按 SolarDate 早子时重算的文本（err=%v）", err)
 	}
 }
 
