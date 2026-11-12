@@ -517,6 +517,63 @@ yearly  yisi
 
 ---
 
+## horoscope_of_year
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```python
+def horoscope_of_year(self, year: int) -> Horoscope
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `Horoscope` — its target date is the first day of that lunar year's sixth month and
+its hour follows the hour pillar's branch, the same convention as
+[`yearly_list`](/en/docs/python/horoscope#yearly_list). Whatever it computes afterwards (`to_text`,
+`patterns`, `KnowledgePack.for_horoscope`) is still taken for that lunar year.
+
+**Example**
+
+```python
+h = chart.horoscope_of_year(2027)
+
+print(h.solar_date, h.lunar_date)
+print("yearly", h.yearly.heavenly_stem + h.yearly.earthly_branch, "nominal age", h.age.nominal_age)
+
+jan = chart.horoscope("2027-1-1", 0)
+print("2027-1-1 yearly", jan.yearly.heavenly_stem + jan.yearly.earthly_branch)
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly dingwei nominal age 28
+2027-1-1 yearly bingwoo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`age_divide` set to `birthday` or `horoscope_divide` set to `exact` (the start of spring) they can
+still change within the year, and the result is the one for the first day of the sixth month. The monthly,
+daily and hourly scopes are in the result too, likewise for that day —
+[`to_text(through=Scope.YEARLY)`](/en/docs/python/horoscope#to_text) stops the text at the yearly
+scope. A year outside 1–9999 raises `IztroError` (`invalid_argument`).
+</Callout>
+
+---
+
 ## to_text
 
 **Purpose** The chart's semantic text: a complete description for language models and people;

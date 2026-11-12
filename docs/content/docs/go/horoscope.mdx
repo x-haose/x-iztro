@@ -10,6 +10,9 @@ description: 六个运限层级的数据结构、整层取回的三个列表，�
 h, _ := chart.Horoscope("2025-6-1", 0)
 ```
 
+只问某一年时按农历年取：`chart.HoroscopeOfYear(2027)`，见
+[HoroscopeOfYear](/zh/docs/go/astrolabe#horoscopeofyear)。
+
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
 <Callout type="info">
@@ -689,7 +692,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 
 | 参数 | 类型 | 说明 |
 | --- | --- | --- |
-| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 输出选项。`Knowledge` 字段给释义材料来源：`BuiltinKnowledge()` 取盘语言的内嵌默认包，`KnowledgeFrom(pack)` 用给定的包；`PatternConfig` 字段给各层格局行与格局释义的判定口径；零值 `TextOptions{}` 等同 `ToText` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 输出选项。`Knowledge` 字段给释义材料来源：`BuiltinKnowledge()` 取盘语言的内嵌默认包，`KnowledgeFrom(pack)` 用给定的包；`PatternConfig` 字段给各层格局行与格局释义的判定口径；`Through` 字段让文本[写到某一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)（`ScopeDecadal` … `ScopeHourly`，空串写到流时）；零值 `TextOptions{}` 等同 `ToText` |
 
 释义的插入位置与去重规则见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
@@ -721,5 +724,25 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 两份文本的 `## ` 节完全相同：释义不另起节，插在各层之后。
+
+目标只精确到年时，按农历年取运限并写到流年为止：
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+text, _ = year.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2027-7-4 (二〇二七年六月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命父母 · 虚岁 28
+## 流年 · 命宫: 本命父母 (丁未)
+```
 
 `BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`。

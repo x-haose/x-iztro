@@ -10,6 +10,10 @@ layout in different years — which is exactly what "the decadal scope has moved
 let h = chart.horoscope("2025-6-1", 0)?;
 ```
 
+When the question is about a year, take the horoscope of the lunar year:
+`chart.horoscope_of_year(2027)?` — see
+[horoscope_of_year](/en/docs/rust/astrolabe#horoscope_of_year).
+
 `HoroscopeRef` holds the natal chart that produced it, so none of the query methods need the
 astrolabe passed in again.
 
@@ -711,7 +715,7 @@ pub fn to_text_with(&self, opts: &TextOptions) -> String
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text` |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `horoscope_through(scope)?` [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), `TextOptions::default()` equals `to_text` |
 
 Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language
 use the free function `text::horoscope_to_text_with(astrolabe, horoscope, opts, lang)`. Placement
@@ -740,6 +744,25 @@ for line in text.lines().filter(|l| l.starts_with("## ")) {
 ## 流月 · 命宫: 本命仆役 (丁丑)
 ## 流日 · 命宫: 本命迁移 (庚午)
 ## 流时 · 命宫: 本命迁移 (丙子)
+```
+
+When the target is only precise to the year, take the horoscope of the lunar year and stop at the
+yearly scope:
+
+```rust
+let year = chart.horoscope_of_year(2027)?;
+let text = year.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+
+for line in text.lines().filter(|l| l.starts_with('#')) {
+    println!("{line}");
+}
+```
+
+```text
+# 运限 2027-7-4 (二〇二七年六月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命父母 · 虚岁 28
+## 流年 · 命宫: 本命父母 (丁未)
 ```
 
 ---

@@ -486,6 +486,68 @@ yearly  yi si
 
 ---
 
+## horoscope_of_year
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```rust
+pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `HoroscopeRef<'_>` — its target date is the first day of that lunar year's sixth
+month and its hour follows the hour pillar's branch, the same convention as
+[`yearly_list`](/en/docs/rust/horoscope#yearly_list).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope_of_year(2027)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("yearly {} {} nominal age {}",
+    translate_heavenly_stem(h.yearly.heavenly_stem, en),
+    translate_earthly_branch(h.yearly.earthly_branch, en),
+    h.age.nominal_age);
+
+let jan = chart.horoscope("2027-1-1", 0)?;
+println!("2027-1-1 yearly {} {}",
+    translate_heavenly_stem(jan.yearly.heavenly_stem, en),
+    translate_earthly_branch(jan.yearly.earthly_branch, en));
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly ding wei nominal age 28
+2027-1-1 yearly bing woo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`age_divide` set to `AgeDivide::Birthday` or `horoscope_divide` set to `HoroscopeDivide::Exact`
+they can still change within the year, and the result is the one for the first day of the sixth
+month. The monthly, daily and hourly scopes are in the result too, likewise for that day —
+[`TextOptions::horoscope_through(Scope::Yearly)`](/en/docs/rust/astro#textoptions) stops the text
+at the yearly scope. A year outside 1–9999 returns `IztroError::InvalidArgument`.
+</Callout>
+
+---
+
 ## to_text
 
 **Purpose** The chart's semantic text: a complete description for language models and people, as

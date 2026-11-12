@@ -494,6 +494,58 @@ now = chart.horoscope()
 
 ---
 
+## horoscope_of_year
+
+**用途**　取指定农历年的运限：只问某一年时用它，不必自己挑公历日期。
+
+**签名**
+
+```python
+def horoscope_of_year(self, year: int) -> Horoscope
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年份，1–9999 |
+
+**返回值**　`Horoscope`——目标日期取该农历年六月初一、时辰按时柱地支，与
+[`yearly_list`](/zh/docs/python/horoscope#yearly_list) 同一约定。它再发起的计算
+（`to_text`、`patterns`、`KnowledgePack.for_horoscope`）仍按该农历年取运限。
+
+**示例**
+
+```python
+h = chart.horoscope_of_year(2027)
+
+print(h.solar_date, h.lunar_date)
+print("流年", h.yearly.heavenly_stem + h.yearly.earthly_branch, "虚岁", h.age.nominal_age)
+
+jan = chart.horoscope("2027-1-1", 0)
+print("2027-1-1 流年", jan.yearly.heavenly_stem + jan.yearly.earthly_branch)
+```
+
+**输出**
+
+```text
+2027-7-4 二〇二七年六月初一
+流年 丁未 虚岁 28
+2027-1-1 流年 丙午
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+公历年初到正月初一之前仍属上一个农历年，所以公历 2027-1-1 的流年还是丙午。
+大限、小限与流年在默认分界配置下整个农历年不变；`age_divide` 取 `birthday`（生日分界）或
+`horoscope_divide` 取 `exact`（立春分界）时年内仍会换层，结果是六月初一当天的。流月、流日、流时也在结果里，同样是六月初一那一天的，
+文本用 [`to_text(through=Scope.YEARLY)`](/zh/docs/python/horoscope#to_text) 只写到流年。
+年份不在 1–9999 抛 `IztroError`（`invalid_argument`）。
+</Callout>
+
+---
+
 ## to_text
 
 **用途**　星盘的语义化文本：面向语言模型与人的完整描述，`str(chart)` 等价。

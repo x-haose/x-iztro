@@ -30,7 +30,8 @@ well, so pasting it into a chat box loses no structure.
 Everything generates in the **chart language**: a Chinese chart yields Chinese text, an English
 chart English text. With a [knowledge pack](#text-with-readings), readings are inlined next to the
 facts they belong to rather than appended (the mutagen notes are the one appendix). How much fact
-and how much reading to write each have a switch — see [Layers](#layers).
+and how much reading to write each have a switch — see [Layers](#layers); the horoscope text has
+one more for the scope it stops at — see [How far the horoscope text goes](#how-far-the-horoscope-text-goes).
 
 ## Usage
 
@@ -663,6 +664,72 @@ structural labels are longer): full facts — natal 6,757, horoscope 6,378, pala
 palaces 1,911, flanking palaces 895, decadal timeline 1,893, patterns 95; overview — natal 1,374,
 horoscope 5,112, palace 164, surrounded palaces 710, flanking palaces 299.
 
+## How far the horoscope text goes
+
+The horoscope text writes all six sections by default. The monthly scope and below change with the
+date and the hourly scope with the hour: when the target is only precise to the year or the day, the
+precision that was not given does not belong in the text. `through` stops the horoscope text at a
+scope and leaves the finer ones out:
+
+| Value | Sections written | Characters (full / overview) |
+| --- | --- | --- |
+| `decadal` | decadal | 601 / 312 |
+| `yearly` | decadal, age fortune, yearly | 1,636 / 871 |
+| `monthly` | plus monthly | 2,015 / 1,250 |
+| `daily` | plus daily | 2,356 / 1,591 |
+| `hourly` (the default when unset) | all six | 2,697 / 1,932 |
+
+The age fortune is written or left out together with the yearly scope. The character counts are
+measured on the horoscope text of the table in [Layers](#layers) (Chinese chart, target 2025-1-1). `through` is independent of the two switches in
+[Layers](#layers) and acts on the horoscope text only: Python accepts it on the horoscope's
+`to_text` alone, and Go's `TextOptions.Through` has no effect on the other texts. The natal scope
+`origin` and any value that is not a horoscope scope are `invalid_argument`.
+
+```python
+from x_iztro import Scope
+
+h.to_text(through=Scope.YEARLY)
+```
+
+```rust
+h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+```
+
+```go
+h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+```
+
+### Horoscope of a lunar year
+
+When the question is about a year, give the target as a **lunar year** instead of picking a solar
+date yourself. The days from 1 January up to the lunar new year still belong to the previous lunar
+year, so computing from 1 January yields the previous year's yearly scope — the 2025-1-1 target above
+has the yearly stem-branch jia chen, not 2025's yi si. The horoscope of a year takes the first day of
+that year's sixth lunar month as its target date, the same convention as `yearly_list`; stopped at
+the yearly scope, the text carries year-level precision and nothing finer:
+
+```python
+h = chart.horoscope_of_year(2027)
+h.to_text(through=Scope.YEARLY)
+```
+
+```rust
+let h = chart.horoscope_of_year(2027)?;
+h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+```
+
+```go
+h, _ := chart.HoroscopeOfYear(2027)
+h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+```
+
+```text
+# Horoscope 2027-7-4 (二〇二七年六月初一)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
+## Yearly · Soul Palace: Natal parents (ding wei)
+```
+
 ## Six languages
 
 The structural labels (`Basic Info`, `Major Stars`, `Trine & Opposite`, `Decadal`, …) exist in six
@@ -706,7 +773,7 @@ system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
           "do not invent information that is not on it.")
 user = f"""{chart.to_text()}
 
-{chart.horoscope("2025-1-1", 0).to_text()}
+{chart.horoscope_of_year(2025).to_text(through=Scope.YEARLY)}
 
 Analyse this person's career prospects for 2025."""
 ```

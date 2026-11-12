@@ -10,6 +10,10 @@ layout in different years — which is exactly what "the decadal scope has moved
 h = chart.horoscope("2025-6-1", 0)
 ```
 
+When the question is about a year, take the horoscope of the lunar year:
+`chart.horoscope_of_year(2027)` — see
+[horoscope_of_year](/en/docs/python/astrolabe#horoscope_of_year).
+
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again. The trailing `astrolabe=None` parameter on every query method is there for the case
 where you hold horoscope data but keep the chart elsewhere; day to day you never pass it.
@@ -677,6 +681,7 @@ def to_text(
     knowledge: bool | KnowledgePack | None = None,
     detail: TextDetail = TextDetail.FULL,
     knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    through: Scope | ScopeLiteral | None = None,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -688,6 +693,7 @@ def to_text(
 | `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
 | `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each scope (age fortune aside) palace names, mutagens, scope stars and patterns without the twelve-palace table; `FULL` writes everything |
 | `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers) (an entry's summary, or a body short enough on its own; patterns without their conditions), `FULL` the full bodies. `SUMMARY` needs `knowledge`, and a pack with a long body lacking its summary raises `IztroError` (`invalid_argument`) listing every missing entry |
+| `through` | `Scope \| ScopeLiteral \| None` | no | `None` | [The scope the text stops at](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Scope.DECADAL` writes the decadal only, `YEARLY` the decadal, age fortune and yearly, and `MONTHLY` / `DAILY` / `HOURLY` one more scope each; `None` writes through the hourly scope. `Scope.ORIGIN` and any value that is not a horoscope scope raise `IztroError` (`invalid_argument`) |
 | `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
 **Return value** `str` — a Markdown subset in the chart's charting language: a
@@ -720,6 +726,22 @@ print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 ## Daily · Soul Palace: Natal surface (geng woo)
 ## Hourly · Soul Palace: Natal surface (bing zi)
 2457 8458
+```
+
+When the target is only precise to the year, take the horoscope of the lunar year and stop at the
+yearly scope:
+
+```python
+year = chart.horoscope_of_year(2027)
+
+print("\n".join(l for l in year.to_text(through=Scope.YEARLY).splitlines() if l.startswith("#")))
+```
+
+```text
+# Horoscope 2027-7-4 (二〇二七年六月初一)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
+## Yearly · Soul Palace: Natal parents (ding wei)
 ```
 
 **Edge cases and pitfalls**

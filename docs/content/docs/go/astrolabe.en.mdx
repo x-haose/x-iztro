@@ -500,6 +500,64 @@ yearly  yisi
 
 ---
 
+## HoroscopeOfYear
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```go
+func (a *Astrolabe) HoroscopeOfYear(lunarYear int) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (*Horoscope, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `*Horoscope` — its target date is the first day of that lunar year's sixth month and
+its hour follows the hour pillar's branch, the same convention as
+[`YearlyList`](/en/docs/go/horoscope#yearlylist--yearlylistbypalace). Whatever it computes afterwards
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year.
+
+**Example**
+
+```go
+h, _ := chart.HoroscopeOfYear(2027)
+
+fmt.Println(h.SolarDate, h.LunarDate)
+fmt.Println("yearly", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch, "nominal age", h.Age.NominalAge)
+
+jan, _ := chart.Horoscope("2027-1-1", 0)
+fmt.Println("2027-1-1 yearly", jan.Yearly.HeavenlyStem+jan.Yearly.EarthlyBranch)
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly dingwei nominal age 28
+2027-1-1 yearly bingwoo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`Config.AgeDivide` set to `AgeDivideBirthday` or `Config.HoroscopeDivide` set to
+`HoroscopeDivideExact` they can still change within the year, and the result is the one for the
+first day of the sixth month. The monthly, daily and hourly scopes are in the result too, likewise
+for that day — [`TextOptions{Through: ScopeYearly}`](/en/docs/go/knowledge#textoptions) stops the
+text at the yearly scope. A year outside 1–9999 returns `ErrInvalidArgument`.
+</Callout>
+
+---
+
 ## ToText / PalaceToText / SurroundedPalacesToText
 
 **Purpose** Semantic text for the chart, a single palace or the surrounded palaces: a complete
