@@ -17,8 +17,9 @@ use x_iztro::data::types::*;
 use x_iztro::text::{
     astrolabe_to_text, astrolabe_to_text_with, decadal_list_to_text, decadal_list_to_text_with,
     flanking_palaces_to_text, flanking_palaces_to_text_with, horoscope_to_text,
-    horoscope_to_text_with, palace_to_text, palace_to_text_with, patterns_to_text,
-    patterns_to_text_with, surrounded_palaces_to_text, surrounded_palaces_to_text_with,
+    horoscope_to_text_with, monthly_list_to_text, monthly_list_to_text_with, palace_to_text,
+    palace_to_text_with, patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
+    surrounded_palaces_to_text_with,
 };
 use x_iztro::{KnowledgePack, TextDetail, TextOptions, by_solar, get_horoscope};
 
@@ -36,6 +37,8 @@ const BIRTH_DATE: &str = "2000-8-16";
 const BIRTH_TIME_INDEX: u8 = 2;
 const TARGET_DATE: &str = "2025-1-1";
 const TARGET_TIME_INDEX: u8 = 0;
+/// 流月一览取的农历年：2025 年有闰六月，覆盖闰月拆成前后半月的两行
+const MONTHLY_YEAR: i64 = 2025;
 /// 主题文本取的主题：夫妻宫连三方四正，另有命宫、身宫与子女宫，覆盖两组宫位与去重
 const TOPIC: &str = "romance";
 
@@ -65,8 +68,8 @@ fn assert_snapshot(name: &str, actual: &str) {
     );
 }
 
-/// 七类输出的名称；带释义形态在名称后加 `_knowledge`
-const KINDS: [&str; 7] = [
+/// 八类输出的名称；带释义形态在名称后加 `_knowledge`
+const KINDS: [&str; 8] = [
     "astrolabe",
     "horoscope",
     "patterns",
@@ -74,13 +77,14 @@ const KINDS: [&str; 7] = [
     "surrounded",
     "flanking",
     "decadals",
+    "monthlies",
 ];
 
-/// 受事实详略影响的五类输出（格局与大限一览本身就是总览）
+/// 受事实详略影响的五类输出（格局、大限一览与流月一览本身就是总览）
 const DETAIL_KINDS: [&str; 5] = ["astrolabe", "horoscope", "palace", "surrounded", "flanking"];
 
-/// 快照目录的文件集必须恰为：七类输出 × 两种语言、五类总览输出 × 两种语言、
-/// 七类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
+/// 快照目录的文件集必须恰为：八类输出 × 两种语言、五类总览输出 × 两种语言、
+/// 八类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
     let expected: std::collections::BTreeSet<String> = ["zh-CN", "en-US"]
@@ -210,6 +214,17 @@ fn decadal_list_text_matches_snapshot() {
     }
 }
 
+#[test]
+fn monthly_list_text_matches_snapshot() {
+    for (lang, tag) in LANGS {
+        let astrolabe = chart(lang);
+        assert_snapshot(
+            &format!("monthlies_{tag}"),
+            &monthly_list_to_text(&astrolabe, MONTHLY_YEAR, lang).unwrap(),
+        );
+    }
+}
+
 /// 带释义的七类输出：同一固定盘按内嵌 zh-CN 知识包取材，逐字节比对。
 #[test]
 fn text_with_knowledge_matches_snapshot() {
@@ -255,6 +270,10 @@ fn text_with_knowledge_matches_snapshot() {
     assert_snapshot(
         "decadals_knowledge_zh-CN",
         &decadal_list_to_text_with(&astrolabe, &opts, lang),
+    );
+    assert_snapshot(
+        "monthlies_knowledge_zh-CN",
+        &monthly_list_to_text_with(&astrolabe, MONTHLY_YEAR, &opts, lang).unwrap(),
     );
 }
 
@@ -318,6 +337,10 @@ fn text_with_summary_knowledge_matches_snapshot() {
         (
             "decadals",
             decadal_list_to_text_with(&astrolabe, &opts, lang),
+        ),
+        (
+            "monthlies",
+            monthly_list_to_text_with(&astrolabe, MONTHLY_YEAR, &opts, lang).unwrap(),
         ),
         ("topic", astrolabe.topic_to_text(TOPIC, &opts).unwrap()),
     ] {

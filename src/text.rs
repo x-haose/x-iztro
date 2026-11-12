@@ -8,7 +8,7 @@
 //!
 //! 覆盖对象：本命盘（[`astrolabe_to_text`]）、运限（[`horoscope_to_text`]）、
 //! 格局命中（[`patterns_to_text`]）、单宫（[`palace_to_text`]）、
-//! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览。各对象另有同名 `to_text` 便捷方法。
+//! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览、流月一览。各对象另有同名 `to_text` 便捷方法。
 //! `*_to_text_with` 收 [`TextOptions`]，两个开关互相独立：[`TextDetail`] 管事实写到多细，
 //! [`KnowledgeDepth`] 管释义写多长；运限文本另有 [`TextOptions::horoscope_through`] 管写到哪一层。释义随段落而不随表格——宫位段落之后紧跟该宫星耀的释义，
 //! 格局列表之后紧跟格局释义，运限各层级段之后紧跟流耀与格局释义，本命文末附四化释义，
@@ -322,6 +322,9 @@ labels_table! {
     col_stem_branch: ["干支", "干支", "Stem-Branch", "干支", "간지", "Can chi"],
     col_age_range: ["虚岁", "虛歲", "Nominal Age", "数え年", "나이", "Tuổi ta"],
     col_year_range: ["年份", "年份", "Years", "年", "연도", "Năm"],
+    doc_monthlies: ["流月一览", "流月一覽", "Monthly Timeline", "流月一覧", "유월 일람", "Tổng quan Lưu nguyệt"],
+    col_lunar_month: ["农历月", "農曆月", "Lunar Month", "旧暦月", "음력 월", "Tháng âm lịch"],
+    leap_month: ["闰", "閏", "leap", "閏", "윤", "nhuận"],
     // 宫干飞化行的标签模板，`{}` 处填宫干
     stem_flying: ["宫干{}飞化", "宮干{}飛化", "Stem {} Flying", "宮干{}飛化", "궁간 {} 비화", "Can cung {} phi hóa"],
     twelve_gods: ["十二神", "十二神", "Twelve Gods", "十二神", "십이신", "Mười hai thần"],
@@ -1102,25 +1105,111 @@ pub fn decadal_list_to_text_with(
         ));
     }
 
-    if let Some(notes) = opts.notes() {
-        let mut seen: Vec<StarKey> = Vec::new();
-        let mut text = String::new();
-        for d in &list {
-            for key in &d.mutagen {
-                if seen.contains(key) {
-                    continue;
-                }
-                seen.push(*key);
-                if let Some(reading) = notes.star(*key) {
-                    note(&mut text, translate_star(*key, lang), reading);
-                }
-            }
+    out.push_str(&mutagen_star_notes(
+        list.iter().map(|d| d.mutagen.as_slice()),
+        opts,
+        &l,
+        lang,
+    ));
+    out
+}
+
+/// 一览表后的四化星释义一节：各行的四化星按出现先后去重；不带知识包或无材料返回空串
+fn mutagen_star_notes<'s>(
+    rows: impl Iterator<Item = &'s [StarKey]>,
+    opts: &TextOptions,
+    l: &Labels,
+    lang: Language,
+) -> String {
+    let Some(notes) = opts.notes() else {
+        return String::new();
+    };
+    let mut seen: Vec<StarKey> = Vec::new();
+    let mut text = String::new();
+    for key in rows.flatten() {
+        if seen.contains(key) {
+            continue;
         }
-        if !text.is_empty() {
-            out.push_str(&format!("\n## {}\n\n{text}", l.sec_star_notes));
+        seen.push(*key);
+        if let Some(reading) = notes.star(*key) {
+            note(&mut text, translate_star(*key, lang), reading);
         }
     }
-    out
+    if text.is_empty() {
+        return String::new();
+    }
+    format!("\n## {}\n\n{text}", l.sec_star_notes)
+}
+
+/// 指定农历年的流月一览（只含事实）
+///
+/// # Errors
+/// 同 [`monthly_list_to_text_with`]。
+pub fn monthly_list_to_text(
+    astrolabe: &Astrolabe,
+    year: i64,
+    lang: Language,
+) -> Result<String, IztroError> {
+    monthly_list_to_text_with(astrolabe, year, &TextOptions::default(), lang)
+}
+
+/// 指定农历年的流月一览：每个流月一行，写农历月、阳历起止日、流月命宫所在的本命宫、干支与四化落宫。
+/// 闰月按前后半月拆成两行（前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
+/// 带知识包时表后附四化星的释义（跨行去重）。
+///
+/// # Errors
+/// 年份不在 1-9999，或某一段的首日落在支持范围外时返回 [`IztroError`]（同
+/// [`Astrolabe::monthly_list`]）。
+pub fn monthly_list_to_text_with(
+    astrolabe: &Astrolabe,
+    year: i64,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError> {
+    let l = labels(lang);
+    let list = astrolabe.monthly_list(year, true)?;
+    let mut out = format!("# {} {year}\n\n", l.doc_monthlies);
+
+    out.push_str(&format!(
+        "| {} | {} | {} | {} | {} |\n|---|---|---|---|---|\n",
+        l.col_lunar_month, l.solar_date, l.col_natal_palace, l.col_stem_branch, l.mutagen_fly,
+    ));
+    for m in &list {
+        let signed_month = if m.is_leap_month {
+            -(m.month as i64)
+        } else {
+            m.month as i64
+        };
+        let solar = |day: u32| {
+            let (y, mo, d) = crate::calendar::solar_date_of(year, signed_month, day as i64)
+                .expect("流月列表项的农历日在该月的天数之内");
+            format!("{y}-{mo}-{d}")
+        };
+        let month = if m.is_leap_month {
+            format!(
+                "{}{}{} ({}-{})",
+                l.leap_month, l.label_sep, m.month, m.day_range.0, m.day_range.1
+            )
+        } else {
+            m.month.to_string()
+        };
+        out.push_str(&format!(
+            "| {month} | {} ~ {} | {} | {} | {} |\n",
+            solar(m.day_range.0),
+            solar(m.day_range.1),
+            translate_palace(astrolabe.palaces[m.index].name, lang),
+            stem_branch(m.heavenly_stem, m.earthly_branch, &l, lang),
+            mutagen_stars_with_places(astrolabe, &m.mutagen, true, &l, lang),
+        ));
+    }
+
+    out.push_str(&mutagen_star_notes(
+        list.iter().map(|m| m.mutagen.as_slice()),
+        opts,
+        &l,
+        lang,
+    ));
+    Ok(out)
 }
 
 // ============================================================
@@ -1652,6 +1741,26 @@ impl Astrolabe {
     /// 大限一览文本，按选项附释义；[`decadal_list_to_text_with`] 的便捷形态
     pub fn decadal_list_to_text_with(&self, opts: &TextOptions) -> String {
         decadal_list_to_text_with(self, opts, self.language)
+    }
+
+    /// 流月一览的语义化文本（按排盘语言）；[`monthly_list_to_text`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`monthly_list_to_text_with`]。
+    pub fn monthly_list_to_text(&self, year: i64) -> Result<String, IztroError> {
+        monthly_list_to_text(self, year, self.language)
+    }
+
+    /// 流月一览文本，按选项附释义；[`monthly_list_to_text_with`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`monthly_list_to_text_with`]。
+    pub fn monthly_list_to_text_with(
+        &self,
+        year: i64,
+        opts: &TextOptions,
+    ) -> Result<String, IztroError> {
+        monthly_list_to_text_with(self, year, opts, self.language)
     }
 
     /// 主题文本（按排盘语言）；[`topic_to_text`] 的便捷形态

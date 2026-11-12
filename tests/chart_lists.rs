@@ -317,3 +317,28 @@ fn horoscope_of_year_is_the_lunar_year_not_new_years_day() {
         );
     }
 }
+
+/// 按农历月取运限：流月与流月列表里同一月的那项一致；闰月不单独成月号，月号越界报错。
+#[test]
+fn horoscope_of_month_matches_the_monthly_list() {
+    let a = chart("2000-8-16", 2);
+    let list = a.monthly_list(2025, true).unwrap();
+    for month in 1..=12u32 {
+        let of_month = a.horoscope_of_month(2025, month).unwrap();
+        let listed = list
+            .iter()
+            .find(|m| m.month == month && !m.is_leap_month)
+            .unwrap();
+        assert_eq!(of_month.monthly.index, listed.index, "{month} 月");
+        assert_eq!(of_month.monthly.mutagen, listed.mutagen, "{month} 月");
+    }
+    for (year, month) in [(2025, 0), (2025, 13), (0, 1), (10000, 1)] {
+        assert!(
+            matches!(
+                a.horoscope_of_month(year, month),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "{year} 年 {month} 月应报错"
+        );
+    }
+}
