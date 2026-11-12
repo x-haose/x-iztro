@@ -788,22 +788,16 @@ impl Astrolabe {
             .collect()
     }
 
-    /// 指定农历年、非闰月某月初一的运限，时辰同逐层列表（[`Self::list_time_index`]）。
-    fn horoscope_at_month_start(&self, year: i64, month: u32) -> Result<HoroscopeData, IztroError> {
-        let (sy, sm, sd) = calendar::solar_date_of(year, month as i64, 1).ok_or_else(|| {
-            IztroError::Internal(format!("lunar year {year} has no month {month}"))
-        })?;
+    /// 指定农历年六月初一的运限，时辰同逐层列表（[`Self::list_time_index`]）：按年取运限与流年列表共用的代表日。
+    fn horoscope_at_mid_year(&self, year: i64) -> Result<HoroscopeData, IztroError> {
+        let (sy, sm, sd) = calendar::solar_date_of(year, 6, 1)
+            .ok_or_else(|| IztroError::Internal(format!("lunar year {year} has no sixth month")))?;
         get_horoscope(
             self,
             &format!("{sy}-{sm}-{sd}"),
             self.list_time_index(),
             self.language,
         )
-    }
-
-    /// 指定农历年六月初一的运限：按年取运限与流年列表共用的代表日。
-    fn horoscope_at_mid_year(&self, year: i64) -> Result<HoroscopeData, IztroError> {
-        self.horoscope_at_month_start(year, 6)
     }
 
     /// 指定农历年的运限：目标日期取该年六月初一，与 [`Self::yearly_list`] 同一约定。
@@ -831,16 +825,19 @@ impl Astrolabe {
         })
     }
 
-    /// 指定农历年某月的运限：目标日期取该月（非闰）初一，与 [`Self::monthly_list`] 整月一段的约定相同。
+    /// 指定农历年某月的运限，时辰按时柱地支取（同逐层列表）。只问某个月时用它，不必替提问的人挑一天。
     ///
-    /// 只问某个月时用它，不必替提问的人挑一天。`month` 是农历月号 1-12；默认分界配置下闰月前半月的流月
-    /// 随本月、后半月随下月，所以流月只按月号取，闰月的起止见 [`Self::monthly_list`]。
-    /// 流日与流时也在结果里，是该月初一那一天的，文本可用
-    /// [`crate::text::TextOptions::horoscope_through`] 只写到流月。
+    /// `month` 是月序 1-12，目标日期随 `horoscope_divide`：
+    /// - 初一分界（默认）：该农历月（非闰）初一，与 [`Self::monthly_list`] 整月一段的约定相同。
+    ///   闰月前半月的流月随本月、后半月随下月，所以流月只按月号取，闰月的起止见 [`Self::monthly_list`]。
+    /// - 节气分界：第 `month` 个节令月（寅月为 1）交节次日，流年与 [`Self::horoscope_of_year`] 同属立春起算的
+    ///   `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
+    ///
+    /// 流日与流时也在结果里，是那一天的，文本可用 [`crate::text::TextOptions::horoscope_through`] 只写到流月。
     ///
     /// # Errors
-    /// 年份不在 1-9999 或月份不在 1-12 时返回 [`IztroError::InvalidArgument`]；该月初一落在支持范围外时返回
-    /// [`IztroError`]。
+    /// 年份不在 1-9999、月份不在 1-12，或初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）时返回
+    /// [`IztroError::InvalidArgument`]；目标日期落在支持范围外（9999 年节气分界的丑月）时返回 [`IztroError`]。
     pub fn horoscope_of_month(
         &self,
         year: i64,
@@ -858,8 +855,21 @@ impl Astrolabe {
                 "invalid lunar month {month}: expected 1-12"
             )));
         }
+        let (sy, sm, sd) = match self.config.horoscope_divide {
+            HoroscopeDivide::Normal => {
+                calendar::solar_date_of(year, month as i64, 1).ok_or_else(|| {
+                    IztroError::InvalidArgument(format!("lunar year {year} has no month {month}"))
+                })?
+            }
+            HoroscopeDivide::Exact => calendar::day_after_jie(year, month),
+        };
         Ok(HoroscopeRef {
-            data: self.horoscope_at_month_start(year, month)?,
+            data: get_horoscope(
+                self,
+                &format!("{sy}-{sm}-{sd}"),
+                self.list_time_index(),
+                self.language,
+            )?,
             astrolabe: self,
         })
     }

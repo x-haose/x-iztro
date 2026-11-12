@@ -622,6 +622,7 @@ leap month follows the month it repeats and the second half the next one —
 and hourly scopes are in the result too, for the first day of that month —
 [`to_text(through=Scope.MONTHLY)`](/en/docs/python/horoscope#to_text) stops the text at the monthly
 scope. A year outside 1–9999 or a month outside 1–12 raises `IztroError` (`invalid_argument`).
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>
 
 ---

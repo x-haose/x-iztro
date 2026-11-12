@@ -499,7 +499,7 @@ func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextO
 }
 
 // MonthlyListToText 生成流月一览的语义化文本：指定农历年每个流月一行，写农历月、阳历起止日、
-// 流月命宫所在的本命宫、干支与四化落宫。闰月按前后半月拆成两行（前半月的流月同本月、后半月同下月），
+// 流月命宫所在的本命宫、干支与四化落宫。闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），
 // 月号前加「闰」并注明农历日区间。lunarYear 不在 1-9999 时返回 ErrInvalidArgument。
 func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error) {
 	return a.MonthlyListToTextContext(context.Background(), lunarYear)

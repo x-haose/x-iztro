@@ -607,6 +607,7 @@ leap month follows the month it repeats and the second half the next one —
 scopes are in the result too, for the first day of that month —
 [`TextOptions{Through: ScopeMonthly}`](/en/docs/go/knowledge#textoptions) stops the text at the
 monthly scope. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>
 
 ---

@@ -574,6 +574,7 @@ println!("流月 {}{}",
 流日与流时也在结果里，是该月初一那一天的，文本用
 [`TextOptions::horoscope_through(Scope::Monthly)`](/zh/docs/rust/astro#textoptions) 只写到流月。
 年份不在 1–9999 或月份不在 1–12 返回 `IztroError::InvalidArgument`。
+`horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与按年取的同属立春起算的那一年。初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）同样是入参错误。
 </Callout>
 
 ---

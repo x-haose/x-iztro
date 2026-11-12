@@ -569,8 +569,10 @@ class Astrolabe:
         约定相同。
 
         只问某个月时用它，不必替提问的人挑一天。闰月不单独成月号：默认分界配置下闰月前半月的流月
-        随本月、后半月随下月，闰月的起止见 `monthly_list`。流日与流时也在结果里，是该月初一那一天的，
-        文本用 `to_text(through=Scope.MONTHLY)` 只写到流月。
+        随本月、后半月随下月，闰月的起止见 `monthly_list`。流日与流时也在结果里，是那一天的，
+        文本用 `to_text(through=Scope.MONTHLY)` 只写到流月。星盘配置的 `horoscope_divide` 取节气分界
+        （exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与 `horoscope_of_year`
+        同属立春起算的那一年。
 
         Args:
             year: 农历年份 (1-9999)
@@ -580,7 +582,8 @@ class Astrolabe:
             Horoscope 运限对象；它再发起的计算（`to_text`、格局、按盘取材）仍按该农历年月取运限
 
         Raises:
-            IztroError: 年份不在 1-9999、月份不在 1-12，或该月初一落在支持范围外
+            IztroError: 年份不在 1-9999、月份不在 1-12、初一分界下该农历年没有这个月（公历 8 年、
+                237 年这类改历年），或目标日期落在支持范围外
         """
         return self._horoscope(target_year=year, target_month=month)
 
@@ -708,7 +711,7 @@ class Astrolabe:
         干支与四化落宫。
 
         与 `monthly_list(year)` 同一套数据，输出面向语言模型与人的文本而非结构化列表。
-        闰月按前后半月拆成两行（前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
+        闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
 
         Args:
             year: 农历年份 (1-9999)

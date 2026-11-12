@@ -772,6 +772,7 @@ stopped at the monthly scope, the text carries month-level precision and nothing
 number is 1-12 and a leap month has no number of its own: under the default divide settings the
 first half of a leap month follows the month it repeats and the second half the next one — the
 monthly timeline gives the dates.
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 
 ```python
 h = chart.horoscope_of_month(2025, 7)

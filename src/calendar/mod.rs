@@ -61,6 +61,18 @@ pub(crate) fn solar_date_of(year: i64, signed_month: i64, day: i64) -> Option<(i
     lunar::solar_date(&lunar_year(year), signed_month, day)
 }
 
+/// 按节气分界时第 `month` 个月（寅月为 1 … 丑月为 12）里的第一个整日：该月节令交节当天的次日，
+/// 返回 (年, 月, 日)。节令依次为立春、惊蛰、清明、立夏、芒种、小暑、立秋、白露、寒露、立冬、大雪、小寒，
+/// 以 `year` 年立春起算，丑月的小寒落在公历 `year + 1` 年。`month` 须在 1-12。
+pub(crate) fn day_after_jie(year: i64, month: u32) -> (i64, i64, i64) {
+    assert!((1..=12).contains(&month), "节令月序 {month} 越界");
+    let ly = lunar_year(year);
+    let jie = &ly.jie_qi().times[lunar_year::LI_CHUN + 2 * (month as usize - 1)];
+    let noon = SolarTime::new(jie.year, jie.month, jie.day, 12, 0);
+    let next = SolarTime::from_julian_day(noon.julian_day() + 1.0);
+    (next.year, next.month, next.day)
+}
+
 /// 农历某月的天数（29 或 30）；该年无此月时返回 `None`。
 pub(crate) fn month_day_count(year: i64, signed_month: i64) -> Option<i64> {
     lunar_year(year).month(signed_month).map(|m| m.day_count)

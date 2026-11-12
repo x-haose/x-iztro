@@ -236,10 +236,13 @@ func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (
 //
 // 只问某个月时用它，不必替提问的人挑一天。lunarMonth 是农历月号 1-12，闰月不单独成月号：
 // 默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止见 MonthlyList。
-// 流日与流时也在结果里，是该月初一那一天的，文本用 TextOptions{Through: ScopeMonthly} 只写到流月。
+// 流日与流时也在结果里，是那一天的，文本用 TextOptions{Through: ScopeMonthly} 只写到流月。
 // 返回的运限再发起的计算（ToText、Patterns、按盘取材）仍按该农历年月取运限。
+// 星盘配置的 horoscope_divide 取节气分界（exact）时，目标日期改取第 lunarMonth 个节令月（寅月为 1）的
+// 交节次日，流年与 HoroscopeOfYear 同属立春起算的那一年。
 //
-// lunarYear 不在 1-9999 或 lunarMonth 不在 1-12 时返回 ErrInvalidArgument。
+// lunarYear 不在 1-9999、lunarMonth 不在 1-12，或初一分界下该农历年没有这个月（公历 8 年、237 年这类
+// 改历年）时返回 ErrInvalidArgument。
 func (a *Astrolabe) HoroscopeOfMonth(lunarYear int, lunarMonth int) (*Horoscope, error) {
 	return a.HoroscopeOfMonthContext(context.Background(), lunarYear, lunarMonth)
 }

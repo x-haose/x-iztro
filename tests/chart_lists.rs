@@ -342,3 +342,40 @@ fn horoscope_of_month_matches_the_monthly_list() {
         );
     }
 }
+
+/// 节气分界下按月取运限：第 N 个月的流月地支恒为寅起第 N 支，流年与按年取的一致（正月不落回上一年）。
+#[test]
+fn horoscope_of_month_follows_the_jie_under_exact_division() {
+    let config = Config {
+        horoscope_divide: HoroscopeDivide::Exact,
+        ..Config::default()
+    };
+    let a = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, config).unwrap();
+    for year in 1950..2050 {
+        let yearly = a.horoscope_of_year(year).unwrap().yearly.earthly_branch;
+        for month in 1..=12u32 {
+            let h = a.horoscope_of_month(year, month).unwrap();
+            assert_eq!(
+                h.monthly.earthly_branch.index(),
+                (month as usize + 1) % 12,
+                "{year} 年第 {month} 月"
+            );
+            assert_eq!(h.yearly.earthly_branch, yearly, "{year} 年第 {month} 月");
+        }
+    }
+}
+
+/// 初一分界下改历年里不存在的农历月是入参错误，不是内部错误。
+#[test]
+fn horoscope_of_month_rejects_a_month_the_lunar_year_lacks() {
+    let a = chart("2000-8-16", 2);
+    for (year, month) in [(237, 3), (8, 12)] {
+        assert!(
+            matches!(
+                a.horoscope_of_month(year, month),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "{year} 年 {month} 月"
+        );
+    }
+}
