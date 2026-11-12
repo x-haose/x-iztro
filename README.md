@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ziwei.x-haose.com/en"><img src="https://ziwei.x-haose.com/banner-en.png" alt="x-iztro — Zi Wei Dou Shu chart engine. Code casts the chart; AI does the reading."></a>
+  <a href="https://x-iztro.x-haose.com/en"><img src="https://x-iztro.x-haose.com/banner-en.png" alt="x-iztro — Zi Wei Dou Shu chart engine. Code casts the chart; AI does the reading."></a>
 </p>
 
 <p align="center">
@@ -8,13 +8,13 @@
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <a href="https://ziwei.x-haose.com/en/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/golden_cases-747%2C572-2da44e?style=flat-square" alt="747,572 golden cases"></a>
+  <a href="https://x-iztro.x-haose.com/en/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/golden_cases-747%2C572-2da44e?style=flat-square" alt="747,572 golden cases"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://ziwei.x-haose.com/en">Documentation</a> ·
-  <a href="https://ziwei.x-haose.com/en/docs/guide/getting-started">Quick start</a> ·
+  <a href="https://x-iztro.x-haose.com/en">Documentation</a> ·
+  <a href="https://x-iztro.x-haose.com/en/docs/guide/getting-started">Quick start</a> ·
   <a href="#x-iztro-and-iztro">vs iztro</a> ·
   <a href="#accuracy">Accuracy</a> ·
   <a href="https://github.com/x-haose/x-iztro/blob/main/README.zh-CN.md">中文文档</a>
@@ -250,7 +250,7 @@ soul-or-body patterns record the palace they actually formed in. The two
 Hidden Support lines are one pattern forming two distinct ways, told apart by
 `variant`. Natal charts and horoscope views share one rule set. How the rules
 are evaluated, plus the full table of 64 patterns:
-[documentation](https://ziwei.x-haose.com/en/docs/guide/concepts/patterns).
+[documentation](https://x-iztro.x-haose.com/en/docs/guide/concepts/patterns).
 
 ### BaZi reverse — four pillars back to birth dates
 
@@ -310,7 +310,7 @@ pruned enumeration, then re-cast every surviving candidate in full, so each
 result provably charts back to the target. Constrained queries answer in
 milliseconds; sweeps across the whole 200-year range are typically sub-second,
 and overly loose criteria stop at a candidate limit with a `truncated` flag.
-Details: [documentation](https://ziwei.x-haose.com/en/docs/guide/guides/reverse).
+Details: [documentation](https://x-iztro.x-haose.com/en/docs/guide/guides/reverse).
 
 ### Knowledge packs — the interpretation layer, swappable
 
@@ -339,7 +339,7 @@ Empress and Minister Facing the Palace | 府相朝垣命必荣
 ```
 
 Pack format, merge rules, and how to write an overlay:
-[documentation](https://ziwei.x-haose.com/en/docs/guide/guides/knowledge-pack).
+[documentation](https://x-iztro.x-haose.com/en/docs/guide/guides/knowledge-pack).
 
 ### LLM output in practice
 
@@ -363,11 +363,12 @@ Pack format, merge rules, and how to write an overlay:
   iztro's own gloss vocabulary (`considery`, `dissipated`) that models mostly
   don't recognize. Feed the Chinese chart and ask for answers in English.
   Rationale and wiring, including exposing the library as a tool call:
-  [LLM guide](https://ziwei.x-haose.com/en/docs/guide/guides/llm). No MCP
-  server yet — the tool-call recipe there covers the same integration.
+  [LLM guide](https://x-iztro.x-haose.com/en/docs/guide/guides/llm).
+- To use it from an AI client without writing code, there is a public MCP
+  server built on this library: [x-ziwei](https://ziwei.x-haose.com/en).
 - The documentation site is itself LLM-readable:
-  [`/llms.txt`](https://ziwei.x-haose.com/llms.txt),
-  [`/llms-full.txt`](https://ziwei.x-haose.com/llms-full.txt), and any docs
+  [`/llms.txt`](https://x-iztro.x-haose.com/llms.txt),
+  [`/llms-full.txt`](https://x-iztro.x-haose.com/llms-full.txt), and any docs
   page with `.md` appended.
 
 ## Accuracy
@@ -468,12 +469,12 @@ tables can be supplied alongside them. Chart language is a per-call parameter:
 
 ## Documentation
 
-**<https://ziwei.x-haose.com>** — the documentation site, in English and
+**<https://x-iztro.x-haose.com>** — the documentation site, in English and
 Chinese: a guide that starts from zero, the Zi Wei concepts behind the data
 model, and per-language API references where every function, type and method
 has its own entry with real output and edge-case notes. New to Zi Wei Dou Shu
 itself? Start at
-[the concepts](https://ziwei.x-haose.com/en/docs/guide/concepts).
+[the concepts](https://x-iztro.x-haose.com/en/docs/guide/concepts).
 
 Rust API docs are also on [docs.rs/x-iztro](https://docs.rs/x-iztro); inline
 doc comments are currently Chinese, the English API reference lives on the

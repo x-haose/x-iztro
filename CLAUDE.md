@@ -65,6 +65,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
 - `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
+- `docs/` — 文档站（Next.js + Fumadocs），部署在 <https://x-iztro.x-haose.com>，讲把库嵌进自己的程序。
+  面向 AI 客户端使用者的站点在 [x-ziwei](https://github.com/x-haose/x-ziwei) 仓库的 `site/`
+  （<https://ziwei.x-haose.com>，基于本库的公开 MCP 服务）；两站互为入口，MCP 的安装与工具说明只写在那边
 
 ## 关键约定
 

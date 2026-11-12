@@ -23,11 +23,18 @@ export const REPO_URL = 'https://github.com/x-haose/x-iztro';
  */
 export const LEARN_URL = 'https://iztro.com/learn/basis.html';
 
+/**
+ * x-ziwei 的站点：基于本库的公开 MCP 服务，给在 AI 客户端里直接用的读者。
+ * 本站讲把库嵌进自己的程序，那边讲安装与工具，两站互为入口。
+ */
+export const ZIWEI_URL = 'https://ziwei.x-haose.com';
+
 const nav = {
   zh: {
     guide: '指南',
     api: 'API 参考',
     learn: '紫微扫盲',
+    forAI: '给 AI 用',
     rust: { text: 'Rust', desc: '核心库，Python 与 Go 绑定都调用它' },
     python: { text: 'Python', desc: 'dataclass 与 StrEnum 构成的类型化 API' },
     go: { text: 'Go', desc: '内嵌 wasm，无 cgo，交叉编译不受影响' },
@@ -36,6 +43,7 @@ const nav = {
     guide: 'Guide',
     api: 'API',
     learn: 'Learn Zi Wei',
+    forAI: 'For AI',
     rust: { text: 'Rust', desc: 'The core library behind all bindings' },
     python: { text: 'Python', desc: 'Typed API of dataclasses and StrEnums' },
     go: { text: 'Go', desc: 'Embedded wasm, no cgo, cross-compiles cleanly' },
@@ -84,6 +92,12 @@ export function baseOptions(locale: string): BaseLayoutProps {
           api('python', <Braces />),
           api('go', <Boxes />),
         ],
+      },
+      {
+        type: 'main',
+        text: t.forAI,
+        url: `${ZIWEI_URL}/${locale}`,
+        external: true,
       },
       {
         type: 'main',

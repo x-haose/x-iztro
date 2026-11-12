@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ziwei.x-haose.com/zh"><img src="https://ziwei.x-haose.com/banner.png" alt="x-iztro — 紫微斗数排盘引擎：排盘归它算，解读归 AI"></a>
+  <a href="https://x-iztro.x-haose.com/zh"><img src="https://x-iztro.x-haose.com/banner.png" alt="x-iztro — 紫微斗数排盘引擎：排盘归它算，解读归 AI"></a>
 </p>
 
 <p align="center">
@@ -8,13 +8,13 @@
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <a href="https://ziwei.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-747%2C572-2da44e?style=flat-square" alt="金标用例 747,572"></a>
+  <a href="https://x-iztro.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-747%2C572-2da44e?style=flat-square" alt="金标用例 747,572"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://ziwei.x-haose.com/zh">文档站</a> ·
-  <a href="https://ziwei.x-haose.com/zh/docs/guide/getting-started">快速开始</a> ·
+  <a href="https://x-iztro.x-haose.com/zh">文档站</a> ·
+  <a href="https://x-iztro.x-haose.com/zh/docs/guide/getting-started">快速开始</a> ·
   <a href="#与-iztro-的关系">与 iztro 对照</a> ·
   <a href="#准确性">准确性</a> ·
   <a href="https://github.com/x-haose/x-iztro/blob/main/README.md">English</a>
@@ -30,7 +30,7 @@ Rust 核心，Rust、Python、Go 三种语言直接调用。
 > 排盘是算术，不是解读：公农历换算、闰月、干支、上百颗星的安星规则。
 > 大模型能算对一部分，剩下的会不声不响地算错——而你从输出里看不出是哪一部分。
 
-不写代码？先看这页：[不写代码怎么用它](https://ziwei.x-haose.com/zh/docs/guide/guides/for-non-developers)。
+不写代码？先看这页：[不写代码怎么用它](https://x-iztro.x-haose.com/zh/docs/guide/guides/for-non-developers)。
 
 ```python
 from x_iztro import Astro
@@ -77,7 +77,7 @@ print(chart.to_text())
 ```
 
 样例盘的庚干四化取太阴化科，与 iztro 一致；取天府/天同的门派可用
-[自定义四化表](https://ziwei.x-haose.com/zh/docs/guide/guides/config)切换。
+[自定义四化表](https://x-iztro.x-haose.com/zh/docs/guide/guides/config)切换。
 同一张盘可以输出成六种语言；底层对象全部带类型，`chart.to_json()` 覆盖
 JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键）。
 
@@ -241,7 +241,7 @@ for hit in chart.patterns():
 「文星暗拱」是同一格局的两种成立口径（对照 / 夹拱），由 `variant` 区分。
 格局名以本项目词表为准，古籍异名（如「文桂文华」）见 64 条总表。本命盘与
 运限盘共用同一套规则。判定原则与总表见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/concepts/patterns)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/concepts/patterns)。
 
 ### 知识包 — 解读层外置，可整包替换
 
@@ -266,7 +266,7 @@ for hit in chart.patterns():
 ```
 
 包格式、合并规则与覆盖包写法见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/guides/knowledge-pack)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/guides/knowledge-pack)。
 
 ### 八字反推 — 由四柱反查生辰
 
@@ -320,7 +320,7 @@ for c in result.candidates:
 两个入口都是剪枝枚举，再用正向排盘把每个候选完整复核一遍，结果必然排得回目标盘。
 条件明确的查询毫秒级出解；横跨整个 200 年范围的宽查询通常也在一秒上下，
 过宽的条件会在候选数上限处截断并置 `truncated`。详见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/guides/reverse)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/guides/reverse)。
 
 ### 接大模型的几件实事
 
@@ -337,10 +337,11 @@ for c in result.candidates:
 - 即使做英文产品，也建议**喂模型中文盘**：模型认识中文星名，而英文星名是
   iztro 自造的释义词表（`considery`、`dissipated` 这类），模型多半不认识——
   喂中文盘、让它用英文作答即可。原理与接法（含把库当 tool call 暴露）见
-  [LLM 指南](https://ziwei.x-haose.com/zh/docs/guide/guides/llm)。
-  暂无 MCP server，tool call 的接法覆盖同样的场景。
-- 文档站本身对 LLM 可读：[`/llms.txt`](https://ziwei.x-haose.com/llms.txt)、
-  [`/llms-full.txt`](https://ziwei.x-haose.com/llms-full.txt)，任意文档页
+  [LLM 指南](https://x-iztro.x-haose.com/zh/docs/guide/guides/llm)。
+- 不写代码、直接在 AI 客户端里用：基于本库的公开 MCP 服务
+  [x-ziwei](https://ziwei.x-haose.com/zh)。
+- 文档站本身对 LLM 可读：[`/llms.txt`](https://x-iztro.x-haose.com/llms.txt)、
+  [`/llms-full.txt`](https://x-iztro.x-haose.com/llms-full.txt)，任意文档页
   追加 `.md` 即纯文本。
 
 ## 准确性
@@ -422,10 +423,10 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
 
 ## 文档
 
-**<https://ziwei.x-haose.com>**——中英双语文档站：从零开始的指南、数据模型
+**<https://x-iztro.x-haose.com>**——中英双语文档站：从零开始的指南、数据模型
 背后的斗数概念、三种语言各自的 API 参考（每个函数、类型、方法都有独立条目，
 附真实运行输出与边界说明）。想先系统看懂命盘本身，从
-[紫微斗数概念](https://ziwei.x-haose.com/zh/docs/guide/concepts)开始。
+[紫微斗数概念](https://x-iztro.x-haose.com/zh/docs/guide/concepts)开始。
 
 Rust 的 API 文档同时发布在 [docs.rs/x-iztro](https://docs.rs/x-iztro)。
 三种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。

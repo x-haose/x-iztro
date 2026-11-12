@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { REPO_URL, LEARN_URL } from '@/lib/layout.shared';
+import { LEARN_URL, REPO_URL, ZIWEI_URL } from '@/lib/layout.shared';
 
 const TEXT = {
   zh: {
@@ -12,6 +12,7 @@ const TEXT = {
     llmsIndex: '站点索引',
     llmsFull: '全文',
     howTo: '接入说明',
+    mcp: 'MCP 服务 x-ziwei',
     project: '项目',
     about: '关于',
     accuracy: '准确性',
@@ -29,6 +30,7 @@ const TEXT = {
     llmsIndex: 'Site index',
     llmsFull: 'Full text',
     howTo: 'How to use',
+    mcp: 'The x-ziwei MCP service',
     project: 'Project',
     about: 'About',
     accuracy: 'Accuracy',
@@ -91,6 +93,7 @@ export function Footer({ lang, className }: { lang: string; className?: string }
         </Column>
 
         <Column title={t.forAI}>
+          <a className={linkClass} href={`${ZIWEI_URL}/${lang}`} target="_blank" rel="noreferrer">{t.mcp}</a>
           <Link className={linkClass} href={doc('guide/guides/llm')}>{t.howTo}</Link>
           <a className={`${linkClass} font-mono`} href={`/${lang}/llms.txt`}>
             /{lang}/llms.txt <span className="font-sans">· {t.llmsIndex}</span>
