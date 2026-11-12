@@ -548,6 +548,61 @@ at the yearly scope. A year outside 1–9999 returns `IztroError::InvalidArgumen
 
 ---
 
+## horoscope_of_month
+
+**Purpose** Take the horoscope of one month of a lunar year: when the question is about a month,
+use it instead of picking a day on the asker's behalf.
+
+**Signature**
+
+```rust
+pub fn horoscope_of_month(&self, year: i64, month: u32) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+| `month` | `u32` | Yes | — | Lunar month number, 1–12; a leap month has no number of its own |
+
+**Return value** `HoroscopeRef<'_>` — its target date is the first day of that (non-leap) month and
+its hour follows the hour pillar's branch, the same convention as a whole-month entry of
+[`monthly_list`](/en/docs/rust/horoscope#monthly_list).
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope_of_month(2025, 7)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("monthly {} {}",
+    translate_heavenly_stem(h.monthly.heavenly_stem, en),
+    translate_earthly_branch(h.monthly.earthly_branch, en));
+```
+
+**Output**
+
+```text
+2025-8-23 二〇二五年七月初一
+monthly jia shen
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A leap month has no number of its own: under the default dividing configuration the first half of a
+leap month follows the month it repeats and the second half the next one —
+[`monthly_list_to_text`](/en/docs/rust/horoscope#monthly_list_to_text) gives the dates. The daily
+and hourly scopes are in the result too, for the first day of that month —
+[`TextOptions::horoscope_through(Scope::Monthly)`](/en/docs/rust/astro#textoptions) stops the text
+at the monthly scope. A year outside 1–9999 or a month outside 1–12 returns
+`IztroError::InvalidArgument`.
+</Callout>
+
+---
+
 ## to_text
 
 **Purpose** The chart's semantic text: a complete description for language models and people, as

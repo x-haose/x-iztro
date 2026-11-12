@@ -11,7 +11,9 @@ let h = chart.horoscope("2025-6-1", 0)?;
 ```
 
 只问某一年时按农历年取：`chart.horoscope_of_year(2027)?`，见
-[horoscope_of_year](/zh/docs/rust/astrolabe#horoscope_of_year)。
+[horoscope_of_year](/zh/docs/rust/astrolabe#horoscope_of_year)；只问某个月时按农历年加月取：
+`chart.horoscope_of_month(2025, 7)?`，见
+[horoscope_of_month](/zh/docs/rust/astrolabe#horoscope_of_month)。
 
 `HoroscopeRef` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
@@ -342,6 +344,56 @@ println!("{} {}", chart.monthly_list(2020, false)?.len(), chart.monthly_list(202
 <Callout type="info" title="闰月与常规月的 month 相同">
 闰四月的 `month` 也是 `4`，靠 `is_leap_month` 区分。按 `month` 去重会把闰月弄丢。
 </Callout>
+
+---
+
+## monthly_list_to_text
+
+**用途**　一个农历年的流月一览文本：每个流月一行，面向语言模型与人。
+
+**签名**
+
+```rust
+pub fn monthly_list_to_text(&self, year: i64) -> Result<String, IztroError>
+pub fn monthly_list_to_text_with(&self, year: i64, opts: &TextOptions) -> Result<String, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年份，1–9999 |
+| `opts` | `&TextOptions` | 是 | — | 输出选项；`TextOptions::new().knowledge(pack)` 时表后附各月四化星的释义，同一颗星只出一次；详略、写到哪一层与格局口径对它不起作用 |
+
+**返回值**　`Result<String, IztroError>`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、
+流月命宫所在的本命宫、干支与四化落宫。与 [`monthly_list(year, true)`](#monthly_list) 同一套数据：
+无闰月 12 行；有闰月 14 行，闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+[语义化文本](/zh/docs/guide/guides/to-text#八个入口)。年份不在 1–9999 返回 `IztroError::InvalidArgument`。
+
+定义在 `Astrolabe` 上，按星盘排盘语言输出；要指定语言用自由函数
+`text::monthly_list_to_text(astrolabe, year, lang)` 与
+`text::monthly_list_to_text_with(astrolabe, year, opts, lang)`。
+
+**示例**
+
+```rust
+let text = chart.monthly_list_to_text(2025)?;
+
+println!("{}", text.lines().next().unwrap());
+for line in text.lines().filter(|l| l.starts_with("| 闰")) {
+    println!("{line}");
+}
+```
+
+**输出**
+
+```text
+# 流月一览 2025
+| 闰6 (1-15) | 2025-7-25 ~ 2025-8-8 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (16-29) | 2025-8-9 ~ 2025-8-22 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+```
+
+农历 2025 年闰六月：前半月的流月同六月（癸未），后半月同七月（甲申）。
 
 ---
 
@@ -731,6 +783,25 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+目标只精确到月时，按农历月取运限并写到流月为止：
+
+```rust
+let month = chart.horoscope_of_month(2025, 7)?;
+let text = month.to_text_with(&TextOptions::new().horoscope_through(Scope::Monthly)?);
+
+for line in text.lines().filter(|l| l.starts_with('#')) {
+    println!("{line}");
+}
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 ---

@@ -338,7 +338,7 @@ type TextOptions struct {
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | 释义材料来源；零值不带释义。给出时每宫事实之后紧跟该宫星耀释义、格局列表之后紧跟格局释义、本命文本末尾附 `## 四化释义`，见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
-| `Detail` | `string` | 事实详略：`TextDetailOverview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。`TextDetailFull` 或空串为完整。对格局与大限一览不起作用 |
+| `Detail` | `string` | 事实详略：`TextDetailOverview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。`TextDetailFull` 或空串为完整。对格局、大限一览与流月一览不起作用 |
 | `KnowledgeDepth` | `string` | 释义深度：`KnowledgeDepthSummary` 用摘要层（条目摘要，或本身够短的正文；格局不附成立条件），`KnowledgeDepthFull` 或空串用全文。摘要层须同时给 `Knowledge`，所给包有长正文缺摘要时报 `ErrInvalidArgument` 并列出缺项 |
 | `Through` | `string` | 运限文本[写到哪一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`ScopeDecadal` 只写大限，`ScopeYearly` 写大限、小限、流年，`ScopeMonthly` / `ScopeDaily` / `ScopeHourly` 依次各多一层；空串写到流时。只对 `Horoscope.ToTextWith` 起作用；`ScopeOrigin` 与不是运限层级的取值报 `ErrInvalidArgument` |
 | `PatternConfig` | [`*PatternConfig`](/zh/docs/go/patterns#patternconfig) | 格局判定口径，与 `Patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`nil` 取内核默认 |

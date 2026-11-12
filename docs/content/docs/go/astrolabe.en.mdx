@@ -558,6 +558,59 @@ text at the yearly scope. A year outside 1–9999 returns `ErrInvalidArgument`.
 
 ---
 
+## HoroscopeOfMonth
+
+**Purpose** Take the horoscope of one month of a lunar year: when the question is about a month,
+use it instead of picking a day on the asker's behalf.
+
+**Signature**
+
+```go
+func (a *Astrolabe) HoroscopeOfMonth(lunarYear int, lunarMonth int) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeOfMonthContext(ctx context.Context, lunarYear int, lunarMonth int) (*Horoscope, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+| `lunarMonth` | `int` | Yes | — | Lunar month number, 1–12; a leap month has no number of its own |
+
+**Return value** `*Horoscope` — its target date is the first day of that (non-leap) month and its
+hour follows the hour pillar's branch, the same convention as a whole-month entry of
+[`MonthlyList`](/en/docs/go/horoscope#monthlylist). Whatever it computes afterwards
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year and month.
+
+**Example**
+
+```go
+h, _ := chart.HoroscopeOfMonth(2025, 7)
+
+fmt.Println(h.SolarDate, h.LunarDate)
+fmt.Println("monthly", h.Monthly.HeavenlyStem+h.Monthly.EarthlyBranch)
+```
+
+**Output**
+
+```text
+2025-8-23 二〇二五年七月初一
+monthly jiashen
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A leap month has no number of its own: under the default dividing configuration the first half of a
+leap month follows the month it repeats and the second half the next one —
+[`MonthlyListToText`](/en/docs/go/horoscope#monthlylisttotext) gives the dates. The daily and hourly
+scopes are in the result too, for the first day of that month —
+[`TextOptions{Through: ScopeMonthly}`](/en/docs/go/knowledge#textoptions) stops the text at the
+monthly scope. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
+</Callout>
+
+---
+
 ## ToText / PalaceToText / SurroundedPalacesToText
 
 **Purpose** Semantic text for the chart, a single palace or the surrounded palaces: a complete

@@ -11,7 +11,9 @@ h = chart.horoscope("2025-6-1", 0)
 ```
 
 只问某一年时按农历年取：`chart.horoscope_of_year(2027)`，见
-[horoscope_of_year](/zh/docs/python/astrolabe#horoscope_of_year)。
+[horoscope_of_year](/zh/docs/python/astrolabe#horoscope_of_year)；只问某个月时按农历年加月取：
+`chart.horoscope_of_month(2025, 7)`，见
+[horoscope_of_month](/zh/docs/python/astrolabe#horoscope_of_month)。
 
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 每个查询方法末尾那个 `astrolabe=None` 参数是为「手里只有运限数据、星盘另存」的场合留的，
@@ -317,6 +319,60 @@ print(len(chart.monthly_list(2020, fix_leap=False)), len(chart.monthly_list(2021
 <Callout type="info" title="闰月与常规月的 month 相同">
 闰四月的 `month` 也是 `4`，靠 `is_leap_month` 区分。按 `month` 去重会把闰月弄丢。
 </Callout>
+
+---
+
+## monthly_list_to_text
+
+**用途**　一个农历年的流月一览文本：每个流月一行，面向语言模型与人。
+
+**签名**
+
+```python
+def monthly_list_to_text(
+    self,
+    year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年份，1–9999 |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时表后附各月四化星的释义，同一颗星只出一次 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用[摘要层](/zh/docs/guide/guides/to-text#分层)，`FULL` 用全文。`SUMMARY` 须同时给 `knowledge` |
+
+**返回值**　`str`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
+干支与四化落宫。与 [`monthly_list(year)`](#monthly_list) 同一套数据：无闰月 12 行；有闰月 14 行，
+闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+[语义化文本](/zh/docs/guide/guides/to-text#八个入口)。
+
+**异常**　年份不在 1–9999，或某一段的首日落在支持范围外时抛 `IztroError`；`knowledge=True` 而排盘语言没有内嵌包
+（目前只有 zh-CN 有）、`SUMMARY` 而未给 `knowledge` 或所给的包缺摘要，抛 `IztroError`（`invalid_argument`）。
+
+**示例**
+
+```python
+text = chart.monthly_list_to_text(2025)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith("| 闰")))
+```
+
+**输出**
+
+```text
+# 流月一览 2025
+| 闰6 (1-15) | 2025-7-25 ~ 2025-8-8 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (16-29) | 2025-8-9 ~ 2025-8-22 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+```
+
+农历 2025 年闰六月：前半月的流月同六月（癸未），后半月同七月（甲申）。
 
 ---
 
@@ -710,6 +766,22 @@ print("\n".join(l for l in year.to_text(through=Scope.YEARLY).splitlines() if l.
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+目标只精确到月时，按农历月取运限并写到流月为止：
+
+```python
+month = chart.horoscope_of_month(2025, 7)
+
+print("\n".join(l for l in month.to_text(through=Scope.MONTHLY).splitlines() if l.startswith("#")))
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 **边界与陷阱**

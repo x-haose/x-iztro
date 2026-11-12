@@ -21,6 +21,7 @@ description: 把一张盘、一段运限或一个宫位投影成 Markdown 文本
 | 三方四正 `to_text` | 本宫、对宫、财帛位、官禄位四宫各一段 |
 | 夹宫 `to_text` | 目标宫前后相邻的两宫各一段 |
 | 大限一览 `to_text` | 十二个大限一张表：本命宫、虚岁、年份、干支、四化 |
+| 流月一览 `to_text` | 指定农历年的流月一张表：农历月、阳历起止日、本命宫、干支、四化；闰月拆成前后半月两行 |
 | `patterns_to_text` | 格局命中列表单独成文，本命与运限视角皆可 |
 | `topic_to_text` | 按问题取材：按知识包里主题的定义选宫（如婚恋取夫妻宫三方四正与命身、子女），见[按主题取材](#按主题取材) |
 
@@ -59,6 +60,7 @@ chart.palace("命宫").to_text()                 # 单宫
 chart.surrounded_palaces("命宫").to_text()      # 三方四正
 chart.flanking_palaces("命宫").to_text()        # 夹宫
 chart.decadal_list_to_text()                    # 大限一览
+chart.monthly_list_to_text(2025)                # 农历 2025 年的流月一览
 chart.patterns_to_text()                        # 本命格局
 h.patterns_to_text("yearly")                    # 流年视角格局
 ```
@@ -68,15 +70,17 @@ chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.FlankingPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.DecadalListToText()
+chart.MonthlyListToText(2025)
 chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
 Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
-`FlankingPalaces::to_text()`、`Astrolabe::decadal_list_to_text()` 与
+`FlankingPalaces::to_text()`、`Astrolabe::decadal_list_to_text()`、
+`Astrolabe::monthly_list_to_text(year)` 与
 `text` 模块的自由函数（`astrolabe_to_text` / `horoscope_to_text` /
 `palace_to_text` / `surrounded_palaces_to_text` / `flanking_palaces_to_text` /
-`decadal_list_to_text` / `patterns_to_text`），
+`decadal_list_to_text` / `monthly_list_to_text` / `patterns_to_text`），
 便捷方法按排盘语言输出，自由函数可指定语言，见 [Rust — TextOptions](/zh/docs/rust/astro#textoptions)。
 三语言输出逐字节一致。
 
@@ -253,6 +257,8 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 | `### 本宫 · 命宫 (壬午) · 大限 3-12` | 三方四正文本的宫段标题：宫名前多一个角色——`本宫`、`对宫`、`财帛位`、`官禄位` |
 | `### 前宫 · 兄弟 (辛巳) · 大限 13-22` | 夹宫文本的宫段标题：角色是 `前宫`、`后宫`，事实行与三方四正逐字同构 |
 | `\| 序 \| 本命宫 \| 虚岁 \| 年份 \| 干支 \| 四化 \|` | 大限一览的表头：十二行一行一限，按起运先后排；四化列的箭头指向本命宫 |
+| `\| 农历月 \| 阳历 \| 本命宫 \| 干支 \| 四化 \|` | 流月一览的表头：一行一个流月，按月份先后排；阳历列是该行的起止日，本命宫列是流月命宫所在的本命宫 |
+| `闰6 (1-15)` | 流月一览里闰月的一行：月号前加「闰」，括号内是该行覆盖的农历日区间；闰月按前后半月拆成两行 |
 | `- 宫干壬飞化: 天梁化禄→子女, …` | 以本宫宫干起的[飞星四化](/zh/docs/guide/concepts/mutagen#飞星)：四化星与各自落宫 |
 | `- 十二神: 长生·衰, 博士·青龙, 岁前·丧门, 将前·灾煞` | 四组各一位，写「组名·神名」，固定顺序长生 12、博士 12、岁前 12、将前 12；流年表的十二神列只有岁前、将前两组 |
 | `- 小限虚岁: 5, 17, 29, …` | 小限落在本宫的虚岁 |
@@ -274,7 +280,7 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 
 日期字段原样回显入参，不补零：传 `"2000-8-16"` 输出就是 `阳历: 2000-8-16`。
 
-## 七个入口
+## 八个入口
 
 | 入口 | 输出 |
 | --- | --- |
@@ -284,10 +290,11 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 | 三方四正 | `## 命宫 三方四正` 标题 + 本宫、对宫、财帛位、官禄位四宫各一段；每段标题带角色前缀（`### 本宫 · 命宫 …`），事实行与单宫文本逐字一致 |
 | 夹宫 | `## 夹宫` 标题 + [前后两宫](/zh/docs/guide/concepts/surrounded#夹宫)各一段，与三方四正同构，角色前缀是 `前宫` / `后宫` |
 | 大限一览 | `# 大限一览` 标题 + 十二行的表，一行一限 |
+| 流月一览 | `# 流月一览 <农历年>` 标题 + 一行一个流月的表：无闰月 12 行，有闰月 14 行 |
 | `patterns_to_text` | 只有格局行，每条一行；本命视角与运限各层视角皆可 |
 
-八个 bridge kind 与之对应：`patterns_to_text` 的本命视角与运限视角是两个 kind
-（`patternsToText` / `horoscopePatternsToText`），其余六个入口一个入口一个 kind。
+九个 bridge kind 与之对应：`patterns_to_text` 的本命视角与运限视角是两个 kind
+（`patternsToText` / `horoscopePatternsToText`），其余七个入口一个入口一个 kind。
 
 单宫与三方四正：
 
@@ -359,6 +366,24 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 这张表**不展开每限的流年** —— 十二限各十年会撑到一百二十行，它要做的是一眼看完一生的
 十二个十年。某一限的流年用 `yearly_list` 单取。
 
+流月一览按农历年出，一行一个流月。农历 2025 年闰六月，闰月按前后半月拆成两行：
+前半月的流月同六月，后半月同七月（截五月至七月，其余各月同款）：
+
+```text
+# 流月一览 2025
+
+| 农历月 | 阳历 | 本命宫 | 干支 | 四化 |
+|---|---|---|---|---|
+| 5 | 2025-5-27 ~ 2025-6-24 | 兄弟 | 壬午 | 天梁化禄→本命子女, 紫微化权→本命命宫, 左辅化科→本命官禄, 武曲化忌→本命财帛 |
+| 6 | 2025-6-25 ~ 2025-7-24 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (1-15) | 2025-7-25 ~ 2025-8-8 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (16-29) | 2025-8-9 ~ 2025-8-22 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+| 7 | 2025-8-23 ~ 2025-9-21 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+```
+
+「本命宫」列是该月流月命宫落在本命盘的哪个宫。年份是农历年，范围 1-9999，越界报 `invalid_argument`。
+与 `monthly_list(year)` 同一套数据；某个月的完整运限用[按农历月取运限](#按农历月取运限)。
+
 格局文本：
 
 ```text
@@ -383,6 +408,7 @@ chart.palace("命宫").to_text(knowledge=True)
 chart.surrounded_palaces("命宫").to_text(knowledge=True)
 chart.flanking_palaces("命宫").to_text(knowledge=True)
 chart.decadal_list_to_text(knowledge=True)
+chart.monthly_list_to_text(2025, knowledge=True)
 chart.patterns_to_text(knowledge=True)
 h.patterns_to_text("yearly", knowledge=True)
 
@@ -399,6 +425,7 @@ chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.decadal_list_to_text_with(&opts);
+chart.monthly_list_to_text_with(2025, &opts)?;
 text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
 let cfg = PatternConfig { borrow: false, ..PatternConfig::default() };
@@ -414,6 +441,7 @@ chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.FlankingPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.DecadalListToTextWith(opts)
+chart.MonthlyListToTextWith(2025, opts)
 chart.PatternsToTextWith(opts)
 h.PatternsToTextWith(iztro.ScopeYearly, opts)
 
@@ -423,7 +451,7 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 
 格局判定口径（`config` / `pattern_config` / `PatternConfig`）与 `patterns(config)` 同一入参，
 同时作用于文本里的格局节与格局释义：口径变了，命中的格局与紧跟其后的释义一起变。
-不传取默认口径。大限一览没有格局节，故不收这个入参。
+不传取默认口径。大限一览与流月一览没有格局节，故不收这个入参。
 
 ### 插入位置与去重
 
@@ -435,6 +463,7 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 | 三方四正 | 四宫各自的事实行之后 |
 | 夹宫 | 前后两宫各自的事实行之后 |
 | 大限一览 | 表之后 `## 星耀释义`：各限四化星每颗一条，同一颗星在多限重复出现时只出一次 |
+| 流月一览 | 表之后 `## 星耀释义`：各月四化星每颗一条，同一颗星在多个月重复出现时只出一次 |
 | `patterns_to_text` | 格局列表之后 |
 
 - 释义条目写作 `**标题**: 正文`，标题就是事实行里那颗星的写法（`**紫微(庙)**`、`**太阳(庙)化禄**`），
@@ -561,7 +590,7 @@ chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge
 
 | 开关 | 取值 | 作用 |
 | --- | --- | --- |
-| 事实详略 | 总览 / 完整（默认） | 总览：本命只写基本信息、十二宫总览表与格局，不写十二宫详解；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；单宫、三方四正、夹宫每宫只写主星、辅星与杂耀。格局与大限一览本身就是总览，不受影响 |
+| 事实详略 | 总览 / 完整（默认） | 总览：本命只写基本信息、十二宫总览表与格局，不写十二宫详解；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；单宫、三方四正、夹宫每宫只写主星、辅星与杂耀。格局、大限一览与流月一览本身就是总览，不受影响 |
 | 释义深度 | 摘要 / 全文（默认） | 摘要：用知识包条目的[摘要](/zh/docs/guide/guides/knowledge-pack#摘要)，本身够短的正文直接用；格局不附成立条件。带知识包时才有意义，包里有长正文缺摘要即报错并列出缺项 |
 
 释义随段落、不随表格：本命总览没有十二宫详解，所以不附星耀释义，只附格局与四化释义；
@@ -588,8 +617,8 @@ chart.ToTextWith(iztro.TextOptions{Detail: iztro.TextDetailOverview})
 chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
 ```
 
-`knowledge_depth` 收在全部八个 to_text 入口上；`detail` 只收在受它影响的五个（星盘、运限、宫位、三方四正、夹宫），
-Go 的 `TextOptions.Detail` 对格局与大限一览不起作用。
+`knowledge_depth` 收在全部九个 to_text 入口上；`detail` 只收在受它影响的五个（星盘、运限、宫位、三方四正、夹宫），
+Go 的 `TextOptions.Detail` 对格局、大限一览与流月一览不起作用。
 
 同一张盘各形态的实测字符数（中文盘，默认包）：
 
@@ -601,10 +630,11 @@ Go 的 `TextOptions.Detail` 对格局与大限一览不起作用。
 | 三方四正（命宫） | 924 | 2,721 | 6,314 | 319 | 2,116 | 5,709 |
 | 夹宫（命宫） | 436 | 963 | 1,874 | 133 | 660 | 1,571 |
 | 大限一览 | 1,045 | 1,936 | 6,447 | — | — | — |
+| 流月一览（农历 2025 年） | 1,278 | 2,169 | 6,680 | — | — | — |
 | 格局 | 36 | 95 | 328 | — | — | — |
 
 英文盘的事实部分更长（星名是单词而非两字，且多一套结构标签）：完整事实本命 6,757、运限 6,378、单宫 464、
-三方四正 1,911、夹宫 895、大限一览 1,893、格局 95；总览本命 1,374、运限 5,112、单宫 164、三方四正 710、夹宫 299。
+三方四正 1,911、夹宫 895、大限一览 1,893、流月一览 2,260、格局 95；总览本命 1,374、运限 5,112、单宫 164、三方四正 710、夹宫 299。
 
 ## 运限写到哪一层
 
@@ -663,6 +693,35 @@ h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+### 按农历月取运限
+
+只问某个月时，目标按**农历年加农历月**给，不必替提问的人挑一天。按月取的运限以该月（非闰）初一为目标日期，
+与 `monthly_list` 整月一段的约定相同；配上写到流月，文本里就只有月这一级的精度。
+月号 1-12，闰月不单独成月号：默认分界配置下闰月前半月的流月随本月、后半月随下月，起止日见流月一览。
+
+```python
+h = chart.horoscope_of_month(2025, 7)
+h.to_text(through=Scope.MONTHLY)
+```
+
+```rust
+let h = chart.horoscope_of_month(2025, 7)?;
+h.to_text_with(&TextOptions::new().horoscope_through(Scope::Monthly)?);
+```
+
+```go
+h, _ := chart.HoroscopeOfMonth(2025, 7)
+h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeMonthly})
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 ## 六种语言

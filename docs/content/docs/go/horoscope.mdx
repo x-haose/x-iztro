@@ -11,7 +11,9 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 ```
 
 只问某一年时按农历年取：`chart.HoroscopeOfYear(2027)`，见
-[HoroscopeOfYear](/zh/docs/go/astrolabe#horoscopeofyear)。
+[HoroscopeOfYear](/zh/docs/go/astrolabe#horoscopeofyear)；只问某个月时按农历年加月取：
+`chart.HoroscopeOfMonth(2025, 7)`，见
+[HoroscopeOfMonth](/zh/docs/go/astrolabe#horoscopeofmonth)。
 
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
@@ -357,6 +359,57 @@ fmt.Println(len(whole), len(plain))
 <Callout type="info" title="闰月与常规月的 Month 相同">
 闰四月的 `Month` 也是 `4`，靠 `IsLeapMonth` 区分。按 `Month` 去重会把闰月弄丢。
 </Callout>
+
+---
+
+## MonthlyListToText
+
+**用途**　一个农历年的流月一览文本：每个流月一行，面向语言模型与人。
+
+**签名**
+
+```go
+func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextContext(ctx context.Context, lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextWith(lunarYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear int, opts TextOptions) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | 是 | — | 农历年份，1–9999 |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各月四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `MonthlyListToText` |
+
+**返回值**　`string`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
+干支与四化落宫。与 [`MonthlyList(lunarYear, nil)`](#monthlylist) 同一套数据：无闰月 12 行；有闰月 14 行，
+闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+[语义化文本](/zh/docs/guide/guides/to-text#八个入口)。年份不在 1–9999 返回 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+text, _ := chart.MonthlyListToText(2025)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 闰") {
+        fmt.Println(l)
+    }
+}
+```
+
+**输出**
+
+```text
+# 流月一览 2025
+| 闰6 (1-15) | 2025-7-25 ~ 2025-8-8 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (16-29) | 2025-8-9 ~ 2025-8-22 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+```
+
+农历 2025 年闰六月：前半月的流月同六月（癸未），后半月同七月（甲申）。
 
 ---
 
@@ -743,6 +796,27 @@ for _, l := range strings.Split(text, "\n") {
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+目标只精确到月时，按农历月取运限并写到流月为止：
+
+```go
+month, _ := chart.HoroscopeOfMonth(2025, 7)
+text, _ = month.ToTextWith(iztro.TextOptions{Through: iztro.ScopeMonthly})
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 `BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`。

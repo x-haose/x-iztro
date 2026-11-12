@@ -12,6 +12,8 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 
 When the question is about a year, take the horoscope of the lunar year:
 `chart.HoroscopeOfYear(2027)` — see [HoroscopeOfYear](/en/docs/go/astrolabe#horoscopeofyear).
+When it is about a month, take the horoscope of the lunar year and month:
+`chart.HoroscopeOfMonth(2025, 7)` — see [HoroscopeOfMonth](/en/docs/go/astrolabe#horoscopeofmonth).
 
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again.
@@ -369,6 +371,62 @@ splits the leap month. The two may differ and do not affect each other.
 The leap fourth month also has `Month == 4`; `IsLeapMonth` is what tells them apart. Deduplicating by
 `Month` drops the leap month.
 </Callout>
+
+---
+
+## MonthlyListToText
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```go
+func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextContext(ctx context.Context, lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextWith(lunarYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear int, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Yes | — | Output options. `Knowledge` names the reading material; when given, the readings of the months' mutagen stars follow the table, each star once. `KnowledgeDepth` picks the summary layer or the full text; `Detail`, `Through` and `PatternConfig` have no effect here; the zero value `TextOptions{}` equals `MonthlyListToText` |
+
+**Return value** `string` — a `# Monthly Timeline <lunar year>` heading plus one table whose columns
+are the lunar month, its first and last solar day, the natal palace the month's Soul palace lands
+on, the stem-branch and where the mutagens land. The data is the same as
+[`MonthlyList(lunarYear, nil)`](#monthlylist): 12 rows without a leap month; 14 with one, the leap
+month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
+is described in [Semantic text](/en/docs/guide/guides/to-text#the-eight-entries). A year outside
+1–9999 returns `ErrInvalidArgument`.
+
+**Example**
+
+```go
+text, _ := chart.MonthlyListToText(2025)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| leap") {
+        fmt.Println(l)
+    }
+}
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
 
 ---
 
@@ -772,6 +830,28 @@ for _, l := range strings.Split(text, "\n") {
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+When the target is only precise to the month, take the horoscope of the lunar month and stop at the
+monthly scope:
+
+```go
+month, _ := chart.HoroscopeOfMonth(2025, 7)
+text, _ = month.ToTextWith(iztro.TextOptions{Through: iztro.ScopeMonthly})
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 `BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns

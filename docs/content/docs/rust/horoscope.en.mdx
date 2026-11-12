@@ -12,7 +12,9 @@ let h = chart.horoscope("2025-6-1", 0)?;
 
 When the question is about a year, take the horoscope of the lunar year:
 `chart.horoscope_of_year(2027)?` — see
-[horoscope_of_year](/en/docs/rust/astrolabe#horoscope_of_year).
+[horoscope_of_year](/en/docs/rust/astrolabe#horoscope_of_year). When it is about a month, take
+the horoscope of the lunar year and month: `chart.horoscope_of_month(2025, 7)?` — see
+[horoscope_of_month](/en/docs/rust/astrolabe#horoscope_of_month).
 
 `HoroscopeRef` holds the natal chart that produced it, so none of the query methods need the
 astrolabe passed in again.
@@ -357,6 +359,61 @@ splits the leap month. The two may differ and do not affect each other.
 The leap fourth month also has `month == 4`; `is_leap_month` is what tells them apart. Deduplicating by
 `month` drops the leap month.
 </Callout>
+
+---
+
+## monthly_list_to_text
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```rust
+pub fn monthly_list_to_text(&self, year: i64) -> Result<String, IztroError>
+pub fn monthly_list_to_text_with(&self, year: i64, opts: &TextOptions) -> Result<String, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+| `opts` | `&TextOptions` | Yes | — | Output options; with `TextOptions::new().knowledge(pack)` the readings of the months' mutagen stars follow the table, each star once; the detail level, the scope to stop at and the pattern criteria have no effect here |
+
+**Return value** `Result<String, IztroError>` — a `# Monthly Timeline <lunar year>` heading plus one
+table whose columns are the lunar month, its first and last solar day, the natal palace the month's
+Soul palace lands on, the stem-branch and where the mutagens land. The data is the same as
+[`monthly_list(year, true)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap
+month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
+is described in [Semantic text](/en/docs/guide/guides/to-text#the-eight-entries). A year outside
+1–9999 returns `IztroError::InvalidArgument`.
+
+Defined on `Astrolabe` and emitted in the chart language; to pick the language use the free
+functions `text::monthly_list_to_text(astrolabe, year, lang)` and
+`text::monthly_list_to_text_with(astrolabe, year, opts, lang)`.
+
+**Example**
+
+```rust
+let text = chart.monthly_list_to_text(2025)?;
+
+println!("{}", text.lines().next().unwrap());
+for line in text.lines().filter(|l| l.starts_with("| leap")) {
+    println!("{line}");
+}
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
 
 ---
 
@@ -763,6 +820,26 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
+```
+
+When the target is only precise to the month, take the horoscope of the lunar month and stop at the
+monthly scope:
+
+```rust
+let month = chart.horoscope_of_month(2025, 7)?;
+let text = month.to_text_with(&TextOptions::new().horoscope_through(Scope::Monthly)?);
+
+for line in text.lines().filter(|l| l.starts_with('#')) {
+    println!("{line}");
+}
+```
+
+```text
+# 运限 2025-8-23 (二〇二五年七月初一)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 ---

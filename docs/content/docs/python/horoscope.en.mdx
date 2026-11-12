@@ -12,7 +12,9 @@ h = chart.horoscope("2025-6-1", 0)
 
 When the question is about a year, take the horoscope of the lunar year:
 `chart.horoscope_of_year(2027)` — see
-[horoscope_of_year](/en/docs/python/astrolabe#horoscope_of_year).
+[horoscope_of_year](/en/docs/python/astrolabe#horoscope_of_year). When it is about a month, take
+the horoscope of the lunar year and month: `chart.horoscope_of_month(2025, 7)` — see
+[horoscope_of_month](/en/docs/python/astrolabe#horoscope_of_month).
 
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again. The trailing `astrolabe=None` parameter on every query method is there for the case
@@ -332,6 +334,66 @@ splits the leap month. The two may differ and do not affect each other.
 The leap fourth month also has `month == 4`; `is_leap_month` is what tells them apart. Deduplicating by
 `month` drops the leap month.
 </Callout>
+
+---
+
+## monthly_list_to_text
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```python
+def monthly_list_to_text(
+    self,
+    year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | Lunar year, 1–9999 |
+| `knowledge` | `bool \| KnowledgePack \| None` | No | `None` | Reading material: `True` takes the bundled default pack for the chart language, a `KnowledgePack` uses that pack; when given, the readings of the months' mutagen stars follow the table, each star once |
+| `knowledge_depth` | `KnowledgeDepth` | No | `KnowledgeDepth.FULL` | Reading depth: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers), `FULL` the full text. `SUMMARY` requires `knowledge` |
+
+**Return value** `str` — a `# Monthly Timeline <lunar year>` heading plus one table whose columns are
+the lunar month, its first and last solar day, the natal palace the month's Soul palace lands on,
+the stem-branch and where the mutagens land. The data is the same as
+[`monthly_list(year)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap month
+split into two rows, one per half, marked `leap` and carrying its lunar day range. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-eight-entries).
+
+**Raises** `IztroError` when the year is outside 1–9999 or a segment's first day falls outside the
+supported range; `IztroError` (`invalid_argument`) when `knowledge=True` and the chart language has
+no bundled pack (only zh-CN has one), or with `SUMMARY` when `knowledge` is missing or the pack
+lacks summaries.
+
+**Example**
+
+```python
+text = chart.monthly_list_to_text(2025)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith("| leap")))
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
 
 ---
 
@@ -742,6 +804,23 @@ print("\n".join(l for l in year.to_text(through=Scope.YEARLY).splitlines() if l.
 ## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
 ## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
 ## Yearly · Soul Palace: Natal parents (ding wei)
+```
+
+When the target is only precise to the month, take the horoscope of the lunar month and stop at the
+monthly scope:
+
+```python
+month = chart.horoscope_of_month(2025, 7)
+
+print("\n".join(l for l in month.to_text(through=Scope.MONTHLY).splitlines() if l.startswith("#")))
+```
+
+```text
+# Horoscope 2025-8-23 (二〇二五年七月初一)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal property · Nominal Age 26
+## Yearly · Soul Palace: Natal siblings (yi si)
+## Monthly · Soul Palace: Natal parents (jia shen)
 ```
 
 **Edge cases and pitfalls**
