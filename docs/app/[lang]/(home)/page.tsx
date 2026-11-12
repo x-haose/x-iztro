@@ -8,11 +8,11 @@ const COPY = {
   zh: {
     metaTitle: 'x-iztro — 紫微斗数排盘引擎 · Rust / Python / Go',
     metaDescription:
-      '紫微斗数排盘引擎：与 JS iztro 逐字段零差异（716,314 例金标），附 64 条格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go 直接调用。',
+      '紫微斗数排盘引擎：与 JS iztro 逐字段零差异（747,572 例金标），附 64 条格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go 直接调用。',
     ogImage: '/og.png',
     tagline: '排盘归它算 · 解读归 AI',
     headline: '紫微斗数排盘引擎',
-    lede: '输入公历生日和出生时辰，输出一张完整的紫微斗数命盘——十二宫、上百颗星、各层运限；再调用一次，就变成大模型读得懂的文字。Rust 核心，Rust / Python / Go 直接调用，排盘结果与 JS iztro 逐字段一致，716,314 例金标守着这条线。',
+    lede: '输入公历生日和出生时辰，输出一张完整的紫微斗数命盘——十二宫、上百颗星、各层运限；再调用一次，就变成大模型读得懂的文字。Rust 核心，Rust / Python / Go 直接调用，排盘结果与 JS iztro 逐字段一致，747,572 例金标守着这条线。',
     start: '快速开始',
     concepts: '先看懂命盘',
     nonDev: '不写代码？从这页开始 →',
@@ -21,36 +21,31 @@ const COPY = {
     ariaFeatures: '特性',
     ariaProduction: '生产就绪',
     stats: [
-      { value: '716,314', label: '金标对照用例' },
+      { value: '747,572', label: '金标对照用例' },
       { value: '0', label: '允许的差异' },
       { value: '64', label: '条格局判定' },
       { value: '6', label: '种输出语言' },
     ],
     promptTitle: '大模型拿到的是这样一段文字',
     promptCaption:
-      '一次调用生成整盘的结构化文本，直接贴进任何大模型就能开始问；括号是亮度与四化标记，运限另有同款输出。',
+      '一次调用生成整盘的 Markdown 文本，直接贴进任何大模型就能开始问；括号是亮度，四化写作「化禄」「化权」，运限另有同款输出。',
     promptLink: '它是怎么生成的 →',
-    promptSample: `=== 基本信息 ===
-性别: 女
-阳历: 2000-8-16
-农历: 二〇〇〇年七月十七
-干支: 庚辰 甲申 丙午 庚寅
-…
-命宫地支: 午
-身宫地支: 戌
-命主: 破军
-身主: 文昌
-五行局: 木三局
-生年四化: 太阳禄, 武曲权, 太阴科, 天同忌
+    promptSample: `# 命盘 2000-8-16 寅时 女
 
-=== 十二宫 ===
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
+- 五行局: 木三局 · 命主: 破军 · 身主: 文昌
+- 命宫: 午 · 身宫: 戌 (官禄) · 来因宫: 辰 (夫妻)
+- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 太阴化科→仆役, 天同化忌→疾厄
 
---- 财帛 ---
-…
-主星: 武曲(得)[权], 天相(庙)
-辅星: 天马
-杂耀: 解神, 三台, 天寿, 天巫, 天厨, 阴煞, 天哭
-…（其余十一宫依次列全）`,
+## 十二宫总览
+| 宫位 | 主星 | 辅星 | 大限 |
+|---|---|---|---|
+| **命宫** 午 | 紫微(庙) | 文曲(陷) | 3-12 |
+| 兄弟 巳 | 天机(平) | — | 13-22 |
+| 夫妻 辰 [来因宫] | 七杀(庙) | 右弼, 火星(陷) | 23-32 |
+…（其余九宫同款列全，之后是格局与十二宫详解）`,
     iztroTitle: '与 iztro 的关系',
     iztroAligned: {
       title: '与 JS iztro 完全一致',
@@ -58,7 +53,7 @@ const COPY = {
         '排盘、十二宫（含身宫、来因宫）、六层运限',
         '宫位查询、三方四正、飞星',
         '序列化 JSON 逐键一致',
-        '716,314 例金标，零容忍差异',
+        '747,572 例金标，零容忍差异',
       ],
     },
     iztroBeyond: {
@@ -84,7 +79,7 @@ chart = astro.by_solar("2000-8-16", 2, "female")
 chart.soul                # 命主
 chart.palace("soulPalace")  # 命宫
 chart.patterns()          # 格局命中
-astro.astrolabe_to_prompt(chart)  # 整盘 → 文本`,
+chart.to_text()           # 整盘 → 文本`,
     features: [
       {
         title: '排盘与运限完整',
@@ -100,7 +95,7 @@ astro.astrolabe_to_prompt(chart)  # 整盘 → 文本`,
       },
       {
         title: '面向 AI 的接口',
-        body: 'Prompt 输出格式确定、字段顺序稳定，可直接当 tool call 的返回值；文档站自带 llms.txt，任意文档页追加 .md 即纯文本。',
+        body: '文本输出格式确定、字段顺序稳定，可直接当 tool call 的返回值；文档站自带 llms.txt，任意文档页追加 .md 即纯文本。',
       },
     ],
     prodStrip: ['无全局状态', '非法输入不 panic', 'Python abi3 零依赖', 'Go 无 cgo', 'MIT 开源'],
@@ -108,11 +103,11 @@ astro.astrolabe_to_prompt(chart)  # 整盘 → 文本`,
   en: {
     metaTitle: 'x-iztro — Zi Wei Dou Shu (Purple Star Astrology) chart engine for Rust, Python & Go',
     metaDescription:
-      'A Chinese astrology (Zi Wei Dou Shu / Purple Star) chart engine, field-for-field identical to JS iztro — 716,314 golden cases — plus 64 pattern rules, knowledge packs, reverse birth-date lookup and LLM-ready output. Rust core with Python and Go bindings.',
+      'A Chinese astrology (Zi Wei Dou Shu / Purple Star) chart engine, field-for-field identical to JS iztro — 747,572 golden cases — plus 64 pattern rules, knowledge packs, reverse birth-date lookup and LLM-ready output. Rust core with Python and Go bindings.',
     ogImage: '/og-en.png',
     tagline: 'Code does the chart. AI does the reading.',
     headline: 'Chinese astrology (Zi Wei Dou Shu) chart engine',
-    lede: 'Zi Wei Dou Shu — Chinese "Purple Star" astrology — charts a life from a birth date and hour. A Rust core casts it, with bindings for Rust, Python and Go; every field carries a translated name plus a stable key, and one call turns the whole chart into text an LLM can read. Charts match JS iztro field for field — 716,314 golden cases hold that line.',
+    lede: 'Zi Wei Dou Shu — Chinese "Purple Star" astrology — charts a life from a birth date and hour. A Rust core casts it, with bindings for Rust, Python and Go; every field carries a translated name plus a stable key, and one call turns the whole chart into text an LLM can read. Charts match JS iztro field for field — 747,572 golden cases hold that line.',
     start: 'Get started',
     concepts: 'Learn the chart',
     nonDev: 'Not writing code? Start here →',
@@ -121,36 +116,31 @@ astro.astrolabe_to_prompt(chart)  # 整盘 → 文本`,
     ariaFeatures: 'features',
     ariaProduction: 'production-ready',
     stats: [
-      { value: '716,314', label: 'golden cases' },
+      { value: '747,572', label: 'golden cases' },
       { value: '0', label: 'tolerated deviations' },
       { value: '64', label: 'pattern rules' },
       { value: '6', label: 'output languages' },
     ],
     promptTitle: 'What the model gets',
     promptCaption:
-      'One call renders the whole chart as structured text — paste it into any LLM and start asking. Brackets are brightness and the four transformations; there is a matching call for horoscopes.',
+      'One call renders the whole chart as Markdown — paste it into any LLM and start asking. Values in round brackets are brightness, the letters A–D mark the four transformations; there is a matching call for horoscopes.',
     promptLink: 'How it is generated →',
-    promptSample: `=== Basic Info ===
-Gender: female
-Solar Date: 2000-8-16
-Lunar Date: 二〇〇〇年七月十七
-Chinese Date: geng chen - jia shen - bing woo - geng yin
-…
-Soul Palace Branch: woo
-Body Palace Branch: xu
-Soul Star: rebel
-Body Star: scholar
-Five Elements Class: wood 3rd
-Birth-Year Mutagen: sunA, generalB, moonC, fortunateD
+    promptSample: `# Natal Chart 2000-8-16 Tiger hour female
 
-=== Palaces ===
+## Basic Info
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
+- Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
+- Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
+- Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
+- Birth-Year Mutagen: sun [A]→children, warrior [B]→wealth, moon [C]→friends, fortunate [D]→health
 
---- wealth ---
-…
-Major Stars: general([+1])[B], minister([+3])
-Minor Stars: horse
-Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
-… (the other eleven palaces)`,
+## Palace Overview
+| Palace | Major Stars | Minor Stars | Decadal |
+|---|---|---|---|
+| **soul** woo | emperor([+3]) | artist([-3]) | 3-12 |
+| siblings si | advisor([-1]) | — | 13-22 |
+| spouse chen [Original Palace] | marshal([+3]) | helper, impulsive([-3]) | 23-32 |
+… (the other nine palaces follow, then patterns and each palace in detail)`,
     iztroTitle: 'x-iztro and iztro',
     iztroAligned: {
       title: 'Identical to JS iztro',
@@ -158,7 +148,7 @@ Adjective Stars: considery, senior, ageless, psychic, gourmet, gloomy, upset
         'Charts, twelve palaces (body and Original palace included), six horoscope levels',
         'Palace queries, surrounded palaces, flying stars',
         'Serialized JSON, key for key',
-        '716,314 golden cases, zero tolerated deviations',
+        '747,572 golden cases, zero tolerated deviations',
       ],
     },
     iztroBeyond: {
@@ -184,7 +174,7 @@ chart = astro.by_solar("2000-8-16", 2, "female")
 chart.soul                # soul star
 chart.palace("soulPalace")  # soul palace
 chart.patterns()          # pattern hits
-astro.astrolabe_to_prompt(chart)  # chart -> text`,
+chart.to_text()           # chart -> text`,
     features: [
       {
         title: 'Complete charts and horoscopes',
@@ -200,7 +190,7 @@ astro.astrolabe_to_prompt(chart)  # chart -> text`,
       },
       {
         title: 'An interface built for AI',
-        body: 'Prompt output is deterministic, with a stable field order — usable directly as a tool-call result. The docs ship llms.txt, and every docs page serves plain text with .md appended.',
+        body: 'Text output is deterministic, with a stable field order — usable directly as a tool-call result. The docs ship llms.txt, and every docs page serves plain text with .md appended.',
       },
     ],
     prodStrip: [
@@ -305,7 +295,7 @@ export default async function HomePage({ params }: PageProps<'/[lang]'>) {
           </h2>
           <p className="text-sm leading-relaxed text-fd-muted-foreground">{t.promptCaption}</p>
           <Link
-            href={`/${lang}/docs/guide/guides/ai-prompt`}
+            href={`/${lang}/docs/guide/guides/to-text`}
             className="text-sm font-medium underline-offset-4 hover:underline"
           >
             {t.promptLink}
