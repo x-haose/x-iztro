@@ -788,16 +788,23 @@ type Horoscope struct {
 	targetDate string
 	// targetTimeIndex 为发起这次查询的目标时辰索引；nil 表示由 targetDate 的时间换算，再次发起计算时同样省略。
 	targetTimeIndex *uint8
-	// targetYear 为发起这次查询的目标农历年份（Astrolabe.HoroscopeOfYear）；按日期发起的为 nil。
+	// targetYear 为发起这次查询的目标农历年份（Astrolabe.HoroscopeOfYear / HoroscopeOfMonth）；按日期发起的为 nil。
 	// 再次发起计算时转发年份而不是 SolarDate，内核按同一约定重新取该年的运限。
 	targetYear *int
+	// targetMonth 为发起这次查询的目标农历月号（Astrolabe.HoroscopeOfMonth），与 targetYear 成对；
+	// 其余发起方式为 nil。再次发起计算时随年份一起转发。
+	targetMonth *int
 }
 
-// addTarget 把发起这次运限查询的目标写进入参：按农历年发起的写年份，否则写目标日期与时辰。
+// addTarget 把发起这次运限查询的目标写进入参：按农历年发起的写年份（按月发起的再写月号），
+// 否则写目标日期与时辰。
 // 首次计算与再次发起的计算（文本、格局、按盘取材）都经这里，目标键只在此一处写。
 func (h *Horoscope) addTarget(payload map[string]any) {
 	if h.targetYear != nil {
 		payload["targetYear"] = *h.targetYear
+		if h.targetMonth != nil {
+			payload["targetMonth"] = *h.targetMonth
+		}
 		return
 	}
 	payload["targetDate"] = h.targetDate

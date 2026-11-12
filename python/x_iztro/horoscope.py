@@ -302,8 +302,12 @@ class Horoscope:
     """发起本次查询的目标时辰索引；`None` 表示由目标日期串换算，再次发起计算时同样转发"""
 
     _target_year: int | None = field(default=None, compare=False, repr=False)
-    """发起本次查询的目标农历年份（`Astrolabe.horoscope_of_year`）；按日期发起的为 `None`。
-    再次发起计算时转发年份而不是 `solar_date`，内核按同一约定重新取该年的运限"""
+    """发起本次查询的目标农历年份（`Astrolabe.horoscope_of_year` / `horoscope_of_month`）；
+    按日期发起的为 `None`。再次发起计算时转发年份而不是 `solar_date`，内核按同一约定重新取该年的运限"""
+
+    _target_month: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标农历月号（`Astrolabe.horoscope_of_month`），与 `_target_year` 成对；
+    其余发起方式为 `None`。再次发起计算时随年份一起转发"""
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -383,7 +387,7 @@ class Horoscope:
     def _context_query(self, kind: str, astrolabe: Astrolabe | None, **extra: Any) -> Any:
         """以发起本次运限查询的排盘上下文调用绑定层：星盘上下文（含重排起点）
         委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加发起时的运限目标
-        （日期与时辰，或农历年份）。"""
+        （日期与时辰，或农历年份与月号）。"""
         chart = self._chart(astrolabe)
         if chart is None:
             raise ValueError(
@@ -394,6 +398,7 @@ class Horoscope:
             target_date=self._target_date,
             target_time_index=self._target_time_index,
             target_year=self._target_year,
+            target_month=self._target_month,
             **extra,
         )
 
@@ -624,12 +629,14 @@ class Horoscope:
         target_date: str | None,
         target_time_index: int | None,
         target_year: int | None,
+        target_month: int | None,
     ) -> Horoscope:
         return cls(
             _raw=d,
             _target_date=target_date,
             _target_time_index=target_time_index,
             _target_year=target_year,
+            _target_month=target_month,
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],
             decadal=HoroscopeItem._from_dict(d["decadal"]),

@@ -3,10 +3,11 @@ package iztro
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 )
 
-// 夹宫、三个运限列表与按农历年取运限的行为测试：项数、字段自洽、两种大限定位等价、
+// 夹宫、三个运限列表与按农历年、农历月取运限的行为测试：项数、字段自洽、两种大限定位等价、
 // 定位缺省报错，以及重排上下文与运限目标是否随查询转发。
 
 // listChart 排出测试用盘：2000-8-16 寅时女命，fixLeap 决定闰月是否拆段。
@@ -340,6 +341,129 @@ func TestHoroscopeOfYear(t *testing.T) {
 	}
 	if other, err := earlyZi.ToText(); err != nil || text == other {
 		t.Errorf("年份运限的文本不应等于按 SolarDate 早子时重算的文本（err=%v）", err)
+	}
+}
+
+// TestHoroscopeOfMonth 校验按农历月取运限：流月与流月列表里同月号的常规月那项一致，
+// 年份、月号越界报错，返回的运限再发起计算时转发的仍是年份与月号。
+func TestHoroscopeOfMonth(t *testing.T) {
+	a := listChart(t, true)
+
+	list, err := a.MonthlyList(2025, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for month := 1; month <= 12; month++ {
+		ofMonth, err := a.HoroscopeOfMonth(2025, month)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var want *MonthlyListItem
+		for i := range list {
+			if list[i].Month == month && !list[i].IsLeapMonth {
+				want = &list[i]
+			}
+		}
+		if want == nil {
+			t.Fatalf("流月列表里没有 %d 月的常规月", month)
+		}
+		got := ofMonth.Monthly
+		if got.Index != want.Index || got.HeavenlyStemKey != want.HeavenlyStemKey ||
+			got.EarthlyBranchKey != want.EarthlyBranchKey ||
+			!reflect.DeepEqual(got.MutagenStarKeys, want.MutagenStarKeys) {
+			t.Errorf("%d 月的流月与流月列表不一致: %+v vs %+v", month, got, want.HoroscopeScope)
+		}
+	}
+
+	for _, ym := range [][2]int{{2025, 0}, {2025, 13}, {2025, -1}, {0, 1}, {10000, 1}} {
+		if _, err := a.HoroscopeOfMonth(ym[0], ym[1]); !errors.Is(err, ErrInvalidArgument) {
+			t.Errorf("%d 年 %d 月越界应报 ErrInvalidArgument，实际 %v", ym[0], ym[1], err)
+		}
+	}
+
+	// 农历 2025 年七月初一是 2025-8-23。再发起的计算与「该日 + 出生时辰（寅时，索引 2）」的运限相同：
+	// 只转发年份会退成六月初一，转发 DTO 的 SolarDate 会按早子时重算
+	ofMonth, err := a.HoroscopeOfMonth(2025, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ofMonth.SolarDate != "2025-8-23" {
+		t.Fatalf("农历 2025 年七月初一应为 2025-8-23，实际 %s", ofMonth.SolarDate)
+	}
+	sameHour, err := a.Horoscope("2025-8-23", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	earlyZi, err := a.HoroscopeAt("2025-8-23")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ofYear, err := a.HoroscopeOfYear(2025)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := func(h *Horoscope, opts TextOptions) string {
+		t.Helper()
+		out, err := h.ToTextWith(opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+
+	if text(ofMonth, TextOptions{}) != text(sameHour, TextOptions{}) {
+		t.Error("月份运限的文本应与该月初一出生时辰的运限同文")
+	}
+	if text(ofMonth, TextOptions{}) == text(earlyZi, TextOptions{}) {
+		t.Error("月份运限的文本不应等于按 SolarDate 早子时重算的文本")
+	}
+
+	throughMonthly := TextOptions{Through: ScopeMonthly}
+	monthly := text(ofMonth, throughMonthly)
+	if monthly != text(sameHour, throughMonthly) {
+		t.Error("写到流月的月份运限文本应与该月初一的运限同文")
+	}
+	if monthly == text(ofYear, throughMonthly) {
+		t.Error("月份运限的文本不应等于只按年份重算（六月初一）的文本")
+	}
+	for i, heading := range []string{"## 流月 · ", "## 流日 · ", "## 流时 · "} {
+		if got, want := strings.Contains(monthly, heading), i < 1; got != want {
+			t.Errorf("写到流月时 %q 是否出现应为 %v", heading, want)
+		}
+	}
+
+	gotHits, err := ofMonth.Patterns(ScopeMonthly, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantHits, err := sameHour.Patterns(ScopeMonthly, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotHits, wantHits) {
+		t.Error("月份运限的流月格局应与该月初一的运限相同")
+	}
+	gotHitsText, err := ofMonth.PatternsToText(ScopeMonthly, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if wantHitsText, err := sameHour.PatternsToText(ScopeMonthly, nil); err != nil || gotHitsText != wantHitsText {
+		t.Errorf("月份运限的流月格局文本应与该月初一的运限同文（err=%v）", err)
+	}
+	gotPack, err := BuiltinKnowledge().ForHoroscope(ofMonth, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPack, err := BuiltinKnowledge().ForHoroscope(sameHour, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotPack, wantPack) {
+		t.Error("月份运限的按盘取材应与该月初一的运限相同")
+	}
+
+	if _, err := a.MonthlyListToText(99999); !errors.Is(err, ErrInvalidArgument) {
+		t.Errorf("流月一览的年份越界应报 ErrInvalidArgument，实际 %v", err)
 	}
 }
 

@@ -231,7 +231,25 @@ func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (
 	return a.horoscope(ctx, &Horoscope{targetYear: &lunarYear})
 }
 
-// horoscope 按 out 上已填好的运限目标（targetDate 与 targetTimeIndex，或 targetYear）发起运限计算，
+// HoroscopeOfMonth 返回指定农历年某月的运限，返回的运限持有本盘：目标日期取该月（非闰）初一，
+// 与 MonthlyList 整月一段的约定相同。
+//
+// 只问某个月时用它，不必替提问的人挑一天。lunarMonth 是农历月号 1-12，闰月不单独成月号：
+// 默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止见 MonthlyList。
+// 流日与流时也在结果里，是该月初一那一天的，文本用 TextOptions{Through: ScopeMonthly} 只写到流月。
+// 返回的运限再发起的计算（ToText、Patterns、按盘取材）仍按该农历年月取运限。
+//
+// lunarYear 不在 1-9999 或 lunarMonth 不在 1-12 时返回 ErrInvalidArgument。
+func (a *Astrolabe) HoroscopeOfMonth(lunarYear int, lunarMonth int) (*Horoscope, error) {
+	return a.HoroscopeOfMonthContext(context.Background(), lunarYear, lunarMonth)
+}
+
+// HoroscopeOfMonthContext 为 HoroscopeOfMonth 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) HoroscopeOfMonthContext(ctx context.Context, lunarYear int, lunarMonth int) (*Horoscope, error) {
+	return a.horoscope(ctx, &Horoscope{targetYear: &lunarYear, targetMonth: &lunarMonth})
+}
+
+// horoscope 按 out 上已填好的运限目标（targetDate 与 targetTimeIndex，或 targetYear 与 targetMonth）发起运限计算，
 // 把结果解进 out 并让它持有本盘；目标留在 out 上，供它再发起计算时转发。
 func (a *Astrolabe) horoscope(ctx context.Context, out *Horoscope) (*Horoscope, error) {
 	if a == nil {

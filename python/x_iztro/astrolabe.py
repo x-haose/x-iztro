@@ -563,15 +563,37 @@ class Astrolabe:
         """
         return self._horoscope(target_year=year)
 
+    def horoscope_of_month(self, year: int, month: int) -> Horoscope:
+        """
+        指定农历年某月的运限，结果持有本盘：目标日期取该月（非闰）初一，与 `monthly_list` 整月一段的
+        约定相同。
+
+        只问某个月时用它，不必替提问的人挑一天。闰月不单独成月号：默认分界配置下闰月前半月的流月
+        随本月、后半月随下月，闰月的起止见 `monthly_list`。流日与流时也在结果里，是该月初一那一天的，
+        文本用 `to_text(through=Scope.MONTHLY)` 只写到流月。
+
+        Args:
+            year: 农历年份 (1-9999)
+            month: 农历月号 (1-12)
+
+        Returns:
+            Horoscope 运限对象；它再发起的计算（`to_text`、格局、按盘取材）仍按该农历年月取运限
+
+        Raises:
+            IztroError: 年份不在 1-9999、月份不在 1-12，或该月初一落在支持范围外
+        """
+        return self._horoscope(target_year=year, target_month=month)
+
     def _horoscope(
         self,
         *,
         target_date: str | None = None,
         target_time_index: int | None = None,
         target_year: int | None = None,
+        target_month: int | None = None,
     ) -> Horoscope:
-        """按运限目标（日期与时辰，或农历年份）发起运限计算；目标入参原样记在返回的运限上，
-        供它再发起计算时转发。"""
+        """按运限目标（日期与时辰，或农历年份、可再配农历月号）发起运限计算；目标入参原样记在
+        返回的运限上，供它再发起计算时转发。"""
         from x_iztro._bridge import horoscope as bridge_horoscope
 
         data = bridge_horoscope(
@@ -586,8 +608,11 @@ class Astrolabe:
             target_date=target_date,
             target_time_index=target_time_index,
             target_year=target_year,
+            target_month=target_month,
         )
-        return Horoscope._from_dict(data, self, target_date, target_time_index, target_year)
+        return Horoscope._from_dict(
+            data, self, target_date, target_time_index, target_year, target_month
+        )
 
     def decadal_list(self) -> list[DecadalListItem]:
         """
@@ -670,6 +695,39 @@ class Astrolabe:
         """
         data = self._context_query("monthlyList", year=year, month_fix_leap=fix_leap)
         return [MonthlyListItem._from_dict(m) for m in data]
+
+    def monthly_list_to_text(
+        self,
+        year: int,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    ) -> str:
+        """
+        流月一览的语义化文本：指定农历年每个流月一行，写农历月、阳历起止日、流月命宫所在的本命宫、
+        干支与四化落宫。
+
+        与 `monthly_list(year)` 同一套数据，输出面向语言模型与人的文本而非结构化列表。
+        闰月按前后半月拆成两行（前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
+
+        Args:
+            year: 农历年份 (1-9999)
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各月四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文），
+                默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+
+        Raises:
+            IztroError: 年份不在 1-9999，或某一段的首日落在支持范围外；
+                `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+        """
+        return self._context_query(
+            "monthlyListToText",
+            year=year,
+            knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
+        )
 
     def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]:
         """

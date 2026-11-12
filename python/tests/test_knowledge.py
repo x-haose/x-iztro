@@ -43,7 +43,7 @@ def _snapshot(name: str) -> str:
 
 
 def _texts(chart, horoscope, **kw) -> dict[str, str]:
-    """七类语义化文本，键与快照文件名前缀一致。"""
+    """八类语义化文本，键与快照文件名前缀一致；流月一览取农历 2025 年。"""
     soul = chart.palace(PalaceName.SOUL)
     return {
         "astrolabe": chart.to_text(**kw),
@@ -53,6 +53,7 @@ def _texts(chart, horoscope, **kw) -> dict[str, str]:
         "surrounded": soul.surrounded_palaces().to_text(**kw),
         "flanking": chart.flanking_palaces(PalaceName.SOUL).to_text(**kw),
         "decadals": chart.decadal_list_to_text(**kw),
+        "monthlies": chart.monthly_list_to_text(2025, **kw),
     }
 
 

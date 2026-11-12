@@ -926,7 +926,8 @@ SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "text_sna
 @pytest.mark.parametrize("language", ["zh-CN", "en-US"])
 def test_to_text_matches_rust_snapshots(language: str):
     """
-    与 `tests/text_snapshot.rs` 同一张盘、同一目标日期，七类输出须逐字节相同。
+    与 `tests/text_snapshot.rs` 同一张盘、同一目标日期（流月一览取农历 2025 年，含闰六月），
+    八类输出须逐字节相同。
 
     `in` 断言察觉不到措辞、字段顺序与整段缺失的漂移，因此这里比整份文本；
     快照由 Rust 侧生成，Python 只做消费方。
@@ -945,6 +946,7 @@ def test_to_text_matches_rust_snapshots(language: str):
     assert soul.surrounded_palaces().to_text() == snapshot("surrounded")
     assert chart.flanking_palaces(PalaceName.SOUL).to_text() == snapshot("flanking")
     assert chart.decadal_list_to_text() == snapshot("decadals")
+    assert chart.monthly_list_to_text(2025) == snapshot("monthlies")
 
     overview = TextDetail.OVERVIEW
     assert chart.to_text(detail=overview) == snapshot("astrolabe_overview")
