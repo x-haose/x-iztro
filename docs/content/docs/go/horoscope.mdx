@@ -289,6 +289,60 @@ fmt.Println(len(years), len(byPalace))
 
 ---
 
+## YearlyOverviewToText
+
+**用途**　连续若干农历年的流年一览文本：每年一行，面向语言模型与人。问「接下来几年」「哪年适合做某事」时一次拿到，
+不必逐年取运限。
+
+**签名**
+
+```go
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `fromYear` | `int` | 是 | — | 起始农历年份，1–9999，含 |
+| `toYear` | `int` | 是 | — | 截止农历年份，1–9999，含；不早于 `fromYear` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各年四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `YearlyOverviewToText` |
+
+**返回值**　`string`——`# 流年一览 <起始年>-<截止年>` 标题加一张表，一年一行，列为年份、干支、正月初一的阳历日期、虚岁、
+大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。各年与
+[`HoroscopeOfYear(year)`](/zh/docs/go/astrolabe#horoscopeofyear) 同一口径；未起运的年份大限一格写 `童限 · <宫>`，
+改历年里没有正月时正月初一一格写 `—`。格式见[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。
+`fromYear` 晚于 `toYear`、某一年不在 1–9999 返回 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+text, _ := chart.YearlyOverviewToText(2001, 2012)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 2001 ") || strings.HasPrefix(l, "| 2012 ") {
+        fmt.Println(l)
+    }
+}
+```
+
+**输出**
+
+```text
+# 流年一览 2001-2012
+| 2001 | 辛巳 | 2001-1-24 | 2 | 童限 · 财帛 | 田宅 | 兄弟 | 巨门化禄→本命疾厄, 太阳化权→本命子女, 文曲化科→本命命宫, 文昌化忌→本命福德 |
+| 2012 | 壬辰 | 2012-1-23 | 13 | 兄弟 | 官禄 | 夫妻 | 天梁化禄→本命子女, 紫微化权→本命命宫, 左辅化科→本命官禄, 武曲化忌→本命财帛 |
+```
+
+2001 年虚岁 2 尚未起运，大限一格写童限；2012 年虚岁 13 进入第二个大限（兄弟）。
+
+---
+
 ## MonthlyList
 
 **用途**　取一个农历年的全部流月。
@@ -385,7 +439,7 @@ func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear 
 **返回值**　`string`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
 干支与四化落宫。与 [`MonthlyList(lunarYear, nil)`](#monthlylist) 同一套数据：无闰月 12 行；有闰月 14 行，
 闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
-[语义化文本](/zh/docs/guide/guides/to-text#八个入口)。年份不在 1–9999 返回 `ErrInvalidArgument`。
+[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。年份不在 1–9999 返回 `ErrInvalidArgument`。
 
 **示例**
 

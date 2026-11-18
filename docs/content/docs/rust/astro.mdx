@@ -498,7 +498,7 @@ pub enum KnowledgeDepth { Summary, Full }     // 默认 Full；标识 "summary" 
 | 方法 | 说明 |
 | --- | --- |
 | `new()` / `default()` | 完整事实、不带释义、默认格局口径的选项 |
-| `detail(TextDetail)` | 事实详略：`Overview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。格局、大限一览与流月一览不受影响 |
+| `detail(TextDetail)` | 事实详略：`Overview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。格局、大限一览、流年一览与流月一览不受影响 |
 | `knowledge(&pack)` | 按盘从 `pack` 取释义全文；`pack` 是内嵌默认包或合并覆盖包之后的自定义包，借用期须覆盖选项本身 |
 | `knowledge_summary(&pack)` | 同上，取摘要层：条目的摘要，或本身不超过 [`SUMMARY_FALLBACK_WIDTH`](/zh/docs/rust/knowledge#summary_fallback_width) 的正文；格局不附成立条件。包里有长正文缺摘要时返回 `IztroError::InvalidArgument` 并列出全部缺项 |
 | `horoscope_through(Scope)` | 运限文本[写到 `scope` 这一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`Decadal` 只写大限，`Yearly` 写大限、小限、流年，`Monthly` / `Daily` / `Hourly` 依次各多一层；不设即写到流时。只对运限文本起作用；`Scope::Origin` 返回 `IztroError::InvalidArgument` |

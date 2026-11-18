@@ -261,6 +261,69 @@ would turn a forgotten argument into a plausible-looking wrong answer.
 
 ---
 
+## yearly_overview_to_text
+
+**Purpose** The yearly timeline text of a run of lunar years: one row per year, for language models
+and people. Questions such as "the next few years" or "which year suits this" get every year in one
+call instead of one horoscope per year.
+
+**Signature**
+
+```python
+def yearly_overview_to_text(
+    self,
+    from_year: int,
+    to_year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `from_year` | `int` | Yes | — | First lunar year, 1–9999, inclusive |
+| `to_year` | `int` | Yes | — | Last lunar year, 1–9999, inclusive; not before `from_year` |
+| `knowledge` | `bool \| KnowledgePack \| None` | No | `None` | Reading material: `True` takes the bundled default pack for the chart language, a `KnowledgePack` uses that pack; when given, the readings of the years' mutagen stars follow the table, each star once |
+| `knowledge_depth` | `KnowledgeDepth` | No | `KnowledgeDepth.FULL` | Reading depth: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers), `FULL` the full text. `SUMMARY` requires `knowledge` |
+
+**Return value** `str` — a `# Yearly Timeline <first year>-<last year>` heading plus one table, one row per year, whose columns are the year, its
+stem-branch, the solar date of its first lunar day, the nominal age, the natal palaces the decadal
+and age fortune land on, the natal palace the yearly Soul palace lands on, and where the yearly
+mutagens land. Each year follows the same convention as [`horoscope_of_year(year)`](/en/docs/python/astrolabe#horoscope_of_year); a
+year before the decadals start shows `Childhood Fortune · <palace>` in the decadal cell, and in a
+calendar-reform year without a first lunar month the Lunar New Year cell is `—`. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+
+**Raises** `IztroError` (`invalid_argument`) when `from_year` is after `to_year` or a year is outside
+1–9999; likewise when `knowledge=True` and the chart language has no bundled pack (only zh-CN has
+one), or with `SUMMARY` when `knowledge` is missing or the pack lacks summaries.
+
+**Example**
+
+```python
+text = chart.yearly_overview_to_text(2001, 2012)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith(("| 2001 ", "| 2012 "))))
+```
+
+**Output**
+
+```text
+# Yearly Timeline 2001-2012
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+In 2001 (nominal age 2) the decadals have not started, so the decadal cell reads `Childhood Fortune`; in 2012
+(nominal age 13) the second decadal (siblings) begins.
+
+---
+
 ## monthly_list
 
 **Purpose** Get every monthly scope of one lunar year.
@@ -367,7 +430,7 @@ the lunar month, its first and last solar day, the natal palace the month's Soul
 the stem-branch and where the mutagens land. The data is the same as
 [`monthly_list(year)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap month
 split into two rows, one per half, marked `leap` and carrying its lunar day range. The format is
-described in [Semantic text](/en/docs/guide/guides/to-text#the-eight-entries).
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
 
 **Raises** `IztroError` when the year is outside 1–9999 or a segment's first day falls outside the
 supported range; `IztroError` (`invalid_argument`) when `knowledge=True` and the chart language has

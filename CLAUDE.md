@@ -118,15 +118,17 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
   记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
   开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
-  覆盖十个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
-  /`flankingPalacesToText`/`decadalListToText`/`monthlyListToText`/`patternsToText`
-  /`horoscopePatternsToText`/`topicToText`；`monthlyListToText` 的农历年份收 `year`（与 `monthlyList` 同一入参）；
+  覆盖十一个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+  /`flankingPalacesToText`/`decadalListToText`/`yearlyOverviewToText`/`monthlyListToText`/`patternsToText`
+  /`horoscopePatternsToText`/`topicToText`；`yearlyOverviewToText` 的农历年区间收 `fromYear`/`toYear`
+  （两端都含，缺任一端报 invalid_argument，区间颠倒由内核报）；`monthlyListToText` 的农历年份收 `year`
+  （与 `monthlyList` 同一入参）；
   宫位寻址收 `palaceKey`（宫名 key 或 bodyPalace/originalPalace，解析只在 `PalaceTarget::from_key` 一处，
   知识包主题的宫位列表同用）或 `palaceIndex`，二者必给其一。Python 挂对象方法且 `__str__` 即 to_text，
   Go 是 `ToText()`
 - 知识包只作为**参数**融入 to_text：选项对象 `TextOptions`（Rust `to_text_with(&TextOptions::new()
   .knowledge(&pack))`，Go `ToTextWith(TextOptions{Knowledge})`，Python 关键字参数
-  `to_text(knowledge=True|pack)`），一切影响输出的开关都收在这里。bridge 九个 kind 的可选入参
+  `to_text(knowledge=True|pack)`），一切影响输出的开关都收在这里。bridge 十个 kind 的可选入参
   `knowledge`（`"builtin"` 取盘语言内嵌包，无该语言包即报错不回退；或直接给包对象）。带包时释义
   **内联**、随段落不随表格：宫位段落的事实后紧跟该宫星耀释义（同宫主星组合最前，两个方向都查、每对一次；
   十二神不释义），格局列表后跟格局释义，运限各层级段后跟流耀与格局释义，本命文末附四化释义。
@@ -134,8 +136,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   宫位段落的三方四正、飞化、十二神、小限）与 `KnowledgeDepth`（bridge `knowledgeDepth`，Summary 取
   条目摘要或够短的正文、格局不附成立条件）。默认 Full/Full 与无开关时逐字节相同。Summary 只能经
   `TextOptions::knowledge_summary` 设上（整包校验缺摘要即 `InvalidArgument`），渲染处据此不再判缺摘要；
-  bridge 收 `knowledgeDepth: "summary"` 而无 `knowledge` 报错。`detail` 对格局、大限一览与流月一览不起作用，
-  Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那三类文本被忽略
+  bridge 收 `knowledgeDepth: "summary"` 而无 `knowledge` 报错。`detail` 对格局、大限一览、流年一览与流月一览
+  不起作用，Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那四类文本被忽略
 - 运限文本写到哪一层：`TextOptions::horoscope_through(Scope)`（bridge `through`，取值为层级标识
   `decadal`/`yearly`/`monthly`/`daily`/`hourly`；Python `Horoscope.to_text(through=)`，Go
   `TextOptions.Through`）。更细的层级不写，小限随流年；不设即写到流时，与无此开关时逐字节相同。
@@ -324,8 +326,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
     要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
-  - 语义化文本 → `text_snapshot`（Markdown 形态的八类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
-    外加八类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+  - 语义化文本 → `text_snapshot`（Markdown 形态的九类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
+    外加九类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
     有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）
@@ -341,6 +343,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - 按农历月取运限与流月一览文本 → `chart_lists`（流月与流月列表同月那项一致）+ `text_snapshot`
     （流月一览取农历 2025 年，含闰六月两行）+ `bridge.rs` 单测（年加月的分派与互斥、`monthlyListToText`）
     + Go `lists_test.go` / Python `test_chart_lists.py`（月份运限再发起计算仍按年月）
+  - 流年一览文本 → `chart_lists`（每行与按年取运限一致、未起运写童限）+ `text_snapshot`（农历 2001-2012 年，
+    含童限与跨大限）+ `bridge.rs` 单测（`yearlyOverviewToText` 的区间入参）+ Go `lists_test.go` /
+    Python `test_chart_lists.py`（区间颠倒与年份越界报错）
   - 反推 → `reverse`（八字/特征往返、甲子周期解数、Exact 口径、中州派、晚子双归属、
     全星环测 34 剪枝臂、共享 key 十二神可用、儒略历与改历前后往返、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）

@@ -251,6 +251,63 @@ print(len(years), len(chart.yearly_list("spousePalace")))
 
 ---
 
+## yearly_overview_to_text
+
+**用途**　连续若干农历年的流年一览文本：每年一行，面向语言模型与人。问「接下来几年」「哪年适合做某事」时一次拿到，
+不必逐年取运限。
+
+**签名**
+
+```python
+def yearly_overview_to_text(
+    self,
+    from_year: int,
+    to_year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `from_year` | `int` | 是 | — | 起始农历年份，1–9999，含 |
+| `to_year` | `int` | 是 | — | 截止农历年份，1–9999，含；不早于 `from_year` |
+| `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时表后附各年四化星的释义，同一颗星只出一次 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用[摘要层](/zh/docs/guide/guides/to-text#分层)，`FULL` 用全文。`SUMMARY` 须同时给 `knowledge` |
+
+**返回值**　`str`——`# 流年一览 <起始年>-<截止年>` 标题加一张表，一年一行，列为年份、干支、正月初一的阳历日期、虚岁、
+大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。各年与
+[`horoscope_of_year(year)`](/zh/docs/python/astrolabe#horoscope_of_year) 同一口径；未起运的年份大限一格写 `童限 · <宫>`，
+改历年里没有正月时正月初一一格写 `—`。格式见[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。
+
+**异常**　`from_year` 晚于 `to_year`、某一年不在 1–9999 时抛 `IztroError`（`invalid_argument`）；`knowledge=True` 而排盘语言
+没有内嵌包（目前只有 zh-CN 有）、`SUMMARY` 而未给 `knowledge` 或所给的包缺摘要，同样抛 `IztroError`（`invalid_argument`）。
+
+**示例**
+
+```python
+text = chart.yearly_overview_to_text(2001, 2012)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith(("| 2001 ", "| 2012 "))))
+```
+
+**输出**
+
+```text
+# 流年一览 2001-2012
+| 2001 | 辛巳 | 2001-1-24 | 2 | 童限 · 财帛 | 田宅 | 兄弟 | 巨门化禄→本命疾厄, 太阳化权→本命子女, 文曲化科→本命命宫, 文昌化忌→本命福德 |
+| 2012 | 壬辰 | 2012-1-23 | 13 | 兄弟 | 官禄 | 夫妻 | 天梁化禄→本命子女, 紫微化权→本命命宫, 左辅化科→本命官禄, 武曲化忌→本命财帛 |
+```
+
+2001 年虚岁 2 尚未起运，大限一格写童限；2012 年虚岁 13 进入第二个大限（兄弟）。
+
+---
+
 ## monthly_list
 
 **用途**　取一个农历年的全部流月。
@@ -349,7 +406,7 @@ def monthly_list_to_text(
 **返回值**　`str`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
 干支与四化落宫。与 [`monthly_list(year)`](#monthly_list) 同一套数据：无闰月 12 行；有闰月 14 行，
 闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
-[语义化文本](/zh/docs/guide/guides/to-text#八个入口)。
+[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。
 
 **异常**　年份不在 1–9999，或某一段的首日落在支持范围外时抛 `IztroError`；`knowledge=True` 而排盘语言没有内嵌包
 （目前只有 zh-CN 有）、`SUMMARY` 而未给 `knowledge` 或所给的包缺摘要，抛 `IztroError`（`invalid_argument`）。

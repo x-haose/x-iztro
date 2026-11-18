@@ -531,6 +531,7 @@ fmt.Println("2027-1-1 流年", jan.Yearly.HeavenlyStem+jan.Yearly.EarthlyBranch)
 流月、流日、流时也在结果里，同样是六月初一那一天的，文本用
 [`TextOptions{Through: ScopeYearly}`](/zh/docs/go/knowledge#textoptions) 只写到流年。
 年份不在 1–9999 返回 `ErrInvalidArgument`。
+连续若干年各要一行时用 [`YearlyOverviewToText`](/zh/docs/go/horoscope#yearlyoverviewtotext)。
 </Callout>
 
 ---

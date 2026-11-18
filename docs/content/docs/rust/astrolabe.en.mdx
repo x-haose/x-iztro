@@ -543,7 +543,8 @@ the decadal, age-fortune and yearly scopes stay the same for the whole lunar yea
 they can still change within the year, and the result is the one for the first day of the sixth
 month. The monthly, daily and hourly scopes are in the result too, likewise for that day —
 [`TextOptions::horoscope_through(Scope::Yearly)`](/en/docs/rust/astro#textoptions) stops the text
-at the yearly scope. A year outside 1–9999 returns `IztroError::InvalidArgument`.
+at the yearly scope. A year outside 1–9999 returns `IztroError::InvalidArgument`. For one row per
+year over a run of years, use [`yearly_overview_to_text`](/en/docs/rust/horoscope#yearly_overview_to_text).
 </Callout>
 
 ---

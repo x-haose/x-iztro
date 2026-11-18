@@ -24,6 +24,7 @@ well, so pasting it into a chat box loses no structure.
 | Surrounded palaces `to_text` | The target palace, its opposite, and the wealth and career positions, one section each |
 | Flanking palaces `to_text` | The two palaces immediately either side of the target, one section each |
 | Decadal timeline `to_text` | All twelve decadals in one table: natal palace, nominal ages, years, stem-branch, mutagens |
+| Yearly timeline `to_text` | A run of lunar years in one table: year, stem-branch, lunar new year, nominal age, the natal palaces of the decadal, age fortune and yearly Soul palace, mutagens |
 | Monthly timeline `to_text` | The months of one lunar year in one table: lunar month, first and last solar day, natal palace, stem-branch, mutagens; a leap month takes two rows, one per half |
 | `patterns_to_text` | The pattern-hit list on its own, from the natal or any horoscope perspective |
 | `topic_to_text` | Material by question: the palaces a knowledge-pack topic names (romance takes the spouse palace with its trine & opposite, plus soul, body and children) — see [Text by topic](#text-by-topic) |
@@ -65,6 +66,7 @@ chart.palace("soul").to_text()                  # one palace
 chart.surrounded_palaces("soul").to_text()      # surrounded palaces
 chart.flanking_palaces("soul").to_text()        # flanking palaces
 chart.decadal_list_to_text()                    # decadal timeline
+chart.yearly_overview_to_text(2001, 2012)       # yearly timeline of lunar years 2001-2012
 chart.monthly_list_to_text(2025)                # monthly timeline of lunar year 2025
 chart.patterns_to_text()                        # natal patterns
 h.patterns_to_text("yearly")                    # patterns from the yearly perspective
@@ -75,6 +77,7 @@ chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.FlankingPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.DecadalListToText()
+chart.YearlyOverviewToText(2001, 2012)
 chart.MonthlyListToText(2025)
 chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
@@ -82,10 +85,10 @@ h.PatternsToText(iztro.ScopeYearly, nil)
 
 On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text()`,
 `FlankingPalaces::to_text()`, `Astrolabe::decadal_list_to_text()`,
-`Astrolabe::monthly_list_to_text(year)` and the free functions of the
+`Astrolabe::yearly_overview_to_text(from, to)`, `Astrolabe::monthly_list_to_text(year)` and the free functions of the
 `text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
 `surrounded_palaces_to_text` / `flanking_palaces_to_text` / `decadal_list_to_text` /
-`monthly_list_to_text` / `patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
+`yearly_overview_to_text` / `monthly_list_to_text` / `patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
 explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). All three languages emit identical text.
 
 ## Structure at a glance
@@ -276,6 +279,8 @@ different reading semantics.
 | `### Target Palace · soul (ren woo) · Decadal 3-12` | A palace heading in the surrounded-palaces text: the palace name is preceded by its role — `Target Palace`, `Opposite Palace`, `Wealth Palace`, `Career Palace` |
 | `### Previous Palace · siblings (xin si) · Decadal 13-22` | A palace heading in the flanking-palaces text: the roles are `Previous Palace` and `Next Palace`, and the fact lines match the surrounded-palaces text |
 | `\| # \| Natal Palace \| Nominal Age \| Years \| Stem-Branch \| Mutagen \|` | The decadal timeline's header: twelve rows, one per decadal, in starting order; the arrows in the Mutagen column point at natal palaces |
+| `\| Year \| Stem-Branch \| Lunar New Year \| Nominal Age \| Decadal Fortune \| Age Fortune \| Yearly Soul Palace \| Mutagen \|` | The yearly timeline's header: one row per lunar year; the Lunar New Year column is the solar date of that year's first lunar day, and the Decadal Fortune, Age Fortune and Yearly Soul Palace columns are the natal palaces each scope's Soul palace lands on |
+| `Childhood Fortune · wealth` | The decadal cell of the yearly timeline for a year before the decadals start: `Childhood Fortune` and the natal palace it lands on |
 | `\| Lunar Month \| Solar \| Natal Palace \| Stem-Branch \| Mutagen \|` | The monthly timeline's header: one row per month, in calendar order; the Solar column is the row's first and last day, the Natal Palace column is the natal palace the month's Soul palace lands on |
 | `leap 6 (1-15)` | A leap-month row of the monthly timeline: `leap` before the month number, and in parentheses the lunar days the row covers; a leap month is split into two rows, one per half |
 | `- Stem ren Flying: sage [A]→children, …` | The [flying-star mutagens](/en/docs/guide/concepts/mutagen#flying-stars) driven by this palace's stem: the mutagen stars and where each lands |
@@ -310,7 +315,7 @@ key, never by parsing the name.
 Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` and you get
 `Solar: 2000-8-16`.
 
-## The eight entries
+## The nine entries
 
 | Entry | Output |
 | --- | --- |
@@ -320,11 +325,12 @@ Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` an
 | Surrounded palaces | A `## soul Trine & Opposite` heading plus one section each for the target, its opposite, and the wealth and career positions; each heading carries a role prefix (`### Target Palace · soul …`), and the fact lines are character-for-character the palace text |
 | Flanking palaces | A `## Flanking Palaces` heading plus one section each for the [two neighbours](/en/docs/guide/concepts/surrounded#flanking-palaces), structured like the surrounded text with the role prefixes `Previous Palace` / `Next Palace` |
 | Decadal timeline | A `# Decadal Timeline` heading plus a twelve-row table, one row per decadal |
+| Yearly timeline | A `# Yearly Timeline <first year>-<last year>` heading plus a table with one row per lunar year |
 | Monthly timeline | A `# Monthly Timeline <lunar year>` heading plus a table with one row per month: 12 rows without a leap month, 14 with one |
 | `patterns_to_text` | Pattern lines only, one per hit; from the natal perspective or any horoscope scope |
 
-Nine bridge kinds map onto these: `patterns_to_text` splits into a natal and a horoscope kind
-(`patternsToText` / `horoscopePatternsToText`), and each of the other seven entries is one kind.
+Ten bridge kinds map onto these: `patterns_to_text` splits into a natal and a horoscope kind
+(`patternsToText` / `horoscopePatternsToText`), and each of the other eight entries is one kind.
 
 Surrounded palaces and a single palace:
 
@@ -399,6 +405,27 @@ That table deliberately **does not expand each decadal's years** — twelve deca
 would run to a hundred and twenty rows, whereas the point of this table is to take in all twelve
 decades of a life at once. For the years within one decadal, use `yearly_list`.
 
+The yearly timeline takes a range of lunar years, one row per year, and may cross decadals (2001-2003
+and 2011-2012 shown):
+
+```text
+# Yearly Timeline 2001-2012
+
+| Year | Stem-Branch | Lunar New Year | Nominal Age | Decadal Fortune | Age Fortune | Yearly Soul Palace | Mutagen |
+|---|---|---|---|---|---|---|---|
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2002 | ren woo | 2002-2-12 | 3 | soul | spirit | soul | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+| 2003 | gui wei | 2003-2-1 | 4 | soul | parents | parents | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| 2011 | xin mao | 2011-2-3 | 12 | soul | friends | children | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+Each year follows the same convention as the [horoscope of a lunar year](#horoscope-of-a-lunar-year)
+(the first day of its sixth lunar month); a year before the decadals start shows `Childhood Fortune`
+in the decadal cell. The years are lunar years, both ends included, in 1-9999; a first year after the
+last year, or a year out of range, is `invalid_argument`. In a calendar-reform year without a first
+lunar month, the Lunar New Year cell is `—`.
+
 The monthly timeline is per lunar year, one row per month. Lunar 2025 has a leap sixth month, which
 is split into two rows: the first half shares the monthly scope of month 6, the second half that of
 month 7 (months 5 to 7 shown, the others are the same shape):
@@ -445,6 +472,7 @@ chart.palace("soul").to_text(knowledge=True)
 chart.surrounded_palaces("soul").to_text(knowledge=True)
 chart.flanking_palaces("soul").to_text(knowledge=True)
 chart.decadal_list_to_text(knowledge=True)
+chart.yearly_overview_to_text(2001, 2012, knowledge=True)
 chart.monthly_list_to_text(2025, knowledge=True)
 chart.patterns_to_text(knowledge=True)
 h.patterns_to_text("yearly", knowledge=True)
@@ -462,6 +490,7 @@ chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.decadal_list_to_text_with(&opts);
+chart.yearly_overview_to_text_with(2001, 2012, &opts)?;
 chart.monthly_list_to_text_with(2025, &opts)?;
 text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
@@ -478,6 +507,7 @@ chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.FlankingPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.DecadalListToTextWith(opts)
+chart.YearlyOverviewToTextWith(2001, 2012, opts)
 chart.MonthlyListToTextWith(2025, opts)
 chart.PatternsToTextWith(opts)
 h.PatternsToTextWith(iztro.ScopeYearly, opts)
@@ -489,8 +519,8 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 The pattern criteria (`config` / `pattern_config` / `PatternConfig`) are the same argument as
 `patterns(config)` and act on both the text's pattern section and the pattern readings: change the
 criteria and the hits and the readings that follow them change together. Omitted, the default
-criteria apply. The decadal and monthly timelines have no pattern section, so they do not take the
-argument.
+criteria apply. The decadal, yearly and monthly timelines have no pattern section, so they do not
+take the argument.
 
 ### Where readings go, and deduplication
 
@@ -502,6 +532,7 @@ argument.
 | Surrounded palaces | After each of the four palaces' fact lines |
 | Flanking palaces | After each of the two palaces' fact lines |
 | Decadal timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across decadals read only once |
+| Yearly timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across years read only once |
 | Monthly timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across months read only once |
 | `patterns_to_text` | After the pattern list |
 
@@ -646,7 +677,7 @@ reading. Both default to full, giving the output shown above.
 
 | Switch | Values | Effect |
 | --- | --- | --- |
-| Detail | overview / full (default) | Overview: the natal text keeps basic info, the palace overview table and the patterns, without the twelve palaces in detail; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace, surrounded-palaces and flanking text give each palace's major, minor and adjective stars only. Patterns and the decadal and monthly timelines are overviews already and do not change |
+| Detail | overview / full (default) | Overview: the natal text keeps basic info, the palace overview table and the patterns, without the twelve palaces in detail; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace, surrounded-palaces and flanking text give each palace's major, minor and adjective stars only. Patterns and the decadal, yearly and monthly timelines are overviews already and do not change |
 | Knowledge depth | summary / full (default) | Summary: the pack entries' [summaries](/en/docs/guide/guides/knowledge-pack#summaries), a body short enough on its own used as is; patterns without their conditions. Meaningful only with a knowledge pack; a pack with a long body lacking its summary is an error that lists every missing entry |
 
 Readings follow sections, not tables: the natal overview has no palace sections, so it carries no
@@ -675,9 +706,9 @@ chart.ToTextWith(iztro.TextOptions{Detail: iztro.TextDetailOverview})
 chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
 ```
 
-`knowledge_depth` is accepted by all nine to_text entries; `detail` only by the five it affects
+`knowledge_depth` is accepted by all ten to_text entries; `detail` only by the five it affects
 (chart, horoscope, palace, surrounded palaces, flanking palaces), and Go's `TextOptions.Detail` has
-no effect on patterns or the decadal and monthly timelines.
+no effect on patterns or the decadal, yearly and monthly timelines.
 
 Measured character counts for each form of the same chart (Chinese chart, default pack):
 
@@ -689,12 +720,13 @@ Measured character counts for each form of the same chart (Chinese chart, defaul
 | Surrounded palaces (Soul) | 924 | 2,721 | 6,314 | 319 | 2,116 | 5,709 |
 | Flanking palaces (Soul) | 436 | 963 | 1,874 | 133 | 660 | 1,571 |
 | Decadal timeline | 1,045 | 1,936 | 6,447 | — | — | — |
+| Yearly timeline (lunar 2001-2012) | 1,183 | 2,074 | 6,585 | — | — | — |
 | Monthly timeline (lunar 2025) | 1,278 | 2,169 | 6,680 | — | — | — |
 | Patterns | 36 | 95 | 328 | — | — | — |
 
 An English chart's facts are longer (star names are words rather than two characters, and the
 structural labels are longer): full facts — natal 6,757, horoscope 6,378, palace 464, surrounded
-palaces 1,911, flanking palaces 895, decadal timeline 1,893, monthly timeline 2,260, patterns 95; overview — natal 1,374,
+palaces 1,911, flanking palaces 895, decadal timeline 1,893, yearly timeline 2,170, monthly timeline 2,260, patterns 95; overview — natal 1,374,
 horoscope 5,112, palace 164, surrounded palaces 710, flanking palaces 299.
 
 ## How far the horoscope text goes
@@ -762,6 +794,10 @@ h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
 ## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
 ## Yearly · Soul Palace: Natal parents (ding wei)
 ```
+
+When the question spans several years ("the next few years", "which year suits this"), the
+[yearly timeline](#the-nine-entries) gives one row per year in a single call instead of one horoscope
+per year.
 
 ### Horoscope of a lunar month
 

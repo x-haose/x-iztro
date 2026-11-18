@@ -297,6 +297,65 @@ picking a default would turn a forgotten argument into a plausible-looking wrong
 
 ---
 
+## YearlyOverviewToText
+
+**Purpose** The yearly timeline text of a run of lunar years: one row per year, for language models
+and people. Questions such as "the next few years" or "which year suits this" get every year in one
+call instead of one horoscope per year.
+
+**Signature**
+
+```go
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `fromYear` | `int` | Yes | — | First lunar year, 1–9999, inclusive |
+| `toYear` | `int` | Yes | — | Last lunar year, 1–9999, inclusive; not before `fromYear` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Yes | — | Output options. `Knowledge` names the reading material; when given, the readings of the years' mutagen stars follow the table, each star once. `KnowledgeDepth` picks the summary layer or the full text; `Detail`, `Through` and `PatternConfig` have no effect here; the zero value `TextOptions{}` equals `YearlyOverviewToText` |
+
+**Return value** `string` — a `# Yearly Timeline <first year>-<last year>` heading plus one table, one row per year, whose columns are the year, its
+stem-branch, the solar date of its first lunar day, the nominal age, the natal palaces the decadal
+and age fortune land on, the natal palace the yearly Soul palace lands on, and where the yearly
+mutagens land. Each year follows the same convention as [`HoroscopeOfYear(year)`](/en/docs/go/astrolabe#horoscopeofyear); a
+year before the decadals start shows `Childhood Fortune · <palace>` in the decadal cell, and in a
+calendar-reform year without a first lunar month the Lunar New Year cell is `—`. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+`fromYear` after `toYear`, or a year outside 1–9999, returns `ErrInvalidArgument`.
+
+**Example**
+
+```go
+text, _ := chart.YearlyOverviewToText(2001, 2012)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 2001 ") || strings.HasPrefix(l, "| 2012 ") {
+        fmt.Println(l)
+    }
+}
+```
+
+**Output**
+
+```text
+# Yearly Timeline 2001-2012
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+In 2001 (nominal age 2) the decadals have not started, so the decadal cell reads `Childhood Fortune`; in 2012
+(nominal age 13) the second decadal (siblings) begins.
+
+---
+
 ## MonthlyList
 
 **Purpose** Get every monthly scope of one lunar year.
@@ -400,7 +459,7 @@ are the lunar month, its first and last solar day, the natal palace the month's 
 on, the stem-branch and where the mutagens land. The data is the same as
 [`MonthlyList(lunarYear, nil)`](#monthlylist): 12 rows without a leap month; 14 with one, the leap
 month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
-is described in [Semantic text](/en/docs/guide/guides/to-text#the-eight-entries). A year outside
+is described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries). A year outside
 1–9999 returns `ErrInvalidArgument`.
 
 **Example**

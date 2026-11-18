@@ -553,7 +553,8 @@ the decadal, age-fortune and yearly scopes stay the same for the whole lunar yea
 `HoroscopeDivideExact` they can still change within the year, and the result is the one for the
 first day of the sixth month. The monthly, daily and hourly scopes are in the result too, likewise
 for that day — [`TextOptions{Through: ScopeYearly}`](/en/docs/go/knowledge#textoptions) stops the
-text at the yearly scope. A year outside 1–9999 returns `ErrInvalidArgument`.
+text at the yearly scope. A year outside 1–9999 returns `ErrInvalidArgument`. For one row per year
+over a run of years, use [`YearlyOverviewToText`](/en/docs/go/horoscope#yearlyoverviewtotext).
 </Callout>
 
 ---
