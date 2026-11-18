@@ -780,7 +780,7 @@ const (
 // 语义化文本的事实详略（TextOptions.Detail）。
 const (
 	// TextDetailOverview 为总览：本命只写基本信息、十二宫总览表与格局；运限各层只写宫名对照、四化、流耀与格局；
-	// 宫位段落只写主星、辅星与杂耀。格局与大限一览文本不受影响
+	// 宫位段落只写主星、辅星与杂耀。格局、大限一览、流年一览与流月一览文本不受影响
 	TextDetailOverview = "overview"
 	// TextDetailFull 为完整：全部事实
 	TextDetailFull = "full"

@@ -498,6 +498,37 @@ func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextO
 	return out, utilQueryContext(ctx, payload, &out)
 }
 
+// YearlyOverviewToText 生成流年一览的语义化文本：农历 fromYear 年到 toYear 年（含两端）每年一行，
+// 写年份、干支、正月初一的阳历日期、虚岁、大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。
+// 各年与 HoroscopeOfYear 同一口径；未起运的年份大限一格写童限，改历年里没有正月时正月初一一格写「—」。
+// fromYear 晚于 toYear、某一年不在 1-9999 时返回 ErrInvalidArgument。
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error) {
+	return a.YearlyOverviewToTextContext(context.Background(), fromYear, toYear)
+}
+
+// YearlyOverviewToTextContext 为 YearlyOverviewToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error) {
+	return a.YearlyOverviewToTextWithContext(ctx, fromYear, toYear, TextOptions{})
+}
+
+// YearlyOverviewToTextWith 生成流年一览的语义化文本并按 opts.Knowledge 在表后追加各年四化星的释义节。
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error) {
+	return a.YearlyOverviewToTextWithContext(context.Background(), fromYear, toYear, opts)
+}
+
+// YearlyOverviewToTextWithContext 为 YearlyOverviewToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("yearlyOverviewToText: nil astrolabe")
+	}
+	payload := a.textPayload("yearlyOverviewToText")
+	payload["fromYear"] = fromYear
+	payload["toYear"] = toYear
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
 // MonthlyListToText 生成流月一览的语义化文本：指定农历年每个流月一行，写农历月、阳历起止日、
 // 流月命宫所在的本命宫、干支与四化落宫。闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），
 // 月号前加「闰」并注明农历日区间。lunarYear 不在 1-9999 时返回 ErrInvalidArgument。

@@ -7,9 +7,10 @@ import (
 	"testing"
 )
 
-// TestTextWithKnowledgeParity 断言八类带释义文本与 Rust 侧快照逐字节相同
+// TestTextWithKnowledgeParity 断言九类带释义文本与 Rust 侧快照逐字节相同
 // （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，
-// patterns 默认口径，流月一览取农历 2025 年），并确认零值 Knowledge 的输出仍等于不带释义的原快照。
+// patterns 默认口径，流年一览取农历 2001-2012 年，流月一览取农历 2025 年），
+// 并确认零值 Knowledge 的输出仍等于不带释义的原快照。
 func TestTextWithKnowledgeParity(t *testing.T) {
 	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
@@ -32,6 +33,9 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 			return chart.FlankingPalacesToTextWith(soul, o)
 		},
 		"decadals": chart.DecadalListToTextWith,
+		"yearlies": func(o TextOptions) (string, error) {
+			return chart.YearlyOverviewToTextWith(2001, 2012, o)
+		},
 		"monthlies": func(o TextOptions) (string, error) {
 			return chart.MonthlyListToTextWith(2025, o)
 		},

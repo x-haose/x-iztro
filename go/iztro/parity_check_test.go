@@ -609,8 +609,8 @@ func textSnapshot(t *testing.T, name string) string {
 // TestTextParity 断言 Go 侧各 ToText 输出与 Rust 侧快照逐字节相同。
 //
 // 快照由 Rust 侧写在 tests/golden/text_snapshots/，固定盘 2000-8-16 时辰 2
-// 女命、运限目标 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，流月一览取农历 2025 年
-// （含闰六月）。措辞、字段顺序、
+// 女命、运限目标 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，流年一览取农历 2001-2012 年，
+// 流月一览取农历 2025 年（含闰六月）。措辞、字段顺序、
 // 段落增删任一处漂移都会暴露；有意改动文本时按 Rust 侧的流程重建快照，两侧一起更新。
 func TestTextParity(t *testing.T) {
 	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
@@ -631,6 +631,7 @@ func TestTextParity(t *testing.T) {
 			"surrounded": func() (string, error) { return chart.SurroundedPalacesToText(PalaceTarget{Key: PalaceSoul}) },
 			"flanking":   func() (string, error) { return chart.FlankingPalacesToText(PalaceTarget{Key: PalaceSoul}) },
 			"decadals":   chart.DecadalListToText,
+			"yearlies":   func() (string, error) { return chart.YearlyOverviewToText(2001, 2012) },
 			"monthlies":  func() (string, error) { return chart.MonthlyListToText(2025) },
 		} {
 			got, err := get()

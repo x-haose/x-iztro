@@ -681,6 +681,42 @@ class Astrolabe:
         data = self._context_query("yearlyList", decadal_ordinal=ordinal, palace_key=key)
         return [YearlyListItem._from_dict(d) for d in data]
 
+    def yearly_overview_to_text(
+        self,
+        from_year: int,
+        to_year: int,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    ) -> str:
+        """
+        流年一览的语义化文本：农历 `from_year` 年到 `to_year` 年（含两端）每年一行，写年份、干支、
+        正月初一的阳历日期、虚岁、大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。
+
+        各年与 `horoscope_of_year` 同一口径；未起运的年份大限一格写童限，改历年里没有正月时正月初一
+        一格写「—」。区间可跨大限，连续若干年一次拿到，不必逐年取运限。
+
+        Args:
+            from_year: 起始农历年份 (1-9999)
+            to_year: 截止农历年份 (1-9999)，不早于 `from_year`
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各年四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文），
+                默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+
+        Raises:
+            IztroError: `from_year` 晚于 `to_year`、某一年不在 1-9999，或某一年六月初一落在支持范围外；
+                `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+        """
+        return self._context_query(
+            "yearlyOverviewToText",
+            from_year=from_year,
+            to_year=to_year,
+            knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
+        )
+
     def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem]:
         """
         指定农历年的全部流月，按月份先后排列。

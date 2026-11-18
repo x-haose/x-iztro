@@ -247,6 +247,14 @@ def test_horoscope_of_year_recomputes_by_year():
     assert of_year.to_text() != a.horoscope(of_year.solar_date).to_text()
 
 
+def test_yearly_overview_to_text_rejects_bad_ranges():
+    """流年一览的区间颠倒、年份越界报 invalid_argument。"""
+    for from_year, to_year in ((2012, 2001), (0, 1), (9999, 10000)):
+        with pytest.raises(IztroError) as info:
+            chart().yearly_overview_to_text(from_year, to_year)
+        assert info.value.code == "invalid_argument", (from_year, to_year)
+
+
 # ------ 按农历月取运限 ------
 
 

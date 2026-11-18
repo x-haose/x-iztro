@@ -168,6 +168,10 @@ pub struct QueryInput {
     pub decadal_ordinal: Option<usize>,
     /// 农历年份，`monthlyList` 与 `monthlyListToText` 用
     pub year: Option<i64>,
+    /// `yearlyOverviewToText` 的起始农历年（含）；与 `to_year` 都必给
+    pub from_year: Option<i64>,
+    /// `yearlyOverviewToText` 的截止农历年（含）；早于 `from_year` 由内核报 invalid_argument
+    pub to_year: Option<i64>,
     /// `monthlyList` 是否把闰月拆成前后半月；独立于排盘的 `fix_leap`，
     /// 缺省为 true（与 iztro `monthlyList(year, fixLeap = true)` 一致）。
     /// 复用排盘那个会让「盘按闰月下半月安星」与「列表拆不拆闰月」这两件事纠缠在一起
@@ -610,6 +614,7 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "surroundedPalacesToText"
         | "flankingPalacesToText"
         | "decadalListToText"
+        | "yearlyOverviewToText"
         | "monthlyListToText"
         | "patternsToText"
         | "horoscopePatternsToText"
@@ -946,7 +951,7 @@ fn parse_text_through(s: &str) -> Result<Option<Scope>, BridgeError> {
 /// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
 /// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时按 `knowledgeDepth` 附按盘取材的释义，
 /// 事实详略按 `detail`，运限文本写到 `through` 这一层为止；运限类 kind 的目标见 [`horoscope_at`]，
-/// `monthlyListToText` 的农历年份取 `year`
+/// `yearlyOverviewToText` 的农历年区间取 `fromYear` 与 `toYear`，`monthlyListToText` 的农历年份取 `year`
 fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
@@ -1013,6 +1018,14 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
             crate::flanking_palaces_to_text_with(&f, &opts, language)
         }
         "decadalListToText" => crate::decadal_list_to_text_with(&astrolabe, &opts, language),
+        "yearlyOverviewToText" => {
+            let (Some(from), Some(to)) = (input.from_year, input.to_year) else {
+                return Err(BridgeError::invalid_argument(
+                    "yearlyOverviewToText requires 'fromYear' and 'toYear'",
+                ));
+            };
+            crate::yearly_overview_to_text_with(&astrolabe, from, to, &opts, language)?
+        }
         "monthlyListToText" => {
             let year = input.year.ok_or_else(|| {
                 BridgeError::invalid_argument("monthlyListToText requires 'year'".to_string())
@@ -1981,6 +1994,61 @@ mod tests {
         for (extra, want) in [
             (json!({}), "monthlyListToText requires 'year'"),
             (json!({"year": 0}), "invalid year 0"),
+        ] {
+            let err = run(extra.clone()).unwrap_err();
+            assert_eq!(err.code, "invalid_argument", "{extra}");
+            assert!(err.message.contains(want), "{extra}: {}", err.message);
+        }
+    }
+
+    /// `yearlyOverviewToText` 按 `fromYear`/`toYear` 出流年一览，与原生同文；`detail`、`through` 不影响它；
+    /// 缺任一端、区间颠倒或年份越界报错。
+    #[test]
+    fn yearly_overview_text_takes_a_lunar_year_range() {
+        let run = |extra: Value| {
+            let mut q = json!({
+                "kind": "yearlyOverviewToText",
+                "solarDate": "2000-8-16",
+                "timeIndex": 2,
+                "gender": "female",
+                "language": "zh-CN",
+            });
+            for (k, v) in extra.as_object().unwrap() {
+                q[k] = v.clone();
+            }
+            query(&serde_json::from_value::<QueryInput>(q).unwrap())
+        };
+
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let text = run(json!({"fromYear": 2001, "toYear": 2012})).unwrap();
+        assert_eq!(
+            text,
+            json!(chart.yearly_overview_to_text(2001, 2012).unwrap())
+        );
+        assert_eq!(
+            run(json!({"fromYear": 2001, "toYear": 2012, "detail": "overview", "through": "decadal"}))
+                .unwrap(),
+            text
+        );
+
+        let missing = "yearlyOverviewToText requires 'fromYear' and 'toYear'";
+        for (extra, want) in [
+            (json!({}), missing),
+            (json!({"fromYear": 2001}), missing),
+            (json!({"toYear": 2012}), missing),
+            (
+                json!({"fromYear": 2012, "toYear": 2001}),
+                "invalid year range 2012-2001",
+            ),
+            (json!({"fromYear": 0, "toYear": 1}), "invalid year 0"),
         ] {
             let err = run(extra.clone()).unwrap_err();
             assert_eq!(err.code, "invalid_argument", "{extra}");

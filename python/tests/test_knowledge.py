@@ -43,7 +43,7 @@ def _snapshot(name: str) -> str:
 
 
 def _texts(chart, horoscope, **kw) -> dict[str, str]:
-    """八类语义化文本，键与快照文件名前缀一致；流月一览取农历 2025 年。"""
+    """九类语义化文本，键与快照文件名前缀一致；流年一览取农历 2001-2012 年，流月一览取农历 2025 年。"""
     soul = chart.palace(PalaceName.SOUL)
     return {
         "astrolabe": chart.to_text(**kw),
@@ -53,6 +53,7 @@ def _texts(chart, horoscope, **kw) -> dict[str, str]:
         "surrounded": soul.surrounded_palaces().to_text(**kw),
         "flanking": chart.flanking_palaces(PalaceName.SOUL).to_text(**kw),
         "decadals": chart.decadal_list_to_text(**kw),
+        "yearlies": chart.yearly_overview_to_text(2001, 2012, **kw),
         "monthlies": chart.monthly_list_to_text(2025, **kw),
     }
 
@@ -124,13 +125,13 @@ def test_merge_overrides_only_given_fields(pack):
 
 
 def test_text_with_builtin_knowledge_matches_rust_snapshots(chart, horoscope):
-    """`knowledge=True` 的七类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
+    """`knowledge=True` 的九类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
     for kind, text in _texts(chart, horoscope, knowledge=True).items():
         assert text == _snapshot(f"{kind}_knowledge_zh-CN"), kind
 
 
 def test_text_with_summary_knowledge_matches_rust_snapshots(chart, horoscope):
-    """摘要层的七类输出与 Rust 快照逐字节相同。"""
+    """摘要层的九类输出与 Rust 快照逐字节相同。"""
     summary = KnowledgeDepth.SUMMARY
     for kind, text in _texts(chart, horoscope, knowledge=True, knowledge_depth=summary).items():
         assert text == _snapshot(f"{kind}_summary_zh-CN"), kind

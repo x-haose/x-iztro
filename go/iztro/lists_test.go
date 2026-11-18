@@ -296,7 +296,7 @@ func TestFlankingPalacesJudgements(t *testing.T) {
 }
 
 // TestHoroscopeOfYear 校验按农历年取运限：流年是该农历年的（公历同年 1 月 1 日还在上一个农历年），
-// 越界年份报错，返回的运限再发起计算时转发的仍是年份。
+// 越界年份报错，返回的运限再发起计算时转发的仍是年份；流年一览的区间颠倒或年份越界报错。
 func TestHoroscopeOfYear(t *testing.T) {
 	a := listChart(t, true)
 
@@ -341,6 +341,12 @@ func TestHoroscopeOfYear(t *testing.T) {
 	}
 	if other, err := earlyZi.ToText(); err != nil || text == other {
 		t.Errorf("年份运限的文本不应等于按 SolarDate 早子时重算的文本（err=%v）", err)
+	}
+
+	for _, r := range [][2]int{{2012, 2001}, {0, 1}, {9999, 10000}} {
+		if _, err := a.YearlyOverviewToText(r[0], r[1]); !errors.Is(err, ErrInvalidArgument) {
+			t.Errorf("流年一览 %d-%d 应报 ErrInvalidArgument，实际 %v", r[0], r[1], err)
+		}
 	}
 }
 
