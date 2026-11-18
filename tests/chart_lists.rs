@@ -379,3 +379,29 @@ fn horoscope_of_month_rejects_a_month_the_lunar_year_lacks() {
         );
     }
 }
+
+/// 流年一览每行与按年取运限一致；未起运的年份大限写童限；区间颠倒报错。
+#[test]
+fn yearly_overview_rows_follow_the_horoscope_of_each_year() {
+    let a = chart("2000-8-16", 2);
+    let text = a.yearly_overview_to_text(2001, 2012).unwrap();
+    let rows: Vec<&str> = text.lines().filter(|l| l.starts_with("| 20")).collect();
+    assert_eq!(rows.len(), 12);
+    let name = |index: usize| translate_palace(a.palaces[index].name, Language::ZhCN);
+    for (row, year) in rows.iter().zip(2001..=2012) {
+        let h = a.horoscope_of_year(year).unwrap();
+        let cells: Vec<&str> = row.split(" | ").collect();
+        assert_eq!(cells[3], h.age.nominal_age.to_string(), "{year}");
+        assert!(cells[4].ends_with(name(h.decadal.index)), "{year}: {row}");
+        assert_eq!(
+            cells[4].contains("童限"),
+            h.decadal.name_key == HoroscopeName::Childhood,
+            "{year}: {row}"
+        );
+        assert_eq!(cells[6], name(h.yearly.index), "{year}");
+    }
+    assert!(matches!(
+        a.yearly_overview_to_text(2012, 2001),
+        Err(IztroError::InvalidArgument(_))
+    ));
+}

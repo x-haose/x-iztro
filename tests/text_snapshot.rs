@@ -19,7 +19,7 @@ use x_iztro::text::{
     flanking_palaces_to_text, flanking_palaces_to_text_with, horoscope_to_text,
     horoscope_to_text_with, monthly_list_to_text, monthly_list_to_text_with, palace_to_text,
     palace_to_text_with, patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
-    surrounded_palaces_to_text_with,
+    surrounded_palaces_to_text_with, yearly_overview_to_text, yearly_overview_to_text_with,
 };
 use x_iztro::{KnowledgePack, TextDetail, TextOptions, by_solar, get_horoscope};
 
@@ -37,6 +37,8 @@ const BIRTH_DATE: &str = "2000-8-16";
 const BIRTH_TIME_INDEX: u8 = 2;
 const TARGET_DATE: &str = "2025-1-1";
 const TARGET_TIME_INDEX: u8 = 0;
+/// 流年一览取的农历年区间：前两年未起运（童限），其后跨两个大限
+const YEARLY_RANGE: (i64, i64) = (2001, 2012);
 /// 流月一览取的农历年：2025 年有闰六月，覆盖闰月拆成前后半月的两行
 const MONTHLY_YEAR: i64 = 2025;
 /// 主题文本取的主题：夫妻宫连三方四正，另有命宫、身宫与子女宫，覆盖两组宫位与去重
@@ -68,8 +70,8 @@ fn assert_snapshot(name: &str, actual: &str) {
     );
 }
 
-/// 八类输出的名称；带释义形态在名称后加 `_knowledge`
-const KINDS: [&str; 8] = [
+/// 九类输出的名称；带释义形态在名称后加 `_knowledge`
+const KINDS: [&str; 9] = [
     "astrolabe",
     "horoscope",
     "patterns",
@@ -77,14 +79,15 @@ const KINDS: [&str; 8] = [
     "surrounded",
     "flanking",
     "decadals",
+    "yearlies",
     "monthlies",
 ];
 
-/// 受事实详略影响的五类输出（格局、大限一览与流月一览本身就是总览）
+/// 受事实详略影响的五类输出（格局、大限一览、流年一览与流月一览本身就是总览）
 const DETAIL_KINDS: [&str; 5] = ["astrolabe", "horoscope", "palace", "surrounded", "flanking"];
 
-/// 快照目录的文件集必须恰为：八类输出 × 两种语言、五类总览输出 × 两种语言、
-/// 八类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
+/// 快照目录的文件集必须恰为：九类输出 × 两种语言、五类总览输出 × 两种语言、
+/// 九类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
     let expected: std::collections::BTreeSet<String> = ["zh-CN", "en-US"]
@@ -215,6 +218,17 @@ fn decadal_list_text_matches_snapshot() {
 }
 
 #[test]
+fn yearly_overview_text_matches_snapshot() {
+    for (lang, tag) in LANGS {
+        let astrolabe = chart(lang);
+        assert_snapshot(
+            &format!("yearlies_{tag}"),
+            &yearly_overview_to_text(&astrolabe, YEARLY_RANGE.0, YEARLY_RANGE.1, lang).unwrap(),
+        );
+    }
+}
+
+#[test]
 fn monthly_list_text_matches_snapshot() {
     for (lang, tag) in LANGS {
         let astrolabe = chart(lang);
@@ -270,6 +284,11 @@ fn text_with_knowledge_matches_snapshot() {
     assert_snapshot(
         "decadals_knowledge_zh-CN",
         &decadal_list_to_text_with(&astrolabe, &opts, lang),
+    );
+    assert_snapshot(
+        "yearlies_knowledge_zh-CN",
+        &yearly_overview_to_text_with(&astrolabe, YEARLY_RANGE.0, YEARLY_RANGE.1, &opts, lang)
+            .unwrap(),
     );
     assert_snapshot(
         "monthlies_knowledge_zh-CN",
@@ -337,6 +356,11 @@ fn text_with_summary_knowledge_matches_snapshot() {
         (
             "decadals",
             decadal_list_to_text_with(&astrolabe, &opts, lang),
+        ),
+        (
+            "yearlies",
+            yearly_overview_to_text_with(&astrolabe, YEARLY_RANGE.0, YEARLY_RANGE.1, &opts, lang)
+                .unwrap(),
         ),
         (
             "monthlies",

@@ -8,7 +8,7 @@
 //!
 //! 覆盖对象：本命盘（[`astrolabe_to_text`]）、运限（[`horoscope_to_text`]）、
 //! 格局命中（[`patterns_to_text`]）、单宫（[`palace_to_text`]）、
-//! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览、流月一览。各对象另有同名 `to_text` 便捷方法。
+//! 三方四正（[`surrounded_palaces_to_text`]）、夹宫、大限一览、流年一览、流月一览。各对象另有同名 `to_text` 便捷方法。
 //! `*_to_text_with` 收 [`TextOptions`]，两个开关互相独立：[`TextDetail`] 管事实写到多细，
 //! [`KnowledgeDepth`] 管释义写多长；运限文本另有 [`TextOptions::horoscope_through`] 管写到哪一层。释义随段落而不随表格——宫位段落之后紧跟该宫星耀的释义，
 //! 格局列表之后紧跟格局释义，运限各层级段之后紧跟流耀与格局释义，本命文末附四化释义，
@@ -323,6 +323,9 @@ labels_table! {
     col_age_range: ["虚岁", "虛歲", "Nominal Age", "数え年", "나이", "Tuổi ta"],
     col_year_range: ["年份", "年份", "Years", "年", "연도", "Năm"],
     doc_monthlies: ["流月一览", "流月一覽", "Monthly Timeline", "流月一覧", "유월 일람", "Tổng quan Lưu nguyệt"],
+    doc_yearlies: ["流年一览", "流年一覽", "Yearly Timeline", "流年一覧", "유년 일람", "Tổng quan Lưu niên"],
+    col_new_year: ["正月初一", "正月初一", "Lunar New Year", "旧正月", "설날", "Tết"],
+    col_year: ["年份", "年份", "Year", "年", "연도", "Năm"],
     col_lunar_month: ["农历月", "農曆月", "Lunar Month", "旧暦月", "음력 월", "Tháng âm lịch"],
     leap_month: ["闰", "閏", "leap", "閏", "윤", "nhuận"],
     // 宫干飞化行的标签模板，`{}` 处填宫干
@@ -1558,6 +1561,90 @@ pub fn horoscope_to_text_with(
     out
 }
 
+/// 连续若干农历年的流年一览（只含事实）
+///
+/// # Errors
+/// 同 [`yearly_overview_to_text_with`]。
+pub fn yearly_overview_to_text(
+    astrolabe: &Astrolabe,
+    from: i64,
+    to: i64,
+    lang: Language,
+) -> Result<String, IztroError> {
+    yearly_overview_to_text_with(astrolabe, from, to, &TextOptions::default(), lang)
+}
+
+/// 农历 `from` 年到 `to` 年（含两端）的流年一览：每年一行，写年份、干支、正月初一的阳历日期、虚岁、
+/// 大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。各年取
+/// [`Astrolabe::horoscope_of_year`]，与按年取运限同一口径；未起运的年份大限一格写童限。
+/// 改历年里没有正月时正月初一一格写「—」。带知识包时表后附四化星释义（跨行去重）。
+///
+/// # Errors
+/// `from` 大于 `to` 时返回 [`IztroError::InvalidArgument`]；某一年不在 1-9999 时同
+/// [`Astrolabe::horoscope_of_year`]。
+pub fn yearly_overview_to_text_with(
+    astrolabe: &Astrolabe,
+    from: i64,
+    to: i64,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError> {
+    if from > to {
+        return Err(IztroError::InvalidArgument(format!(
+            "invalid year range {from}-{to}: the first year is after the last"
+        )));
+    }
+    let l = labels(lang);
+    let years = (from..=to)
+        .map(|year| Ok((year, astrolabe.horoscope_of_year(year)?.into_data())))
+        .collect::<Result<Vec<_>, IztroError>>()?;
+    let mut out = format!("# {} {from}-{to}\n\n", l.doc_yearlies);
+
+    out.push_str(&format!(
+        "| {} | {} | {} | {} | {} | {} | {}{}{} | {} |\n|---|---|---|---|---|---|---|---|\n",
+        l.col_year,
+        l.col_stem_branch,
+        l.col_new_year,
+        l.nominal_age,
+        l.decadal_fortune,
+        l.age_fortune,
+        l.yearly,
+        l.label_sep,
+        l.soul_palace,
+        l.mutagen_fly,
+    ));
+    let palace = |index: usize| translate_palace(astrolabe.palaces[index].name, lang);
+    for (year, h) in &years {
+        let new_year = crate::calendar::solar_date_of(*year, 1, 1)
+            .map_or_else(|| NONE_MARK.to_string(), |(y, m, d)| format!("{y}-{m}-{d}"));
+        let decadal = if h.decadal.name_key == crate::data::types::HoroscopeName::Childhood {
+            format!(
+                "{}{FIELD_SEP}{}",
+                l.childhood_fortune,
+                palace(h.decadal.index)
+            )
+        } else {
+            palace(h.decadal.index).to_string()
+        };
+        out.push_str(&format!(
+            "| {year} | {} | {new_year} | {} | {decadal} | {} | {} | {} |\n",
+            stem_branch(h.yearly.heavenly_stem, h.yearly.earthly_branch, &l, lang),
+            h.age.nominal_age,
+            palace(h.age.index),
+            palace(h.yearly.index),
+            mutagen_stars_with_places(astrolabe, &h.yearly.mutagen, true, &l, lang),
+        ));
+    }
+
+    out.push_str(&mutagen_star_notes(
+        years.iter().map(|(_, h)| h.yearly.mutagen.as_slice()),
+        opts,
+        &l,
+        lang,
+    ));
+    Ok(out)
+}
+
 // ============================================================
 // 主题
 // ============================================================
@@ -1762,6 +1849,27 @@ impl Astrolabe {
         opts: &TextOptions,
     ) -> Result<String, IztroError> {
         monthly_list_to_text_with(self, year, opts, self.language)
+    }
+
+    /// 流年一览的语义化文本（按排盘语言）；[`yearly_overview_to_text`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`yearly_overview_to_text_with`]。
+    pub fn yearly_overview_to_text(&self, from: i64, to: i64) -> Result<String, IztroError> {
+        yearly_overview_to_text(self, from, to, self.language)
+    }
+
+    /// 流年一览文本，按选项附释义；[`yearly_overview_to_text_with`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`yearly_overview_to_text_with`]。
+    pub fn yearly_overview_to_text_with(
+        &self,
+        from: i64,
+        to: i64,
+        opts: &TextOptions,
+    ) -> Result<String, IztroError> {
+        yearly_overview_to_text_with(self, from, to, opts, self.language)
     }
 
     /// 主题文本（按排盘语言）；[`topic_to_text`] 的便捷形态
