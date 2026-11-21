@@ -422,7 +422,10 @@ Convenience methods that emit in the chart language: `Astrolabe::to_text()`,
 `to_text_with` taking `&TextOptions`. The free functions' `lang` may differ from the charting
 language: structural labels, star names, hours, zodiac signs, stems and branches and flowing stars
 are all re-translated by key into the target language, byte-identical to a chart cast in that
-language.
+language. `HoroscopeData` carries no query precision, so `horoscope_to_text(_with)` without
+`horoscope_through` writes through the hourly scope; `HoroscopeRef::to_text()` / `to_text_with`
+stop at the horoscope's query precision by default, and `to_text_with` returns
+`IztroError::InvalidArgument` for a scope finer than it.
 
 **Parameters**
 
@@ -507,7 +510,8 @@ Wiring it to a model is covered on [Docs for AI](/en/docs/guide/guides/llm).
 
 **Purpose** Output options for the to_text family: level of detail, source and depth of readings,
 the scope the horoscope text stops at, and the pattern criteria. By default the full facts are
-written, without readings, the horoscope text goes through the hourly scope, and patterns are
+written, without readings, the horoscope text stops at the query precision (the free functions go
+through the hourly scope), and patterns are
 judged under the default criteria. With a knowledge pack, each palace section's facts are followed by
 readings of that palace's stars (same-palace major-star combinations `**A × B (same palace)**: `
 first), the pattern list is followed by pattern readings (with a `Conditions: ` line at the full
@@ -543,7 +547,7 @@ pub enum KnowledgeDepth { Summary, Full }     // default Full; keys "summary" / 
 | `detail(TextDetail)` | Level of detail: with `Overview` the natal text keeps basic info, the palace overview table and the patterns; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace sections give major, minor and adjective stars only. Patterns and the decadal, yearly and monthly timelines are unaffected |
 | `knowledge(&pack)` | Pick full readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
 | `knowledge_summary(&pack)` | As above, at the summary layer: an entry's summary, or a body no wider than [`SUMMARY_FALLBACK_WIDTH`](/en/docs/rust/knowledge#summary_fallback_width); patterns without their conditions. Returns `IztroError::InvalidArgument` listing every missing entry when a long body lacks its summary |
-| `horoscope_through(Scope)` | [Stop the horoscope text at `scope`](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Decadal` writes the decadal only, `Yearly` the decadal, age fortune and yearly, and `Monthly` / `Daily` / `Hourly` one more scope each; unset writes through the hourly scope. Acts on the horoscope text only; `Scope::Origin` returns `IztroError::InvalidArgument` |
+| `horoscope_through(Scope)` | [Stop the horoscope text at `scope`](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Decadal` writes the decadal only, `Yearly` the decadal, age fortune and yearly, and `Monthly` / `Daily` / `Hourly` one more scope each; unset, `HoroscopeRef::to_text_with` stops at the query precision and the free functions write through the hourly scope. Stopped at `Decadal`, the decadal section leaves out Feng Yun Ji Hui. Acts on the horoscope text only; `Scope::Origin` returns `IztroError::InvalidArgument`, and `HoroscopeRef::to_text_with` returns the same error for a scope finer than the query precision |
 | `pattern_config(&config)` | Judge patterns under `config`, the same argument as [`patterns_with`](/en/docs/rust/patterns#patterns_with); acts on both the text's pattern section and the pattern readings. Unset means `PatternConfig::default()` |
 | `knowledge_pack()` | The current source of readings; `None` means facts only |
 

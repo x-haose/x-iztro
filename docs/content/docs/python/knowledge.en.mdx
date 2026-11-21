@@ -382,7 +382,9 @@ def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = Non
 the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
 `combinations` keep only partners that actually share the palace), `patterns` the hits under the
 `config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
-each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+the flowing stars and the patterns hit from each perspective from the decadal scope down to the
+horoscope's [query precision](/en/docs/python/horoscope#precision): hourly for a date, yearly for
+`horoscope_of_year`, monthly for `horoscope_of_month`.
 Pair the sub-pack with `patterns(config)` / `patterns_to_text(config)` under the same criteria:
 different criteria hit different sets, and the readings would then miss or over-include entries.
 The selection rule is on [Picking by chart](/en/docs/guide/guides/knowledge-pack#picking-by-chart).

@@ -373,7 +373,8 @@ def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = Non
 **返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
 （主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
 `patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
-`for_horoscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+`for_horoscope` 在此之上再加大限到运限[查询精度](/zh/docs/python/horoscope#precision)各层的流耀与各层视角命中的格局：
+按日期取的到流时，`horoscope_of_year` 取的到流年，`horoscope_of_month` 取的到流月。
 子包要和 `patterns(config)` / `patterns_to_text(config)` 配同一口径：口径不同，命中集合不同，
 释义就会缺项或多项。
 取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。

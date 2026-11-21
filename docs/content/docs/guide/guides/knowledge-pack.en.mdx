@@ -323,13 +323,21 @@ material on top:
 
 | Section | `for_astrolabe` | `for_horoscope` adds |
 | --- | --- | --- |
-| `stars` | The stars on the twelve palaces: major, minor, adjective and the four groups of twelve gods; the 14 major stars' `combinations` keep only partners that actually share the palace | Each scope's flowing stars |
-| `patterns` | Patterns hit under the pattern criteria | Patterns hit from the decadal down to the hourly perspective |
+| `stars` | The stars on the twelve palaces: major, minor, adjective and the four groups of twelve gods; the 14 major stars' `combinations` keep only partners that actually share the palace | The flowing stars of each scope from the decadal down to the query precision |
+| `patterns` | Patterns hit under the pattern criteria | Patterns hit from the decadal perspective down to the query precision |
 | `mutagens` | All four entries Lu, Quan, Ke, Ji, independent of the chart | — |
 | `palaces` / `concepts` | Empty — palaces and glossary do not depend on the chart; read them from the full pack as needed | — |
 
+The horoscope scopes go only down to the precision of the horoscope's target: hourly for a date,
+yearly for a lunar year, monthly for a lunar month — the finer scopes belong to a representative day
+the kernel picked and stay out of the sub-pack. Python and Go take the horoscope object and follow
+its precision; Rust's `for_horoscope(&chart, data)` goes down to the hourly scope, so for a
+horoscope of a year or a month use `for_horoscope_with(&chart, h.data(), h.precision(), &PatternConfig)`.
+Stopping at the decadal scope leaves out Feng Yun Ji Hui (it needs the age fortune and the yearly
+scope), matching the [horoscope text stopped at the decadal scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes).
+
 The pattern criteria are optional: Rust takes `for_astrolabe_with(&chart, &PatternConfig)` /
-`for_horoscope_with(&chart, &h, &PatternConfig)` (the two without `_with` use the default),
+`for_horoscope_with(&chart, data, through, &PatternConfig)` (the two without `_with` use the default),
 Python a `config=` keyword, Go a second `*PatternConfig` argument (`nil` for the default). Pair the
 sub-pack with `patterns` / `patterns_to_text` under the same criteria: different criteria hit
 different sets, and the readings would then miss or over-include entries. Go also offers

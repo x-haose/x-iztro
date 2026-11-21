@@ -454,7 +454,8 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 `horoscope_now` takes the current date and hour from the local clock and has no parameters.
 
 **Return value** `HoroscopeRef<'_>` — a horoscope view holding this chart, so palace lookups across
-the six scopes need not be passed the astrolabe again.
+the six scopes need not be passed the astrolabe again; its precision (`precision()`) is the hourly
+scope, with or without an hour.
 Details on [the horoscope object](/en/docs/rust/horoscope).
 
 **Example**
@@ -505,7 +506,7 @@ pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroErro
 
 **Return value** `HoroscopeRef<'_>` — its target date is the first day of that lunar year's sixth
 month and its hour follows the hour pillar's branch, the same convention as
-[`yearly_list`](/en/docs/rust/horoscope#yearly_list).
+[`yearly_list`](/en/docs/rust/horoscope#yearly_list); its precision (`precision()`) is `Scope::Yearly`.
 
 **Example**
 
@@ -541,9 +542,9 @@ why the yearly scope of solar 2027-1-1 is still bing woo. Under the default divi
 the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
 `age_divide` set to `AgeDivide::Birthday` or `horoscope_divide` set to `HoroscopeDivide::Exact`
 they can still change within the year, and the result is the one for the first day of the sixth
-month. The monthly, daily and hourly scopes are in the result too, likewise for that day —
-[`TextOptions::horoscope_through(Scope::Yearly)`](/en/docs/rust/astro#textoptions) stops the text
-at the yearly scope. A year outside 1–9999 returns `IztroError::InvalidArgument`. For one row per
+month. The monthly, daily and hourly scopes are in the result too, likewise for that day, and are
+not the answer to the query: `to_text` stops at the yearly scope by default, and a text or pattern
+scope finer than yearly returns `IztroError::InvalidArgument`. A year outside 1–9999 returns `IztroError::InvalidArgument`. For one row per
 year over a run of years, use [`yearly_overview_to_text`](/en/docs/rust/horoscope#yearly_overview_to_text).
 </Callout>
 
@@ -569,7 +570,7 @@ pub fn horoscope_of_month(&self, year: i64, month: u32) -> Result<HoroscopeRef<'
 
 **Return value** `HoroscopeRef<'_>` — its target date is the first day of that (non-leap) month and
 its hour follows the hour pillar's branch, the same convention as a whole-month entry of
-[`monthly_list`](/en/docs/rust/horoscope#monthly_list).
+[`monthly_list`](/en/docs/rust/horoscope#monthly_list); its precision (`precision()`) is `Scope::Monthly`.
 
 **Example**
 
@@ -596,9 +597,9 @@ monthly jia shen
 A leap month has no number of its own: under the default dividing configuration the first half of a
 leap month follows the month it repeats and the second half the next one —
 [`monthly_list_to_text`](/en/docs/rust/horoscope#monthly_list_to_text) gives the dates. The daily
-and hourly scopes are in the result too, for the first day of that month —
-[`TextOptions::horoscope_through(Scope::Monthly)`](/en/docs/rust/astro#textoptions) stops the text
-at the monthly scope. A year outside 1–9999 or a month outside 1–12 returns
+and hourly scopes are in the result too, for the first day of that month: `to_text` stops at the
+monthly scope by default, and a text or pattern scope finer than monthly returns
+`IztroError::InvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns
 `IztroError::InvalidArgument`.
 When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>

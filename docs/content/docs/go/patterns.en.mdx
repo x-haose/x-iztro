@@ -245,7 +245,9 @@ gives exactly what `Patterns(nil)` on the astrolabe gives.
 
 **Errors**　A horoscope not created by `Astrolabe.Horoscope` returns
 `iztro: horoscopePatterns: horoscope must be created by Astrolabe.Horoscope`; an unrecognised
-`scope` returns `unknown scope`.
+`scope` returns `unknown scope`; a `scope` finer than the horoscope's
+[query precision](/en/docs/go/horoscope#precision) (such as `ScopeMonthly` on a horoscope from
+`HoroscopeOfYear`) returns `ErrInvalidArgument`, and likewise for `PatternsToText`.
 
 **Example**
 

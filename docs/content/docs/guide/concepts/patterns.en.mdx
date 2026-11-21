@@ -179,7 +179,7 @@ Soul palace there.
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-for hit in h.patterns(Scope::Decadal) {
+for hit in h.patterns(Scope::Decadal)? {
     println!("{} {:?}", translate_pattern(hit.key, en), hit.variant);
 }
 ```
@@ -223,6 +223,10 @@ Asking a horoscope object for the `origin` level gives exactly what calling `pat
 astrolabe gives.
 </Callout>
 
+The view cannot be finer than the precision of the horoscope's target: a horoscope of a lunar year
+goes down to the yearly level and one of a lunar month to the monthly level; the finer levels belong
+to a representative day the kernel picked, and asking for them is `invalid_argument`.
+
 ### Two patterns that exist only in horoscope views
 
 Two of the 64 are **transit patterns**: judged only in a horoscope view, never reported on the natal
@@ -238,6 +242,9 @@ chart.
 (a reading some schools prefer); the `same_palace` forms are the strict reading — both limits' Soul
 palaces hold Lucun, Tianma or the Lu transformation in-palace — while the plain forms accept the
 surrounded set. Each pair reports one hit, two at most; on the chart above both pairs hold.
+It is reported at the decadal view but comes and goes with the minor limit and the year, so a
+horoscope text [stopped at the decadal level](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes)
+leaves it out of the decadal section.
 
 ## Which table decides Sun and Moon brightness
 

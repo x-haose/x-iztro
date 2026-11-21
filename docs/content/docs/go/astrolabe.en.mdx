@@ -521,7 +521,8 @@ func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (
 **Return value** `*Horoscope` — its target date is the first day of that lunar year's sixth month and
 its hour follows the hour pillar's branch, the same convention as
 [`YearlyList`](/en/docs/go/horoscope#yearlylist--yearlylistbypalace). Whatever it computes afterwards
-(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year.
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year; its precision
+([`Precision()`](/en/docs/go/horoscope#precision)) is `ScopeYearly`.
 
 **Example**
 
@@ -552,8 +553,9 @@ the decadal, age-fortune and yearly scopes stay the same for the whole lunar yea
 `Config.AgeDivide` set to `AgeDivideBirthday` or `Config.HoroscopeDivide` set to
 `HoroscopeDivideExact` they can still change within the year, and the result is the one for the
 first day of the sixth month. The monthly, daily and hourly scopes are in the result too, likewise
-for that day — [`TextOptions{Through: ScopeYearly}`](/en/docs/go/knowledge#textoptions) stops the
-text at the yearly scope. A year outside 1–9999 returns `ErrInvalidArgument`. For one row per year
+for that day, and are not the answer to the query: `ToText` and picking knowledge by chart stop at
+the yearly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions) or pattern scope
+finer than yearly returns `ErrInvalidArgument`. A year outside 1–9999 returns `ErrInvalidArgument`. For one row per year
 over a run of years, use [`YearlyOverviewToText`](/en/docs/go/horoscope#yearlyoverviewtotext).
 </Callout>
 
@@ -581,7 +583,8 @@ func (a *Astrolabe) HoroscopeOfMonthContext(ctx context.Context, lunarYear int, 
 **Return value** `*Horoscope` — its target date is the first day of that (non-leap) month and its
 hour follows the hour pillar's branch, the same convention as a whole-month entry of
 [`MonthlyList`](/en/docs/go/horoscope#monthlylist). Whatever it computes afterwards
-(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year and month.
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year and month; its
+precision ([`Precision()`](/en/docs/go/horoscope#precision)) is `ScopeMonthly`.
 
 **Example**
 
@@ -605,9 +608,9 @@ monthly jiashen
 A leap month has no number of its own: under the default dividing configuration the first half of a
 leap month follows the month it repeats and the second half the next one —
 [`MonthlyListToText`](/en/docs/go/horoscope#monthlylisttotext) gives the dates. The daily and hourly
-scopes are in the result too, for the first day of that month —
-[`TextOptions{Through: ScopeMonthly}`](/en/docs/go/knowledge#textoptions) stops the text at the
-monthly scope. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
+scopes are in the result too, for the first day of that month: `ToText` and picking knowledge by
+chart stop at the monthly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions) or
+pattern scope finer than monthly returns `ErrInvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
 When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>
 

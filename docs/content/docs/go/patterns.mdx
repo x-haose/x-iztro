@@ -235,7 +235,8 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 
 **错误**　运限不是由 `Astrolabe.Horoscope` 发起时返回
 `iztro: horoscopePatterns: horoscope must be created by Astrolabe.Horoscope`；
-`scope` 不是合法层级标识时返回 `unknown scope`。
+`scope` 不是合法层级标识时返回 `unknown scope`；`scope` 比运限的[查询精度](/zh/docs/go/horoscope#precision)细
+（如 `HoroscopeOfYear` 取的运限传 `ScopeMonthly`）时返回 `ErrInvalidArgument`，`PatternsToText` 同理。
 
 **示例**
 

@@ -485,7 +485,7 @@ let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let opts = TextOptions::new().knowledge(&pack);
 
 chart.to_text_with(&opts);
-h.to_text_with(&opts);
+h.to_text_with(&opts)?;
 chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
@@ -731,10 +731,11 @@ horoscope 5,112, palace 164, surrounded palaces 710, flanking palaces 299.
 
 ## How far the horoscope text goes
 
-The horoscope text writes all six sections by default. The monthly scope and below change with the
-date and the hourly scope with the hour: when the target is only precise to the year or the day, the
-precision that was not given does not belong in the text. `through` stops the horoscope text at a
-scope and leaves the finer ones out:
+By default the horoscope text stops at the **precision** of its target: a horoscope of a date writes
+all six sections, a [horoscope of a lunar year](#horoscope-of-a-lunar-year) stops at the yearly scope
+and a [horoscope of a lunar month](#horoscope-of-a-lunar-month) at the monthly scope — the scopes
+finer than the precision belong to a representative day the kernel picked, not to the question.
+`through` stops the horoscope text at a scope and leaves the finer ones out:
 
 | Value | Sections written | Characters (full / overview) |
 | --- | --- | --- |
@@ -742,13 +743,20 @@ scope and leaves the finer ones out:
 | `yearly` | decadal, age fortune, yearly | 1,636 / 871 |
 | `monthly` | plus monthly | 2,015 / 1,250 |
 | `daily` | plus daily | 2,356 / 1,591 |
-| `hourly` (the default when unset) | all six | 2,697 / 1,932 |
+| `hourly` | all six | 2,697 / 1,932 |
 
 The age fortune is written or left out together with the yearly scope. The character counts are
 measured on the horoscope text of the table in [Layers](#layers) (Chinese chart, target 2025-1-1). `through` is independent of the two switches in
 [Layers](#layers) and acts on the horoscope text only: Python accepts it on the horoscope's
 `to_text` alone, and Go's `TextOptions.Through` has no effect on the other texts. The natal scope
-`origin` and any value that is not a horoscope scope are `invalid_argument`.
+`origin`, any value that is not a horoscope scope, and a scope finer than the precision (such as the
+monthly scope on a horoscope of a year) are `invalid_argument`; a coarser scope is fine.
+
+Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui: it is reported at the
+decadal view but reads whether the age fortune's and the yearly scope's Soul Palaces meet Lu or Ma,
+so within one decade it comes and goes year by year. The decadal section is therefore the same for
+every year of a decade. The [horoscope patterns](/en/docs/guide/concepts/patterns) themselves still
+report Feng Yun Ji Hui; the text scope does not affect them.
 
 ```python
 from x_iztro import Scope
@@ -757,7 +765,7 @@ h.to_text(through=Scope.YEARLY)
 ```
 
 ```rust
-h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?)?;
 ```
 
 ```go
@@ -770,22 +778,22 @@ When the question is about a year, give the target as a **lunar year** instead o
 date yourself. The days from 1 January up to the lunar new year still belong to the previous lunar
 year, so computing from 1 January yields the previous year's yearly scope — the 2025-1-1 target above
 has the yearly stem-branch jia chen, not 2025's yi si. The horoscope of a year takes the first day of
-that year's sixth lunar month as its target date, the same convention as `yearly_list`; stopped at
-the yearly scope, the text carries year-level precision and nothing finer:
+that year's sixth lunar month as its target date, the same convention as `yearly_list`; its precision
+is the yearly scope, so the text stops there by default:
 
 ```python
 h = chart.horoscope_of_year(2027)
-h.to_text(through=Scope.YEARLY)
+h.to_text()
 ```
 
 ```rust
 let h = chart.horoscope_of_year(2027)?;
-h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+h.to_text();
 ```
 
 ```go
 h, _ := chart.HoroscopeOfYear(2027)
-h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+h.ToText()
 ```
 
 ```text
@@ -804,7 +812,7 @@ per year.
 When the question is about a month, give the target as a **lunar year plus a lunar month** instead
 of picking a day on the asker's behalf. The horoscope of a month takes the first day of that
 (non-leap) month as its target date, the same convention as a whole-month entry of `monthly_list`;
-stopped at the monthly scope, the text carries month-level precision and nothing finer. The month
+its precision is the monthly scope, so the text stops there by default. The month
 number is 1-12 and a leap month has no number of its own: under the default divide settings the
 first half of a leap month follows the month it repeats and the second half the next one — the
 monthly timeline gives the dates.
@@ -812,17 +820,17 @@ When `horoscope_divide` is the solar-term divide (exact), the target date is ins
 
 ```python
 h = chart.horoscope_of_month(2025, 7)
-h.to_text(through=Scope.MONTHLY)
+h.to_text()
 ```
 
 ```rust
 let h = chart.horoscope_of_month(2025, 7)?;
-h.to_text_with(&TextOptions::new().horoscope_through(Scope::Monthly)?);
+h.to_text();
 ```
 
 ```go
 h, _ := chart.HoroscopeOfMonth(2025, 7)
-h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeMonthly})
+h.ToText()
 ```
 
 ```text
@@ -876,7 +884,7 @@ system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
           "do not invent information that is not on it.")
 user = f"""{chart.to_text()}
 
-{chart.horoscope_of_year(2025).to_text(through=Scope.YEARLY)}
+{chart.horoscope_of_year(2025).to_text()}
 
 Analyse this person's career prospects for 2025."""
 ```

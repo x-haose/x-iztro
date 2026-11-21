@@ -491,6 +491,7 @@ impl KnowledgePack {
         &self,
         chart: &Astrolabe,
         horoscope: &HoroscopeData,
+        through: Scope,
         config: &PatternConfig,
     ) -> KnowledgePack
 }
@@ -502,13 +503,19 @@ impl KnowledgePack {
 | --- | --- | --- | --- | --- |
 | `chart` | `&Astrolabe` | yes | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
 | `horoscope` | `&HoroscopeData` | yes | — | Horoscope data, available from `HoroscopeRef::data()` |
+| `through` | `Scope` | `for_horoscope_with` only | — | The last horoscope scope to take, usually [`HoroscopeRef::precision()`](/en/docs/rust/horoscope#precision); `for_horoscope` uses `Scope::Hourly`; `Scope::Origin` takes the natal part only, as `for_astrolabe_with` |
 | `config` | `&PatternConfig` | `_with` only | — | Pattern criteria; the two without `_with` use `PatternConfig::default()` |
 
 **Returns**　A standard `KnowledgePack` with the metadata carried over: `stars` holds the stars on
 the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
 `combinations` keep only partners that actually share the palace), `patterns` the hits under the
-`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
-each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` /
+`for_horoscope_with` add the flowing stars and the patterns hit from each perspective from the decadal
+scope down to `through`; with `through` at `Scope::Decadal`, Feng Yun Ji Hui is left out (it needs the
+minor limit and the year), matching the horoscope text stopped at the decadal scope. `HoroscopeData`
+carries no query precision: `for_horoscope` on a horoscope of a year or a month brings in the
+representative day's monthly-and-finer material, so pass
+`for_horoscope_with(&chart, h.data(), h.precision(), &cfg)` instead.
 Pair the sub-pack with [`patterns_with`](/en/docs/rust/patterns#patterns_with) /
 `patterns_to_text_with` under the same criteria: different criteria hit different sets, and the
 readings would then miss or over-include entries.
@@ -527,6 +534,9 @@ println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect
 let h = chart.horoscope("2025-1-1", 0)?;
 let sub = pack.for_horoscope(&chart, h.data());
 println!("{} {}", sub.stars.len(), sub.patterns.len());
+
+let year = chart.horoscope_of_year(2027)?;
+let sub = pack.for_horoscope_with(&chart, year.data(), year.precision(), &PatternConfig::default());   // yearly at most
 ```
 
 **Output**

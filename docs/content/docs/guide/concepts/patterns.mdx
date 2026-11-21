@@ -164,7 +164,7 @@ x-iztro 不把它当成格条件，只标注）；文星朝命的 `broken` 表�
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-for hit in h.patterns(Scope::Decadal) {
+for hit in h.patterns(Scope::Decadal)? {
     println!("{} {:?}", translate_pattern(hit.key, zh), hit.variant);
 }
 ```
@@ -207,6 +207,9 @@ for _, x := range hits {
 运限对象上传 `origin` 层，结果与直接在星盘上调 `patterns()` 完全一致。
 </Callout>
 
+视角不能比运限目标的查询精度细：按农历年取的运限最细到流年、按农历月取的到流月，
+再往细的层级是内核挑的代表日的，传进来报 `invalid_argument`。
+
 ### 两条只在运限出现的格局
 
 64 条里有两条是**行运格**：只在运限视角判定，本命盘上永远不报。
@@ -220,6 +223,8 @@ for _, x := range hits {
 取「大限 + 小限」，`yearly` 或 `yearly_same_palace` 取「大限 + 流年」（另有流派取这一种）；
 带 `same_palace` 的是两限命宫皆本宫坐禄马的严口径，不带的是三方四正会照。
 两种组合各报一条，最多两条，上面那张盘正是两种组合都成立。
+它报在大限视角，有无却随小限与流年逐年变；运限文本[只写到大限](/zh/docs/guide/guides/to-text#运限写到哪一层)时
+大限段因此不列它。
 
 ## 日月的明暗按哪张表
 

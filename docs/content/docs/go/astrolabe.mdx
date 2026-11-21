@@ -500,7 +500,8 @@ func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (
 
 **返回值**　`*Horoscope`——目标日期取该农历年六月初一、时辰按时柱地支，与
 [`YearlyList`](/zh/docs/go/horoscope#yearlylist--yearlylistbypalace) 同一约定。它再发起的计算
-（`ToText`、`Patterns`、`Knowledge.ForHoroscope`）仍按该农历年取运限。
+（`ToText`、`Patterns`、`Knowledge.ForHoroscope`）仍按该农历年取运限，
+查询精度（[`Precision()`](/zh/docs/go/horoscope#precision)）为 `ScopeYearly`。
 
 **示例**
 
@@ -528,8 +529,8 @@ fmt.Println("2027-1-1 流年", jan.Yearly.HeavenlyStem+jan.Yearly.EarthlyBranch)
 公历年初到正月初一之前仍属上一个农历年，所以公历 2027-1-1 的流年还是丙午。
 大限、小限与流年在默认分界配置下整个农历年不变；`Config.AgeDivide` 取 `AgeDivideBirthday` 或
 `Config.HoroscopeDivide` 取 `HoroscopeDivideExact` 时年内仍会换层，结果是六月初一当天的。
-流月、流日、流时也在结果里，同样是六月初一那一天的，文本用
-[`TextOptions{Through: ScopeYearly}`](/zh/docs/go/knowledge#textoptions) 只写到流年。
+流月、流日、流时也在结果里，同样是六月初一那一天的，不是查询的答案：`ToText` 与按盘取材只取到流年，
+[`TextOptions.Through`](/zh/docs/go/knowledge#textoptions) 与格局的层级参数比流年细时返回 `ErrInvalidArgument`。
 年份不在 1–9999 返回 `ErrInvalidArgument`。
 连续若干年各要一行时用 [`YearlyOverviewToText`](/zh/docs/go/horoscope#yearlyoverviewtotext)。
 </Callout>
@@ -556,7 +557,8 @@ func (a *Astrolabe) HoroscopeOfMonthContext(ctx context.Context, lunarYear int, 
 
 **返回值**　`*Horoscope`——目标日期取该月（非闰）初一、时辰按时柱地支，与
 [`MonthlyList`](/zh/docs/go/horoscope#monthlylist) 整月一段的约定相同。它再发起的计算
-（`ToText`、`Patterns`、`Knowledge.ForHoroscope`）仍按该农历年月取运限。
+（`ToText`、`Patterns`、`Knowledge.ForHoroscope`）仍按该农历年月取运限，
+查询精度（[`Precision()`](/zh/docs/go/horoscope#precision)）为 `ScopeMonthly`。
 
 **示例**
 
@@ -579,8 +581,8 @@ fmt.Println("流月", h.Monthly.HeavenlyStem+h.Monthly.EarthlyBranch)
 <Callout type="info">
 闰月不单独成月号：默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止日见
 [`MonthlyListToText`](/zh/docs/go/horoscope#monthlylisttotext)。
-流日与流时也在结果里，是该月初一那一天的，文本用
-[`TextOptions{Through: ScopeMonthly}`](/zh/docs/go/knowledge#textoptions) 只写到流月。
+流日与流时也在结果里，是该月初一那一天的：`ToText` 与按盘取材只取到流月，
+[`TextOptions.Through`](/zh/docs/go/knowledge#textoptions) 与格局的层级参数比流月细时返回 `ErrInvalidArgument`。
 年份不在 1–9999 或月份不在 1–12 返回 `ErrInvalidArgument`。
 `horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与按年取的同属立春起算的那一年。初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）同样是入参错误。
 </Callout>

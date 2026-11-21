@@ -14,7 +14,8 @@ When the question is about a year, take the horoscope of the lunar year:
 `chart.horoscope_of_year(2027)` — see
 [horoscope_of_year](/en/docs/python/astrolabe#horoscope_of_year). When it is about a month, take
 the horoscope of the lunar year and month: `chart.horoscope_of_month(2025, 7)` — see
-[horoscope_of_month](/en/docs/python/astrolabe#horoscope_of_month).
+[horoscope_of_month](/en/docs/python/astrolabe#horoscope_of_month). Their results answer only down
+to the scope asked about; see [precision](#precision).
 
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again. The trailing `astrolabe=None` parameter on every query method is there for the case
@@ -792,6 +793,42 @@ None
 
 ---
 
+## precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```python
+def precision(self) -> Scope
+```
+
+**Return value** `Scope` — `Scope.YEARLY` for [`horoscope_of_year`](/en/docs/python/astrolabe#horoscope_of_year),
+`Scope.MONTHLY` for [`horoscope_of_month`](/en/docs/python/astrolabe#horoscope_of_month), and
+`Scope.HOURLY` for a date (`horoscope`, with or without an hour).
+
+The data always holds all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `to_text` and [`KnowledgePack.for_horoscope`](/en/docs/python/knowledge#for_astrolabe--for_horoscope)
+stop at this scope, and a `through` for `to_text` or a `scope` for `patterns` / `patterns_to_text`
+finer than it raises `IztroError` (`invalid_argument`).
+
+**Example**
+
+```python
+print(chart.horoscope_of_year(2027).precision())
+print(chart.horoscope("2025-6-1", 0).precision())
+```
+
+**Output**
+
+```text
+yearly
+hourly
+```
+
+---
+
 ## to_text
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people;
@@ -818,12 +855,13 @@ def to_text(
 | `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
 | `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each scope (age fortune aside) palace names, mutagens, scope stars and patterns without the twelve-palace table; `FULL` writes everything |
 | `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers) (an entry's summary, or a body short enough on its own; patterns without their conditions), `FULL` the full bodies. `SUMMARY` needs `knowledge`, and a pack with a long body lacking its summary raises `IztroError` (`invalid_argument`) listing every missing entry |
-| `through` | `Scope \| ScopeLiteral \| None` | no | `None` | [The scope the text stops at](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Scope.DECADAL` writes the decadal only, `YEARLY` the decadal, age fortune and yearly, and `MONTHLY` / `DAILY` / `HOURLY` one more scope each; `None` writes through the hourly scope. `Scope.ORIGIN` and any value that is not a horoscope scope raise `IztroError` (`invalid_argument`) |
+| `through` | `Scope \| ScopeLiteral \| None` | no | `None` | [The scope the text stops at](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Scope.DECADAL` writes the decadal only, `YEARLY` the decadal, age fortune and yearly, and `MONTHLY` / `DAILY` / `HOURLY` one more scope each; `None` stops at the [query precision](#precision). Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui. `Scope.ORIGIN`, any value that is not a horoscope scope, and a scope finer than the query precision raise `IztroError` (`invalid_argument`) |
 | `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
 **Return value** `str` — a Markdown subset in the chart's charting language: a
 `# Horoscope <date> (<lunar>)` title, then one `## ` section each for the decadal (childhood before
-the decadals start), age fortune, yearly, monthly, daily and hourly scopes; the decadal and yearly
+the decadals start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or
+a month stops at the yearly or monthly scope); the decadal and yearly
 sections expand into a twelve-palace table, and every scope carries its mutagen, flowing-star and
 pattern lines from its own perspective. The full format is on
 [Semantic text](/en/docs/guide/guides/to-text#format-conventions); where readings are inserted is on
@@ -853,13 +891,12 @@ print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 2457 8458
 ```
 
-When the target is only precise to the year, take the horoscope of the lunar year and stop at the
-yearly scope:
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
 
 ```python
 year = chart.horoscope_of_year(2027)
 
-print("\n".join(l for l in year.to_text(through=Scope.YEARLY).splitlines() if l.startswith("#")))
+print("\n".join(l for l in year.to_text().splitlines() if l.startswith("#")))
 ```
 
 ```text
@@ -869,13 +906,12 @@ print("\n".join(l for l in year.to_text(through=Scope.YEARLY).splitlines() if l.
 ## Yearly · Soul Palace: Natal parents (ding wei)
 ```
 
-When the target is only precise to the month, take the horoscope of the lunar month and stop at the
-monthly scope:
+The horoscope of a lunar month stops at the monthly scope:
 
 ```python
 month = chart.horoscope_of_month(2025, 7)
 
-print("\n".join(l for l in month.to_text(through=Scope.MONTHLY).splitlines() if l.startswith("#")))
+print("\n".join(l for l in month.to_text().splitlines() if l.startswith("#")))
 ```
 
 ```text

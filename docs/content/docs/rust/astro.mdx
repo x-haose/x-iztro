@@ -388,7 +388,9 @@ pub fn horoscope_to_text_with(
 按排盘语言输出的便捷方法：`Astrolabe::to_text()`、`HoroscopeRef::to_text()`、
 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`，各自另有收 `&TextOptions` 的 `to_text_with`。
 自由函数的 `lang` 可以与排盘语言不同：结构标签、星名、时辰、星座、干支、流耀全部按标识
-以目标语言重翻，输出与用该语言排的盘逐字一致。
+以目标语言重翻，输出与用该语言排的盘逐字一致。`HoroscopeData` 不带查询精度，`horoscope_to_text(_with)`
+不设 `horoscope_through` 即写到流时；`HoroscopeRef::to_text()` / `to_text_with` 默认写到该运限的查询精度，
+`to_text_with` 设的层级比精度细时返回 `IztroError::InvalidArgument`。
 
 **参数**
 
@@ -468,7 +470,7 @@ print!("{}", chart.to_text());
 ## TextOptions
 
 **用途**　to_text 家族的输出选项：事实详略、释义材料与深度、运限文本写到哪一层、格局判定口径。
-默认写完整事实、不带释义、运限写到流时、按默认口径判格局。给知识包后，宫位段落的事实之后紧跟该宫星耀的释义
+默认写完整事实、不带释义、运限写到查询精度（自由函数写到流时）、按默认口径判格局。给知识包后，宫位段落的事实之后紧跟该宫星耀的释义
 （同宫主星组合 `**A × B (同宫)**: ` 在前），格局列表之后紧跟格局释义（全文层含 `成立条件: ` 段），
 本命文本末尾附 `## 四化释义`，运限文本各层附该层流耀与格局的释义（跨层去重）。十二神不释义。
 两个开关的取舍与篇幅见[分层](/zh/docs/guide/guides/to-text#分层)。
@@ -501,7 +503,7 @@ pub enum KnowledgeDepth { Summary, Full }     // 默认 Full；标识 "summary" 
 | `detail(TextDetail)` | 事实详略：`Overview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。格局、大限一览、流年一览与流月一览不受影响 |
 | `knowledge(&pack)` | 按盘从 `pack` 取释义全文；`pack` 是内嵌默认包或合并覆盖包之后的自定义包，借用期须覆盖选项本身 |
 | `knowledge_summary(&pack)` | 同上，取摘要层：条目的摘要，或本身不超过 [`SUMMARY_FALLBACK_WIDTH`](/zh/docs/rust/knowledge#summary_fallback_width) 的正文；格局不附成立条件。包里有长正文缺摘要时返回 `IztroError::InvalidArgument` 并列出全部缺项 |
-| `horoscope_through(Scope)` | 运限文本[写到 `scope` 这一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`Decadal` 只写大限，`Yearly` 写大限、小限、流年，`Monthly` / `Daily` / `Hourly` 依次各多一层；不设即写到流时。只对运限文本起作用；`Scope::Origin` 返回 `IztroError::InvalidArgument` |
+| `horoscope_through(Scope)` | 运限文本[写到 `scope` 这一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`Decadal` 只写大限，`Yearly` 写大限、小限、流年，`Monthly` / `Daily` / `Hourly` 依次各多一层；不设时 `HoroscopeRef::to_text_with` 写到查询精度、自由函数写到流时。只写到大限时大限段不列风云际会。只对运限文本起作用；`Scope::Origin` 返回 `IztroError::InvalidArgument`，比查询精度细的层级由 `HoroscopeRef::to_text_with` 返回同一错误 |
 | `pattern_config(&config)` | 格局按 `config` 口径判定，与 [`patterns_with`](/zh/docs/rust/patterns#patterns_with) 同一入参；同时作用于文本的格局节与格局释义。不设即 `PatternConfig::default()` |
 | `knowledge_pack()` | 当前的释义材料来源；`None` 即只输出事实 |
 

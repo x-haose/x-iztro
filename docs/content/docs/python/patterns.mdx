@@ -238,6 +238,8 @@ def patterns(
 
 **异常**　`ValueError`——既没传 `astrolabe`、本运限也不是由星盘发起时抛出。
 用 `chart.horoscope(...)` 拿到的运限对象不会遇到这种情况。
+`IztroError`（`invalid_argument`）——`scope` 比运限的[查询精度](/zh/docs/python/horoscope#precision)细，
+如按农历年取的运限传 `Scope.MONTHLY`；`patterns_to_text` 同理。
 
 **示例**
 

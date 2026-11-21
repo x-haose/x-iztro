@@ -299,13 +299,19 @@ for _, hit := range hits {
 
 | 段 | `for_astrolabe` | `for_horoscope` 另加 |
 | --- | --- | --- |
-| `stars` | 十二宫上出现的星：主星、辅星、杂耀与四组十二神；14 主星的 `combinations` 只保留对方主星确在同宫的那些 | 各层流耀 |
-| `patterns` | 按格局口径命中的格局 | 大限到流时各层视角命中的格局 |
+| `stars` | 十二宫上出现的星：主星、辅星、杂耀与四组十二神；14 主星的 `combinations` 只保留对方主星确在同宫的那些 | 大限到查询精度各层的流耀 |
+| `patterns` | 按格局口径命中的格局 | 大限到查询精度各层视角命中的格局 |
 | `mutagens` | 禄权科忌四条，与盘无关 | — |
 | `palaces` / `concepts` | 空——宫位与术语与盘无关，按需从整包直接查 | — |
 
+运限层只取到运限目标的查询精度：按日期取的到流时，按农历年取的到流年，按农历月取的到流月——
+比精度细的层级是内核挑的代表日的，不进子包。Python 与 Go 传运限对象即按其精度取材；
+Rust 的 `for_horoscope(&chart, data)` 取到流时，按年、按月取的运限用
+`for_horoscope_with(&chart, h.data(), h.precision(), &PatternConfig)`。取到大限为止时不收风云际会
+（它要读小限与流年才判得出），与[只写到大限的运限文本](/zh/docs/guide/guides/to-text#运限写到哪一层)一致。
+
 格局口径可选传：Rust 走 `for_astrolabe_with(&chart, &PatternConfig)` /
-`for_horoscope_with(&chart, &h, &PatternConfig)`（不带 `_with` 的两个即默认口径），
+`for_horoscope_with(&chart, data, through, &PatternConfig)`（不带 `_with` 的两个即默认口径），
 Python 是 `config=` 关键字，Go 是第二个参数 `*PatternConfig`（`nil` 即默认）。
 子包要和 `patterns` / `patterns_to_text` 配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
 Go 另有 `BuiltinKnowledge().ForAstrolabe(chart, nil)` 这条路，让内核直接读内嵌包，不必先取整包再送回。

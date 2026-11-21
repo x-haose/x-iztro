@@ -249,6 +249,9 @@ def patterns(
 
 **Raises**　`ValueError` — when no `astrolabe` was passed and this horoscope did not come from a
 chart. A horoscope obtained through `chart.horoscope(...)` never hits this.
+`IztroError` (`invalid_argument`) — when `scope` is finer than the horoscope's
+[query precision](/en/docs/python/horoscope#precision), such as `Scope.MONTHLY` on a horoscope of a
+lunar year; likewise for `patterns_to_text`.
 
 **Example**
 

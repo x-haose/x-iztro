@@ -772,6 +772,44 @@ println!("{}", data.solar_date);
 
 ---
 
+## precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```rust
+pub fn precision(&self) -> Scope
+```
+
+**Return value** `Scope` — `Scope::Yearly` for [`horoscope_of_year`](/en/docs/rust/astrolabe#horoscope_of_year),
+`Scope::Monthly` for [`horoscope_of_month`](/en/docs/rust/astrolabe#horoscope_of_month), and
+`Scope::Hourly` for a date (`horoscope`, with or without an hour).
+
+The data always holds all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `to_text` / `to_text_with` stop at this scope
+by default, and a `horoscope_through` in `to_text_with` or a `scope` for
+[`patterns`](/en/docs/rust/patterns#horoscoperefpatterns) finer than it returns
+`IztroError::InvalidArgument`. Pass it as the stopping scope when picking knowledge by chart:
+[`for_horoscope_with`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope)`(&chart, h.data(), h.precision(), &cfg)`.
+
+**Example**
+
+```rust
+println!("{:?}", chart.horoscope_of_year(2027)?.precision());
+println!("{:?}", chart.horoscope("2025-6-1", 0)?.precision());
+```
+
+**Output**
+
+```text
+Yearly
+Hourly
+```
+
+---
+
 ## to_text
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people,
@@ -783,11 +821,14 @@ as a Markdown subset.
 pub fn to_text(&self) -> String
 ```
 
-Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language use
-the free function `text::horoscope_to_text(astrolabe, horoscope, lang)`.
+Defined on `HoroscopeRef`, emitting in the chart's charting language and stopping at the query
+precision ([`precision`](#precision)); for an explicit language use the free function
+`text::horoscope_to_text(astrolabe, horoscope, lang)`, which writes through the hourly scope unless
+told otherwise.
 
 **Return value** `String` — one section each for the decadal (childhood before the decadals
-start), age fortune, yearly, monthly, daily and hourly scopes, each with its mutagens and the
+start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or a month
+stops at the yearly or monthly scope), each with its mutagens and the
 patterns and flowing stars from its own perspective; the decadal and yearly sections expand into a
 twelve-palace table. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
 
@@ -823,14 +864,17 @@ across scopes. Natal star readings are not repeated here — they are in the cha
 **Signature**
 
 ```rust
-pub fn to_text_with(&self, opts: &TextOptions) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> Result<String, IztroError>
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `horoscope_through(scope)?` [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), `TextOptions::default()` equals `to_text` |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `horoscope_through(scope)?` [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), unset stops at the query precision; `TextOptions::default()` equals `to_text` |
+
+**Errors** A `horoscope_through` finer than the query precision (such as the monthly scope on a
+horoscope of a year) returns `IztroError::InvalidArgument`.
 
 Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language
 use the free function `text::horoscope_to_text_with(astrolabe, horoscope, opts, lang)`. Placement
@@ -841,7 +885,7 @@ is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let h = chart.horoscope("2025-1-1", 0)?;
-let text = h.to_text_with(&TextOptions::new().knowledge(pack));
+let text = h.to_text_with(&TextOptions::new().knowledge(pack))?;
 
 println!("{} {}", h.to_text().chars().count(), text.chars().count());
 for line in text.lines().filter(|l| l.starts_with("## ")) {
@@ -861,12 +905,11 @@ for line in text.lines().filter(|l| l.starts_with("## ")) {
 ## 流时 · 命宫: 本命迁移 (丙子)
 ```
 
-When the target is only precise to the year, take the horoscope of the lunar year and stop at the
-yearly scope:
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
 
 ```rust
 let year = chart.horoscope_of_year(2027)?;
-let text = year.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?);
+let text = year.to_text();
 
 for line in text.lines().filter(|l| l.starts_with('#')) {
     println!("{line}");
@@ -880,12 +923,11 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ## 流年 · 命宫: 本命父母 (丁未)
 ```
 
-When the target is only precise to the month, take the horoscope of the lunar month and stop at the
-monthly scope:
+The horoscope of a lunar month stops at the monthly scope:
 
 ```rust
 let month = chart.horoscope_of_month(2025, 7)?;
-let text = month.to_text_with(&TextOptions::new().horoscope_through(Scope::Monthly)?);
+let text = month.to_text();
 
 for line in text.lines().filter(|l| l.starts_with('#')) {
     println!("{line}");

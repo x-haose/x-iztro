@@ -14,6 +14,7 @@ When the question is about a year, take the horoscope of the lunar year:
 `chart.HoroscopeOfYear(2027)` — see [HoroscopeOfYear](/en/docs/go/astrolabe#horoscopeofyear).
 When it is about a month, take the horoscope of the lunar year and month:
 `chart.HoroscopeOfMonth(2025, 7)` — see [HoroscopeOfMonth](/en/docs/go/astrolabe#horoscopeofmonth).
+Their results answer only down to the scope asked about; see [Precision](#precision).
 
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again.
@@ -777,6 +778,45 @@ decadal
 
 ---
 
+## Precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```go
+func (h *Horoscope) Precision() string
+```
+
+**Return value** A scope constant — `ScopeYearly` for [`HoroscopeOfYear`](/en/docs/go/astrolabe#horoscopeofyear),
+`ScopeMonthly` for [`HoroscopeOfMonth`](/en/docs/go/astrolabe#horoscopeofmonth), and `ScopeHourly`
+for a date (`Horoscope` / `HoroscopeAt` / `HoroscopeAtTime` / `HoroscopeNow`, with or without an hour); a `nil`
+horoscope returns an empty string.
+
+The fields always hold all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `ToText` / `ToTextWith` and
+[`ForHoroscope`](/en/docs/go/knowledge#forastrolabe--forhoroscope) stop at this scope, and a
+`TextOptions.Through` or a `scope` for `Patterns` / `PatternsToText` finer than it returns
+`ErrInvalidArgument`.
+
+**Example**
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+day, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(year.Precision(), day.Precision())
+```
+
+**Output**
+
+```text
+yearly hourly
+```
+
+---
+
 ## ToText
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people.
@@ -790,7 +830,9 @@ func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
 
 **Return value** `string` — a Markdown subset in the chart's charting language: under the
 `# Horoscope <date> (<lunar date>)` heading, one `## ` section each for the decadal (childhood
-before the decadals start), age fortune, yearly, monthly, daily and hourly scopes; each section
+before the decadals start), age fortune, yearly, monthly, daily and hourly scopes, down to the
+[query precision](#precision) (a horoscope of a year or a month stops at the yearly or monthly
+scope); each section
 says which natal palace that scope's Soul palace landed on and carries the scope's mutagens (with
 landing palaces), flowing stars and pattern line from its own perspective; the decadal and yearly
 sections also expand a twelve-palace table. The full format is on
@@ -835,7 +877,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the criteria for each scope's pattern line and pattern readings; the `Through` field [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes) (`ScopeDecadal` … `ScopeHourly`, empty writes through the hourly scope); the zero value `TextOptions{}` behaves like `ToText` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the criteria for each scope's pattern line and pattern readings; the `Through` field [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes) (`ScopeDecadal` … `ScopeHourly`, empty stops at the [query precision](#precision), finer than it returns `ErrInvalidArgument`); the zero value `TextOptions{}` behaves like `ToText` |
 
 Where the readings are inserted and how they are deduplicated is on
 [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
@@ -870,12 +912,11 @@ for _, l := range strings.Split(text, "\n") {
 The two texts have identical `## ` sections: readings do not get sections of their own but sit
 right after each scope.
 
-When the target is only precise to the year, take the horoscope of the lunar year and stop at the
-yearly scope:
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
 
 ```go
 year, _ := chart.HoroscopeOfYear(2027)
-text, _ = year.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+text, _ = year.ToText()
 
 for _, l := range strings.Split(text, "\n") {
     if strings.HasPrefix(l, "#") {
@@ -891,12 +932,11 @@ for _, l := range strings.Split(text, "\n") {
 ## 流年 · 命宫: 本命父母 (丁未)
 ```
 
-When the target is only precise to the month, take the horoscope of the lunar month and stop at the
-monthly scope:
+The horoscope of a lunar month stops at the monthly scope:
 
 ```go
 month, _ := chart.HoroscopeOfMonth(2025, 7)
-text, _ = month.ToTextWith(iztro.TextOptions{Through: iztro.ScopeMonthly})
+text, _ = month.ToText()
 
 for _, l := range strings.Split(text, "\n") {
     if strings.HasPrefix(l, "#") {

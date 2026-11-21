@@ -437,8 +437,8 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 
 `horoscope_now` 取本地时钟的此刻（日期与时辰），无参数。
 
-**返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘。
-详见[运限对象](/zh/docs/rust/horoscope)。
+**返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘；
+查询精度（`precision()`）为流时，给不给时辰都一样。详见[运限对象](/zh/docs/rust/horoscope)。
 
 **示例**
 
@@ -486,7 +486,7 @@ pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroErro
 | `year` | `i64` | 是 | — | 农历年份，1–9999 |
 
 **返回值**　`HoroscopeRef<'_>`——目标日期取该农历年六月初一、时辰按时柱地支，与
-[`yearly_list`](/zh/docs/rust/horoscope#yearly_list) 同一约定。
+[`yearly_list`](/zh/docs/rust/horoscope#yearly_list) 同一约定；查询精度（`precision()`）为 `Scope::Yearly`。
 
 **示例**
 
@@ -520,8 +520,8 @@ println!("2027-1-1 流年 {}{}",
 公历年初到正月初一之前仍属上一个农历年，所以公历 2027-1-1 的流年还是丙午。
 大限、小限与流年在默认分界配置下整个农历年不变；`age_divide` 取 `AgeDivide::Birthday` 或
 `horoscope_divide` 取 `HoroscopeDivide::Exact` 时年内仍会换层，结果是六月初一当天的。
-流月、流日、流时也在结果里，同样是六月初一那一天的，文本用
-[`TextOptions::horoscope_through(Scope::Yearly)`](/zh/docs/rust/astro#textoptions) 只写到流年。
+流月、流日、流时也在结果里，同样是六月初一那一天的，不是查询的答案：`to_text` 默认只写到流年，
+文本与格局的层级参数比流年细时返回 `IztroError::InvalidArgument`。
 年份不在 1–9999 返回 `IztroError::InvalidArgument`。
 连续若干年各要一行时用 [`yearly_overview_to_text`](/zh/docs/rust/horoscope#yearly_overview_to_text)。
 </Callout>
@@ -546,7 +546,7 @@ pub fn horoscope_of_month(&self, year: i64, month: u32) -> Result<HoroscopeRef<'
 | `month` | `u32` | 是 | — | 农历月号，1–12；闰月不单独成月号 |
 
 **返回值**　`HoroscopeRef<'_>`——目标日期取该月（非闰）初一、时辰按时柱地支，与
-[`monthly_list`](/zh/docs/rust/horoscope#monthly_list) 整月一段的约定相同。
+[`monthly_list`](/zh/docs/rust/horoscope#monthly_list) 整月一段的约定相同；查询精度（`precision()`）为 `Scope::Monthly`。
 
 **示例**
 
@@ -572,8 +572,8 @@ println!("流月 {}{}",
 <Callout type="info">
 闰月不单独成月号：默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止日见
 [`monthly_list_to_text`](/zh/docs/rust/horoscope#monthly_list_to_text)。
-流日与流时也在结果里，是该月初一那一天的，文本用
-[`TextOptions::horoscope_through(Scope::Monthly)`](/zh/docs/rust/astro#textoptions) 只写到流月。
+流日与流时也在结果里，是该月初一那一天的：`to_text` 默认只写到流月，
+文本与格局的层级参数比流月细时返回 `IztroError::InvalidArgument`。
 年份不在 1–9999 或月份不在 1–12 返回 `IztroError::InvalidArgument`。
 `horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与按年取的同属立春起算的那一年。初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）同样是入参错误。
 </Callout>
