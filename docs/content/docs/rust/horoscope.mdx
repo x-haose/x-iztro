@@ -490,7 +490,7 @@ println!("{}", translate_palace(h.age_palace().name, Language::ZhCN));
 **签名**
 
 ```rust
-pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
+pub fn palace(&self, name: Palace, scope: Scope) -> Result<Option<PalaceRef<'a>>, IztroError>
 ```
 
 **参数**
@@ -503,6 +503,9 @@ pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
 **返回值**　`Option<PalaceRef<'a>>`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
 层级为 `Origin` 时即本命十二宫。
 
+**错误**　`scope` 比[查询精度](#precision)细（如按年取的运限传 `Scope::Monthly`）时返回
+`IztroError::InvalidArgument`：那一层是内核挑的代表日的，不是查询的答案。
+
 **示例**
 
 ```rust
@@ -510,9 +513,9 @@ let zh = Language::ZhCN;
 let h = chart.horoscope("2025-6-1", 0)?;
 
 println!("大限命宫落在本命的 {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Decadal).unwrap().name, zh));
+    translate_palace(h.palace(Palace::Soul, Scope::Decadal)?.unwrap().name, zh));
 println!("本命命宫是 {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Origin).unwrap().name, zh));
+    translate_palace(h.palace(Palace::Soul, Scope::Origin)?.unwrap().name, zh));
 ```
 
 **输出**
@@ -538,18 +541,18 @@ println!("本命命宫是 {}",
 **签名**
 
 ```rust
-pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>>
+pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Result<Option<SurroundedPalaces<'a>>, IztroError>
 ```
 
 **参数**　同 `palace`。
 
-**返回值**　`Option<SurroundedPalaces<'a>>`，判断方法见[三方四正](/zh/docs/rust/surpalaces)。
+**返回值**　`Option<SurroundedPalaces<'a>>`，判断方法见[三方四正](/zh/docs/rust/surpalaces)。错误同 `palace`。
 
 **示例**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
+let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly)?.unwrap();
 
 println!("流年财帛的三方四正以本命 {} 为本宫", translate_palace(sp.target.name, Language::ZhCN));
 ```
@@ -573,9 +576,9 @@ println!("流年财帛的三方四正以本命 {} 为本宫", translate_palace(s
 **签名**
 
 ```rust
-pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
 ```
 
 **参数**
@@ -594,6 +597,8 @@ pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[Star
 | `has_one_of_horoscope_stars` | 至少一颗在 |
 | `not_have_horoscope_stars` | 一颗都不在 |
 
+**错误**　同 `palace`。
+
 **示例**
 
 ```rust
@@ -601,9 +606,9 @@ use x_iztro::StarKey::*;
 
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu]));
-println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang]));
-println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo]));
+println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu])?);
+println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang])?);
+println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo])?);
 ```
 
 **输出**
@@ -650,7 +655,7 @@ true
 **签名**
 
 ```rust
-pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool
+pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> Result<bool, IztroError>
 ```
 
 **参数**
@@ -661,14 +666,14 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `scope` | `Scope` | 是 | — | 运限层级 |
 | `mutagen` | `Mutagen` | 是 | — | 四化之一 |
 
-**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。
+**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。错误同 `palace`。
 
 **示例**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu));
+println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu)?);
 
 // 该层级化出的四颗星本身可直接读
 println!("{:?}", h.decadal.mutagen.iter()
@@ -751,7 +756,7 @@ pub fn precision(&self) -> Scope
 
 数据里六个层级恒齐全，比精度细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，
 不是查询的答案：`to_text` / `to_text_with` 默认只写到这一层，`to_text_with` 的
-`horoscope_through` 与 [`patterns`](/zh/docs/rust/patterns#horoscoperefpatterns) 的 `scope` 比它细时返回
+`horoscope_through`、[`patterns`](/zh/docs/rust/patterns#horoscoperefpatterns) 与[宫位查询](#palace)的 `scope` 比它细时返回
 `IztroError::InvalidArgument`。[按盘取材](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope)也只取到这一层。
 
 **示例**
@@ -783,7 +788,8 @@ pub fn to_text(&self) -> String
 定义在 `HoroscopeRef` 上，按星盘排盘语言输出，写到查询精度（[`precision`](#precision)）为止；
 要指定语言用自由函数 `text::horoscope_to_text(astrolabe, horoscope, lang)`，它不设层级即写到流时。
 
-**返回值**　`String`——大限（未起运为童限）、小限、流年、流月、流日、流时各一节（按年、按月取的运限只到流年、流月），
+**返回值**　`String`——标题写目标日期的阳历与农历，只写到流年、流月时只写农历年份与干支
+（如 `# 运限 2027 (丁未)`、`# 运限 2025 (乙巳) · 流月 (甲申)`）；大限（未起运为童限）、小限、流年、流月、流日、流时各一节（按年、按月取的运限只到流年、流月），
 各层带四化、该层视角的格局与流耀，大限与流年展开十二宫表。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text)。
 
@@ -870,7 +876,7 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ```
 
 ```text
-# 运限 2027-7-4 (二〇二七年六月初一)
+# 运限 2027 (丁未)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
@@ -888,7 +894,7 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ```
 
 ```text
-# 运限 2025-8-23 (二〇二五年七月初一)
+# 运限 2025 (乙巳) · 流月 (甲申)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命田宅 · 虚岁 26
 ## 流年 · 命宫: 本命兄弟 (乙巳)

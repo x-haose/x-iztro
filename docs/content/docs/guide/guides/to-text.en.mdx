@@ -109,7 +109,7 @@ The skeleton of a natal text, top to bottom:
 A horoscope text:
 
 ```text
-# Horoscope <solar date> (<lunar date>)
+# Horoscope <solar date> (<lunar date>)                   down to daily or hourly; down to monthly: # Horoscope <lunar year> (stem-branch) · Monthly (stem-branch); down to yearly or decadal: # Horoscope <lunar year> (stem-branch)
 ## Decadal Fortune · Soul Palace: Natal X (stem-branch)   mutagens, patterns + a twelve-palace table (Decadal | Natal | Major | Minor | Scope Stars); "Childhood Fortune" before the decadals start
 ## Age Fortune · Soul Palace: Natal X · Nominal Age N      palace names, mutagens, that palace's three star groups
 ## Yearly · Soul Palace: Natal X (stem-branch)             mutagens, patterns + a twelve-palace table (with a Twelve Gods column)
@@ -263,7 +263,7 @@ different reading semantics.
 
 | Notation | Meaning |
 | --- | --- |
-| `# Natal Chart 2000-8-16 Tiger hour female`, `# Horoscope 2025-1-1 (…)` | Document title: the natal chart carries solar date, hour and gender; the horoscope carries the target date in solar and lunar form |
+| `# Natal Chart 2000-8-16 Tiger hour female`, `# Horoscope 2025-1-1 (…)` | Document title: the natal chart carries solar date, hour and gender; the horoscope carries the target date in solar and lunar form. A horoscope text that stops at the monthly scope titles itself with the lunar year, the yearly stem-branch and the monthly stem-branch instead (`# Horoscope 2025 (yi si) · Monthly (jia shen)`), and one that stops at the yearly or decadal scope with the lunar year and the yearly stem-branch only (`# Horoscope 2027 (ding wei)`) — the target date of a horoscope of a year or a month is a representative day the kernel picked and stays out of the title |
 | `## Basic Info`, `## Palace Overview`, `## Patterns`, `## Palaces`, `## Mutagen Notes` | The natal sections; `## Decadal Fortune`, `## Age Fortune`, `## Yearly`, `## Monthly`, `## Daily`, `## Hourly` are the horoscope sections |
 | `### soul (ren woo) · Decadal 3-12` | One section per palace: palace name, its stem and branch, and the nominal-age range when this palace is the decadal |
 | `### career (bing xu) · Decadal 83-92 [Body Palace]` | The bracket marks this palace as also being the Body palace; `[Original Palace]` marks the [Original palace](/en/docs/guide/concepts/palaces#the-original-palace). The overview table's Palace column carries the same marks |
@@ -739,9 +739,9 @@ finer than the precision belong to a representative day the kernel picked, not t
 
 | Value | Sections written | Characters (full / overview) |
 | --- | --- | --- |
-| `decadal` | decadal | 601 / 312 |
-| `yearly` | decadal, age fortune, yearly | 1,636 / 871 |
-| `monthly` | plus monthly | 2,015 / 1,250 |
+| `decadal` | decadal | 579 / 290 |
+| `yearly` | decadal, age fortune, yearly | 1,625 / 860 |
+| `monthly` | plus monthly | 2,014 / 1,249 |
 | `daily` | plus daily | 2,356 / 1,591 |
 | `hourly` | all six | 2,697 / 1,932 |
 
@@ -750,7 +750,8 @@ measured on the horoscope text of the table in [Layers](#layers) (Chinese chart,
 [Layers](#layers) and acts on the horoscope text only: Python accepts it on the horoscope's
 `to_text` alone, and Go's `TextOptions.Through` has no effect on the other texts. The natal scope
 `origin`, any value that is not a horoscope scope, and a scope finer than the precision (such as the
-monthly scope on a horoscope of a year) are `invalid_argument`; a coarser scope is fine.
+monthly scope on a horoscope of a year) are `invalid_argument`; a coarser scope is fine. The title
+stops at the same scope, see [Format conventions](#format-conventions).
 
 Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui: it is reported at the
 decadal view but reads whether the age fortune's and the yearly scope's Soul Palaces meet Lu or Ma,
@@ -779,7 +780,8 @@ date yourself. The days from 1 January up to the lunar new year still belong to 
 year, so computing from 1 January yields the previous year's yearly scope — the 2025-1-1 target above
 has the yearly stem-branch jia chen, not 2025's yi si. The horoscope of a year takes the first day of
 that year's sixth lunar month as its target date, the same convention as `yearly_list`; its precision
-is the yearly scope, so the text stops there by default:
+is the yearly scope, so the text stops there by default, and the title names only the lunar year and
+its yearly stem-branch, not that day:
 
 ```python
 h = chart.horoscope_of_year(2027)
@@ -797,7 +799,7 @@ h.ToText()
 ```
 
 ```text
-# Horoscope 2027-7-4 (二〇二七年六月初一)
+# Horoscope 2027 (ding wei)
 ## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
 ## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
 ## Yearly · Soul Palace: Natal parents (ding wei)
@@ -812,7 +814,8 @@ per year.
 When the question is about a month, give the target as a **lunar year plus a lunar month** instead
 of picking a day on the asker's behalf. The horoscope of a month takes the first day of that
 (non-leap) month as its target date, the same convention as a whole-month entry of `monthly_list`;
-its precision is the monthly scope, so the text stops there by default. The month
+its precision is the monthly scope, so the text stops there by default, and the title names the
+lunar year, the yearly stem-branch and the monthly stem-branch, not that day. The month
 number is 1-12 and a leap month has no number of its own: under the default divide settings the
 first half of a leap month follows the month it repeats and the second half the next one — the
 monthly timeline gives the dates.
@@ -834,7 +837,7 @@ h.ToText()
 ```
 
 ```text
-# Horoscope 2025-8-23 (二〇二五年七月初一)
+# Horoscope 2025 (yi si) · Monthly (jia shen)
 ## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
 ## Age Fortune · Soul Palace: Natal property · Nominal Age 26
 ## Yearly · Soul Palace: Natal siblings (yi si)
@@ -848,7 +851,9 @@ sets — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN — and star names, palace nam
 brightness, mutagens and pattern names are translated into the chart language. The same chart in
 all six languages has a line-for-line matching skeleton; only the words differ. The natal lunar date
 follows the language (`2000-7-17`, `2000年7月17日`, `2000년 7월 17일`, `ngày 17 tháng 7 năm 2000`;
-Chinese numerals in Chinese); the horoscope heading keeps Chinese numerals in every language.
+Chinese numerals in Chinese); the horoscope heading keeps Chinese numerals in every language. A
+heading that stops at the monthly, yearly or decadal scope carries no date: the year is in Arabic
+numerals and the stem-branch is translated into the chart language.
 
 The mutagen mark follows the language: Simplified Chinese and Japanese write `化禄`, Traditional Chinese `化祿`, English `[A]`
 (`[A]`/`[B]`/`[C]`/`[D]` are Lu, Quan, Ke, Ji), Korean `화록`, Vietnamese `hóa Lộc`. Word spacing

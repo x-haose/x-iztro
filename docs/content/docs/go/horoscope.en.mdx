@@ -531,7 +531,7 @@ naming, and it is usually not the same palace as the natal Spouse palace.
 **Signature**
 
 ```go
-func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) (*Palace, error)
 ```
 
 **Parameters**
@@ -542,15 +542,21 @@ func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
 | `scope` | `string` | Yes | — | Which scope's twelve palaces to search |
 
 **Return value** `*Palace` — a palace on the natal chart (the same cell carries different names under
-different scopes). With `ScopeOrigin`, these are the natal twelve palaces. `nil` when nothing matches.
+different scopes). With `ScopeOrigin`, these are the natal twelve palaces. `nil` with a `nil` error
+when the palace name matches nothing. `ErrInvalidArgument` when `scope` is not a scope key or is finer
+than the [query precision](#precision) (for example `ScopeMonthly` on the horoscope of a year): that
+scope belongs to a representative day the kernel picked and is not the answer to the query.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println("the decadal Soul palace is the natal", h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal).Name)
-fmt.Println("the natal Soul palace is", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Name)
+decadalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal)
+natalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin)
+
+fmt.Println("the decadal Soul palace is the natal", decadalSoul.Name)
+fmt.Println("the natal Soul palace is", natalSoul.Name)
 ```
 
 **Output**
@@ -577,19 +583,19 @@ because it is that cell on the natal chart. To see what the cell is called at th
 **Signature**
 
 ```go
-func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) (*SurroundedPalaces, error)
 ```
 
 **Parameters** Same as `Palace`.
 
 **Return value** `*SurroundedPalaces`; its predicates are on
-[Surrounded palaces](/en/docs/go/surpalaces).
+[Surrounded palaces](/en/docs/go/surpalaces). Errors as for `Palace`.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
-sp := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
+sp, _ := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
 
 fmt.Println("the surrounded set of the yearly Wealth palace is anchored on the natal", sp.Target.Name)
 ```
@@ -614,9 +620,9 @@ Liuyue at the yearly layer — with the same meaning applied to their own time s
 **Signature**
 
 ```go
-func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
 ```
 
 **Parameters**
@@ -635,14 +641,20 @@ func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, st
 | `HasOneOfHoroscopeStars` | At least one is present |
 | `NotHaveHoroscopeStars` | None is present |
 
+All three are `false` when the palace name matches nothing; errors as for `Palace`.
+
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"}))
-fmt.Println(h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"}))
-fmt.Println(h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"}))
+has, _ := h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"})
+one, _ := h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"})
+none, _ := h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"})
+
+fmt.Println(has)
+fmt.Println(one)
+fmt.Println(none)
 ```
 
 **Output**
@@ -693,7 +705,7 @@ asking about this.
 **Signature**
 
 ```go
-func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) (bool, error)
 ```
 
 **Parameters**
@@ -705,14 +717,16 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 | `mutagenKey` | `string` | Yes | — | A mutagen key |
 
 **Return value** `bool`. It checks whether the star transformed by that layer's stem is among the
-major or minor stars of the target palace (adjective stars are not scanned).
+major or minor stars of the target palace (adjective stars are not scanned). Errors as for `Palace`.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu))
+lu, _ := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+
+fmt.Println(lu)
 fmt.Println(h.Decadal.Mutagen)
 ```
 
@@ -797,7 +811,7 @@ The fields always hold all six scopes; the ones finer than the precision belong 
 day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
 the solar term) and are not the answer to the query: `ToText` / `ToTextWith` and
 [`ForHoroscope`](/en/docs/go/knowledge#forastrolabe--forhoroscope) stop at this scope, and a
-`TextOptions.Through` or a `scope` for `Patterns` / `PatternsToText` finer than it returns
+`TextOptions.Through` or a `scope` for `Patterns` / `PatternsToText` or the [palace queries](#palace) finer than it returns
 `ErrInvalidArgument`.
 
 **Example**
@@ -829,7 +843,9 @@ func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
 ```
 
 **Return value** `string` — a Markdown subset in the chart's charting language: under the
-`# Horoscope <date> (<lunar date>)` heading, one `## ` section each for the decadal (childhood
+`# Horoscope <date> (<lunar date>)` heading (only the lunar year and its stem-branch when the text
+stops at the yearly or monthly scope, such as `# Horoscope 2027 (ding wei)` and
+`# Horoscope 2025 (yi si) · Monthly (jia shen)`), one `## ` section each for the decadal (childhood
 before the decadals start), age fortune, yearly, monthly, daily and hourly scopes, down to the
 [query precision](#precision) (a horoscope of a year or a month stops at the yearly or monthly
 scope); each section
@@ -926,7 +942,7 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 ```text
-# 运限 2027-7-4 (二〇二七年六月初一)
+# 运限 2027 (丁未)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
@@ -946,7 +962,7 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 ```text
-# 运限 2025-8-23 (二〇二五年七月初一)
+# 运限 2025 (乙巳) · 流月 (甲申)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命田宅 · 虚岁 26
 ## 流年 · 命宫: 本命兄弟 (乙巳)

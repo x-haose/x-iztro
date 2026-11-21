@@ -516,7 +516,7 @@ naming, and it is usually not the same palace as the natal Spouse palace.
 **Signature**
 
 ```rust
-pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
+pub fn palace(&self, name: Palace, scope: Scope) -> Result<Option<PalaceRef<'a>>, IztroError>
 ```
 
 **Parameters**
@@ -530,6 +530,10 @@ pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
 different names under different scopes). With `Origin` as the scope, these are the natal twelve
 palaces.
 
+**Errors** `IztroError::InvalidArgument` when `scope` is finer than the [query precision](#precision)
+(for example `Scope::Monthly` on the horoscope of a year): that scope belongs to a representative day
+the kernel picked and is not the answer to the query.
+
 **Example**
 
 ```rust
@@ -537,9 +541,9 @@ let en = Language::EnUS;
 let h = chart.horoscope("2025-6-1", 0)?;
 
 println!("the decadal Soul palace is the natal {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Decadal).unwrap().name, en));
+    translate_palace(h.palace(Palace::Soul, Scope::Decadal)?.unwrap().name, en));
 println!("the natal Soul palace is {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Origin).unwrap().name, en));
+    translate_palace(h.palace(Palace::Soul, Scope::Origin)?.unwrap().name, en));
 ```
 
 **Output**
@@ -566,19 +570,19 @@ the decadal layer, read `h.decadal.palace_names[index]`.
 **Signature**
 
 ```rust
-pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>>
+pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Result<Option<SurroundedPalaces<'a>>, IztroError>
 ```
 
 **Parameters** Same as `palace`.
 
 **Return value** `Option<SurroundedPalaces<'a>>`; its predicates are on
-[Surrounded palaces](/en/docs/rust/surpalaces).
+[Surrounded palaces](/en/docs/rust/surpalaces). Errors as for `palace`.
 
 **Example**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
+let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly)?.unwrap();
 
 println!("the surrounded set of the yearly Wealth palace is anchored on the natal {}",
     translate_palace(sp.target.name, Language::EnUS));
@@ -604,9 +608,9 @@ Liuyue at the yearly layer — with the same meaning applied to their own time s
 **Signature**
 
 ```rust
-pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
 ```
 
 **Parameters**
@@ -625,6 +629,8 @@ pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[Star
 | `has_one_of_horoscope_stars` | At least one is present |
 | `not_have_horoscope_stars` | None is present |
 
+**Errors** As for `palace`.
+
 **Example**
 
 ```rust
@@ -632,9 +638,9 @@ use x_iztro::StarKey::*;
 
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu]));
-println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang]));
-println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo]));
+println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu])?);
+println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang])?);
+println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo])?);
 ```
 
 **Output**
@@ -684,7 +690,7 @@ asking about this.
 **Signature**
 
 ```rust
-pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool
+pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> Result<bool, IztroError>
 ```
 
 **Parameters**
@@ -696,14 +702,14 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `mutagen` | `Mutagen` | Yes | — | One of the four mutagens |
 
 **Return value** `bool`. It checks whether the star transformed by that layer's stem sits among the
-target palace's major or minor stars (adjective stars are not considered).
+target palace's major or minor stars (adjective stars are not considered). Errors as for `palace`.
 
 **Example**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu));
+println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu)?);
 
 // the four stars this layer transforms can be read directly
 println!("{:?}", h.decadal.mutagen.iter()
@@ -790,7 +796,7 @@ The data always holds all six scopes; the ones finer than the precision belong t
 day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
 the solar term) and are not the answer to the query: `to_text` / `to_text_with` stop at this scope
 by default, and a `horoscope_through` in `to_text_with` or a `scope` for
-[`patterns`](/en/docs/rust/patterns#horoscoperefpatterns) finer than it returns
+[`patterns`](/en/docs/rust/patterns#horoscoperefpatterns) or the [palace queries](#palace) finer than it returns
 `IztroError::InvalidArgument`. [Picking knowledge by chart](/en/docs/rust/knowledge#for_astrolabe--for_horoscope) also stops at this scope.
 
 **Example**
@@ -825,8 +831,10 @@ precision ([`precision`](#precision)); for an explicit language use the free fun
 `text::horoscope_to_text(astrolabe, horoscope, lang)`, which writes through the hourly scope unless
 told otherwise.
 
-**Return value** `String` — one section each for the decadal (childhood before the decadals
-start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or a month
+**Return value** `String` — a title with the target date in solar and lunar form, or only the
+lunar year and its stem-branch when the text stops at the yearly or monthly scope (such as
+`# Horoscope 2027 (ding wei)` and `# Horoscope 2025 (yi si) · Monthly (jia shen)`); then one section
+each for the decadal (childhood before the decadals start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or a month
 stops at the yearly or monthly scope), each with its mutagens and the
 patterns and flowing stars from its own perspective; the decadal and yearly sections expand into a
 twelve-palace table. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
@@ -916,7 +924,7 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ```
 
 ```text
-# 运限 2027-7-4 (二〇二七年六月初一)
+# 运限 2027 (丁未)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
@@ -934,7 +942,7 @@ for line in text.lines().filter(|l| l.starts_with('#')) {
 ```
 
 ```text
-# 运限 2025-8-23 (二〇二五年七月初一)
+# 运限 2025 (乙巳) · 流月 (甲申)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命田宅 · 虚岁 26
 ## 流年 · 命宫: 本命兄弟 (乙巳)

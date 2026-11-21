@@ -554,7 +554,7 @@ the decadal, age-fortune and yearly scopes stay the same for the whole lunar yea
 `HoroscopeDivideExact` they can still change within the year, and the result is the one for the
 first day of the sixth month. The monthly, daily and hourly scopes are in the result too, likewise
 for that day, and are not the answer to the query: `ToText` and picking knowledge by chart stop at
-the yearly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions) or pattern scope
+the yearly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions), palace-query or pattern scope
 finer than yearly returns `ErrInvalidArgument`. A year outside 1–9999 returns `ErrInvalidArgument`. For one row per year
 over a run of years, use [`YearlyOverviewToText`](/en/docs/go/horoscope#yearlyoverviewtotext).
 </Callout>
@@ -609,8 +609,8 @@ A leap month has no number of its own: under the default dividing configuration 
 leap month follows the month it repeats and the second half the next one —
 [`MonthlyListToText`](/en/docs/go/horoscope#monthlylisttotext) gives the dates. The daily and hourly
 scopes are in the result too, for the first day of that month: `ToText` and picking knowledge by
-chart stop at the monthly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions) or
-pattern scope finer than monthly returns `ErrInvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
+chart stop at the monthly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions),
+palace-query or pattern scope finer than monthly returns `ErrInvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
 When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>
 

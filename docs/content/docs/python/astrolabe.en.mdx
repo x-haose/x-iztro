@@ -570,7 +570,7 @@ the decadal, age-fortune and yearly scopes stay the same for the whole lunar yea
 still change within the year, and the result is the one for the first day of the sixth month. The monthly,
 daily and hourly scopes are in the result too, likewise for that day, and are not the answer to the
 query: [`to_text`](/en/docs/python/horoscope#to_text) and picking knowledge by chart stop at the
-yearly scope, and a text or pattern scope finer than yearly raises `IztroError` (`invalid_argument`).
+yearly scope, and a text, palace-query or pattern scope finer than yearly raises `IztroError` (`invalid_argument`).
 A year outside 1–9999 raises `IztroError` (`invalid_argument`). For one row per year over a
 run of years, use [`yearly_overview_to_text`](/en/docs/python/horoscope#yearly_overview_to_text).
 </Callout>
@@ -625,7 +625,7 @@ leap month follows the month it repeats and the second half the next one —
 [`monthly_list_to_text`](/en/docs/python/horoscope#monthly_list_to_text) gives the dates. The daily
 and hourly scopes are in the result too, for the first day of that month:
 [`to_text`](/en/docs/python/horoscope#to_text) and picking knowledge by chart stop at the monthly
-scope, and a text or pattern scope finer than monthly raises `IztroError` (`invalid_argument`). A year outside 1–9999 or a month outside 1–12 raises `IztroError` (`invalid_argument`).
+scope, and a text, palace-query or pattern scope finer than monthly raises `IztroError` (`invalid_argument`). A year outside 1–9999 or a month outside 1–12 raises `IztroError` (`invalid_argument`).
 When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
 </Callout>
 

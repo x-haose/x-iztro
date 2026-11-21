@@ -498,7 +498,10 @@ def palace(
 | `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
 
 **返回值**　`Palace | None`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
-层级为 `"origin"` 时即本命十二宫。宫名或层级标识拼错时返回 `None`，不报错。
+层级为 `"origin"` 时即本命十二宫。宫名拼错时返回 `None`，不报错。
+
+**异常**　`scope` 不是层级标识，或比[查询精度](#precision)细（如按年取的运限传 `Scope.MONTHLY`）时抛
+`IztroError`（`invalid_argument`）：那一层是内核挑的代表日的，不是查询的答案。
 
 **示例**
 
@@ -544,7 +547,7 @@ def surround_palaces(
 
 **参数**　同 `palace`。
 
-**返回值**　`SurroundedPalaces | None`，判断方法见[三方四正](/zh/docs/python/surpalaces)。
+**返回值**　`SurroundedPalaces | None`，判断方法见[三方四正](/zh/docs/python/surpalaces)。异常同 `palace`。
 
 **示例**
 
@@ -595,6 +598,8 @@ def not_have_horoscope_stars(self, name, scope, stars: list[str], astrolabe=None
 | `has_horoscope_stars` | 每一颗都在 |
 | `has_one_of_horoscope_stars` | 至少一颗在 |
 | `not_have_horoscope_stars` | 一颗都不在 |
+
+**异常**　同 `palace`。
 
 **示例**
 
@@ -659,7 +664,7 @@ def has_horoscope_mutagen(self, name, scope, mutagen: Mutagen, astrolabe=None) -
 | `mutagen` | `str` | 是 | — | 四化标识 |
 | `astrolabe` | `Astrolabe \| None` | 否 | `None` | 通常不传 |
 
-**返回值**　`bool`。
+**返回值**　`bool`。异常同 `palace`。
 
 **示例**
 
@@ -770,7 +775,7 @@ def precision(self) -> Scope
 
 字段里六个层级恒齐全，比精度细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，
 不是查询的答案：`to_text` 与 [`KnowledgePack.for_horoscope`](/zh/docs/python/knowledge#for_astrolabe--for_horoscope)
-只取到这一层，`to_text` 的 `through` 与 `patterns` / `patterns_to_text` 的 `scope` 比它细时抛
+只取到这一层，`to_text` 的 `through`、`patterns` / `patterns_to_text` 与[宫位查询](#palace)的 `scope` 比它细时抛
 `IztroError`（`invalid_argument`）。
 
 **示例**
@@ -817,7 +822,8 @@ def to_text(
 | `through` | `Scope \| ScopeLiteral \| None` | 否 | `None` | [写到哪一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`Scope.DECADAL` 只写大限，`YEARLY` 写大限、小限、流年，`MONTHLY` / `DAILY` / `HOURLY` 依次各多一层；`None` 写到[查询精度](#precision)。只写到大限时大限段不列风云际会。`Scope.ORIGIN`、不是运限层级、比查询精度细的取值抛 `IztroError`（`invalid_argument`） |
 | `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
 
-**返回值**　`str`——按星盘排盘语言输出的 Markdown 子集：`# 运限 <日期> (<农历>)` 标题，
+**返回值**　`str`——按星盘排盘语言输出的 Markdown 子集：`# 运限 <日期> (<农历>)` 标题（只写到流年、流月时只写农历年份与干支，
+如 `# 运限 2027 (丁未)`、`# 运限 2025 (乙巳) · 流月 (甲申)`），
 大限（未起运写童限）、小限、流年、流月、流日、流时各一节 `## `（按年、按月取的运限只到流年、流月），大限与流年展开十二宫表，
 各层带该层视角的四化、流耀与格局行。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text#格式约定)，释义的插入位置见
@@ -855,7 +861,7 @@ print("\n".join(l for l in year.to_text().splitlines() if l.startswith("#")))
 ```
 
 ```text
-# 运限 2027-7-4 (二〇二七年六月初一)
+# 运限 2027 (丁未)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命父母 · 虚岁 28
 ## 流年 · 命宫: 本命父母 (丁未)
@@ -870,7 +876,7 @@ print("\n".join(l for l in month.to_text().splitlines() if l.startswith("#")))
 ```
 
 ```text
-# 运限 2025-8-23 (二〇二五年七月初一)
+# 运限 2025 (乙巳) · 流月 (甲申)
 ## 大限 · 命宫: 本命夫妻 (庚辰)
 ## 小限 · 命宫: 本命田宅 · 虚岁 26
 ## 流年 · 命宫: 本命兄弟 (乙巳)
