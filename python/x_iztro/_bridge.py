@@ -10,7 +10,10 @@ Go 绑定走的是同一个 Rust 分派函数，因此两侧的行为不会分�
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from x_iztro._x_iztro import IztroError
 
 T = TypeVar("T")
 
@@ -38,6 +41,13 @@ def _snake(name: str) -> str:
         else:
             out.append(ch)
     return "".join(out)
+
+
+def invalid_argument(message: str) -> IztroError:
+    """Python 侧入参校验失败时抛出的 `IztroError`：code 为 invalid_argument，与内核同类报错同形。"""
+    err = _native().IztroError(message)
+    err.code = "invalid_argument"
+    return err
 
 
 def typed(cls: type[T], payload: dict[str, Any]) -> T:

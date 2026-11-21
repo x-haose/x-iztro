@@ -344,6 +344,18 @@ func TestHoroscopeOfYear(t *testing.T) {
 	if _, err := ofYear.ToTextWith(TextOptions{Through: ScopeMonthly}); !errors.Is(err, ErrInvalidArgument) {
 		t.Errorf("年份运限写到流月应报 ErrInvalidArgument，实际 %v", err)
 	}
+	// 宫位查询在 Go 侧本地算：流年照常，比流年细报错，报错与内核校验的格局同一句
+	if p, err := ofYear.Palace(PalaceSoul, ScopeYearly); p == nil || err != nil {
+		t.Errorf("年份运限的流年命宫应取得到（err=%v）", err)
+	}
+	_, patternsErr := ofYear.Patterns(ScopeMonthly, nil)
+	_, palaceErr := ofYear.Palace(PalaceSoul, ScopeMonthly)
+	if !errors.Is(palaceErr, ErrInvalidArgument) || patternsErr == nil || palaceErr.Error() != patternsErr.Error() {
+		t.Errorf("年份运限按流月取宫应报与格局相同的 ErrInvalidArgument，实际 %v / %v", palaceErr, patternsErr)
+	}
+	if _, err := ofYear.HasHoroscopeMutagen(PalaceSoul, ScopeDaily, MutagenLu); !errors.Is(err, ErrInvalidArgument) {
+		t.Errorf("年份运限按流日判四化应报 ErrInvalidArgument，实际 %v", err)
+	}
 
 	for _, r := range [][2]int{{2012, 2001}, {0, 1}, {9999, 10000}} {
 		if _, err := a.YearlyOverviewToText(r[0], r[1]); !errors.Is(err, ErrInvalidArgument) {

@@ -120,20 +120,23 @@ func TestStage1Parity(t *testing.T) {
 	if h.AgePalace() == nil {
 		t.Fatal("小限宫位取不到")
 	}
-	if h.Palace(PalaceSoul, ScopeYearly) == nil {
-		t.Fatal("流年命宫取不到")
+	if p, err := h.Palace(PalaceSoul, ScopeYearly); p == nil || err != nil {
+		t.Fatalf("流年命宫取不到: %v", err)
 	}
-	if h.SurroundPalaces(PalaceSoul, ScopeYearly) == nil {
-		t.Fatal("流年命宫三方四正取不到")
+	if sp, err := h.SurroundPalaces(PalaceSoul, ScopeYearly); sp == nil || err != nil {
+		t.Fatalf("流年命宫三方四正取不到: %v", err)
 	}
-	if h.HasHoroscopeMutagen(PalaceSoul, ScopeOrigin, MutagenLu) {
-		t.Fatal("ScopeOrigin 下运限四化恒为 false")
+	if has, err := h.HasHoroscopeMutagen(PalaceSoul, ScopeOrigin, MutagenLu); has || err != nil {
+		t.Fatalf("ScopeOrigin 下运限四化恒为 false: %v", err)
 	}
 	// 三个流耀判断互相自洽
 	probe := []string{"流禄"}
-	has := h.HasHoroscopeStars(PalaceSoul, ScopeYearly, probe)
-	one := h.HasOneOfHoroscopeStars(PalaceSoul, ScopeYearly, probe)
-	not := h.NotHaveHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	has, err1 := h.HasHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	one, err2 := h.HasOneOfHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	not, err3 := h.NotHaveHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	if err := errors.Join(err1, err2, err3); err != nil {
+		t.Fatal(err)
+	}
 	if has != one || has == not {
 		t.Fatalf("流耀判断不自洽: has=%v one=%v not=%v", has, one, not)
 	}

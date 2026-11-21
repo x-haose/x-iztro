@@ -808,7 +808,7 @@ impl Astrolabe {
     /// 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
     /// `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
     /// 查询精度（[`HoroscopeRef::precision`]）为流年：流月、流日、流时也在数据里，是六月初一那一天的，
-    /// 文本默认只写到流年，格局与文本的层级参数比流年细时报错。
+    /// 文本默认只写到流年，宫位查询、格局与文本的层级参数比流年细时报错。
     ///
     /// # Errors
     /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]；该年六月初一落在支持范围外时返回
@@ -837,7 +837,7 @@ impl Astrolabe {
     ///   `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
     ///
     /// 查询精度（[`HoroscopeRef::precision`]）为流月：流日与流时也在数据里，是那一天的，
-    /// 文本默认只写到流月，格局与文本的层级参数比流月细时报错。
+    /// 文本默认只写到流月，宫位查询、格局与文本的层级参数比流月细时报错。
     ///
     /// # Errors
     /// 年份不在 1-9999、月份不在 1-12，或初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）时返回
@@ -962,43 +962,91 @@ impl<'a> HoroscopeRef<'a> {
         self.data.age_palace(self.astrolabe)
     }
 
-    /// 按宫位名称和运限范围取宫位
-    pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>> {
-        self.data.palace(name, scope, self.astrolabe)
+    /// 按宫位名称和运限范围取宫位；`Scope::Origin` 按本命宫名取
+    ///
+    /// # Errors
+    /// `scope` 比查询精度（[`HoroscopeRef::precision`]）细时返回 [`IztroError::InvalidArgument`]：
+    /// 那一层是内核挑的代表日的，不是查询的答案。
+    pub fn palace(&self, name: Palace, scope: Scope) -> Result<Option<PalaceRef<'a>>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self.data.palace(name, scope, self.astrolabe))
     }
 
     /// 按宫位名称和运限范围取三方四正
-    pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>> {
-        self.data.surround_palaces(name, scope, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn surround_palaces(
+        &self,
+        name: Palace,
+        scope: Scope,
+    ) -> Result<Option<SurroundedPalaces<'a>>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self.data.surround_palaces(name, scope, self.astrolabe))
     }
 
     /// 该运限天干的指定四化星是否落在目标宫位（本命盘范围恒为 false）
-    pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool {
-        self.data
-            .has_horoscope_mutagen(name, scope, mutagen, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn has_horoscope_mutagen(
+        &self,
+        name: Palace,
+        scope: Scope,
+        mutagen: Mutagen,
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_horoscope_mutagen(name, scope, mutagen, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否**全部**包含指定星耀
-    pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
-        self.data
-            .has_horoscope_stars(name, scope, stars, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn has_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否包含指定星耀中的**任一颗**
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
     pub fn has_one_of_horoscope_stars(
         &self,
         name: Palace,
         scope: Scope,
         stars: &[StarKey],
-    ) -> bool {
-        self.data
-            .has_one_of_horoscope_stars(name, scope, stars, self.astrolabe)
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_one_of_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否**一颗都不**包含指定星耀
-    pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
-        self.data
-            .not_have_horoscope_stars(name, scope, stars, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn not_have_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .not_have_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 }
 
@@ -1035,12 +1083,16 @@ mod tests {
             .palace(Palace::Soul, Scope::Decadal, &astrolabe)
             .unwrap();
         assert_eq!(
-            h.palace(Palace::Soul, Scope::Decadal).unwrap().index,
+            h.palace(Palace::Soul, Scope::Decadal)
+                .unwrap()
+                .unwrap()
+                .index,
             by_data.index
         );
         assert_eq!(h.age_palace().index, h.data().age_palace(&astrolabe).index);
         assert_eq!(
             h.surround_palaces(Palace::Soul, Scope::Yearly)
+                .unwrap()
                 .unwrap()
                 .target
                 .index,
@@ -1048,22 +1100,69 @@ mod tests {
         );
         for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
             assert_eq!(
-                h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m),
+                h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m)
+                    .unwrap(),
                 h.data()
                     .has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m, &astrolabe)
             );
         }
         let stars = [StarKey::Yunkui, StarKey::Yunyue];
         assert_eq!(
-            h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
+                .unwrap(),
             h.data()
                 .has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars, &astrolabe)
         );
         assert_eq!(
-            h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
+                .unwrap(),
             !h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
-                || h.palace(Palace::Soul, Scope::Decadal).is_none()
+                .unwrap()
         );
+    }
+
+    /// 按年、按月取的运限，宫位查询的层级比查询精度细时报错，而不是答出代表日那一层的宫位；
+    /// 不比查询精度细的层级与本命照常可查
+    #[test]
+    fn palace_queries_reject_scopes_finer_than_the_precision() {
+        let astrolabe = make_astrolabe();
+        let stars = [StarKey::Yunkui];
+        for (h, finer, within) in [
+            (
+                astrolabe.horoscope_of_year(2027).unwrap(),
+                Scope::Monthly,
+                Scope::Yearly,
+            ),
+            (
+                astrolabe.horoscope_of_month(2025, 7).unwrap(),
+                Scope::Daily,
+                Scope::Monthly,
+            ),
+        ] {
+            let errors = [
+                h.palace(Palace::Soul, finer).err(),
+                h.surround_palaces(Palace::Soul, finer).err(),
+                h.has_horoscope_mutagen(Palace::Soul, finer, Mutagen::Lu)
+                    .err(),
+                h.has_horoscope_stars(Palace::Soul, finer, &stars).err(),
+                h.has_one_of_horoscope_stars(Palace::Soul, finer, &stars)
+                    .err(),
+                h.not_have_horoscope_stars(Palace::Soul, finer, &stars)
+                    .err(),
+            ];
+            for err in errors {
+                assert!(
+                    matches!(err, Some(IztroError::InvalidArgument(_))),
+                    "{finer:?}: {err:?}"
+                );
+            }
+            for scope in [Scope::Origin, Scope::Decadal, within] {
+                assert!(
+                    h.palace(Palace::Soul, scope).unwrap().is_some(),
+                    "{scope:?}"
+                );
+            }
+        }
     }
 
     #[test]

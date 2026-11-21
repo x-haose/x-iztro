@@ -16,6 +16,7 @@ import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from x_iztro._bridge import invalid_argument
 from x_iztro.enums import LanguageType
 
 if TYPE_CHECKING:
@@ -55,20 +56,13 @@ def _validate_schema(raw: object) -> dict[str, Any]:
     Raises:
         IztroError: 不符合格式（code 为 invalid_argument）
     """
-    from x_iztro._x_iztro import IztroError
-
-    def invalid(message: str) -> IztroError:
-        err = IztroError(message)
-        err.code = "invalid_argument"
-        return err
-
     if not isinstance(raw, dict):
-        raise invalid("knowledge pack must be a JSON object")
+        raise invalid_argument("knowledge pack must be a JSON object")
     schema = raw.get("schema", 0)
     if not isinstance(schema, int) or isinstance(schema, bool) or schema <= 0:
-        raise invalid('knowledge pack must declare "schema" (currently 1)')
+        raise invalid_argument('knowledge pack must declare "schema" (currently 1)')
     if schema > _SCHEMA_VERSION:
-        raise invalid(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
+        raise invalid_argument(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
     return raw
 
 

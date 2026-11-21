@@ -247,7 +247,7 @@ impl<'a> HoroscopeRef<'a> {
     /// 按日期取（[`Astrolabe::horoscope`]，给不给时辰都一样）为 [`Scope::Hourly`]。
     ///
     /// 数据里比它细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，不是查询的答案：
-    /// 文本（`to_text`）默认只写到这一层，格局与文本的层级参数比它细时报错。
+    /// 文本（`to_text`）默认只写到这一层，宫位查询、格局与文本的层级参数比它细时报错。
     pub fn precision(&self) -> Scope {
         self.precision
     }

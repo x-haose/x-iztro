@@ -219,7 +219,7 @@ func (a *Astrolabe) HoroscopeNowContext(ctx context.Context) (*Horoscope, error)
 // 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
 // Config.AgeDivide 取生日分界或 Config.HoroscopeDivide 取立春分界时年内仍会换层，结果是六月初一当天的。
 // 查询精度（Horoscope.Precision）为 ScopeYearly：流月、流日、流时也在结果里，是六月初一那一天的，
-// 文本与按盘取材只取到流年，文本与格局的层级参数比流年细时报 ErrInvalidArgument。
+// 文本与按盘取材只取到流年，宫位查询、文本与格局的层级参数比流年细时报 ErrInvalidArgument。
 // 返回的运限再发起的计算（ToText、Patterns、按盘取材）仍按该农历年取运限。
 //
 // lunarYear 不在 1-9999 时返回 ErrInvalidArgument。
@@ -238,7 +238,7 @@ func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (
 // 只问某个月时用它，不必替提问的人挑一天。lunarMonth 是农历月号 1-12，闰月不单独成月号：
 // 默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止见 MonthlyList。
 // 查询精度（Horoscope.Precision）为 ScopeMonthly：流日与流时也在结果里，是那一天的，
-// 文本与按盘取材只取到流月，文本与格局的层级参数比流月细时报 ErrInvalidArgument。
+// 文本与按盘取材只取到流月，宫位查询、文本与格局的层级参数比流月细时报 ErrInvalidArgument。
 // 返回的运限再发起的计算（ToText、Patterns、按盘取材）仍按该农历年月取运限。
 // 星盘配置的 horoscope_divide 取节气分界（exact）时，目标日期改取第 lunarMonth 个节令月（寅月为 1）的
 // 交节次日，流年与 HoroscopeOfYear 同属立春起算的那一年。

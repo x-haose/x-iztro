@@ -136,8 +136,8 @@ func TestHoroscopeScopeItem(t *testing.T) {
 	if idx < 0 {
 		t.Fatal("流年层级应有命宫")
 	}
-	if h.Palace(PalaceSoul, ScopeYearly).Index != idx {
-		t.Error("PalaceIndexByName 与 Palace 结果不一致")
+	if p, err := h.Palace(PalaceSoul, ScopeYearly); err != nil || p.Index != idx {
+		t.Errorf("PalaceIndexByName 与 Palace 结果不一致: %v", err)
 	}
 	if h.Yearly.PalaceIndexByName("没有这个宫") != -1 {
 		t.Error("查不到的宫名应返回 -1")

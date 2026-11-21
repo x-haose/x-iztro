@@ -241,7 +241,7 @@ def test_horoscope_of_year_is_the_lunar_year_not_new_years_day():
 def test_horoscope_of_year_recomputes_by_year():
     """年份运限再发起计算时转发的是年份，查询精度为流年：文本只写到流年，与「六月初一 + 出生时辰
     （寅时，索引 2）」的运限写到流年同文；转发 DTO 的 solar_date 会成为日期目标、写到流时。
-    比流年细的层级报错。"""
+    比流年细的层级报错：宫位查询在 Python 侧本地算，报错与内核校验的格局同一句。"""
     a = chart()
     of_year = a.horoscope_of_year(2027)
     assert of_year.precision() == Scope.YEARLY
@@ -249,13 +249,19 @@ def test_horoscope_of_year_recomputes_by_year():
     assert "## 流年 · " in text
     assert "## 流月 · " not in text
     assert text == a.horoscope(of_year.solar_date, 2).to_text(through=Scope.YEARLY)
+    assert of_year.palace(PalaceName.SOUL, Scope.YEARLY) is not None
+    messages = []
     for call in (
         lambda: of_year.to_text(through=Scope.MONTHLY),
         lambda: of_year.patterns(Scope.MONTHLY),
+        lambda: of_year.palace(PalaceName.SOUL, Scope.MONTHLY),
+        lambda: of_year.has_horoscope_mutagen(PalaceName.SOUL, Scope.DAILY, Mutagen.LU),
     ):
         with pytest.raises(IztroError) as info:
             call()
         assert info.value.code == "invalid_argument"
+        messages.append(str(info.value))
+    assert messages[2] == messages[1]
 
 
 def test_yearly_overview_to_text_rejects_bad_ranges():

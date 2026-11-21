@@ -222,7 +222,7 @@ pub struct QueryInput {
     /// to_text 家族的释义深度标识（`summary` / `full`）；空串取 `full`，`summary` 须同时给 `knowledge`
     pub knowledge_depth: String,
     /// `horoscopeToText` 写到哪一层为止的运限层级标识（`decadal` / `yearly` / `monthly` / `daily` /
-    /// `hourly`），小限随流年；空串即写到流时
+    /// `hourly`），小限随流年；空串即写到运限目标的查询精度，比查询精度细报 invalid_argument
     pub through: String,
     /// `topicToText` 的主题 slug（知识包 `topics` 段的键）
     pub topic: String,
