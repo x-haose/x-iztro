@@ -340,7 +340,7 @@ func (a *Astrolabe) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 	return out, utilQueryContext(ctx, payload, &out)
 }
 
-// ToText 生成运限的语义化文本；本命信息与运限一并写入。
+// ToText 生成运限的语义化文本，写到查询精度（Precision）那一层为止。
 func (h *Horoscope) ToText() (string, error) {
 	return h.ToTextContext(context.Background())
 }
@@ -351,6 +351,7 @@ func (h *Horoscope) ToTextContext(ctx context.Context) (string, error) {
 }
 
 // ToTextWith 生成运限的语义化文本并按 opts.Knowledge 追加释义节：各层流耀与各层命中格局的解读。
+// opts.Through 为空时写到查询精度（Precision），比查询精度细时报 ErrInvalidArgument。
 func (h *Horoscope) ToTextWith(opts TextOptions) (string, error) {
 	return h.ToTextWithContext(context.Background(), opts)
 }

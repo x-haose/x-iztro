@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::stars::StarKey;
 use crate::data::types::{Brightness, Mutagen, Scope};
+use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::horoscope::{HoroscopeData, HoroscopeRef};
 
@@ -125,13 +126,25 @@ impl Astrolabe {
 
 impl<'a> HoroscopeRef<'a> {
     /// 指定运限层视角的格局命中（默认口径）：`Scope::Origin` 等同本命。
-    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit> {
+    ///
+    /// # Errors
+    /// 同 [`Self::patterns_with`]。
+    pub fn patterns(&self, scope: Scope) -> Result<Vec<PatternHit>, IztroError> {
         self.patterns_with(scope, &PatternConfig::default())
     }
 
     /// 指定运限层视角的格局命中，指定口径。
-    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit> {
-        patterns_at(self.astrolabe(), self.data(), scope, config)
+    ///
+    /// # Errors
+    /// `scope` 比查询精度（[`HoroscopeRef::precision`]）细时返回 [`IztroError::InvalidArgument`]：
+    /// 那一层是内核挑的代表日的，不是查询的答案。
+    pub fn patterns_with(
+        &self,
+        scope: Scope,
+        config: &PatternConfig,
+    ) -> Result<Vec<PatternHit>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(patterns_at(self.astrolabe(), self.data(), scope, config))
     }
 }
 
@@ -143,6 +156,22 @@ pub fn patterns_at(
     config: &PatternConfig,
 ) -> Vec<PatternHit> {
     detect(&ChartView::at(astrolabe, horoscope, scope, config))
+}
+
+/// 运限只取到 `through` 层时 `scope` 层视角的格局命中：在 [`patterns_at`] 之上，
+/// `through` 不比 `scope` 细时去掉要读更细一层的格局（[`PatternKey::needs_finer_layer`]）。
+pub(crate) fn patterns_through(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    scope: Scope,
+    through: Scope,
+    config: &PatternConfig,
+) -> Vec<PatternHit> {
+    let mut hits = patterns_at(astrolabe, horoscope, scope, config);
+    if through.depth() <= scope.depth() {
+        hits.retain(|h| !h.key.needs_finer_layer());
+    }
+    hits
 }
 
 #[cfg(test)]
@@ -316,9 +345,9 @@ mod tests {
         assert_eq!(v.mutagen_of(star), Some(Mutagen::Lu));
         assert!(v.has_mutagen(p, Mutagen::Lu));
         // 运限视角与本命视角各自可跑，且 Origin 等同本命
-        let _ = h.patterns(Scope::Decadal);
-        let _ = h.patterns(Scope::Yearly);
-        assert_eq!(h.patterns(Scope::Origin), a.patterns());
+        h.patterns(Scope::Decadal).unwrap();
+        h.patterns(Scope::Yearly).unwrap();
+        assert_eq!(h.patterns(Scope::Origin).unwrap(), a.patterns());
     }
 
     #[test]

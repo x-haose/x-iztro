@@ -673,6 +673,7 @@ mod tests {
         );
         assert!(
             h.patterns(Scope::Decadal)
+                .unwrap()
                 .iter()
                 .any(|x| x.key == PatternKey::LuShuaiMaKun)
         );
@@ -744,6 +745,7 @@ mod tests {
         // 只在大限视角报出，流年视角不重复
         assert!(
             !h.patterns(Scope::Yearly)
+                .unwrap()
                 .iter()
                 .any(|x| x.key == PatternKey::FengYunJiHui)
         );

@@ -1,5 +1,6 @@
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
 
@@ -204,13 +205,17 @@ pub struct HoroscopeData {
     pub hourly: HoroscopeItem,
 }
 
-/// 一次运限查询的结果连同发起它的星盘。
+/// 一次运限查询的结果连同发起它的星盘与查询精度。
 ///
-/// 由 [`Astrolabe::horoscope`] 返回。解引用即得到 [`HoroscopeData`] 本身，
-/// 而宫位与流耀查询不必再把星盘传进来 —— 运限本来就依附于某一张盘。
+/// 由 [`Astrolabe::horoscope`]、[`Astrolabe::horoscope_of_year`]、[`Astrolabe::horoscope_of_month`] 返回。
+/// 解引用即得到 [`HoroscopeData`] 本身，而宫位与流耀查询不必再把星盘传进来 —— 运限本来就依附于某一张盘。
 pub struct HoroscopeRef<'a> {
+    /// 运限数据；各层恒齐全，比 `precision` 细的层级属于代表日
     pub(crate) data: HoroscopeData,
+    /// 发起查询的星盘
     pub(crate) astrolabe: &'a Astrolabe,
+    /// 查询精度，取值见 [`HoroscopeRef::precision`]
+    pub(crate) precision: Scope,
 }
 
 impl<'a> std::ops::Deref for HoroscopeRef<'a> {
@@ -232,8 +237,37 @@ impl<'a> HoroscopeRef<'a> {
         self.astrolabe
     }
 
-    /// 取出运限数据，脱离星盘。
+    /// 取出运限数据，脱离星盘与查询精度。
     pub fn into_data(self) -> HoroscopeData {
         self.data
+    }
+
+    /// 查询精度：目标实际指定到的最细层级。按农历年取（[`Astrolabe::horoscope_of_year`]）为
+    /// [`Scope::Yearly`]，按农历年月取（[`Astrolabe::horoscope_of_month`]）为 [`Scope::Monthly`]，
+    /// 按日期取（[`Astrolabe::horoscope`]，给不给时辰都一样）为 [`Scope::Hourly`]。
+    ///
+    /// 数据里比它细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，不是查询的答案：
+    /// 文本（`to_text`）默认只写到这一层，格局与文本的层级参数比它细时报错。
+    pub fn precision(&self) -> Scope {
+        self.precision
+    }
+
+    /// 校验 `scope` 不比查询精度细；`param` 是报错时指明的入参名。
+    ///
+    /// # Errors
+    /// `scope` 比 [`Self::precision`] 细时返回 [`IztroError::InvalidArgument`]。
+    pub(crate) fn check_within_precision(
+        &self,
+        scope: Scope,
+        param: &str,
+    ) -> Result<(), IztroError> {
+        if scope.depth() > self.precision.depth() {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid {param} '{}': the horoscope target only specifies layers down to '{}'",
+                scope.as_key(),
+                self.precision.as_key()
+            )));
+        }
+        Ok(())
     }
 }

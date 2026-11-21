@@ -31,7 +31,7 @@ use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::models::surpalaces::SurroundedPalaces;
-use crate::pattern::{PatternConfig, PatternHit, PatternKey, patterns_at};
+use crate::pattern::{PatternConfig, PatternHit, PatternKey, patterns_through};
 use crate::utils::fix_index;
 
 /// 列表型取值的分隔符：星耀列表、十二神、四化都用它连接
@@ -87,7 +87,7 @@ pub struct TextOptions<'a> {
     depth: KnowledgeDepth,
     /// 格局判定口径；`None` 取 [`PatternConfig::default`]
     pattern_config: Option<&'a PatternConfig>,
-    /// 运限文本写到哪一层为止；`None` 即写到流时
+    /// 运限文本写到哪一层为止；`None` 时自由函数写到流时，[`HoroscopeRef`] 的便捷方法写到查询精度
     through: Option<Scope>,
 }
 
@@ -137,9 +137,11 @@ impl<'a> TextOptions<'a> {
     }
 
     /// 运限文本写到 `scope` 这一层为止，更细的层级不写：大限只写大限；流年写大限、小限、流年；
-    /// 流月、流日、流时依次各多一层。不设即写到流时。只对运限文本起作用。
+    /// 流月、流日、流时依次各多一层。只对运限文本起作用。不设时 [`HoroscopeRef::to_text_with`]
+    /// 写到查询精度（[`HoroscopeRef::precision`]），自由函数 [`horoscope_to_text_with`] 写到流时。
     ///
-    /// 目标日期只精确到年或日时用它：流月以下随日期变、流时随时辰变，没给到的精度不该出现在文本里。
+    /// 只写到大限时，大限段不列要读小限与流年才判得出的格局（[`PatternKey::needs_finer_layer`]），
+    /// 同一大限内各年的大限段因此相同。
     ///
     /// # Errors
     /// `scope` 为 [`Scope::Origin`] 时返回 [`IztroError::InvalidArgument`]：本命不是运限层级。
@@ -154,13 +156,14 @@ impl<'a> TextOptions<'a> {
         Ok(self)
     }
 
-    /// 运限文本是否写 `scope` 这一层；层级先后即 [`HOROSCOPE_SCOPES`] 的顺序。
+    /// 运限文本写到的最后一层；不设即流时。
+    fn through(&self) -> Scope {
+        self.through.unwrap_or(Scope::Hourly)
+    }
+
+    /// 运限文本是否写 `scope` 这一层。
     fn writes_scope(&self, scope: Scope) -> bool {
-        let rank = |s: Scope| HOROSCOPE_SCOPES.iter().position(|x| *x == s);
-        match self.through {
-            None => true,
-            Some(through) => rank(scope) <= rank(through),
-        }
+        scope.depth() <= self.through().depth()
     }
 
     /// 当前的释义材料来源；`None` 即只输出事实。
@@ -1223,15 +1226,21 @@ pub fn monthly_list_to_text_with(
 /// 各运限层级视角的格局命中，按 [`HOROSCOPE_SCOPES`] 顺序排列
 type ScopeHits = Vec<(Scope, Vec<PatternHit>)>;
 
-/// 按指定口径判定各运限层级的格局命中（小限不在 Scope 之列，无格局）
+/// 文本写到的各运限层级的格局命中，按选项的口径判定、只取到选项写到的层级
+/// （小限不在 Scope 之列，无格局）
 fn horoscope_scope_hits(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
-    config: &PatternConfig,
+    opts: &TextOptions,
 ) -> ScopeHits {
+    let config = opts.effective_pattern_config();
     HOROSCOPE_SCOPES
         .into_iter()
-        .map(|scope| (scope, patterns_at(astrolabe, horoscope, scope, config)))
+        .filter(|scope| opts.writes_scope(*scope))
+        .map(|scope| {
+            let hits = patterns_through(astrolabe, horoscope, scope, opts.through(), &config);
+            (scope, hits)
+        })
         .collect()
 }
 
@@ -1461,7 +1470,8 @@ pub fn horoscope_to_text(
 
 /// 运限的语义化文本：大限、小限、流年、流月、流日、流时各一节，完整层的大限与流年展开
 /// 十二宫表、总览层与其余各层同写宫名对照与流耀行；带知识包时各层附流耀与格局释义（跨层去重）。
-/// 写到哪一层为止由 [`TextOptions::horoscope_through`] 决定，小限随流年一起写或不写
+/// 写到哪一层为止由 [`TextOptions::horoscope_through`] 决定，不设即写到流时，小限随流年一起写或不写。
+/// `horoscope` 不带查询精度：按年、按月取的运限用 [`HoroscopeRef::to_text_with`]，默认只写到查询精度
 pub fn horoscope_to_text_with(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
@@ -1469,7 +1479,7 @@ pub fn horoscope_to_text_with(
     lang: Language,
 ) -> String {
     let l = labels(lang);
-    let scope_hits = horoscope_scope_hits(astrolabe, horoscope, &opts.effective_pattern_config());
+    let scope_hits = horoscope_scope_hits(astrolabe, horoscope, opts);
     let mut seen_stars: Vec<StarKey> = Vec::new();
     let mut seen_patterns: Vec<PatternKey> = Vec::new();
     let mut out = String::new();
@@ -1882,19 +1892,45 @@ impl Astrolabe {
 }
 
 impl HoroscopeRef<'_> {
-    /// 运限的语义化文本（按星盘排盘语言）；[`horoscope_to_text`] 的便捷形态
+    /// 运限的语义化文本（按星盘排盘语言），写到查询精度（[`Self::precision`]）为止；
+    /// [`horoscope_to_text_with`] 的便捷形态
     pub fn to_text(&self) -> String {
-        horoscope_to_text(self.astrolabe(), self.data(), self.astrolabe().language)
-    }
-
-    /// 运限文本，按选项附释义；[`horoscope_to_text_with`] 的便捷形态
-    pub fn to_text_with(&self, opts: &TextOptions) -> String {
+        let opts = TextOptions {
+            through: Some(self.precision()),
+            ..TextOptions::default()
+        };
         horoscope_to_text_with(
             self.astrolabe(),
             self.data(),
-            opts,
+            &opts,
             self.astrolabe().language,
         )
+    }
+
+    /// 运限文本，按选项附释义；未设 [`TextOptions::horoscope_through`] 时写到查询精度为止。
+    /// [`horoscope_to_text_with`] 的便捷形态
+    ///
+    /// # Errors
+    /// `opts` 设的层级比查询精度细时返回 [`IztroError::InvalidArgument`]：那几层是内核挑的代表日的，
+    /// 不是查询的答案。
+    pub fn to_text_with(&self, opts: &TextOptions) -> Result<String, IztroError> {
+        let through = match opts.through {
+            Some(scope) => {
+                self.check_within_precision(scope, "through")?;
+                scope
+            }
+            None => self.precision(),
+        };
+        let opts = TextOptions {
+            through: Some(through),
+            ..*opts
+        };
+        Ok(horoscope_to_text_with(
+            self.astrolabe(),
+            self.data(),
+            &opts,
+            self.astrolabe().language,
+        ))
     }
 }
 
@@ -2140,6 +2176,54 @@ mod tests {
             horoscope_to_text(&astrolabe, &horoscope, lang)
         );
         assert!(TextOptions::new().horoscope_through(Scope::Origin).is_err());
+    }
+
+    /// 只写到大限时，大限段不列要读小限与流年才判得出的风云际会：同一大限里各年的文本相同。
+    /// 写到流年时它照列在大限段
+    #[test]
+    fn decadal_only_text_is_the_same_across_the_decade() {
+        let astrolabe = by_solar(
+            "1980-3-10",
+            2,
+            Gender::Male,
+            true,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let decadal = TextOptions::new()
+            .horoscope_through(Scope::Decadal)
+            .unwrap();
+        let text = |year: i64, opts: &TextOptions| {
+            astrolabe
+                .horoscope_of_year(year)
+                .unwrap()
+                .to_text_with(opts)
+                .unwrap()
+        };
+        let with_age = text(2025, &TextOptions::new());
+        assert!(with_age.contains("风云际会 (命宫)"), "{with_age}");
+        let decadal_2025 = text(2025, &decadal);
+        assert!(!decadal_2025.contains("风云际会"), "{decadal_2025}");
+        // 两年同属一个大限，运限标题行的日期不同，其余逐字节相同
+        let body = |t: &str| t.split_once('\n').unwrap().1.to_string();
+        assert_eq!(body(&decadal_2025), body(&text(2027, &decadal)));
+    }
+
+    /// 按年、按月取的运限，不带选项的文本只写到查询精度
+    #[test]
+    fn horoscope_ref_text_stops_at_its_precision() {
+        let astrolabe = chart(Language::ZhCN);
+        let text = astrolabe.horoscope_of_year(2027).unwrap().to_text();
+        assert!(
+            text.contains("## 流年 · ") && !text.contains("## 流月 · "),
+            "{text}"
+        );
+        let text = astrolabe.horoscope_of_month(2025, 7).unwrap().to_text();
+        assert!(
+            text.contains("## 流月 · ") && !text.contains("## 流日 · "),
+            "{text}"
+        );
     }
 
     /// 未起运的盘（童限），大限段的标题写「童限」而非「大限」

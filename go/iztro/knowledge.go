@@ -192,9 +192,9 @@ type TextOptions struct {
 	// 取摘要层须同时给 Knowledge，所给包缺摘要时报 ErrInvalidArgument 并列出缺项
 	KnowledgeDepth string
 	// Through 为运限文本写到哪一层为止，更细的层级不写：ScopeDecadal 只写大限，ScopeYearly 写大限、
-	// 小限、流年，ScopeMonthly / ScopeDaily / ScopeHourly 依次各多一层；空串写到流时。
-	// 流月以下随日期变、流时随时辰变，目标只精确到年或日时用它略去没给到的精度。
-	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin 与不是运限层级的取值报 ErrInvalidArgument
+	// 小限、流年，ScopeMonthly / ScopeDaily / ScopeHourly 依次各多一层；空串写到运限的查询精度
+	// （Horoscope.Precision）。只写到大限时大限段不列风云际会（它要读小限与流年才判得出）。
+	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin、不是运限层级、比查询精度细的取值报 ErrInvalidArgument
 	Through string
 	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
 	PatternConfig *PatternConfig
@@ -252,7 +252,8 @@ func (k Knowledge) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, co
 	return k.forChart(ctx, chart.textPayload("knowledgeForChart"), config)
 }
 
-// ForHoroscope 按运限取材：在 ForAstrolabe 的本命内容之上，另加各运限层的流耀与各层按 config 口径命中的格局。
+// ForHoroscope 按运限取材：在 ForAstrolabe 的本命内容之上，另加各运限层的流耀与各层按 config 口径命中的格局，
+// 只取到运限的查询精度（Horoscope.Precision）那一层。
 func (k Knowledge) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
 	return k.ForHoroscopeContext(context.Background(), horoscope, config)
 }

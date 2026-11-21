@@ -821,6 +821,22 @@ func (h *Horoscope) Astrolabe() *Astrolabe {
 	return h.astrolabe
 }
 
+// Precision 返回查询精度：目标实际指定到的最细层级。HoroscopeOfYear 为 ScopeYearly，HoroscopeOfMonth 为
+// ScopeMonthly，按日期发起的为 ScopeHourly。比它细的层级是内核替调用方挑的代表日的，不是查询的答案：
+// 文本默认只写到这一层，文本与格局的层级参数比它细时报 ErrInvalidArgument。nil 运限返回空串。
+func (h *Horoscope) Precision() string {
+	switch {
+	case h == nil:
+		return ""
+	case h.targetYear == nil:
+		return ScopeHourly
+	case h.targetMonth == nil:
+		return ScopeYearly
+	default:
+		return ScopeMonthly
+	}
+}
+
 // ScopeItem 按层级取运限项；scope 传 ScopeDecadal 等常量，取不到返回 nil。
 // ScopeOrigin 不属于运限层级，返回 nil。
 func (h *Horoscope) ScopeItem(scope string) *HoroscopeScope {

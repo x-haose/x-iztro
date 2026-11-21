@@ -252,14 +252,14 @@ fn tier1_charts_hit_patterns_consistently() {
             .horoscope(TARGET_DATE, TARGET_TIME_INDEX)
             .expect("运限目标日期合法");
         assert_eq!(
-            horoscope.patterns(Scope::Origin),
+            horoscope.patterns(Scope::Origin).unwrap(),
             natal,
             "{label}：运限的 Origin 视角应与本命一致"
         );
 
-        let decadal = horoscope.patterns(Scope::Decadal);
+        let decadal = horoscope.patterns(Scope::Decadal).unwrap();
         check_hits(&a, &decadal, Scope::Decadal, &label);
-        let yearly = horoscope.patterns(Scope::Yearly);
+        let yearly = horoscope.patterns(Scope::Yearly).unwrap();
         check_hits(&a, &yearly, Scope::Yearly, &label);
 
         for (column, hits) in [&natal, &decadal, &yearly].into_iter().enumerate() {

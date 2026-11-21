@@ -140,7 +140,13 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   不起作用，Python 只在受影响的五个方法上收 `detail`，Go 的 `TextOptions.Detail` 对那四类文本被忽略
 - 运限文本写到哪一层：`TextOptions::horoscope_through(Scope)`（bridge `through`，取值为层级标识
   `decadal`/`yearly`/`monthly`/`daily`/`hourly`；Python `Horoscope.to_text(through=)`，Go
-  `TextOptions.Through`）。更细的层级不写，小限随流年；不设即写到流时，与无此开关时逐字节相同。
+  `TextOptions.Through`）。更细的层级不写，小限随流年。不设即写到运限的查询精度
+  （`HoroscopeRef::precision`，Python `precision()`、Go `Precision()`：`horoscope_of_year` 为流年、
+  `horoscope_of_month` 为流月、按日期为流时——更细的层级是内核挑的代表日的）；自由函数
+  `horoscope_to_text_with` 收不带精度的 `HoroscopeData`，不设即写到流时。`through` 与运限格局的 `scope`
+  比查询精度细报 invalid_argument，校验只在 `HoroscopeRef::check_within_precision` 一处；
+  按盘取材 `for_horoscope_with` 收 `through`，bridge 传查询精度。只写到大限时，大限段与取材都去掉
+  `PatternKey::needs_finer_layer` 的格局（风云际会要读小限与流年，`pattern::patterns_through` 一处）。
   `origin` 由内核拒绝、不认识的取值由 bridge 拒绝，都是 invalid_argument。只对 `horoscopeToText`
   起作用：bridge 对其余文本 kind 照样解析但不影响输出，Python 只在运限 `to_text` 上收，
   Go 的 `TextOptions.Through` 对其余文本被忽略
@@ -336,9 +342,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     + Go `knowledge_test.go`
   - 夹宫与运限列表 → `golden_chart_lists`（对 JS 逐项）+ `chart_lists`（几何、闰月拆段、
     大限两种定位、重排转发守卫）+ Go `lists_test.go` / Python `test_chart_lists.py`
-  - 按农历年取运限与运限文本写到哪一层 → `chart_lists`（流年是该农历年的）+ `text.rs` 单测（各层截止）
-    + `bridge.rs` 单测（运限目标分派与互斥、`through` 取值）+ Go `lists_test.go` / Python
-    `test_chart_lists.py`（年份运限再发起计算仍按年份）+ Go `parity_check_test.go` / Python
+  - 按农历年取运限与运限文本写到哪一层 → `chart_lists`（流年是该农历年的）+ `text.rs` 单测（各层截止、
+    按查询精度截止、只写到大限时同一大限各年相同）+ `bridge.rs` 单测（运限目标分派与互斥、`through` 取值、
+    比查询精度细报错、按年取材只到流年）+ Go `lists_test.go` / Python
+    `test_chart_lists.py`（年份运限再发起计算仍按年份、只写到流年）+ Go `parity_check_test.go` / Python
     `test_parity.py`（写到流年）
   - 按农历月取运限与流月一览文本 → `chart_lists`（流月与流月列表同月那项一致）+ `text_snapshot`
     （流月一览取农历 2025 年，含闰六月两行）+ `bridge.rs` 单测（年加月的分派与互斥、`monthlyListToText`）

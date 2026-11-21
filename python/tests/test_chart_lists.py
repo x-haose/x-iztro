@@ -239,12 +239,23 @@ def test_horoscope_of_year_is_the_lunar_year_not_new_years_day():
 
 
 def test_horoscope_of_year_recomputes_by_year():
-    """年份运限再发起计算时转发的是年份：文本与「六月初一 + 出生时辰（寅时，索引 2）」的运限同文。
-    转发 DTO 的 solar_date 会丢掉时辰、按早子时重算，流时一节随之不同。"""
+    """年份运限再发起计算时转发的是年份，查询精度为流年：文本只写到流年，与「六月初一 + 出生时辰
+    （寅时，索引 2）」的运限写到流年同文；转发 DTO 的 solar_date 会成为日期目标、写到流时。
+    比流年细的层级报错。"""
     a = chart()
     of_year = a.horoscope_of_year(2027)
-    assert of_year.to_text() == a.horoscope(of_year.solar_date, 2).to_text()
-    assert of_year.to_text() != a.horoscope(of_year.solar_date).to_text()
+    assert of_year.precision() == Scope.YEARLY
+    text = of_year.to_text()
+    assert "## 流年 · " in text
+    assert "## 流月 · " not in text
+    assert text == a.horoscope(of_year.solar_date, 2).to_text(through=Scope.YEARLY)
+    for call in (
+        lambda: of_year.to_text(through=Scope.MONTHLY),
+        lambda: of_year.patterns(Scope.MONTHLY),
+    ):
+        with pytest.raises(IztroError) as info:
+            call()
+        assert info.value.code == "invalid_argument"
 
 
 def test_yearly_overview_to_text_rejects_bad_ranges():
@@ -284,24 +295,27 @@ def test_horoscope_of_month_matches_the_monthly_list():
 
 
 def test_horoscope_of_month_recomputes_by_year_and_month():
-    """月份运限再发起计算时转发的是年份与月号：结果与「该月初一 + 出生时辰（寅时，索引 2）」的运限相同。
-    只转发年份会退成六月初一，转发 DTO 的 solar_date 会按早子时重算。农历 2025 年七月初一是 2025-8-23。"""
+    """月份运限再发起计算时转发的是年份与月号，查询精度为流月：结果与「该月初一 + 出生时辰（寅时，索引 2）」
+    的运限取到流月相同。只转发年份会退成六月初一、只取到流年，转发 DTO 的 solar_date 会取到流时。
+    农历 2025 年七月初一是 2025-8-23。"""
     a = chart()
     of_month = a.horoscope_of_month(2025, 7)
     assert of_month.solar_date == "2025-8-23"
+    assert of_month.precision() == Scope.MONTHLY
     same_hour = a.horoscope("2025-8-23", 2)
 
-    assert of_month.to_text() == same_hour.to_text()
-    assert of_month.to_text() != a.horoscope("2025-8-23").to_text()
-
-    text = of_month.to_text(through=Scope.MONTHLY)
+    text = of_month.to_text()
     assert text == same_hour.to_text(through=Scope.MONTHLY)
-    assert text != a.horoscope_of_year(2025).to_text(through=Scope.MONTHLY)
     assert "## 流月 · " in text
     for heading in ("## 流日 · ", "## 流时 · "):
         assert heading not in text
 
     assert of_month.patterns(Scope.MONTHLY) == same_hour.patterns(Scope.MONTHLY)
     assert of_month.patterns_to_text(Scope.MONTHLY) == same_hour.patterns_to_text(Scope.MONTHLY)
-    pack = KnowledgePack.builtin()
-    assert pack.for_horoscope(of_month).to_dict() == pack.for_horoscope(same_hour).to_dict()
+    # 按盘取材取到流月：有该月的流耀，没有代表日流日的流耀
+    stars = KnowledgePack.builtin().for_horoscope(of_month).to_dict()["stars"]
+    monthly = {s.key for group in of_month.monthly.stars or [] for s in group}
+    daily = {s.key for group in of_month.daily.stars or [] for s in group}
+    assert monthly and daily
+    assert monthly <= stars.keys()
+    assert not daily & stars.keys()

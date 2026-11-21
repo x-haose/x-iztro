@@ -673,7 +673,8 @@ impl HoroscopeData {
 }
 
 impl Astrolabe {
-    /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘。
+    /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘；查询精度
+    /// （[`HoroscopeRef::precision`]）为流时，给不给时辰都一样。
     ///
     /// - `target_date`: 目标阳历日期，可带 ` HH:mm(:ss)`（文法见 [`get_horoscope`]）
     /// - `target_time_index`: 目标时辰索引 0-12，可传 `None`：按目标日期串的小时换算，不带时间即早子时
@@ -688,6 +689,7 @@ impl Astrolabe {
         Ok(HoroscopeRef {
             data: get_horoscope(self, target_date, target_time_index, self.language)?,
             astrolabe: self,
+            precision: Scope::Hourly,
         })
     }
 }
@@ -805,8 +807,8 @@ impl Astrolabe {
     /// 只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
     /// 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
     /// `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
-    /// 流月、流日、流时也在结果里，是六月初一那一天的，文本可用
-    /// [`crate::text::TextOptions::horoscope_through`] 只写到流年。
+    /// 查询精度（[`HoroscopeRef::precision`]）为流年：流月、流日、流时也在数据里，是六月初一那一天的，
+    /// 文本默认只写到流年，格局与文本的层级参数比流年细时报错。
     ///
     /// # Errors
     /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]；该年六月初一落在支持范围外时返回
@@ -822,6 +824,7 @@ impl Astrolabe {
         Ok(HoroscopeRef {
             data: self.horoscope_at_mid_year(year)?,
             astrolabe: self,
+            precision: Scope::Yearly,
         })
     }
 
@@ -833,7 +836,8 @@ impl Astrolabe {
     /// - 节气分界：第 `month` 个节令月（寅月为 1）交节次日，流年与 [`Self::horoscope_of_year`] 同属立春起算的
     ///   `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
     ///
-    /// 流日与流时也在结果里，是那一天的，文本可用 [`crate::text::TextOptions::horoscope_through`] 只写到流月。
+    /// 查询精度（[`HoroscopeRef::precision`]）为流月：流日与流时也在数据里，是那一天的，
+    /// 文本默认只写到流月，格局与文本的层级参数比流月细时报错。
     ///
     /// # Errors
     /// 年份不在 1-9999、月份不在 1-12，或初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）时返回
@@ -871,6 +875,7 @@ impl Astrolabe {
                 self.language,
             )?,
             astrolabe: self,
+            precision: Scope::Monthly,
         })
     }
 

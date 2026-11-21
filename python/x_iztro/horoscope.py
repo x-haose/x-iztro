@@ -351,15 +351,15 @@ class Horoscope:
             knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
                 格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             through: 写到哪一层为止，更细的层级不写：`Scope.DECADAL` 只写大限，`YEARLY` 写大限、
-                小限、流年，`MONTHLY` / `DAILY` / `HOURLY` 依次各多一层；默认 None 写到流时。
-                流月以下随日期变、流时随时辰变，目标只精确到年或日时用它略去没给到的精度
+                小限、流年，`MONTHLY` / `DAILY` / `HOURLY` 依次各多一层；默认 None 写到查询精度
+                （`precision()`）。只写到大限时大限段不列风云际会（它要读小限与流年才判得出）
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
                 `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要；
-                `through` 为 `Scope.ORIGIN` 或不是运限层级
+                `through` 为 `Scope.ORIGIN`、不是运限层级，或比查询精度细
         """
         from x_iztro.pattern import _pattern_config, _scope_key
 
@@ -383,6 +383,20 @@ class Horoscope:
     def astrolabe(self) -> Astrolabe | None:
         """发起这次运限查询的星盘；脱离星盘单独构造的运限返回 None"""
         return self._astrolabe
+
+    def precision(self) -> Scope:
+        """
+        查询精度：目标实际指定到的最细层级。`Astrolabe.horoscope_of_year` 为 `Scope.YEARLY`，
+        `horoscope_of_month` 为 `Scope.MONTHLY`，按日期发起的为 `Scope.HOURLY`。
+
+        比它细的层级是内核替调用方挑的代表日的，不是查询的答案：`to_text` 默认只写到这一层，
+        文本与格局的层级参数比它细时报 `IztroError`。
+        """
+        if self._target_year is None:
+            return Scope.HOURLY
+        if self._target_month is None:
+            return Scope.YEARLY
+        return Scope.MONTHLY
 
     def _context_query(self, kind: str, astrolabe: Astrolabe | None, **extra: Any) -> Any:
         """以发起本次运限查询的排盘上下文调用绑定层：星盘上下文（含重排起点）
@@ -561,6 +575,7 @@ class Horoscope:
 
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
+            IztroError: `scope` 比查询精度（`precision()`）细
         """
         from x_iztro.pattern import PatternHit, _pattern_config, _scope_key
 
@@ -599,7 +614,8 @@ class Horoscope:
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
             IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
-                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要；
+                `scope` 比查询精度（`precision()`）细
         """
         from x_iztro.pattern import _pattern_config, _scope_key
 

@@ -296,7 +296,7 @@ func TestFlankingPalacesJudgements(t *testing.T) {
 }
 
 // TestHoroscopeOfYear 校验按农历年取运限：流年是该农历年的（公历同年 1 月 1 日还在上一个农历年），
-// 越界年份报错，返回的运限再发起计算时转发的仍是年份；流年一览的区间颠倒或年份越界报错。
+// 越界年份报错，返回的运限再发起计算时转发的仍是年份、文本只写到流年；流年一览的区间颠倒或年份越界报错。
 func TestHoroscopeOfYear(t *testing.T) {
 	a := listChart(t, true)
 
@@ -322,25 +322,27 @@ func TestHoroscopeOfYear(t *testing.T) {
 		}
 	}
 
-	// 文本与「六月初一 + 出生时辰（寅时，索引 2）」的运限同文；转发 DTO 的 SolarDate 会丢掉时辰、
-	// 按早子时重算，流时一节随之不同
+	// 查询精度为流年：文本只写到流年，与「六月初一 + 出生时辰（寅时，索引 2）」的运限写到流年同文；
+	// 转发 DTO 的 SolarDate 会成为日期目标、写到流时。比流年细的层级报错
+	if got := ofYear.Precision(); got != ScopeYearly {
+		t.Errorf("年份运限的查询精度应为 %s，实际 %s", ScopeYearly, got)
+	}
 	text, err := ofYear.ToText()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !strings.Contains(text, "## 流年 · ") || strings.Contains(text, "## 流月 · ") {
+		t.Errorf("年份运限的文本应写到流年为止:\n%s", text)
 	}
 	sameHour, err := a.Horoscope(ofYear.SolarDate, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want, err := sameHour.ToText(); err != nil || text != want {
-		t.Errorf("年份运限的文本应与六月初一出生时辰的运限同文（err=%v）", err)
+	if want, err := sameHour.ToTextWith(TextOptions{Through: ScopeYearly}); err != nil || text != want {
+		t.Errorf("年份运限的文本应与六月初一出生时辰的运限写到流年同文（err=%v）", err)
 	}
-	earlyZi, err := a.HoroscopeAt(ofYear.SolarDate)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if other, err := earlyZi.ToText(); err != nil || text == other {
-		t.Errorf("年份运限的文本不应等于按 SolarDate 早子时重算的文本（err=%v）", err)
+	if _, err := ofYear.ToTextWith(TextOptions{Through: ScopeMonthly}); !errors.Is(err, ErrInvalidArgument) {
+		t.Errorf("年份运限写到流月应报 ErrInvalidArgument，实际 %v", err)
 	}
 
 	for _, r := range [][2]int{{2012, 2001}, {0, 1}, {9999, 10000}} {
@@ -387,8 +389,8 @@ func TestHoroscopeOfMonth(t *testing.T) {
 		}
 	}
 
-	// 农历 2025 年七月初一是 2025-8-23。再发起的计算与「该日 + 出生时辰（寅时，索引 2）」的运限相同：
-	// 只转发年份会退成六月初一，转发 DTO 的 SolarDate 会按早子时重算
+	// 农历 2025 年七月初一是 2025-8-23。再发起的计算取到流月，与「该日 + 出生时辰（寅时，索引 2）」的运限
+	// 取到流月相同：只转发年份会退成六月初一、只取到流年，转发 DTO 的 SolarDate 会取到流时
 	ofMonth, err := a.HoroscopeOfMonth(2025, 7)
 	if err != nil {
 		t.Fatal(err)
@@ -400,13 +402,8 @@ func TestHoroscopeOfMonth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	earlyZi, err := a.HoroscopeAt("2025-8-23")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ofYear, err := a.HoroscopeOfYear(2025)
-	if err != nil {
-		t.Fatal(err)
+	if got := ofMonth.Precision(); got != ScopeMonthly {
+		t.Errorf("月份运限的查询精度应为 %s，实际 %s", ScopeMonthly, got)
 	}
 	text := func(h *Horoscope, opts TextOptions) string {
 		t.Helper()
@@ -417,20 +414,9 @@ func TestHoroscopeOfMonth(t *testing.T) {
 		return out
 	}
 
-	if text(ofMonth, TextOptions{}) != text(sameHour, TextOptions{}) {
-		t.Error("月份运限的文本应与该月初一出生时辰的运限同文")
-	}
-	if text(ofMonth, TextOptions{}) == text(earlyZi, TextOptions{}) {
-		t.Error("月份运限的文本不应等于按 SolarDate 早子时重算的文本")
-	}
-
-	throughMonthly := TextOptions{Through: ScopeMonthly}
-	monthly := text(ofMonth, throughMonthly)
-	if monthly != text(sameHour, throughMonthly) {
-		t.Error("写到流月的月份运限文本应与该月初一的运限同文")
-	}
-	if monthly == text(ofYear, throughMonthly) {
-		t.Error("月份运限的文本不应等于只按年份重算（六月初一）的文本")
+	monthly := text(ofMonth, TextOptions{})
+	if monthly != text(sameHour, TextOptions{Through: ScopeMonthly}) {
+		t.Error("月份运限的文本应与该月初一出生时辰的运限写到流月同文")
 	}
 	for i, heading := range []string{"## 流月 · ", "## 流日 · ", "## 流时 · "} {
 		if got, want := strings.Contains(monthly, heading), i < 1; got != want {
@@ -464,8 +450,21 @@ func TestHoroscopeOfMonth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(gotPack, wantPack) {
-		t.Error("月份运限的按盘取材应与该月初一的运限相同")
+	// 按盘取材取到流月：有该月的流耀，没有代表日流日的流耀；同一天按日期取材两者都有
+	for _, c := range []struct {
+		scope HoroscopeScope
+		want  bool
+	}{{ofMonth.Monthly, true}, {ofMonth.Daily, false}} {
+		for _, group := range c.scope.Stars {
+			for _, s := range group {
+				if _, got := gotPack.Stars[s.Key]; got != c.want {
+					t.Errorf("月份运限的子包里 %s 是否出现应为 %v", s.Key, c.want)
+				}
+				if _, ok := wantPack.Stars[s.Key]; !ok {
+					t.Errorf("该月初一按日期取材的子包里应有 %s", s.Key)
+				}
+			}
+		}
 	}
 
 	if _, err := a.MonthlyListToText(99999); !errors.Is(err, ErrInvalidArgument) {

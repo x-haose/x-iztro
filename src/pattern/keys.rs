@@ -274,6 +274,13 @@ impl PatternKey {
     pub fn is_horoscope_only(self) -> bool {
         matches!(self, PatternKey::LuShuaiMaKun | PatternKey::FengYunJiHui)
     }
+
+    /// 在某层视角判定时是否还要读更细一层：风云际会在大限视角报，却要看小限与流年两层的命宫
+    /// 是否逢禄马，所以同一大限里逐年有无不同。
+    /// 运限只取到判定视角那一层时，这类命中依据的是取用范围之外的层级，不算该层的事实。
+    pub fn needs_finer_layer(self) -> bool {
+        matches!(self, PatternKey::FengYunJiHui)
+    }
 }
 
 #[cfg(test)]

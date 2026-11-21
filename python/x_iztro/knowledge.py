@@ -337,7 +337,8 @@ class KnowledgePack:
         self, horoscope: Horoscope, config: PatternConfig | None = None
     ) -> KnowledgePack:
         """
-        按运限取材的子包：在 `for_astrolabe` 之上再加各层流耀的条目与各层视角命中的格局。
+        按运限取材的子包：在 `for_astrolabe` 之上再加各层流耀的条目与各层视角命中的格局，
+        只取到运限的查询精度（`Horoscope.precision()`）那一层。
 
         Args:
             config: 格局判定口径，与 `Horoscope.patterns` 同一参数；不传取默认

@@ -316,6 +316,21 @@ keyed_enum!(Scope, "scope" {
     Hourly => "hourly",
 });
 
+impl Scope {
+    /// 层级深浅：本命 0、大限 1、流年 2、流月 3、流日 4、流时 5，越大越细；
+    /// 运限层级的先后即 [`HOROSCOPE_SCOPES`] 的顺序。
+    pub(crate) fn depth(self) -> u8 {
+        match self {
+            Scope::Origin => 0,
+            Scope::Decadal => 1,
+            Scope::Yearly => 2,
+            Scope::Monthly => 3,
+            Scope::Daily => 4,
+            Scope::Hourly => 5,
+        }
+    }
+}
+
 /// 有流耀与运限四化的五个层级，按大限、流年、流月、流日、流时排列（本命与小限不在此列）。
 pub const HOROSCOPE_SCOPES: [Scope; 5] = [
     Scope::Decadal,
