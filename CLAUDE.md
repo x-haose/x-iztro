@@ -151,7 +151,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `PatternKey::needs_finer_layer` 的格局（风云际会要读小限与流年，`pattern::patterns_through` 一处）。
   `origin` 由内核拒绝、不认识的取值由 bridge 拒绝，都是 invalid_argument。只对 `horoscopeToText`
   起作用：bridge 对其余文本 kind 照样解析但不影响输出，Python 只在运限 `to_text` 上收，
-  Go 的 `TextOptions.Through` 对其余文本被忽略
+  Go 的 `TextOptions.Through` 对其余文本被忽略。标题同样按写到的层级取（`text::horoscope_title`）：
+  写到流日、流时为目标日期的阳历与农历；写到流月为农历年份与流年干支加流月干支；只写到大限、流年为
+  农历年份与流年干支。年份取目标日农历年前后一年里与流年干支相合的那一年（节气分界下按正月取的代表日是
+  立春次日，可能还在上一个农历年），按年、按月取的运限即所问的年份
 - 按主题取材：主题是论法，定义在知识包 `topics` 段（`surround` 连三方四正、`palaces` 只取本宫），内核
   `topic_to_text` 通用执行——主题定义与释义都取自 `TextOptions` 的包，无包、无此主题、宫位标识不认识一律
   `InvalidArgument`（略过会静默少一宫）。只按本命宫位取材，运限问题走运限文本。

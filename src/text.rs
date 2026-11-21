@@ -14,6 +14,7 @@
 //! 格局列表之后紧跟格局释义，运限各层级段之后紧跟流耀与格局释义，本命文末附四化释义，
 //! 事实与解读同处一屏。
 
+use crate::astro::builder::parse_solar_date;
 use crate::data::constants::CHINESE_TIME;
 use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
@@ -1459,7 +1460,67 @@ fn flow_notes(
     out
 }
 
+/// 运限文本的标题行，只写到文本写到的层级：写到流日或流时为目标日期的阳历与农历
+/// （`# 运限 2025-1-1 (二〇二四年腊月初二)`）；写到流月为农历年份与流年干支，再加流月干支
+/// （`# 运限 2025 (乙巳) · 流月 (甲申)`）；只写到大限或流年为农历年份与流年干支（`# 运限 2027 (丁未)`）。
+/// 按年、按月取的运限，目标日期是内核挑的代表日，写进标题会被当成所问的日子。
+fn horoscope_title(
+    horoscope: &HoroscopeData,
+    through: Scope,
+    l: &Labels,
+    lang: Language,
+) -> String {
+    let yearly = &horoscope.yearly;
+    let year = format!(
+        "{} ({})",
+        yearly_layer_year(horoscope),
+        stem_branch(yearly.heavenly_stem, yearly.earthly_branch, l, lang)
+    );
+    match through {
+        Scope::Daily | Scope::Hourly => format!(
+            "# {} {} ({})\n",
+            l.doc_horoscope, horoscope.solar_date, horoscope.lunar_date
+        ),
+        Scope::Monthly => format!(
+            "# {} {year}{FIELD_SEP}{} ({})\n",
+            l.doc_horoscope,
+            l.monthly,
+            stem_branch(
+                horoscope.monthly.heavenly_stem,
+                horoscope.monthly.earthly_branch,
+                l,
+                lang
+            )
+        ),
+        Scope::Origin | Scope::Decadal | Scope::Yearly => {
+            format!("# {} {year}\n", l.doc_horoscope)
+        }
+    }
+}
+
+/// 流年干支所属的年份：目标日所在农历年及其前后一年里，年干支与流年层干支相同的那一年。
+/// 流年按正月初一或立春换年（`horoscope_divide`），立春与正月初一相隔不到一年，三年里恰有一年相合；
+/// [`Astrolabe::horoscope_of_year`] 与 [`Astrolabe::horoscope_of_month`] 取的运限即所问的年份。
+///
+/// # Panics
+/// `horoscope` 不是本库算出的运限（阳历日期不是 `y-m-d`，或流年干支与目标日相距一年以上）时。
+fn yearly_layer_year(horoscope: &HoroscopeData) -> i64 {
+    let (y, m, d) =
+        parse_solar_date(&horoscope.solar_date).expect("运限的阳历日期由内核按 y-m-d 写出");
+    let lunar_year = crate::calendar::lunar_date_of(y, m, d).year;
+    let pillar = (
+        horoscope.yearly.heavenly_stem,
+        horoscope.yearly.earthly_branch,
+    );
+    (lunar_year - 1..=lunar_year + 1)
+        .find(|year| crate::calendar::year_pillar(*year) == pillar)
+        .expect("流年换年点与正月初一相隔不到一年")
+}
+
 /// 运限的语义化文本（默认格局口径，只含事实）
+///
+/// # Panics
+/// 同 [`horoscope_to_text_with`]。
 pub fn horoscope_to_text(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
@@ -1470,8 +1531,13 @@ pub fn horoscope_to_text(
 
 /// 运限的语义化文本：大限、小限、流年、流月、流日、流时各一节，完整层的大限与流年展开
 /// 十二宫表、总览层与其余各层同写宫名对照与流耀行；带知识包时各层附流耀与格局释义（跨层去重）。
-/// 写到哪一层为止由 [`TextOptions::horoscope_through`] 决定，不设即写到流时，小限随流年一起写或不写。
+/// 写到哪一层为止由 [`TextOptions::horoscope_through`] 决定，不设即写到流时，小限随流年一起写或不写；
+/// 标题同样只写到这一层：写到流日或流时为目标日期，写到流月为农历年份、流年干支与流月干支，
+/// 只写到大限或流年为农历年份与流年干支。
 /// `horoscope` 不带查询精度：按年、按月取的运限用 [`HoroscopeRef::to_text_with`]，默认只写到查询精度
+///
+/// # Panics
+/// `horoscope` 不是本库算出的运限（阳历日期不是 `y-m-d`，或流年干支与该日相距一年以上）时。
 pub fn horoscope_to_text_with(
     astrolabe: &Astrolabe,
     horoscope: &HoroscopeData,
@@ -1485,10 +1551,7 @@ pub fn horoscope_to_text_with(
     let mut out = String::new();
     let full = opts.detail == TextDetail::Full;
 
-    out.push_str(&format!(
-        "# {} {} ({})\n",
-        l.doc_horoscope, horoscope.solar_date, horoscope.lunar_date
-    ));
+    out.push_str(&horoscope_title(horoscope, opts.through(), &l, lang));
 
     // 一个层级段：事实，带释义时再接该层的流耀释义与格局释义
     let mut scope_section = |item: &HoroscopeItem, scope: Scope, table: Option<bool>| -> String {
@@ -2205,7 +2268,7 @@ mod tests {
         assert!(with_age.contains("风云际会 (命宫)"), "{with_age}");
         let decadal_2025 = text(2025, &decadal);
         assert!(!decadal_2025.contains("风云际会"), "{decadal_2025}");
-        // 两年同属一个大限，运限标题行的日期不同，其余逐字节相同
+        // 两年同属一个大限，标题行的年份不同，其余逐字节相同
         let body = |t: &str| t.split_once('\n').unwrap().1.to_string();
         assert_eq!(body(&decadal_2025), body(&text(2027, &decadal)));
     }
@@ -2224,6 +2287,49 @@ mod tests {
             text.contains("## 流月 · ") && !text.contains("## 流日 · "),
             "{text}"
         );
+    }
+
+    /// 按年、按月取的运限，标题不写代表日：按年写农历年份与流年干支，按月再加流月干支。
+    /// 节气分界下按正月取的代表日是立春次日，农历 2027 年正月初一在立春之后，那一天还在农历 2026 年，
+    /// 标题仍写与流年干支相合的 2027
+    #[test]
+    fn horoscope_title_names_the_queried_year_and_month_not_the_representative_day() {
+        let zh = chart(Language::ZhCN);
+        let en = chart(Language::EnUS);
+        let title = |text: String| text.lines().next().unwrap().to_string();
+        for (h, want) in [
+            (zh.horoscope_of_year(2027).unwrap(), "# 运限 2027 (丁未)"),
+            (
+                zh.horoscope_of_month(2025, 7).unwrap(),
+                "# 运限 2025 (乙巳) · 流月 (甲申)",
+            ),
+            (
+                en.horoscope_of_year(2027).unwrap(),
+                "# Horoscope 2027 (ding wei)",
+            ),
+            (
+                en.horoscope_of_month(2025, 7).unwrap(),
+                "# Horoscope 2025 (yi si) · Monthly (jia shen)",
+            ),
+        ] {
+            assert_eq!(title(h.to_text()), want, "{}", h.solar_date);
+        }
+
+        let exact = by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            true,
+            Language::ZhCN,
+            Config {
+                horoscope_divide: HoroscopeDivide::Exact,
+                ..Config::default()
+            },
+        )
+        .unwrap();
+        let h = exact.horoscope_of_month(2027, 1).unwrap();
+        assert!(h.lunar_date.starts_with("二〇二六年"), "{}", h.lunar_date);
+        assert_eq!(title(h.to_text()), "# 运限 2027 (丁未) · 流月 (壬寅)");
     }
 
     /// 未起运的盘（童限），大限段的标题写「童限」而非「大限」

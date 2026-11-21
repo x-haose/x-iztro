@@ -51,6 +51,12 @@ pub(crate) fn month_exact(time: &SolarTime, lunar_year: i64) -> Pillar {
     lunar::month_exact(&self::lunar_year(time.year), time, lunar_year)
 }
 
+/// 年号 `year` 的年干支（公历 4 年为甲子）：该年分界点（正月初一或立春）之后的日子属这一柱，
+/// 之前的属上一年。
+pub(crate) fn year_pillar(year: i64) -> Pillar {
+    lunar::pillar(year - 4, year - 4)
+}
+
 /// 公历日期所在的农历日期。
 pub(crate) fn lunar_date_of(year: i64, month: i64, day: i64) -> LunarDate {
     lunar::lunar_date(&lunar_year(year), &SolarTime::new(year, month, day, 0, 0))

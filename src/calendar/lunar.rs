@@ -41,7 +41,7 @@ fn date_part(ymdhms: &str) -> &str {
 }
 
 /// 天干序与地支序（可为负或越界）各自取模成一柱。
-fn pillar(stem: i64, branch: i64) -> Pillar {
+pub(super) fn pillar(stem: i64, branch: i64) -> Pillar {
     (
         HeavenlyStem::from_index(stem.rem_euclid(10) as usize),
         EarthlyBranch::from_index(branch.rem_euclid(12) as usize),

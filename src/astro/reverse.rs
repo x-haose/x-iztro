@@ -13,7 +13,7 @@ use serde::Serialize;
 
 use crate::astro::builder::{SUPPORTED_YEARS, by_solar, effective_time_index, four_pillars};
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
-use crate::calendar;
+use crate::calendar::{self, year_pillar};
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::IztroError;
@@ -130,14 +130,6 @@ pub fn solar_dates_by_bazi(
         }
     }
     Ok(out)
-}
-
-/// 公历年 `year` 当年的年柱干支（大部分日子所属；分界点前的日子属上一年）。
-fn year_pillar(year: i64) -> (HeavenlyStem, EarthlyBranch) {
-    (
-        HeavenlyStem::from_index(fix_index((year - 4) as i32, 10)),
-        EarthlyBranch::from_index(fix_index((year - 4) as i32, 12)),
-    )
 }
 
 /// 干支的六十甲子序（甲子=0）。
