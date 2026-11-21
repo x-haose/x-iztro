@@ -14,11 +14,11 @@ use serde::{Deserialize, Serialize};
 use unicode_width::UnicodeWidthStr;
 
 use crate::data::stars::StarKey;
-use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
+use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace};
 use crate::models::astrolabe::Astrolabe;
-use crate::models::horoscope::HoroscopeData;
+use crate::models::horoscope::HoroscopeRef;
 use crate::models::palace::PalaceData;
-use crate::pattern::{PatternConfig, PatternKey, patterns_through};
+use crate::pattern::{PatternConfig, PatternKey, patterns_at};
 
 /// 一宫之内出现的全部星耀标识：主星、辅星、杂耀与四组十二神各一位。
 pub(crate) fn palace_star_keys(palace: &PalaceData) -> impl Iterator<Item = StarKey> + '_ {
@@ -450,35 +450,32 @@ impl KnowledgePack {
         out
     }
 
-    /// 按运限取材（默认格局口径、取到流时）：在 [`Self::for_astrolabe`] 之上，再加大限至流时
-    /// 各层流耀的条目与各层视角命中的格局。按年、按月取的运限（[`crate::HoroscopeRef::precision`]
-    /// 比流时粗）用 [`Self::for_horoscope_with`] 传查询精度，否则会带上代表日那几层的材料。
-    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack {
-        self.for_horoscope_with(chart, horoscope, Scope::Hourly, &PatternConfig::default())
+    /// 按运限取材（默认格局口径）：在 [`Self::for_astrolabe`] 之上，再加大限至查询精度
+    /// （[`HoroscopeRef::precision`]）各层流耀的条目与各层视角命中的格局。按年、按月取的运限里
+    /// 比精度细的层级是内核挑的代表日的，不取。
+    pub fn for_horoscope(&self, horoscope: &HoroscopeRef) -> KnowledgePack {
+        self.for_horoscope_with(horoscope, &PatternConfig::default())
     }
 
-    /// 按运限取材，只取到 `through` 层，格局按指定口径判定。`through` 通常传
-    /// [`crate::HoroscopeRef::precision`]；为 [`Scope::Origin`] 时只有本命部分，同 [`Self::for_astrolabe_with`]。
-    /// 取材范围与 `horoscope_through` 相同的运限文本一致：只取到大限时，
-    /// 不取要读更细一层才判得出的格局（[`PatternKey::needs_finer_layer`]）。
+    /// 按运限取材，格局按指定口径判定；取材范围同 [`Self::for_horoscope`]。
     pub fn for_horoscope_with(
         &self,
-        chart: &Astrolabe,
-        horoscope: &HoroscopeData,
-        through: Scope,
+        horoscope: &HoroscopeRef,
         config: &PatternConfig,
     ) -> KnowledgePack {
+        let chart = horoscope.astrolabe();
+        let precision = horoscope.precision();
         let mut out = self.for_astrolabe_with(chart, config);
         for scope in HOROSCOPE_SCOPES
             .into_iter()
-            .filter(|s| s.depth() <= through.depth())
+            .filter(|s| s.depth() <= precision.depth())
         {
             if let Some(item) = horoscope.scope_item(scope) {
                 for star in item.stars.iter().flatten().flatten() {
                     self.copy_star(&mut out, star.key, &[]);
                 }
             }
-            for hit in patterns_through(chart, horoscope, scope, through, config) {
+            for hit in patterns_at(chart, horoscope.data(), scope, config) {
                 self.copy_pattern(&mut out, hit.key);
             }
         }

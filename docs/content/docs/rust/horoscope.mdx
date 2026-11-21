@@ -752,8 +752,7 @@ pub fn precision(&self) -> Scope
 数据里六个层级恒齐全，比精度细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，
 不是查询的答案：`to_text` / `to_text_with` 默认只写到这一层，`to_text_with` 的
 `horoscope_through` 与 [`patterns`](/zh/docs/rust/patterns#horoscoperefpatterns) 的 `scope` 比它细时返回
-`IztroError::InvalidArgument`。按盘取材传它作取到哪一层：
-[`for_horoscope_with`](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope)`(&chart, h.data(), h.precision(), &cfg)`。
+`IztroError::InvalidArgument`。[按盘取材](/zh/docs/rust/knowledge#for_astrolabe--for_horoscope)也只取到这一层。
 
 **示例**
 

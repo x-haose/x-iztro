@@ -472,14 +472,8 @@ println!("{:?}", pack.missing_summaries());
 impl KnowledgePack {
     pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
     pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
-    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
-    pub fn for_horoscope_with(
-        &self,
-        chart: &Astrolabe,
-        horoscope: &HoroscopeData,
-        through: Scope,
-        config: &PatternConfig,
-    ) -> KnowledgePack
+    pub fn for_horoscope(&self, horoscope: &HoroscopeRef) -> KnowledgePack
+    pub fn for_horoscope_with(&self, horoscope: &HoroscopeRef, config: &PatternConfig) -> KnowledgePack
 }
 ```
 
@@ -487,18 +481,15 @@ impl KnowledgePack {
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `chart` | `&Astrolabe` | 是 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
-| `horoscope` | `&HoroscopeData` | 是 | — | 运限数据，`HoroscopeRef::data()` 可得 |
-| `through` | `Scope` | `for_horoscope_with` 必填 | — | 运限层取到哪一层为止，通常传 [`HoroscopeRef::precision()`](/zh/docs/rust/horoscope#precision)；`for_horoscope` 即 `Scope::Hourly`；`Scope::Origin` 只取本命部分，同 `for_astrolabe_with` |
+| `chart` | `&Astrolabe` | `for_astrolabe` 系必填 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
+| `horoscope` | `&HoroscopeRef` | `for_horoscope` 系必填 | — | 运限，连同它的星盘与[查询精度](/zh/docs/rust/horoscope#precision) |
 | `config` | `&PatternConfig` | `_with` 必填 | — | 格局判定口径；无 `_with` 的两个即 `PatternConfig::default()` |
 
 **返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
 （主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
 `patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
-`for_horoscope` / `for_horoscope_with` 在此之上再加大限到 `through` 各层的流耀与各层视角命中的格局；
-`through` 为 `Scope::Decadal` 时不收风云际会（它要读小限与流年才判得出），与只写到大限的运限文本一致。
-`HoroscopeData` 不带查询精度：按年、按月取的运限用 `for_horoscope` 会带上代表日流月以下各层的材料，
-要传 `for_horoscope_with(&chart, h.data(), h.precision(), &cfg)`。
+`for_horoscope` / `for_horoscope_with` 在此之上再加大限到查询精度各层的流耀与各层视角命中的格局；
+按年、按月取的运限里比精度细的层级是内核挑的代表日的，不取。
 子包要和[`patterns_with`](/zh/docs/rust/patterns#patterns_with) / `patterns_to_text_with`
 配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
 取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。
@@ -514,11 +505,11 @@ println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(),
 println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
 
 let year = chart.horoscope_of_year(2027)?;
-let sub = pack.for_horoscope_with(&chart, year.data(), year.precision(), &PatternConfig::default());   // 只取到流年
+let sub = pack.for_horoscope(&year);   // 只取到流年
 ```
 
 **输出**

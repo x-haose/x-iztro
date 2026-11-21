@@ -486,14 +486,8 @@ Hongluan's reading is within the limit, so the summary layer uses it as is.
 impl KnowledgePack {
     pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
     pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
-    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
-    pub fn for_horoscope_with(
-        &self,
-        chart: &Astrolabe,
-        horoscope: &HoroscopeData,
-        through: Scope,
-        config: &PatternConfig,
-    ) -> KnowledgePack
+    pub fn for_horoscope(&self, horoscope: &HoroscopeRef) -> KnowledgePack
+    pub fn for_horoscope_with(&self, horoscope: &HoroscopeRef, config: &PatternConfig) -> KnowledgePack
 }
 ```
 
@@ -501,9 +495,8 @@ impl KnowledgePack {
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `chart` | `&Astrolabe` | yes | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
-| `horoscope` | `&HoroscopeData` | yes | — | Horoscope data, available from `HoroscopeRef::data()` |
-| `through` | `Scope` | `for_horoscope_with` only | — | The last horoscope scope to take, usually [`HoroscopeRef::precision()`](/en/docs/rust/horoscope#precision); `for_horoscope` uses `Scope::Hourly`; `Scope::Origin` takes the natal part only, as `for_astrolabe_with` |
+| `chart` | `&Astrolabe` | `for_astrolabe*` | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
+| `horoscope` | `&HoroscopeRef` | `for_horoscope*` | — | The horoscope, with its chart and [query precision](/en/docs/rust/horoscope#precision) |
 | `config` | `&PatternConfig` | `_with` only | — | Pattern criteria; the two without `_with` use `PatternConfig::default()` |
 
 **Returns**　A standard `KnowledgePack` with the metadata carried over: `stars` holds the stars on
@@ -511,11 +504,8 @@ the chart (major, minor, adjective and the four groups of twelve gods; the 14 ma
 `combinations` keep only partners that actually share the palace), `patterns` the hits under the
 `config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` /
 `for_horoscope_with` add the flowing stars and the patterns hit from each perspective from the decadal
-scope down to `through`; with `through` at `Scope::Decadal`, Feng Yun Ji Hui is left out (it needs the
-minor limit and the year), matching the horoscope text stopped at the decadal scope. `HoroscopeData`
-carries no query precision: `for_horoscope` on a horoscope of a year or a month brings in the
-representative day's monthly-and-finer material, so pass
-`for_horoscope_with(&chart, h.data(), h.precision(), &cfg)` instead.
+scope down to the query precision; for a horoscope of a year or a month, the finer scopes belong to a
+representative day the kernel picked and are left out.
 Pair the sub-pack with [`patterns_with`](/en/docs/rust/patterns#patterns_with) /
 `patterns_to_text_with` under the same criteria: different criteria hit different sets, and the
 readings would then miss or over-include entries.
@@ -532,11 +522,11 @@ println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(),
 println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
 
 let year = chart.horoscope_of_year(2027)?;
-let sub = pack.for_horoscope_with(&chart, year.data(), year.precision(), &PatternConfig::default());   // yearly at most
+let sub = pack.for_horoscope(&year);   // yearly at most
 ```
 
 **Output**

@@ -455,8 +455,8 @@ fn for_astrolabe_selects_exactly_the_chart_material() {
     });
 
     // 运限取材：在本命之上多出流耀条目与各层格局
-    let h = x_iztro::get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN).unwrap();
-    let sub_h = pack.for_horoscope(&chart, &h);
+    let h = chart.horoscope("2025-1-1", 0).unwrap();
+    let sub_h = pack.for_horoscope(&h);
     assert!(sub_h.stars.len() > sub.stars.len());
     assert!(
         sub_h

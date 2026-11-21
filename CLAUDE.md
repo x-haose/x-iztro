@@ -145,7 +145,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `horoscope_of_month` 为流月、按日期为流时——更细的层级是内核挑的代表日的）；自由函数
   `horoscope_to_text_with` 收不带精度的 `HoroscopeData`，不设即写到流时。`through` 与运限格局的 `scope`
   比查询精度细报 invalid_argument，校验只在 `HoroscopeRef::check_within_precision` 一处；
-  按盘取材 `for_horoscope_with` 收 `through`，bridge 传查询精度。只写到大限时，大限段与取材都去掉
+  按盘取材 `for_horoscope` 收 `HoroscopeRef`，取到它的查询精度。只写到大限时，大限段去掉
   `PatternKey::needs_finer_layer` 的格局（风云际会要读小限与流年，`pattern::patterns_through` 一处）。
   `origin` 由内核拒绝、不认识的取值由 bridge 拒绝，都是 invalid_argument。只对 `horoscopeToText`
   起作用：bridge 对其余文本 kind 照样解析但不影响输出，Python 只在运限 `to_text` 上收，

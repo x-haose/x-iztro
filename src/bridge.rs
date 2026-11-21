@@ -897,7 +897,7 @@ fn knowledge_for_chart(input: &QueryInput) -> Result<Value, BridgeError> {
             input.target_year,
             input.target_month,
         )?;
-        pack.for_horoscope_with(&astrolabe, h.data(), h.precision(), &pattern_config)
+        pack.for_horoscope_with(&h, &pattern_config)
     };
     serde_json::to_value(sub).map_err(serialize_failed)
 }
@@ -1926,12 +1926,9 @@ mod tests {
                     &target,
                 ]))
                 .unwrap(),
-                serde_json::to_value(pack.for_horoscope_with(
-                    &chart,
-                    native.data(),
-                    native.precision(),
-                    &crate::pattern::PatternConfig::default(),
-                ))
+                serde_json::to_value(
+                    pack.for_horoscope_with(&native, &crate::pattern::PatternConfig::default()),
+                )
                 .unwrap(),
                 "{target}"
             );
