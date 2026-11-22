@@ -67,7 +67,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `go/iztro/` — Go FFI 绑定包
 - `js/` — JS/TS 绑定（npm 包 `x-iztro`）：`src/` TypeScript 源码，`test/` 读金标的 node:test 测试，
   `dist/` 为构建产物（不进 git，含 `x_iztro.wasm`）
-- `examples/{rust,python,go}/` — 三个独立示例项目
+- `examples/{rust,python,go,js}/` — 四个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
 - `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
 - `docs/` — 文档站（Next.js + Fumadocs），部署在 <https://x-iztro.x-haose.com>，讲把库嵌进自己的程序。
@@ -191,7 +191,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 两个入口：package.json `exports` 的 node 条件 → `dist/node.js`（读文件），default 条件 → `dist/browser.js`（fetch）；
   都按 `new URL('./x_iztro.wasm', import.meta.url)` 取内核——打包器（Vite、webpack、Turbopack）认这个写法，
   改动入口或 wasm 位置后要在真实打包器里重新验证。`x-iztro/types`（`src/types-entry.ts`）只导出枚举与 DTO 类型，
-  不得引入 runtime。类型声明的下限是 TypeScript 5.0（`export type *`），以可选 peer 依赖声明
+  不得引入 runtime。类型声明的下限是 TypeScript 5.0（`export type *`），以可选 peer 依赖声明；
+  消费方 `lib` 只要求 `ES2022`，不要求 DOM：公开声明里的 `Response`、`URL`、`WebAssembly.Module` 从 `globalThis`
+  上取（`runtime.ts` 的 `Host*`），不直接写名字。`tests/js-types/` 用 TypeScript 5.0.4、`skipLibCheck: false`
+  分别按浏览器（`ES2022` + `DOM`）与 Node（`ES2022` + `@types/node`）工程检查声明，`make check-js` 会跑
 - 模块划分与函数名随 iztro（`astro` / `util` / `star` / `data` 命名空间，`astro.getHoroscope` 即 Python 的
   `get_decadals_and_ages`），能力与 Python 一一对应；可选参数收在选项对象里，不按位置传布尔
 - 对象间回指与「再发起计算」的上下文（配置副本、重排起点、运限目标）放在 `src/internal.ts` 的 WeakMap，
@@ -416,16 +419,21 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    `cargo check` 与 `cd examples/rust && cargo check` 分别刷新两处 Cargo.lock——发版走
    `cargo publish --locked`，lock 里本包版本不同步会挂；示例经 `path` 依赖本包，
    它的 lock 不同步则首次运行示例即产生脏工作区。
-   **版本号忘了改不会报错**：release.yml 见 GitHub Release `v<版本>` 已存在就打印一行跳过并成功退出，
-   PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
+   **版本号忘了改不会报错**：release.yml 只在 PR 本身改了版本号（头提交与分出点的 `Cargo.toml` 版本不同）时发版，
+   没改就打印一行跳过并成功退出，PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
 3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
-   合并即自动发版：金标门禁与 JS `npm run check` → 预检 npm 包已存在 → crates.io（OIDC）→ npm（可信发布）
-   → `v*` 与 `go/iztro/v*` 双标签 → 派发 wheels.yml 发 PyPI → 最后建 GitHub Release。
-   每一步都是已完成即跳过（crates.io、npm 查注册表，标签查远端，PyPI 跳过已上传的文件），
-   GitHub Release 存在才算这个版本发完：中途失败，修好原因后重跑 release 作业即从失败处接着做。
-   npm 可信发布只能给已存在的包配置：首次发布由维护者在 `js/` 本机 `npm run build && npm publish --access public`，
-   随后在 npmjs.com 包设置的 Trusted Publisher 登记仓库 `x-haose/x-iztro`、工作流 `release.yml`，
-   并勾选允许 `npm publish`；登记后 2 天内须有一次成功的可信发布，否则配置失效需重登。
+   合并即自动发版，发的是这个 PR 的合并提交，同一时刻只跑一个发版作业：
+   金标门禁与 JS `npm run check` → 预检 npm 包已存在 → 在合并提交上打 `v*` 与 `go/iztro/v*` 双标签
+   → crates.io（OIDC）→ npm（可信发布）→ 派发 wheels.yml 并等它成功（PyPI）→ 最后建 GitHub Release。
+   每一步都是已完成即跳过（标签查远端，crates.io、npm 查注册表，PyPI 跳过已上传的文件），
+   GitHub Release 存在才算这个版本发完：中途失败，修好原因后**重跑这次合并的 release 作业**即从失败处接着做；
+   之后合并的、没改版本号的 PR 不会接手。标签已在别的提交上时作业失败，不从另一份代码再发同一个版本。
+   npm 可信发布只能给已存在的包配置，首次由维护者手动建包，发的是占位版本而不是真正的首个版本——
+   手动发了真正的版本，CI 会因版本已存在而跳过 npm，可信发布登记后 2 天内没有一次成功的可信发布即失效：
+   1. 在空目录建只含 `{"name": "x-iztro", "version": "0.0.0-init"}` 的 `package.json`，
+      `npm publish --access public --tag init`，再 `npm deprecate x-iztro@0.0.0-init "占位版本，无内容"`；
+   2. 在 npmjs.com 包设置的 Trusted Publisher 登记仓库 `x-haose/x-iztro`、工作流 `release.yml`，并勾选允许 `npm publish`；
+   3. 2 天内合并改了版本号的发版 PR，由 CI 经可信发布发出真正的首个版本。
    npm 上还没有这个包时，release 作业在发布任何东西之前失败。
 4. 合并后核验实际产物到位：crates.io 新版本、npm 新版本、PyPI wheels、`v*` 与 `go/iztro/v*` 两个标签、
    GitHub Release。CI 绿不等于发出去了。

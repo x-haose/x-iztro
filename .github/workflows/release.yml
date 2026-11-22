@@ -1,14 +1,20 @@
 # 合并到 main 即发版。
 #
-# 版本号的唯一来源是 Cargo.toml：PR 里改了它才发版，没改就跳过，
+# 版本号的唯一来源是 Cargo.toml：PR 本身改了它才发版，没改就跳过，
 # 因此「合并一个普通 PR」与「发一个版本」用同一条路径，不必记两套流程。
+# 「PR 本身改了」指 PR 头提交的版本号与它从 main 分出时的版本号不同；后来合并的、没改版本号的 PR
+# 不会接手前一个没发完的版本。
 # pyproject.toml 与 js/package.json 的 version 必须与之相等，本作业开头断言，不等即失败——
 # 三个文件各写一遍版本号，写漏一个会让 PyPI、npm 与 crates.io 发出不同版本。
 #
-# 「这个版本发完了」以 GitHub Release v<版本> 存在为准，它在全部发布之后最后建。
-# 其余每一步都是「已完成即跳过」：crates.io、npm 查注册表里有没有这个版本，标签查有没有，
-# PyPI 由 wheels.yml 按文件跳过已上传的。任何一步失败后修好原因、重跑本作业，
-# 已完成的步骤跳过，从失败处接着做。
+# 发的是这个 PR 的合并提交，不是 main 的当前头：重跑时 main 可能已经前进。
+# 发布前先在合并提交上打 v<版本> 与 go/iztro/v<版本> 两个标签，表明这个版本归这次合并：
+# 标签已存在而指向别的提交，说明这个版本已由另一次合并开始发布，作业失败，不从这里的代码再发一次。
+#
+# 「这个版本发完了」以 GitHub Release v<版本> 存在为准，它在全部发布（含 PyPI）成功之后最后建。
+# 其余每一步都是「已完成即跳过」：标签查远端，crates.io、npm 查注册表，PyPI 由 wheels.yml 按文件跳过已上传的。
+# 任何一步失败后修好原因、重跑这次的作业（不是另开一个 PR），已完成的步骤跳过，从失败处接着做。
+# 查询注册表与 GitHub 时只把明确的 404 当作「还没有」，其余异常直接失败。
 #
 # Release 描述取自 PR 正文的「## 发布说明」一节（见 pull_request_template.md），
 # 不用 GitHub 自动生成的 PR 标题罗列——那个不成文案。
@@ -25,30 +31,38 @@ permissions:
   contents: write
   # crates.io 与 npm 的可信发布要用 GitHub 签发的 OIDC JWT 去换短期令牌
   id-token: write
-  # 末尾 gh workflow run 派发 wheels.yml 要写 Actions
+  # 派发 wheels.yml 并等它跑完要读写 Actions
   actions: write
 
 jobs:
   release:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    # 同一时刻只跑一个发版作业，后到的排队：两次发版并发会争同一个版本号与标签
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
       - name: 取版本号，判断本次是否发版
         id: ver
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          # 从标准输入的 TOML 里取 [$1] 节的 version
           toml_version() {
-            sed -n "/^\[$2\]/,/^\[/p" "$1" \
-              | sed -n 's/^version = "\(.*\)"/\1/p' | head -1
+            awk -v section="[$1]" '$0 == section { inside = 1; next } /^\[/ { inside = 0 }
+              inside && /^version = / { gsub(/^version = "|"$/, ""); print; exit }'
           }
-          version=$(toml_version Cargo.toml package)
-          py_version=$(toml_version pyproject.toml project)
+          version=$(toml_version package < Cargo.toml)
+          py_version=$(toml_version project < pyproject.toml)
           js_version=$(jq -r .version js/package.json)
           if [ -z "$version" ]; then
             echo "::error::Cargo.toml 里读不到 [package] 的 version"
@@ -59,13 +73,30 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if gh release view "v$version" >/dev/null 2>&1; then
-            echo "Release v$version 已存在，本次 PR 未改版本号，跳过发版。"
+
+          # PR 从 main 分出的那个提交：头提交与基准提交的共同祖先。
+          # 头提交在 PR 分支删除或 squash 合并后不在任何分支上，从 PR 的只读引用取
+          git fetch --no-tags origin "refs/pull/$PR_NUMBER/head"
+          fork_point=$(git merge-base "$HEAD_SHA" "$BASE_SHA")
+          head_version=$(git show "$HEAD_SHA:Cargo.toml" | toml_version package)
+          fork_version=$(git show "$fork_point:Cargo.toml" | toml_version package)
+          if [ "$head_version" = "$fork_version" ]; then
+            echo "本 PR 没有改版本号（$fork_version），跳过发版。"
             echo "release=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "将发布 v$version（已完成的步骤会跳过）。"
-            echo "release=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          if [ "$head_version" != "$version" ]; then
+            echo "::error::PR 头提交的版本号是 $head_version，合并提交却是 $version：合并时版本号被改动过，人工核对"
+            exit 1
+          fi
+
+          status=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/v$version")
+          case "$status" in
+            200) echo "Release v$version 已存在，这个版本已发完，跳过。"; echo "release=false" >> "$GITHUB_OUTPUT" ;;
+            404) echo "将发布 v$version（已完成的步骤会跳过）。"; echo "release=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::查询 GitHub Release v$version 返回 HTTP $status"; exit 1 ;;
+          esac
 
       # 发版门禁：金标测试不过就不该有这个版本。
       # tier3 全量（586K 例）留在本地，常规层已覆盖排盘、运限、契约与 i18n。
@@ -97,14 +128,41 @@ jobs:
 
       # 发布前的预检：npm 可信发布只能给已存在的包配置，包还不存在时 OIDC 发布必然失败。
       # 在发布任何东西之前确认，免得 crates.io 已发出而 npm 发不出去。
-      # 首次发布与可信发布的登记要维护者在 npmjs.com 手动做，见 CLAUDE.md「发版」。
+      # 占位版本的首发与可信发布的登记要维护者在 npmjs.com 手动做，见 CLAUDE.md「发版」。
       - name: 预检 npm 包已存在
         if: steps.ver.outputs.release == 'true'
         run: |
-          if ! npm view x-iztro name >/dev/null 2>&1; then
-            echo "::error::npm 上还没有 x-iztro 包：可信发布要求包已存在，先由维护者手动首发并登记 Trusted Publisher（见 CLAUDE.md「发版」）"
-            exit 1
-          fi
+          status=$(curl -s -o /dev/null -w '%{http_code}' https://registry.npmjs.org/x-iztro)
+          case "$status" in
+            200) ;;
+            404) echo "::error::npm 上还没有 x-iztro 包：可信发布要求包已存在，先由维护者发占位版本并登记 Trusted Publisher（见 CLAUDE.md「发版」）"; exit 1 ;;
+            *) echo "::error::查询 npm 注册表返回 HTTP $status"; exit 1 ;;
+          esac
+
+      # 两个标签：v* 是仓库版本，go/iztro/v* 是 Go 子模块版本。
+      # Go 的模块路径带子目录（.../x-iztro/go/iztro），go get 只认前缀相同的标签，少了它 go get 拿不到这个版本。
+      # 标签在发布之前打在合并提交上，表明这个版本归这次合并（见文件开头）。
+      - name: 在合并提交上打标签
+        if: steps.ver.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          head=$(git rev-parse HEAD)
+          for tag in "v$VERSION" "go/iztro/v$VERSION"; do
+            # 附注标签要取 ^{} 才是它指向的提交
+            remote=$(git ls-remote --tags origin "refs/tags/$tag^{}" | cut -f1)
+            if [ -z "$remote" ]; then
+              git tag -a "$tag" -m "$tag"
+              git push origin "$tag"
+            elif [ "$remote" = "$head" ]; then
+              echo "$tag 已在本次合并提交上，跳过。"
+            else
+              echo "::error::$tag 已指向 $remote，不是本次合并提交 $head：这个版本由另一次合并发布，去重跑那次的作业"
+              exit 1
+            fi
+          done
 
       - name: 查 crates.io 是否已有这个版本
         if: steps.ver.outputs.release == 'true'
@@ -131,49 +189,48 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --locked
 
-      # 版本不存在时 npm view 输出为空，与网络失败区分开：只有输出恰为这个版本号才算已发布
       - name: 发布到 npm
         if: steps.ver.outputs.release == 'true'
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          cd js
-          if [ "$(npm view "x-iztro@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
-            echo "x-iztro@$VERSION 已在 npm，跳过。"
-          else
-            npm publish --access public
-          fi
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/x-iztro/$VERSION")
+          case "$status" in
+            200) echo "x-iztro@$VERSION 已在 npm，跳过。" ;;
+            404) cd js && npm publish --access public ;;
+            *) echo "::error::查询 npm 注册表返回 HTTP $status"; exit 1 ;;
+          esac
 
-      # 两个标签：v* 是仓库版本，go/iztro/v* 是 Go 子模块版本。
-      # Go 的模块路径带子目录（.../x-iztro/go/iztro），go get 只认前缀相同的标签，
-      # 少了它 go get 拿不到这个版本。
-      - name: 打标签
-        if: steps.ver.outputs.release == 'true'
-        env:
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for tag in "v$VERSION" "go/iztro/v$VERSION"; do
-            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
-              echo "$tag 已存在，跳过。"
-            else
-              git tag -a "$tag" -m "$tag"
-              git push origin "$tag"
-            fi
-          done
-
-      # PyPI 由 wheels.yml 接手，用 workflow_dispatch 显式派发到刚打的标签上。
+      # PyPI 由 wheels.yml 接手，用 workflow_dispatch 显式派发到本次的标签上，并等它跑完：
+      # 只派发不等，wheels 失败时 Release 已经建好，重跑会判「已发完」而 PyPI 永远补不上。
       # 不能直接让推标签去触发：GITHUB_TOKEN 推出的 push 事件不会启动新的工作流运行，
       # workflow_dispatch 是该规则的明文例外。
       # 也不能把 wheels.yml 写成 reusable workflow 由本作业 uses 调用：
       # PyPI 可信发布匹配不到被复用工作流（pypi/warehouse#11096 未关），一调即拒。
-      - name: 派发 wheels.yml 构建并发布 PyPI
+      # 重跑时 wheels 会再跑一遍，已上传的文件由它跳过。
+      - name: 发布 PyPI（派发 wheels.yml 并等它成功）
         if: steps.ver.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.ver.outputs.version }}
-        run: gh workflow run wheels.yml --ref "v$VERSION"
+        run: |
+          # 往前留一分钟容忍运行器与 GitHub 的时钟差；上一次尝试的运行已被等完，不会落在这一分钟里
+          since=$(date -u -d '-1 minute' +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run wheels.yml --ref "v$VERSION"
+          # 派发接口不返回运行编号：按标签（运行的 headBranch）、触发方式与派发时刻找这次的运行
+          run_id=""
+          for _ in $(seq 1 30); do
+            run_id=$(gh run list --workflow wheels.yml --event workflow_dispatch --limit 20 \
+              --json databaseId,headBranch,createdAt \
+              --jq "[.[] | select(.headBranch == \"v$VERSION\" and .createdAt >= \"$since\")] | sort_by(.createdAt) | last | .databaseId // empty")
+            [ -n "$run_id" ] && break
+            sleep 10
+          done
+          if [ -z "$run_id" ]; then
+            echo "::error::派发后 5 分钟内没找到 wheels.yml 的运行"
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
 
       # 最后建 Release：它的存在表示这个版本的全部发布步骤都已完成（见文件开头）。
       - name: 从 PR 正文提取发布说明
@@ -187,4 +244,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.ver.outputs.version }}
-        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
+        run: gh release create "v$VERSION" --verify-tag --title "v$VERSION" --notes-file RELEASE_NOTES.md
