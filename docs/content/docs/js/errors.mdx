@@ -1,0 +1,64 @@
+---
+title: 错误处理
+description: IztroError 的 code 分类、与调用方式错误的区分，以及 WebAssembly 实例故障。
+---
+
+收外部输入的入口在入参非法时抛 `IztroError`。日期格式、日期存在性、年份范围、时辰索引在核心层校验；
+性别、语言、标识、配置这些字符串取值在绑定层校验。
+
+```ts
+import { IztroError } from 'x-iztro';
+```
+
+## code
+
+消息是内核给出的英文原文，会随版本调整措辞；程序里分支请用 `.code`：
+
+| `code` | 含义 | 典型触发 |
+| --- | --- | --- |
+| `invalid_date` | 日期非法 | 格式错、日期不存在（含改历空缺）、超出 1–9999 年 |
+| `invalid_time_index` | 时辰索引越界 | 不在 0–12 |
+| `invalid_argument` | 其余入参或配置非法 | 性别、语言、星耀标识、宫名、自定义表、比查询精度细的层级 |
+| `internal` | 内核装载失败、WebAssembly trap 或库内部缺陷 | `init()` 取不到或编不了 wasm；实例 trap |
+
+与 Rust 的 `IztroError::code()`、Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套取值。
+
+```ts
+for (const call of [
+  () => astro.bySolar('2000-2-30', 2, 'female'),
+  () => astro.bySolar('2000-8-16', 13 as TimeIndex, 'female'),
+  () => astro.bySolar('2000-8-16', 2, 'x' as Gender),
+  () => astro.bySolar('2000-8-16', 2, 'female', { language: 'fr-FR' as Language }),
+]) {
+  try {
+    call();
+  } catch (e) {
+    if (e instanceof IztroError) console.log(e.code, e.message);
+  }
+}
+```
+
+**输出**
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+invalid_time_index time_index must be 0-12, got 13
+invalid_argument invalid gender 'x': expected 'male' or 'female'
+invalid_argument invalid language 'fr-FR': expected 'zh-CN', 'zh-TW', 'en-US', 'ja-JP', 'ko-KR' or 'vi-VN'
+```
+
+## 不是 IztroError 的错误
+
+调用方式本身用错时抛 JS 的标准错误，它们指向代码缺陷而不是输入问题：
+
+| 错误 | 触发 |
+| --- | --- |
+| `Error` | 未 `await init()` 就调用；宫位脱离星盘却调用 `toText` |
+| `TypeError` | `knowledge` 既不是 `true` 也不是 `KnowledgePack`；插件不是函数 |
+| `RangeError` | `util.mergeStars` 某一组不是十二宫 |
+| `SyntaxError` | `KnowledgePack.fromJSON` 的 JSON 语法错 |
+
+## WebAssembly 实例故障
+
+内核不会因非法入参 trap。若因库缺陷发生 trap，当次调用抛 `IztroError`（`internal`，`cause` 为 `WebAssembly.RuntimeError`），
+实例随即作废——trap 后实例的栈与堆状态不可信。此后的调用抛「未初始化」，`await init()` 重建实例即可继续。

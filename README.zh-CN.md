@@ -6,6 +6,7 @@
   <a href="https://crates.io/crates/x-iztro"><img src="https://img.shields.io/crates/v/x-iztro?style=flat-square&logo=rust&logoColor=white" alt="crates.io"></a>
   <a href="https://docs.rs/x-iztro"><img src="https://img.shields.io/docsrs/x-iztro?style=flat-square" alt="docs.rs"></a>
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
+  <a href="https://www.npmjs.com/package/x-iztro"><img src="https://img.shields.io/npm/v/x-iztro?style=flat-square&logo=npm&logoColor=white" alt="npm"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="https://x-iztro.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-747%2C572-2da44e?style=flat-square" alt="金标用例 747,572"></a>
@@ -25,7 +26,7 @@ x-iztro 把生日算成一张完整的紫微斗数命盘，再变成大模型能
 64 条格局判定、可替换的解读文本，每一项既有译名又有语言无关的稳定标识。
 排盘结果与 JS iztro v2.6.3 逐字段零差异（747,572 例金标守着这条线），
 默认口径与 iztro 一致，中州派与各分界点可切换。
-Rust 核心，Rust、Python、Go 三种语言直接调用。
+Rust 核心，Rust、Python、Go、JavaScript/TypeScript 都能直接调用。
 
 > 排盘是算术，不是解读：公农历换算、闰月、干支、上百颗星的安星规则。
 > 大模型能算对一部分，剩下的会不声不响地算错——而你从输出里看不出是哪一部分。
@@ -95,12 +96,12 @@ JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键�
 | 知识包（解读文本、门派属性）             | 无                | ✅                                   |
 | 生辰反推（八字四柱 / 盘面特征 → 生辰）   | 无                | ✅                                   |
 | 语义化文本投影（to_text）                | 无                | ✅                                   |
-| 调用语言                                 | JS / TS           | Rust / Python / Go                   |
+| 调用语言                                 | JS / TS           | Rust / Python / Go / JS·TS（WebAssembly） |
 | 配置                                     | 全局单例          | 随盘传入，无全局状态                 |
 | 非法输入                                 | 抛异常            | 带分类码的错误，非法输入不 panic     |
 
-前端或 Node 项目请用上游 iztro（原作）；后端服务，或要把盘交给大模型解读的场景，
-用 x-iztro。
+JS 项目里 iztro 是原作，依赖也更轻（纯 JavaScript，不用下载 WebAssembly）。
+要用上表里 iztro 没有的能力、要把盘交给大模型解读，或浏览器与后端必须逐字段一致时，用 x-iztro。
 
 ## 安装
 
@@ -126,6 +127,14 @@ pip install x-iztro
 
 ```bash
 go get github.com/x-haose/x-iztro/go/iztro
+```
+
+**JavaScript / TypeScript** — 同一份 Rust 核心编成 WebAssembly（约 1.7 MB，gzip 后约 0.5 MB），
+ESM 带类型声明，支持 Node.js 22+ 与现代浏览器。Vite、webpack、Next.js Turbopack 会自动把 `.wasm`
+作为资源产出。`x-iztro/types` 只导出 DTO 类型与枚举、不碰 WebAssembly，给只负责渲染的界面代码用。
+
+```bash
+npm install x-iztro
 ```
 
 ## 快速开始
@@ -206,7 +215,25 @@ func main() {
 }
 ```
 
-三套绑定调用同一份 Rust 核心，同一组出生数据在三种语言里得到同一份结论——
+**JavaScript / TypeScript**
+
+```ts
+import { init, astro, MajorStar, Mutagen, PalaceName } from 'x-iztro';
+
+await init(); // 装载一次 WebAssembly 内核，之后的调用都是同步的
+
+// timeIndex 2 = 寅时；输出默认 zh-CN，传 { language: 'en-US' } 出英文
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.chineseDate, chart.soul, chart.fiveElementsClass);
+
+const soul = chart.palace(PalaceName.SOUL)!;
+console.log(soul.has([MajorStar.ZIWEI]), soul.hasMutagen(Mutagen.LU));
+
+const horoscope = chart.horoscope('2024-1-1', 0);
+console.log(horoscope.yearly.heavenlyStem, horoscope.yearly.earthlyBranch);
+```
+
+各语言绑定调用同一份 Rust 核心，同一组出生数据在各语言里得到同一份结论——
 这条等价性本身也在测试范围内。
 
 ## 在 iztro 之上
@@ -373,8 +400,8 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
 | 日期写法  | 46      | 分隔符、补零、时间部分与运限省略时辰，含非法写法的报错   |
 
 此外：序列化契约与 JS 的 `JSON.stringify` 逐键逐值对照；翻译反查与 iztro 的
-`kot`（其翻译反查函数）实际取值对照 1,573 例；三侧绑定交叉验证，同一组出生
-数据在 Rust、Python、Go 得到同一份结论。
+`kot`（其翻译反查函数）实际取值对照 1,573 例；各语言绑定交叉验证，同一组出生
+数据在 Rust、Python、Go、JavaScript 得到同一份结论。
 
 **「零容忍」是什么意思，举一个例子。** 早先 Rust 侧借用的农历库，在逐日全量核对下
 暴露出移植错误：公式里 `t -= A + B` 被译成了 `t = t - A + B`，ΔT 外推也不同——
@@ -389,7 +416,7 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
 - **非法输入是错误，不是 panic**——日期格式与存在性都校验，1–9999 年（1582-10-15 以前按儒略历），
   时辰索引 0–12。Rust 返回 `Err(IztroError)`，Python 抛 `x_iztro.IztroError`
   （继承 `ValueError`，带 `.code`），Go 返回可用 `errors.Is` 匹配的 `error`，
-  C FFI 返回错误 JSON。每种失败都带机器可读的类别。
+  JavaScript 抛带 `.code` 的 `IztroError`，C FFI 返回错误 JSON。每种失败都带机器可读的类别。
 - **Python**——单次排盘约 0.5 ms（Apple Silicon 开发机）。盘对象是 frozen
   dataclass，可跨线程共享，但计算持有 GIL：扩容用多进程而不是多线程。
   序列化用 `to_dict()` / `to_json()`，别用 `dataclasses.asdict()`
@@ -399,6 +426,10 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
   落盘缓存命中后 20–30 ms；缓存在 `os.UserCacheDir()` 下，取不到时退化为
   每进程编译）。稳态单次排盘约 0.5 ms（`go/iztro` 下 `go test -bench` 可复现），
   `Warmup` 可把冷启动挪到启动阶段。
+- **JavaScript**——先 `await init()` 一次（浏览器里取 `.wasm`，Node 里读文件），之后每次调用都是
+  在当前线程上的同步纯计算，大范围的反推这类重活放进 Worker。WebAssembly trap 后实例作废，
+  再 `init()` 即重建。页面有严格的 Content-Security-Policy 时需要 `script-src 'wasm-unsafe-eval'`。
+  序列化用 `JSON.stringify(chart)`，`toJSON()` 就是 iztro 的 JSON。
 - **Rust**——MSRV 1.88；默认依赖为 `serde`、`serde_json`、`libm`（历法三角函数）、
   `chrono`（仅 `horoscope_now` 用到时钟）和 `unicode-width`（知识包摘要显示宽度）；
   Python 与 JSON Schema 支持由可选 feature 启用。
@@ -424,12 +455,12 @@ cargo test --release --lib calendar -- --ignored         # 历法全量：公历
 ## 文档
 
 **<https://x-iztro.x-haose.com>**——中英双语文档站：从零开始的指南、数据模型
-背后的斗数概念、三种语言各自的 API 参考（每个函数、类型、方法都有独立条目，
+背后的斗数概念、各语言的 API 参考（每个函数、类型、方法都有独立条目，
 附真实运行输出与边界说明）。想先系统看懂命盘本身，从
 [紫微斗数概念](https://x-iztro.x-haose.com/zh/docs/guide/concepts)开始。
 
 Rust 的 API 文档同时发布在 [docs.rs/x-iztro](https://docs.rs/x-iztro)。
-三种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。
+每种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。
 
 ## 从源码构建
 
@@ -444,6 +475,9 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 # Go 绑定：重编并刷新内嵌的 wasm
 cargo build --release --target wasm32-wasip1
 cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
+
+# JS 绑定：编出 wasm32-unknown-unknown 内核并编译 TypeScript
+cd js && npm ci && npm run build
 ```
 
 金标数据由 JS iztro 包生成：`cd tests/golden && npm ci && npm run gen:all`。

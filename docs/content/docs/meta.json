@@ -1,4 +1,4 @@
 {
   "title": "x-iztro 文档",
-  "pages": ["index", "guide", "rust", "python", "go"]
+  "pages": ["index", "guide", "rust", "python", "go", "js"]
 }

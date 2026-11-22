@@ -1,0 +1,71 @@
+---
+title: JavaScript
+description: npm 安装，init 装载 WebAssembly 内核，之后同步调用；浏览器与 Node.js 通用。
+---
+
+*适合：开发者*
+
+## 安装
+
+```bash
+npm install x-iztro
+```
+
+包里是同一份 Rust 核心编成的 WebAssembly 加上 TypeScript 外壳，ESM，带类型声明，零运行期依赖。
+要求 Node.js 22 及以上，或支持 WebAssembly 的现代浏览器。Vite、webpack、Next.js Turbopack
+会自动把 `.wasm` 作为静态资源产出，见[在打包器与框架里使用](/zh/docs/js/bundlers)。
+
+<Callout title="从源码构建">
+只有在改动 Rust 侧代码时才需要：
+
+```bash
+cd js && npm ci && npm run build
+```
+</Callout>
+
+## 排盘
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init(); // 装载内核，只需一次；之后的调用都是同步的
+
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+
+console.log(chart.solarDate);           // 阳历
+console.log(chart.lunarDate);           // 农历
+console.log(chart.chineseDate);         // 四柱干支
+console.log(chart.time, chart.timeRange);
+console.log(chart.sign, chart.zodiac);  // 星座、生肖
+console.log(chart.soul, chart.body);    // 命主、身主
+console.log(chart.fiveElementsClass);   // 五行局
+```
+
+```text
+2000-8-16
+二〇〇〇年七月十七
+庚辰 甲申 丙午 庚寅
+寅时 03:00~05:00
+狮子座 龙
+破军 文昌
+木三局
+```
+
+农历排盘用 `astro.byLunar`。性别之后的可选项收在对象里（`fixLeap`、`language`、`config`，农历另有 `isLeapMonth`）：
+
+```ts
+const lunar = astro.byLunar('2000-7-17', 2, 'female', { isLeapMonth: false });
+```
+
+返回的 `Astrolabe` 字段都有类型，展示字段已按盘面语言翻译；`JSON.stringify(chart)` 得到与 iztro 同形的 JSON。
+
+## 接下来
+
+完整的 API 在 **[JavaScript API 参考](/zh/docs/js)** 一栏。
+
+<Cards>
+  <Card title="排盘入口" href="/zh/docs/js/astro" description="init、bySolar / byLunar 与排盘配置" />
+  <Card title="星盘对象" href="/zh/docs/js/astrolabe" description="宫位与星耀定位、运限入口、文本" />
+  <Card title="运限对象" href="/zh/docs/js/horoscope" description="六个层级、宫位查询与查询精度" />
+  <Card title="在打包器与框架里使用" href="/zh/docs/js/bundlers" description="React Router、Vite、Tauri、Next.js、Worker、CSP" />
+</Cards>

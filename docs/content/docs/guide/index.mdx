@@ -1,6 +1,6 @@
 ---
 title: 介绍
-description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go 调用，结果与 JS iztro 逐字段一致。
+description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go、JavaScript 调用，结果与 JS iztro 逐字段一致。
 icon: Star
 ---
 
@@ -49,12 +49,13 @@ icon: Star
 排出来的盘准不准，有一条硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro) v2.6.3 逐字段零差异**，
 由 747,572 例金标测试守着。
 
-核心用 Rust 实现，通过三套绑定暴露给上层编程语言：
+核心用 Rust 实现，通过各语言绑定暴露给上层编程语言：
 
 <Cards>
   <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="原生 crate，零拷贝的强类型结构体" />
   <Card title="Python" href="/zh/docs/guide/getting-started/python" description="PyO3 原生扩展，dataclass 类型化 API" />
   <Card title="Go" href="/zh/docs/guide/getting-started/go" description="内嵌 WebAssembly，纯 Go 运行时，无 cgo" />
+  <Card title="JavaScript" href="/zh/docs/guide/getting-started/js" description="WebAssembly 内核，浏览器与 Node.js 通用" />
 </Cards>
 
 ## 它解决什么问题
@@ -102,7 +103,7 @@ x-iztro 是 iztro v2.6.3 的移植，不是重新发明。凡是 iztro 有的功
 <small>给开发者</small>
 
 星名宫名在不同盘面语言下文本不同，但每个实体都额外带一个稳定的标识（key）。
-Python 的枚举与 Go 的常量就建立在这些标识上，
+Python 与 JavaScript 的枚举、Go 的常量就建立在这些标识上，
 所以「命宫有没有紫微星」这类判断，在任何盘面语言的盘上写法与结果都一样。
 见 [key 契约](/zh/docs/guide/guides/keys)。
 
@@ -126,7 +127,7 @@ print([s.name for s in soul.major_stars])
 ['紫微']
 ```
 
-三种编程语言的完整安装与示例见[快速开始](/zh/docs/guide/getting-started)。
+各编程语言的完整安装与示例见[快速开始](/zh/docs/guide/getting-started)。
 
 ## 从哪读起
 
@@ -162,9 +163,14 @@ print([s.name for s in soul.major_stars])
     description="导出函数、类型与方法的完整条目"
   />
   <Card
+    title="JavaScript API 参考"
+    href="/zh/docs/js"
+    description="对象 API、打包器与框架里的用法"
+  />
+  <Card
     title="数据结构字典"
     href="/zh/docs/guide/data-model"
-    description="每个字段的类型与含义，三种编程语言共用的契约"
+    description="每个字段的类型与含义，各编程语言共用的契约"
   />
   <Card
     title="准确性保证"

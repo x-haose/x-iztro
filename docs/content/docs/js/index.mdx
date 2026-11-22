@@ -1,0 +1,110 @@
+---
+title: 概览
+description: 安装、初始化、入口与模块结构，以及阅读本参考的方式。
+icon: FileCode
+---
+
+JS 包是同一份 Rust 核心编成的 WebAssembly 加上 TypeScript 外壳：计算在 wasm 里完成，
+JS 侧提供带类型声明的对象 API。ESM，零运行期依赖，浏览器与 Node.js 通用。
+
+这一栏是 JS 侧的完整 API 参考。语义与 [Python 参考](/zh/docs/python) 一一对应，
+同一张盘在两侧得到同一份结果；本栏写明 JS 的签名、取值与差别。
+
+## 安装
+
+```bash
+npm install x-iztro
+```
+
+要求 Node.js 22 及以上，或支持 WebAssembly 与 ES2022 的浏览器。包内的
+`x_iztro.wasm` 约 1.7 MB（gzip 后约 0.5 MB），由打包器作为静态资源产出，
+不需要 Rust 工具链。
+
+## 第一张盘
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init(); // 装载 WebAssembly 内核，只需一次
+
+const chart = astro.bySolar('2000-8-16', 2, 'female'); // 2 = 寅时（03:00–05:00）
+console.log(chart.solarDate, chart.lunarDate);
+console.log(chart.palace('soulPalace')!.majorStars.map((s) => s.name).join(' '));
+```
+
+**输出**
+
+```text
+2000-8-16 二〇〇〇年七月十七
+紫微
+```
+
+<Callout type="info" title="异步只有 init 一处">
+`init()` 取文件、编译、实例化，是异步的；装好之后所有 API 都是同步的纯计算。
+重复调用 `init()` 直接返回，并发调用共用同一次装载。未初始化就调用其他 API 会抛 `Error`。
+</Callout>
+
+## 入口
+
+| 导入路径 | 内容 | 何时用 |
+| --- | --- | --- |
+| `x-iztro` | 全部 API 与 `init` | 排盘、查询、文本 |
+| `x-iztro/types` | DTO 类型与枚举常量，不含内核 | 只渲染排盘结果的组件；导入它不会取 wasm |
+| `x-iztro/x_iztro.wasm` | 内核文件本身 | 自行托管或预取 wasm |
+
+`x-iztro` 按 package.json 的条件导出分两份实现：Node 条件读文件，其余（浏览器、打包器）用 `fetch`。
+两份 API 完全相同。在各打包器与框架里怎么用见[在打包器与框架里使用](/zh/docs/js/bundlers)。
+
+## 模块结构
+
+与 iztro 的模块划分对应：
+
+| 导出 | 内容 | 本参考对应页 |
+| --- | --- | --- |
+| `astro` | `bySolar` / `byLunar`、轻量查询、宫位推算、插件 | [排盘入口](/zh/docs/js/astro)、[轻量查询](/zh/docs/js/query)、[扩展星盘](/zh/docs/js/extend) |
+| `Astrolabe`、`Palace`、`Star`、`Horoscope` 等类 | 排盘结果与它们的方法 | [星盘对象](/zh/docs/js/astrolabe) 起的五页 |
+| `util` | 索引换算、亮度与四化查表、干支拼接 | [工具函数](/zh/docs/js/util) |
+| `star` | 按出生数据安星 | [安星模块](/zh/docs/js/star) |
+| `data` | 星耀与干支数据表、顺序常量 | [数据表](/zh/docs/js/data) |
+| `i18n` | 标识与译名的双向查找 | [翻译](/zh/docs/js/i18n) |
+| `KnowledgePack` | 知识包 | [知识包](/zh/docs/js/knowledge) |
+| `solarDatesByBazi`、`reverseChart` | 反推 | [反推](/zh/docs/js/reverse) |
+| `IztroError` | 错误类型 | [错误处理](/zh/docs/js/errors) |
+| 枚举（`MajorStar`、`PalaceName`……） | 全部语言无关标识 | [数据表](/zh/docs/js/data#枚举清单) |
+
+## 枚举即标识
+
+每个枚举既是常量对象又是同名的取值联合类型：
+
+```ts
+import { MajorStar, PalaceName } from 'x-iztro';
+
+const soul = chart.palace(PalaceName.SOUL)!;
+soul.majorStars[0]!.key === MajorStar.ZIWEI; // true
+
+const key: MajorStar = 'ziweiMaj'; // 字面量同样合法
+```
+
+取值就是语言无关标识，可直接与数据对象上的 `key` / `*Key` 字段比较；
+字符串字面量同样有效，`chart.palace('soulPalace')` 与 `chart.palace(PalaceName.SOUL)` 等价。
+
+<Callout type="warn" title="判断用 key，不要用 name">
+`star.name` 随排盘语言变化（中文盘是「紫微」，英文盘是 `emperor`）；
+`star.key` 在任何语言下都是 `ziweiMaj`。所有判断都应基于 `*Key` 字段或内置判断方法。
+</Callout>
+
+## 数据对象只读
+
+对象的字段都是 `readonly`，数组是 `readonly` 数组。需要变体时用返回新对象的方法，
+如 `chart.rearranged(...)`。`toJSON()` 给出的是 DTO 的深拷贝，改它不影响原对象。
+
+## 找不到时返回 undefined
+
+定位不到的宫位、星耀、条目返回 `undefined`（Python 侧是 `None`）。
+入参非法抛 [`IztroError`](/zh/docs/js/errors)；调用方式用错（未初始化、参数类型不对）抛标准的 `Error` / `TypeError`。
+
+## 条目怎么读
+
+示例统一用同一张盘：**2000 年 8 月 16 日寅时女命**（`astro.bySolar('2000-8-16', 2, 'female')`），
+排盘语言默认 `zh-CN`，输出块是真实运行结果。各条目的斗数含义与 Python 参考相同，本栏不重复，
+需要时按条目里的链接对照。

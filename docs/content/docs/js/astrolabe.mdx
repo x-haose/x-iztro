@@ -1,0 +1,270 @@
+---
+title: 星盘对象
+description: Astrolabe 的字段、宫位与星耀定位、三方四正与夹宫、运限入口、文本与 JSON。
+---
+
+`Astrolabe` 是排盘的产物，也是一切查询的入口：十二宫，以及四柱、命主身主、五行局这些盘级信息。
+
+```ts
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+```
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `gender` / `genderKey` | `string` / `Gender` | 性别译名 / 标识 |
+| `solarDate` | `string` | 公历日期，入参去掉时间部分原样回显 |
+| `lunarDate` | `string` | 农历日期，随盘面语言 |
+| `chineseDate` | `string` | 四柱展示串 |
+| `rawDates` | `RawDates` | 结构化的农历生日（`lunarDate`）与四柱（`chineseDate`，含 `yearlyKeys` 等标识） |
+| `time` / `timeRange` | `string` | 时辰名 / 钟点区间 |
+| `sign` / `signKey` | `string` | 星座 / 标识 |
+| `zodiac` / `zodiacKey` | `string` | 生肖 / 标识 |
+| `soul` / `soulKey`、`body` / `bodyKey` | `string` | 命主、身主星 / 标识 |
+| `fiveElementsClass` / `fiveElementsClassKey` | `string` / `FiveElementsClass` | 五行局 / 标识 |
+| `earthlyBranchOfSoulPalace(Key)` / `earthlyBranchOfBodyPalace(Key)` | `string` | 命宫、身宫地支 / 标识 |
+| `timeIndex`、`fixLeap`、`language` | — | 排盘入参 |
+| `config` | `ChartConfigData` | 六个开关的实际取值 |
+| `palaces` | `readonly Palace[]` | 十二宫，索引 0 为寅宫、11 为丑宫 |
+
+`palaces` 的索引是宫位索引而非宫名顺序，取命宫用 `chart.palace('soulPalace')`。
+
+---
+
+## palace
+
+```ts
+palace(target: number | PalaceName | string): Palace | undefined;
+```
+
+按宫位索引、宫名标识或当前语言的宫名取宫位；`PalaceName.BODY`、`PalaceName.ORIGINAL` 取身宫、来因宫。
+
+```ts
+const soul = chart.palace(PalaceName.SOUL)!;
+console.log(soul.index, soul.name, soul.heavenlyStem + soul.earthlyBranch);
+console.log(chart.palace(PalaceName.BODY)!.name, chart.palace(PalaceName.ORIGINAL)!.name,
+  chart.palace('财帛')!.index, chart.palace(0)!.name);
+console.log(chart.palace('nope'));
+```
+
+```text
+4 命宫 壬午
+官禄 夫妻 0 财帛
+undefined
+```
+
+---
+
+## star / starInPalace
+
+```ts
+star(star: string): Star | undefined;
+starInPalace(star: string): [Star, Palace] | undefined;
+```
+
+按星耀标识或当前语言星名在本命盘（主、辅、杂）上找星。
+
+```ts
+const [s, p] = chart.starInPalace(MajorStar.WUQU)!;
+console.log(s.name, s.brightness, s.mutagen, p.name);
+console.log(chart.star('文昌')!.palace()!.name);
+```
+
+```text
+武曲 得 权 财帛
+福德
+```
+
+---
+
+## surroundedPalaces
+
+```ts
+surroundedPalaces(target: number | PalaceName | string): SurroundedPalaces | undefined;
+```
+
+本宫、对宫、财帛位、官禄位，见[三方四正与夹宫](/zh/docs/js/surpalaces)。
+
+## isSurrounded / isSurroundedOneOf / notSurrounded
+
+```ts
+isSurrounded(target, stars: readonly string[]): boolean;      // 三方四正含全部
+isSurroundedOneOf(target, stars: readonly string[]): boolean; // 含任意一颗
+notSurrounded(target, stars: readonly string[]): boolean;     // 一颗都不含
+```
+
+```ts
+const sp = chart.surroundedPalaces(PalaceName.SOUL)!;
+console.log([sp.target, sp.opposite, sp.wealth, sp.career].map((p) => p.name).join(' '));
+console.log(
+  chart.isSurrounded(PalaceName.SOUL, [MajorStar.ZIWEI, MajorStar.WUQU]),
+  chart.isSurroundedOneOf(PalaceName.SOUL, [MinorStar.QINGYANG, MinorStar.TUOLUO]),
+  chart.notSurrounded(PalaceName.SOUL, [MinorStar.DIKONG]),
+);
+```
+
+```text
+命宫 迁移 财帛 官禄
+true false true
+```
+
+定位不到宫位时三者都返回 `false`。
+
+---
+
+## flankingPalaces
+
+```ts
+flankingPalaces(target: number | PalaceName | string): FlankingPalaces | undefined;
+```
+
+目标宫前后相邻的两宫，十二宫首尾相连。
+
+```ts
+const f = chart.flankingPalaces(PalaceName.SOUL)!;
+console.log(f.previous.name, f.next.name, f.have(['天机']), f.haveMutagen(Mutagen.JI));
+```
+
+```text
+兄弟 父母 true false
+```
+
+---
+
+## horoscope / horoscopeOfYear / horoscopeOfMonth
+
+```ts
+horoscope(targetDate?: string | Date, targetTimeIndex?: TimeIndex): Horoscope;
+horoscopeOfYear(year: number): Horoscope;
+horoscopeOfMonth(year: number, month: number): Horoscope;
+```
+
+- `horoscope`：目标阳历日期（字符串可带时间；`Date` 取本地时区的年月日时分秒），不传取此刻；
+  时辰不传时按目标日期的时间换算，不带时间即早子时。查询精度为流时。
+- `horoscopeOfYear`：农历年，目标日期取该年六月初一。只问某一年时用它——公历年初到春节前仍属上一个农历年。查询精度为流年。
+- `horoscopeOfMonth`：农历年某月，目标日期取该月（非闰）初一。查询精度为流月。
+
+```ts
+const h = chart.horoscope('2024-10-1 13:20');
+console.log(h.solarDate, h.lunarDate, h.hourly.heavenlyStem + h.hourly.earthlyBranch, h.precision());
+const y = chart.horoscopeOfYear(2027);
+console.log(y.solarDate, y.yearly.heavenlyStem + y.yearly.earthlyBranch, y.precision());
+const m = chart.horoscopeOfMonth(2025, 7);
+console.log(m.solarDate, m.monthly.heavenlyStem + m.monthly.earthlyBranch, m.precision());
+```
+
+```text
+2024-10-1 二〇二四年八月廿九 己未 hourly
+2027-7-4 丁未 yearly
+2025-8-23 甲申 monthly
+```
+
+运限对象见[运限对象](/zh/docs/js/horoscope)，查询精度的含义见 [precision](/zh/docs/js/horoscope#precision)。
+
+## decadalList / yearlyList / monthlyList 与一览文本
+
+见[运限对象 · 三个列表](/zh/docs/js/horoscope#三个列表)。
+
+## patterns / patternsToText
+
+见[格局](/zh/docs/js/patterns)。
+
+---
+
+## rearranged
+
+```ts
+rearranged(fromStem: HeavenlyStem, fromBranch: EarthlyBranch): Astrolabe;
+```
+
+以指定干支为命宫重排，返回新盘，本盘不变。重排盘上的运限、格局、文本都按重排后的布局计算。
+常规的地盘、人盘用 `config.astroType` 即可。
+
+---
+
+## toText
+
+```ts
+toText(options?: {
+  knowledge?: boolean | KnowledgePack | null; // true 取内嵌包，或给包
+  detail?: TextDetail;                        // 'overview' | 'full'（默认）
+  knowledgeDepth?: KnowledgeDepth;            // 'summary' | 'full'（默认），summary 须给 knowledge
+  config?: PatternConfig;                     // 格局判定口径
+}): string;
+```
+
+星盘的语义化文本：面向语言模型与人的 Markdown 子集，按排盘语言输出。`String(chart)` 等于 `chart.toText()`。
+文本形态见 [to_text 指南](/zh/docs/guide/guides/to-text)。
+
+```ts
+console.log(chart.toText({ detail: TextDetail.OVERVIEW }).split('\n').slice(0, 12).join('\n'));
+```
+
+```text
+# 命盘 2000-8-16 寅时 女
+
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
+- 五行局: 木三局 · 命主: 破军 · 身主: 文昌
+- 命宫: 午 · 身宫: 戌 (官禄) · 来因宫: 辰 (夫妻)
+- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 太阴化科→仆役, 天同化忌→疾厄
+
+## 十二宫总览
+| 宫位 | 主星 | 辅星 | 大限 |
+|---|---|---|---|
+```
+
+`knowledge: true` 而排盘语言没有内嵌包（目前只有 zh-CN）、`summary` 而包缺摘要时抛 `IztroError`。
+`knowledge` 只接受 `true` 或 `KnowledgePack` 实例，传别的抛 `TypeError`。
+
+## topicToText
+
+```ts
+topicToText(topic: string, options?: TextOptions): string;
+```
+
+按知识包里该主题的定义选宫，每宫一段，文末附落在选中宫内的格局与四化释义。
+`knowledge` 默认取排盘语言的内嵌包（主题定义就在包里）。
+
+```ts
+const text = chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY });
+console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正
+### 本宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+### 对宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+### 财帛位 · 迁移 (戊子) · 大限 63-72
+### 官禄位 · 福德 (甲申) · 大限 103-112
+## 相关宫位
+### 命宫 (壬午) · 大限 3-12
+### 子女 (己卯) · 大限 33-42
+## 格局
+## 四化释义
+```
+
+包里没有该主题、主题里有不认识的宫位标识时抛 `IztroError`。
+
+---
+
+## toJSON
+
+```ts
+toJSON(): AstrolabeData;
+```
+
+星盘的 DTO：camelCase 键、按语言翻译的值，与 iztro 的 `JSON.stringify(astrolabe)` 逐键逐值对应，
+外加语言无关标识。返回深拷贝；`JSON.stringify(chart)` 即序列化它。
+
+```ts
+const raw = chart.toJSON();
+console.log(raw.palaces.length, JSON.parse(JSON.stringify(chart)).solarDate);
+```
+
+```text
+12 2000-8-16
+```

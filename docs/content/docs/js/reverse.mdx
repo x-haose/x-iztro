@@ -1,0 +1,63 @@
+---
+title: 反推
+description: 由八字四柱或星盘特征反查候选生辰。
+---
+
+计算在内核完成（剪枝枚举 + 正排终验，与正向排盘零分歧）。星盘布局与性别无关，反推不收性别。
+背景见[反推指南](/zh/docs/guide/guides/reverse)。
+
+## 类型
+
+| 类型 | 字段 |
+| --- | --- |
+| `Pillar` | `[HeavenlyStem, EarthlyBranch]` |
+| `BirthCandidate` | `solarDate`、`timeIndex`，可直接交给 `astro.bySolar` |
+| `StarPosition` | `star`（本命星耀标识，流耀不收）、`branch` |
+| `ReverseCriteria` | `soulBranch?`、`bodyBranch?`、`fiveElementsClass?`、`stars?`、`mutagens?`（[禄, 权, 科, 忌]，不限定的写 `null`）、`yearRange?`（默认 `[1900, 2100]`）、`fixLeap?`、`limit?`（省略或 0 为 512） |
+| `ReverseResult` | `candidates`、`truncated` |
+
+## solarDatesByBazi
+
+```ts
+solarDatesByBazi(yearly: Pillar, monthly: Pillar, daily: Pillar, hourly: Pillar,
+  options?: { yearRange?: [number, number]; config?: ChartConfig }): BirthCandidate[];
+```
+
+四柱按 `config` 的分界口径解释，与 `rawDates.chineseDate` 同语义。一组四柱约每 60 年出现一次；子时可能给出早晚子两个候选。
+干支阴阳不配、年份范围非法抛 `IztroError`。
+
+## reverseChart
+
+```ts
+reverseChart(criteria: ReverseCriteria, config?: ChartConfig): ReverseResult;
+```
+
+条件为空、含流耀、年份范围非法抛 `IztroError`。候选按枚举序（农历年升序，年内依 月→时辰→日）；
+达到 `limit` 时停止并置 `truncated`。
+
+```ts
+const c = chart.rawDates.chineseDate;
+console.log(solarDatesByBazi(c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys));
+const r = reverseChart({
+  soulBranch: EarthlyBranch.WU,
+  stars: [{ star: MajorStar.ZIWEI, branch: EarthlyBranch.WU }],
+  mutagens: ['taiyangMaj', null, null, 'tiantongMaj'],
+  yearRange: [1990, 2010],
+});
+console.log(r.candidates.length, r.truncated, r.candidates.slice(0, 3));
+```
+
+```text
+[
+  { solarDate: '1940-8-31', timeIndex: 2 },
+  { solarDate: '2000-8-16', timeIndex: 2 },
+  { solarDate: '2060-8-1', timeIndex: 2 }
+]
+120 false [
+  { solarDate: '1990-2-2', timeIndex: 8 },
+  { solarDate: '1990-2-10', timeIndex: 8 },
+  { solarDate: '1990-2-12', timeIndex: 8 }
+]
+```
+
+反推在调用线程上同步计算；在浏览器里对大范围条件反推时放进 Worker，免得阻塞界面。

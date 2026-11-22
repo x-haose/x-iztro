@@ -29,7 +29,7 @@ make check-full            # 再跑 Tier 3 全量金标与全日期可排盘测�
 | `check-rust` | 格式、Clippy、schemars feature 编译、零告警 API 文档、release 构建、常规测试（含契约与文本快照）、历法全量金标 |
 | `check-python` | 从源码构建并安装原生扩展，再跑 Python 全部测试 |
 | `check-go` | 对仓库内嵌 WASM 跑竞态检测测试，重编并刷新 WASM 后再测，构建 Go 示例 |
-| `check-js` | 编出 `wasm32-unknown-unknown` 内核并编译 TypeScript，类型检查测试，在 Node 里对真实内核跑全部测试，用 publint 与 attw 检查包的导出与类型声明 |
+| `check-js` | 编出 `wasm32-unknown-unknown` 内核并编译 TypeScript，类型检查测试，在 Node 里对真实内核跑全部测试，用 publint 与 attw 检查包的导出与类型声明，运行 JS 示例 |
 | `check-docs` | 生成路由类型、类型检查、生产构建 |
 
 各目标可单独执行。Python 环境不在 `.venv` 时用 `make check VENV=/绝对路径`。

@@ -1,5 +1,5 @@
 {
   "title": "Getting started",
   "icon": "Rocket",
-  "pages": ["index", "rust", "python", "go"]
+  "pages": ["index", "rust", "python", "go", "js"]
 }

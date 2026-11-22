@@ -1,6 +1,6 @@
 ---
 title: Documentation
-description: A Zi Wei Dou Shu chart engine, field-for-field identical to JS iztro, plus pattern judgement, knowledge packs and reverse birth-date lookup — with LLM-ready text output. A Rust core, callable from Rust, Python and Go.
+description: A Zi Wei Dou Shu chart engine, field-for-field identical to JS iztro, plus pattern judgement, knowledge packs and reverse birth-date lookup — with LLM-ready text output. A Rust core, callable from Rust, Python, Go and JavaScript.
 icon: Star
 ---
 
@@ -76,7 +76,7 @@ is an engineering standard, not a claim that any one school is the only correct 
   <Card
     title="x-iztro Guide"
     href="/en/docs/guide"
-    description="Installation, your first chart, Zi Wei concepts, configuration and data model. Applies to all three bindings."
+    description="Installation, your first chart, Zi Wei concepts, configuration and data model. Applies to every binding."
   />
   <Card
     title="Using it without writing code"
@@ -86,7 +86,7 @@ is an engineering standard, not a claim that any one school is the only correct 
   <Card
     title="Rust API"
     href="/en/docs/rust"
-    description="The core library. Both the Python and Go bindings call into it."
+    description="The core library. Every binding calls into it."
   />
   <Card
     title="Python API"
@@ -97,6 +97,11 @@ is an engineering standard, not a claim that any one school is the only correct 
     title="Go API"
     href="/en/docs/go"
     description="Embedded WebAssembly on a pure Go runtime, no cgo."
+  />
+  <Card
+    title="JavaScript API"
+    href="/en/docs/js"
+    description="A WebAssembly core with TypeScript types, for browsers and Node.js."
   />
   <Card
     title="Semantic text (to_text)"
@@ -134,13 +139,13 @@ and upstream iztro has no equivalent API for any of them:
 - **Backend / AI application engineer** → [Getting started](/en/docs/guide/getting-started), then the [LLM guide](/en/docs/guide/guides/llm)
 - **New to Zi Wei Dou Shu** → [the concepts](/en/docs/guide/concepts), starting from stems, branches and the twelve palaces
 
-## Three programming languages, one result
+## Several programming languages, one result
 
-All three bindings call the same Rust core, so charts come out identical field for field.
+Every binding calls the same Rust core, so charts come out identical field for field.
 The predicate methods are built on language-independent keys, so one analysis rule — written in
-Rust, Python or Go — yields the same answer on a chart rendered in any output language.
+Rust, Python, Go or JavaScript — yields the same answer on a chart rendered in any output language.
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -175,9 +180,22 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' });
+const soul = chart.palace('soulPalace')!;
+
+console.log(soul.has(['ziweiMaj']));
+```
+
+</Tab>
 </Tabs>
 
-All three report the same answer — the Soul palace of this chart holds Ziwei, the Emperor star
-(Python prints `True`; Rust and Go print `true`). All three use the language-independent key
+They all report the same answer — the Soul palace of this chart holds Ziwei, the Emperor star
+(Python prints `True`; the others print `true`). All of them use the language-independent key
 `ziweiMaj`: render the same chart in English or Japanese and the answer doesn't change.
 

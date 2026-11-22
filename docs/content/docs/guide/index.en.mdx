@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python and Go, matching JS iztro field for field.
+description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python, Go and JavaScript, matching JS iztro field for field.
 icon: Star
 ---
 
@@ -49,12 +49,13 @@ One call produces this Markdown. Paste it into any language model and start aski
 Whether a chart is *correct* has one hard standard here: **zero field-level divergence from JS
 [iztro](https://github.com/SylarLong/iztro) v2.6.3**, held by 747,572 golden test cases.
 
-The core is written in Rust and exposed to higher-level languages through three bindings:
+The core is written in Rust and exposed to higher-level languages through bindings:
 
 <Cards>
   <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="A native crate with strongly typed, zero-copy structs" />
   <Card title="Python" href="/en/docs/guide/getting-started/python" description="A native PyO3 extension with a typed dataclass API" />
   <Card title="Go" href="/en/docs/guide/getting-started/go" description="Embedded WebAssembly on a pure Go runtime, no cgo" />
+  <Card title="JavaScript" href="/en/docs/guide/getting-started/js" description="A WebAssembly core for browsers and Node.js" />
 </Cards>
 
 ## The problem it solves
@@ -111,7 +112,7 @@ chart language only swaps the translation — the computed result is unaffected.
 <small>For developers</small>
 
 Star and palace names read differently in each chart language, but every entity also carries a
-stable key. The Python enums and Go constants are built on those keys, so a check like "does the
+stable key. The Python and JavaScript enums and the Go constants are built on those keys, so a check like "does the
 Soul palace hold Ziwei?" is written the same way and yields the same answer on a chart in any chart
 language. See [The key contract](/en/docs/guide/guides/keys).
 
@@ -137,7 +138,7 @@ soul renwoo
 ['emperor']
 ```
 
-Full installation and examples for all three programming languages are on
+Full installation and examples for every programming language are on
 [Getting started](/en/docs/guide/getting-started).
 
 ## Where to read next
@@ -174,9 +175,14 @@ Full installation and examples for all three programming languages are on
     description="Every exported function, type and method"
   />
   <Card
+    title="JavaScript API"
+    href="/en/docs/js"
+    description="The object API, plus use in bundlers and frameworks"
+  />
+  <Card
     title="Data model"
     href="/en/docs/guide/data-model"
-    description="The type and meaning of every field — the contract shared by all three programming languages"
+    description="The type and meaning of every field — the contract shared by every programming language"
   />
   <Card
     title="Accuracy"

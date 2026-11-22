@@ -1,0 +1,141 @@
+---
+title: Using it with bundlers and frameworks
+description: How the core file gets bundled; React Router, Vite, Tauri, Next.js, Workers, CSP, and components that only render results.
+---
+
+The package loads its core through `new URL('./x_iztro.wasm', import.meta.url)`. Vite, webpack and Turbopack
+all recognize that pattern: they emit the wasm as a static asset and rewrite the address, with no extra
+configuration. Every combination below was built and run in a real project
+(2026-11-23: React Router 8.5.2, Vite 8.3.8, Tauri 2.12.6, Next.js 16.4.6, in Chrome and the macOS WebView).
+
+| Environment | Result | Configuration needed |
+| --- | --- | --- |
+| React Router 8 framework mode (`ssr: false` + `prerender`, built by Vite 8): main thread, `clientLoader` and a module Worker | Works; prerendering evaluates the route modules in Node and importing the package loads nothing | `worker: { format: 'es' }` when the Worker uses dynamic `import()` |
+| The same React Router static build as Tauri 2's `frontendDist`, bundled and run under `tauri://localhost` | Works; the main thread and the Worker each load once | CSP needs `script-src 'wasm-unsafe-eval'` |
+| Next.js 16, Turbopack (`next dev` / `next build`), client components | Works; the wasm is served as `application/wasm` | None |
+| Next.js 16, Turbopack, server (route handlers, server components) | Works | None |
+| Next.js 16, webpack (`next build --webpack`), client components | Works | None |
+| Next.js 16, webpack, server | Needs configuration | `serverExternalPackages: ['x-iztro']` |
+| Vite 8 (`vite dev` / `vite build`), main thread and Worker | Works | `worker: { format: 'es' }` when the Worker uses dynamic `import()` |
+| Tauri 2 + Vite (`tauri dev` / `tauri build`) | Works; the asset protocol serves `application/wasm` | CSP needs `script-src 'wasm-unsafe-eval'` |
+
+## Where init goes
+
+Call `init()` once before the first chart; everything after it is synchronous. The package's modules do
+nothing when imported, so importing it during server rendering or prerendering never fetches the wasm.
+
+Both styles work in a client component:
+
+```tsx
+'use client';
+import { useEffect, useState } from 'react';
+
+export function Chart() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    (async () => {
+      const { init, astro } = await import('x-iztro'); // download the core only when needed
+      await init();
+      setText(astro.bySolar('2000-8-16', 2, 'female').toText());
+    })();
+  }, []);
+  return <pre>{text}</pre>;
+}
+```
+
+A static import (`import { init, astro } from 'x-iztro'`) works too; the core is downloaded when `init()` is called.
+
+## React Router: prerendering and clientLoader
+
+With `ssr: false` plus `prerender`, the build evaluates the route modules in Node to produce static HTML. A
+top-level static import of `x-iztro` in a route module is fine; do the charting in `useEffect` or a
+`clientLoader` (which only runs in the browser):
+
+```tsx title="app/routes/chart.tsx"
+import { init, astro } from 'x-iztro';
+
+export async function clientLoader() {
+  await init();
+  return astro.bySolar('2000-8-16', 2, 'female').toText();
+}
+
+export function HydrateFallback() {
+  return <p>…</p>;
+}
+
+export default function Chart({ loaderData }: Route.ComponentProps) {
+  return <pre>{loaderData}</pre>;
+}
+```
+
+`build/client` is the output to hand to static hosting or Tauri's `frontendDist`; the wasm sits in `build/client/assets/`.
+
+## Components that only render results
+
+Components that only display chart results (a component library shared by the web and desktop apps, say)
+import the DTO types and enums from `x-iztro/types`, and the app passes `chart.toJSON()` in:
+
+```ts
+import { MajorStar, PalaceName, type AstrolabeData } from 'x-iztro/types';
+
+export function soulStars(chart: AstrolabeData): string[] {
+  const soul = chart.palaces.find((p) => p.nameKey === PalaceName.SOUL)!;
+  return soul.majorStars.map((s) => s.name);
+}
+```
+
+That entry holds only constants and types; importing it brings neither the core nor the wasm into the output
+(checked in a Next.js build).
+
+## Next.js: the server in webpack mode
+
+webpack rewrites `new URL(..., import.meta.url)` in server bundles to the site's public path
+(`/_next/static/media/…`), which Node cannot read a file from, so `init()` throws `IztroError` (`internal`, cause
+`Invalid URL`). Keep Next from bundling the package:
+
+```ts title="next.config.ts"
+const nextConfig = { serverExternalPackages: ['x-iztro'] };
+export default nextConfig;
+```
+
+Turbopack (the Next 16 default) does not need it.
+
+## Workers
+
+Charting and text generation are fast; heavy work such as wide [reverse lookups](/en/docs/js/reverse) can go
+into a Worker. A Worker calls `init()` too:
+
+```ts title="worker.ts"
+const { init, astro } = await import('x-iztro');
+await init();
+postMessage(astro.bySolar('2000-8-16', 2, 'female').soul);
+```
+
+Vite bundles Workers as iife by default, and a Worker with dynamic `import()` then fails to build; set:
+
+```ts title="vite.config.ts"
+export default defineConfig({ worker: { format: 'es' } });
+```
+
+## Content-Security-Policy
+
+When the page sets a CSP, instantiating WebAssembly needs `script-src 'wasm-unsafe-eval'`. In Tauri 2:
+
+```json title="src-tauri/tauri.conf.json"
+"security": {
+  "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self'"
+}
+```
+
+## Hosting the core yourself
+
+When `x-iztro/x_iztro.wasm` lives on a CDN or in an offline bundle, pass its address, a `Response` or the bytes to `init`:
+
+```ts
+await init('https://cdn.example.com/x_iztro.wasm');
+await init(await fetch('/assets/x_iztro.wasm'));
+await init(bytes); // Uint8Array / ArrayBuffer
+```
+
+With `Content-Type: application/wasm` the core compiles while it downloads; with any other type it is read in
+full and then compiled, with the same result.

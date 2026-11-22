@@ -6,8 +6,8 @@ import { Footer } from '@/components/footer';
 /**
  * 文档版式。
  *
- * 用 notebook 版式并把栏目切换放进顶栏：x-iztro、Rust、Python、Go
- * 是四个并列的一级栏目，平铺在顶端一次点击即可切换，
+ * 用 notebook 版式并把栏目切换放进顶栏：x-iztro、Rust、Python、Go、JavaScript
+ * 是并列的一级栏目，平铺在顶端一次点击即可切换，
  * 侧栏因此只承载当前栏目的页面树。
  */
 export default async function Layout({ params, children }: LayoutProps<'/[lang]/docs'>) {

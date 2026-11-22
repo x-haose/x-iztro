@@ -1,0 +1,74 @@
+---
+title: JavaScript
+description: npm install, init loads the WebAssembly core, then synchronous calls — for browsers and Node.js alike.
+---
+
+*For: developers*
+
+## Installation
+
+```bash
+npm install x-iztro
+```
+
+The package is the same Rust core compiled to WebAssembly plus a TypeScript layer: ESM, with type declarations
+and zero runtime dependencies. Requires Node.js 22 or later, or a modern browser with WebAssembly. Vite,
+webpack and Next.js Turbopack emit the `.wasm` as a static asset on their own; see
+[Using it with bundlers and frameworks](/en/docs/js/bundlers).
+
+<Callout title="Building from source">
+Only needed when changing the Rust side:
+
+```bash
+cd js && npm ci && npm run build
+```
+</Callout>
+
+## Charting
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init(); // load the core, once; every call after this is synchronous
+
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+
+console.log(chart.solarDate);           // solar date
+console.log(chart.lunarDate);           // lunar date
+console.log(chart.chineseDate);         // four pillars
+console.log(chart.time, chart.timeRange);
+console.log(chart.sign, chart.zodiac);  // sign, zodiac
+console.log(chart.soul, chart.body);    // Soul star, Body star
+console.log(chart.fiveElementsClass);   // Five Elements class
+```
+
+```text
+2000-8-16
+二〇〇〇年七月十七
+庚辰 甲申 丙午 庚寅
+寅时 03:00~05:00
+狮子座 龙
+破军 文昌
+木三局
+```
+
+Lunar charts use `astro.byLunar`. The optional arguments after `gender` go in an object (`fixLeap`, `language`,
+`config`, plus `isLeapMonth` for lunar dates):
+
+```ts
+const lunar = astro.byLunar('2000-7-17', 2, 'female', { isLeapMonth: false });
+```
+
+Every field of the returned `Astrolabe` is typed, display fields are already translated into the chart language,
+and `JSON.stringify(chart)` gives the same JSON shape as iztro.
+
+## Next
+
+The full API is in the **[JavaScript API reference](/en/docs/js)**.
+
+<Cards>
+  <Card title="Charting" href="/en/docs/js/astro" description="init, bySolar / byLunar and chart configuration" />
+  <Card title="Astrolabe" href="/en/docs/js/astrolabe" description="Locating palaces and stars, horoscopes, text" />
+  <Card title="Horoscope" href="/en/docs/js/horoscope" description="Six layers, palace queries and query precision" />
+  <Card title="Bundlers and frameworks" href="/en/docs/js/bundlers" description="React Router, Vite, Tauri, Next.js, Workers, CSP" />
+</Cards>

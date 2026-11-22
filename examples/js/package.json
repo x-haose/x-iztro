@@ -1,0 +1,13 @@
+{
+  "name": "x-iztro-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "x-iztro JavaScript 使用示例",
+  "type": "module",
+  "scripts": {
+    "start": "node main.mjs"
+  },
+  "dependencies": {
+    "x-iztro": "file:../../js"
+  }
+}

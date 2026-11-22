@@ -1,0 +1,74 @@
+---
+title: 安星模块
+description: star 模块：不排整盘、按出生数据取某一组星耀的落宫。
+---
+
+返回的星耀标识与索引都与语言无关。索引一律为宫位索引：0 为寅宫，11 为丑宫。函数名与 iztro 的 `star` 模块一致。
+
+## 共用参数
+
+按出生数据安星的函数收一个对象：
+
+```ts
+interface BirthParam {
+  solarDate: string;
+  timeIndex: TimeIndex;
+  gender?: Gender;      // 默认 'male'
+  fixLeap?: boolean;    // 默认 true
+  language?: Language;  // 星名语言，默认 'zh-CN'
+  config?: ChartConfig;
+}
+// getStartIndex、getMajorStar、getChangsheng12 另收 fromStem / fromBranch：改用该干支起五行局
+```
+
+## 按出生数据
+
+| 函数 | 返回 |
+| --- | --- |
+| `getStartIndex(param)` | `{ ziweiIndex, tianfuIndex }` |
+| `getLuYangTuoMaIndex(param)` | `{ luIndex, yangIndex, tuoIndex, maIndex }` |
+| `getKuiYueIndex(param)` | `{ kuiIndex, yueIndex }` |
+| `getChangQuIndex(param)` | `{ changIndex, quIndex }`（按时支） |
+| `getKongJieIndex(param)` | `{ kongIndex, jieIndex }` |
+| `getTimelyStarIndex(param)` | `{ taifuIndex, fenggaoIndex }` |
+| `getLuanXiIndex(param)` | `{ hongluanIndex, tianxiIndex }` |
+| `getDailyStarIndex(param)` | 三台、八座、恩光、天贵 |
+| `getMonthlyStarIndex(param)` | 解神、天姚、天刑、阴煞、天月、天巫 |
+| `getYearlyStarIndex(param)` | 年系杂耀一整组（`YearlyStarIndex`，27 个索引） |
+| `getMajorStar` / `getMinorStar` / `getAdjectiveStar(param)` | `Star[][]`，十二宫各一组 |
+| `getChangsheng12` / `getBoShi12(param)` | 十二神标识，从寅宫起 |
+| `getYearly12(param)` | `{ suiqian12, jiangqian12 }` |
+
+## 按干支、时辰
+
+| 函数 | 说明 |
+| --- | --- |
+| `getHoroscopeStar(stem, branch, scope, language?)` | 流耀在十二宫的分布，星名随层级（运魁、流魁……），流年另加年解 |
+| `getChangesheng12StartIndex(fiveElementsClass)` | 长生十二神起始宫位 |
+| `getJiangqian12StartIndex(branch)` | 将前十二神起始宫位 |
+| `getZuoYouIndex(lunarMonth)` | 左辅右弼；`lunarMonth` 为闰月修正后的月份 1–12 |
+| `getHuoLingIndex(branch, timeIndex)` | 火星铃星 |
+| `getHuagaiXianchiIndex(branch)` / `getGuGuaIndex(branch)` | 华盖咸池 / 孤辰寡宿 |
+| `getJieshaAdjIndex` / `getDahaoIndex` / `getNianjieIndex(branch)` | 劫煞 / 大耗 / 年解 |
+| `getTianshiTianshangIndex(gender, branch, soulIndex, config?)` | 天伤天使，派别由 `config.algorithm` 决定 |
+| `getChangQuIndexByHeavenlyStem(stem)` | 按天干的昌曲（运限层级的流昌流曲） |
+
+```ts
+const birth = { solarDate: '2000-8-16', timeIndex: 2, gender: 'female' } as const;
+console.log(star.getStartIndex(birth), star.getLuYangTuoMaIndex(birth), star.getKuiYueIndex(birth));
+console.log(star.getMajorStar(birth)[4]!.map((s) => s.name), star.getChangsheng12(birth).slice(0, 3),
+  star.getYearly12(birth).suiqian12.slice(0, 3));
+console.log(star.getHoroscopeStar(HeavenlyStem.JIA, EarthlyBranch.ZI, Scope.YEARLY)
+  .map((g) => g.map((s) => s.name).join('')).join('|'));
+console.log(star.getZuoYouIndex(7), star.getHuoLingIndex(EarthlyBranch.CHEN, 2),
+  star.getChangesheng12StartIndex('wood3rd'), star.getJiangqian12StartIndex(EarthlyBranch.CHEN));
+```
+
+```text
+{ tianfuIndex: 8, ziweiIndex: 4 } { luIndex: 6, maIndex: 0, tuoIndex: 5, yangIndex: 7 } { kuiIndex: 11, yueIndex: 5 }
+[ '紫微' ] [ 'jue', 'mu', 'si' ] [ 'diaoke', 'bingfu', 'suijian' ]
+流禄流马|流羊流鸾||流昌||流钺||流曲流喜|年解|||流魁流陀
+{ youIndex: 2, zuoIndex: 8 } { huoIndex: 2, lingIndex: 10 } 9 10
+```
+
+iztro 在本命层级把红鸾写成 `hongluanMin`，这里安放的是正确标识 `hongluan`。

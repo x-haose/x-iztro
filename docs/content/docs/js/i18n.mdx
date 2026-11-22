@@ -1,0 +1,29 @@
+---
+title: 翻译
+description: i18n 模块：标识与译名的双向查找。
+---
+
+星盘对象的每个字段都同时给出译名与 `*Key` 标识，通常不必再手工翻译；这三个函数用于手上只有标识
+（或只有某种语言的译名）、需要换算的场合。覆盖 260 个标识。
+
+```ts
+i18n.translate(key: string, language?: Language): string | undefined; // 未知标识为 undefined
+i18n.keyOf(text: string, keyFilter?: string): string | undefined;      // iztro 的 kot
+i18n.allKeys(): string[];                                              // 顺序即 keyOf 的反查次序
+```
+
+`keyOf` 逐语言、每种语言内逐标识比对取先命中者，顺序与 iztro 一致。同一译名在多个类目下同形时
+（en-US 的 `horse` 既是生肖马也是天马），用 `keyFilter` 限定标识名须含的子串：`'Maj'`、`'Min'`、
+`'Heavenly'`、`'Earthly'`、`'Palace'`、`'Hour'`。限定后无匹配为 `undefined`，不退回未限定的结果。
+
+```ts
+console.log(i18n.translate('ziweiMaj'), i18n.translate('ziweiMaj', 'ja-JP'), i18n.translate('soulPalace', 'en-US'), i18n.translate('nope'));
+console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'), i18n.allKeys().length);
+```
+
+```text
+紫微 紫微 soul undefined
+ziweiMaj horse tianmaMin 260
+```
+
+没有全局语言开关：语言随每次排盘传入，同一进程里不同语言的盘互不干扰。

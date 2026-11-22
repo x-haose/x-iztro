@@ -1,0 +1,57 @@
+---
+title: Extending the astrolabe
+description: Attach your own analysis methods to Astrolabe with plugins; TypeScript adds the types by declaration merging.
+---
+
+A plugin is a function that receives the `Astrolabe` class and attaches methods to its prototype. Once loaded,
+every chart has those methods, including charts created before loading. It is the same mechanism as Python's
+`load_plugin`, Go's embedding and Rust's extension trait, in each language's idiom.
+
+```ts
+astro.loadPlugin(plugin: (astrolabeClass: typeof Astrolabe) => void): void;
+astro.loadPlugins(plugins: Iterable<Plugin>): void;
+```
+
+A plugin that is not a function throws `TypeError`; `loadPlugins` stops at the first one and loads nothing after it.
+
+## Recipe
+
+```ts
+import { init, astro, PalaceName, FIVE_ELEMENTS_CLASS_NUMBER, type Astrolabe } from 'x-iztro';
+
+// Declaration merging: give Astrolabe the methods' types
+declare module 'x-iztro' {
+  interface Astrolabe {
+    /** Soul-palace major stars (borrowing the opposite palace when empty), comma-separated */
+    majorStar(): string;
+    /** The Five Elements class number */
+    fiveElementsValue(): number;
+  }
+}
+
+astro.loadPlugin((cls) => {
+  cls.prototype.majorStar = function (this: Astrolabe): string {
+    const soul = this.palace(PalaceName.SOUL)!;
+    const source = soul.isEmpty() ? soul.oppositePalace()! : soul;
+    return source.majorStars.map((s) => s.name).join(',');
+  };
+  cls.prototype.fiveElementsValue = function (this: Astrolabe): number {
+    return FIVE_ELEMENTS_CLASS_NUMBER[this.fiveElementsClassKey];
+  };
+});
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.majorStar(), chart.fiveElementsValue());
+console.log(astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' }).majorStar());
+```
+
+**Output**
+
+```text
+紫微 3
+emperor
+```
+
+Extension methods use the public API and follow the chart language; base checks on the `*Key` fields to keep
+results language-independent.

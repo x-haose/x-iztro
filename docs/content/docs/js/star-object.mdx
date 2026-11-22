@@ -1,0 +1,46 @@
+---
+title: 星耀对象
+description: Star 的字段、亮度与四化判断，以及所在宫位的回指。
+---
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `key` | `string` | 语言无关星耀标识（`MajorStar` / `MinorStar` / `AdjectiveStar` / `HoroscopeStar` 取值） |
+| `name` | `string` | 星名译名 |
+| `type` | `StarType` | `major` `soft` `tough` `adjective` `flower` `helper` `lucun` `tianma` |
+| `scope` | `Scope` | 本命为 `origin`，流耀为所在层级 |
+| `brightness` / `brightnessKey` | `string \| undefined` / `Brightness \| undefined` | 亮度，无亮度为 `undefined` |
+| `mutagen` / `mutagenKey` | `string \| undefined` / `Mutagen \| undefined` | 生年四化，无四化为 `undefined` |
+
+## withBrightness / withMutagen
+
+```ts
+withBrightness(brightness: Brightness | readonly Brightness[]): boolean;
+withMutagen(mutagen: Mutagen | readonly Mutagen[]): boolean;
+```
+
+给数组时为其中任一。
+
+## palace / oppositePalace / surroundedPalaces
+
+```ts
+palace(): Palace | undefined;
+oppositePalace(): Palace | undefined;
+surroundedPalaces(): SurroundedPalaces | undefined;
+```
+
+星盘上的星耀知道自己落在哪一宫；运限流耀与安星函数返回的星耀不挂在宫位上，三者都是 `undefined`。
+
+```ts
+const s = chart.star(MajorStar.TAIYANG)!;
+console.log(s.key, s.name, s.type, s.scope, s.brightness, s.brightnessKey, s.mutagen, s.mutagenKey);
+console.log(s.withBrightness([Brightness.MIAO, Brightness.WANG]), s.withMutagen(Mutagen.LU),
+  s.palace()!.name, s.oppositePalace()!.name, s.surroundedPalaces()!.target.name);
+```
+
+```text
+taiyangMaj 太阳 major origin 庙 miao 禄 sihuaLu
+true true 子女 田宅 子女
+```

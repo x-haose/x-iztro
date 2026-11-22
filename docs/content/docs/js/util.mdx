@@ -1,0 +1,81 @@
+---
+title: 工具函数
+description: util 模块的索引换算、亮度与四化查表、干支拼接，以及 astro 模块的宫位推算。
+---
+
+参数与返回值中的枚举一律是语言无关标识，与输出语言无关。函数名与 iztro 的 `util` 一致。
+
+## util 模块
+
+```ts
+util.fixIndex(index: number, max = 12): number;                         // 约束到 0..max 的循环区间
+util.earthlyBranchIndexToPalaceIndex(branch: EarthlyBranch): number;    // 地支 → 宫位索引（寅为 0）
+util.timeToIndex(hour: number): TimeIndex;                              // 小时 0–23 → 时辰索引
+util.getAgeIndex(branch: EarthlyBranch): number;                        // 生年地支 → 小限起始宫位
+util.getBrightness(star: string, palaceIndex: number, config?): Brightness | undefined;
+util.getMutagen(star: string, stem: HeavenlyStem, config?): Mutagen | undefined;
+util.getMutagensByHeavenlyStem(stem: HeavenlyStem, config?): string[];  // [禄, 权, 科, 忌]
+util.fixLunarMonthIndex(lunarMonth, lunarDay, isLeap, timeIndex, fixLeap): number; // 正月为 0
+util.fixLunarDayIndex(lunarDay: number, timeIndex: TimeIndex): number;
+util.translateChineseDate(pillars: [HeavenlyStem, EarthlyBranch][], language?: Language): string;
+util.mergeStars(...groups: Star[][][]): Star[][];                       // 按宫位合并多组十二宫星耀
+```
+
+```ts
+console.log(util.fixIndex(-1), util.fixIndex(13), util.earthlyBranchIndexToPalaceIndex(EarthlyBranch.ZI),
+  util.timeToIndex(23), util.getAgeIndex(EarthlyBranch.CHEN));
+console.log(util.getBrightness(MajorStar.ZIWEI, 4), util.getBrightness(MinorStar.ZUOFU, 0),
+  util.getMutagen(MajorStar.TAIYANG, HeavenlyStem.GENG), util.getMutagensByHeavenlyStem(HeavenlyStem.GENG));
+console.log(util.fixLunarMonthIndex(7, 17, false, 2, true), util.fixLunarDayIndex(17, 2));
+const c = chart.rawDates.chineseDate;
+console.log(util.translateChineseDate([c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys], 'en-US'));
+```
+
+```text
+11 1 10 12 8
+miao undefined sihuaLu [ 'taiyangMaj', 'wuquMaj', 'taiyinMaj', 'tiantongMaj' ]
+6 16
+geng chen - jia shen - bing woo - geng yin
+```
+
+- `getBrightness`：该星没有亮度表时为 `undefined`；`getMutagen`：不在该天干四化表内时为 `undefined`。两者随 `config` 的自定义表变化。
+- `translateChineseDate`：词条均为单字符时柱内紧凑相连、柱间空格；任一词条多字符时柱内空格、柱间「 - 」。柱数不为四或标识非法抛 `IztroError`。
+- `mergeStars`：某一组长度不是 12 抛 `RangeError`。
+
+## astro 模块的宫位推算
+
+与 iztro 一样放在 `astro` 下：
+
+```ts
+astro.getSoulAndBody(monthIndex: number, timeIndex: TimeIndex, yearlyStem: HeavenlyStem): SoulAndBody;
+astro.getFiveElementsClass(stem: HeavenlyStem, branch: EarthlyBranch): FiveElementsClass;
+astro.getPalaceNames(soulIndex: number): PalaceName[];
+astro.getHoroscope(soulIndex, fiveElementsClass, gender, yearlyStem, yearlyBranch): { decadals: Decadal[]; ages: number[][] };
+```
+
+`getHoroscope` 是 iztro 的同名函数：十二宫的大限与小限，按宫位索引排列（Python 侧叫 `get_decadals_and_ages`）。
+星盘上的运限是 `chart.horoscope(...)`。
+
+```ts
+console.log(astro.getSoulAndBody(6, 2, HeavenlyStem.GENG));
+console.log(astro.getFiveElementsClass(HeavenlyStem.REN, EarthlyBranch.WU), astro.getPalaceNames(4).slice(0, 3));
+const r = astro.getHoroscope(4, 'wood3rd', 'female', HeavenlyStem.GENG, EarthlyBranch.CHEN);
+console.log(r.decadals[4], r.ages[4]!.slice(0, 3));
+```
+
+```text
+{
+  bodyIndex: 8,
+  earthlyBranchOfSoul: 'wuEarthly',
+  heavenlyStemOfSoul: 'renHeavenly',
+  soulIndex: 4
+}
+wood3rd [ 'wealthPalace', 'childrenPalace', 'spousePalace' ]
+{
+  earthlyBranch: '午',
+  earthlyBranchKey: 'wuEarthly',
+  heavenlyStem: '壬',
+  heavenlyStemKey: 'renHeavenly',
+  range: [ 3, 12 ]
+} [ 5, 17, 29 ]
+```

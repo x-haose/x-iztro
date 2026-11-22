@@ -1,0 +1,30 @@
+{
+  "title": "JavaScript",
+  "description": "JavaScript / TypeScript API 参考",
+  "icon": "FileCode",
+  "root": true,
+  "pages": [
+    "index",
+    "---排盘---",
+    "astro",
+    "astrolabe",
+    "---对象方法---",
+    "palace",
+    "star-object",
+    "surpalaces",
+    "horoscope",
+    "patterns",
+    "---模块函数---",
+    "query",
+    "util",
+    "star",
+    "data",
+    "i18n",
+    "knowledge",
+    "reverse",
+    "---进阶---",
+    "bundlers",
+    "extend",
+    "errors"
+  ]
+}

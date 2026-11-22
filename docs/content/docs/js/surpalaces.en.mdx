@@ -1,0 +1,54 @@
+---
+title: Surrounded and flanking palaces
+description: Fields, star and mutagen checks, and text for SurroundedPalaces and FlankingPalaces.
+---
+
+## SurroundedPalaces
+
+| Field | Description |
+| --- | --- |
+| `target` | The palace itself |
+| `opposite` | Opposite palace (+6) |
+| `wealth` | Wealth position (+8) |
+| `career` | Career position (+4) |
+
+Three ways to get it, all equivalent: `chart.surroundedPalaces(target)`, `palace.surroundedPalaces()`,
+`star.surroundedPalaces()`.
+
+```ts
+have(stars: readonly string[]): boolean;
+notHave(stars: readonly string[]): boolean;
+haveOneOf(stars: readonly string[]): boolean;
+haveMutagen(mutagen: Mutagen): boolean;
+notHaveMutagen(mutagen: Mutagen): boolean;
+toText(options?: TextOptions): string;
+```
+
+The checks take the union of the four palaces' stars.
+
+```ts
+const sp = chart.palace(PalaceName.CAREER)!.surroundedPalaces()!;
+console.log(sp.have([MajorStar.TIANFU, MajorStar.TIANXIANG]), sp.haveOneOf(['擎羊', '陀罗']),
+  sp.notHave([MinorStar.DIKONG]), sp.haveMutagen(Mutagen.QUAN));
+console.log(sp.toText({ detail: TextDetail.OVERVIEW }).split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+true false true true
+## 官禄 三方四正
+### 本宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+### 对宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+### 财帛位 · 命宫 (壬午) · 大限 3-12
+### 官禄位 · 财帛 (戊寅) · 大限 43-52
+```
+
+## FlankingPalaces
+
+| Field / method | Description |
+| --- | --- |
+| `previous` / `next` | The palace before (index −1) / after (+1); the twelve wrap around |
+| `astrolabe()` | The chart both belong to |
+| `have` / `notHave` / `haveOneOf` / `haveMutagen` / `notHaveMutagen` | Union of the two palaces, as above |
+| `toText(options?)` | One section per palace |
+
+Get it from `chart.flankingPalaces(target)`; example on [Astrolabe](/en/docs/js/astrolabe#flankingpalaces).

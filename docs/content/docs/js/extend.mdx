@@ -1,0 +1,55 @@
+---
+title: 扩展星盘
+description: 用插件给 Astrolabe 挂自定义分析方法，TypeScript 用声明合并补类型。
+---
+
+插件是一个函数，接受 `Astrolabe` 类，往它的原型上挂方法。加载后所有星盘都有这些方法，包括加载之前已排好的盘。
+与 Python 的 `load_plugin`、Go 的嵌入、Rust 的扩展 trait 是同一个机制的各语言写法。
+
+```ts
+astro.loadPlugin(plugin: (astrolabeClass: typeof Astrolabe) => void): void;
+astro.loadPlugins(plugins: Iterable<Plugin>): void;
+```
+
+插件不是函数时抛 `TypeError`；`loadPlugins` 遇到第一个不是函数的即停，不加载其后的插件。
+
+## 配方
+
+```ts
+import { init, astro, PalaceName, FIVE_ELEMENTS_CLASS_NUMBER, type Astrolabe } from 'x-iztro';
+
+// 声明合并：给 Astrolabe 补上方法的类型
+declare module 'x-iztro' {
+  interface Astrolabe {
+    /** 命宫主星名（空宫借对宫），多颗以逗号分隔 */
+    majorStar(): string;
+    /** 五行局的局数 */
+    fiveElementsValue(): number;
+  }
+}
+
+astro.loadPlugin((cls) => {
+  cls.prototype.majorStar = function (this: Astrolabe): string {
+    const soul = this.palace(PalaceName.SOUL)!;
+    const source = soul.isEmpty() ? soul.oppositePalace()! : soul;
+    return source.majorStars.map((s) => s.name).join(',');
+  };
+  cls.prototype.fiveElementsValue = function (this: Astrolabe): number {
+    return FIVE_ELEMENTS_CLASS_NUMBER[this.fiveElementsClassKey];
+  };
+});
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.majorStar(), chart.fiveElementsValue());
+console.log(astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' }).majorStar());
+```
+
+**输出**
+
+```text
+紫微 3
+emperor
+```
+
+扩展方法用的都是公开 API，随排盘语言输出；判断请用 `*Key` 字段，结果才与语言无关。

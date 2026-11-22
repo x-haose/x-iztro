@@ -27,6 +27,7 @@ check-go:
 
 check-js:
 	cd js && npm run check
+	cd examples/js && npm ci && node main.mjs > /dev/null
 
 check-docs:
 	cd docs && ./node_modules/.bin/next typegen && npm run types:check

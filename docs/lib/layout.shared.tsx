@@ -3,7 +3,7 @@ import { i18n } from '@/lib/i18n';
 import { uiTranslations } from 'fumadocs-ui/i18n';
 import { zhCN } from '@fumadocs/language/zh-cn';
 import { Logo } from '@/components/logo';
-import { Boxes, Braces, Cog } from 'lucide-react';
+import { Boxes, Braces, Cog, FileCode } from 'lucide-react';
 
 /** 界面文案：中文界面用 fumadocs 官方简体词表，英文取内置默认。 */
 export const translations = i18n
@@ -35,9 +35,10 @@ const nav = {
     api: 'API 参考',
     learn: '紫微扫盲',
     forAI: '给 AI 用',
-    rust: { text: 'Rust', desc: '核心库，Python 与 Go 绑定都调用它' },
+    rust: { text: 'Rust', desc: '核心库，各语言绑定都调用它' },
     python: { text: 'Python', desc: 'dataclass 与 StrEnum 构成的类型化 API' },
     go: { text: 'Go', desc: '内嵌 wasm，无 cgo，交叉编译不受影响' },
+    js: { text: 'JavaScript', desc: 'WebAssembly 内核，浏览器与 Node.js 通用' },
   },
   en: {
     guide: 'Guide',
@@ -47,21 +48,22 @@ const nav = {
     rust: { text: 'Rust', desc: 'The core library behind all bindings' },
     python: { text: 'Python', desc: 'Typed API of dataclasses and StrEnums' },
     go: { text: 'Go', desc: 'Embedded wasm, no cgo, cross-compiles cleanly' },
+    js: { text: 'JavaScript', desc: 'WebAssembly core for browsers and Node.js' },
   },
 } as const;
 
 /**
  * 导航栏与页脚的共享配置。
  *
- * 三个语言的 API 参考收在一个下拉里而非并列成三个顶级菜单：
- * 它们是同一件事的三种实现，与「指南」不属于同一层级；
- * 下拉项带描述，首次访问者能一眼看出三者的分工。
+ * 各语言的 API 参考收在一个下拉里而非并列成顶级菜单：
+ * 它们是同一件事的不同实现，与「指南」不属于同一层级；
+ * 下拉项带描述，首次访问者能一眼看出各自的分工。
  * 文档内部的栏目切换由侧栏 tab 承担。
  */
 export function baseOptions(locale: string): BaseLayoutProps {
   const t = nav[locale as keyof typeof nav] ?? nav.en;
   const api = (
-    key: 'rust' | 'python' | 'go',
+    key: 'rust' | 'python' | 'go' | 'js',
     icon: React.ReactNode,
   ) => ({
     icon,
@@ -91,6 +93,7 @@ export function baseOptions(locale: string): BaseLayoutProps {
           api('rust', <Cog />),
           api('python', <Braces />),
           api('go', <Boxes />),
+          api('js', <FileCode />),
         ],
       },
       {

@@ -1,0 +1,111 @@
+---
+title: Patterns
+description: PatternHit, PatternStar, PatternConfig, and pattern hits and text from the natal and horoscope views.
+---
+
+Judgement happens in the core; the rules are on [Patterns](/en/docs/guide/concepts/patterns). Patterns with
+several readings report the one that matched in `variant`.
+
+## Types
+
+### PatternHit
+
+| Field / method | Description |
+| --- | --- |
+| `key` | Pattern key (`PatternKey` value) |
+| `name` | Pattern name in the chart language |
+| `scope` | The view: `origin` for the natal chart, otherwise the layer |
+| `palaceIndex` / `palaceName` / `palaceNameKey` | Where the pattern forms (named in that view) |
+| `broken` | Whether a "broken / spoiled by malefics" condition fires; the hit is still reported, only flagged |
+| `stars` | The stars forming it (`PatternStar[]`) |
+| `variant` | The reading that matched, `undefined` for single-reading patterns |
+| `is(key)` / `inPalace(name)` | Is it that pattern / does it form in that palace |
+| `toJSON()` | The hit's DTO |
+
+### PatternStar
+
+`key`, `name`, `palaceIndex`, `brightness(Key)`, `mutagen(Key)` (the transformation in that view), with
+`hasBrightness` and `hasMutagen`.
+
+### PatternConfig
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `brightnessSource` | `'table'` | How sun and moon brightness is judged: `table` by iztro's table, `positional` by traditional position |
+| `borrow` | `true` | Whether an empty palace borrows the opposite palace's major stars |
+| `flowStars` | `true` | Whether horoscope stars count as their natal counterparts in the horoscope views |
+
+---
+
+## patterns
+
+```ts
+chart.patterns(config?: PatternConfig): PatternHit[];
+```
+
+Every hit on the natal chart, in the order of the patterns page; a rearranged chart is judged on its
+rearranged layout.
+
+```ts
+for (const hit of chart.patterns()) {
+  console.log(hit.key, hit.name, hit.palaceName, hit.broken, hit.variant ?? '-', hit.stars.map((s) => s.name).join('+'));
+}
+console.log(astro.bySolar('1985-6-10', 8, 'female')
+  .patterns({ brightnessSource: BrightnessSource.POSITIONAL })
+  .some((h) => h.is(PatternKey.RI_YUE_FAN_BEI)));
+```
+
+```text
+fu_xiang_chao_yuan 府相朝垣 命宫 false - 天府+天相
+true
+```
+
+On the second chart the sun sits in You: the table rates it 平, not dim, while the positional reading
+counts it as dim — so 日月反背 only forms under the positional reading.
+
+## Horoscope.patterns
+
+```ts
+horoscope.patterns(scope: Scope, config?: PatternConfig, astrolabe?: Astrolabe): PatternHit[];
+```
+
+Reruns every rule with that layer's Soul palace as the Soul palace and that layer's horoscope stars and
+transformations merged in, plus the two horoscope-only patterns (禄衰马困, 风云际会); `origin` is the natal
+chart. A `scope` finer than the query precision throws `IztroError`.
+
+```ts
+console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `${h.name}@${h.palaceName}`).join(' '));
+```
+
+```text
+杀破狼@命宫 禄马交驰@夫妻 禄马佩印@夫妻 昌曲夹命@命宫 文星暗拱@命宫
+```
+
+## toJSON
+
+```ts
+console.log(JSON.stringify(chart.patterns()[0]));
+```
+
+```text
+{"broken":false,"key":"fu_xiang_chao_yuan","name":"府相朝垣","palaceIndex":4,"palaceName":"命宫","palaceNameKey":"soulPalace","scope":"origin","stars":[{"brightness":"庙","brightnessKey":"miao","key":"tianfuMaj","name":"天府","palaceIndex":8},{"brightness":"庙","brightnessKey":"miao","key":"tianxiangMaj","name":"天相","palaceIndex":0}]}
+```
+
+## patternsToText
+
+```ts
+chart.patternsToText(options?: { config?: PatternConfig; knowledge?: Knowledge; knowledgeDepth?: KnowledgeDepth }): string;
+horoscope.patternsToText(scope: Scope, options?: { config?; knowledge?; knowledgeDepth? }, astrolabe?: Astrolabe): string;
+```
+
+With `knowledge`, each pattern's reading follows the list.
+
+```ts
+console.log(chart.patternsToText());
+```
+
+```text
+# 格局
+
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
+```

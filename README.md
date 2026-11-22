@@ -6,6 +6,7 @@
   <a href="https://crates.io/crates/x-iztro"><img src="https://img.shields.io/crates/v/x-iztro?style=flat-square&logo=rust&logoColor=white" alt="crates.io"></a>
   <a href="https://docs.rs/x-iztro"><img src="https://img.shields.io/docsrs/x-iztro?style=flat-square" alt="docs.rs"></a>
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
+  <a href="https://www.npmjs.com/package/x-iztro"><img src="https://img.shields.io/npm/v/x-iztro?style=flat-square&logo=npm&logoColor=white" alt="npm"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="https://x-iztro.x-haose.com/en/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/golden_cases-747%2C572-2da44e?style=flat-square" alt="747,572 golden cases"></a>
@@ -21,7 +22,7 @@
 </p>
 
 x-iztro is a Zi Wei Dou Shu (紫微斗数, Chinese "Purple Star" astrology) chart
-engine: a Rust core with native Python and Go bindings. It turns a birth date
+engine: a Rust core with Python, Go and JavaScript/TypeScript bindings. It turns a birth date
 and hour into a complete, semantically labeled chart — twelve palaces, ~100
 stars with brightness and transformations, six horoscope levels, 64 named
 patterns, swappable reading texts. Every piece carries a translated name plus a
@@ -98,12 +99,14 @@ and held identical to it; the layers an AI pipeline needs on top are new.
 | Knowledge packs (reading texts, school attributes)           | —                 | ✅                                        |
 | Reverse lookup (BaZi pillars / chart features → birth dates) | —                 | ✅                                        |
 | Semantic text projection (to_text)                           | —                 | ✅                                        |
-| Calling languages                                            | JS / TS           | Rust / Python / Go                        |
+| Calling languages                                            | JS / TS           | Rust / Python / Go / JS·TS (WebAssembly)  |
 | Configuration                                                | global singleton  | passed per chart, no global state         |
 | Invalid input                                                | throws            | typed errors with machine-readable codes; never panics on invalid input |
 
-On JS or in the browser, use iztro — it is the original. On a backend, or when
-the chart is headed for an LLM, use x-iztro.
+On JS, iztro is the original and the lighter dependency (plain JavaScript, no
+WebAssembly download). Use x-iztro when you need what the table marks iztro
+without, when the chart is headed for an LLM, or when a browser and a backend
+must agree to the field.
 
 ## Install
 
@@ -130,6 +133,16 @@ Cross-compilation works as usual.
 
 ```bash
 go get github.com/x-haose/x-iztro/go/iztro
+```
+
+**JavaScript / TypeScript** — the same Rust core compiled to WebAssembly
+(~1.7 MB, ~0.5 MB gzipped), ESM with type declarations, Node.js 22+ and modern
+browsers. Bundlers (Vite, webpack, Next.js Turbopack) pick the `.wasm` up as an
+asset on their own. `x-iztro/types` exports the DTO types and enums without
+touching the WebAssembly, for UI code that only renders charts.
+
+```bash
+npm install x-iztro
 ```
 
 ## Quick start
@@ -212,7 +225,25 @@ func main() {
 }
 ```
 
-All three bindings call the same Rust core, so the same birth data yields the
+**JavaScript / TypeScript**
+
+```ts
+import { init, astro, MajorStar, Mutagen, PalaceName } from 'x-iztro';
+
+await init(); // loads the WebAssembly core once; every call after this is synchronous
+
+// timeIndex 2 = Tiger hour; output defaults to zh-CN, pass { language: 'en-US' } for English
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.chineseDate, chart.soul, chart.fiveElementsClass);
+
+const soul = chart.palace(PalaceName.SOUL)!;
+console.log(soul.has([MajorStar.ZIWEI]), soul.hasMutagen(Mutagen.LU));
+
+const horoscope = chart.horoscope('2024-1-1', 0);
+console.log(horoscope.yearly.heavenlyStem, horoscope.yearly.earthlyBranch);
+```
+
+All bindings call the same Rust core, so the same birth data yields the
 same answers everywhere — that equivalence is itself under test.
 
 ## Beyond iztro
@@ -408,8 +439,8 @@ means 1984–2043, one sexagenary cycle):
 On top of that: the serialization contract is compared key-by-key against JS
 `JSON.stringify`; translation reverse-lookup is checked against iztro's `kot`
 (its key-of-translation helper) on 1,573 entries; and the three bindings are
-cross-checked so the same birth data yields the same answers in Rust, Python
-and Go.
+cross-checked so the same birth data yields the same answers in Rust, Python,
+Go and JavaScript.
 
 **One example of what zero tolerance means.** The Rust lunar-calendar crate
 x-iztro used to borrow turned out, under a day-by-day check of the whole range,
@@ -430,7 +461,8 @@ that check running in full in CI.
 - **Invalid input is an error, never a panic** — date format and existence are
   validated, years 1–9999 (Julian calendar before 1582-10-15), hour index 0–12. Rust returns
   `Err(IztroError)`, Python raises `x_iztro.IztroError` (a `ValueError` with a
-  `.code`), Go returns an `error` matchable with `errors.Is`, and the C FFI
+  `.code`), Go returns an `error` matchable with `errors.Is`, JavaScript throws
+  `IztroError` with a `.code`, and the C FFI
   yields error JSON. Every failure carries a machine-readable category.
 - **Python** — ~0.5 ms per chart (Apple Silicon dev machine). Charts are
   frozen dataclasses, safe to share across threads, but the compute holds the
@@ -442,6 +474,13 @@ that check running in full in CI.
   cache under `os.UserCacheDir()`; without one, each process recompiles).
   Steady state is ~0.5 ms per chart — reproduce with `go test -bench` in
   `go/iztro` — and `Warmup` moves the cold start to boot time.
+- **JavaScript** — `await init()` once (it fetches the `.wasm` in the
+  browser, reads the file in Node); after that every call is synchronous pure
+  computation on the calling thread, so move heavy loops (reverse lookup over
+  wide ranges) into a Worker. A WebAssembly trap retires the instance and
+  `init()` rebuilds it. Under a strict Content-Security-Policy the page needs
+  `script-src 'wasm-unsafe-eval'`. Serialize with `JSON.stringify(chart)` —
+  `toJSON()` is iztro's JSON.
 - **Rust** — MSRV 1.88; default dependencies are `serde`, `serde_json`, `libm`
   (calendar trigonometry), `chrono` (clock only, for `horoscope_now`) and
   `unicode-width` (knowledge-summary display width). Python and JSON Schema
@@ -478,7 +517,7 @@ itself? Start at
 
 Rust API docs are also on [docs.rs/x-iztro](https://docs.rs/x-iztro); inline
 doc comments are currently Chinese, the English API reference lives on the
-docs site. Runnable projects for all three languages are under `examples/`.
+docs site. Runnable projects for every language are under `examples/`.
 
 ## Building from source
 
@@ -493,6 +532,9 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 # Go bindings: rebuild and refresh the embedded wasm
 cargo build --release --target wasm32-wasip1
 cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
+
+# JS bindings: build the wasm32-unknown-unknown core and compile TypeScript
+cd js && npm ci && npm run build
 ```
 
 Golden test data is generated from the JS iztro package:

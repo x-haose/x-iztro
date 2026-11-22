@@ -1,0 +1,65 @@
+---
+title: Reverse lookup
+description: Recover candidate birth moments from BaZi pillars or chart features.
+---
+
+Computed in the core (pruned enumeration plus forward re-charting, so zero divergence from charting). The chart
+layout does not depend on gender, so reverse lookup takes none. Background in [Reverse lookup](/en/docs/guide/guides/reverse).
+
+## Types
+
+| Type | Fields |
+| --- | --- |
+| `Pillar` | `[HeavenlyStem, EarthlyBranch]` |
+| `BirthCandidate` | `solarDate`, `timeIndex`, ready for `astro.bySolar` |
+| `StarPosition` | `star` (a natal star key; horoscope stars are rejected), `branch` |
+| `ReverseCriteria` | `soulBranch?`, `bodyBranch?`, `fiveElementsClass?`, `stars?`, `mutagens?` ([lu, quan, ke, ji], `null` where unconstrained), `yearRange?` (default `[1900, 2100]`), `fixLeap?`, `limit?` (omitted or 0 means 512) |
+| `ReverseResult` | `candidates`, `truncated` |
+
+## solarDatesByBazi
+
+```ts
+solarDatesByBazi(yearly: Pillar, monthly: Pillar, daily: Pillar, hourly: Pillar,
+  options?: { yearRange?: [number, number]; config?: ChartConfig }): BirthCandidate[];
+```
+
+The pillars are read under `config`'s boundaries, with the same semantics as `rawDates.chineseDate`. A set of
+pillars recurs roughly every 60 years; the Rat hour may yield both an early and a late candidate. Mismatched
+stem/branch polarity or an invalid range throws `IztroError`.
+
+## reverseChart
+
+```ts
+reverseChart(criteria: ReverseCriteria, config?: ChartConfig): ReverseResult;
+```
+
+Empty criteria, horoscope stars or an invalid range throw `IztroError`. Candidates come in enumeration order
+(lunar year ascending, then month → hour → day within a year); reaching `limit` stops the search and sets `truncated`.
+
+```ts
+const c = chart.rawDates.chineseDate;
+console.log(solarDatesByBazi(c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys));
+const r = reverseChart({
+  soulBranch: EarthlyBranch.WU,
+  stars: [{ star: MajorStar.ZIWEI, branch: EarthlyBranch.WU }],
+  mutagens: ['taiyangMaj', null, null, 'tiantongMaj'],
+  yearRange: [1990, 2010],
+});
+console.log(r.candidates.length, r.truncated, r.candidates.slice(0, 3));
+```
+
+```text
+[
+  { solarDate: '1940-8-31', timeIndex: 2 },
+  { solarDate: '2000-8-16', timeIndex: 2 },
+  { solarDate: '2060-8-1', timeIndex: 2 }
+]
+120 false [
+  { solarDate: '1990-2-2', timeIndex: 8 },
+  { solarDate: '1990-2-10', timeIndex: 8 },
+  { solarDate: '1990-2-12', timeIndex: 8 }
+]
+```
+
+Reverse lookup runs synchronously on the calling thread; in a browser, move wide searches into a Worker so the
+page stays responsive.

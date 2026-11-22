@@ -1,0 +1,194 @@
+---
+title: 排盘入口
+description: init 装载内核，bySolar / byLunar 排盘，ChartConfig 排盘配置。
+---
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+```
+
+所有入口在入参非法时抛 `IztroError`，`.code` 给出机器可读分类，详见[错误处理](/zh/docs/js/errors)。
+
+---
+
+## init
+
+**用途**　装载 WebAssembly 内核。其余 API 都是同步的，调用前必须等它完成。
+
+**签名**
+
+```ts
+function init(source?: WasmSource): Promise<void>;
+
+type WasmSource =
+  | URL | string                 // wasm 地址；Node 端 file: 地址与文件路径读文件，其余 fetch
+  | Response | Promise<Response> // 已发出的请求
+  | ArrayBuffer | ArrayBufferView<ArrayBuffer> // wasm 字节
+  | WebAssembly.Module;          // 已编译的模块
+```
+
+**参数**
+
+| 名 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `source` | `WasmSource` | 否 | 内核来源；省略取包内的 `x_iztro.wasm`（`new URL('./x_iztro.wasm', import.meta.url)`） |
+
+**行为**
+
+- 已装好时直接返回；装载进行中时并发调用共用同一次装载。
+- 响应的 `Content-Type` 为 `application/wasm` 时边下载边编译（`instantiateStreaming`），否则读完整个文件再编译，结果相同。
+- 取文件、编译或实例化失败抛 `IztroError`（code 为 `internal`，原因在 `cause`），可再次调用重试。
+- 内核执行时若发生 WebAssembly trap，当次调用抛 `internal`，实例随即作废；再次 `init()` 重建。正常与非法入参都不会触发 trap。
+
+`isInitialized()` 返回内核当前是否可用。
+
+---
+
+## ChartConfig
+
+排盘配置：六个开关加两张可选的自定义表。每一项都可省略，省略取与 iztro 一致的默认值，
+`{}` 与不传等价。
+
+| 字段 | 类型 | 默认 | 取值 |
+| --- | --- | --- | --- |
+| `yearDivide` | `YearDivide` | `'normal'` | `normal` 正月初一 / `exact` 立春 |
+| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` 初一 / `exact` 节气 |
+| `ageDivide` | `AgeDivide` | `'normal'` | `normal` 跨年即加 / `birthday` 过生日才加 |
+| `dayDivide` | `DayDivide` | `'forward'` | `forward` 晚子时归次日 / `current` 归当天 |
+| `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
+| `astroType` | `AstroType` | `'heaven'` | `heaven` 天盘 / `earth` 地盘 / `human` 人盘 |
+| `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | 天干标识 → 四颗星标识（禄、权、科、忌），按天干整表替换 |
+| `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
+
+六个开关的语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
+
+```ts
+const earth = astro.bySolar('2000-8-16', 2, 'female', {
+  config: {
+    astroType: 'earth',
+    mutagens: { gengHeavenly: ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj'] },
+  },
+});
+console.log(earth.fiveElementsClass, earth.config.astroType);
+console.log(earth.palace('soulPalace')!.mutagenStarKeys);
+```
+
+**输出**
+
+```text
+土五局 earth
+[ 'tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj' ]
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="只收标识，不收译名">
+两张表的键与值都必须是语言无关标识（`'gengHeavenly'`、`'taiyangMaj'`）。四化必须正好四项、
+亮度必须正好十二项，不对就抛 `IztroError`。
+</Accordion>
+<Accordion title="自定义表不回显在 chart.config 上">
+`chart.config` 只含六个开关——两张表是排盘输入，不进 DTO（与 iztro 的字段契约一致）。
+星盘内部保留了你传入的原件，`rearranged`、`horoscope`、`toText` 这些再发起的计算仍然用它。
+</Accordion>
+</Accordions>
+
+---
+
+## bySolar
+
+**用途**　由公历日期排出本命盘。斗数含义见 [Python 参考](/zh/docs/python/astro#by_solar)。
+
+**签名**
+
+```ts
+function bySolar(
+  solarDate: string,
+  timeIndex: TimeIndex,
+  gender: Gender,
+  options?: { fixLeap?: boolean; language?: Language; config?: ChartConfig },
+): Astrolabe;
+```
+
+**参数**
+
+| 名 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `solarDate` | `string` | 是 | — | `'Y-M-D'`，分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`（时间不参与排盘），1–9999 年 |
+| `timeIndex` | `TimeIndex` | 是 | — | 时辰索引 0–12，0 早子时、12 晚子时 |
+| `gender` | `Gender` | 是 | — | `'male'` / `'female'` |
+| `options.fixLeap` | `boolean` | 否 | `true` | 闰月前半月算本月、后半月算下月 |
+| `options.language` | `Language` | 否 | `'zh-CN'` | 展示文本语言 |
+| `options.config` | `ChartConfig` | 否 | 默认配置 | 见上 |
+
+性别之后的可选项收在对象里：两个布尔与语言码相邻时按位置传参容易写反且不报错。
+
+```ts
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.solarDate, chart.chineseDate, chart.time, chart.timeRange);
+console.log(chart.soul, chart.body, chart.fiveElementsClass);
+
+const en = astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' });
+console.log(en.lunarDate, en.soul, en.palace('soulPalace')!.name);
+```
+
+**输出**
+
+```text
+2000-8-16 庚辰 甲申 丙午 庚寅 寅时 03:00~05:00
+破军 文昌 木三局
+Lunar 2000-7-17 rebel soul
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="solarDate 原样回显">
+`chart.solarDate` 是入参字符串去掉时间部分，不补零：传 `'2000/08/16'` 就回 `'2000/08/16'`。
+要结构化日期用 `chart.rawDates`。
+</Accordion>
+<Accordion title="晚子时用 12">
+23:00–24:00 出生用 `12` 而不是 `0`；两者排出的盘不同，见[时辰索引](/zh/docs/guide/getting-started#时辰索引)。
+</Accordion>
+</Accordions>
+
+---
+
+## byLunar
+
+**用途**　由农历日期排盘。
+
+**签名**
+
+```ts
+function byLunar(
+  lunarDate: string,
+  timeIndex: TimeIndex,
+  gender: Gender,
+  options?: { isLeapMonth?: boolean; fixLeap?: boolean; language?: Language; config?: ChartConfig },
+): Astrolabe;
+```
+
+`options.isLeapMonth` 默认 `false`，该月没有闰月时不生效；其余同 `bySolar`。
+
+```ts
+const lunar = astro.byLunar('2000-7-17', 2, 'female');
+console.log(lunar.solarDate, lunar.lunarDate);
+```
+
+**输出**
+
+```text
+2000-8-16 二〇〇〇年七月十七
+```
+
+---
+
+## 运限与重排
+
+运限、重排与语义化文本都是星盘对象的方法，见[星盘对象](/zh/docs/js/astrolabe)：
+`chart.horoscope(date, timeIndex)`、`chart.horoscopeOfYear(year)`、`chart.horoscopeOfMonth(year, month)`、
+`chart.rearranged(stem, branch)`、`chart.toText(options)`。

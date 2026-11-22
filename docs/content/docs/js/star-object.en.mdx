@@ -1,0 +1,47 @@
+---
+title: Star
+description: Star fields, brightness and mutagen checks, and the way back to its palace.
+---
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `string` | Language-independent star key (`MajorStar` / `MinorStar` / `AdjectiveStar` / `HoroscopeStar` values) |
+| `name` | `string` | Star name in the chart language |
+| `type` | `StarType` | `major` `soft` `tough` `adjective` `flower` `helper` `lucun` `tianma` |
+| `scope` | `Scope` | `origin` for natal stars, the layer for horoscope stars |
+| `brightness` / `brightnessKey` | `string \| undefined` / `Brightness \| undefined` | Brightness; `undefined` when there is none |
+| `mutagen` / `mutagenKey` | `string \| undefined` / `Mutagen \| undefined` | Birth-year transformation; `undefined` when there is none |
+
+## withBrightness / withMutagen
+
+```ts
+withBrightness(brightness: Brightness | readonly Brightness[]): boolean;
+withMutagen(mutagen: Mutagen | readonly Mutagen[]): boolean;
+```
+
+With an array, any of its values matches.
+
+## palace / oppositePalace / surroundedPalaces
+
+```ts
+palace(): Palace | undefined;
+oppositePalace(): Palace | undefined;
+surroundedPalaces(): SurroundedPalaces | undefined;
+```
+
+A star on a chart knows its palace; horoscope stars and the stars returned by the placement functions hang
+off no palace, so all three are `undefined` for them.
+
+```ts
+const s = chart.star(MajorStar.TAIYANG)!;
+console.log(s.key, s.name, s.type, s.scope, s.brightness, s.brightnessKey, s.mutagen, s.mutagenKey);
+console.log(s.withBrightness([Brightness.MIAO, Brightness.WANG]), s.withMutagen(Mutagen.LU),
+  s.palace()!.name, s.oppositePalace()!.name, s.surroundedPalaces()!.target.name);
+```
+
+```text
+taiyangMaj 太阳 major origin 庙 miao 禄 sihuaLu
+true true 子女 田宅 子女
+```

@@ -1,0 +1,198 @@
+---
+title: Horoscope
+description: The six layers of a Horoscope, palace queries, horoscope stars and mutagens, query precision, the three lists and text.
+---
+
+A horoscope is started from a chart (`chart.horoscope`, `horoscopeOfYear`, `horoscopeOfMonth`) and holds that
+chart, so its query methods need no chart argument. For what each layer means see the
+[Python reference](/en/docs/python/horoscope) and [Horoscope concepts](/en/docs/guide/concepts/horoscope).
+
+```ts
+const h = chart.horoscope('2024-10-1', 0);
+```
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `solarDate` / `lunarDate` | `string` | Target date |
+| `decadal` | `HoroscopeItem` | Decadal (before the first decadal begins, `nameKey` is `childhood`) |
+| `age` | `AgeItem` | Age fortune, with `nominalAge` |
+| `yearly` | `HoroscopeYearly` | Yearly, with `yearlyDecStar` (the Suiqian and Jiangqian twelve) |
+| `monthly` / `daily` / `hourly` | `HoroscopeItem` | Monthly / daily / hourly |
+
+### HoroscopeItem
+
+| Field | Description |
+| --- | --- |
+| `index` | Palace index of this layer's Soul palace |
+| `name` / `nameKey` | Layer name / key (`childhood` before the first decadal; `turn` for the age fortune) |
+| `heavenlyStem(Key)` / `earthlyBranch(Key)` | This layer's stem and branch / keys |
+| `palaceNames` / `palaceNameKeys` | The twelve palace names counted from this layer's Soul palace, by palace index |
+| `mutagen` / `mutagenStarKeys` | This layer's transformed stars [lu, quan, ke, ji] |
+| `stars` | Horoscope stars, one group per palace; `undefined` when the layer has none |
+| `palaceIndexByName(name)` | Palace index of a palace name in this layer |
+
+```ts
+for (const it of [h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly]) {
+  console.log(it.nameKey, it.name, it.index, it.heavenlyStem + it.earthlyBranch, it.mutagen.join(''));
+}
+console.log(h.age.nominalAge, h.yearly.yearlyDecStar.suiqian12.slice(0, 3));
+```
+
+```text
+decadal 大限 2 庚辰 太阳武曲太阴天同
+turn 小限 8 丙戌 天同天机文昌廉贞
+yearly 流年 2 甲辰 廉贞破军武曲太阳
+monthly 流月 5 癸酉 破军巨门太阴贪狼
+daily 流日 9 戊戌 贪狼太阴右弼天机
+hourly 流时 9 壬子 天梁紫微左辅武曲
+25 [ '吊客', '病符', '岁建' ]
+```
+
+---
+
+## Palace queries
+
+```ts
+palace(name: PalaceName | string, scope: Scope, astrolabe?: Astrolabe): Palace | undefined;
+surroundPalaces(name: PalaceName | string, scope: Scope, astrolabe?: Astrolabe): SurroundedPalaces | undefined;
+agePalace(astrolabe?: Astrolabe): Palace | undefined;
+scopeItem(scope: Scope): HoroscopeItem | undefined;
+astrolabe(): Astrolabe;
+```
+
+`palace(name, scope)` is the palace that carries the name `name` in that layer (returned as the natal palace
+object); with `scope` `origin` the natal names are used. `agePalace` is where the age fortune sits.
+
+## hasHoroscopeStars / hasOneOfHoroscopeStars / notHaveHoroscopeStars / hasHoroscopeMutagen
+
+```ts
+hasHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+hasOneOfHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+notHaveHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+hasHoroscopeMutagen(name, scope, mutagen: Mutagen, astrolabe?): boolean;
+```
+
+The star checks look at the decadal and yearly horoscope stars (as iztro does); the mutagen check asks
+whether a major or minor star in that palace is transformed by that layer, and is always `false` for `origin`.
+
+```ts
+console.log(h.palace(PalaceName.SOUL, Scope.YEARLY)!.name, h.agePalace()!.name,
+  h.surroundPalaces(PalaceName.WEALTH, Scope.DECADAL)!.target.name);
+console.log(h.hasHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['流禄']),
+  h.hasOneOfHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['流禄', '流羊']),
+  h.hasHoroscopeMutagen(PalaceName.SOUL, Scope.YEARLY, Mutagen.LU));
+```
+
+```text
+夫妻 官禄 迁移
+false false false
+```
+
+---
+
+## precision
+
+```ts
+precision(): Scope;
+```
+
+Query precision: the finest layer the target actually specifies. `yearly` for `horoscopeOfYear`, `monthly`
+for `horoscopeOfMonth`, `hourly` for a date. Finer layers belong to a representative day the core picked, not
+to the question: `toText` stops at this layer by default, and a palace query, text or pattern call asking for a
+finer layer throws `IztroError`.
+
+```ts
+try {
+  chart.horoscopeOfYear(2027).palace(PalaceName.SOUL, Scope.MONTHLY);
+} catch (e) {
+  console.log((e as IztroError).code, (e as IztroError).message);
+}
+```
+
+```text
+invalid_argument invalid scope 'monthly': the horoscope target only specifies layers down to 'yearly'
+```
+
+---
+
+## The three lists
+
+All astrolabe methods:
+
+```ts
+decadalList(): DecadalListItem[];                               // 12 decadals, in order
+yearlyList(decadal?: number | PalaceName): YearlyListItem[];     // the 10 years of one decadal; locating it is required
+monthlyList(year: number, fixLeap = true): MonthlyListItem[];    // the months of a lunar year; fixLeap splits a leap month
+decadalListToText(options?: KnowledgeOptions): string;
+yearlyOverviewToText(fromYear: number, toYear: number, options?: KnowledgeOptions): string;
+monthlyListToText(year: number, options?: KnowledgeOptions): string;
+```
+
+| Item | Extra fields |
+| --- | --- |
+| `DecadalListItem` | `palaceName(Key)` (the natal palace it sits in), `ageRange`, `yearRange` |
+| `YearlyListItem` | `age`, `year` |
+| `MonthlyListItem` | `age`, `year`, `month`, `isLeapMonth`, `part` (`normal` / `first` / `second`), `dayRange` |
+
+`monthlyList`'s `fixLeap` has nothing to do with the charting switch of the same name: 12 items without a leap
+month; with one, it is split into two halves (14 items), or kept whole (13 items).
+
+```ts
+const d = chart.decadalList()[2]!;
+console.log(d.palaceName, d.ageRange, d.yearRange, d.heavenlyStem + d.earthlyBranch, d.mutagen.join(''));
+const y = chart.yearlyList(2)[0]!;
+console.log(y.year, y.age, y.heavenlyStem + y.earthlyBranch);
+console.log(chart.monthlyList(2025).map((m) => `${m.isLeapMonth ? '闰' : ''}${m.month}${m.part === 'normal' ? '' : m.part[0]}`).join(' '));
+console.log(chart.yearlyOverviewToText(2025, 2027));
+```
+
+```text
+夫妻 [ 23, 32 ] [ 2022, 2031 ] 庚辰 太阳武曲太阴天同
+2022 23 壬寅
+1 2 3 4 5 6 闰6f 闰6s 7 8 9 10 11 12
+# 流年一览 2025-2027
+
+| 年份 | 干支 | 正月初一 | 虚岁 | 大限 | 小限 | 流年命宫 | 四化 |
+|---|---|---|---|---|---|---|---|
+| 2025 | 乙巳 | 2025-1-29 | 26 | 夫妻 | 田宅 | 兄弟 | 天机化禄→本命兄弟, 天梁化权→本命子女, 紫微化科→本命命宫, 太阴化忌→本命仆役 |
+| 2026 | 丙午 | 2026-2-17 | 27 | 夫妻 | 福德 | 命宫 | 天同化禄→本命疾厄, 天机化权→本命兄弟, 文昌化科→本命福德, 廉贞化忌→本命官禄 |
+| 2027 | 丁未 | 2027-2-6 | 28 | 夫妻 | 父母 | 父母 | 太阴化禄→本命仆役, 天同化权→本命疾厄, 天机化科→本命兄弟, 巨门化忌→本命疾厄 |
+```
+
+---
+
+## toText
+
+```ts
+toText(options?: TextOptions & { through?: 'decadal' | 'yearly' | 'monthly' | 'daily' | 'hourly' }): string;
+```
+
+The horoscope's semantic text; `String(h)` equals `h.toText()`. `through` sets the last layer written, and
+defaults to the query precision; when it stops at the decadal, the decadal section leaves out 风云际会. A
+`through` of `origin`, an unknown layer or one finer than the precision throws `IztroError`.
+
+```ts
+const text = h.toText({ through: Scope.YEARLY, detail: TextDetail.OVERVIEW });
+console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+# 运限 2024 (甲辰)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+```
+
+## patterns / patternsToText
+
+See [Patterns](/en/docs/js/patterns#horoscopepatterns).
+
+## toJSON
+
+```ts
+toJSON(): HoroscopeData;
+```
+
+A deep copy of the horoscope's DTO (same shape as iztro's JSON).

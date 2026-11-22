@@ -1,0 +1,31 @@
+---
+title: Translation
+description: The i18n module — two-way lookup between keys and translated names.
+---
+
+Every field on a chart carries both a translated name and a `*Key`, so translating by hand is rarely needed;
+these three functions are for when you hold only a key (or only a name in some language). They cover 260 keys.
+
+```ts
+i18n.translate(key: string, language?: Language): string | undefined; // undefined for an unknown key
+i18n.keyOf(text: string, keyFilter?: string): string | undefined;      // iztro's kot
+i18n.allKeys(): string[];                                              // in keyOf's lookup order
+```
+
+`keyOf` scans language by language, key by key within each language, and takes the first match, in iztro's
+order. When one name is shared across categories (en-US `horse` is both the zodiac horse and Tianma), narrow it
+with `keyFilter`, a substring the key must contain: `'Maj'`, `'Min'`, `'Heavenly'`, `'Earthly'`, `'Palace'`,
+`'Hour'`. A filter with no match gives `undefined`; it never falls back to the unfiltered result.
+
+```ts
+console.log(i18n.translate('ziweiMaj'), i18n.translate('ziweiMaj', 'ja-JP'), i18n.translate('soulPalace', 'en-US'), i18n.translate('nope'));
+console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'), i18n.allKeys().length);
+```
+
+```text
+紫微 紫微 soul undefined
+ziweiMaj horse tianmaMin 260
+```
+
+There is no global language switch: the language travels with each chart, so charts in different languages
+never interfere within one process.
