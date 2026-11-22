@@ -1,9 +1,9 @@
-.PHONY: check check-rust check-python check-go check-docs check-full
+.PHONY: check check-rust check-python check-go check-js check-docs check-full
 .NOTPARALLEL:
 
 VENV ?= $(CURDIR)/.venv
 
-check: check-rust check-python check-go check-docs
+check: check-rust check-python check-go check-js check-docs
 
 check-rust:
 	cargo fmt --check
@@ -24,6 +24,9 @@ check-go:
 	cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/x_iztro.wasm
 	cd go/iztro && go test -race ./...
 	cd examples/go && go build -o ../../target/x-iztro-go-example .
+
+check-js:
+	cd js && npm run check
 
 check-docs:
 	cd docs && ./node_modules/.bin/next typegen && npm run types:check

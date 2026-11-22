@@ -1,7 +1,7 @@
-//! 绑定覆盖率：核心分派的每个标识都必须在 Python 与 Go 的绑定源码里出现。
+//! 绑定覆盖率：核心分派的每个标识都必须在 Python、Go 与 JS 的绑定源码里出现。
 //!
 //! 三侧的功能测试各自只跑自己写过的接口，因此「bridge 分派了某个 kind，但
-//! Python/Go 没有写类型化包装」这类漏洞在任何一侧都测不出来——对外等于该
+//! Python/Go/JS 没有写类型化包装」这类漏洞在任何一侧都测不出来——对外等于该
 //! 能力不存在。星耀标识同理：枚举漏一个，用户就没法用类型化方式引用它。
 //!
 //! 查询 kind 没有运行期清单，从 `src/bridge.rs` 的源码文本抽取；星耀与格局标识取
@@ -84,7 +84,7 @@ fn binding_sources(dir: &str, ext: &str) -> String {
     out
 }
 
-/// 标识是否以带引号的形式出现（Go 只有双引号，Python 两种引号都可能）。
+/// 标识是否以带引号的形式出现（Go 只有双引号，Python 与 JS 两种引号都可能）。
 fn mentions(src: &str, ident: &str) -> bool {
     src.contains(&format!("\"{ident}\"")) || src.contains(&format!("'{ident}'"))
 }
@@ -149,9 +149,11 @@ fn bridge_query_kinds_are_wrapped_in_bindings() {
     let kinds = bridge_query_kinds();
     let python = binding_sources("python/x_iztro", ".py");
     let go = binding_sources("go/iztro", ".go");
+    let js = binding_sources("js/src", ".ts");
 
     let mut missing = report_missing("python", &kinds, &python);
     missing.extend(report_missing("go", &kinds, &go));
+    missing.extend(report_missing("js", &kinds, &js));
 
     assert!(
         missing.is_empty(),
@@ -167,9 +169,11 @@ fn star_keys_are_exposed_in_bindings() {
     let keys = star_keys();
     let python = binding_sources("python/x_iztro", ".py");
     let go = binding_sources("go/iztro", ".go");
+    let js = binding_sources("js/src", ".ts");
 
     let mut missing = report_missing("python", &keys, &python);
     missing.extend(report_missing("go", &keys, &go));
+    missing.extend(report_missing("js", &keys, &js));
 
     assert!(
         missing.is_empty(),
@@ -185,9 +189,11 @@ fn pattern_keys_are_exposed_in_bindings() {
     let keys = pattern_keys();
     let python = binding_sources("python/x_iztro", ".py");
     let go = binding_sources("go/iztro", ".go");
+    let js = binding_sources("js/src", ".ts");
 
     let mut missing = report_missing("python", &keys, &python);
     missing.extend(report_missing("go", &keys, &go));
+    missing.extend(report_missing("js", &keys, &js));
 
     assert!(
         missing.is_empty(),

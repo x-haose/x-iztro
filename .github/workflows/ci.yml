@@ -1,4 +1,4 @@
-# 三语言 CI：Rust 核心（fmt/clippy/测试/wasm）、Go 绑定、Python 绑定，外加文档站构建。
+# 多语言 CI：Rust 核心（fmt/clippy/测试/wasm）、Go、Python、JS 绑定，外加文档站构建。
 # tier3 全量金标（586K 例，需 release 编译）不在 CI 跑，属本地验证项。
 name: CI
 
@@ -93,7 +93,38 @@ jobs:
       - name: 矩阵全部通过
         run: echo "python matrix passed"
 
-  # 文档站与三语言代码无依赖，独立跑。类型检查拦 MDX 组件用错，
+  # 两端各测一次：22 是 js/package.json engines 声明的下限（测试靠它内置的 TypeScript 类型擦除直接跑 .ts），
+  # 26 是当前的 Active LTS。内核由源码现编 wasm32-unknown-unknown，测的就是这次提交的内核。
+  js-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["22", "26"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+      - name: 安装依赖
+        run: cd js && npm ci
+      - name: 构建、类型检查、端到端金标测试与包检查
+        run: make check-js
+
+  # 与 python 聚合门同理：以固定名 js 汇总矩阵结果。
+  js:
+    needs: js-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 矩阵全部通过
+        run: echo "js matrix passed"
+
+  # 文档站与各语言代码无依赖，独立跑。类型检查拦 MDX 组件用错，
   # 构建拦坏链接与坏 frontmatter——两者本地不跑就发现不了。
   docs:
     runs-on: ubuntu-latest

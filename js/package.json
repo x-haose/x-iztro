@@ -1,0 +1,65 @@
+{
+  "name": "x-iztro",
+  "version": "0.6.1",
+  "description": "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro, running the Rust core as WebAssembly",
+  "keywords": [
+    "ziwei",
+    "iztro",
+    "astrology",
+    "horoscope",
+    "wasm",
+    "紫微斗数"
+  ],
+  "license": "MIT",
+  "author": "昊色居士",
+  "homepage": "https://x-iztro.x-haose.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/x-haose/x-iztro.git",
+    "directory": "js"
+  },
+  "bugs": "https://github.com/x-haose/x-iztro/issues",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      },
+      "default": {
+        "types": "./dist/browser.d.ts",
+        "default": "./dist/browser.js"
+      }
+    },
+    "./types": {
+      "types": "./dist/types-entry.d.ts",
+      "default": "./dist/types-entry.js"
+    },
+    "./x_iztro.wasm": "./dist/x_iztro.wasm",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "npm run build:wasm && npm run build:ts",
+    "build:wasm": "cargo build --release --locked --target wasm32-unknown-unknown --manifest-path ../Cargo.toml && node scripts/copy-wasm.mjs",
+    "build:ts": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "node --test --test-reporter=dot \"test/**/*.test.ts\"",
+    "lint:package": "publint --strict && attw --pack . --profile esm-only --exclude-entrypoints ./x_iztro.wasm",
+    "check": "npm run build && npm run typecheck && npm test && npm run lint:package",
+    "prepublishOnly": "npm run check"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@types/node": "26.6.6",
+    "publint": "0.3.25",
+    "typescript": "7.0.2"
+  }
+}

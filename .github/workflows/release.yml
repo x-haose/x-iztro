@@ -2,13 +2,13 @@
 #
 # 版本号的唯一来源是 Cargo.toml：PR 里改了它才发版，没改就跳过，
 # 因此「合并一个普通 PR」与「发一个版本」用同一条路径，不必记两套流程。
-# pyproject.toml 的 version 必须与之相等，本作业开头断言，不等即失败——
-# 两个文件各写一遍版本号，写漏一个会让 PyPI 与 crates.io 发出不同版本。
+# pyproject.toml 与 js/package.json 的 version 必须与之相等，本作业开头断言，不等即失败——
+# 三个文件各写一遍版本号，写漏一个会让 PyPI、npm 与 crates.io 发出不同版本。
 #
 # Release 描述取自 PR 正文的「## 发布说明」一节（见 pull_request_template.md），
 # 不用 GitHub 自动生成的 PR 标题罗列——那个不成文案。
 #
-# crates.io 与 PyPI 都走可信发布（OIDC 换短期令牌），仓库里不存任何长期凭据。
+# crates.io、npm 与 PyPI 都走可信发布（OIDC 换短期令牌），仓库里不存任何长期凭据。
 name: Release
 
 on:
@@ -18,7 +18,7 @@ on:
 
 permissions:
   contents: write
-  # crates.io 可信发布要用 GitHub 签发的 OIDC JWT 去换短期令牌
+  # crates.io 与 npm 的可信发布要用 GitHub 签发的 OIDC JWT 去换短期令牌
   id-token: write
   # 末尾 gh workflow run 派发 wheels.yml 要写 Actions
   actions: write
@@ -42,12 +42,13 @@ jobs:
           }
           version=$(toml_version Cargo.toml package)
           py_version=$(toml_version pyproject.toml project)
+          js_version=$(jq -r .version js/package.json)
           if [ -z "$version" ]; then
             echo "::error::Cargo.toml 里读不到 [package] 的 version"
             exit 1
           fi
-          if [ "$version" != "$py_version" ]; then
-            echo "::error::版本号不一致：Cargo.toml=$version，pyproject.toml=${py_version:-空}"
+          if [ "$version" != "$py_version" ] || [ "$version" != "$js_version" ]; then
+            echo "::error::版本号不一致：Cargo.toml=$version，pyproject.toml=${py_version:-空}，js/package.json=${js_version:-空}"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -64,9 +65,28 @@ jobs:
       - name: 装 Rust 工具链
         if: steps.ver.outputs.release == 'true'
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - name: 常规层金标测试
         if: steps.ver.outputs.release == 'true'
         run: cargo test --locked
+
+      # npm 可信发布要求 npm 11.5.1 以上、Node 22.14.0 以上（docs.npmjs.com/trusted-publishers，2026-11-23 查）；
+      # Node 26 自带 npm 11.20。不配 registry-url：它会写入 NODE_AUTH_TOKEN 配置，盖过 OIDC。
+      # 发布用的包缓存可能被投毒，故不开 npm 缓存。
+      - name: 装 Node.js
+        if: steps.ver.outputs.release == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          package-manager-cache: false
+      # JS 包的门禁与产物在同一步：构建出的 dist/ 就是随后发布的内容。
+      - name: JS 绑定构建与测试
+        if: steps.ver.outputs.release == 'true'
+        run: |
+          cd js
+          npm ci
+          npm run check
 
       # 发布顺序：先 crates.io，后打标签。
       # 反过来的话，publish 失败会留下标签，重跑时版本判定认为「已发过」直接跳过，
@@ -81,6 +101,20 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --locked
+
+      # 已发过即跳过：crates.io 成功而 npm 失败时，人工补发 npm 后重跑不会卡在这里。
+      # 首次发布与可信发布的配置要维护者在 npmjs.com 手动做，见 AGENTS.md「发版」。
+      - name: 发布到 npm
+        if: steps.ver.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          cd js
+          if npm view "x-iztro@$VERSION" version >/dev/null 2>&1; then
+            echo "x-iztro@$VERSION 已在 npm，跳过。"
+          else
+            npm publish --access public
+          fi
 
       # 两个标签：v* 是仓库版本，go/iztro/v* 是 Go 子模块版本。
       # Go 的模块路径带子目录（.../x-iztro/go/iztro），go get 只认前缀相同的标签，
