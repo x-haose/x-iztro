@@ -110,7 +110,7 @@ JS 项目里 iztro 是原作，依赖也更轻（纯 JavaScript，不用下载 W
 
 ```toml
 [dependencies]
-x-iztro = "0.6"
+x-iztro = "0.7"
 ```
 
 **Python** — 要求 3.10+，零运行时依赖，类型化 API（dataclass + StrEnum）。

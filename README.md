@@ -115,7 +115,7 @@ must agree to the field.
 
 ```toml
 [dependencies]
-x-iztro = "0.6"
+x-iztro = "0.7"
 ```
 
 **Python** — 3.10+, zero runtime dependencies, typed API (dataclasses +
