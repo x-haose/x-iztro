@@ -1,0 +1,67 @@
+# Python wheel 与 sdist 的多平台构建，只构建、上传为本次运行的 artifact，不发布。
+#
+# 两处调用：wheels.yml 构建后发布到 PyPI；release.yml 在打标签之前用它构建合并提交，
+# 某个平台构建不过就不打标签、不发任何东西，版本号不会被一次失败的发版占掉。
+# 发布不放在这里：PyPI 可信发布匹配不到被复用的工作流（pypi/warehouse#11096 未关）。
+name: Wheels build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 要构建的提交；空串表示调用方的 github.ref
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64
+          - os: ubuntu-latest
+            target: aarch64
+          - os: macos-latest
+            target: universal2-apple-darwin
+          - os: windows-latest
+            target: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: 构建 wheel（abi3，一包通用 3.10+）
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --features python
+          manylinux: auto
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}
+          path: dist
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - name: 构建 sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist

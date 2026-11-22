@@ -422,12 +422,16 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    **版本号忘了改不会报错**：release.yml 只在 PR 本身改了版本号（头提交与分出点的 `Cargo.toml` 版本不同）时发版，
    没改就打印一行跳过并成功退出，PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
 3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
-   合并即自动发版，发的是这个 PR 的合并提交，同一时刻只跑一个发版作业：
-   金标门禁与 JS `npm run check` → 预检 npm 包已存在 → 在合并提交上打 `v*` 与 `go/iztro/v*` 双标签
-   → crates.io（OIDC）→ npm（可信发布）→ 派发 wheels.yml 并等它成功（PyPI）→ 最后建 GitHub Release。
+   合并即自动发版，发的是这个 PR 的合并提交：先判断是否发版（不排队），需要发版时
+   各平台 wheel 构建（`wheels-build.yml`）→ 金标门禁、`cargo package`、JS `npm run check` → 预检 npm 包已存在，
+   门禁全过才在合并提交上打 `v*` 与 `go/iztro/v*` 双标签 → crates.io（OIDC）→ npm（可信发布）
+   → 派发 wheels.yml 并等它成功（PyPI）→ 最后建 GitHub Release。发布作业同一时刻只跑一个。
    每一步都是已完成即跳过（标签查远端，crates.io、npm 查注册表，PyPI 跳过已上传的文件），
-   GitHub Release 存在才算这个版本发完：中途失败，修好原因后**重跑这次合并的 release 作业**即从失败处接着做；
+   GitHub Release 存在才算这个版本发完：中途失败，修好原因后**重跑这次合并的 Release 工作流运行**即从失败处接着做；
    之后合并的、没改版本号的 PR 不会接手。标签已在别的提交上时作业失败，不从另一份代码再发同一个版本。
+   GitHub 只能重跑 30 天内的运行，超期后按 release.yml 剩余步骤手动补完（发布各注册表、派发 wheels.yml、建 Release）。
+   打标签之后因代码问题失败、必须改代码才能发时，这个版本号作废：升版本号走一次新的发版 PR，旧标签保留不删
+   （Go 模块代理可能已缓存 `go/iztro/v*`，删了重打会让同一版本对应两份内容），CHANGELOG 注明该版本未发布。
    npm 可信发布只能给已存在的包配置，首次由维护者手动建包，发的是占位版本而不是真正的首个版本——
    手动发了真正的版本，CI 会因版本已存在而跳过 npm，可信发布登记后 2 天内没有一次成功的可信发布即失效：
    1. 在空目录建只含 `{"name": "x-iztro", "version": "0.0.0-init"}` 的 `package.json`，
