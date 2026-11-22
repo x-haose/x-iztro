@@ -255,6 +255,14 @@ test('自定义四化表不波及其他天干', () => {
   assert.deepEqual(util.getMutagensByHeavenlyStem(HeavenlyStem.REN, CUSTOM_GENG), ['tianliangMaj', 'ziweiMaj', 'zuofuMin', 'wuquMaj']);
 });
 
+test('排盘后改动调用方的配置对象，不影响这张盘再发起的计算', () => {
+  const config: ChartConfig = { mutagens: { ...CUSTOM_GENG.mutagens } };
+  const a = astro.bySolar('2000-8-16', 2, 'female', { config });
+  const before = a.horoscope('2030-6-1', 0).yearly.mutagenStarKeys;
+  config.mutagens = undefined;
+  assert.deepEqual(a.horoscope('2030-6-1', 0).yearly.mutagenStarKeys, before);
+});
+
 test('自定义亮度表生效', () => {
   const config: ChartConfig = { brightness: { [MajorStar.TANLANG]: Array(12).fill(Brightness.WANG) } };
   const a = astro.bySolar('2000-8-16', 2, 'female', { config });

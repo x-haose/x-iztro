@@ -423,7 +423,10 @@ function dateParam(value: Date): string {
   );
 }
 
-/** 排盘时用户传入的配置原件，供构造星盘的入口记录 */
+/**
+ * 由排盘入口构造星盘，记下用户传入的配置。记的是排盘当时的副本：调用方事后改动自己的配置对象，
+ * 不会改变这张盘再发起的计算。
+ */
 export function newChart(data: AstrolabeData, config: ChartConfig | undefined): Astrolabe {
-  return new Astrolabe(data, { config, from: undefined });
+  return new Astrolabe(data, { config: config === undefined ? undefined : structuredClone(config), from: undefined });
 }
