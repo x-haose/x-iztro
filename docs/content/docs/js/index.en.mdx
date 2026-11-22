@@ -20,8 +20,10 @@ npm install x-iztro
 
 Requires Node.js 22 or later, or a browser with WebAssembly and ES2022. The bundled `x_iztro.wasm` is
 about 1.7 MB (about 0.5 MB gzipped); bundlers emit it as a static asset. No Rust toolchain needed.
-The type declarations need TypeScript 5.0 or later (declared as an optional peer dependency in `package.json`); checked with
-5.0.4, 5.4.5, 5.6.3 and 7.0.2 under `skipLibCheck: false` — 4.9 does not support the `export type *` the declarations use.
+The type declarations need TypeScript 5.0 or later (declared as an optional peer dependency in `package.json`) and a `lib`
+that includes at least `ES2022`; the DOM library is not required, so a Node project with only `@types/node` type-checks too.
+CI checks them with TypeScript 5.0.4 under `skipLibCheck: false` in both a browser setup (`ES2022` + `DOM`) and a Node setup
+(`ES2022` + `@types/node`).
 
 ## Your first chart
 

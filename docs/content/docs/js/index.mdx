@@ -19,7 +19,7 @@ npm install x-iztro
 要求 Node.js 22 及以上，或支持 WebAssembly 与 ES2022 的浏览器。包内的
 `x_iztro.wasm` 约 1.7 MB（gzip 后约 0.5 MB），由打包器作为静态资源产出，
 不需要 Rust 工具链。
-类型声明需要 TypeScript 5.0 及以上（`package.json` 以可选的 peer 依赖声明）；用 5.0.4、5.4.5、5.6.3、7.0.2 在 `skipLibCheck: false` 下校验过，4.9 不支持声明里的 `export type *`。
+类型声明需要 TypeScript 5.0 及以上（`package.json` 以可选的 peer 依赖声明），`lib` 至少含 `ES2022`；不要求 DOM 类型库，只有 `@types/node` 的 Node 工程也能通过检查。CI 用 TypeScript 5.0.4 在 `skipLibCheck: false` 下对浏览器（`ES2022` + `DOM`）与 Node（`ES2022` + `@types/node`）两种工程配置各检查一次。
 
 ## 第一张盘
 

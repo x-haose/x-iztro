@@ -18,8 +18,9 @@ docs/plan/
 # Go 示例编译产物
 examples/go/x-iztro-example
 
-# JS 示例的依赖（指向本仓库 js/ 的本地链接）
+# JS 示例与类型检查工程的依赖（其中 x-iztro 是指向本仓库 js/ 的本地链接）
 examples/js/node_modules/
+tests/js-types/node_modules/
 
 # AI 代理工具的自动生成配置（ECC/Codex 等），项目约定只维护 CLAUDE.md
 .claude/

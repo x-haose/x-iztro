@@ -12,13 +12,33 @@
 import { invalidArgument, IztroError } from './errors.js';
 
 /**
+ * 宿主的 `Response` 类型。`Response` 与 `WebAssembly` 只在 DOM / WebWorker 类型库里有声明，
+ * 公开的声明文件不直接写它们的名字，而是从 `globalThis` 上取：编译环境声明了就是那个类型，
+ * 没声明（如只有 ES 库与 @types/node 的 Node 工程）就是 `never`，声明文件照样能通过类型检查。
+ */
+export type HostResponse = typeof globalThis extends { Response: { prototype: infer R } } ? R : never;
+
+/** 宿主的 `WebAssembly.Module` 类型，取法同 {@link HostResponse} */
+export type HostWasmModule = typeof globalThis extends { WebAssembly: { Module: { prototype: infer M } } } ? M : never;
+
+/** 宿主的 `URL` 类型（DOM 类型库或 @types/node 声明），取法同 {@link HostResponse} */
+export type HostURL = typeof globalThis extends { URL: { prototype: infer U } } ? U : never;
+
+/**
  * 内核的来源：
- * - `URL` / `string`：wasm 文件地址，浏览器端用 `fetch` 取，Node 端 `file:` 地址读文件、其余用 `fetch`
+ * - `URL` / `string`：wasm 文件地址，浏览器端用 `fetch` 取，Node 端 `file:` `http(s):` `data:` 地址按 URL、其余按文件路径
  * - `Response` 或其 Promise：已经发出的请求，`Content-Type` 为 `application/wasm` 时边下边编译
  * - `ArrayBuffer` / `TypedArray`：wasm 文件的字节
  * - `WebAssembly.Module`：已编译的模块，如 Cloudflare Workers 的 wasm 导入
  */
-export type WasmSource = URL | string | Response | Promise<Response> | ArrayBuffer | ArrayBufferView | WebAssembly.Module;
+export type WasmSource =
+  | HostURL
+  | string
+  | HostResponse
+  | Promise<HostResponse>
+  | ArrayBuffer
+  | ArrayBufferView
+  | HostWasmModule;
 
 /** 内核导出的函数与线性内存 */
 interface KernelExports {
@@ -51,7 +71,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 /** 由来源取得可以实例化的输入：地址交给 `resolve`（各入口自己决定怎么取），其余原样 */
-export type Resolver = (location: URL | string) => Promise<Response | ArrayBufferView | ArrayBuffer>;
+export type Resolver = (location: HostURL | string) => Promise<HostResponse | ArrayBufferView | ArrayBuffer>;
 
 /**
  * 装载内核。已装好时直接返回；装载进行中时后到的调用共用那一次装载，自己传入的 `source` 不被使用。
@@ -65,7 +85,7 @@ export function initialize(source: WasmSource, resolve: Resolver): Promise<void>
   loading ??= (async () => {
     try {
       const input = source instanceof URL || typeof source === 'string' ? await resolve(source) : await source;
-      kernel = exportsOf(await instantiate(input));
+      kernel = exportsOf(await instantiate(input as Response | ArrayBuffer | ArrayBufferView | WebAssembly.Module));
     } catch (cause) {
       throw new IztroError('internal', `failed to load x_iztro.wasm: ${String(cause)}`, { cause });
     } finally {
