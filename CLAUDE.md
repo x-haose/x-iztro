@@ -3,7 +3,7 @@
 ## 项目概述
 
 x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/SylarLong/iztro) v2.6.3。
-支持 Rust / Python(PyO3) / Go(WASM) 三语言调用，另有 C FFI 边界。
+支持 Rust / Python(PyO3) / Go(WASM) / JavaScript·TypeScript(WASM) 调用，另有 C FFI 边界。
 
 ## 决策标准
 
@@ -23,7 +23,7 @@ x-iztro：紫微斗数 Rust 核心库，移植自 JS [iztro](https://github.com/
 ## 构建与测试
 
 ```bash
-make check                              # 三语言与文档检查；环境准备见 CONTRIBUTING.md
+make check                              # 各语言与文档检查；环境准备见 CONTRIBUTING.md
 make check-full                         # 另含 Tier 3 与全日期可排盘测试
 cargo build --release                    # 构建（含 cdylib + rlib）
 cargo test                               # 常规测试（~1min，含除 Tier 3 外的全部金标）
@@ -36,6 +36,9 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
 # Go 用 wasm
 cargo build --release --target wasm32-wasip1
+
+# JS 绑定（js/）：编 wasm32-unknown-unknown 内核、tsc、类型检查测试、node:test、publint + attw
+cd js && npm ci && npm run check
 
 # 金标测试数据生成（需要 Node.js + iztro）
 cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.json 的 gen:* 脚本
@@ -56,12 +59,14 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   - `i18n/` — 多语言翻译
   - `text.rs` — 语义化文本投影（to_text：本命/运限/格局/单宫/三方四正的自然语言形态，六语言标签表）
   - `error.rs` — IztroError（入口前置校验的错误类型）
-  - `dto.rs` — JS 兼容序列化 DTO（三语言绑定共用）
+  - `dto.rs` — JS 兼容序列化 DTO（各语言绑定共用）
   - `ffi.rs` — C FFI（错误 JSON + catch_unwind 兜底）
-  - `wasm.rs` — wasm32 导出（Go 经 wazero 调用；wasm 上 catch_unwind 无效，防线在核心校验）
+  - `wasm.rs` — wasm32 导出（Go 经 wazero、JS 经浏览器 / Node 的 WebAssembly 调用；wasm 上 catch_unwind 无效，防线在核心校验）
   - `python.rs` — PyO3 原生模块（`python` feature gate）
 - `python/x_iztro/` — Python 包（dataclass 类型 + StrEnum 枚举，零外部依赖）
 - `go/iztro/` — Go FFI 绑定包
+- `js/` — JS/TS 绑定（npm 包 `x-iztro`）：`src/` TypeScript 源码，`test/` 读金标的 node:test 测试，
+  `dist/` 为构建产物（不进 git，含 `x_iztro.wasm`）
 - `examples/{rust,python,go}/` — 三个独立示例项目
 - `tests/golden/` — JS 生成的金标测试数据（tier1/tier2/tier3）
 - `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
@@ -88,7 +93,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `Cargo.toml` 的 lib crate-type 同时有 `cdylib`（FFI）和 `rlib`（Rust 依赖）
 - `python` feature 启用 PyO3 + pythonize
 
-### 绑定契约（三语言共用）
+### 绑定契约（各语言共用）
 - 语义化契约总纲：**一个对象三种投影**——`to_json`/DTO（机器）、`to_text`（自然语言）、译文字段（展示）；
   **key 两条命名规则**——① 有译文的属性 `x` 配套 `xKey`（数组 `xKeys`），② 实体自身标识一律叫 `key`
   （星、格局命中）。少数语义改名：运限层级与宫位的四化星数组统一叫 `mutagenStarKeys`
@@ -112,9 +117,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   （`targetDate`/`targetTimeIndex`，或 `targetYear`/`targetMonth`），
   不能用 DTO 里规范化后的 `solarDate`——省略时辰时它已丢掉时间部分，会静默换成早子时，
   按农历年、月取的运限时辰是时柱地支、同样不在 `solarDate` 里；Python 记在 `Horoscope._target_*`，
-  Go 记在 `Horoscope.target*` 并只经 `addTarget` 写入参；
+  Go 记在 `Horoscope.target*` 并只经 `addTarget` 写入参，JS 记在 `internal.ts` 的运限上下文并只经 `horoscopeQuery` 写入参；
   重排盘（rearranged）在语言对象里记 fromStem/fromBranch，patterns/horoscope/各 to_text kind 的
-  payload 都要转发——三侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
+  payload 都要转发——各侧新增「再计算」入口时别漏（bridge 各入口统一 apply_rearrange）
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
   记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
   开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
@@ -178,6 +183,24 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - 不依赖 pydantic，纯 stdlib（dataclasses + StrEnum）
 - 端到端金标：`cd python && pytest tests/`（先 maturin develop）
 
+### JS 绑定
+- `js/src/runtime.ts` 装载 `wasm32-unknown-unknown` 内核并按 `src/wasm.rs` 的 alloc/free + JSON 协议调用；
+  `init()` 异步一次，其余同步。地址与打包结果按无符号读（线性内存过 2 GiB 后最高位为 1）；入参里的
+  非有限数字在转 JSON 时报 invalid_argument（`JSON.stringify` 会写成 null，内核当作「未给」）；导出调用期间抛出的
+  任何异常都表示内核执行中断，实例作废、抛 `internal`，再 `init()` 重建
+- 两个入口：package.json `exports` 的 node 条件 → `dist/node.js`（读文件），default 条件 → `dist/browser.js`（fetch）；
+  都按 `new URL('./x_iztro.wasm', import.meta.url)` 取内核——打包器（Vite、webpack、Turbopack）认这个写法，
+  改动入口或 wasm 位置后要在真实打包器里重新验证。`x-iztro/types`（`src/types-entry.ts`）只导出枚举与 DTO 类型，
+  不得引入 runtime。类型声明的下限是 TypeScript 5.0（`export type *`），以可选 peer 依赖声明
+- 模块划分与函数名随 iztro（`astro` / `util` / `star` / `data` 命名空间，`astro.getHoroscope` 即 Python 的
+  `get_decadals_and_ages`），能力与 Python 一一对应；可选参数收在选项对象里，不按位置传布尔
+- 对象间回指与「再发起计算」的上下文（配置副本、重排起点、运限目标）放在 `src/internal.ts` 的 WeakMap，
+  不进公开字段；再发起计算一律经 `chartQuery` / `horoscopeQuery`，上下文键只维护那一处
+- 枚举由 Python `enums.py` 等价改写为 `as const` 对象 + 同名联合类型；新增标识各侧同步
+- 测试按包名自引用导入（走 exports 与 dist/），`node --test` 直接跑 .ts（Node 22.18+ 类型擦除）；
+  读与 Python/Go 相同的金标与快照，另以 `contract_data.json` 对照 `toJSON()` 与对象字段。
+  **改了 `src/` 要 `npm run build` 再测**，测的是 dist 里的 wasm
+
 ### Go 绑定
 - `go/iztro` 内嵌 `x_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
@@ -191,15 +214,15 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 
 ### 与 iztro 的 API 对齐
 - 基准是 npm 包的 `lib/**/*.d.ts`（签名）+ `lib/**/*.js`（语义，以它为准）。
-  硬要求：iztro 每个公开 API 三侧都要有等价物，且三侧能力完全一致，形式各随语言习惯
+  硬要求：iztro 每个公开 API 各侧（Python、Go、JS）都要有等价物，且能力完全一致，形式各随语言习惯
 - 已全数覆盖（`toJSON()` 的等价物是 `to_json`/DTO，不另设）。改动后逐条自查用这三条线索
-  ——三侧测试都发现不了它们（每一侧单独看都正常，只有横向比才看得出）：
-  - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py` 或 `go/iztro/*.go` 没写类型化包装，
-    等于对外不可用。注意 `binding_coverage` 只证明「kind 的字面量出现在绑定源码里」，
+  ——各侧测试都发现不了它们（每一侧单独看都正常，只有横向比才看得出）：
+  - `src/bridge.rs` 分派了、但 `python/x_iztro/*.py`、`go/iztro/*.go` 或 `js/src/*.ts` 没写类型化包装，
+    等于对外不可用。注意 `binding_coverage` 只证明「kind 与入参字段的字面量出现在绑定源码里」，
     证明不了「包装完整」——返回对象少了方法、方法少了参数它都照样绿
     （`FlankingPalaces` 在 Go 侧缺过五个判定方法）
   - **iztro 的方法入参被绑定层偷换成排盘入参**：内核签名收得到、绑定层却拿排盘的同名字段顶上，
-    于是 Rust 原生能独立指定而 Python/Go 不能。`monthlyList` 的 `fixLeap` 犯过一次——
+    于是 Rust 原生能独立指定而绑定层不能。`monthlyList` 的 `fixLeap` 犯过一次——
     它与排盘的 `fix_leap` 同名不同义（前者只决定列表拆不拆闰月，后者决定闰月下半月按哪个月
     安星），bridge 收独立的 `monthFixLeap` 才对。新增 kind 时逐个入参问：它是盘的属性，
     还是这次调用的属性
@@ -336,7 +359,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     金标由 `generate_regression.mjs` 生成，可复现）
   - 入口错误路径 → `error_paths`（非法日期/越界年份/时辰 13/农历 31 日等返回 Err 不 panic）
   - 绑定不漏接口 → `binding_coverage`（读 `src/bridge.rs` 与 `src/data/stars.rs` 源码文本，
-    要求每个 kind 与星耀 key 都出现在 Python/Go 的非测试源码里）
+    要求每个 kind、星耀 key、格局 key 以带引号的形式出现在 Python/Go/JS 的非测试源码里；
+    bridge 入参结构体的每个字段都要被各侧发送：Go 带引号的 camelCase 键、Python 的 snake_case 关键字、
+    JS 的 camelCase 对象键。Go 就地计算 `fixIndex` / `timeToIndex`，不发 `max` / `hour`，单列豁免）
   - 语义化文本 → `text_snapshot`（Markdown 形态的九类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
     外加九类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
@@ -362,16 +387,17 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     全星环测 34 剪枝臂、共享 key 十二神可用、儒略历与改历前后往返、limit 截断、错误路径、FFI kind）
   - 格局 → 规则单测（`src/pattern/rules/*.rs`，真实盘正/负例）+ `pattern_api`（Rust 方法/DTO/FFI 分派/口径入参）
     + `pattern_examples`（iztro-docs 页面 32 张示例盘反查真实盘）+ `pattern_distribution`（tier1 全量分布合理性）
-    + `pattern_snapshot`（三侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，
-    Python `test_patterns.py` 与 Go `pattern_golden_test.go` 读同一批快照；缺失即失败，
+    + `pattern_snapshot`（各侧同解基线 `tests/golden/pattern_snapshots/`，本命与五个运限层，
+    Python `test_patterns.py`、Go `pattern_golden_test.go` 与 JS `patterns.test.ts` 读同一批快照；缺失即失败，
     有意改口径后用 `UPDATE_PATTERN_SNAPSHOTS=1` 重跑该测试重建基线，`pattern_distribution`
     的 tally 金标随之更新）
   - `star` 模块各入口 → `golden_star`（含低层落宫按入参域全覆盖 814 例）
   - 翻译与反查 → `golden_i18n`（`key_lookup_matches_kot` 1,573 例（含 14 条星曜别名）对 `kot` 实际取值）
   - 数据表 → `golden_data`；中州派盘型 → `golden_astrotype`；四开关 → `golden_config`
   - 自定义四化/亮度表 → `config_overrides`；Rust 扩展 trait → `extension`
-  - 三侧同盘同解 → `src/models/astrolabe.rs` 单测 + `python/tests/test_parity.py`
-    + `go/iztro/parity_check_test.go`；插件三侧同解 → 各自的 `test_plugin` / `plugin_test`
+  - 各侧同盘同解 → `src/models/astrolabe.rs` 单测 + `python/tests/test_parity.py`
+    + `go/iztro/parity_check_test.go` + `js/test/parity.test.ts`；插件各侧同解 → 各自的 `test_plugin` / `plugin_test` /
+    `inputs-reverse-plugin.test.ts`
 - 同步 iztro 新版本流程：升级 `tests/golden/package.json` 中的精确版本 → 重新生成金标数据
   → `cargo test`，diff 即数据差异清单；API 面的增删改金标不报，另按上面「与 iztro 的 API 对齐」自查
 
@@ -385,16 +411,23 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    commits 归类为中文节名），逐条润色成带背景说明的条目并入 CHANGELOG.md——
    未发布功能的开发期修正并进该功能条目的最终描述，只有对已发布版本的行为修正才单列；
    `[Unreleased]` 下插入版本节，文件尾链接行同步更新。
-2. `Cargo.toml` 与 `pyproject.toml` 版本号同改（release.yml 开头断言两者相等），
+2. `Cargo.toml`、`pyproject.toml` 与 `js/package.json` 版本号同改（release.yml 开头断言三者相等；改 `js/package.json`
+   后在 `js/` 跑 `npm install --package-lock-only` 刷新锁文件），
    `cargo check` 与 `cd examples/rust && cargo check` 分别刷新两处 Cargo.lock——发版走
    `cargo publish --locked`，lock 里本包版本不同步会挂；示例经 `path` 依赖本包，
    它的 lock 不同步则首次运行示例即产生脏工作区。
-   **版本号忘了改不会报错**：release.yml 见 `v<版本>` 标签已存在就打印一行跳过并成功退出，
+   **版本号忘了改不会报错**：release.yml 见 GitHub Release `v<版本>` 已存在就打印一行跳过并成功退出，
    PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。
 3. dev → main 发 PR，正文按模板写「## 发布说明」节（GitHub Release 描述取自该节）；
-   合并即自动发版：金标门禁 → crates.io（OIDC）→ `v*` 与 `go/iztro/v*` 双标签
-   → GitHub Release → 派发 wheels.yml 发 PyPI。
-4. 合并后核验四样实际产物到位：crates.io 新版本、PyPI wheels、`v*` 与 `go/iztro/v*` 两个标签、
+   合并即自动发版：金标门禁与 JS `npm run check` → 预检 npm 包已存在 → crates.io（OIDC）→ npm（可信发布）
+   → `v*` 与 `go/iztro/v*` 双标签 → 派发 wheels.yml 发 PyPI → 最后建 GitHub Release。
+   每一步都是已完成即跳过（crates.io、npm 查注册表，标签查远端，PyPI 跳过已上传的文件），
+   GitHub Release 存在才算这个版本发完：中途失败，修好原因后重跑 release 作业即从失败处接着做。
+   npm 可信发布只能给已存在的包配置：首次发布由维护者在 `js/` 本机 `npm run build && npm publish --access public`，
+   随后在 npmjs.com 包设置的 Trusted Publisher 登记仓库 `x-haose/x-iztro`、工作流 `release.yml`，
+   并勾选允许 `npm publish`；登记后 2 天内须有一次成功的可信发布，否则配置失效需重登。
+   npm 上还没有这个包时，release 作业在发布任何东西之前失败。
+4. 合并后核验实际产物到位：crates.io 新版本、npm 新版本、PyPI wheels、`v*` 与 `go/iztro/v*` 两个标签、
    GitHub Release。CI 绿不等于发出去了。
 
 ## 常用命令速查
