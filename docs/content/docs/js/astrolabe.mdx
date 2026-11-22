@@ -17,7 +17,7 @@ const chart = astro.bySolar('2000-8-16', 2, 'female');
 | `solarDate` | `string` | 公历日期，入参去掉时间部分原样回显 |
 | `lunarDate` | `string` | 农历日期，随盘面语言 |
 | `chineseDate` | `string` | 四柱展示串 |
-| `rawDates` | `RawDates` | 结构化的农历生日（`lunarDate`）与四柱（`chineseDate`，含 `yearlyKeys` 等标识） |
+| `rawDates` | `RawDates` | 结构化的农历生日（`lunarDate`）与四柱（`chineseDate`：`RawChineseDate`，含 `yearlyKeys` 等标识；`pillarKeys()` 给出 [年, 月, 日, 时] 四柱标识，可直接交给 `util.translateChineseDate` 或展开给 `solarDatesByBazi`） |
 | `time` / `timeRange` | `string` | 时辰名 / 钟点区间 |
 | `sign` / `signKey` | `string` | 星座 / 标识 |
 | `zodiac` / `zodiacKey` | `string` | 生肖 / 标识 |

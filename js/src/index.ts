@@ -17,6 +17,7 @@ export { isInitialized } from './runtime.js';
 
 export { Astrolabe } from './astrolabe.js';
 export { Palace, type Decadal, type PalaceTarget } from './palace.js';
+export { RawChineseDate, type RawDates } from './raw-dates.js';
 export { Star } from './star-object.js';
 export { SurroundedPalaces, FlankingPalaces } from './surpalaces.js';
 export {

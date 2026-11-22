@@ -213,8 +213,8 @@ export interface RawLunarDate {
   isLeap: boolean;
 }
 
-/** 四柱干支：每柱 [天干, 地支]，译文与标识两组 */
-export interface RawChineseDate {
+/** 四柱干支的 DTO：每柱 [天干, 地支]，译文与标识两组。星盘上对应的对象是 `RawChineseDate` */
+export interface RawChineseDateData {
   /** 年柱（翻译文本） */
   yearly: [string, string];
   /** 月柱（翻译文本） */
@@ -233,12 +233,12 @@ export interface RawChineseDate {
   hourlyKeys: [HeavenlyStem, EarthlyBranch];
 }
 
-/** 结构化的出生日期 */
-export interface RawDates {
+/** 结构化出生日期的 DTO */
+export interface RawDatesData {
   /** 数字化农历生日 */
   lunarDate: RawLunarDate;
   /** 四柱干支 */
-  chineseDate: RawChineseDate;
+  chineseDate: RawChineseDateData;
 }
 
 /** 星盘 */
@@ -252,7 +252,7 @@ export interface AstrolabeData {
   /** 干支纪年日期 */
   chineseDate: string;
   /** 结构化的农历生日与四柱 */
-  rawDates: RawDates;
+  rawDates: RawDatesData;
   /** 时辰 */
   time: string;
   /** 时辰对应的时间段 */

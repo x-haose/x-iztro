@@ -18,7 +18,7 @@ const chart = astro.bySolar('2000-8-16', 2, 'female');
 | `solarDate` | `string` | Solar date, the input echoed without its time part |
 | `lunarDate` | `string` | Lunar date, in the chart language |
 | `chineseDate` | `string` | Four pillars for display |
-| `rawDates` | `RawDates` | Structured lunar birthday (`lunarDate`) and pillars (`chineseDate`, with `yearlyKeys` and friends) |
+| `rawDates` | `RawDates` | Structured lunar birthday (`lunarDate`) and pillars (`chineseDate`: a `RawChineseDate` with `yearlyKeys` and friends; `pillarKeys()` returns the [year, month, day, hour] pillar keys, ready for `util.translateChineseDate` or to spread into `solarDatesByBazi`) |
 | `time` / `timeRange` | `string` | Hour name / clock range |
 | `sign` / `signKey` | `string` | Western sign / key |
 | `zodiac` / `zodiacKey` | `string` | Chinese zodiac / key |

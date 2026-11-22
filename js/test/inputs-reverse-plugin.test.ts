@@ -74,8 +74,7 @@ test('运限拒绝非法目标', () => {
 
 test('八字往返', () => {
   const a = astro.bySolar('2000-8-16', 2, 'female');
-  const p = a.rawDates.chineseDate;
-  const got = solarDatesByBazi(p.yearlyKeys, p.monthlyKeys, p.dailyKeys, p.hourlyKeys);
+  const got = solarDatesByBazi(...a.rawDates.chineseDate.pillarKeys());
   assert.ok(got.some((c) => c.solarDate === '2000-8-16' && c.timeIndex === 2));
   assert.equal(got.length, 3);
 });

@@ -10,6 +10,7 @@ import { birthParams, chartContexts, chartQuery, palaceCharts, starCharts, starP
 import { DecadalListItem, Horoscope, MonthlyListItem, YearlyListItem, type PatternTextOptions } from './horoscope.js';
 import { Palace } from './palace.js';
 import { PatternHit } from './pattern.js';
+import { RawChineseDate, type RawDates } from './raw-dates.js';
 import { invoke } from './runtime.js';
 import type { Star } from './star-object.js';
 import { FlankingPalaces, SurroundedPalaces } from './surpalaces.js';
@@ -24,7 +25,6 @@ import type {
   PalaceData,
   PatternConfig,
   PatternHitData,
-  RawDates,
   TextOptions,
   YearlyListItemData,
 } from './types.js';
@@ -42,7 +42,7 @@ export class Astrolabe {
   /** 干支纪年日期 */
   readonly chineseDate: string;
   /** 结构化的农历生日与四柱干支 */
-  readonly rawDates: Readonly<RawDates>;
+  readonly rawDates: RawDates;
   /** 时辰 */
   readonly time: string;
   /** 时辰对应的时间段 */
@@ -100,7 +100,10 @@ export class Astrolabe {
     this.solarDate = data.solarDate;
     this.lunarDate = data.lunarDate;
     this.chineseDate = data.chineseDate;
-    this.rawDates = structuredClone(data.rawDates);
+    this.rawDates = {
+      lunarDate: { ...data.rawDates.lunarDate },
+      chineseDate: new RawChineseDate(data.rawDates.chineseDate),
+    };
     this.time = data.time;
     this.timeRange = data.timeRange;
     this.sign = data.sign;

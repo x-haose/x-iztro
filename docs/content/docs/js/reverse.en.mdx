@@ -37,8 +37,7 @@ Empty criteria, horoscope stars or an invalid range throw `IztroError`. Candidat
 (lunar year ascending, then month → hour → day within a year); reaching `limit` stops the search and sets `truncated`.
 
 ```ts
-const c = chart.rawDates.chineseDate;
-console.log(solarDatesByBazi(c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys));
+console.log(solarDatesByBazi(...chart.rawDates.chineseDate.pillarKeys()));
 const r = reverseChart({
   soulBranch: EarthlyBranch.WU,
   stars: [{ star: MajorStar.ZIWEI, branch: EarthlyBranch.WU }],

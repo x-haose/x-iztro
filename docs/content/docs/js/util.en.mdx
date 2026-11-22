@@ -28,8 +28,7 @@ console.log(util.fixIndex(-1), util.fixIndex(13), util.earthlyBranchIndexToPalac
 console.log(util.getBrightness(MajorStar.ZIWEI, 4), util.getBrightness(MinorStar.ZUOFU, 0),
   util.getMutagen(MajorStar.TAIYANG, HeavenlyStem.GENG), util.getMutagensByHeavenlyStem(HeavenlyStem.GENG));
 console.log(util.fixLunarMonthIndex(7, 17, false, 2, true), util.fixLunarDayIndex(17, 2));
-const c = chart.rawDates.chineseDate;
-console.log(util.translateChineseDate([c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys], 'en-US'));
+console.log(util.translateChineseDate(chart.rawDates.chineseDate.pillarKeys(), 'en-US'));
 ```
 
 ```text

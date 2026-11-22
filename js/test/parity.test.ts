@@ -325,7 +325,9 @@ test('重排盘上的运限与文本按重排后的布局计算', () => {
 
 test('translateChineseDate 与星盘字段一致', () => {
   const c = chart.rawDates.chineseDate;
-  const pillars = [c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys];
+  const pillars = c.pillarKeys();
+  assert.deepEqual(pillars, [c.yearlyKeys, c.monthlyKeys, c.dailyKeys, c.hourlyKeys]);
+  assert.deepEqual(pillars[0], [HeavenlyStem.GENG, EarthlyBranch.CHEN]);
   assert.equal(util.translateChineseDate(pillars), chart.chineseDate);
   assert.equal(util.translateChineseDate(pillars, 'en-US'), 'geng chen - jia shen - bing woo - geng yin');
   assert.throws(() => util.translateChineseDate(pillars.slice(0, 3)), IztroError);
