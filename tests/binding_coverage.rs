@@ -6,7 +6,8 @@
 //!
 //! 查询 kind 没有运行期清单，从 `src/bridge.rs` 的源码文本抽取；星耀与格局标识取
 //! `StarKey::KEYS` / `PatternKey::KEYS`。再要求每个字符串以带引号的形式出现在绑定层的
-//! 非测试源码中。
+//! 非测试源码中。bridge 入参结构体的字段（绑定层发给内核的 JSON 键）同样从源码抽取，
+//! 要求各侧都发送：Go 以带引号的 camelCase 键、Python 以 snake_case 关键字、JS 以 camelCase 对象键出现。
 
 use std::fs;
 use std::path::Path;
@@ -120,6 +121,107 @@ fn bridge_query_kinds() -> Vec<String> {
         kinds.len()
     );
     kinds
+}
+
+/// bridge 入参结构体（排盘、运限、统一查询）的全部字段名，snake_case，取自各结构体的源码。
+///
+/// 字段是绑定层发给内核的 JSON 键：哪一侧漏发了某个键，内核取缺省值，结果看着正常却是错的。
+fn bridge_input_fields() -> Vec<String> {
+    let src = read("src/bridge.rs");
+    let mut fields = Vec::new();
+    for header in [
+        "pub struct SolarChartInput",
+        "pub struct LunarChartInput",
+        "pub struct HoroscopeInput",
+        "pub struct QueryInput",
+    ] {
+        for line in fn_body(&src, header).lines() {
+            let Some((name, _)) = line
+                .trim()
+                .strip_prefix("pub ")
+                .and_then(|rest| rest.split_once(':'))
+            else {
+                continue;
+            };
+            let is_field = !name.is_empty()
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+            if is_field && !fields.iter().any(|f| f == name) {
+                fields.push(name.to_string());
+            }
+        }
+    }
+    assert!(
+        fields.len() > 40,
+        "只抽出 {} 个入参字段，抽取逻辑与 bridge.rs 结构脱节了",
+        fields.len()
+    );
+    fields
+}
+
+/// snake_case 转 camelCase（绑定层 JSON 键的写法）
+fn camel(snake: &str) -> String {
+    let mut out = String::new();
+    let mut upper = false;
+    for c in snake.chars() {
+        if c == '_' {
+            upper = true;
+        } else if upper {
+            out.push(c.to_ascii_uppercase());
+            upper = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// 标识是否作为一个完整的词出现（前后都不是字母、数字或下划线）：
+/// Python 以 snake_case 关键字传参，JS 以 camelCase 对象键（含简写属性）传参，都不带引号。
+fn mentions_word(src: &str, ident: &str) -> bool {
+    let is_word = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    src.match_indices(ident).any(|(i, _)| {
+        let before = src[..i].chars().next_back();
+        let after = src[i + ident.len()..].chars().next();
+        !before.is_some_and(is_word) && !after.is_some_and(is_word)
+    })
+}
+
+/// Go 侧不经内核、就地计算的查询所独有的入参：`fixIndex` 的 `max` 与 `timeToIndex` 的 `hour`
+/// （取模与整数除法，`go/iztro/utils.go` 的 `FixIndex` / `TimeToIndex`），Go 不发送它们
+const GO_LOCAL_FIELDS: [&str; 2] = ["max", "hour"];
+
+#[test]
+fn bridge_input_fields_are_sent_by_bindings() {
+    let fields = bridge_input_fields();
+    let python = binding_sources("python/x_iztro", ".py");
+    let go = binding_sources("go/iztro", ".go");
+    let js = binding_sources("js/src", ".ts");
+
+    let mut missing = Vec::new();
+    for field in &fields {
+        let key = camel(field);
+        if !mentions_word(&python, field) {
+            missing.push(format!("python: {field}"));
+        }
+        if !GO_LOCAL_FIELDS.contains(&field.as_str()) && !mentions(&go, &key) {
+            missing.push(format!("go: \"{key}\""));
+        }
+        if !mentions_word(&js, &key) {
+            missing.push(format!("js: {key}"));
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "\n\n{} 个 bridge 入参字段在绑定层没有发送（内核会静默取缺省值）：\n  {}\n",
+        missing.len(),
+        missing.join("\n  "),
+    );
+    eprintln!(
+        "binding coverage: all {} bridge input fields sent",
+        fields.len()
+    );
 }
 
 fn star_keys() -> Vec<String> {

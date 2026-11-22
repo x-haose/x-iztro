@@ -111,6 +111,19 @@ test('三方四正按宫名取与判断', () => {
   assert.equal(chart.notSurrounded(PalaceName.SOUL, [first]), false);
 });
 
+test('流耀判断取大限与流年两层的流耀', () => {
+  // 2024-10-1 的流年盘：流年夫妻在寅宫，大限流耀运马、流年流耀流禄流马都落在这里；流年命宫所在的午宫两层都没有流耀
+  const h = chart.horoscope('2024-10-1', 0);
+  assert.equal(h.hasHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, ['运马', '流禄', '流马']), true);
+  assert.equal(h.hasHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, [HoroscopeStar.YUN_MA, HoroscopeStar.LIU_LU]), true);
+  assert.equal(h.hasHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, ['运马', '流羊']), false);
+  assert.equal(h.hasOneOfHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, ['流羊', '流马']), true);
+  assert.equal(h.notHaveHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, ['流羊']), true);
+  assert.equal(h.notHaveHoroscopeStars(PalaceName.SPOUSE, Scope.YEARLY, ['流马']), false);
+  assert.equal(h.hasOneOfHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['运马', '流禄', '流羊']), false);
+  assert.equal(h.notHaveHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['运马', '流禄', '流羊']), true);
+});
+
 test('流耀判断三者一致', () => {
   const h = chart.horoscope('2024-10-1', 0);
   const probe = ['流禄'];
