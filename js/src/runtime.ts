@@ -9,7 +9,7 @@
  * 装载是异步的（取文件、编译），装好之后的每次调用都是同步的纯计算。
  */
 
-import { IztroError } from './errors.js';
+import { invalidArgument, IztroError } from './errors.js';
 
 /**
  * 内核的来源：
@@ -18,14 +18,7 @@ import { IztroError } from './errors.js';
  * - `ArrayBuffer` / `TypedArray`：wasm 文件的字节
  * - `WebAssembly.Module`：已编译的模块，如 Cloudflare Workers 的 wasm 导入
  */
-export type WasmSource =
-  | URL
-  | string
-  | Response
-  | Promise<Response>
-  | ArrayBuffer
-  | ArrayBufferView<ArrayBuffer>
-  | WebAssembly.Module;
+export type WasmSource = URL | string | Response | Promise<Response> | ArrayBuffer | ArrayBufferView | WebAssembly.Module;
 
 /** 内核导出的函数与线性内存 */
 interface KernelExports {
@@ -58,10 +51,10 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 /** 由来源取得可以实例化的输入：地址交给 `resolve`（各入口自己决定怎么取），其余原样 */
-export type Resolver = (location: URL | string) => Promise<Response | ArrayBufferView<ArrayBuffer> | ArrayBuffer>;
+export type Resolver = (location: URL | string) => Promise<Response | ArrayBufferView | ArrayBuffer>;
 
 /**
- * 装载内核。已装好时直接返回；装载进行中时等同一次装载。
+ * 装载内核。已装好时直接返回；装载进行中时后到的调用共用那一次装载，自己传入的 `source` 不被使用。
  *
  * 失败时抛 `IztroError`（code 为 internal），原因在 `cause` 里；失败后可以再次调用重试。
  */
@@ -88,7 +81,7 @@ export function isInitialized(): boolean {
 }
 
 async function instantiate(
-  input: Response | ArrayBuffer | ArrayBufferView<ArrayBuffer> | WebAssembly.Module,
+  input: Response | ArrayBuffer | ArrayBufferView | WebAssembly.Module,
 ): Promise<WebAssembly.Instance> {
   if (input instanceof WebAssembly.Module) {
     return WebAssembly.instantiate(input, {});
@@ -105,7 +98,8 @@ async function instantiate(
     }
     return (await WebAssembly.instantiate(await input.arrayBuffer(), {})).instance;
   }
-  return (await WebAssembly.instantiate(input as ArrayBuffer | ArrayBufferView<ArrayBuffer>, {})).instance;
+  // 共享内存视图（SharedArrayBuffer）也是 ArrayBufferView，编译接口不收，由 instantiate 自己报错
+  return (await WebAssembly.instantiate(input as BufferSource, {})).instance;
 }
 
 function exportsOf(instance: WebAssembly.Instance): KernelExports {
@@ -127,11 +121,26 @@ function exportsOf(instance: WebAssembly.Instance): KernelExports {
 }
 
 /**
+ * 入参转 JSON 时拒绝非有限数字：`JSON.stringify` 会把 NaN、±Infinity 写成 null，
+ * 内核把 null 当作「未给」，按缺省值算出一个看似正常的结果。
+ */
+function finiteNumbers(key: string, value: unknown): unknown {
+  if (typeof value === 'number' && !Number.isFinite(value)) {
+    throw invalidArgument(`${key || 'input'} must be a finite number, got ${value}`);
+  }
+  return value;
+}
+
+/**
  * 以 JSON 入参调用内核的一个入口，返回解析后的结果。
  *
  * 值为 `undefined` 的键不进 JSON，内核按缺省处理。
  *
- * @throws IztroError 内核拒绝入参（code 见 {@link ErrorCode}），或实例 trap（internal，实例随即作废）
+ * 内核不导入任何宿主函数，调用期间抛出的任何异常（trap、wasm 栈溢出、结果缓冲越界或不是合法 UTF-8）
+ * 都表示内核执行中断或产出了坏数据：实例随即作废，抛 `IztroError`（internal），下次 `init()` 重建。
+ *
+ * @throws IztroError 入参含非有限数字（invalid_argument）；内核拒绝入参（code 见 {@link ErrorCode}）；
+ *   内核执行中断（internal，实例随即作废）
  * @throws Error 尚未初始化
  */
 export function invoke(entry: Entry, input: object): unknown {
@@ -139,34 +148,24 @@ export function invoke(entry: Entry, input: object): unknown {
   if (k === undefined) {
     throw new Error('x-iztro is not initialized: await init() before calling it');
   }
-  const bytes = encoder.encode(JSON.stringify(input));
-  let inPtr: number | undefined;
-  let outPtr: number | undefined;
-  let outLen = 0;
+  const bytes = encoder.encode(JSON.stringify(input, finiteNumbers));
   let text: string;
   try {
-    inPtr = k.iztro_wasm_alloc(bytes.length);
+    // 地址与打包结果按无符号读：线性内存超过 2 GiB 后，i32 / i64 的最高位为 1，按有符号读是负数
+    const inPtr = k.iztro_wasm_alloc(bytes.length) >>> 0;
     new Uint8Array(k.memory.buffer, inPtr, bytes.length).set(bytes);
-    const packed = k[`iztro_wasm_${entry}`](inPtr, bytes.length);
-    outPtr = Number(packed >> 32n);
-    outLen = Number(packed & 0xffffffffn);
+    const packed = BigInt.asUintN(64, k[`iztro_wasm_${entry}`](inPtr, bytes.length));
+    const outPtr = Number(packed >> 32n);
+    const outLen = Number(packed & 0xffffffffn);
     text = decoder.decode(new Uint8Array(k.memory.buffer, outPtr, outLen));
+    k.iztro_wasm_free(outPtr, outLen);
+    k.iztro_wasm_free(inPtr, bytes.length);
   } catch (cause) {
-    if (cause instanceof WebAssembly.RuntimeError) {
-      // trap 后实例的栈与堆状态不可信，不再复用；下次 init() 重新实例化
-      kernel = undefined;
-      throw new IztroError(
-        'internal',
-        `x_iztro.wasm trapped: ${cause.message}; the instance is retired, await init() again`,
-        { cause },
-      );
-    }
-    throw cause;
-  } finally {
-    if (kernel === k) {
-      if (outPtr !== undefined) k.iztro_wasm_free(outPtr, outLen);
-      if (inPtr !== undefined) k.iztro_wasm_free(inPtr, bytes.length);
-    }
+    if (kernel === k) kernel = undefined;
+    const reason = cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
+    throw new IztroError('internal', `x_iztro.wasm stopped mid-call (${reason}); the instance is retired, await init() again`, {
+      cause,
+    });
   }
   const result: unknown = JSON.parse(text);
   if (isErrorPayload(result)) {

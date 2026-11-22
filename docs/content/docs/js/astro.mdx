@@ -26,7 +26,7 @@ function init(source?: WasmSource): Promise<void>;
 type WasmSource =
   | URL | string                 // wasm 地址；Node 端 file: 地址与文件路径读文件，其余 fetch
   | Response | Promise<Response> // 已发出的请求
-  | ArrayBuffer | ArrayBufferView<ArrayBuffer> // wasm 字节
+  | ArrayBuffer | ArrayBufferView // wasm 字节
   | WebAssembly.Module;          // 已编译的模块
 ```
 
@@ -34,14 +34,14 @@ type WasmSource =
 
 | 名 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `source` | `WasmSource` | 否 | 内核来源；省略取包内的 `x_iztro.wasm`（`new URL('./x_iztro.wasm', import.meta.url)`） |
+| `source` | `WasmSource` | 否 | 内核来源；省略取包内的 `x_iztro.wasm`（`new URL('./x_iztro.wasm', import.meta.url)`）。Node 端的字符串以 `file:` `http(s):` `data:` 开头时当 URL，其余当文件路径（含 Windows 绝对路径） |
 
 **行为**
 
-- 已装好时直接返回；装载进行中时并发调用共用同一次装载。
+- 已装好时直接返回；装载进行中时后到的调用共用那一次装载，自己传入的 `source` 不被使用。
 - 响应的 `Content-Type` 为 `application/wasm` 时边下载边编译（`instantiateStreaming`），否则读完整个文件再编译，结果相同。
 - 取文件、编译或实例化失败抛 `IztroError`（code 为 `internal`，原因在 `cause`），可再次调用重试。
-- 内核执行时若发生 WebAssembly trap，当次调用抛 `internal`，实例随即作废；再次 `init()` 重建。正常与非法入参都不会触发 trap。
+- 内核在调用中途出错（trap、栈溢出、结果缓冲损坏）时，当次调用抛 `internal`，实例随即作废；再次 `init()` 重建。正常与非法入参都不会出现这种情况。
 
 `isInitialized()` 返回内核当前是否可用。
 

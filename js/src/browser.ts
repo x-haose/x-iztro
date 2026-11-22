@@ -10,7 +10,8 @@ import { initialize, type WasmSource } from './runtime.js';
 export * from './index.js';
 
 /**
- * 装载 WebAssembly 内核。其余 API 都是同步的，调用前必须等它完成；重复调用直接返回。
+ * 装载 WebAssembly 内核。其余 API 都是同步的，调用前必须等它完成。已装好时直接返回；
+ * 装载进行中时后到的调用共用那一次装载，自己传入的 `source` 不被使用。
  *
  * @param source 内核来源；省略时取包内的 x_iztro.wasm。自行托管 wasm（CDN、离线包）时传它的地址或字节
  * @throws IztroError 取文件或实例化失败（code 为 internal），可再次调用重试

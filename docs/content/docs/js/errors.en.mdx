@@ -19,8 +19,8 @@ The message is the core's English text and may be reworded between versions; bra
 | --- | --- | --- |
 | `invalid_date` | Invalid date | Bad format, a date that does not exist (including the reform gap), outside years 1–9999 |
 | `invalid_time_index` | Hour index out of range | Not within 0–12 |
-| `invalid_argument` | Any other invalid input or configuration | Gender, language, star key, palace name, override tables, a layer finer than the query precision |
-| `internal` | Core failed to load, a WebAssembly trap, or a defect in the library | `init()` cannot fetch or compile the wasm; the instance traps |
+| `invalid_argument` | Any other invalid input or configuration | Gender, language, star key, palace name, override tables, a layer finer than the query precision, `NaN` / `±Infinity` in the input |
+| `internal` | Core failed to load, the core stopped mid-call, or a defect in the library | `init()` cannot fetch or compile the wasm; a trap, stack overflow or corrupt result buffer during a call |
 
 The same values as Rust's `IztroError::code()`, Python's `IztroError.code` and Go's `iztro.Error.Code`.
 
@@ -59,9 +59,15 @@ Misusing the API throws JS's standard errors; these point at a defect in the cal
 | `RangeError` | A group passed to `util.mergeStars` that does not cover twelve palaces |
 | `SyntaxError` | Bad JSON in `KnowledgePack.fromJSON` |
 
+## Non-finite numbers
+
+`NaN` and `±Infinity` turn into `null` when converted to JSON, which the core would read as "not given" and
+silently compute a plausible default (`horoscopeOfMonth(2024, NaN)` would become a yearly horoscope, for example).
+So a non-finite number anywhere in the input throws `invalid_argument`.
+
 ## WebAssembly instance failures
 
-The core does not trap on invalid input. If a library defect ever causes a trap, that call throws `IztroError`
-(`internal`, with a `WebAssembly.RuntimeError` as `cause`) and the instance is retired — after a trap its stack
-and heap can no longer be trusted. Later calls throw "not initialized"; `await init()` builds a fresh instance and
-work continues.
+The core does not fail on invalid input. If a library defect ever makes a call stop midway — a trap, a wasm stack
+overflow, or a result buffer that is out of bounds or not valid UTF-8 — that call throws `IztroError` (`internal`,
+with the original exception as `cause`) and the instance is retired: after an interrupted run its stack and heap
+can no longer be trusted. Later calls throw "not initialized"; `await init()` builds a fresh instance and work continues.

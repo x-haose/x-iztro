@@ -18,8 +18,8 @@ import { IztroError } from 'x-iztro';
 | --- | --- | --- |
 | `invalid_date` | 日期非法 | 格式错、日期不存在（含改历空缺）、超出 1–9999 年 |
 | `invalid_time_index` | 时辰索引越界 | 不在 0–12 |
-| `invalid_argument` | 其余入参或配置非法 | 性别、语言、星耀标识、宫名、自定义表、比查询精度细的层级 |
-| `internal` | 内核装载失败、WebAssembly trap 或库内部缺陷 | `init()` 取不到或编不了 wasm；实例 trap |
+| `invalid_argument` | 其余入参或配置非法 | 性别、语言、星耀标识、宫名、自定义表、比查询精度细的层级、入参里的 `NaN` / `±Infinity` |
+| `internal` | 内核装载失败、内核执行中断或库内部缺陷 | `init()` 取不到或编不了 wasm；调用中 trap、栈溢出或结果缓冲损坏 |
 
 与 Rust 的 `IztroError::code()`、Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套取值。
 
@@ -58,7 +58,13 @@ invalid_argument invalid language 'fr-FR': expected 'zh-CN', 'zh-TW', 'en-US', '
 | `RangeError` | `util.mergeStars` 某一组不是十二宫 |
 | `SyntaxError` | `KnowledgePack.fromJSON` 的 JSON 语法错 |
 
+## 非有限数字
+
+`NaN` 与 `±Infinity` 在转成 JSON 时会变成 `null`，内核会把它当作「未给」、按缺省值算出一个看似正常的结果
+（例如 `horoscopeOfMonth(2024, NaN)` 变成按年取运限）。因此入参里出现非有限数字时直接抛 `invalid_argument`。
+
 ## WebAssembly 实例故障
 
-内核不会因非法入参 trap。若因库缺陷发生 trap，当次调用抛 `IztroError`（`internal`，`cause` 为 `WebAssembly.RuntimeError`），
-实例随即作废——trap 后实例的栈与堆状态不可信。此后的调用抛「未初始化」，`await init()` 重建实例即可继续。
+内核不会因非法入参出错。若因库缺陷在调用中途出错——trap、wasm 栈溢出，或返回的结果缓冲越界、不是合法 UTF-8——
+当次调用抛 `IztroError`（`internal`，原始异常在 `cause`），实例随即作废：执行中断后实例的栈与堆状态不可信。
+此后的调用抛「未初始化」，`await init()` 重建实例即可继续。

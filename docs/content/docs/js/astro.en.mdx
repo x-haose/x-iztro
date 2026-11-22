@@ -26,7 +26,7 @@ function init(source?: WasmSource): Promise<void>;
 type WasmSource =
   | URL | string                 // wasm address; in Node, file: URLs and file paths are read from disk, others fetched
   | Response | Promise<Response> // a request already made
-  | ArrayBuffer | ArrayBufferView<ArrayBuffer> // the wasm bytes
+  | ArrayBuffer | ArrayBufferView // the wasm bytes
   | WebAssembly.Module;          // an already compiled module
 ```
 
@@ -34,16 +34,16 @@ type WasmSource =
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `source` | `WasmSource` | no | Where the core comes from; omitted, the packaged `x_iztro.wasm` (`new URL('./x_iztro.wasm', import.meta.url)`) |
+| `source` | `WasmSource` | no | Where the core comes from; omitted, the packaged `x_iztro.wasm` (`new URL('./x_iztro.wasm', import.meta.url)`). In Node a string starting with `file:`, `http(s):` or `data:` is a URL and anything else a file path (Windows absolute paths included) |
 
 **Behaviour**
 
-- Returns immediately once loaded; concurrent calls during a load share that load.
+- Returns immediately once loaded; calls made while a load is in progress share that load, and their own `source` is not used.
 - A response with `Content-Type: application/wasm` is compiled while it downloads (`instantiateStreaming`);
   anything else is read in full and then compiled, with the same result.
 - A failure to fetch, compile or instantiate throws `IztroError` (code `internal`, reason in `cause`); calling again retries.
-- If the core ever hits a WebAssembly trap, that call throws `internal` and the instance is retired; `init()`
-  again rebuilds it. Neither valid nor invalid input triggers a trap.
+- If the core ever stops mid-call (a trap, a stack overflow, a corrupt result buffer), that call throws `internal`
+  and the instance is retired; `init()` again rebuilds it. Neither valid nor invalid input causes this.
 
 `isInitialized()` tells whether the core is currently usable.
 
