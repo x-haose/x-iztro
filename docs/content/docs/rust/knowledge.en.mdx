@@ -244,7 +244,7 @@ Err("knowledge pack must declare \"schema\" (currently 1)")
 <Accordion title="Absent and null mean the same thing">
 Every entry and field is optional. A map field (`source`, `stars`, `combinations` …) written as
 `null` is the same as leaving it out — Go serializes a nil map as `null`, and this keeps the default
-serialization of all three languages mutually parseable.
+serialization of every language mutually parseable.
 </Accordion>
 <Accordion title="Unknown keys are not an error">
 A key in `stars` that is not a star key, or an unknown pattern key in `patterns`, is kept verbatim.

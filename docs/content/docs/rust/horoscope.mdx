@@ -28,7 +28,7 @@ let h = chart.horoscope("2025-6-1", 0)?;
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `solar_date` | `String` | 目标公历日期，与入参一致 |
+| `solar_date` | `String` | 目标公历日期，写作不补零、不带时间的 `Y-M-D`（入参 `"2025-01-05 13:00"` 得 `"2025-1-5"`）；按农历年、月取的运限为内核挑的代表日 |
 | `lunar_date` | `String` | 目标日期的农历中文写法 |
 | `decadal` | `HoroscopeItem` | 大限 |
 | `age` | `AgeItem` | 小限 |

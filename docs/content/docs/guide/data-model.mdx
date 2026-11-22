@@ -155,8 +155,8 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
-| `solarDate` | string | 目标阳历日期 |
-| `lunarDate` | string | 目标农历日期 |
+| `solarDate` | string | 目标阳历日期，不补零、不带时间的 `Y-M-D`（如 `2025-1-5`） |
+| `lunarDate` | string | 目标农历日期，任何语言都是中文写法 |
 | `decadal` | [HoroscopeScope](#horoscopescope-运限层级) | 大限，未起运时为童限 |
 | `age` | HoroscopeScope | 小限，带 `nominalAge` |
 | `yearly` | HoroscopeScope | 流年，带 `yearlyDecStar` |
@@ -195,8 +195,8 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `jiangqian12` / `jiangqian12Keys` | string[12] | 按流年支起的将前十二神 |
 
 <Callout title="Rust 侧的 base 层">
-Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base, nominal_age }`），
-序列化时用 `#[serde(flatten)]` 展平，所以 JSON 与 Python / Go / JavaScript 侧看到的是平铺结构。
+Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base, nominal_age }`）；
+转成 DTO 时这一层展平（DTO 上的 `#[serde(flatten)]`），所以 JSON 与 Python / Go / JavaScript 侧看到的是平铺结构。
 </Callout>
 
 ## 完整 JSON 样例

@@ -26,7 +26,7 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 
 | 字段 | 类型 | 跨度 | 说明 |
 | --- | --- | --- | --- |
-| `SolarDate` / `LunarDate` | `string` | — | **目标**日期的公历串与农历中文写法。出生日期在本命盘上，用 `h.Astrolabe().SolarDate` 取 |
+| `SolarDate` / `LunarDate` | `string` | — | **目标**日期的公历串（不补零、不带时间的 `Y-M-D`）与农历中文写法；按农历年、月取的运限为内核挑的代表日。出生日期在本命盘上，用 `h.Astrolabe().SolarDate` 取 |
 | `Decadal` | `HoroscopeScope` | 十年 | 大限。未起运的幼年期为童限 |
 | `Age` | `HoroscopeScope` | 一年 | 小限。按虚岁逐年走一宫 |
 | `Yearly` | `HoroscopeScope` | 一年 | 流年。按流年干支定宫 |

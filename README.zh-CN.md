@@ -119,14 +119,14 @@ Windows x64，这些平台不需要 Rust 工具链；其余目标（musl/Alpine�
 回落到 sdist 源码编译，需要装一个。
 
 ```bash
-pip install x-iztro
+pip install "x-iztro~=0.7.0"
 ```
 
 **Go** — 无 cgo：Rust 核心以约 1.5 MB 的 WebAssembly 形式内嵌在模块里，
 由纯 Go 运行时 [wazero](https://wazero.io) 驱动。交叉编译照常可用。
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
 ```
 
 **JavaScript / TypeScript** — 同一份 Rust 核心编成 WebAssembly（约 1.7 MB，gzip 后约 0.5 MB），
@@ -134,7 +134,7 @@ ESM 带类型声明，支持 Node.js 22+ 与现代浏览器。Vite、webpack、N
 作为资源产出。`x-iztro/types` 只导出 DTO 类型与枚举、不碰 WebAssembly，给只负责渲染的界面代码用。
 
 ```bash
-npm install x-iztro
+npm install x-iztro@0.7
 ```
 
 ## 快速开始

@@ -28,7 +28,7 @@ English.
 
 | Field | Type | Span | Description |
 | --- | --- | --- | --- |
-| `SolarDate` / `LunarDate` | `string` | — | The solar string and the Chinese lunar spelling of the **target** date. The birth date lives on the natal chart; read it from `h.Astrolabe().SolarDate` |
+| `SolarDate` / `LunarDate` | `string` | — | The solar string (`Y-M-D` without zero padding or time) and the Chinese lunar spelling of the **target** date; for a horoscope taken by lunar year or month, the representative day the core picked. The birth date lives on the natal chart; read it from `h.Astrolabe().SolarDate` |
 | `Decadal` | `HoroscopeScope` | Ten years | The decadal scope; the childhood scope for the years before it begins |
 | `Age` | `HoroscopeScope` | One year | The age scope, moving one palace per nominal year |
 | `Yearly` | `HoroscopeScope` | One year | The yearly scope, its palace fixed by the year's pillar |

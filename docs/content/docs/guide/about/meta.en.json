@@ -5,6 +5,7 @@
     "index",
     "accuracy",
     "architecture",
-    "iztro-parity"
+    "iztro-parity",
+    "upgrade-0-7"
   ]
 }

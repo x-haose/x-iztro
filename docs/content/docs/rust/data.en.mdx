@@ -21,8 +21,8 @@ so they compare directly and go straight into collections.
 Every enum except yin-yang and the five elements carries a set of language-independent keys — iztro i18n
 key strings: `as_key()` gives the key, `from_key(&str)` restores the variant, and `KEYS` lists every key in
 variant declaration order. These keys are exactly the values of the `*Key` fields in the DTO and of the
-binding wire protocol, and the values of the Python enums and Go constants — write the same string on any
-of the three sides and the predicates agree.
+binding wire protocol, and the values of the Python enums, Go constants and JavaScript constants — write the same
+string in any language and the predicates agree.
 
 | Enum | Variants | To key | From key | Example keys |
 | --- | --- | --- | --- | --- |

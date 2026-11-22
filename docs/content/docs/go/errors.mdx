@@ -63,7 +63,7 @@ iztro: invalid solar date '2000-2-30': day is out of range for that month
 
 <Callout type="info" title="错误消息统一带 iztro: 前缀">
 `Error()` 在 `Message` 前补 `iztro: `，与调用方自己的错误容易区分；
-`Message` 字段本身不带前缀。消息主体来自核心层，三种语言绑定完全一致，
+`Message` 字段本身不带前缀。消息主体来自核心层，各语言绑定完全一致，
 但**文案会随版本调整**——要在程序里分支请用 `errors.Is` 或 `Code`，别解析文案。
 </Callout>
 

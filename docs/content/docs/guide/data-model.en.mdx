@@ -156,8 +156,8 @@ For what they mean, see [Config in depth](/en/docs/guide/guides/config).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `solarDate` | string | Target Gregorian date |
-| `lunarDate` | string | Target lunar date |
+| `solarDate` | string | Target Gregorian date as `Y-M-D` without zero padding or time (e.g. `2025-1-5`) |
+| `lunarDate` | string | Target lunar date, in Chinese in every language |
 | `decadal` | [HoroscopeScope](#horoscopescope) | The decadal, or the childhood scope before the decadals begin |
 | `age` | HoroscopeScope | Age fortune, carrying `nominalAge` |
 | `yearly` | HoroscopeScope | The yearly scope, carrying `yearlyDecStar` |
@@ -196,8 +196,8 @@ tell whether the scope is a childhood one; do not compare `name` translations.
 | `jiangqian12` / `jiangqian12Keys` | string[12] | The twelve Jiang-qian gods placed from the yearly branch |
 
 <Callout title="The base layer on the Rust side">
-In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`)
-and are flattened with `#[serde(flatten)]` on serialization, so the JSON — and the Python, Go and
+In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`);
+the DTO flattens that layer (`#[serde(flatten)]` on the DTO), so the JSON — and the Python, Go and
 JavaScript sides — see a flat structure.
 </Callout>
 

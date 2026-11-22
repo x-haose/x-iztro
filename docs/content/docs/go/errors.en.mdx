@@ -66,7 +66,7 @@ iztro: invalid solar date '2000-2-30': day is out of range for that month
 <Callout type="info" title="Error messages all carry the iztro: prefix">
 `Error()` prepends `iztro: ` to `Message`, keeping these errors easy to tell apart from the caller's
 own; the `Message` field itself has no prefix. The body of the message comes from the core and is
-identical across the three language bindings, but **the wording may change between versions** — branch
+identical across the language bindings, but **the wording may change between versions** — branch
 on `errors.Is` or `Code`, never by parsing the text.
 </Callout>
 

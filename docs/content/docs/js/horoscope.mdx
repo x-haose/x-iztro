@@ -14,7 +14,7 @@ const h = chart.horoscope('2024-10-1', 0);
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `solarDate` / `lunarDate` | `string` | 目标日期 |
+| `solarDate` / `lunarDate` | `string` | 目标日期的公历串（不补零、不带时间的 `Y-M-D`）与农历中文写法；按农历年、月取的运限为内核挑的代表日 |
 | `decadal` | `HoroscopeItem` | 大限（未起运时 `nameKey` 为 `childhood`，即童限） |
 | `age` | `AgeItem` | 小限，另有 `nominalAge`（虚岁） |
 | `yearly` | `HoroscopeYearly` | 流年，另有 `yearlyDecStar`（岁前、将前十二神） |

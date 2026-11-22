@@ -204,7 +204,7 @@ func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*Knowledg
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`Attributes` 与 `Combinations` 逐字段合并，
-数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 wasm 内核里算，三语言结果一致。
+数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 wasm 内核里算，各语言绑定结果一致。
 
 **示例**
 

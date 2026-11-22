@@ -124,7 +124,7 @@ universal2 and Windows x64 — no Rust toolchain needed there. Other targets
 (musl/Alpine, 32-bit) fall back to the sdist and compile with one.
 
 ```bash
-pip install x-iztro
+pip install "x-iztro~=0.7.0"
 ```
 
 **Go** — no cgo: the Rust core ships inside the module as a ~1.5 MB
@@ -132,7 +132,7 @@ WebAssembly blob run by [wazero](https://wazero.io), a pure-Go runtime.
 Cross-compilation works as usual.
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
 ```
 
 **JavaScript / TypeScript** — the same Rust core compiled to WebAssembly
@@ -142,7 +142,7 @@ asset on their own. `x-iztro/types` exports the DTO types and enums without
 touching the WebAssembly, for UI code that only renders charts.
 
 ```bash
-npm install x-iztro
+npm install x-iztro@0.7
 ```
 
 ## Quick start
@@ -438,7 +438,7 @@ means 1984–2043, one sexagenary cycle):
 
 On top of that: the serialization contract is compared key-by-key against JS
 `JSON.stringify`; translation reverse-lookup is checked against iztro's `kot`
-(its key-of-translation helper) on 1,573 entries; and the three bindings are
+(its key-of-translation helper) on 1,573 entries; and the bindings are
 cross-checked so the same birth data yields the same answers in Rust, Python,
 Go and JavaScript.
 

@@ -61,6 +61,8 @@ astro.bySolar('2000-8-16', 2, 'female', {
 ```
 
 Python、Go、JavaScript 都只需填要改的键，其余取默认；Rust 用 `..Config::default()` 达到同样效果。
+写错的键名不会被忽略：JavaScript 与直接写 config JSON 时报 `invalid_argument` 并列出合法的键，
+Python 的 `ChartConfig` 与 Go 的 `Config` 在构造或编译时就拒绝。
 
 ---
 

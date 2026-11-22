@@ -306,7 +306,7 @@ calling it in a loop.
 ## Serialisation
 
 The JSON tags on `PatternHit` and `PatternStar` are the binding DTO's key names, so
-`encoding/json` produces exactly the structure the Rust and Python sides produce:
+`encoding/json` produces exactly the structure Rust, Python and JavaScript produce:
 
 ```go
 chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageEnUS, nil)

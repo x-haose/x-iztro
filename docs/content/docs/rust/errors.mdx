@@ -328,5 +328,5 @@ enum AppError {
 
 <Callout type="warn" title="wasm 目标下尤其重要">
 wasm 上 panic 即 trap，而且每次 trap 都会永久损耗模块实例的栈空间。
-因此校验放在核心层而非绑定层——三种语言共用同一道防线。
+因此校验放在核心层而非绑定层——各语言绑定共用同一道防线。
 </Callout>

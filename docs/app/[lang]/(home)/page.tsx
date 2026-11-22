@@ -66,10 +66,10 @@ const COPY = {
     },
     iztroLink: '完整对应关系 →',
     langs: [
-      { name: 'Rust', install: 'cargo add x-iztro', href: 'rust' },
-      { name: 'Python', install: 'pip install x-iztro', href: 'python' },
-      { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro', href: 'go' },
-      { name: 'JavaScript', install: 'npm install x-iztro', href: 'js' },
+      { name: 'Rust', install: 'cargo add x-iztro@0.7', href: 'rust' },
+      { name: 'Python', install: 'pip install "x-iztro~=0.7.0"', href: 'python' },
+      { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro@v0.7.0', href: 'go' },
+      { name: 'JavaScript', install: 'npm install x-iztro@0.7', href: 'js' },
     ],
     sample: `from x_iztro import Astro
 
@@ -162,10 +162,10 @@ chart.to_text()           # 整盘 → 文本`,
     },
     iztroLink: 'Full comparison with iztro →',
     langs: [
-      { name: 'Rust', install: 'cargo add x-iztro', href: 'rust' },
-      { name: 'Python', install: 'pip install x-iztro', href: 'python' },
-      { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro', href: 'go' },
-      { name: 'JavaScript', install: 'npm install x-iztro', href: 'js' },
+      { name: 'Rust', install: 'cargo add x-iztro@0.7', href: 'rust' },
+      { name: 'Python', install: 'pip install "x-iztro~=0.7.0"', href: 'python' },
+      { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro@v0.7.0', href: 'go' },
+      { name: 'JavaScript', install: 'npm install x-iztro@0.7', href: 'js' },
     ],
     sample: `from x_iztro import Astro
 

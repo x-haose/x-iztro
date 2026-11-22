@@ -233,7 +233,7 @@ Err("knowledge pack must declare \"schema\" (currently 1)")
 <Accordions>
 <Accordion title="缺省与 null 等价">
 所有条目与字段都可选。映射类字段（`source`、`stars`、`combinations`…）写成 `null`
-等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样三侧的默认序列化产物可以互相解析。
+等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样各语言的默认序列化产物可以互相解析。
 </Accordion>
 <Accordion title="未知的键不报错">
 `stars` 里出现不是星耀标识的键、`patterns` 里出现未知格局标识，都会照原样留在包里。

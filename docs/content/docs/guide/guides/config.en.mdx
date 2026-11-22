@@ -69,7 +69,9 @@ astro.bySolar('2000-8-16', 2, 'female', {
 ```
 
 Python, Go and JavaScript take only the keys you want to change and default the rest; Rust achieves the same
-with `..Config::default()`.
+with `..Config::default()`. A misspelled key is never ignored: JavaScript and hand-written config JSON return
+`invalid_argument` listing the valid keys, and Python's `ChartConfig` and Go's `Config` reject it at
+construction or compile time.
 
 ---
 

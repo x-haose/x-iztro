@@ -30,7 +30,7 @@ output are iztro's en-US vocabulary.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `solar_date` | `String` | Target solar date, as passed in |
+| `solar_date` | `String` | The target solar date as `Y-M-D` without zero padding or time (input `"2025-01-05 13:00"` gives `"2025-1-5"`); for a horoscope taken by lunar year or month, the representative day the core picked |
 | `lunar_date` | `String` | The target date's lunar form, written in Chinese numerals |
 | `decadal` | `HoroscopeItem` | The decadal scope |
 | `age` | `AgeItem` | The age scope |

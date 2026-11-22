@@ -290,7 +290,7 @@ for _, x := range hits {
 ## 序列化
 
 `PatternHit` 与 `PatternStar` 的 JSON tag 就是绑定层 DTO 的键名，
-`encoding/json` 直接序列化即得与 Rust、Python 两侧一致的结构：
+`encoding/json` 直接序列化即得与 Rust、Python、JavaScript 一致的结构：
 
 ```go
 chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageZhCN, nil)

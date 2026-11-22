@@ -15,7 +15,7 @@ const h = chart.horoscope('2024-10-1', 0);
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `solarDate` / `lunarDate` | `string` | Target date |
+| `solarDate` / `lunarDate` | `string` | The solar string (`Y-M-D` without zero padding or time) and the Chinese lunar spelling of the target date; for a horoscope taken by lunar year or month, the representative day the core picked |
 | `decadal` | `HoroscopeItem` | Decadal (before the first decadal begins, `nameKey` is `childhood`) |
 | `age` | `AgeItem` | Age fortune, with `nominalAge` |
 | `yearly` | `HoroscopeYearly` | Yearly, with `yearlyDecStar` (the Suiqian and Jiangqian twelve) |
