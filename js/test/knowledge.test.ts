@@ -82,6 +82,18 @@ test('默认包的元信息与条目', () => {
   assert.throws(() => KnowledgePack.builtin('en-US'), IztroError);
 });
 
+test('按键查询只认包自己的键，原型链上的名字查不到', () => {
+  for (const name of ['constructor', 'toString', 'hasOwnProperty', '__proto__']) {
+    assert.equal(pack.star(name), undefined, name);
+    assert.equal(pack.pattern(name), undefined, name);
+    assert.equal(pack.palace(name), undefined, name);
+    assert.equal(pack.mutagen(name), undefined, name);
+    assert.equal(pack.concept(name), undefined, name);
+    assert.equal(pack.topic(name), undefined, name);
+    assert.equal(pack.starIntro(name), undefined, name);
+  }
+});
+
 test('本命格局命中都能在包里查到释义', () => {
   for (const hit of chart.patterns()) assert.ok(pack.pattern(hit.key) !== undefined, hit.key);
 });

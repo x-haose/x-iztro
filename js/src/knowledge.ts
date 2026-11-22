@@ -159,6 +159,12 @@ function section(raw: Raw, name: string): Record<string, Raw> {
   return (raw[name] ?? {}) as Record<string, Raw>;
 }
 
+/** 取某一段里键为 `key` 的条目；只认包自己的键，`constructor`、`toString` 这类原型链上的名字不算 */
+function entryOf(raw: Raw, name: string, key: string): Raw | undefined {
+  const sec = section(raw, name);
+  return Object.hasOwn(sec, key) ? sec[key] : undefined;
+}
+
 function starEntry(key: string, d: Raw): StarEntry {
   return {
     ...(d as Omit<StarEntry, 'key' | 'attributes' | 'combinations' | 'combinationSummaries'>),
@@ -288,37 +294,37 @@ export class KnowledgePack {
 
   /** 星耀条目（键为星耀标识） */
   star(key: string): StarEntry | undefined {
-    const d = section(packState(this).raw, 'stars')[key];
+    const d = entryOf(packState(this).raw, 'stars', key);
     return d === undefined ? undefined : starEntry(key, d);
   }
 
   /** 格局条目（键为格局标识） */
   pattern(key: string): PatternEntry | undefined {
-    const d = section(packState(this).raw, 'patterns')[key];
+    const d = entryOf(packState(this).raw, 'patterns', key);
     return d === undefined ? undefined : { ...d, key };
   }
 
   /** 宫位条目（键为宫位标识） */
   palace(key: string): TextEntry | undefined {
-    const d = section(packState(this).raw, 'palaces')[key];
+    const d = entryOf(packState(this).raw, 'palaces', key);
     return d === undefined ? undefined : { ...d, key };
   }
 
   /** 四化条目（键为四化标识） */
   mutagen(key: string): TextEntry | undefined {
-    const d = section(packState(this).raw, 'mutagens')[key];
+    const d = entryOf(packState(this).raw, 'mutagens', key);
     return d === undefined ? undefined : { ...d, key };
   }
 
   /** 术语条目 */
   concept(slug: string): ConceptEntry | undefined {
-    const d = section(packState(this).raw, 'concepts')[slug];
+    const d = entryOf(packState(this).raw, 'concepts', slug);
     return d === undefined ? undefined : { ...d, slug };
   }
 
   /** 主题条目 */
   topic(slug: string): TopicEntry | undefined {
-    const d = section(packState(this).raw, 'topics')[slug];
+    const d = entryOf(packState(this).raw, 'topics', slug);
     return d === undefined ? undefined : { ...d, slug };
   }
 
