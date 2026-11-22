@@ -21,11 +21,11 @@ export class Star {
   readonly type: StarType;
   /** 作用范围 */
   readonly scope: Scope;
-  /** 亮度显示文本（如「庙」），无亮度为 undefined */
+  /** 亮度显示文本（如「庙」），无亮度为 undefined（DTO 里的空串在这里也是 undefined） */
   readonly brightness: string | undefined;
   /** 语言无关亮度标识，无亮度为 undefined */
   readonly brightnessKey: Brightness | undefined;
-  /** 四化显示文本（如「禄」），无四化为 undefined */
+  /** 四化显示文本（如「禄」），无四化为 undefined（DTO 里的空串在这里也是 undefined） */
   readonly mutagen: string | undefined;
   /** 语言无关四化标识，无四化为 undefined */
   readonly mutagenKey: Mutagen | undefined;
