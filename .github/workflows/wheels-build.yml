@@ -49,6 +49,8 @@ jobs:
         with:
           name: wheels-${{ matrix.os }}-${{ matrix.target }}
           path: dist
+          # 「Re-run all jobs」时同一次运行里已有同名 artifact，不覆盖就上传失败
+          overwrite: true
 
   sdist:
     runs-on: ubuntu-latest
@@ -65,3 +67,4 @@ jobs:
         with:
           name: sdist
           path: dist
+          overwrite: true
