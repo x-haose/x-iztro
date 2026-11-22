@@ -5,6 +5,11 @@
 # pyproject.toml 与 js/package.json 的 version 必须与之相等，本作业开头断言，不等即失败——
 # 三个文件各写一遍版本号，写漏一个会让 PyPI、npm 与 crates.io 发出不同版本。
 #
+# 「这个版本发完了」以 GitHub Release v<版本> 存在为准，它在全部发布之后最后建。
+# 其余每一步都是「已完成即跳过」：crates.io、npm 查注册表里有没有这个版本，标签查有没有，
+# PyPI 由 wheels.yml 按文件跳过已上传的。任何一步失败后修好原因、重跑本作业，
+# 已完成的步骤跳过，从失败处接着做。
+#
 # Release 描述取自 PR 正文的「## 发布说明」一节（见 pull_request_template.md），
 # 不用 GitHub 自动生成的 PR 标题罗列——那个不成文案。
 #
@@ -35,6 +40,8 @@ jobs:
 
       - name: 取版本号，判断本次是否发版
         id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           toml_version() {
             sed -n "/^\[$2\]/,/^\[/p" "$1" \
@@ -52,11 +59,11 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if git rev-parse "v$version" >/dev/null 2>&1; then
-            echo "v$version 已存在，本次 PR 未改版本号，跳过发版。"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "Release v$version 已存在，本次 PR 未改版本号，跳过发版。"
             echo "release=false" >> "$GITHUB_OUTPUT"
           else
-            echo "将发布 v$version。"
+            echo "将发布 v$version（已完成的步骤会跳过）。"
             echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -88,29 +95,50 @@ jobs:
           npm ci
           npm run check
 
-      # 发布顺序：先 crates.io，后打标签。
-      # 反过来的话，publish 失败会留下标签，重跑时版本判定认为「已发过」直接跳过，
-      # 于是永远发不出去；而 publish 成功、打标签失败只需人工补一条 git tag。
-      - name: 换取 crates.io 短期令牌
+      # 发布前的预检：npm 可信发布只能给已存在的包配置，包还不存在时 OIDC 发布必然失败。
+      # 在发布任何东西之前确认，免得 crates.io 已发出而 npm 发不出去。
+      # 首次发布与可信发布的登记要维护者在 npmjs.com 手动做，见 CLAUDE.md「发版」。
+      - name: 预检 npm 包已存在
         if: steps.ver.outputs.release == 'true'
+        run: |
+          if ! npm view x-iztro name >/dev/null 2>&1; then
+            echo "::error::npm 上还没有 x-iztro 包：可信发布要求包已存在，先由维护者手动首发并登记 Trusted Publisher（见 CLAUDE.md「发版」）"
+            exit 1
+          fi
+
+      - name: 查 crates.io 是否已有这个版本
+        if: steps.ver.outputs.release == 'true'
+        id: crates
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'x-iztro-release (github.com/x-haose/x-iztro)' \
+            "https://crates.io/api/v1/crates/x-iztro/$VERSION")
+          case "$status" in
+            200) echo "x-iztro $VERSION 已在 crates.io，跳过。"; echo "published=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "published=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::查询 crates.io 返回 HTTP $status"; exit 1 ;;
+          esac
+
+      - name: 换取 crates.io 短期令牌
+        if: steps.ver.outputs.release == 'true' && steps.crates.outputs.published == 'false'
         id: auth
         uses: rust-lang/crates-io-auth-action@v1
 
       - name: 发布到 crates.io
-        if: steps.ver.outputs.release == 'true'
+        if: steps.ver.outputs.release == 'true' && steps.crates.outputs.published == 'false'
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --locked
 
-      # 已发过即跳过：crates.io 成功而 npm 失败时，人工补发 npm 后重跑不会卡在这里。
-      # 首次发布与可信发布的配置要维护者在 npmjs.com 手动做，见 AGENTS.md「发版」。
+      # 版本不存在时 npm view 输出为空，与网络失败区分开：只有输出恰为这个版本号才算已发布
       - name: 发布到 npm
         if: steps.ver.outputs.release == 'true'
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
           cd js
-          if npm view "x-iztro@$VERSION" version >/dev/null 2>&1; then
+          if [ "$(npm view "x-iztro@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
             echo "x-iztro@$VERSION 已在 npm，跳过。"
           else
             npm publish --access public
@@ -126,22 +154,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v$VERSION" -m "v$VERSION"
-          git tag -a "go/iztro/v$VERSION" -m "go/iztro v$VERSION"
-          git push origin "v$VERSION" "go/iztro/v$VERSION"
-
-      - name: 从 PR 正文提取发布说明
-        if: steps.ver.outputs.release == 'true'
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: printf '%s' "$PR_BODY" | python3 .github/scripts/release_notes.py > RELEASE_NOTES.md
-
-      - name: 建 Release
-        if: steps.ver.outputs.release == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.ver.outputs.version }}
-        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md
+          for tag in "v$VERSION" "go/iztro/v$VERSION"; do
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+              echo "$tag 已存在，跳过。"
+            else
+              git tag -a "$tag" -m "$tag"
+              git push origin "$tag"
+            fi
+          done
 
       # PyPI 由 wheels.yml 接手，用 workflow_dispatch 显式派发到刚打的标签上。
       # 不能直接让推标签去触发：GITHUB_TOKEN 推出的 push 事件不会启动新的工作流运行，
@@ -154,3 +174,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.ver.outputs.version }}
         run: gh workflow run wheels.yml --ref "v$VERSION"
+
+      # 最后建 Release：它的存在表示这个版本的全部发布步骤都已完成（见文件开头）。
+      - name: 从 PR 正文提取发布说明
+        if: steps.ver.outputs.release == 'true'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" | python3 .github/scripts/release_notes.py > RELEASE_NOTES.md
+
+      - name: 建 Release
+        if: steps.ver.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file RELEASE_NOTES.md

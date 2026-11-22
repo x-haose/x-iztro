@@ -78,9 +78,10 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      # 不设 skip-existing：同一版本重复上传应当报错。
-      # 静默跳过会让「版本号忘了改」这类事故看起来像发布成功。
+      # 跳过已上传的文件：release.yml 某步失败后重跑会再派发一次，已传过的 wheel 不能让它失败。
+      # 「版本号忘了改」由 release.yml 开头按 GitHub Release 是否存在拦下，不会走到这里。
       - name: 发布到 PyPI（Trusted Publishing）
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          skip-existing: true
