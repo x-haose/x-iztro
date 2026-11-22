@@ -5,7 +5,7 @@ description: 校验了什么、在哪一层校验、四个错误分类各是什�
 
 *适合：开发者*
 
-x-iztro 把外部输入的校验放在尽量靠内的一层，三种编程语言共用同一道防线。
+x-iztro 把外部输入的校验放在尽量靠内的一层，各编程语言共用同一道防线。
 各语言只把错误翻译成自己的惯例类型，不重复校验、也不各自解释。
 
 ## 错误分类
@@ -21,7 +21,7 @@ x-iztro 把外部输入的校验放在尽量靠内的一层，三种编程语言
 
 ## 各语言的错误类型
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 `IztroError` 枚举，`code()` 给出分类：
@@ -89,6 +89,26 @@ invalid_date invalid solar date '2000-13-1': month must be within 1-12
 `Error()` 输出带 `iztro: ` 前缀；`Message` 是不带前缀的原文。
 
 </Tab>
+<Tab value="JavaScript">
+
+`IztroError`，带 `.code`；未初始化、参数类型不对这类用法错误抛的是标准 `Error` / `TypeError`：
+
+```ts
+import { init, astro, IztroError } from 'x-iztro';
+
+await init();
+try {
+  astro.bySolar('2000-2-30', 2, 'female');
+} catch (e) {
+  if (e instanceof IztroError) console.log(e.code, e.message);
+}
+```
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+```
+
+</Tab>
 </Tabs>
 
 C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<code>"}`，
@@ -114,7 +134,7 @@ C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<cod
 | 自定义表收到译名 | `invalid mutagens for 'gengHeavenly': unknown star '太阳'` |
 
 <Callout title="在哪一层校验">
-日期与时辰在**核心层**校验，三种编程语言完全一致。
+日期与时辰在**核心层**校验，各编程语言完全一致。
 性别、盘面语言、配置开关、星耀标识这些以字符串传入的东西，
 在**绑定层**解析时校验 —— Rust 侧它们本来就是枚举，不存在非法取值。
 </Callout>
@@ -126,14 +146,14 @@ C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<cod
 
 | 场景 | 返回 |
 | --- | --- |
-| 某颗星不在这张盘上 | `None` / `nil` |
-| 宫位索引越界 | `None` / `nil` |
-| 该星没有亮度表 | `None` / 空串 |
-| 反查一个不存在的译名 | `None` / 空串 |
+| 某颗星不在这张盘上 | `None` / `nil` / `undefined` |
+| 宫位索引越界 | `None` / `nil` / `undefined` |
+| 该星没有亮度表 | `None` / 空串 / `undefined` |
+| 反查一个不存在的译名 | `None` / 空串 / `undefined` |
 
 <Callout type="warn" title="拼错的标识会静默失效">
 `chart.palace("soulPalce")` 不会报错，只会返回空；`has(["ziweiMj"])` 恒返回 `False`。
-判断用枚举或常量（Python 的 `PalaceName.SOUL`、Go 的 `iztro.PalaceSoul`）——
+判断用枚举或常量（Python 的 `PalaceName.SOUL`、Go 的 `iztro.PalaceSoul`、JavaScript 的 `PalaceName.SOUL`）——
 拼错时是编译期或构造期报错，不是运行期静默。
 要校验一个外来的字符串，把它喂给枚举构造：`PalaceName("x")` 会抛 `ValueError`。
 </Callout>
@@ -160,7 +180,7 @@ C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<cod
 
 坏数据跳过、好数据继续，而不是整批失败：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -196,6 +216,23 @@ for _, row := range rows {
         continue
     }
     charts = append(charts, chart)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const charts: Astrolabe[] = [];
+const failed: [Row, string, string][] = [];
+
+for (const row of rows) {
+  try {
+    charts.push(astro.bySolar(row.date, row.ti, row.gender));
+  } catch (e) {
+    if (!(e instanceof IztroError)) throw e;
+    failed.push([row, e.code, e.message]);
+  }
 }
 ```
 

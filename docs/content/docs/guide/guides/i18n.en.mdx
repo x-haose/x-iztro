@@ -83,7 +83,7 @@ tolerated deviation.
 When you hold only a key (or only a name in some language), use the two-way lookup functions rather
 than charting again:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -124,6 +124,15 @@ Both Go functions return `(string, error)`: an unknown key or a failed reverse l
 string and an `*iztro.Error` of category `invalid_argument`.
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+i18n.keyOf('emperor');                 // ziweiMaj
+i18n.translate('ziweiMaj', 'en-US');   // emperor
+i18n.keyOf('자미');                     // ziweiMaj
+```
+
+</Tab>
 </Tabs>
 
 Coverage is 260 keys across twelve categories: stars, palaces (including the Body and Original
@@ -143,13 +152,14 @@ disambiguate: `"Maj"` searches only the fourteen major stars, `"Min"` only the m
 `"Palace"` only palaces, `"Hour"` only hours.
 </Callout>
 
-## The three programming languages hold values differently
+## The programming languages hold values differently
 
 | | What the chart holds | Cost of switching chart language |
 | --- | --- | --- |
 | Rust | Enums (`StarKey`, `Palace`, …), with only a few display fields as `String` | Call a translation function; one chart can emit several languages at once |
 | Python | Both the translated and the key fields are already strings | Chart again |
 | Go | As above | Chart again |
+| JavaScript | As above | Chart again |
 
 Charting itself is a matter of milliseconds, so charting more than once is not a problem. Keep
 predicates on the key fields and switching chart language requires no code changes at all.
@@ -178,4 +188,4 @@ library. Adding a language touches four places:
 </Steps>
 
 The binding layer needs no changes: language codes are passed as strings, so a new enum variant is
-immediately available in all three programming languages.
+immediately available in every programming language.

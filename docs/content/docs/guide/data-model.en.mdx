@@ -6,13 +6,14 @@ description: The type and meaning of every field on Astrolabe, Palace, Star and 
 *For: developers*
 
 This page is written against the serialized JSON field names (camelCase), which are the contract
-shared by all three bindings. Naming translates as follows:
+shared by every binding. Naming translates as follows:
 
 | Layer | Naming | Example |
 | --- | --- | --- |
 | JSON / binding contract | camelCase | `isBodyPalace` |
 | Python | snake_case | `is_body_palace` |
 | Go | PascalCase | `IsBodyPalace` |
+| JavaScript | camelCase, same as the JSON | `isBodyPalace` |
 | Rust | snake_case, values are enums | `is_body_palace` |
 
 ## Astrolabe
@@ -196,8 +197,8 @@ tell whether the scope is a childhood one; do not compare `name` translations.
 
 <Callout title="The base layer on the Rust side">
 In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`)
-and are flattened with `#[serde(flatten)]` on serialization, so the JSON — and the Python and Go
-sides — see a flat structure.
+and are flattened with `#[serde(flatten)]` on serialization, so the JSON — and the Python, Go and
+JavaScript sides — see a flat structure.
 </Callout>
 
 ## A complete JSON example

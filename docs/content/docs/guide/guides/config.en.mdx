@@ -59,7 +59,16 @@ cfg := &iztro.Config{
 iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
 ```
 
-Python and Go take only the keys you want to change and default the rest; Rust achieves the same
+```ts
+import { astro, Algorithm, YearDivide } from 'x-iztro';
+
+astro.bySolar('2000-8-16', 2, 'female', {
+  language: 'en-US',
+  config: { algorithm: Algorithm.ZHONGZHOU, yearDivide: YearDivide.EXACT },
+});
+```
+
+Python, Go and JavaScript take only the keys you want to change and default the rest; Rust achieves the same
 with `..Config::default()`.
 
 ---
@@ -299,7 +308,7 @@ flies out comes from the same table.
 ### The brightness table
 
 One star takes twelve brightness values, ordered by slot on the chart (slot 0 is the Yin palace),
-and all twelve must be given; use an empty value (an empty string in Python and Go) where a slot has
+and all twelve must be given; use an empty value (an empty string in Python, Go and JavaScript) where a slot has
 no brightness.
 
 ```python

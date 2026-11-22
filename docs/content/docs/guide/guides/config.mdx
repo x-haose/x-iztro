@@ -52,7 +52,15 @@ cfg := &iztro.Config{
 iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageZhCN, cfg)
 ```
 
-Python 与 Go 都只需填要改的键，其余取默认；Rust 用 `..Config::default()` 达到同样效果。
+```ts
+import { astro, Algorithm, YearDivide } from 'x-iztro';
+
+astro.bySolar('2000-8-16', 2, 'female', {
+  config: { algorithm: Algorithm.ZHONGZHOU, yearDivide: YearDivide.EXACT },
+});
+```
+
+Python、Go、JavaScript 都只需填要改的键，其余取默认；Rust 用 `..Config::default()` 达到同样效果。
 
 ---
 
@@ -269,7 +277,7 @@ cfg := &iztro.Config{Mutagens: map[string][]string{
 ### 亮度表
 
 一颗星配十二个亮度，按盘上位置排列（第一项是寅宫），必须给满十二项；
-该位置无亮度时用空值（Python / Go 传空串）。
+该位置无亮度时用空值（Python / Go / JavaScript 传空串）。
 
 ```python
 cfg = ChartConfig(brightness={

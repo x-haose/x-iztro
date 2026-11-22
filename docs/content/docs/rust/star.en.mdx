@@ -236,8 +236,8 @@ pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroEr
 list, possibly empty.
 
 <Callout type="info">
-Rust names these three in the plural; the Python and Go bindings name their equivalents in the
-singular (`get_major_star`, `GetMajorStar`, …). Do not confuse them with
+Rust names these three in the plural; the Python, Go and JavaScript bindings name their equivalents in the
+singular (`get_major_star`, `GetMajorStar`, `getMajorStar`, …). Do not confuse them with
 [`get_major_star_by_solar_date`](/en/docs/rust/query#get_major_star_by_solar_date--get_major_star_by_lunar_date),
 which returns only the Soul palace's major stars as a string.
 </Callout>

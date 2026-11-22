@@ -128,7 +128,7 @@ Its rules **differ** from the decadals — the two are independent:
 
 Look a palace up by name, then ask what is in it:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -179,6 +179,25 @@ soul.IsBodyPalace
 soul.IsOriginalPalace
 soul.Decadal.Range
 soul.Ages
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { PalaceName, MajorStar, Mutagen } from 'x-iztro';
+
+const soul = chart.palace(PalaceName.SOUL)!;
+
+soul.has([MajorStar.ZIWEI]);
+soul.hasOneOf([MajorStar.ZIWEI, MajorStar.TIANFU]);
+soul.hasMutagen(Mutagen.LU);
+soul.isEmpty();
+
+soul.isBodyPalace;
+soul.isOriginalPalace;
+soul.decadal.range;         // [3, 12]
+soul.ages;                  // [5, 17, 29, 41, 53, 65, 77, 89, 101, 113]
 ```
 
 </Tab>

@@ -54,6 +54,14 @@ natal, _ := chart.ToText()
 fortune, _ := h.ToText()
 ```
 
+```ts
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+const h = chart.horoscope('2025-1-1', 0);
+
+const text = `${chart.toText()}\n${h.toText()}`;   // String(chart) / String(h) 等价
+```
+
 更细粒度的入口：
 
 ```python
@@ -78,6 +86,17 @@ chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
+```ts
+chart.palace('命宫')!.toText();
+chart.surroundedPalaces('命宫')!.toText();
+chart.flankingPalaces('命宫')!.toText();
+chart.decadalListToText();
+chart.yearlyOverviewToText(2001, 2012);
+chart.monthlyListToText(2025);
+chart.patternsToText();
+h.patternsToText('yearly');
+```
+
 Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 `FlankingPalaces::to_text()`、`Astrolabe::decadal_list_to_text()`、
 `Astrolabe::yearly_overview_to_text(from, to)`、`Astrolabe::monthly_list_to_text(year)` 与
@@ -85,7 +104,7 @@ Rust 侧对应 `PalaceRef::to_text()`、`SurroundedPalaces::to_text()`、
 `palace_to_text` / `surrounded_palaces_to_text` / `flanking_palaces_to_text` /
 `decadal_list_to_text` / `yearly_overview_to_text` / `monthly_list_to_text` / `patterns_to_text`），
 便捷方法按排盘语言输出，自由函数可指定语言，见 [Rust — TextOptions](/zh/docs/rust/astro#textoptions)。
-三语言输出逐字节一致。
+各语言输出逐字节一致。
 
 ## 结构总览
 

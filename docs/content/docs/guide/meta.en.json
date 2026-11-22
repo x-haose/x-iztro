@@ -1,6 +1,6 @@
 {
   "title": "x-iztro",
-  "description": "A Zi Wei Dou Shu charting library: a Rust core with three language bindings",
+  "description": "A Zi Wei Dou Shu charting library: a Rust core with bindings for several languages",
   "icon": "Sparkles",
   "root": true,
   "pages": [

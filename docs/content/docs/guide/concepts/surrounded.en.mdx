@@ -1,6 +1,6 @@
 ---
 title: Surrounded palaces
-description: Why a palace is never read alone, which four palaces make up the surrounded set, how flanking palaces differ from it, and how to get both in each of the three programming languages.
+description: Why a palace is never read alone, which four palaces make up the surrounded set, how flanking palaces differ from it, and how to get both in each programming language.
 ---
 
 *For: everyone. Code and the predicate table are at the end of the page*
@@ -48,9 +48,9 @@ other target, only the positional relationship is the same.
 
 ## In code
 
-All three programming languages accept either a palace index or a palace name:
+Every programming language accepts either a palace index or a palace name:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -75,6 +75,14 @@ sp = chart.SurroundedPalacesByIndex(soul.Index)          // by index
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+let sp = chart.surroundedPalaces(PalaceName.SOUL);   // by palace name
+sp = chart.surroundedPalaces(soul.index);            // by index
+```
+
+</Tab>
 </Tabs>
 
 The four members are `target`, `opposite`, `career` (the career position) and `wealth` (the wealth
@@ -84,7 +92,7 @@ resolve to `soul`, `surface`, `career` and `wealth`.
 ### Predicates
 
 The surrounded-palace predicates share names with the single-palace ones, but check the union of the
-four palaces. They are identical across the three programming languages:
+four palaces. They are identical across the programming languages:
 
 | Method | Does |
 | --- | --- |
@@ -184,7 +192,7 @@ in the previous palace and Tianyue in the next — the predicate reads the union
 of them a star landed in.
 </Callout>
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -232,6 +240,23 @@ fmt.Println(f.HaveOneOf(iztro.StarQingyangMin, iztro.StarTuoluoMin))
 
 ```text
 siblings parents
+true
+true
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const f = chart.flankingPalaces(PalaceName.SOUL)!;
+
+console.log(f.previous.name, f.next.name);
+console.log(f.have([MajorStar.TIANJI, MinorStar.TIANYUE]));
+console.log(f.haveOneOf([MinorStar.QINGYANG, MinorStar.TUOLUO]));
+```
+
+```text
+兄弟 父母
 true
 true
 ```

@@ -59,6 +59,14 @@ natal, _ := chart.ToText()
 fortune, _ := h.ToText()
 ```
 
+```ts
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' });
+const h = chart.horoscope('2025-1-1', 0);
+
+const text = `${chart.toText()}\n${h.toText()}`;   // String(chart) / String(h) are equivalent
+```
+
 The finer-grained entries:
 
 ```python
@@ -83,13 +91,24 @@ chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
+```ts
+chart.palace(PalaceName.SOUL)!.toText();
+chart.surroundedPalaces(PalaceName.SOUL)!.toText();
+chart.flankingPalaces(PalaceName.SOUL)!.toText();
+chart.decadalListToText();
+chart.yearlyOverviewToText(2001, 2012);
+chart.monthlyListToText(2025);
+chart.patternsToText();
+h.patternsToText('yearly');
+```
+
 On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text()`,
 `FlankingPalaces::to_text()`, `Astrolabe::decadal_list_to_text()`,
 `Astrolabe::yearly_overview_to_text(from, to)`, `Astrolabe::monthly_list_to_text(year)` and the free functions of the
 `text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
 `surrounded_palaces_to_text` / `flanking_palaces_to_text` / `decadal_list_to_text` /
 `yearly_overview_to_text` / `monthly_list_to_text` / `patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
-explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). All three languages emit identical text.
+explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). Every language emits identical text.
 
 ## Structure at a glance
 

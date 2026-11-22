@@ -5,7 +5,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 
 *适合：开发者*
 
-这一页以序列化后的 JSON 字段名（camelCase）为准，它是三套绑定共用的契约。
+这一页以序列化后的 JSON 字段名（camelCase）为准，它是各语言绑定共用的契约。
 各编程语言的命名换算：
 
 | 层 | 命名 | 示例 |
@@ -13,6 +13,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | JSON / 绑定契约 | camelCase | `isBodyPalace` |
 | Python | snake_case | `is_body_palace` |
 | Go | PascalCase | `IsBodyPalace` |
+| JavaScript | camelCase，与 JSON 相同 | `isBodyPalace` |
 | Rust | snake_case，值为枚举 | `is_body_palace` |
 
 ## Astrolabe 星盘
@@ -195,7 +196,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 
 <Callout title="Rust 侧的 base 层">
 Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base, nominal_age }`），
-序列化时用 `#[serde(flatten)]` 展平，所以 JSON 与 Python / Go 侧看到的是平铺结构。
+序列化时用 `#[serde(flatten)]` 展平，所以 JSON 与 Python / Go / JavaScript 侧看到的是平铺结构。
 </Callout>
 
 ## 完整 JSON 样例

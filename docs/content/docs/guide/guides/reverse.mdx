@@ -25,7 +25,7 @@ x-iztro 给了两个反推入口，都返回**候选生辰**（公历日期 + �
 
 ## 由八字反查生辰
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -80,9 +80,25 @@ for _, c := range cands {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { solarDatesByBazi, HeavenlyStem as S, EarthlyBranch as B } from 'x-iztro';
+
+// 庚辰 甲申 丙午 庚寅
+const cands = solarDatesByBazi(
+  [S.GENG, B.CHEN], [S.JIA, B.SHEN], [S.BING, B.WU], [S.GENG, B.YIN],
+  { yearRange: [1900, 2100] },
+);
+for (const c of cands) {
+  console.log(c.solarDate, c.timeIndex);
+}
+```
+
+</Tab>
 </Tabs>
 
-**输出**（三种语言相同）
+**输出**（各语言相同）
 
 ```text
 1940-8-31 2
@@ -152,7 +168,7 @@ assert!(cands.iter().any(|c| c.solar_date == "2001-2-1" && c.time_index == 3));
 | `fix_leap` | 闰月修正，与排盘入参同义；缺省取 `true`（Go 侧为 `*bool`，`nil` 即缺省） |
 | `limit` | 候选数上限，0 取默认值 512 |
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -204,6 +220,22 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(len(r.Candidates), "个候选, truncated =", r.Truncated)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { reverseChart, EarthlyBranch, FiveElementsClass, MajorStar } from 'x-iztro';
+
+const r = reverseChart({
+  soulBranch: EarthlyBranch.WU,
+  fiveElementsClass: FiveElementsClass.WOOD_3,
+  stars: [{ star: MajorStar.ZIWEI, branch: EarthlyBranch.WU }],
+  mutagens: [MajorStar.TAIYANG, null, null, null], // 太阳化禄
+  yearRange: [1998, 2002],
+});
+console.log(r.candidates.length, '个候选, truncated =', r.truncated);
 ```
 
 </Tab>

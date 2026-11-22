@@ -206,7 +206,7 @@ invalid_argument / invalid yearly pillar: stem and branch must have the same pol
 ## BridgeError
 
 绑定层（C FFI / wasm / PyO3）对外报错的统一形状。Rust 调用方一般用不到它——
-它是 Python 与 Go 侧错误对象的来源。
+它是 Python、Go、JavaScript 侧错误对象的来源。
 
 ```rust
 pub struct BridgeError {

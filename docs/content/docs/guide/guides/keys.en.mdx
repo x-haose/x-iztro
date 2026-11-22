@@ -1,6 +1,6 @@
 ---
 title: The language-independent key contract
-description: Why star names must not drive predicates, what the key fields are, and how each of the three programming languages uses them.
+description: Why star names must not drive predicates, what the key fields are, and how each programming language uses them.
 ---
 
 *For: developers*
@@ -101,6 +101,26 @@ star.WithMutagen(iztro.MutagenQuan)
 star.WithBrightness(iztro.BrightnessMiao)
 ```
 
+### JavaScript: constant objects
+
+Every enum is both a constant object and a union type of its values under the same name; **the property values are the keys**:
+
+```ts
+import { MajorStar, Mutagen, PalaceName, Brightness } from 'x-iztro';
+
+MajorStar.ZIWEI      // 'ziweiMaj'
+Mutagen.LU           // 'sihuaLu'
+PalaceName.SOUL      // 'soulPalace'
+Brightness.MIAO      // 'miao'
+
+const soul = chart.palace(PalaceName.SOUL)!;
+soul.has([MajorStar.ZIWEI]);
+soul.hasMutagen(Mutagen.LU);
+star.key === MajorStar.ZIWEI;   // true
+```
+
+In TypeScript the parameter types are those unions, so a misspelled literal fails at compile time.
+
 ### Rust: the enums themselves
 
 The Rust side needs no key fields — the structs hold enums to begin with, and translation happens
@@ -122,7 +142,7 @@ Brightness::Miao.as_key();    // "miao"
 
 The same birthday is charted in all six chart languages and every key field must match one for one —
 a line held by the binding contract test (`golden_contract`) and by the end-to-end golden tests on
-the Go and Python sides.
+the Go, Python and JavaScript sides.
 
 So this code gives the same answer in every chart language:
 

@@ -1,6 +1,6 @@
 {
   "title": "x-iztro",
-  "description": "紫微斗数排盘库，Rust 核心 + 三语言绑定",
+  "description": "紫微斗数排盘库，Rust 核心 + 多语言绑定",
   "icon": "Sparkles",
   "root": true,
   "pages": [

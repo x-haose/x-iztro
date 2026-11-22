@@ -44,12 +44,12 @@ x-iztro **只判定组合是否成立，不给任何评价**——断语属于�
    所以这部分不像排盘那样有逐字段对照的金标数据。代之以四层测试：
    每条规则的正反例单测（约 80 个）、来源页 32 张示例盘的真实盘复现、
    tier1 那 1,560 张盘上的批量合理性与不变量检查（含每个格局的命中盘数统计），
-   以及 4 张盘 × 6 种语言的输出快照——快照由 Rust 写基线，Python 与 Go 读同一批文件比对，
-   三侧结果必须逐字节一致。
+   以及 4 张盘 × 6 种语言的输出快照——快照由 Rust 写基线，Python、Go、JavaScript 读同一批文件比对，
+   各侧结果必须逐字节一致。
 
 ## 一次命中长什么样
 
-一次命中就是一个 `PatternHit`，字段在三种编程语言里同名（大小写随语言习惯；
+一次命中就是一个 `PatternHit`，字段在各编程语言里同名（大小写随语言习惯；
 唯 Rust 结构体把 `palace_index` 叫 `palace`，序列化 DTO 的键统一是 `palaceIndex`）：
 
 | 字段 | 说明 |
@@ -65,7 +65,7 @@ x-iztro **只判定组合是否成立，不给任何评价**——断语属于�
 
 拿一张盘列出它的全部格局：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -100,6 +100,20 @@ hits, _ := chart.Patterns(nil)
 
 for _, h := range hits {
     fmt.Println(h.Name, h.PalaceName)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('1985-5-3', 9, 'male');
+
+for (const hit of chart.patterns()) {
+  console.log(hit.name, hit.palaceName);
 }
 ```
 
@@ -159,7 +173,7 @@ x-iztro 不把它当成格条件，只标注）；文星朝命的 `broken` 表�
 在大限视角下重跑本命规则即可。运限视角**没有身宫**，
 「身命」类格局在运限层只判该层命宫。
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -186,6 +200,16 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 hits, _ := h.Patterns(iztro.ScopeDecadal, nil)
 for _, x := range hits {
     fmt.Printf("%s %s %q\n", x.Name, x.Scope, x.Variant)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const h = chart.horoscope('2025-6-1', 0);
+for (const hit of h.patterns(Scope.DECADAL)) {
+  console.log(hit.name, hit.scope, hit.variant);
 }
 ```
 
@@ -390,7 +414,7 @@ print([h.name for h in chart.patterns(
 
 ## 格局释义在知识包里
 
-这一页与三个 API 参考页讲的是**判定**：哪几颗星怎么凑在一起才算成格。
+这一页与各语言的 API 参考页讲的是**判定**：哪几颗星怎么凑在一起才算成格。
 成格之后「这条格局意味着什么」是解读，属于门派观点，
 放在[知识包](/zh/docs/guide/guides/knowledge-pack)里——
 内嵌的默认包给了 64 条格局各自的古籍引文、成立条件的文字描述与解读正文。

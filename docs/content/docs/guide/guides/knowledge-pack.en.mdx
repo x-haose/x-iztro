@@ -55,7 +55,7 @@ The text has been edited by x-iztro into third-person reference prose (declared 
 
 <Callout type="warn" title="The default pack is zh-CN only">
 There is no bundled pack for the other five languages: Rust's `KnowledgePack::builtin` returns
-`None`, Python and Go raise `invalid_argument`. For another language, write your own pack — or hand
+`None`, Python, Go and JavaScript raise `invalid_argument`. For another language, write your own pack — or hand
 the Chinese entries to an LLM along with the chart and let it translate as it interprets.
 </Callout>
 
@@ -190,7 +190,7 @@ wholesale), or add topics of your own.
 
 ## Reading a pack
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -248,6 +248,24 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { KnowledgePack, MajorStar } from 'x-iztro';
+
+const pack = KnowledgePack.builtin();
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+
+console.log(ziwei.name, ziwei.attributes.aliases);
+console.log(pack.starIntro(MajorStar.ZIWEI)!.slice(0, 12));
+```
+
+```text
+紫微 [ '帝王星', '老板星', '俸禄星' ]
+紫微星号称 `帝王星`，
+```
+
+</Tab>
 </Tabs>
 
 A key that is not in the pack comes back empty everywhere: `None` in Rust and Python, `nil` in Go
@@ -257,7 +275,7 @@ A key that is not in the pack comes back empty everywhere: `None` in Rust and Py
 
 The `key` on a pattern hit is exactly the key used in the pack's `patterns` section:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -310,6 +328,23 @@ for _, hit := range hits {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+
+for (const hit of chart.patterns()) {
+  const entry = pack.pattern(hit.key)!;
+  console.log(hit.name, '|', entry.quotes![0]);
+}
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+```
+
+</Tab>
 </Tabs>
 
 Stars work the same way: take each star's `key` from the chart to `pack.star(key)`, a palace's
@@ -330,7 +365,7 @@ material on top:
 
 The horoscope scopes go only down to the precision of the horoscope's target: hourly for a date,
 yearly for a lunar year, monthly for a lunar month — the finer scopes belong to a representative day
-the kernel picked and stay out of the sub-pack. All three languages take the horoscope object and
+the kernel picked and stay out of the sub-pack. Every language takes the horoscope object and
 follow its precision.
 
 The pattern criteria are optional: Rust takes `for_astrolabe_with(&chart, &PatternConfig)` /
@@ -347,7 +382,7 @@ sub-pack cut from the default pack for the 2000-8-16 Yin-hour female chart: 108 
 4 mutagens for the natal chart, about 75 KB serialised (the full pack is about 219 KB); the
 2025-1-1 horoscope adds flowing stars and each scope's patterns for 158 stars / 16 patterns.
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -386,9 +421,21 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+let sub = pack.forAstrolabe(chart);
+console.log(sub.stars().length, sub.patterns().length, sub.mutagen('sihuaLu') !== undefined, sub.palace('soulPalace'));
+
+sub = pack.forHoroscope(chart.horoscope('2025-1-1', 0));
+console.log(sub.stars().length, sub.patterns().length);
+```
+
+</Tab>
 </Tabs>
 
-All three sides agree: `108 1 4 0` and `158 16` (Python's first line ends `True None`). The
+Every side agrees: `108 1 4 0` and `158 16` (Python's first line ends `True None`, JavaScript's `true undefined`). The
 to_text-with-readings form selects by the same rule: every star and pattern in the sub-pack has a
 reading entry in the text (except the twelve gods — the sub-pack includes them, to_text writes no
 readings for them).
@@ -420,7 +467,7 @@ the reading for 紫府同宫, leaving everything else untouched:
 
 Merging produces a new pack:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -467,15 +514,30 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { readFile } from 'node:fs/promises'; // in a browser, fetch the text instead
+
+const base = KnowledgePack.builtin();
+const overlay = KnowledgePack.fromJSON(await readFile('my-school.json', 'utf8'));
+const pack = base.merged(overlay);
+
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+console.log(ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+console.log(pack.patternIntro(PatternKey.ZI_FU_TONG_GONG));
+```
+
+</Tab>
 </Tabs>
 
-All three produce the same result: Ziwei keeps its `name` (紫微) and `chemistry` (尊贵) while
+Every language produces the same result: Ziwei keeps its `name` (紫微) and `chemistry` (尊贵) while
 `intro` and `aliases` come from the overlay; 紫府同宫 keeps its `quotes` and `conditions` and takes
 the new `intro`.
 
 <Callout type="info">
-Merging is implemented once, in the Rust core. Python's `merged` and Go's `Merged` both call into
-it, so the merged result is byte-identical across the three languages instead of each side
+Merging is implemented once, in the Rust core. Python's and JavaScript's `merged` and Go's `Merged` all call into
+it, so the merged result is byte-identical across the languages instead of each side
 re-implementing the rules.
 </Callout>
 
@@ -530,4 +592,4 @@ layer, not to this library.
 The readings in the default pack come from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
 protocol, the editorial rewrite of the default pack, the 55 cross-reference entries such as the
-flowing stars, every summary, the 13 topics and the three-language API are x-iztro's own work.
+flowing stars, every summary, the 13 topics and the API in every language are x-iztro's own work.

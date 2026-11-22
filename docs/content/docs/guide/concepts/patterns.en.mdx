@@ -51,12 +51,12 @@ principles this engine follows:
    positive and negative unit tests per rule (around 80 of them); a reproduction of all 32 example
    charts from the source page on real charts; a bulk sanity and invariant sweep over the 1,560
    tier-1 charts, including a per-pattern count of how many charts it hits; and output snapshots of
-   4 charts across 6 languages — Rust writes the baseline, Python and Go read the same files back,
-   and all three sides must agree byte for byte.
+   4 charts across 6 languages — Rust writes the baseline, Python, Go and JavaScript read the same files back,
+   and every side must agree byte for byte.
 
 ## What one hit looks like
 
-A hit is a `PatternHit`. The fields have the same names in all three programming languages (casing
+A hit is a `PatternHit`. The fields have the same names in every programming language (casing
 follows each language's convention; the one exception is Rust, whose struct calls `palace_index`
 simply `palace` — the serialized DTO key is `palaceIndex` everywhere):
 
@@ -73,7 +73,7 @@ simply `palace` — the serialized DTO key is `palaceIndex` everywhere):
 
 Listing every pattern on a chart:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -108,6 +108,20 @@ hits, _ := chart.Patterns(nil)
 
 for _, h := range hits {
     fmt.Println(h.Name, "|", h.PalaceName)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('1985-5-3', 9, 'male');
+
+for (const hit of chart.patterns()) {
+  console.log(hit.name, hit.palaceName);
 }
 ```
 
@@ -174,7 +188,7 @@ its benefit is enjoyed" falls out for free — it is just the natal rules re-run
 A horoscope view **has no Body palace**, so "Body-or-Soul" patterns are judged only at that level's
 Soul palace there.
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -201,6 +215,16 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 hits, _ := h.Patterns(iztro.ScopeDecadal, nil)
 for _, x := range hits {
     fmt.Printf("%s %s %q\n", x.Name, x.Scope, x.Variant)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const h = chart.horoscope('2025-6-1', 0);
+for (const hit of h.patterns(Scope.DECADAL)) {
+  console.log(hit.name, hit.scope, hit.variant);
 }
 ```
 
@@ -420,7 +444,7 @@ Shen, Si or Hai, so the palace is always one of those four.
 
 ## Pattern readings live in a knowledge pack
 
-This page and the three API references cover **judgement**: which stars in which arrangement make a
+This page and the API references cover **judgement**: which stars in which arrangement make a
 pattern form. What a formed pattern then *means* is interpretation, and interpretation is a school's
 opinion, so it lives in a [knowledge pack](/en/docs/guide/guides/knowledge-pack) — the bundled
 default pack carries classical quotations, a prose description of the conditions and a reading for
