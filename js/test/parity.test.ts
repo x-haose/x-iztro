@@ -132,6 +132,22 @@ test('流耀判断三者一致', () => {
   assert.notEqual(h.notHaveHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, probe), has);
 });
 
+test('运限四化按该层天干落在该层的宫位', () => {
+  // 2024-10-1：大限庚干（太阳禄、武曲权、太阴科、天同忌），流年甲干（廉贞禄、破军权、武曲科、太阳忌）。
+  // 大限兄弟与流年兄弟都在卯宫（太阳、天梁），同一颗太阳在两层分别化禄、化忌
+  const h = chart.horoscope('2024-10-1', 0);
+  assert.equal(h.hasHoroscopeMutagen(PalaceName.SIBLINGS, Scope.DECADAL, Mutagen.LU), true);
+  assert.equal(h.hasHoroscopeMutagen(PalaceName.SIBLINGS, Scope.YEARLY, Mutagen.JI), true);
+  assert.equal(h.hasHoroscopeMutagen(PalaceName.SIBLINGS, Scope.YEARLY, Mutagen.LU), false);
+  assert.equal(h.hasHoroscopeMutagen(PalaceName.CHILDREN, Scope.DECADAL, Mutagen.JI), true);
+  assert.equal(h.hasHoroscopeMutagen(PalaceName.SURFACE, Scope.YEARLY, Mutagen.LU), true);
+  // 每层四化各落一宫：十二宫 × 四化里恰有四个为真，且四化各一
+  for (const scope of [Scope.DECADAL, Scope.YEARLY]) {
+    const hits = Object.values(PalaceName).flatMap((name) => MUTAGEN_ORDER.filter((m) => h.hasHoroscopeMutagen(name, scope, m)));
+    assert.deepEqual(hits.sort(), [...MUTAGEN_ORDER].sort(), scope);
+  }
+});
+
 test('运限持有发起它的星盘，免传星盘与显式传盘一致', () => {
   const h = chart.horoscope('2024-10-1', 0);
   assert.equal(h.astrolabe(), chart);
