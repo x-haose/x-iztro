@@ -439,8 +439,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
    `cargo check` 与 `cd examples/rust && cargo check` 分别刷新两处 Cargo.lock——发版走
    `cargo publish --locked`，lock 里本包版本不同步会挂；示例经 `path` 依赖本包，
    它的 lock 不同步则首次运行示例即产生脏工作区。
-   README 与文档站的安装写法带版本号（`cargo add x-iztro@0.8`、`x-iztro = "0.8"`、`pip install "x-iztro~=0.8.0"`、
-   `go get …/go/iztro@v0.8.0`、`npm install x-iztro@0.8`），升次版本号时 `git grep` 旧版本号一并改；
+   README 与文档站的安装写法带版本号（`cargo add x-iztro@0.9`、`x-iztro = "0.9"`、`pip install "x-iztro~=0.9.0"`、
+   `go get …/go/iztro@v0.9.0`、`npm install x-iztro@0.9`），升次版本号时 `git grep` 旧版本号一并改；
    含破坏性变更的版本在文档站「关于」下写升级指南（如 `upgrade-0-7`），CHANGELOG 与发布说明链接到它。
    **版本号忘了改不会报错**：release.yml 只在 PR 本身改了版本号（头提交与分出点的 `Cargo.toml` 版本不同）时发版，
    没改就打印一行跳过并成功退出，PR 合并、CI 全绿、什么都没发。合并后按第 4 步核验实际产物。

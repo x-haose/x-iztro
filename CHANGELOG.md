@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-23
+
 ### 变更（breaking）
 
 逐条的改法与各语言写法见[从 0.8 升级到 0.9](https://x-iztro.x-haose.com/zh/docs/guide/about/upgrade-0-9)。
@@ -556,7 +558,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/x-haose/x-iztro/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/x-haose/x-iztro/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/x-haose/x-iztro/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/x-haose/x-iztro/compare/v0.6.1...v0.7.0
