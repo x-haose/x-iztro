@@ -44,7 +44,7 @@ function yearLines(y: number): string[] {
   return lines;
 }
 
-// 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、尾月落在公历 10000 年的 9999 年
+// 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、腊月后段落在公历 10000 年的 9999 年
 for (const y of [1, 237, 1582, 2023, 2024, 9999]) {
   test(`农历 ${y} 年与 lunar-typescript 一致`, () => {
     const digest = createHash('sha256').update(yearLines(y).join('\n')).digest('hex').slice(0, 32);

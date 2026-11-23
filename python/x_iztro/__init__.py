@@ -224,7 +224,6 @@ __all__ = [
     "i18n",
     "utils",
     "query",
-    "calendar",
     "plugin",
     "knowledge",
     "reverse",

@@ -89,7 +89,7 @@ fn check(keep: impl Fn(i64) -> bool) -> (usize, Vec<i64>) {
 }
 
 /// 历法分支与边界：首尾年份、历史闰月特例（37、75）、景初与武周改月名（237-239、689-701）、
-/// 改历（1582、1583）、公历 10000 年的尾月（9999）、闰月年份（2023、2025）；其余每 97 年取一年。
+/// 改历（1582、1583）、腊月后段落在公历 10000 年的 9999 年、闰月年份（2023、2025）；其余每 97 年取一年。
 const SAMPLE_YEARS: &[i64] = &[
     1, 2, 37, 75, 237, 238, 239, 689, 697, 700, 701, 1582, 1583, 1645, 2023, 2024, 2025, 2057, 9999,
 ];
@@ -151,6 +151,26 @@ fn solar_year_one_starts_in_lunar_year_zero() {
             lunar_month: 11,
             lunar_day: 18,
             is_leap: false
+        }
+    );
+}
+
+#[test]
+fn lunar_year_9999_ends_in_solar_year_10000() {
+    let months = lunar_months(9999).unwrap();
+    assert!(months.iter().all(|m| m.first_day.solar_year == 9999));
+    let last = months.last().unwrap();
+    assert_eq!((last.month, last.is_leap, last.day_count), (12, false, 29));
+    let in_10000: Vec<u32> = (1..=last.day_count)
+        .filter(|&d| lunar_to_solar(9999, 12, d, false).unwrap().solar_year == 10000)
+        .collect();
+    assert_eq!(in_10000, (3..=29).collect::<Vec<_>>());
+    assert_eq!(
+        lunar_to_solar(9999, 12, 3, false).unwrap(),
+        RawSolarDate {
+            solar_year: 10000,
+            solar_month: 1,
+            solar_day: 1
         }
     );
 }

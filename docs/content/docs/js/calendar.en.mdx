@@ -74,10 +74,11 @@ for (const m of calendar.lunarMonths(2023).slice(0, 4)) {
 A few ancient years, matching lunar-typescript, are a month short: lunar year 237 has 11 months and no third
 month. When iterating months, go by the returned list rather than looping 1–12.
 </Accordion>
-<Accordion title="The last months of lunar year 9999 fall in Gregorian 10000">
-The first days of the last one or two months of lunar year 9999 are in Gregorian year 10000, so
-`firstDay.solarYear` is 10000. Those days cannot be passed on to functions that take a Gregorian date
-(charting, `calendar.solarToLunar`), which accept 1–9999 only.
+<Accordion title="The last 27 days of lunar year 9999 fall in Gregorian 10000">
+The 12th month of lunar year 9999 begins on 9999-12-30; every month's first day is within Gregorian 9999, so
+`firstDay.solarYear` is never 10000. Days 3 to 29 of that month — 27 days — fall in Gregorian year 10000, and
+`calendar.lunarToSolar` returns `solarYear` 10000 for them. Those days cannot be passed on to entry points that take a
+Gregorian year 1–9999 (charting, `calendar.solarToLunar`).
 </Accordion>
 </Accordions>
 

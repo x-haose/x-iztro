@@ -10,7 +10,8 @@ package iztro
 
 // RawSolarDate 为数字化公历日期；1582-10-15 以前为儒略历日期。
 type RawSolarDate struct {
-	// SolarYear 为公历年；农历 9999 年最后一两个月落在公历 10000 年
+	// SolarYear 为公历年；农历 9999 年腊月初三起的 27 天落在公历 10000 年，LunarToSolar 对它们返回 10000；
+	// 各月初一都在 9999 年内
 	SolarYear int `json:"solarYear"`
 	// SolarMonth 为公历月（1-12）
 	SolarMonth int `json:"solarMonth"`

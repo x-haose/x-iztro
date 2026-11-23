@@ -29,7 +29,7 @@ from x_iztro import (
 GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "golden" / "calendar_api.csv"
 EXPECTED = dict(line.split(",") for line in GOLDEN.read_text().splitlines())
 
-# 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、尾月落在公历 10000 年的 9999 年
+# 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、腊月后段落在公历 10000 年的 9999 年
 YEARS = [1, 237, 1582, 2023, 2024, 9999]
 
 

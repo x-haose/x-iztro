@@ -70,9 +70,10 @@ for (const m of calendar.lunarMonths(2023).slice(0, 4)) {
 个别古代年份与 lunar-typescript 一致地少一个月：农历 237 年只有 11 个月、没有三月。
 按 1–12 循环取月份时以返回的列表为准。
 </Accordion>
-<Accordion title="农历 9999 年的尾月落在公历 10000 年">
-农历 9999 年最后一两个月的初一在公历 10000 年，`firstDay.solarYear` 为 10000。
-这些日子不能再交给公历入参的函数（排盘、`calendar.solarToLunar`），那边只收 1–9999 年。
+<Accordion title="农历 9999 年腊月的后 27 天在公历 10000 年">
+农历 9999 年腊月初一是 9999-12-30，各月初一都在公历 9999 年内，`firstDay.solarYear` 不会是 10000；
+腊月初三至廿九这 27 天落在公历 10000 年，`calendar.lunarToSolar` 对它们返回的 `solarYear` 为 10000。
+这些日子不能再交给只收公历 1–9999 年的入口（排盘、`calendar.solarToLunar`）。
 </Accordion>
 </Accordions>
 

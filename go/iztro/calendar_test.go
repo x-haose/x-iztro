@@ -80,7 +80,7 @@ func TestCalendarMatchesLunarTypescript(t *testing.T) {
 		year, hash, _ := strings.Cut(line, ",")
 		expected[year] = hash
 	}
-	// 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、尾月落在公历 10000 年的 9999 年
+	// 闰月年、无闰月年、缺三月的 237 年、改历的 1582 年、腊月后段落在公历 10000 年的 9999 年
 	for _, y := range []int{1, 237, 1582, 2023, 2024, 9999} {
 		sum := sha256.Sum256([]byte(strings.Join(calendarYearLines(t, y), "\n")))
 		if got := hex.EncodeToString(sum[:])[:32]; got != expected[fmt.Sprint(y)] {

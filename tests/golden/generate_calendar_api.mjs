@@ -5,7 +5,7 @@
  * - `M 月,闰(0/1),天数,初一公历` —— 该年各月，按 LunarYear.getMonthsInYear 的先后；
  * - `P 干序,支序` —— 该年首月初一的年干支（正月初一换年，甲 = 0、子 = 0）；
  * - `D 月,闰,日,公历` —— 该年每一天对应的公历日期（Lunar.fromYmd(...).getSolar().toYmd()）。
- * 公历写 `YYYY-MM-DD`；农历 9999 年最后的月份落在公历 10000 年。
+ * 公历写 `YYYY-MM-DD`；农历 9999 年腊月初三起的 27 天落在公历 10000 年。
  *
  * Rust 侧 tests/calendar_api.rs 用公开入口（lunar_months、lunar_year_pillar、lunar_to_solar）
  * 逐行重建同一规范化串比对，并对每一天检查 solar_to_lunar 换回原日期。
