@@ -172,9 +172,9 @@ def to_json(self, **kwargs: Any) -> str
 - `to_dict` 返回深拷贝，怎么改都不影响原包。
 - `to_json` 的 `ensure_ascii` 默认为 `False`（中文原样输出），
   其余 `kwargs` 原样传给 `json.dumps`，例如 `pack.to_json(indent=2)`。
-- 两个构造方法都**校验格式版本**，与 Rust 内核解析同语义：非对象、`schema` 缺失或为 0、
-  `schema` 高于本库支持的版本都抛 `IztroError`（`invalid_argument`）。
-  结构不做深校验：字段不认识就是取不到值。
+- 两个构造方法都先经 [`check`](#check) 校验，有 error 级问题（缺 `schema`、缺 `id` / `version` / `language`、
+  字段类型不符、未知标识、正文含 HTML 等）即抛 `IztroError`（`invalid_argument`），信息逐条列出全部 error 级问题，
+  异常的 `issues` 属性是完整的问题列表（含 warning）。warning 级问题不影响构造。
 
 **示例**　`my-school.json` 是一份覆盖包，完整样例见
 [知识包指南](/zh/docs/guide/guides/knowledge-pack#写一份覆盖包)：
@@ -188,6 +188,50 @@ print(overlay.id, overlay.extends)
 raw = overlay.to_dict()
 raw["stars"]["ziweiMaj"]["intro"] = "再改一次"
 print(overlay.star_intro("ziweiMaj"))  # to_dict 是深拷贝，原包不受影响
+```
+
+---
+
+## check
+
+**用途**　逐条校验一份包，一次返回全部问题。规则、级别与全部问题种类见
+[知识包指南 · 校验一份包](/zh/docs/guide/guides/knowledge-pack#校验一份包)。
+
+**签名**
+
+```python
+@staticmethod
+def check(raw: Any, *, base: KnowledgePack | None = None) -> list[KnowledgeIssue]
+
+@dataclass(frozen=True)
+class KnowledgeIssue:
+    level: str                    # "error" / "warning"
+    path: tuple[str | int, ...]   # 对象键为 str、数组下标为 int
+    code: KnowledgeIssueCode      # StrEnum，如 KnowledgeIssueCode.UNKNOWN_KEY
+    params: dict[str, Any]
+    message: str                  # 带点分路径的英文说明
+```
+
+`raw` 不是 dict（如 `None`、列表）也作为 `not_object` 问题返回。`raw` 含 JSON 表示不了的值、`base` 不是
+`KnowledgePack` 时抛 `TypeError`。
+
+**示例**
+
+```python
+import json
+from x_iztro import KnowledgePack
+
+raw = json.loads('''{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}''')
+for issue in KnowledgePack.check(raw, base=KnowledgePack.builtin()):
+    print(issue.level, issue.message)
+```
+
+**输出**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 ```
 
 ---

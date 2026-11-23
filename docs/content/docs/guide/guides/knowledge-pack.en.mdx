@@ -541,6 +541,175 @@ it, so the merged result is byte-identical across the languages instead of each 
 re-implementing the rules.
 </Callout>
 
+## Checking a pack
+
+Before importing someone else's pack or publishing your own, `check` lists every place it departs from the spec:
+each issue carries a level, a JSON path, a code and parameters, and all issues come back at once rather than
+stopping at the first. Input that is not an object, or JSON that does not parse, comes back as an issue too, not as
+an exception; only usage errors (a base that is not a `KnowledgePack`, values JSON cannot represent) throw.
+
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::{KnowledgePack, Language};
+
+let raw: serde_json::Value = serde_json::from_str(r#"{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}"#)?;
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+for issue in KnowledgePack::check(&raw, Some(base)) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import json
+from x_iztro import KnowledgePack
+
+raw = json.loads('''{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}''')
+for issue in KnowledgePack.check(raw, base=KnowledgePack.builtin()):
+    print(issue.level, issue.message)
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+base, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+issues, err := iztro.CheckKnowledgePack([]byte(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`), base)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```js
+import { KnowledgePack } from 'x-iztro';
+
+const raw = JSON.parse(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`);
+for (const issue of KnowledgePack.check(raw, { base: KnowledgePack.builtin() })) {
+  console.log(issue.level, issue.message);
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+</Tabs>
+
+The fields of an issue:
+
+| Field | Description |
+| --- | --- |
+| `level` | `error` or `warning`, see below |
+| `path` | JSON path: object keys as strings, array indexes as numbers; an empty path is the pack itself |
+| `code` | The kind of issue, see the table below |
+| `params` | Extra data whose keys depend on `code`; `suggestion` is the closest known key, see below |
+| `message` | An English description with the dotted path, for logs; build UI text from `code` and `params` |
+
+With a base, the base-relative reminders are reported too (an empty string overriding a base value, a language or
+`extends` that does not match the base), and the summary rules judge each entry as it will be after merging onto
+the base: an overlay that replaces a long body without a summary makes the base's old summary stale in the merge,
+so it is reported as missing a summary. Without a base, a pack that declares `extends` cannot tell on its own
+whether bodies and summaries pair up or which palaces a topic takes, so those two kinds are not reported.
+
+### Levels and construction
+
+- **error**: breaks a "must / must not" of the spec, or makes the core fail where it uses that spot. The pack
+  constructors (Rust `from_json` / `from_value`, Python `from_dict` / `from_json`, Go `ParseKnowledgePack`,
+  JavaScript `fromObject` / `fromJSON`, and overlay objects passed to `merged`) reject a pack with any error-level
+  issue as `invalid_argument`, with every error-level issue in the message; the Python and JavaScript exceptions and
+  Go's `*Error` also carry `issues`, the full list.
+- **warning**: "should / should not", fields dropped when parsed, literal-match heuristics, and base-relative
+  reminders. Reported, never rejected.
+
+### Issue codes
+
+§ in the Source column refers to `knowledge/SCHEMA.md` in the repository; "default-pack test" refers to the
+assertions `tests/knowledge_pack.rs` makes about the bundled default pack. `suggestion?` means it may be absent.
+
+| code | Level | Meaning | Source | params |
+| --- | --- | --- | --- | --- |
+| `invalid_json` | error | The text is not valid JSON (only entry points that take text report it) | §7 | `message` |
+| `not_object` | error | The pack or an entry is not a JSON object | §2 | — |
+| `schema_missing` | error | `schema` is missing, null or 0 | §2, §7 "must be rejected" | — |
+| `schema_unsupported` | error | `schema` is newer than this library supports | §7 | `value`, `supported` |
+| `wrong_type` | error | A field has the wrong type | Types in the §2 and §4 tables | `expected` |
+| `required_missing` | error | `id` / `version` / `language` is missing or empty | §2 "required" | — |
+| `unknown_language` | error | `language` is not an x-iztro language code | §2 | `value`, `suggestion`? |
+| `unknown_key` | error | An entry key (including a combination's other star) is not a key the core knows | §3; the default-pack test asserts every key | `key`, `suggestion`? |
+| `combination_key_not_major` | error | A combination's other star is a star key but not a major star | §4.1 "keyed by the other major star" | `key` |
+| `invalid_value` | error | `category`, `yinYang`, `fiveElements` or `stem` is outside its allowed set | Values in §4.1 and §4.1.1 | `value`, `allowed`, `suggestion`? |
+| `invalid_slug` | error | A concept or topic slug uses characters other than lowercase letters, digits and hyphens | §4.4, §4.5 | `key` |
+| `unknown_palace` | error | A topic palace is not a palace key, `bodyPalace` or `originalPalace` | §4.5; topic text fails on it | `value`, `suggestion`? |
+| `html_in_text` | error | Text contains an HTML tag or comment | §5 "must not use HTML tags" | `snippet` |
+| `image_in_text` | error | Text contains a Markdown image | §5 "must not use images" | `snippet` |
+| `external_link` | error | Text contains an `http(s)://` URL or a `](//` link (bare URLs render as links too) | §5 "must not use external links" | `url` |
+| `unknown_field` | warning | A field outside the spec, dropped when parsed | §2, §7 implementation behaviour: dropped | `suggestion`? |
+| `empty_string` | warning | A field is an empty string | §4 "must not express absence with an empty string" | — |
+| `summary_missing` | warning | Body wider than 240 with no summary (the summary layer fails on it) | §5.1 "should" have a summary | `width`, `limit` |
+| `summary_not_needed` | warning | Body at most 240 wide but a summary is given | §5.1 "should not" add a summary | `width`, `limit` |
+| `summary_too_wide` | warning | Summary wider than 100 | §5.1 "should" be at most 100 | `width`, `limit` |
+| `summary_multi_paragraph` | warning | Summary is not a single paragraph | §5.1 "should be one paragraph" | — |
+| `summary_without_body` | warning | A summary has no matching body | §5.1 bodies and summaries pair; default-pack test | — |
+| `page_reference` | warning | Text contains a page reference such as 见上表, 详见, 点击 | §5 "must not rely on page context" (literal match) | `phrase` |
+| `topic_without_palaces` | warning | A topic selects no palace | Default-pack test: every topic selects a palace | — |
+| `overrides_with_empty` | warning | An empty string overrides a base value (only with a base) | §4, §6.1: an empty string counts and overrides | `base` |
+| `language_differs_from_base` | warning | Language differs from the base pack (only with a base) | §6.2: the merge takes the overlay's language | `value`, `base` |
+| `extends_differs_from_base` | warning | `extends` differs from the base pack's `id` (only with a base) | §2: `extends` names the base pack's `id` | `value`, `base` |
+
+The bundled default pack checks clean.
+
+### The closest key
+
+`unknown_key`, `unknown_language`, `unknown_palace`, `invalid_value` and `unknown_field` give a `suggestion` when
+one is found: first a candidate differing only in case (language codes also accept underscores, so `zh_cn` suggests
+`zh-CN`); otherwise the candidate at the smallest edit distance. Insertions, deletions, substitutions and swaps of two
+adjacent characters each count 1 (a swap is the commonest slip in typing a key; `ziwieMaj` is 1 away from
+`ziweiMaj`), capped at a third of the misspelt word's length (counting at least 3), the same threshold rustc uses when
+it suggests a name; beyond the cap no suggestion is given, rather than forcing an unrelated word. Ties go to the key
+listed first.
+
+### Only part of the tone rules applies
+
+The default pack has a tone test that bans phrasings such as 读者, 大家肯定, 韭菜, 见上表 and 点击. The part that
+points at page layout or site features (见上表, 下表中, 前面提到, 详见, 参见, 本站, 点击 …) falls under §5 "must not
+rely on page context", which holds for any pack; `page_reference` checks only that part, by literal match, as a
+warning. The rest — colloquialisms and conversational leftovers — is the default pack's own "third-person reference
+voice" (§8); the spec does not ask user packs to adopt it, so it is not checked.
+
 ## Merge rules
 
 Starting from the base pack, each section (`stars`, `patterns`, `palaces`, `mutagens`, `concepts`)

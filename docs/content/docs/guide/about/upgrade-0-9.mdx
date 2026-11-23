@@ -1,0 +1,92 @@
+---
+title: 从 0.8 升级到 0.9
+description: 0.9 的知识包构造按校验结果拒绝不合规范的包：受影响的写法、怎样找出问题、各语言前后对照。
+---
+
+*适合：在用自定义知识包的开发者*
+
+0.9 新增知识包校验（`check`），并让构造知识包的入口按校验结果拒绝不合规范的包。这是唯一的不兼容改动；
+不用自定义知识包（只用内嵌默认包或不带释义）的代码不受影响。
+
+```toml
+x-iztro = "0.9"
+```
+
+```bash
+pip install "x-iztro~=0.9.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.9.0
+npm install x-iztro@0.9
+```
+
+## 知识包构造按校验结果拒绝
+
+**受影响**：以下入口收到有 error 级问题的包时，0.8 照常构造，0.9 报 `invalid_argument`：
+
+| 语言 | 入口 |
+| --- | --- |
+| Rust | `KnowledgePack::from_json`、`from_value`；绑定线协议里收包对象的 kind（`mergeKnowledgePacks`、带 `knowledge` 对象的文本与取材） |
+| Python | `KnowledgePack.from_dict`、`from_json`，`merged` 收到的 dict |
+| Go | `ParseKnowledgePack`，`Merged` 与带自定义包的文本、取材（包在内核侧校验） |
+| JavaScript / TypeScript | `KnowledgePack.fromObject`、`fromJSON`，`merged` 收到的普通对象 |
+
+0.8 只查 `schema`，以下问题都能通过，进了包也只会让条目静默失效或在用到时才报错：
+
+- 缺 `id` / `version` / `language`，或 `language` 不是 x-iztro 语言码；
+- 条目键不是内核认识的标识（如 `ziweiMjj`），双星组合的对方不是主星；
+- 字段类型不符（Python、JavaScript 在 0.8 构造时不查，合并或出文本时才报第一处）；
+- `category`、`yinYang`、`fiveElements`、`stem` 取值越界，术语与主题的 slug 不合规范，主题宫位写错；
+- 正文含 HTML 标签、图片或站外链接。
+
+完整的种类、级别与出处见[知识包 · 校验一份包](/zh/docs/guide/guides/knowledge-pack#校验一份包)。
+warning 级问题（规范外的字段、空字符串、摘要写法、页面引用等）只报告，不影响构造。
+
+**改法**：升级前用 `check` 把自己的包跑一遍，按 error 逐条改；路径与 `suggestion` 指出了位置和最接近的写法。
+
+```rust title="Rust"
+let raw: serde_json::Value = serde_json::from_str(&std::fs::read_to_string("my-school.json")?)?;
+for issue in KnowledgePack::check(&raw, None) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+```python title="Python"
+import json
+from x_iztro import KnowledgePack
+
+with open("my-school.json", encoding="utf-8") as f:
+    for issue in KnowledgePack.check(json.load(f)):
+        print(issue.level, issue.message)
+```
+
+```go title="Go"
+data, _ := os.ReadFile("my-school.json")
+issues, err := iztro.CheckKnowledgePack(data, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+```js title="JavaScript"
+const raw = JSON.parse(readFileSync('my-school.json', 'utf8'));
+for (const issue of KnowledgePack.check(raw)) {
+  console.log(issue.level, issue.message);
+}
+```
+
+被拒绝时，错误信息以 `invalid knowledge pack: ` 开头、逐条列出全部 error 级问题及其路径（0.8 的信息只说明 `schema`
+或第一处解析错误）。Python、JavaScript 的异常与 Go 的 `*iztro.Error` 另带 `issues`，即完整的问题列表：
+
+```python title="Python 0.9"
+try:
+    pack = KnowledgePack.from_dict(raw)
+except IztroError as e:
+    for issue in e.issues:
+        print(issue.path, issue.code)
+```
+
+Go 的 `ParseKnowledgePack` 在 0.8 是纯 Go 解析，0.9 要进 wasm 内核校验，另有 `ParseKnowledgePackContext`。
+
+完整变更见 [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md)。

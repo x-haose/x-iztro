@@ -18,6 +18,7 @@ Every failure in the package comes back as the same concrete type:
 type Error struct {
     Code    string // machine-readable category, one of the Code* constants
     Message string // the error text itself (English)
+    Issues  []KnowledgeIssue // every check issue when a knowledge pack is rejected; nil otherwise
 }
 
 func (e *Error) Error() string   // returns "iztro: " + Message

@@ -198,10 +198,9 @@ impl KnowledgePack {
 
 `from_value` 只借用值树、不复制，手上已有 `Value` 时省一次序列化往返；校验与 `from_json` 相同。
 
-**返回值**　`Result<KnowledgePack, String>`。错误是给人看的字符串，三种情况：
-JSON 语法或类型不合格式（`invalid knowledge pack: ...`）、
-`schema` 缺失或为 0（包必须声明格式版本）、
-以及 `schema` 高于 `SCHEMA_VERSION`（不做降级解析）。
+**返回值**　`Result<KnowledgePack, String>`。JSON 非法，或 [`check`](#check) 报出 error 级问题（缺 `schema`、
+缺 `id` / `version` / `language`、字段类型不符、未知标识、正文含 HTML 等）时返回错误，
+信息以 `invalid knowledge pack: ` 开头、逐条列出全部 error 级问题及其路径。warning 级问题不影响解析。
 
 <Callout type="info">
 这里返回 `String` 而不是 [`IztroError`](/zh/docs/rust/errors)：知识包是调用方自带的数据，
@@ -216,16 +215,16 @@ let pack = KnowledgePack::from_json(r#"{
     "stars": {"ziweiMaj": {"intro": "我的紫微"}}
 }"#)?;
 println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
-println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
-println!("{:?}", KnowledgePack::from_json(r#"{"id": "x"}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99, "id": "x", "version": "1", "language": "zh-CN"}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 1, "id": "x", "version": "1", "language": "zh-CN", "stars": {"ziweiMjj": {}}}"#));
 ```
 
 **输出**
 
 ```text
 Some("我的紫微")
-Err("knowledge pack schema 99 is newer than supported 1")
-Err("knowledge pack must declare \"schema\" (currently 1)")
+Err("invalid knowledge pack: schema: knowledge pack schema 99 is newer than supported 1")
+Err("invalid knowledge pack: stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)")
 ```
 
 **边界与陷阱**
@@ -235,11 +234,58 @@ Err("knowledge pack must declare \"schema\" (currently 1)")
 所有条目与字段都可选。映射类字段（`source`、`stars`、`combinations`…）写成 `null`
 等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样各语言的默认序列化产物可以互相解析。
 </Accordion>
-<Accordion title="未知的键不报错">
-`stars` 里出现不是星耀标识的键、`patterns` 里出现未知格局标识，都会照原样留在包里。
-校验键的有效性是写包者与测试的事，解析器只管格式（未知键被保留但查询不到）。
+<Accordion title="规范之外的字段被丢弃">
+条目或顶层出现规范没有的字段（如把 `intro` 写成 `intor`）不拒绝，解析后不存在；`check` 以 warning 报出。
 </Accordion>
 </Accordions>
+
+---
+
+## check
+
+**用途**　逐条校验一份包的 JSON 值，一次返回全部问题。规则、级别与全部问题种类见
+[知识包指南 · 校验一份包](/zh/docs/guide/guides/knowledge-pack#校验一份包)。
+
+**签名**
+
+```rust
+impl KnowledgePack {
+    pub fn check(raw: &serde_json::Value, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+}
+
+// x_iztro::knowledge
+pub fn check(raw: &serde_json::Value, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+pub fn check_json(json: &str, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+
+pub struct KnowledgeIssue {
+    pub level: IssueLevel,              // Error / Warning
+    pub path: Vec<PathSegment>,         // Key(String) / Index(usize)
+    pub code: IssueCode,                // as_key() 为 snake_case 代码，如 "unknown_key"
+    pub params: serde_json::Map<String, serde_json::Value>,
+}
+```
+
+`check_json` 收 JSON 文本，文本非法时返回一条 `invalid_json`。`base` 为它要叠加的底包，给出时另报相对底包的提醒，
+摘要规则按合并后的条目判断。`KnowledgeIssue` 实现 `Display`（`路径: 英文说明`），`message()` 只给说明，
+`path_string()` 给点分路径；`IssueCode::level()` 是该种问题的固定级别。
+
+**示例**
+
+```rust
+let raw: serde_json::Value = serde_json::from_str(r#"{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}"#)?;
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+for issue in KnowledgePack::check(&raw, Some(base)) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+**输出**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
 
 ---
 

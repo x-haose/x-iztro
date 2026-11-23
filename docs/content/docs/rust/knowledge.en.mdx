@@ -207,10 +207,10 @@ impl KnowledgePack {
 `from_value` borrows the value tree without copying it, saving a serialisation round trip when you
 already hold a `Value`; validation is the same as `from_json`.
 
-**Returns**　`Result<KnowledgePack, String>`. The error is a human-readable string, for three
-cases: JSON that does not fit the format (`invalid knowledge pack: ...`), a missing or zero
-`schema` (a pack must declare its format version), and a `schema` higher than `SCHEMA_VERSION`
-(no best-effort downgrade).
+**Returns**　`Result<KnowledgePack, String>`. Invalid JSON, or any error-level issue from [`check`](#check)
+(missing `schema`, missing `id` / `version` / `language`, wrong field types, unknown keys, HTML in text and so on),
+is an error whose message starts `invalid knowledge pack: ` and lists every error-level issue with its path.
+Warning-level issues do not affect parsing.
 
 <Callout type="info">
 This returns `String` rather than [`IztroError`](/en/docs/rust/errors): a knowledge pack is data the
@@ -226,16 +226,16 @@ let pack = KnowledgePack::from_json(r#"{
     "stars": {"ziweiMaj": {"intro": "我的紫微"}}
 }"#)?;
 println!("{:?}", pack.star_intro(StarKey::ZiweiMaj));
-println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99}"#));
-println!("{:?}", KnowledgePack::from_json(r#"{"id": "x"}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 99, "id": "x", "version": "1", "language": "zh-CN"}"#));
+println!("{:?}", KnowledgePack::from_json(r#"{"schema": 1, "id": "x", "version": "1", "language": "zh-CN", "stars": {"ziweiMjj": {}}}"#));
 ```
 
 **Output**
 
 ```text
 Some("我的紫微")
-Err("knowledge pack schema 99 is newer than supported 1")
-Err("knowledge pack must declare \"schema\" (currently 1)")
+Err("invalid knowledge pack: schema: knowledge pack schema 99 is newer than supported 1")
+Err("invalid knowledge pack: stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)")
 ```
 
 **Edges and traps**
@@ -246,11 +246,60 @@ Every entry and field is optional. A map field (`source`, `stars`, `combinations
 `null` is the same as leaving it out — Go serializes a nil map as `null`, and this keeps the default
 serialization of every language mutually parseable.
 </Accordion>
-<Accordion title="Unknown keys are not an error">
-A key in `stars` that is not a star key, or an unknown pattern key in `patterns`, is kept verbatim.
-Validating keys is the generator's and the tests' job; the parser only checks the format.
+<Accordion title="Fields outside the spec are dropped">
+A field the spec does not define, at the top level or in an entry (say `intor` for `intro`), is not rejected and
+is gone after parsing; `check` reports it as a warning.
 </Accordion>
 </Accordions>
+
+---
+
+## check
+
+**Purpose**　Check a pack's JSON value issue by issue, returning every issue at once. The rules, levels and all
+issue codes are in [Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack).
+
+**Signature**
+
+```rust
+impl KnowledgePack {
+    pub fn check(raw: &serde_json::Value, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+}
+
+// x_iztro::knowledge
+pub fn check(raw: &serde_json::Value, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+pub fn check_json(json: &str, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue>
+
+pub struct KnowledgeIssue {
+    pub level: IssueLevel,              // Error / Warning
+    pub path: Vec<PathSegment>,         // Key(String) / Index(usize)
+    pub code: IssueCode,                // as_key() is the snake_case code, e.g. "unknown_key"
+    pub params: serde_json::Map<String, serde_json::Value>,
+}
+```
+
+`check_json` takes JSON text and returns a single `invalid_json` issue when it does not parse. `base` is the pack it
+will be merged onto; with it, base-relative reminders are reported too and the summary rules judge the merged entry.
+`KnowledgeIssue` implements `Display` (`path: English description`); `message()` gives just the description and
+`path_string()` the dotted path; `IssueCode::level()` is the fixed level of each code.
+
+**Example**
+
+```rust
+let raw: serde_json::Value = serde_json::from_str(r#"{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+    "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}"#)?;
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+for issue in KnowledgePack::check(&raw, Some(base)) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+**Output**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
 
 ---
 

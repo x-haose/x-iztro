@@ -11,9 +11,10 @@ description: KnowledgePack 的构造、查询、合并、按盘取材，以及�
 | 成员 | 说明 |
 | --- | --- |
 | `KnowledgePack.builtin(language = 'zh-CN')` | 内嵌默认包（源自 iztro-docs，MIT）；该语言没有包抛 `IztroError` |
-| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | 读自己的包；未声明 `schema` 或版本过新抛 `IztroError`，JSON 语法错抛 `SyntaxError` |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | 读自己的包；先经 `check` 校验，有 error 级问题抛 `IztroError`（`issues` 为完整问题列表），JSON 语法错抛 `SyntaxError` |
+| `KnowledgePack.check(raw, { base? })` | 逐条校验，一次返回全部问题，见下 |
 | `toJSON()` | 包对象的深拷贝；`JSON.stringify(pack)` 即包的 JSON |
-| `merged(...overlays)` | 以本包为底依次叠加覆盖包（实例或普通对象），返回新包 |
+| `merged(...overlays)` | 以本包为底依次叠加覆盖包（实例或普通对象；普通对象先经 `fromObject` 校验），返回新包 |
 | `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | 按盘取材的子包 |
 | `schema` `id` `version` `language` `extends` `source` | 元信息 |
 | `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | 按标识取条目，没有为 `undefined` |
@@ -34,6 +35,40 @@ console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summar
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
 紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+```
+
+
+## check
+
+逐条校验一份包，一次返回全部问题。规则、级别与全部问题种类见
+[知识包指南 · 校验一份包](/zh/docs/guide/guides/knowledge-pack#校验一份包)。
+
+```ts
+KnowledgePack.check(raw: unknown, options?: { base?: KnowledgePack }): KnowledgeIssue[];
+
+interface KnowledgeIssue {
+  level: 'error' | 'warning';
+  path: (string | number)[];      // 对象键为字符串、数组下标为数字
+  code: KnowledgeIssueCode;       // 如 KnowledgeIssueCode.UNKNOWN_KEY（'unknown_key'）
+  params: Record<string, unknown>;
+  message: string;                // 带点分路径的英文说明
+}
+```
+
+`raw` 不是对象（含 `undefined`、`null`、数组）作为 `not_object` 问题返回；`raw` 含 BigInt 或循环引用、
+`base` 不是本库构造的 `KnowledgePack` 时抛 `TypeError`。`fromObject` 被拒绝时抛的 `IztroError` 带 `issues`。
+
+```js
+const raw = JSON.parse(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`);
+for (const issue of KnowledgePack.check(raw, { base: KnowledgePack.builtin() })) {
+  console.log(issue.level, issue.message);
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 ```
 
 ## merged

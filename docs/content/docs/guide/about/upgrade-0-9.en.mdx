@@ -1,0 +1,100 @@
+---
+title: Upgrading from 0.8 to 0.9
+description: In 0.9 the knowledge pack constructors reject packs that fail the check — the code it affects, how to find the problems, and before-and-after code per language.
+---
+
+*For: developers using their own knowledge packs*
+
+0.9 adds knowledge pack checking (`check`) and makes the pack constructors reject packs that break the spec. That is
+the only incompatible change; code that uses no custom pack (only the bundled default, or no readings) is unaffected.
+
+```toml
+x-iztro = "0.9"
+```
+
+```bash
+pip install "x-iztro~=0.9.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.9.0
+npm install x-iztro@0.9
+```
+
+## Pack constructors reject packs that fail the check
+
+**Affected**: given a pack with any error-level issue, these entry points built it in 0.8 and return
+`invalid_argument` in 0.9:
+
+| Language | Entry points |
+| --- | --- |
+| Rust | `KnowledgePack::from_json`, `from_value`; bridge kinds that take pack objects (`mergeKnowledgePacks`, text and chart selection with a `knowledge` object) |
+| Python | `KnowledgePack.from_dict`, `from_json`, dicts passed to `merged` |
+| Go | `ParseKnowledgePack`; `Merged` and text or chart selection with a custom pack (the core checks it) |
+| JavaScript / TypeScript | `KnowledgePack.fromObject`, `fromJSON`, plain objects passed to `merged` |
+
+0.8 checked only `schema`, so all of these passed and either left entries silently dead or failed only when used:
+
+- missing `id` / `version` / `language`, or a `language` that is not an x-iztro language code;
+- entry keys the core does not know (such as `ziweiMjj`), or a combination whose other star is not a major star;
+- wrong field types (Python and JavaScript did not check them at construction in 0.8; merging or rendering
+  reported the first one);
+- `category`, `yinYang`, `fiveElements` or `stem` outside its allowed set, malformed concept and topic slugs,
+  misspelt topic palaces;
+- HTML tags, images or external links in text.
+
+The full list of codes, levels and sources is in
+[Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack). Warning-level issues
+(fields outside the spec, empty strings, summary style, page references and so on) are reported but never block
+construction.
+
+**Change**: run `check` over your packs before upgrading and fix every error; the path and `suggestion` point at
+the spot and the closest valid spelling.
+
+```rust title="Rust"
+let raw: serde_json::Value = serde_json::from_str(&std::fs::read_to_string("my-school.json")?)?;
+for issue in KnowledgePack::check(&raw, None) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+```python title="Python"
+import json
+from x_iztro import KnowledgePack
+
+with open("my-school.json", encoding="utf-8") as f:
+    for issue in KnowledgePack.check(json.load(f)):
+        print(issue.level, issue.message)
+```
+
+```go title="Go"
+data, _ := os.ReadFile("my-school.json")
+issues, err := iztro.CheckKnowledgePack(data, nil)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+```js title="JavaScript"
+const raw = JSON.parse(readFileSync('my-school.json', 'utf8'));
+for (const issue of KnowledgePack.check(raw)) {
+  console.log(issue.level, issue.message);
+}
+```
+
+On rejection the message starts `invalid knowledge pack: ` and lists every error-level issue with its path (0.8 only
+explained `schema` or the first parse error). The Python and JavaScript exceptions and Go's `*iztro.Error` also carry
+`issues`, the full list:
+
+```python title="Python 0.9"
+try:
+    pack = KnowledgePack.from_dict(raw)
+except IztroError as e:
+    for issue in e.issues:
+        print(issue.path, issue.code)
+```
+
+Go's `ParseKnowledgePack` was pure Go in 0.8; in 0.9 it calls into the wasm core to check, and
+`ParseKnowledgePackContext` also exists.
+
+The full list of changes is in the [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md).

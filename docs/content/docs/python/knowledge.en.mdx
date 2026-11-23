@@ -176,10 +176,10 @@ def to_json(self, **kwargs: Any) -> str
 - `to_dict` returns a deep copy, so changing it never touches the pack.
 - `to_json` defaults `ensure_ascii` to `False` (Chinese stays readable); the remaining `kwargs` go
   straight to `json.dumps`, e.g. `pack.to_json(indent=2)`.
-- Both constructors **validate the format version**, with the same semantics as the Rust core's
-  parser: a non-object, a missing or zero `schema`, or a `schema` newer than this library supports
-  raises `IztroError` (`invalid_argument`). The structure is not deep-checked: an unrecognised
-  field simply yields nothing.
+- Both constructors run [`check`](#check) first and raise `IztroError` (`invalid_argument`) on any error-level
+  issue (missing `schema`, missing `id` / `version` / `language`, wrong field types, unknown keys, HTML in text and
+  so on), listing every error-level issue in the message; the exception's `issues` attribute is the full list,
+  warnings included. Warning-level issues do not affect construction.
 
 **Example**　`my-school.json` is an overlay pack; a complete sample is in the
 [knowledge pack guide](/en/docs/guide/guides/knowledge-pack#writing-an-overlay-pack):
@@ -193,6 +193,50 @@ print(overlay.id, overlay.extends)
 raw = overlay.to_dict()
 raw["stars"]["ziweiMaj"]["intro"] = "changed again"
 print(overlay.star_intro("ziweiMaj"))  # to_dict is a deep copy; the pack is untouched
+```
+
+---
+
+## check
+
+**Purpose**　Check a pack issue by issue, returning every issue at once. The rules, levels and all issue codes are
+in [Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack).
+
+**Signature**
+
+```python
+@staticmethod
+def check(raw: Any, *, base: KnowledgePack | None = None) -> list[KnowledgeIssue]
+
+@dataclass(frozen=True)
+class KnowledgeIssue:
+    level: str                    # "error" / "warning"
+    path: tuple[str | int, ...]   # object keys as str, array indexes as int
+    code: KnowledgeIssueCode      # StrEnum, e.g. KnowledgeIssueCode.UNKNOWN_KEY
+    params: dict[str, Any]
+    message: str                  # English description with the dotted path
+```
+
+A `raw` that is not a dict (`None`, a list) comes back as a `not_object` issue. A `raw` holding values JSON cannot
+represent, or a `base` that is not a `KnowledgePack`, raises `TypeError`.
+
+**Example**
+
+```python
+import json
+from x_iztro import KnowledgePack
+
+raw = json.loads('''{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}''')
+for issue in KnowledgePack.check(raw, base=KnowledgePack.builtin()):
+    print(issue.level, issue.message)
+```
+
+**Output**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 ```
 
 ---
