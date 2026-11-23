@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::stars::StarKey;
 use crate::data::types::{Brightness, Mutagen, Scope};
+use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::horoscope::{HoroscopeData, HoroscopeRef};
 
@@ -23,8 +24,7 @@ pub use keys::{ALL_PATTERNS, PatternKey};
 pub use view::ChartView;
 
 /// 日月亮度的判定依据。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BrightnessSource {
     /// 按星盘亮度表（与 iztro 逐值一致）：庙旺为明，陷与「不」为暗。
     #[default]
@@ -37,6 +37,11 @@ pub enum BrightnessSource {
     /// 日月反背一类「皆暗」的格局上。
     Positional,
 }
+
+crate::data::keyed::keyed_enum!(BrightnessSource, "brightnessSource" {
+    Table => "table",
+    Positional => "positional",
+});
 
 /// 格局判定的口径开关。字段极少：多口径的格局一律以 [`PatternHit::variant`] 报出，
 /// 这里只放会改变「事实判定」本身的数据口径。
@@ -62,8 +67,7 @@ impl Default for PatternConfig {
 }
 
 /// 一颗参与成格的星及其落宫。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StarAt {
     /// 星耀
     pub star: StarKey,
@@ -76,8 +80,7 @@ pub struct StarAt {
 }
 
 /// 一次格局命中。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternHit {
     /// 格局
     pub key: PatternKey,
@@ -123,13 +126,25 @@ impl Astrolabe {
 
 impl<'a> HoroscopeRef<'a> {
     /// 指定运限层视角的格局命中（默认口径）：`Scope::Origin` 等同本命。
-    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit> {
+    ///
+    /// # Errors
+    /// 同 [`Self::patterns_with`]。
+    pub fn patterns(&self, scope: Scope) -> Result<Vec<PatternHit>, IztroError> {
         self.patterns_with(scope, &PatternConfig::default())
     }
 
     /// 指定运限层视角的格局命中，指定口径。
-    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit> {
-        patterns_at(self.astrolabe(), self.data(), scope, config)
+    ///
+    /// # Errors
+    /// `scope` 比查询精度（[`HoroscopeRef::precision`]）细时返回 [`IztroError::InvalidArgument`]：
+    /// 那一层是内核挑的代表日的，不是查询的答案。
+    pub fn patterns_with(
+        &self,
+        scope: Scope,
+        config: &PatternConfig,
+    ) -> Result<Vec<PatternHit>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(patterns_at(self.astrolabe(), self.data(), scope, config))
     }
 }
 
@@ -141,6 +156,22 @@ pub fn patterns_at(
     config: &PatternConfig,
 ) -> Vec<PatternHit> {
     detect(&ChartView::at(astrolabe, horoscope, scope, config))
+}
+
+/// 运限只取到 `through` 层时 `scope` 层视角的格局命中：在 [`patterns_at`] 之上，
+/// `through` 不比 `scope` 细时去掉要读更细一层的格局（[`PatternKey::needs_finer_layer`]）。
+pub(crate) fn patterns_through(
+    astrolabe: &Astrolabe,
+    horoscope: &HoroscopeData,
+    scope: Scope,
+    through: Scope,
+    config: &PatternConfig,
+) -> Vec<PatternHit> {
+    let mut hits = patterns_at(astrolabe, horoscope, scope, config);
+    if through.depth() <= scope.depth() {
+        hits.retain(|h| !h.key.needs_finer_layer());
+    }
+    hits
 }
 
 #[cfg(test)]
@@ -314,9 +345,9 @@ mod tests {
         assert_eq!(v.mutagen_of(star), Some(Mutagen::Lu));
         assert!(v.has_mutagen(p, Mutagen::Lu));
         // 运限视角与本命视角各自可跑，且 Origin 等同本命
-        let _ = h.patterns(Scope::Decadal);
-        let _ = h.patterns(Scope::Yearly);
-        assert_eq!(h.patterns(Scope::Origin), a.patterns());
+        h.patterns(Scope::Decadal).unwrap();
+        h.patterns(Scope::Yearly).unwrap();
+        assert_eq!(h.patterns(Scope::Origin).unwrap(), a.patterns());
     }
 
     #[test]

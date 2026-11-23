@@ -10,6 +10,12 @@ layout in different years — which is exactly what "the decadal scope has moved
 h, _ := chart.Horoscope("2025-6-1", 0)
 ```
 
+When the question is about a year, take the horoscope of the lunar year:
+`chart.HoroscopeOfYear(2027)` — see [HoroscopeOfYear](/en/docs/go/astrolabe#horoscopeofyear).
+When it is about a month, take the horoscope of the lunar year and month:
+`chart.HoroscopeOfMonth(2025, 7)` — see [HoroscopeOfMonth](/en/docs/go/astrolabe#horoscopeofmonth).
+Their results answer only down to the scope asked about; see [Precision](#precision).
+
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again.
 
@@ -22,7 +28,7 @@ English.
 
 | Field | Type | Span | Description |
 | --- | --- | --- | --- |
-| `SolarDate` / `LunarDate` | `string` | — | The solar string and the Chinese lunar spelling of the **target** date. The birth date lives on the natal chart; read it from `h.Astrolabe().SolarDate` |
+| `SolarDate` / `LunarDate` | `string` | — | The solar string (`Y-M-D` without zero padding or time) and the Chinese lunar spelling of the **target** date; for a horoscope taken by lunar year or month, the representative day the core picked. The birth date lives on the natal chart; read it from `h.Astrolabe().SolarDate` |
 | `Decadal` | `HoroscopeScope` | Ten years | The decadal scope; the childhood scope for the years before it begins |
 | `Age` | `HoroscopeScope` | One year | The age scope, moving one palace per nominal year |
 | `Yearly` | `HoroscopeScope` | One year | The yearly scope, its palace fixed by the year's pillar |
@@ -292,6 +298,65 @@ picking a default would turn a forgotten argument into a plausible-looking wrong
 
 ---
 
+## YearlyOverviewToText
+
+**Purpose** The yearly timeline text of a run of lunar years: one row per year, for language models
+and people. Questions such as "the next few years" or "which year suits this" get every year in one
+call instead of one horoscope per year.
+
+**Signature**
+
+```go
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `fromYear` | `int` | Yes | — | First lunar year, 1–9999, inclusive |
+| `toYear` | `int` | Yes | — | Last lunar year, 1–9999, inclusive; not before `fromYear` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Yes | — | Output options. `Knowledge` names the reading material; when given, the readings of the years' mutagen stars follow the table, each star once. `KnowledgeDepth` picks the summary layer or the full text; `Detail`, `Through` and `PatternConfig` have no effect here; the zero value `TextOptions{}` equals `YearlyOverviewToText` |
+
+**Return value** `string` — a `# Yearly Timeline <first year>-<last year>` heading plus one table, one row per year, whose columns are the year, its
+stem-branch, the solar date of its first lunar day, the nominal age, the natal palaces the decadal
+and age fortune land on, the natal palace the yearly Soul palace lands on, and where the yearly
+mutagens land. Each year follows the same convention as [`HoroscopeOfYear(year)`](/en/docs/go/astrolabe#horoscopeofyear); a
+year before the decadals start shows `Childhood Fortune · <palace>` in the decadal cell, and in a
+calendar-reform year without a first lunar month the Lunar New Year cell is `—`. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+`fromYear` after `toYear`, or a year outside 1–9999, returns `ErrInvalidArgument`.
+
+**Example**
+
+```go
+text, _ := chart.YearlyOverviewToText(2001, 2012)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 2001 ") || strings.HasPrefix(l, "| 2012 ") {
+        fmt.Println(l)
+    }
+}
+```
+
+**Output**
+
+```text
+# Yearly Timeline 2001-2012
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+In 2001 (nominal age 2) the decadals have not started, so the decadal cell reads `Childhood Fortune`; in 2012
+(nominal age 13) the second decadal (siblings) begins.
+
+---
+
 ## MonthlyList
 
 **Purpose** Get every monthly scope of one lunar year.
@@ -369,6 +434,62 @@ The leap fourth month also has `Month == 4`; `IsLeapMonth` is what tells them ap
 
 ---
 
+## MonthlyListToText
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```go
+func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextContext(ctx context.Context, lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextWith(lunarYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear int, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Yes | — | Output options. `Knowledge` names the reading material; when given, the readings of the months' mutagen stars follow the table, each star once. `KnowledgeDepth` picks the summary layer or the full text; `Detail`, `Through` and `PatternConfig` have no effect here; the zero value `TextOptions{}` equals `MonthlyListToText` |
+
+**Return value** `string` — a `# Monthly Timeline <lunar year>` heading plus one table whose columns
+are the lunar month, its first and last solar day, the natal palace the month's Soul palace lands
+on, the stem-branch and where the mutagens land. The data is the same as
+[`MonthlyList(lunarYear, nil)`](#monthlylist): 12 rows without a leap month; 14 with one, the leap
+month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
+is described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries). A year outside
+1–9999 returns `ErrInvalidArgument`.
+
+**Example**
+
+```go
+text, _ := chart.MonthlyListToText(2025)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| leap") {
+        fmt.Println(l)
+    }
+}
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
+
+---
+
 ## AgePalace
 
 **Purpose** Get the palace the age scope occupies this year.
@@ -410,7 +531,7 @@ naming, and it is usually not the same palace as the natal Spouse palace.
 **Signature**
 
 ```go
-func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) (*Palace, error)
 ```
 
 **Parameters**
@@ -421,15 +542,21 @@ func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
 | `scope` | `string` | Yes | — | Which scope's twelve palaces to search |
 
 **Return value** `*Palace` — a palace on the natal chart (the same cell carries different names under
-different scopes). With `ScopeOrigin`, these are the natal twelve palaces. `nil` when nothing matches.
+different scopes). With `ScopeOrigin`, these are the natal twelve palaces. `nil` with a `nil` error
+when the palace name matches nothing. `ErrInvalidArgument` when `scope` is not a scope key or is finer
+than the [query precision](#precision) (for example `ScopeMonthly` on the horoscope of a year): that
+scope belongs to a representative day the kernel picked and is not the answer to the query.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println("the decadal Soul palace is the natal", h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal).Name)
-fmt.Println("the natal Soul palace is", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Name)
+decadalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal)
+natalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin)
+
+fmt.Println("the decadal Soul palace is the natal", decadalSoul.Name)
+fmt.Println("the natal Soul palace is", natalSoul.Name)
 ```
 
 **Output**
@@ -456,19 +583,19 @@ because it is that cell on the natal chart. To see what the cell is called at th
 **Signature**
 
 ```go
-func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) (*SurroundedPalaces, error)
 ```
 
 **Parameters** Same as `Palace`.
 
 **Return value** `*SurroundedPalaces`; its predicates are on
-[Surrounded palaces](/en/docs/go/surpalaces).
+[Surrounded palaces](/en/docs/go/surpalaces). Errors as for `Palace`.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
-sp := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
+sp, _ := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
 
 fmt.Println("the surrounded set of the yearly Wealth palace is anchored on the natal", sp.Target.Name)
 ```
@@ -493,9 +620,9 @@ Liuyue at the yearly layer — with the same meaning applied to their own time s
 **Signature**
 
 ```go
-func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
 ```
 
 **Parameters**
@@ -514,14 +641,20 @@ func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, st
 | `HasOneOfHoroscopeStars` | At least one is present |
 | `NotHaveHoroscopeStars` | None is present |
 
+All three are `false` when the palace name matches nothing; errors as for `Palace`.
+
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"}))
-fmt.Println(h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"}))
-fmt.Println(h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"}))
+has, _ := h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"})
+one, _ := h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"})
+none, _ := h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"})
+
+fmt.Println(has)
+fmt.Println(one)
+fmt.Println(none)
 ```
 
 **Output**
@@ -572,7 +705,7 @@ asking about this.
 **Signature**
 
 ```go
-func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) (bool, error)
 ```
 
 **Parameters**
@@ -584,14 +717,16 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 | `mutagenKey` | `string` | Yes | — | A mutagen key |
 
 **Return value** `bool`. It checks whether the star transformed by that layer's stem is among the
-major or minor stars of the target palace (adjective stars are not scanned).
+major or minor stars of the target palace (adjective stars are not scanned). Errors as for `Palace`.
 
 **Example**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu))
+lu, _ := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+
+fmt.Println(lu)
 fmt.Println(h.Decadal.Mutagen)
 ```
 
@@ -657,6 +792,45 @@ decadal
 
 ---
 
+## Precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```go
+func (h *Horoscope) Precision() string
+```
+
+**Return value** A scope constant — `ScopeYearly` for [`HoroscopeOfYear`](/en/docs/go/astrolabe#horoscopeofyear),
+`ScopeMonthly` for [`HoroscopeOfMonth`](/en/docs/go/astrolabe#horoscopeofmonth), and `ScopeHourly`
+for a date (`Horoscope` / `HoroscopeAt` / `HoroscopeAtTime` / `HoroscopeNow`, with or without an hour); a `nil`
+horoscope returns an empty string.
+
+The fields always hold all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `ToText` / `ToTextWith` and
+[`ForHoroscope`](/en/docs/go/knowledge#forastrolabe--forhoroscope) stop at this scope, and a
+`TextOptions.Through` or a `scope` for `Patterns` / `PatternsToText` or the [palace queries](#palace) finer than it returns
+`ErrInvalidArgument`.
+
+**Example**
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+day, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(year.Precision(), day.Precision())
+```
+
+**Output**
+
+```text
+yearly hourly
+```
+
+---
+
 ## ToText
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people.
@@ -669,8 +843,12 @@ func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
 ```
 
 **Return value** `string` — a Markdown subset in the chart's charting language: under the
-`# Horoscope <date> (<lunar date>)` heading, one `## ` section each for the decadal (childhood
-before the decadals start), age fortune, yearly, monthly, daily and hourly scopes; each section
+`# Horoscope <date> (<lunar date>)` heading (only the lunar year and its stem-branch when the text
+stops at the yearly or monthly scope, such as `# Horoscope 2027 (ding wei)` and
+`# Horoscope 2025 (yi si) · Monthly (jia shen)`), one `## ` section each for the decadal (childhood
+before the decadals start), age fortune, yearly, monthly, daily and hourly scopes, down to the
+[query precision](#precision) (a horoscope of a year or a month stops at the yearly or monthly
+scope); each section
 says which natal palace that scope's Soul palace landed on and carries the scope's mutagens (with
 landing palaces), flowing stars and pattern line from its own perspective; the decadal and yearly
 sections also expand a twelve-palace table. The full format is on
@@ -715,7 +893,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the criteria for each scope's pattern line and pattern readings; the zero value `TextOptions{}` behaves like `ToText` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | Output options. The `Knowledge` field names the source of readings: `BuiltinKnowledge()` takes the bundled default pack for the chart language, `KnowledgeFrom(pack)` uses the given pack; the `PatternConfig` field sets the criteria for each scope's pattern line and pattern readings; the `Through` field [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes) (`ScopeDecadal` … `ScopeHourly`, empty stops at the [query precision](#precision), finer than it returns `ErrInvalidArgument`); the zero value `TextOptions{}` behaves like `ToText` |
 
 Where the readings are inserted and how they are deduplicated is on
 [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
@@ -749,6 +927,47 @@ for _, l := range strings.Split(text, "\n") {
 
 The two texts have identical `## ` sections: readings do not get sections of their own but sit
 right after each scope.
+
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+text, _ = year.ToText()
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2027 (丁未)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命父母 · 虚岁 28
+## 流年 · 命宫: 本命父母 (丁未)
+```
+
+The horoscope of a lunar month stops at the monthly scope:
+
+```go
+month, _ := chart.HoroscopeOfMonth(2025, 7)
+text, _ = month.ToText()
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2025 (乙巳) · 流月 (甲申)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
+```
 
 `BuiltinKnowledge()` on a chart whose language has no bundled pack (only zh-CN has one) returns
 `ErrInvalidArgument`.

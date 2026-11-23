@@ -112,7 +112,7 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
     }
     assert_eq!(p.palaces.len(), 12);
     assert_eq!(p.mutagens.len(), 4);
-    assert_eq!(p.concepts.len(), 49);
+    assert_eq!(p.concepts.len(), 50);
     assert!(
         p.star(StarKey::ZiweiMaj)
             .unwrap()
@@ -164,21 +164,29 @@ fn builtin_texts_keep_reference_tone() {
         if let Some(t) = e.intro.as_deref() {
             texts.push((format!("stars.{k}.intro"), t));
         }
-        for (ck, cv) in &e.combinations {
+        if let Some(t) = e.summary.as_deref() {
+            texts.push((format!("stars.{k}.summary"), t));
+        }
+        for (ck, cv) in e.combinations.iter().chain(&e.combination_summaries) {
             texts.push((format!("stars.{k}.combinations.{ck}"), cv));
         }
     }
     for (k, e) in &p.patterns {
-        if let Some(t) = e.intro.as_deref() {
-            texts.push((format!("patterns.{k}.intro"), t));
-        }
-        if let Some(t) = e.conditions.as_deref() {
-            texts.push((format!("patterns.{k}.conditions"), t));
+        for (field, t) in [
+            ("intro", &e.intro),
+            ("summary", &e.summary),
+            ("conditions", &e.conditions),
+        ] {
+            if let Some(t) = t.as_deref() {
+                texts.push((format!("patterns.{k}.{field}"), t));
+            }
         }
     }
     for (k, e) in p.palaces.iter().chain(p.mutagens.iter()) {
-        if let Some(t) = e.intro.as_deref() {
-            texts.push((format!("{k}.intro"), t));
+        for (field, t) in [("intro", &e.intro), ("summary", &e.summary)] {
+            if let Some(t) = t.as_deref() {
+                texts.push((format!("{k}.{field}"), t));
+            }
         }
     }
     for (k, e) in &p.concepts {
@@ -207,6 +215,113 @@ fn builtin_texts_keep_reference_tone() {
         p.source.adapted.as_deref().is_some_and(|a| !a.is_empty()),
         "默认包文本经改写，source.adapted 必须注明"
     );
+}
+
+/// 默认包的摘要写作规则（SCHEMA §5.1）：正文超过上限的条目都有摘要、整包可用于摘要层；
+/// 正文不超过上限的条目不写摘要（同一内容不存两份）；摘要单段、宽度不超过 100（中文 50 字）；
+/// 组合摘要只对应已有的组合解读。
+#[test]
+fn builtin_summaries_follow_authoring_rules() {
+    use unicode_width::UnicodeWidthStr;
+    use x_iztro::knowledge::SUMMARY_FALLBACK_WIDTH;
+    const SUMMARY_MAX_WIDTH: usize = 100;
+
+    let p = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    assert_eq!(p.missing_summaries(), Vec::<String>::new());
+
+    let mut pairs: Vec<(String, &str, Option<&str>)> = Vec::new();
+    for (k, e) in &p.stars {
+        pairs.push((
+            format!("stars.{k}"),
+            e.intro.as_deref().unwrap_or(""),
+            e.summary.as_deref(),
+        ));
+        for other in e.combination_summaries.keys() {
+            assert!(
+                e.combinations.contains_key(other),
+                "stars.{k}.combinationSummaries.{other} 没有对应的组合解读"
+            );
+        }
+        for (other, text) in &e.combinations {
+            pairs.push((
+                format!("stars.{k}.combinations.{other}"),
+                text,
+                e.combination_summaries.get(other).map(String::as_str),
+            ));
+        }
+    }
+    for (k, e) in &p.patterns {
+        pairs.push((
+            format!("patterns.{k}"),
+            e.intro.as_deref().unwrap_or(""),
+            e.summary.as_deref(),
+        ));
+    }
+    for (section, entries) in [("palaces", &p.palaces), ("mutagens", &p.mutagens)] {
+        for (k, e) in entries {
+            pairs.push((
+                format!("{section}.{k}"),
+                e.intro.as_deref().unwrap_or(""),
+                e.summary.as_deref(),
+            ));
+        }
+    }
+    for (path, body, summary) in pairs {
+        let Some(summary) = summary else { continue };
+        assert!(
+            body.width() > SUMMARY_FALLBACK_WIDTH,
+            "{path} 正文不超过上限，摘要层直接取正文，不应另写摘要"
+        );
+        assert!(
+            summary.width() <= SUMMARY_MAX_WIDTH && !summary.contains('\n'),
+            "{path} 摘要应为单段且宽度不超过 {SUMMARY_MAX_WIDTH}：{summary}"
+        );
+    }
+}
+
+/// 默认包的主题：宫位标识都认得、每个主题至少取一宫，且在测试盘上两种释义深度都渲染得出。
+#[test]
+fn builtin_topics_resolve_on_a_chart() {
+    use x_iztro::models::astrolabe::PalaceTarget;
+    use x_iztro::{TextOptions, by_solar};
+
+    let p = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    assert!(!p.topics.is_empty());
+    let chart = by_solar(
+        "2000-8-16",
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        Config::default(),
+    )
+    .unwrap();
+    let full = TextOptions::new().knowledge(p);
+    let summary = TextOptions::new().knowledge_summary(p).unwrap();
+    for (slug, topic) in &p.topics {
+        let keys: Vec<&String> = topic
+            .surround
+            .iter()
+            .chain(&topic.palaces)
+            .flatten()
+            .collect();
+        assert!(!keys.is_empty(), "topics.{slug} 没有取任何宫");
+        for key in keys {
+            assert!(
+                PalaceTarget::from_key(key).is_some(),
+                "topics.{slug} 的宫位标识 {key} 不认识"
+            );
+        }
+        assert!(
+            topic.title.is_some() && topic.intro.is_some(),
+            "topics.{slug}"
+        );
+        for opts in [&full, &summary] {
+            chart
+                .topic_to_text(slug, opts)
+                .unwrap_or_else(|e| panic!("topics.{slug}: {e}"));
+        }
+    }
 }
 
 #[test]
@@ -340,8 +455,8 @@ fn for_astrolabe_selects_exactly_the_chart_material() {
     });
 
     // 运限取材：在本命之上多出流耀条目与各层格局
-    let h = x_iztro::get_horoscope(&chart, "2025-1-1", 0, Language::ZhCN).unwrap();
-    let sub_h = pack.for_horoscope(&chart, &h);
+    let h = chart.horoscope("2025-1-1", 0).unwrap();
+    let sub_h = pack.for_horoscope(&h);
     assert!(sub_h.stars.len() > sub.stars.len());
     assert!(
         sub_h

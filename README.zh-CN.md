@@ -1,20 +1,21 @@
 <p align="center">
-  <a href="https://ziwei.x-haose.com/zh"><img src="https://ziwei.x-haose.com/banner.png" alt="x-iztro — 紫微斗数排盘引擎：排盘归它算，解读归 AI"></a>
+  <a href="https://x-iztro.x-haose.com/zh"><img src="https://x-iztro.x-haose.com/banner.png" alt="x-iztro — 紫微斗数排盘引擎：排盘归它算，解读归 AI"></a>
 </p>
 
 <p align="center">
   <a href="https://crates.io/crates/x-iztro"><img src="https://img.shields.io/crates/v/x-iztro?style=flat-square&logo=rust&logoColor=white" alt="crates.io"></a>
   <a href="https://docs.rs/x-iztro"><img src="https://img.shields.io/docsrs/x-iztro?style=flat-square" alt="docs.rs"></a>
   <a href="https://pypi.org/project/x-iztro/"><img src="https://img.shields.io/pypi/v/x-iztro?style=flat-square&logo=python&logoColor=white" alt="PyPI"></a>
+  <a href="https://www.npmjs.com/package/x-iztro"><img src="https://img.shields.io/npm/v/x-iztro?style=flat-square&logo=npm&logoColor=white" alt="npm"></a>
   <a href="https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro"><img src="https://img.shields.io/badge/go.dev-reference-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go Reference"></a>
   <a href="https://github.com/x-haose/x-iztro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/x-haose/x-iztro/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <a href="https://ziwei.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-716%2C314-2da44e?style=flat-square" alt="金标用例 716,314"></a>
+  <a href="https://x-iztro.x-haose.com/zh/docs/guide/about/accuracy"><img src="https://img.shields.io/badge/%E9%87%91%E6%A0%87%E7%94%A8%E4%BE%8B-747%2C572-2da44e?style=flat-square" alt="金标用例 747,572"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://ziwei.x-haose.com/zh">文档站</a> ·
-  <a href="https://ziwei.x-haose.com/zh/docs/guide/getting-started">快速开始</a> ·
+  <a href="https://x-iztro.x-haose.com/zh">文档站</a> ·
+  <a href="https://x-iztro.x-haose.com/zh/docs/guide/getting-started">快速开始</a> ·
   <a href="#与-iztro-的关系">与 iztro 对照</a> ·
   <a href="#准确性">准确性</a> ·
   <a href="https://github.com/x-haose/x-iztro/blob/main/README.md">English</a>
@@ -23,14 +24,14 @@
 x-iztro 把生日算成一张完整的紫微斗数命盘，再变成大模型能直接读的文字——
 **排盘归它算，解读归 AI**。十二宫、约百颗星连同亮度与四化、六个运限层级、
 64 条格局判定、可替换的解读文本，每一项既有译名又有语言无关的稳定标识。
-排盘结果与 JS iztro v2.6.1 逐字段零差异（716,314 例金标守着这条线），
+排盘结果与 JS iztro v2.6.3 逐字段零差异（747,572 例金标守着这条线），
 默认口径与 iztro 一致，中州派与各分界点可切换。
-Rust 核心，Rust、Python、Go 三种语言直接调用。
+Rust 核心，Rust、Python、Go、JavaScript/TypeScript 都能直接调用。
 
 > 排盘是算术，不是解读：公农历换算、闰月、干支、上百颗星的安星规则。
 > 大模型能算对一部分，剩下的会不声不响地算错——而你从输出里看不出是哪一部分。
 
-不写代码？先看这页：[不写代码怎么用它](https://ziwei.x-haose.com/zh/docs/guide/guides/for-non-developers)。
+不写代码？先看这页：[不写代码怎么用它](https://x-iztro.x-haose.com/zh/docs/guide/guides/for-non-developers)。
 
 ```python
 from x_iztro import Astro
@@ -77,7 +78,7 @@ print(chart.to_text())
 ```
 
 样例盘的庚干四化取太阴化科，与 iztro 一致；取天府/天同的门派可用
-[自定义四化表](https://ziwei.x-haose.com/zh/docs/guide/guides/config)切换。
+[自定义四化表](https://x-iztro.x-haose.com/zh/docs/guide/guides/config)切换。
 同一张盘可以输出成六种语言；底层对象全部带类型，`chart.to_json()` 覆盖
 JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键）。
 
@@ -86,31 +87,30 @@ JS iztro 输出的每一个键且逐值一致（另加文档声明的扩展键�
 排盘算法移植自 JavaScript 的 [iztro](https://github.com/SylarLong/iztro)
 并与之保持逐字段一致；AI 管线需要的语义层是新增的。
 
-|                                          | iztro v2.6.1 (JS) | x-iztro                              |
+|                                          | iztro v2.6.3 (JS) | x-iztro                              |
 | ---------------------------------------- | ----------------- | ------------------------------------ |
-| 排盘、十二宫（含身宫、来因宫）、六层运限 | ✅                | ✅ 逐字段零差异，716,314 例金标      |
+| 排盘、十二宫（含身宫、来因宫）、六层运限 | ✅                | ✅ 逐字段零差异，747,572 例金标      |
 | 宫位查询、三方四正、飞星                 | ✅                | ✅                                   |
 | 序列化输出                               | `JSON.stringify`  | iztro 的每个键逐值一致，另加声明的扩展键 |
 | 格局判定（64 条）                        | 无                | ✅                                   |
 | 知识包（解读文本、门派属性）             | 无                | ✅                                   |
 | 生辰反推（八字四柱 / 盘面特征 → 生辰）   | 无                | ✅                                   |
 | 语义化文本投影（to_text）                | 无                | ✅                                   |
-| 调用语言                                 | JS / TS           | Rust / Python / Go                   |
+| 调用语言                                 | JS / TS           | Rust / Python / Go / JS·TS（WebAssembly） |
 | 配置                                     | 全局单例          | 随盘传入，无全局状态                 |
 | 非法输入                                 | 抛异常            | 带分类码的错误，非法输入不 panic     |
 
-前端或 Node 项目请用上游 iztro（原作）；后端服务，或要把盘交给大模型解读的场景，
-用 x-iztro。
+JS 项目里 iztro 是原作，依赖也更轻（纯 JavaScript，不用下载 WebAssembly）。
+要用上表里 iztro 没有的能力、要把盘交给大模型解读，或浏览器与后端必须逐字段一致时，用 x-iztro。
 
 ## 安装
 
-**Rust** — MSRV 1.88（有独立的 CI 任务盯着），直接依赖四个（完整依赖树 21 个
-crate）。核心以 crate 级 `#![deny(unsafe_code)]` 禁用 `unsafe`，
+**Rust** — MSRV 1.88（有独立的 CI 任务检查）。核心以 crate 级 `#![deny(unsafe_code)]` 禁用 `unsafe`，
 仅 FFI/wasm 边界模块豁免。
 
 ```toml
 [dependencies]
-x-iztro = "0.3"
+x-iztro = "0.7"
 ```
 
 **Python** — 要求 3.10+，零运行时依赖，类型化 API（dataclass + StrEnum）。
@@ -119,14 +119,22 @@ Windows x64，这些平台不需要 Rust 工具链；其余目标（musl/Alpine�
 回落到 sdist 源码编译，需要装一个。
 
 ```bash
-pip install x-iztro
+pip install "x-iztro~=0.7.0"
 ```
 
 **Go** — 无 cgo：Rust 核心以约 1.5 MB 的 WebAssembly 形式内嵌在模块里，
 由纯 Go 运行时 [wazero](https://wazero.io) 驱动。交叉编译照常可用。
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
+```
+
+**JavaScript / TypeScript** — 同一份 Rust 核心编成 WebAssembly（约 1.7 MB，gzip 后约 0.5 MB），
+ESM 带类型声明，支持 Node.js 22+ 与现代浏览器。Vite、webpack、Next.js Turbopack 会自动把 `.wasm`
+作为资源产出。`x-iztro/types` 只导出 DTO 类型与枚举、不碰 WebAssembly，给只负责渲染的界面代码用。
+
+```bash
+npm install x-iztro@0.7
 ```
 
 ## 快速开始
@@ -207,7 +215,25 @@ func main() {
 }
 ```
 
-三套绑定调用同一份 Rust 核心，同一组出生数据在三种语言里得到同一份结论——
+**JavaScript / TypeScript**
+
+```ts
+import { init, astro, MajorStar, Mutagen, PalaceName } from 'x-iztro';
+
+await init(); // 装载一次 WebAssembly 内核，之后的调用都是同步的
+
+// timeIndex 2 = 寅时；输出默认 zh-CN，传 { language: 'en-US' } 出英文
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.chineseDate, chart.soul, chart.fiveElementsClass);
+
+const soul = chart.palace(PalaceName.SOUL)!;
+console.log(soul.has([MajorStar.ZIWEI]), soul.hasMutagen(Mutagen.LU));
+
+const horoscope = chart.horoscope('2024-1-1', 0);
+console.log(horoscope.yearly.heavenlyStem, horoscope.yearly.earthlyBranch);
+```
+
+各语言绑定调用同一份 Rust 核心，同一组出生数据在各语言里得到同一份结论——
 这条等价性本身也在测试范围内。
 
 ## 在 iztro 之上
@@ -242,13 +268,13 @@ for hit in chart.patterns():
 「文星暗拱」是同一格局的两种成立口径（对照 / 夹拱），由 `variant` 区分。
 格局名以本项目词表为准，古籍异名（如「文桂文华」）见 64 条总表。本命盘与
 运限盘共用同一套规则。判定原则与总表见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/concepts/patterns)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/concepts/patterns)。
 
 ### 知识包 — 解读层外置，可整包替换
 
 内核只判定事实；怎么解读是门派观点，所以星耀与格局的解读文本、星耀的门派属性
 （阴阳五行、化气、别号）放在可替换的 JSON 包里，不写死在代码里。库内嵌一份
-zh-CN 默认包——107 颗星、64 条格局、12 宫、4 化、49 条术语，整理自
+zh-CN 默认包——全部 162 颗星、64 条格局、12 宫、4 化、50 条术语，长条目另带摘要，释义整理自
 [iztro-docs](https://docs.iztro.com)（MIT，Sylar Long）。不认同哪一条，
 就用覆盖包把它换掉。它同时是一份现成的中文 RAG 语料。
 
@@ -267,7 +293,7 @@ for hit in chart.patterns():
 ```
 
 包格式、合并规则与覆盖包写法见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/guides/knowledge-pack)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/guides/knowledge-pack)。
 
 ### 八字反推 — 由四柱反查生辰
 
@@ -321,7 +347,7 @@ for c in result.candidates:
 两个入口都是剪枝枚举，再用正向排盘把每个候选完整复核一遍，结果必然排得回目标盘。
 条件明确的查询毫秒级出解；横跨整个 200 年范围的宽查询通常也在一秒上下，
 过宽的条件会在候选数上限处截断并置 `truncated`。详见
-[文档站](https://ziwei.x-haose.com/zh/docs/guide/guides/reverse)。
+[文档站](https://x-iztro.x-haose.com/zh/docs/guide/guides/reverse)。
 
 ### 接大模型的几件实事
 
@@ -338,55 +364,59 @@ for c in result.candidates:
 - 即使做英文产品，也建议**喂模型中文盘**：模型认识中文星名，而英文星名是
   iztro 自造的释义词表（`considery`、`dissipated` 这类），模型多半不认识——
   喂中文盘、让它用英文作答即可。原理与接法（含把库当 tool call 暴露）见
-  [LLM 指南](https://ziwei.x-haose.com/zh/docs/guide/guides/llm)。
-  暂无 MCP server，tool call 的接法覆盖同样的场景。
-- 文档站本身对 LLM 可读：[`/llms.txt`](https://ziwei.x-haose.com/llms.txt)、
-  [`/llms-full.txt`](https://ziwei.x-haose.com/llms-full.txt)，任意文档页
+  [LLM 指南](https://x-iztro.x-haose.com/zh/docs/guide/guides/llm)。
+- 不写代码、直接在 AI 客户端里用：基于本库的公开 MCP 服务
+  [x-ziwei](https://ziwei.x-haose.com/zh)。
+- 文档站本身对 LLM 可读：[`/llms.txt`](https://x-iztro.x-haose.com/llms.txt)、
+  [`/llms-full.txt`](https://x-iztro.x-haose.com/llms-full.txt)，任意文档页
   追加 `.md` 即纯文本。
 
 ## 准确性
 
-每一个数值都与 JS [iztro v2.6.1](https://github.com/SylarLong/iztro)（版本锁定）
+每一个数值都与 JS [iztro v2.6.3](https://github.com/SylarLong/iztro)（版本锁定）
 对照，零容忍差异。这是**复现口径**，不是宣称哪一派是唯一正解——流派与口径
 本就众多，配置开关与自定义四化表、亮度表就是为此准备的。整套对照你自己就能重跑：
 
 ```bash
-cargo test                                               # 下表除 Tier 3 外的全部层，约 1 分钟
-cargo test --release --test golden_tier3 -- --ignored    # Tier 3 全量：586,430 张盘，约 70 秒
+cargo test                                               # 下表除 Tier 3 外的全部层与历法抽样，约 1 分钟
+cargo test --release --test golden_tier3 -- --ignored    # Tier 3 全量：586,430 张盘，约 15 秒
+cargo test --release --lib calendar -- --ignored         # 历法全量：公历 1–9999 年逐日，约 10 秒
 ```
 
-716,314 例金标用例，分九层（表中「60 年」均指 1984–2043，一个甲子）：
+历法层先单独全量核对：公历 1–9999 年逐日 3,652,061 天的农历日期、年月日柱与星座，
+每个农历年的月表与 31 个节气时刻，每个「节」所在日 13 个时辰的月日时柱。
+排盘层 747,572 例金标，分九层（表中「60 年」均指 1984–2043，一个甲子）：
 
 | 层级      | 用例数  | 覆盖范围                                                 |
 |-----------|---------|----------------------------------------------------------|
 | Tier 1    | 1,560   | 60 年 × 13 时辰 × 男女，全字段逐一比对                   |
 | Tier 2    | 37,440  | 60 年 × 每月 1/15 号 × 13 时辰 × 男女                    |
 | Tier 3    | 586,430 | 60 年**每一天** × 13 时辰 × 男女，闰月日期另跑 fix_leap 双份；哈希 |
-| 边界年代  | 46,228  | 1583–1983 与 2044–2100 抽样，闰月与历表最吃紧的地方      |
+| 边界年代  | 78,156  | 公元 1 年至 2100 年抽样，含儒略历年代与 1582 年改历前后  |
 | Horoscope | 5,760   | 360 命盘 × 16 目标日期，六个运限层级全字段               |
 | Variants  | 14,268  | 农历排盘逐日（含闰月组合）、中州派、六语言               |
-| Config    | 9,696   | 各分界开关取非默认值，排盘层与运限层                     |
+| Config    | 11,424  | 各分界开关取非默认值，排盘层与运限层，含逐个交节时刻取样 |
 | 中州派盘型 | 12,488  | 天盘 / 地盘 / 人盘三种视角                               |
-| 1602 窗口 | 2,444   | 1602 闰二月修正窗口逐日全时辰，哈希                      |
+| 日期写法  | 46      | 分隔符、补零、时间部分与运限省略时辰，含非法写法的报错   |
 
 此外：序列化契约与 JS 的 `JSON.stringify` 逐键逐值对照；翻译反查与 iztro 的
-`kot`（其翻译反查函数）实际取值对照 1,559 例；三侧绑定交叉验证，同一组出生
-数据在 Rust、Python、Go 得到同一份结论。
+`kot`（其翻译反查函数）实际取值对照 1,573 例；各语言绑定交叉验证，同一组出生
+数据在 Rust、Python、Go、JavaScript 得到同一份结论。
 
-**「零容忍」是什么意思，举一个例子。** Rust 侧的农历依赖库在 1602 年
-（明万历三十年）的月表自相矛盾——二月 31 天——导致 1 天直接 panic、另有 28 天
-静默排出错盘。x-iztro 在农历月表的唯一读取入口加了修正层：真值经
-lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三个独立来源交叉确认，
-窗口由 2,444 例金标锁死，另有 1583–9999 全域逐日扫描（约 614 万张盘）未发现
-第二个同类窗口。修正层带上游探测：依赖库一旦修好，自动停用。
+**「零容忍」是什么意思，举一个例子。** 早先 Rust 侧借用的农历库，在逐日全量核对下
+暴露出移植错误：公式里 `t -= A + B` 被译成了 `t = t - A + B`，ΔT 外推也不同——
+效果只在万年里的个别日子冒头（某次合朔离午夜只差几十秒、某个节气离时辰的 30 分
+只差几秒），1583–9999 年共 540 天农历日期、23 个时点的节气月柱与 iztro 不一致，
+抽样测试一个也没抓到。x-iztro 于是把历法换成逐函数移植 lunar-typescript（iztro
+自己用的历法库）的自有内核，公历 1–9999 年逐日零差异，这层核对在 CI 里全量运行。
 
 ## 放进生产
 
 - **无全局状态**——配置与语言随每次调用传入，不同流派、不同语言的盘并发互不干扰。
-- **非法输入是错误，不是 panic**——日期格式与存在性都校验，公历 1583–9999，
+- **非法输入是错误，不是 panic**——日期格式与存在性都校验，1–9999 年（1582-10-15 以前按儒略历），
   时辰索引 0–12。Rust 返回 `Err(IztroError)`，Python 抛 `x_iztro.IztroError`
   （继承 `ValueError`，带 `.code`），Go 返回可用 `errors.Is` 匹配的 `error`，
-  C FFI 返回错误 JSON。每种失败都带机器可读的类别。
+  JavaScript 抛带 `.code` 的 `IztroError`，C FFI 返回错误 JSON。每种失败都带机器可读的类别。
 - **Python**——单次排盘约 0.5 ms（Apple Silicon 开发机）。盘对象是 frozen
   dataclass，可跨线程共享，但计算持有 GIL：扩容用多进程而不是多线程。
   序列化用 `to_dict()` / `to_json()`，别用 `dataclasses.asdict()`
@@ -396,8 +426,13 @@ lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三�
   落盘缓存命中后 20–30 ms；缓存在 `os.UserCacheDir()` 下，取不到时退化为
   每进程编译）。稳态单次排盘约 0.5 ms（`go/iztro` 下 `go test -bench` 可复现），
   `Warmup` 可把冷启动挪到启动阶段。
-- **Rust**——MSRV 1.88；直接依赖只有 `serde`、`serde_json`、`lunar_rust` 与
-  `chrono`（仅 `horoscope_now` 用到时钟）。
+- **JavaScript**——先 `await init()` 一次（浏览器里取 `.wasm`，Node 里读文件），之后每次调用都是
+  在当前线程上的同步纯计算，大范围的反推这类重活放进 Worker。WebAssembly trap 后实例作废，
+  再 `init()` 即重建。页面有严格的 Content-Security-Policy 时需要 `script-src 'wasm-unsafe-eval'`。
+  序列化用 `JSON.stringify(chart)`，`toJSON()` 就是 iztro 的 JSON。
+- **Rust**——MSRV 1.88；默认依赖为 `serde`、`serde_json`、`libm`（历法三角函数）、
+  `chrono`（仅 `horoscope_now` 用到时钟）和 `unicode-width`（知识包摘要显示宽度）；
+  Python 与 JSON Schema 支持由可选 feature 启用。
 - **1.0 之前的稳定性**——序列化 JSON 契约、to_text 文本格式与错误码都有快照测试
   守着；破坏性变更在 [CHANGELOG](CHANGELOG.md) 里显式列出。
 
@@ -419,13 +454,13 @@ lunar-typescript、寿星天文历（sxtwl）与韩国天文研究院历表三�
 
 ## 文档
 
-**<https://ziwei.x-haose.com>**——中英双语文档站：从零开始的指南、数据模型
-背后的斗数概念、三种语言各自的 API 参考（每个函数、类型、方法都有独立条目，
+**<https://x-iztro.x-haose.com>**——中英双语文档站：从零开始的指南、数据模型
+背后的斗数概念、各语言的 API 参考（每个函数、类型、方法都有独立条目，
 附真实运行输出与边界说明）。想先系统看懂命盘本身，从
-[紫微斗数概念](https://ziwei.x-haose.com/zh/docs/guide/concepts)开始。
+[紫微斗数概念](https://x-iztro.x-haose.com/zh/docs/guide/concepts)开始。
 
 Rust 的 API 文档同时发布在 [docs.rs/x-iztro](https://docs.rs/x-iztro)。
-三种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。
+每种语言各有一个可直接运行的完整示例项目，在 `examples/` 下。
 
 ## 从源码构建
 
@@ -440,9 +475,14 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 # Go 绑定：重编并刷新内嵌的 wasm
 cargo build --release --target wasm32-wasip1
 cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/
+
+# JS 绑定：编出 wasm32-unknown-unknown 内核并编译 TypeScript
+cd js && npm ci && npm run build
 ```
 
 金标数据由 JS iztro 包生成：`cd tests/golden && npm ci && npm run gen:all`。
+
+开发检查与环境准备见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 

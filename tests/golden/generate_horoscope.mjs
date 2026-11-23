@@ -19,6 +19,7 @@ import { solar2lunar } from 'lunar-lite';
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { horoscopeCase } from './horoscope_case.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = join(__dirname, 'horoscope_data.json');
@@ -43,22 +44,6 @@ function findLeapSecondHalfDate(fromYear) {
   throw new Error(`No leap second-half date found from ${fromYear}`);
 }
 
-/** 单个运限层级的紧凑导出（宫位名序列原序，流耀分布每宫排序）。 */
-function scopeItem(item) {
-  const out = {
-    i: item.index,
-    n: item.name,
-    hs: item.heavenlyStem,
-    eb: item.earthlyBranch,
-    pn: item.palaceNames,
-    m: item.mutagen,
-  };
-  if (item.stars) {
-    out.s = item.stars.map((g) => g.map((s) => s.name).sort());
-  }
-  return out;
-}
-
 const cases = [];
 
 for (let year = START_YEAR; year <= END_YEAR; year++) {
@@ -79,23 +64,7 @@ for (let year = START_YEAR; year <= END_YEAR; year++) {
       targets.push([`${year + 2}-8-15`, 12]);
 
       for (const [td, tt] of targets) {
-        const h = astrolabe.horoscope(td, tt);
-        cases.push({
-          p: { d: birthDate, t: bt, g: gender === '男' ? 0 : 1 },
-          td,
-          tt,
-          ld: h.lunarDate,
-          dec: scopeItem(h.decadal),
-          age: { ...scopeItem(h.age), na: h.age.nominalAge },
-          yr: {
-            ...scopeItem(h.yearly),
-            sq: h.yearly.yearlyDecStar.suiqian12,
-            jq: h.yearly.yearlyDecStar.jiangqian12,
-          },
-          mo: scopeItem(h.monthly),
-          da: scopeItem(h.daily),
-          hr: scopeItem(h.hourly),
-        });
+        cases.push(horoscopeCase(astrolabe, { d: birthDate, t: bt, g: gender === '男' ? 0 : 1 }, td, tt));
       }
     }
   }

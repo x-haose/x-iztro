@@ -92,6 +92,7 @@ The language-independent key of each of the 64 patterns. `Copy` + `Hash`, so it 
 | `as_key` | `fn as_key(self) -> &'static str` | The snake_case key, e.g. `"sha_po_lang"` |
 | `from_key` | `fn from_key(key: &str) -> Option<Self>` | Reverse lookup; unknown strings give `None` |
 | `is_horoscope_only` | `fn is_horoscope_only(self) -> bool` | Whether it is a transit pattern (horoscope views only) |
+| `needs_finer_layer` | `fn needs_finer_layer(self) -> bool` | Whether judging it at a level also reads a finer level: only Feng Yun Ji Hui (reported at the decadal view, but reads the minor limit and the year). A horoscope text stopped at the decadal level leaves such patterns out of the decadal section |
 
 The constant `ALL_PATTERNS: [PatternKey; 64]` lists every pattern in the source page's order. For
 names use `translate_pattern(key, lang)`, available in all six languages.
@@ -258,8 +259,8 @@ and the decadal then arrives at it, its benefit is enjoyed" is computed.
 
 ```rust
 impl<'a> HoroscopeRef<'a> {
-    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit>
-    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit>
+    pub fn patterns(&self, scope: Scope) -> Result<Vec<PatternHit>, IztroError>
+    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Result<Vec<PatternHit>, IztroError>
 }
 ```
 
@@ -273,13 +274,18 @@ impl<'a> HoroscopeRef<'a> {
 **Returns**　`Vec<PatternHit>`, each carrying the level passed in as its `scope`. Passing
 `Scope::Origin` gives exactly what `patterns()` on the astrolabe gives.
 
+**Errors**　A `scope` finer than the horoscope's [query precision](/en/docs/rust/horoscope#precision)
+returns `IztroError::InvalidArgument`: a horoscope of a lunar year goes down to `Scope::Yearly` and
+one of a lunar month to `Scope::Monthly`; the finer levels belong to a representative day the kernel
+picked.
+
 **Example**
 
 ```rust
 let chart = by_solar("2000-8-16", 2, Gender::Female, true, en, Config::default())?;
 let h = chart.horoscope("2025-6-1", 0)?;
 
-for hit in h.patterns(Scope::Decadal) {
+for hit in h.patterns(Scope::Decadal)? {
     println!("{} {:?} {:?}", translate_pattern(hit.key, en), hit.scope, hit.variant);
 }
 ```
@@ -336,17 +342,18 @@ pub fn patterns_at(
 ) -> Vec<PatternHit>
 ```
 
-**Returns**　As `HoroscopeRef::patterns_with`.
+**Returns**　As the success value of `HoroscopeRef::patterns_with`. `HoroscopeData` carries no query
+precision, so every level is judged and nothing is rejected.
 
 Use it when all you hold is a `HoroscopeData` (deserialised from elsewhere, say); where a
-`HoroscopeRef` is at hand, the method form is shorter.
+`HoroscopeRef` is at hand, use the method form, which checks the level against the query precision.
 
 ---
 
 ## patterns_dto
 
 **Purpose**　The hits in serialisation form: camelCase keys, values translated into the chart's
-language, alongside the language-independent keys. All three bindings and the C FFI go through this
+language, alongside the language-independent keys. Every language binding and the C FFI go through this
 layer.
 
 **Signature**

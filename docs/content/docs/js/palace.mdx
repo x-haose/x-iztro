@@ -1,0 +1,143 @@
+---
+title: 宫位对象
+description: Palace 的字段、星耀与四化判断、空宫判断、飞星族与单宫文本。
+---
+
+```ts
+const soul = chart.palace(PalaceName.SOUL)!;
+```
+
+接受星耀参数的方法同时认星耀标识与当前语言的星名；接受宫位参数的方法认宫位对象、索引、宫名标识与当前语言的宫名。
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `index` | `number` | 宫位索引 0–11，0 为寅宫 |
+| `name` / `nameKey` | `string` / `PalaceName` | 宫名 / 标识 |
+| `isBodyPalace` / `isOriginalPalace` | `boolean` | 是否身宫 / 来因宫 |
+| `heavenlyStem(Key)` / `earthlyBranch(Key)` | `string` | 宫干、宫支 / 标识 |
+| `majorStars` / `minorStars` / `adjectiveStars` | `readonly Star[]` | 主星 / 辅星 / 杂耀 |
+| `changsheng12(Key)`、`boshi12(Key)`、`jiangqian12(Key)`、`suiqian12(Key)` | `string` | 四组十二神 / 标识 |
+| `decadal` | `Decadal` | 大限：`range`（起止虚岁）、干支与标识 |
+| `ages` | `readonly number[]` | 小限经过的虚岁 |
+| `mutagenStarKeys` | `readonly [string, string, string, string]` | 本宫天干化出的四颗星（禄、权、科、忌），随自定义四化表变化 |
+
+---
+
+## has / notHave / hasOneOf
+
+```ts
+has(stars: readonly string[]): boolean;      // 包含全部
+notHave(stars: readonly string[]): boolean;  // 一颗都不包含
+hasOneOf(stars: readonly string[]): boolean; // 包含任意一颗
+```
+
+主、辅、杂耀都算在内。
+
+## hasMutagen / notHaveMutagen
+
+```ts
+hasMutagen(mutagen: Mutagen): boolean;
+notHaveMutagen(mutagen: Mutagen): boolean;
+```
+
+只看主星与辅星的生年四化。
+
+```ts
+console.log(soul.has([MajorStar.ZIWEI]), soul.has(['紫微', '文曲']),
+  soul.notHave([MinorStar.WENCHANG]), soul.hasOneOf([MinorStar.WENCHANG, MinorStar.WENQU]));
+console.log(chart.palace(PalaceName.CHILDREN)!.hasMutagen(Mutagen.LU), soul.notHaveMutagen(Mutagen.LU));
+```
+
+```text
+true true true true
+true true
+```
+
+---
+
+## isEmpty
+
+```ts
+isEmpty(excludeStars?: readonly string[]): boolean;
+```
+
+没有十四主星即空宫；`excludeStars` 里任一颗在宫内时不作空宫论。
+
+```ts
+const parents = chart.palace(PalaceName.PARENTS)!;
+console.log(parents.isEmpty(), parents.isEmpty([MinorStar.WENQU]), parents.majorStars.length, parents.oppositePalace()!.name);
+```
+
+```text
+true true 0 疾厄
+```
+
+---
+
+## 飞星族
+
+```ts
+mutagenStars(mutagens: Mutagen | readonly Mutagen[]): string[];
+fliesTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean;      // 全部落在目标宫
+fliesOneOfTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean; // 任一颗落在目标宫
+notFlyTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean;     // 一颗都不落
+selfMutaged(mutagens: Mutagen | readonly Mutagen[]): boolean;                        // 全部自化
+selfMutagedOneOf(mutagens?: Mutagen | readonly Mutagen[]): boolean;                  // 任一种自化，省略即全部四化
+notSelfMutaged(mutagens?: Mutagen | readonly Mutagen[]): boolean;
+mutagedPlaces(allPalaces?: readonly Palace[]): (Palace | undefined)[];               // [禄, 权, 科, 忌] 各飞入哪宫
+```
+
+`PalaceTarget` 是宫位对象、索引、宫名标识或当前语言的宫名。复刻 iztro：四化列表为空时 `fliesTo` 为 `false`，
+`fliesOneOfTo` 与 `notFlyTo` 为 `true`；目标宫定位不到时三者都为 `false`。
+
+```ts
+console.log(soul.mutagenStars([Mutagen.LU, Mutagen.JI]));
+console.log(soul.fliesTo(PalaceName.CHILDREN, Mutagen.LU),
+  soul.fliesOneOfTo(PalaceName.WEALTH, [Mutagen.LU, Mutagen.JI]), soul.notFlyTo(PalaceName.SOUL, Mutagen.JI));
+console.log(soul.selfMutaged(Mutagen.QUAN), soul.selfMutagedOneOf(), soul.notSelfMutaged([Mutagen.LU]));
+console.log(soul.mutagedPlaces().map((p) => p?.name));
+```
+
+```text
+[ 'tianliangMaj', 'wuquMaj' ]
+true true true
+true true true
+[ '子女', '命宫', '官禄', '财帛' ]
+```
+
+命宫壬干：天梁化禄入子女、紫微化权坐命宫（自化权）、左辅化科入官禄、武曲化忌入财帛。
+
+---
+
+## oppositePalace / surroundedPalaces / astrolabe
+
+```ts
+oppositePalace(): Palace | undefined;           // 索引 +6
+surroundedPalaces(): SurroundedPalaces | undefined;
+astrolabe(): Astrolabe | undefined;
+```
+
+脱离星盘单独构造的宫位（如安星函数自己 new 出来的）三者都是 `undefined`。
+
+---
+
+## toText
+
+```ts
+toText(options?: TextOptions): string;
+```
+
+单宫的语义化文本，选项同 [`Astrolabe.toText`](/zh/docs/js/astrolabe#totext)。
+
+```ts
+console.log(soul.toText({ detail: TextDetail.OVERVIEW }));
+```
+
+```text
+### 命宫 (壬午) · 大限 3-12
+- 主星: 紫微(庙)
+- 辅星: 文曲(陷)
+- 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+```

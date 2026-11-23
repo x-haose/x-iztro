@@ -158,7 +158,7 @@ fn bazi_rejects_bad_input() {
     .unwrap_err();
     assert_eq!(err.code(), "invalid_argument");
     // 范围颠倒 / 越界
-    for range in [(2100, 1900), (1000, 2000), (2000, 10000)] {
+    for range in [(2100, 1900), (0, 2000), (2000, 10000)] {
         let err = solar_dates_by_bazi(jia_zi, jia_zi, jia_zi, jia_zi, range, &cfg).unwrap_err();
         assert_eq!(err.code(), "invalid_argument");
     }
@@ -406,10 +406,10 @@ fn reverse_chart_exact_year_divide_covers_lichun_to_new_year_gap() {
 #[test]
 fn reverse_chart_year_range_is_solar_closed_interval() {
     // year_range 按候选公历日期的年份取闭区间：公历年初（元旦到春节前）的日子
-    // 属上一个农历年，也必须可达；候选严格落在区间内。1583 为支持范围首年，
-    // 其年初属农历 1582 年，一并守住枚举域首端扩一年的边界。
+    // 属上一个农历年，也必须可达；候选严格落在区间内。公元 1 年为支持范围首年，
+    // 其年初属农历 0 年，一并守住枚举域首端扩一年的边界。
     let cfg = Config::default();
-    for (date, t) in [("2001-1-10", 4), ("1583-1-5", 2)] {
+    for (date, t) in [("2001-1-10", 4), ("1-1-5", 2)] {
         let a = chart(date, t, &cfg);
         let year: i64 = date.split('-').next().unwrap().parse().unwrap();
         let crit = criteria_of(&a, &cfg, (year, year));
@@ -432,47 +432,32 @@ fn reverse_chart_year_range_is_solar_closed_interval() {
 }
 
 #[test]
-fn reverse_chart_roundtrip_lunar_1602_leap_month_window() {
-    // lunar_rust 1.0.1 把农历 1602 年闰二月首日算晚一天（lunar_table 模块修正）：
-    // 公历 1602-03-24（闰二月初一）至 04-21（闰二月廿九）窗口内，枚举的农历日标签
-    // 必须与正排同源，日敏感剪枝（紫微起宫、日系杂耀）才不会错杀窗口内的真解。
+fn roundtrip_across_julian_calendar_and_1582_reform() {
+    // 1582-10-15 以前按儒略历：日的枚举、日柱的六十甲子序、世纪年的 2 月 29 日都与格里历不同，
+    // 改历前后两日在儒略日上相邻。两个反推入口在这些日子上都须闭环。
     let cfg = Config::default();
-    for (date, t) in [("1602-3-24", 2), ("1602-4-2", 12), ("1602-4-21", 7)] {
+    for (date, t) in [
+        ("1582-10-4", 3),
+        ("1582-10-15", 12),
+        ("1500-2-29", 6),
+        ("841-7-1", 0),
+    ] {
         let a = chart(date, t, &cfg);
-        let pos = |k: StarKey| a.star(k).unwrap().palace().earthly_branch;
-        let crit = ReverseCriteria {
-            soul_branch: Some(a.earthly_branch_of_soul_palace),
-            stars: vec![
-                StarPosition {
-                    star: StarKey::ZiweiMaj,
-                    branch: pos(StarKey::ZiweiMaj),
-                },
-                StarPosition {
-                    star: StarKey::Santai,
-                    branch: pos(StarKey::Santai),
-                },
-                StarPosition {
-                    star: StarKey::Bazuo,
-                    branch: pos(StarKey::Bazuo),
-                },
-                StarPosition {
-                    star: StarKey::Engguang,
-                    branch: pos(StarKey::Engguang),
-                },
-                StarPosition {
-                    star: StarKey::Tiangui,
-                    branch: pos(StarKey::Tiangui),
-                },
-            ],
-            year_range: (1602, 1602),
-            ..Default::default()
-        };
-        let r = reverse_chart(&crit, &cfg).unwrap();
+        let year: i64 = date.split('-').next().unwrap().parse().unwrap();
+        let p = a.raw_dates.chinese_date;
+        let got = solar_dates_by_bazi(p.yearly, p.monthly, p.daily, p.hourly, (year, year), &cfg)
+            .unwrap();
+        assert!(
+            got.iter()
+                .any(|c| c.solar_date == date && c.time_index == t),
+            "bazi {date} t{t}: {got:?}"
+        );
+        let r = reverse_chart(&criteria_of(&a, &cfg, (year, year)), &cfg).unwrap();
         assert!(
             r.candidates
                 .iter()
                 .any(|c| c.solar_date == date && c.time_index == t),
-            "{date} t{t}: {:?}",
+            "chart {date} t{t}: {:?}",
             r.candidates
         );
     }
@@ -775,7 +760,7 @@ fn reverse_chart_contradictory_majors_short_circuit() {
                 branch: EarthlyBranch::Chou,
             },
         ],
-        year_range: (1583, 9999),
+        year_range: (1, 9999),
         ..Default::default()
     };
     let t = std::time::Instant::now();

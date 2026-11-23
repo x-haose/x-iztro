@@ -26,7 +26,7 @@ identifiers and the results of every predicate method stay the same.
 | --- | --- | --- |
 | `gender` | `str` | Translated gender |
 | `solar_date` | `str` | Solar date, as passed in |
-| `lunar_date` | `str` | The lunar date written in Chinese |
+| `lunar_date` | `str` | The lunar date in the chart language: `Lunar 2000-7-17` in English, `二〇〇〇年七月十七` in Chinese |
 | `chinese_date` | `str` | Display string of the four pillars |
 | `time` | `str` | Hour name |
 | `time_range` | `str` | The clock range of that hour |
@@ -480,7 +480,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 ```python
 def horoscope(
     self,
-    target_date: str | None = None,
+    target_date: str | datetime | date | None = None,
     target_time_index: int | None = None,
 ) -> Horoscope
 ```
@@ -489,8 +489,8 @@ def horoscope(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `target_date` | `str \| None` | No | `None` | Target solar date; today when omitted |
-| `target_time_index` | `int \| None` | No | `None` | Target hour index; the current hour when omitted |
+| `target_date` | `str \| datetime \| date \| None` | No | `None` | Target solar date: a string (spelled as for charting, a ` HH:mm` time allowed) or a `datetime` / `date`; now when omitted |
+| `target_time_index` | `int \| None` | No | `None` | Target hour index; when omitted it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time (or a `date`) means the early Zi hour |
 
 **Return value** `Horoscope` — a horoscope object holding this chart, so palace lookups across the six
 scopes need not be passed the astrolabe again.
@@ -517,6 +517,120 @@ yearly  yisi
 
 ---
 
+## horoscope_of_year
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```python
+def horoscope_of_year(self, year: int) -> Horoscope
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `Horoscope` — its target date is the first day of that lunar year's sixth month and
+its hour follows the hour pillar's branch, the same convention as
+[`yearly_list`](/en/docs/python/horoscope#yearly_list). Whatever it computes afterwards (`to_text`,
+`patterns`, `KnowledgePack.for_horoscope`) is still taken for that lunar year; its precision
+([`precision()`](/en/docs/python/horoscope#precision)) is `Scope.YEARLY`.
+
+**Example**
+
+```python
+h = chart.horoscope_of_year(2027)
+
+print(h.solar_date, h.lunar_date)
+print("yearly", h.yearly.heavenly_stem + h.yearly.earthly_branch, "nominal age", h.age.nominal_age)
+
+jan = chart.horoscope("2027-1-1", 0)
+print("2027-1-1 yearly", jan.yearly.heavenly_stem + jan.yearly.earthly_branch)
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly dingwei nominal age 28
+2027-1-1 yearly bingwoo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`age_divide` set to `birthday` or `horoscope_divide` set to `exact` (the start of spring) they can
+still change within the year, and the result is the one for the first day of the sixth month. The monthly,
+daily and hourly scopes are in the result too, likewise for that day, and are not the answer to the
+query: [`to_text`](/en/docs/python/horoscope#to_text) and picking knowledge by chart stop at the
+yearly scope, and a text, palace-query or pattern scope finer than yearly raises `IztroError` (`invalid_argument`).
+A year outside 1–9999 raises `IztroError` (`invalid_argument`). For one row per year over a
+run of years, use [`yearly_overview_to_text`](/en/docs/python/horoscope#yearly_overview_to_text).
+</Callout>
+
+---
+
+## horoscope_of_month
+
+**Purpose** Take the horoscope of one month of a lunar year: when the question is about a month,
+use it instead of picking a day on the asker's behalf.
+
+**Signature**
+
+```python
+def horoscope_of_month(self, year: int, month: int) -> Horoscope
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | Lunar year, 1–9999 |
+| `month` | `int` | Yes | — | Lunar month number, 1–12; a leap month has no number of its own |
+
+**Return value** `Horoscope` — its target date is the first day of that (non-leap) month and its
+hour follows the hour pillar's branch, the same convention as a whole-month entry of
+[`monthly_list`](/en/docs/python/horoscope#monthly_list). Whatever it computes afterwards (`to_text`,
+`patterns`, `KnowledgePack.for_horoscope`) is still taken for that lunar year and month; its
+precision ([`precision()`](/en/docs/python/horoscope#precision)) is `Scope.MONTHLY`.
+
+**Example**
+
+```python
+h = chart.horoscope_of_month(2025, 7)
+
+print(h.solar_date, h.lunar_date)
+print("monthly", h.monthly.heavenly_stem + h.monthly.earthly_branch)
+```
+
+**Output**
+
+```text
+2025-8-23 二〇二五年七月初一
+monthly jiashen
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A leap month has no number of its own: under the default dividing configuration the first half of a
+leap month follows the month it repeats and the second half the next one —
+[`monthly_list_to_text`](/en/docs/python/horoscope#monthly_list_to_text) gives the dates. The daily
+and hourly scopes are in the result too, for the first day of that month:
+[`to_text`](/en/docs/python/horoscope#to_text) and picking knowledge by chart stop at the monthly
+scope, and a text, palace-query or pattern scope finer than monthly raises `IztroError` (`invalid_argument`). A year outside 1–9999 or a month outside 1–12 raises `IztroError` (`invalid_argument`).
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
+</Callout>
+
+---
+
 ## to_text
 
 **Purpose** The chart's semantic text: a complete description for language models and people;
@@ -529,6 +643,8 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -538,6 +654,8 @@ def to_text(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack (custom or merged); when given, readings are inlined after the facts — pattern readings (with their conditions) follow the pattern list, each palace's star readings follow that palace's facts (same-palace major-star combinations first), and a `## Mutagen Notes` section closes the text |
+| `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` keeps basic info, the palace overview table and the patterns (no palace sections, hence no star readings); `FULL` writes everything |
+| `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers) (an entry's summary, or a body short enough on its own; patterns without their conditions), `FULL` the full bodies. `SUMMARY` needs `knowledge`, and a pack with a long body lacking its summary raises `IztroError` (`invalid_argument`) listing every missing entry |
 | `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
 **Return value** `str` — a Markdown subset in the charting language: a `# Natal Chart …` title,
@@ -561,7 +679,7 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ```text
 # Natal Chart 2000-8-16 Tiger hour female
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 
@@ -576,6 +694,62 @@ pass a `KnowledgePack` explicitly.
 For single-palace and surrounded-palace text see `palace(...).to_text()` and
 `surrounded_palaces(...).to_text()`; for pattern text see `patterns_to_text` on
 [Patterns](/en/docs/python/patterns).
+
+---
+
+## topic_to_text
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature**
+
+```python
+def topic_to_text(
+    self,
+    topic: str,
+    *,
+    knowledge: bool | KnowledgePack = True,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    config: PatternConfig | None = None,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `topic` | `str` | yes | — | Topic slug, a key of the pack's `topics` section; see `KnowledgePack.topics()` for the bundled ones |
+| `knowledge` | `bool \| KnowledgePack` | no | `True` | Source of the topic definition and readings: `True` takes the bundled pack for the charting language, or pass a `KnowledgePack` |
+| `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each palace major, minor and adjective stars only |
+| `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the summary layer, `FULL` the full bodies |
+| `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)` |
+
+**Returns**　`str` — a `# Topic · Natal Chart …` title and the topic description, one trine &
+opposite section per `surround` palace, the `palaces` under `## Related Palaces` (no palace twice),
+then the patterns landing in those palaces and the mutagen notes.
+
+**Raises**　`IztroError` (`invalid_argument`) — the pack has no such topic, the topic names an
+unknown palace key, `knowledge=False`, the charting language has no bundled pack, or `SUMMARY` with a
+pack lacking summaries.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```python
+from x_iztro import KnowledgeDepth
+
+text = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+print(text.splitlines()[0])
+print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
 
 ---
 
@@ -623,7 +797,7 @@ print(len(chart.to_json()) > 10000, chart.to_json()[:1])
 ```text
 2000-8-16 soulPalace
 normal female 2
-{"gender": "female", "solarDate": "2000-8-16", "lunarDate": "二〇〇〇年七月十七"}
+{"gender": "female", "solarDate": "2000-8-16", "lunarDate": "Lunar 2000-7-17"}
 True {
 ```
 

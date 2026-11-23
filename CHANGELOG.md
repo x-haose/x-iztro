@@ -7,6 +7,119 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-23
+
+### 变更（breaking）
+
+逐条的改法与各语言前后对照见[从 0.6 升级到 0.7](https://x-iztro.x-haose.com/zh/docs/guide/about/upgrade-0-7)。
+
+- **Rust 公开类型的 serde 表示统一为语言无关标识**：此前约 45 个公开枚举的派生 serde 用 Rust 变体名
+  （`"Male"`、`"Normal"`），与绑定线协议、DTO 用的语言无关标识（`male`、`normal`）是两套 JSON。
+  现在这些枚举按标识序列化与反序列化。星盘、宫位、星耀、运限这些模型结构不再派生 serde，
+  序列化一律走 DTO；`PatternConfig`、反推结果、知识包本身就是线协议，保留。
+  `Language::as_code` 去掉，改用 `as_key`；`from_code` 仍收宽松写法。
+- **配置 JSON 里的未知键由忽略改为报错**（Rust `Config` 的 serde 与各绑定的 config 入参同一实现）：
+  此前拼错的键被静默忽略、按默认配置排盘，结果看上去正常却不是想要的配置。`Config` 的派生 serde
+  此前还会丢掉自定义四化表与亮度表，现在往返不丢，报错统一以 `config:` 开头。
+- **运限按宫查询改为可失败**：按农历年、年月取的运限只精确到流年、流月（见「新增」），
+  在这样的运限上按更细的层级查宫位，此前会静默答出内核替调用方挑的代表日那一层。现在比查询精度细
+  即报 `invalid_argument`，签名随之改变：
+  - Rust `HoroscopeRef` 的 `palace`、`surround_palaces`、`has_horoscope_mutagen`、`has_horoscope_stars`、
+    `has_one_of_horoscope_stars`、`not_have_horoscope_stars` 与 `to_text_with`、`patterns`、`patterns_with`
+    返回 `Result`；`KnowledgePack::for_horoscope` / `for_horoscope_with` 改收 `HoroscopeRef`，
+    按它的查询精度取材，不再有 `through` 参数。`HoroscopeData` 上带星盘参数的同名方法不变。
+  - Go `Horoscope.Palace`、`SurroundPalaces` 返回 `(*T, error)`，`HasHoroscopeMutagen`、`HasHoroscopeStars`、
+    `HasOneOfHoroscopeStars`、`NotHaveHoroscopeStars` 返回 `(bool, error)`。
+  - Python 这几个方法抛 `IztroError`；层级标识拼错也报错，不再返回 `None`。
+  按日期取的运限精确到流时，任何层级都不会报错。
+- **日文、韩文、越南文译文对齐 iztro v2.6.3**，共 52 处：日文改用新字体（陷→陥、龍→竜、祿→禄、德→徳，
+  交友宫僕役→奴僕）；韩文天德 복덕→천덕（原与福德宫同形）、铃星 령성→영성、截空 절중→절공、
+  岁破 태파→세파等；越南文陷 Hạn→Hãm、钺 Nguyệt→Việt 等。按这几种语言的译名展示或反查的下游需同步。
+- **星盘的 `lunarDate` 随排盘语言**（iztro v2.6.3 起）：简繁中文仍为「二〇〇〇年七月十七」，
+  英日韩越为「农历」一词加数字的写法（`Lunar 2000-7-17`、`旧暦2000年7月17日`…），闰月带前缀。
+  运限的 `lunarDate` 仍恒为中文写法。
+- **运限的 `solarDate` 规范为不补零、不带时间的 `Y-M-D`**（如 `2025-1-5`）：日期入参可以补零、带时间部分，
+  运限不回显原串；星盘的 `solarDate` 仍原样回显输入。
+
+### 新增
+
+- **JavaScript / TypeScript 绑定**（npm 包 `x-iztro`）：Rust 内核编译为 WebAssembly，在浏览器、Node.js 22+
+  与 Web Worker 里运行，与 Python、Go 走同一个 bridge 分派，能力一一对应——星盘、宫位、星耀、三方四正、
+  夹宫、运限（含按农历年、月取运限与查询精度）、全部 to_text 入口与分层开关、知识包读取 / 合并 /
+  按盘取材、格局、八字与星盘特征反推、插件。模块划分与函数名随 iztro（`astro` / `util` / `star` / `data`），
+  `toJSON()` 即 iztro 的 JSON；与 iztro 不同的是可选参数收在选项对象里，且启动时要先 `await init()`。
+  - ESM 包，自带类型声明（TypeScript 5.0 起，消费方 `lib` 只需 `ES2022`）。`init()` 是唯一的异步调用，
+    之后全部同步；内核按 `new URL('./x_iztro.wasm', import.meta.url)` 取，Vite、webpack、Turbopack 直接识别，
+    也可显式传 URL、路径、字节、`Response` 或已编译的 `WebAssembly.Module`。
+  - 纯数据入口 `x-iztro/types`：只有 DTO 类型与枚举常量，不装载内核，给只渲染排盘结果的组件用。
+  - 内核调用中断（trap、越界等）时实例作废、抛 `internal`，再 `init()` 重建，不会带着损坏的内存继续算；
+    数字入参拒绝 `NaN` 与 `±Infinity`。
+  - 测试读与 Python、Go 相同的金标与文本快照逐值对照；在 React Router 8（预渲染）、Vite 8、Next.js 16
+    （Turbopack 与 webpack）与 Tauri 2 打包后的应用里实测引用。文档站新增 JavaScript 栏目与打包器配置说明
+    （Next.js webpack 的 `serverExternalPackages`、Vite Worker 的 `worker.format: 'es'`、CSP 的
+    `'wasm-unsafe-eval'`），指南各页补 JavaScript 代码标签。
+- **to_text 分层**：带释义的本命文本约 2 万字，调用方无论问什么都只能拿全部，而 AI 客户端对工具返回有篇幅上限。
+  `TextOptions` 新增两个互相独立的开关，默认都是完整，输出与此前逐字节相同：
+  - 事实详略 `TextDetail`（bridge `detail`）：`Overview` 时本命只写基本信息、十二宫总览表与格局，
+    运限各层只写宫名对照、四化、流耀与格局，单宫、三方四正、夹宫只写三组星。
+  - 释义深度 `KnowledgeDepth`（bridge `knowledgeDepth`）：`Summary` 取条目摘要。
+  基准盘（2000-8-16 寅时女，zh-CN）本命：完整事实 3,389 字、总览 756 字、总览加摘要 1,054 字、
+  完整加全文释义 20,552 字。
+- **知识包摘要字段**：星耀、格局、宫位、四化条目新增 `summary`，星耀另有与 `combinations` 成对的
+  `combinationSummaries`。正文显示宽度超过 240（中文 120 字）的条目必须带摘要，
+  `KnowledgePack::missing_summaries` 按整包校验；覆盖包换了正文却没给摘要时去掉底包的旧摘要，
+  免得摘要层说的是被换掉的内容。默认包 134 条长正文配了摘要。
+- **按主题取材**：知识包新增 `topics.<slug>`（标题、连同三方四正取的宫位、只取本宫的宫位、主题说明），
+  `topic_to_text` 按主题取出相关宫位成文。「婚恋看哪些宫」各家不一，所以主题定义在知识包里，
+  门派可用覆盖包改写。默认包 13 个主题：总论、性格、财运、事业、婚恋、子女、父母、兄弟、交友、
+  田宅、迁移、精神、健康。Rust / Python `topic_to_text`、Go `TopicToText`、bridge kind `topicToText`。
+- **按农历年、农历月取运限**：`horoscope_of_year(year)` / `horoscope_of_month(year, month)`
+  （Go `HoroscopeOfYear` / `HoroscopeOfMonth`，bridge 运限目标 `targetYear` 可配 `targetMonth`）。
+  公历元旦到正月初一之间仍属上一个农历年，按 1 月 1 日取会得到上一年的流年。
+  内核替调用方挑一个代表日（农历年取六月初一；农历月取初一，节气分界下取该节令月的交节次日），
+  运限的查询精度 `precision()` 记为流年或流月，to_text、格局、按盘取材都只写到这一层，
+  文本标题写年份与干支（如「# 运限 2027 (丁未)」）而不写代表日。改历年缺这个农历月时报 `invalid_argument`。
+- **运限文本写到哪一层**：`TextOptions::horoscope_through(scope)`（Python `through=`、Go `TextOptions.Through`、
+  bridge `through`），写到大限 / 流年 / 流月 / 流日 / 流时为止。只写到大限时不列风云际会——它从大限视角判定，
+  却要读小限与流年。
+- **流月一览与流年一览文本**：`monthly_list_to_text(year)` 某农历年每个流月一行（闰月拆前后两行），
+  `yearly_overview_to_text(from, to)` 连续若干农历年每年一行（干支、虚岁、大限与小限宫、流年命宫与四化落宫）。
+  回答「接下来几年」「哪个月适合」这类问题时一次拿到，不必逐年逐月取运限。带知识包时表后附四化星释义。
+  bridge kind `monthlyListToText` / `yearlyOverviewToText`。
+- **运限时辰可省略**（对齐 iztro v2.6.3）：省略时按目标日期串里的小时换算（23 点为晚子），没有时间即早子。
+  Rust 的时辰参数改收 `impl Into<Option<u8>>`，传数字的调用不变；Python `horoscope()` 收 `str` / `datetime` / `date`；
+  Go 新增 `HoroscopeAt(date)` 与 `HoroscopeAtTime(t)`；bridge `targetTimeIndex` 可省略。
+- **日期写法对齐 iztro v2.6.3**：分隔符可用 `-`、`/`、`.`（同一串内一致），月日可补零，可带 ` HH:mm` 或
+  ` HH:mm:ss`；公历、农历、运限共用同一套校验。
+- **支持年份扩到 1-9999**（对齐 iztro v2.6.3）：此前为 1583-9999。1582-10-15 以前按儒略历，
+  改历空缺的 1582-10-05 至 10-14 报 `invalid_date`。
+- Rust 新增可选 feature `schemars`：带标识的枚举实现 `JsonSchema`（列出全部标识），供下游从内核类型派生入参 schema。
+
+### 修正
+
+- **历法换成自有内核，修正 lunar_rust 的移植错误**：以 iztro 所用的 lunar-typescript 1.8.6 为准，
+  对公历 1-9999 年逐日比对，原依赖 lunar_rust 1.0.1 有两类错误落在此前支持的 1583-9999 年内：
+  - 19 处农历月界错位、569 天农历日期不同，原修正层只盖住 1602 年的 29 天，其余 540 天排盘出错，
+    如 1925-05-22 起一个月闰四月被标成四月；
+  - 2012-2149 年 4,080 个节气时刻差 1-41 秒，其中 23 个跨过整点后 30 分，这些时辰
+    `horoscope_divide=Exact` 的月柱判反。
+
+  根因是公式移植错误（`t -= A + B` 译成了 `t = t - A + B` 等），上游仓库自 2023-12 无提交。
+  新内核逐函数移植 lunar-typescript（MIT），金标逐日覆盖公历 1-9999 年的农历日期、年月日柱与星座，
+  逐年覆盖月表与节气时刻。单盘耗时由约 15 µs 降到约 4.5 µs，wasm 由 1.80 MB 降到 1.65 MB。
+- **Python `horoscope()` 只给日期不给时辰时取了此刻的时辰**：iztro 此时按早子时算。
+  运限对象再发起计算（to_text、格局、按盘取材）时也改为转发调用方原始的目标日期与时辰，
+  不再用已去掉时间部分的 `solarDate`，避免省略时辰时静默换成早子时。
+- **流月列表对 1-9999 以外的年份先推算月表、再间接报 `invalid_date`**：现在入口即报 `invalid_argument`，
+  与 iztro 2.6.3 一致。
+
+### 其他
+
+- 文档站迁到 x-iztro.x-haose.com，只讲把库嵌进自己的程序；面向 AI 客户端用户的站点在 ziwei.x-haose.com。
+  新增「从 0.6 升级到 0.7」一页。
+- 默认知识包内容修订：禄存条目末尾与禄存无关的辅星同宫提示移入术语「辅星同宫」（术语 49 → 50），
+  三台、八座按各自视角表述同一段对星释义，龙德补述中州派的安放。
+
 ## [0.6.1] - 2026-09-08
 
 ### 修正
@@ -371,7 +484,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/x-haose/x-iztro/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/x-haose/x-iztro/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/x-haose/x-iztro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/x-haose/x-iztro/compare/v0.4.0...v0.5.0

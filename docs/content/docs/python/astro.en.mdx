@@ -147,7 +147,7 @@ def by_solar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `solar_date` | `str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | `int` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `str` | Yes | — | `"male"` or `"female"`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | No | `True` | Keyword-only. Whether to correct for lunar leap months. When true, days from the sixteenth of a leap month onward count as the next month (the late Zi hour excepted, see below) |
@@ -172,7 +172,7 @@ print("soul", chart.soul, "body", chart.body)
 **Output**
 
 ```text
-2000-8-16 | 二〇〇〇年七月十七 | geng chen - jia shen - bing woo - geng yin
+2000-8-16 | Lunar 2000-7-17 | geng chen - jia shen - bing woo - geng yin
 leo dragon wood 3rd
 soul rebel body scholar
 ```
@@ -232,7 +232,7 @@ would raise no error while silently shifting the chart by a month.
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `lunar_date` | `str` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `lunar_date` | `str` | Yes | — | Lunar date in `YYYY-M-D` (separators and time part as for solar dates); write the month as a positive number (leap months are flagged by the next parameter) |
 | `is_leap_month` | `bool` | No | `False` | Keyword-only. Whether that lunar month is a leap month. Has no effect if that month in that year has no leap month to begin with |
 
 **Return value** Same as `by_solar`.
@@ -272,7 +272,7 @@ before calling.
 def get_horoscope(
     self,
     astrolabe: Astrolabe,
-    target_date: str | None = None,
+    target_date: str | datetime | date | None = None,
     target_time_index: TimeIndexType | None = None,
 ) -> Horoscope
 ```
@@ -282,8 +282,8 @@ def get_horoscope(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `Astrolabe` | Yes | — | The natal chart |
-| `target_date` | `str \| None` | No | `None` | Target solar date; today when omitted |
-| `target_time_index` | `int \| None` | No | `None` | Target hour index; the current hour when omitted |
+| `target_date` | `str \| datetime \| date \| None` | No | `None` | Target solar date: a string (spelled as for charting, a ` HH:mm` time allowed) or a `datetime` / `date`; now when omitted |
+| `target_time_index` | `int \| None` | No | `None` | Target hour index; when omitted it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time (or a `date`) means the early Zi hour |
 
 **Return value** `Horoscope`, holding the chart passed in. Details on
 [the horoscope object](/en/docs/python/horoscope).
@@ -425,7 +425,7 @@ print("\n".join(chart.to_text().splitlines()[:5]))
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 ```
 

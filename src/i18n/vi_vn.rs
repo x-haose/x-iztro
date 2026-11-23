@@ -70,7 +70,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Tianshi => "Thiên Sứ",
         StarKey::Tianchu => "Thiên Trù",
         StarKey::Changsheng => "Trường Sinh",
-        StarKey::Muyu => "Mục Dục",
+        StarKey::Muyu => "Mộc Dục",
         StarKey::Guandai => "Quan Đới",
         StarKey::Linguan => "Lâm Quan",
         StarKey::Diwang => "Đế Vượng",
@@ -137,7 +137,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Liuma => "Lưu Mã",
         StarKey::Nianjie => "Niên Giải",
         StarKey::Yuekui => "Thiên Khôi(M)",
-        StarKey::Yueyue => "Thiên Nguyệt(M)",
+        StarKey::Yueyue => "Thiên Việt(M)",
         StarKey::Yuechang => "Văn Xương(M)",
         StarKey::Yuequ => "Văn Khúc(M)",
         StarKey::Yueluan => "Hồng Loan(M)",
@@ -147,7 +147,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Yuetuo => "Đà La(M)",
         StarKey::Yuema => "Thiên Mã(M)",
         StarKey::Rikui => "Thiên Khôi(d)",
-        StarKey::Riyue => "Thiên Nguyệt(d)",
+        StarKey::Riyue => "Thiên Việt(d)",
         StarKey::Richang => "Văn Xương(d)",
         StarKey::Riqu => "Văn Khúc(d)",
         StarKey::Riluan => "Hồng Loan(d)",
@@ -157,7 +157,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Rituo => "Đà La(d)",
         StarKey::Rima => "Thiên Mã(d)",
         StarKey::Shikui => "Thiên Khôi(H)",
-        StarKey::Shiyue => "Thiên Nguyệt(H)",
+        StarKey::Shiyue => "Thiên Việt(H)",
         StarKey::Shichang => "Văn Xương(H)",
         StarKey::Shiqu => "Văn Khúc(H)",
         StarKey::Shiluan => "Hồng Loan(H)",
@@ -230,7 +230,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
         Brightness::Li => "Lợi",
         Brightness::Ping => "Bình",
         Brightness::Bu => "Bất",
-        Brightness::Xian => "Hạn",
+        Brightness::Xian => "Hãm",
     }
 }
 
@@ -320,11 +320,22 @@ pub fn zodiac_name(branch: EarthlyBranch) -> &'static str {
 pub fn horoscope_name(n: HoroscopeName) -> &'static str {
     match n {
         HoroscopeName::Decadal => "Đại Hạn",
-        HoroscopeName::Childhood => "đứa trẻ Hạn",
+        HoroscopeName::Childhood => "Vận hạn thời thơ ấu",
         HoroscopeName::Age => "Tiểu Hạn",
         HoroscopeName::Yearly => "Lưu Niên",
         HoroscopeName::Monthly => "Lưu Nguyệt",
         HoroscopeName::Daily => "Lưu Nhật",
         HoroscopeName::Hourly => "Lưu Thì",
     }
+}
+
+/// 星盘的农历日期写法：「农历」一词加 [`lunar_date_body`]（对应 iztro 的 `lunarDate` 模板）
+pub fn lunar_date(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    format!("Âm lịch {}", lunar_date_body(year, month, day, is_leap))
+}
+
+/// 农历日期去掉「农历」一词的部分：数字年月日，闰月带前缀；用于已有标签的场合
+pub fn lunar_date_body(year: i64, month: u32, day: u32, is_leap: bool) -> String {
+    let leap = if is_leap { "nhuận " } else { "" };
+    format!("ngày {day} tháng {leap}{month} năm {year}")
 }

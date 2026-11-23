@@ -9,6 +9,8 @@ x-iztro 排盘主类
 
 from __future__ import annotations
 
+from datetime import date, datetime
+
 from x_iztro import _bridge as bridge
 from x_iztro.models import (
     Astrolabe,
@@ -114,7 +116,7 @@ class Astro:
     def get_horoscope(
         self,
         astrolabe: Astrolabe,
-        target_date: str | None = None,
+        target_date: str | datetime | date | None = None,
         target_time_index: TimeIndexType | None = None,
     ) -> Horoscope:
         """
@@ -122,8 +124,8 @@ class Astro:
 
         Args:
             astrolabe: 星盘对象（由 by_solar 或 by_lunar 返回）
-            target_date: 目标阳历日期，如 "2024-1-1"；不传取今天
-            target_time_index: 目标时辰索引 (0-12)；不传取此刻所属时辰
+            target_date: 目标阳历日期，字符串（可带时间）或 `datetime` / `date`；不传取此刻
+            target_time_index: 目标时辰索引 (0-12)；不传时按目标日期的时间换算，不带时间即早子时
 
         Returns:
             Horoscope 运限对象，持有传入的星盘

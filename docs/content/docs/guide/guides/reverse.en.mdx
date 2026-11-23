@@ -28,7 +28,7 @@ candidates.
 
 ## From BaZi pillars to birth dates
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -83,9 +83,25 @@ for _, c := range cands {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { solarDatesByBazi, HeavenlyStem as S, EarthlyBranch as B } from 'x-iztro';
+
+// 庚辰 甲申 丙午 庚寅
+const cands = solarDatesByBazi(
+  [S.GENG, B.CHEN], [S.JIA, B.SHEN], [S.BING, B.WU], [S.GENG, B.YIN],
+  { yearRange: [1900, 2100] },
+);
+for (const c of cands) {
+  console.log(c.solarDate, c.timeIndex);
+}
+```
+
+</Tab>
 </Tabs>
 
-**Output** (identical in all three languages)
+**Output** (identical in every language)
 
 ```text
 1940-8-31 2
@@ -169,7 +185,7 @@ all given conditions must hold **simultaneously**:
 | `fix_leap` | leap month correction, same meaning as the charting parameter; defaults to `true` when absent (a `*bool` on the Go side, `nil` meaning absent) |
 | `limit` | candidate cap, 0 takes the default of 512 |
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -221,6 +237,22 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(len(r.Candidates), "candidates, truncated =", r.Truncated)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { reverseChart, EarthlyBranch, FiveElementsClass, MajorStar } from 'x-iztro';
+
+const r = reverseChart({
+  soulBranch: EarthlyBranch.WU,
+  fiveElementsClass: FiveElementsClass.WOOD_3,
+  stars: [{ star: MajorStar.ZIWEI, branch: EarthlyBranch.WU }],
+  mutagens: [MajorStar.TAIYANG, null, null, null], // Taiyang carries Lu
+  yearRange: [1998, 2002],
+});
+console.log(r.candidates.length, 'candidates, truncated =', r.truncated);
 ```
 
 </Tab>
@@ -280,7 +312,7 @@ Rust):
   a yang stem and 丑 a yin branch, and no such pillar exists in the sexagenary
   cycle;
 - empty reverse criteria, or criteria containing a horoscope-scope flow star;
-- a reversed year range, or one outside the supported span (solar 1583–9999).
+- a reversed year range, or one outside the supported span (years 1–9999).
 
 Error classes and each language's error type are on
 [Error handling](/en/docs/guide/guides/errors).

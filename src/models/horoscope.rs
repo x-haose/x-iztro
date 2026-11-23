@@ -1,12 +1,11 @@
-use serde::{Deserialize, Serialize};
-
 use crate::data::stars::StarKey;
 use crate::data::types::*;
+use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
 
 /// 单个运限层级（大限/流年/流月/流日/流时）的数据。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct HoroscopeItem {
     /// 该运限所在宫位索引（0-11，寅宫为 0）
     pub index: usize,
@@ -30,8 +29,7 @@ pub struct HoroscopeItem {
 /// 农历月在流月列表中的分段。
 ///
 /// 闰月在 `fix_leap` 打开时按前后半月拆成两段分别起运限，其余情形整月一段。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MonthPart {
     /// 整月一段（非闰月，或闰月但不拆分）
     Normal,
@@ -41,16 +39,11 @@ pub enum MonthPart {
     Second,
 }
 
-impl MonthPart {
-    /// 语言无关标识。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            MonthPart::Normal => "normal",
-            MonthPart::First => "first",
-            MonthPart::Second => "second",
-        }
-    }
-}
+crate::data::keyed::keyed_enum!(MonthPart, "month part" {
+    Normal => "normal",
+    First => "first",
+    Second => "second",
+});
 
 /// 大限定位方式：按起运先后的序号，或该限所在的本命宫名。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +69,7 @@ impl From<Palace> for DecadalTarget {
 /// 大限列表项：通用运限字段之外，带该限所在的本命宫名与虚岁、年份区间。
 ///
 /// 通用字段经 `Deref` 直接可读（`d.heavenly_stem`、`d.palace_names`）。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DecadalHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -97,7 +90,7 @@ impl std::ops::Deref for DecadalHoroscope {
 }
 
 /// 流年列表项：通用运限字段之外，带该年对应的虚岁与农历年份。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -116,7 +109,7 @@ impl std::ops::Deref for YearlyHoroscope {
 }
 
 /// 流月列表项：在流年字段之外，带农历月份、闰月标记与该段的农历日区间。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MonthlyHoroscope {
     /// 通用运限字段
     pub base: HoroscopeItem,
@@ -146,10 +139,9 @@ impl std::ops::Deref for MonthlyHoroscope {
 ///
 /// 通用运限字段经 `Deref` 直接可读（`age.index`、`age.heavenly_stem`），
 /// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct AgeItem {
     /// 通用运限字段
-    #[serde(flatten)]
     pub base: HoroscopeItem,
     /// 虚岁
     pub nominal_age: u32,
@@ -164,7 +156,7 @@ impl std::ops::Deref for AgeItem {
 }
 
 /// 流年十二神：按目标年支起的岁前十二神与将前十二神。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyDecStar {
     /// 将前十二神（按宫位索引排列）
     pub jiangqian12: Vec<StarKey>,
@@ -176,10 +168,9 @@ pub struct YearlyDecStar {
 ///
 /// 通用运限字段经 `Deref` 直接可读（`yearly.mutagen`、`yearly.palace_names`），
 /// `base` 字段本身也保留，供需要整个 [`HoroscopeItem`] 时取用。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct YearlyItem {
     /// 通用运限字段
-    #[serde(flatten)]
     pub base: HoroscopeItem,
     /// 流年十二神
     pub yearly_dec_star: YearlyDecStar,
@@ -194,7 +185,7 @@ impl std::ops::Deref for YearlyItem {
 }
 
 /// 一次运限查询的完整结果。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct HoroscopeData {
     /// 目标阳历日期（与查询入参一致）
     pub solar_date: String,
@@ -214,13 +205,17 @@ pub struct HoroscopeData {
     pub hourly: HoroscopeItem,
 }
 
-/// 一次运限查询的结果连同发起它的星盘。
+/// 一次运限查询的结果连同发起它的星盘与查询精度。
 ///
-/// 由 [`Astrolabe::horoscope`] 返回。解引用即得到 [`HoroscopeData`] 本身，
-/// 而宫位与流耀查询不必再把星盘传进来 —— 运限本来就依附于某一张盘。
+/// 由 [`Astrolabe::horoscope`]、[`Astrolabe::horoscope_of_year`]、[`Astrolabe::horoscope_of_month`] 返回。
+/// 解引用即得到 [`HoroscopeData`] 本身，而宫位与流耀查询不必再把星盘传进来 —— 运限本来就依附于某一张盘。
 pub struct HoroscopeRef<'a> {
+    /// 运限数据；各层恒齐全，比 `precision` 细的层级属于代表日
     pub(crate) data: HoroscopeData,
+    /// 发起查询的星盘
     pub(crate) astrolabe: &'a Astrolabe,
+    /// 查询精度，取值见 [`HoroscopeRef::precision`]
+    pub(crate) precision: Scope,
 }
 
 impl<'a> std::ops::Deref for HoroscopeRef<'a> {
@@ -242,8 +237,37 @@ impl<'a> HoroscopeRef<'a> {
         self.astrolabe
     }
 
-    /// 取出运限数据，脱离星盘。
+    /// 取出运限数据，脱离星盘与查询精度。
     pub fn into_data(self) -> HoroscopeData {
         self.data
+    }
+
+    /// 查询精度：目标实际指定到的最细层级。按农历年取（[`Astrolabe::horoscope_of_year`]）为
+    /// [`Scope::Yearly`]，按农历年月取（[`Astrolabe::horoscope_of_month`]）为 [`Scope::Monthly`]，
+    /// 按日期取（[`Astrolabe::horoscope`]，给不给时辰都一样）为 [`Scope::Hourly`]。
+    ///
+    /// 数据里比它细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，不是查询的答案：
+    /// 文本（`to_text`）默认只写到这一层，宫位查询、格局与文本的层级参数比它细时报错。
+    pub fn precision(&self) -> Scope {
+        self.precision
+    }
+
+    /// 校验 `scope` 不比查询精度细；`param` 是报错时指明的入参名。
+    ///
+    /// # Errors
+    /// `scope` 比 [`Self::precision`] 细时返回 [`IztroError::InvalidArgument`]。
+    pub(crate) fn check_within_precision(
+        &self,
+        scope: Scope,
+        param: &str,
+    ) -> Result<(), IztroError> {
+        if scope.depth() > self.precision.depth() {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid {param} '{}': the horoscope target only specifies layers down to '{}'",
+                scope.as_key(),
+                self.precision.as_key()
+            )));
+        }
+        Ok(())
     }
 }

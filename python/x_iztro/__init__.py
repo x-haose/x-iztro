@@ -101,6 +101,8 @@ from x_iztro.enums import (
     HoroscopeStar,
     PatternKey,
     BrightnessSource,
+    TextDetail,
+    KnowledgeDepth,
 )
 
 # 主类
@@ -197,6 +199,8 @@ __all__ = [
     "HoroscopeStar",
     "PatternKey",
     "BrightnessSource",
+    "TextDetail",
+    "KnowledgeDepth",
     # 子模块：安星、数据表、翻译
     "star",
     "data",

@@ -1,37 +1,45 @@
 ---
 title: 从 iztro 迁移：API 对照
-description: iztro 每个公开 API 在 x-iztro 三侧的落点，换了形状的几处及其原因，以及不提供的那些。
+description: iztro 每个公开 API 在 x-iztro 各语言的落点，换了形状的几处及其原因，以及不提供的那些。
 ---
 
 *适合：开发者，尤其是从 JS iztro 迁移过来的*
 
-x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.6.1 的移植。
-iztro 的每个公开 API 在 Rust、Python、Go 三侧都有等价物，
-三侧能力完全一致，形式各随语言习惯。
+x-iztro 是 [iztro](https://github.com/SylarLong/iztro) v2.6.3 的移植。
+iztro 的每个公开 API 在 Rust、Python、Go、JavaScript 四侧都有等价物，
+各侧能力完全一致，形式各随语言习惯。
 
 这一页写给从 iztro 迁移过来的人：名字对不上时来这里查。
 逐个 API 的用法见各语言的 API 参考。
 
 ## 名字直接对得上的
 
-| iztro | Rust | Python | Go |
-| --- | --- | --- | --- |
-| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` |
-| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` |
-| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
-| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
-| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
-| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` |
-| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` |
-| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` |
-| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` |
-| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
-| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
-| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
-| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` |
-| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` |
+| iztro | Rust | Python | Go | JavaScript |
+| --- | --- | --- | --- | --- |
+| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` | `astro.bySolar` |
+| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` | `astro.byLunar` |
+| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` | `chart.horoscope` |
+| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` | `chart.palace` |
+| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` | `chart.surroundedPalaces` |
+| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` | `chart.flankingPalaces` |
+| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` | `chart.decadalList` |
+| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` | `chart.yearlyList` |
+| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` | `chart.monthlyList` |
+| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` | `palace.fliesTo` |
+| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` | `util.fixIndex` |
+| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` | `star.getMajorStar` |
+| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` | `i18n.translate` |
+| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` | `i18n.keyOf` |
 
-其余同理：JS 的 camelCase 在 Rust / Python 下是 snake_case，在 Go 下是 PascalCase。
+其余同理：JS 的 camelCase 在 Rust / Python 下是 snake_case，在 Go 下是 PascalCase，在 x-iztro 的 JS 包里保持 camelCase。
+
+### JavaScript：先 init，再同步调用
+
+x-iztro 的 JS 包把 Rust 核心编成 WebAssembly 运行，装载是异步的：程序里先 `await init()` 一次，
+之后的 API 与 iztro 一样是同步的。模块划分沿用 iztro 的 `astro` / `util` / `star` / `data`；
+`bySolar` 等入口性别之后的可选项收在一个对象里（`{ fixLeap, language, config }`），不按位置传。
+安星函数收出生数据对象（与 iztro 的 `AstrolabeParam` 同一思路），取值一律是语言无关标识。
+见 [JavaScript API 参考](/zh/docs/js)。
 
 ## 换了形状的
 
@@ -52,20 +60,35 @@ chart = Astro().by_solar("2000-8-16", 2, "female",
                          config=ChartConfig(astro_type="earth"))
 ```
 
-从任意干支起盘对应 `rearrangeAstrolable`，三侧都是星盘方法 `rearranged(干, 支)`。
+从任意干支起盘对应 `rearrangeAstrolable`，各侧都是星盘方法 `rearranged(干, 支)`。
 
 ### 没有全局配置与全局语言
 
 iztro 的 `astro.config()`、`i18n.setLanguage()` 改的是模块级单例，
-因此还需要 `astro.getConfig()` 把值读回来。
+因此还需要 `astro.getConfig()`、`astro.resetConfig()`、`i18n.getLanguage()` 读回或复位。
 
 x-iztro 没有全局状态：配置与语言都随每次调用传入，由调用方自己持有。
-所以不提供 `getConfig` 与 `setLanguage` —— 想读回来，读你自己那份就是。
+所以不提供 `getConfig`、`resetConfig`、`setLanguage`、`getLanguage` —— 想读回来，读你自己那份就是。
+
+### 运限的目标时刻
+
+iztro 的 `horoscope(targetDate?, timeIndex?)` 两个参数都可省略：省略时辰时按目标日期的时间换算，
+不带时间即早子时；目标日期还可以是 `Date` 对象。各侧对应如下，各随语言习惯：
+
+| iztro | Rust | Python | Go | JavaScript |
+| --- | --- | --- | --- | --- |
+| `horoscope(date, i)` | `horoscope(date, i)` | `horoscope(date, i)` | `Horoscope(date, i)` | `horoscope(date, i)` |
+| `horoscope(date)` | `horoscope(date, None)` | `horoscope(date)` | `HoroscopeAt(date)` | `horoscope(date)` |
+| `horoscope(new Date(…))` | 自行格式化成 `"Y-M-D H:m"` 传入 | `horoscope(datetime(…))` | `HoroscopeAtTime(t)` | `horoscope(new Date(…))` |
+| `horoscope()` | `horoscope_now()` | `horoscope()` | `HoroscopeNow()` | `horoscope()` |
+
+日期串的写法与 iztro 相同：分隔符可用 `-` `/` `.`、可带 ` HH:mm(:ss)`；排盘时时间部分不参与计算，
+星盘的 `solarDate` 原样回显输入。
 
 ### 大限小限
 
 `astro/palace` 的 `getHoroscope(param)` 收一份 `AstrolabeParam`。
-x-iztro 的 `get_decadals_and_ages` 直接收命宫索引与五行局，
+x-iztro 的 `get_decadals_and_ages`（JS 里沿用 iztro 的名字 `astro.getHoroscope`）直接收命宫索引与五行局，
 不必先凑出一份出生数据，能力是 iztro 那个的超集。
 
 ### 农历入口的闰月参数
@@ -74,7 +97,7 @@ x-iztro 的 `get_decadals_and_ages` 直接收命宫索引与五行局，
 描述闰月：写反了不报错，盘会静默错一个月，而 `fixLeap` 又只在输入是闰月时才有意义。
 x-iztro 把两者合成一个三态值：Rust `LeapMonth::{NotLeap, Leap, LeapFixed}`、
 Go `NotLeapMonth / LeapMonthKeep / LeapMonthFixed`；Python 保留两个布尔但改为只能按关键字传入
-（`is_leap_month=`、`fix_leap=`）。绑定层的 JSON 线协议仍是 `isLeapMonth`/`fixLeap` 两个键，
+（`is_leap_month=`、`fix_leap=`），JavaScript 收在选项对象里（`{ isLeapMonth, fixLeap }`）。绑定层的 JSON 线协议仍是 `isLeapMonth`/`fixLeap` 两个键，
 与 iztro 一致。阳历入口的 `fixLeap` 单独一个布尔，没有写反的余地，保持不变。
 
 Go 侧同理把 `gender`、`language` 做成具名字符串类型 `Gender` / `Language`
@@ -83,26 +106,26 @@ Go 侧同理把 `gender`、`language` 做成具名字符串类型 `Gender` / `La
 ### 插件
 
 iztro 的 `loadPlugin` / `use(plugin)` 是运行期往星盘对象上挂函数 ——
-这是 JS 缺少其他扩展手段的产物。三侧各按语言给出的答案实现同一能力，
-都是编译期或加载期完成，不牺牲类型检查：
+各侧按语言给出的答案实现同一能力，都是编译期或加载期完成，不牺牲类型检查：
 
 | | 做法 |
 | --- | --- |
 | Rust | 扩展 trait |
 | Python | `x_iztro.plugin` 的 `load_plugin` / `load_plugins`，往 `Astrolabe` 类挂方法 |
 | Go | 嵌入 `*Astrolabe`（Go 不允许给外部包的类型加方法，嵌入是语言给出的答案） |
+| JavaScript | `astro.loadPlugin` / `loadPlugins`，往 `Astrolabe` 原型挂方法（先排好的盘也拿得到）；TypeScript 用声明合并补类型 |
 
 写法见[扩展星盘](/zh/docs/guide/guides/plugins)。
 
 ### 反查译名时的消歧
 
-`kot(value, k)` 的第二个参数在三侧是独立入口：
-`key_of_in`（Rust）、`key_of(text, key_filter)`（Python）、`KeyOfIn`（Go）。
+`kot(value, k)` 的第二个参数在各侧是：
+`key_of_in`（Rust）、`key_of(text, key_filter)`（Python）、`KeyOfIn`（Go）、`i18n.keyOf(text, keyFilter)`（JavaScript）。
 取值与 iztro 逐例一致，包括 `horse`、`dragon`、`유시`（韩语的酉时）这类同形译名落到哪个标识。
 
 <Callout type="warn" title="查不到时返回空，不是原样返回">
 iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
-`None`（Rust / Python）或空串（Go）。
+`None`（Rust / Python）、空串（Go）或 `undefined`（JavaScript）。
 迁移时如果依赖过「查不到就当作原值继续用」这个行为，这里要改。
 </Callout>
 
@@ -111,9 +134,9 @@ iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
 | iztro | 为什么不做 |
 | --- | --- |
 | `astro.astrolabeBySolarDate` / `astrolabeByLunarDate` | iztro v2.0.5 起废弃的别名，与 `bySolar` / `byLunar` 同参同行为 |
-| `star.initStars` | JS 里是返回 12 个空数组的工厂；三侧的类型系统本身就给出定长 12 的数组 |
+| `star.initStars` | JS 里是返回 12 个空数组的工厂；各侧的数据结构本身就给出定长 12 的数组 |
 | `util.fixEarthlyBranchIndex` | 与 `earthlyBranchIndexToPalaceIndex` 同义 |
-| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | 建立对象间引用是内部行为，三侧在解析后自动完成 |
+| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | 建立对象间引用是内部行为，各侧在解析后自动完成 |
 | `astro/analyzer` 模块 | 里面 11 个函数是宫位与三方四正方法的自由函数版（`hasStars` 即 `palace.has`），能力已由对象方法覆盖 |
 | `calendar` 模块 | 在 iztro v2.5.8 里已是死代码——活的代码路径全部改走 `lunar-lite` 依赖，该模块也不在包的根导出里；v2.6.1 已把它从包中删除 |
 | `i18n` 默认导出的 i18next 实例 | 不转手第三方库实例；翻译与反查由 `translate` / `key_of` 覆盖 |
@@ -146,26 +169,27 @@ iztro 没有格局相关的 API，x-iztro 在排盘之上加了一层格局判�
 破格标记（`broken`）与证据星。规则条目、示例盘与古籍引文取自 iztro-docs 的《格局》页
 （MIT License，作者 Sylar Long），判定实现、六语言格局名与多种说法之间的取舍是 x-iztro 的工作。
 
-三侧的入口：Rust 的 `Astrolabe::patterns` / `HoroscopeRef::patterns`、
+各侧的入口：Rust 的 `Astrolabe::patterns` / `HoroscopeRef::patterns`、
 Python 的 `Astrolabe.patterns` / `Horoscope.patterns`、
-Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`，
-另有语言无关的格局标识（Rust `PatternKey`、Python `PatternKey`、Go `PatternXxx` 常量）。
+Go 的 `Astrolabe.Patterns` / `Horoscope.Patterns`、
+JavaScript 的 `chart.patterns` / `horoscope.patterns`，
+另有语言无关的格局标识（Rust、Python、JavaScript 的 `PatternKey`，Go 的 `PatternXxx` 常量）。
 概念与 64 条总表见[格局](/zh/docs/guide/concepts/patterns)。
 
 因为 iztro 没有对应实现，这部分没有金标数据，正确性由四层测试守着：
 每条规则的单测、来源页 32 张示例盘的真实盘复现、tier1 那 1,560 张盘上的批量不变量检查，
-以及三侧共读的输出快照。
+以及各侧共读的输出快照。
 
 ### 知识包（iztro 无对应 API）
 
 iztro 只给事实，星耀与格局的解读文本在它的文档站上、不在库里。
 x-iztro 把解读做成一份协议化的数据：知识包是「语言无关标识 → 文本与属性」的 JSON，
-库里内嵌一份默认包（107 颗星、64 条格局、12 宫、4 化、49 条术语，
-取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
+库里内嵌一份默认包（全部 162 颗星、64 条格局、12 宫、4 化、50 条术语，
+释义取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
 不认同其中说法可以写覆盖包按字段合并。
 
-三侧的入口：Rust 的 `KnowledgePack::builtin` / `merged`、
-Python 的 `KnowledgePack.builtin` / `merged`、
+各侧的入口：Rust 的 `KnowledgePack::builtin` / `merged`、
+Python 与 JavaScript 的 `KnowledgePack.builtin` / `merged`、
 Go 的 `BuiltinKnowledgePack` / `Merged`，合并只在 Rust 内核实现一处。
 星耀的阴阳五行、斗分、化气这类**属性**也在包里而不进核心数据表——
 核心的 `StarInfo` 与 iztro 逐值一致，属性是门派说法。
@@ -180,9 +204,10 @@ iztro 只有「生辰 → 盘」一个方向。x-iztro 加上了反方向：`sol
 两者都是「剪枝枚举 + 正排终验」，结果与正向排盘零分歧。
 一组四柱约每 60 年重复一次，因此天然多解，候选拿去正排即可复现目标。
 
-三侧的入口：Rust 的 `solar_dates_by_bazi` / `reverse_chart`、
+各侧的入口：Rust 的 `solar_dates_by_bazi` / `reverse_chart`、
 Python 的 `solar_dates_by_bazi` / `reverse_chart`、
-Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）。
+Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）、
+JavaScript 的 `solarDatesByBazi` / `reverseChart`。
 见[反推](/zh/docs/guide/guides/reverse)。
 
 ### 其余增补
@@ -200,5 +225,5 @@ Go 的 `SolarDatesByBazi` / `ReverseChart`（各带 Context 变体）。
 
 ## 数值一致性
 
-功能对齐之外，排盘结果与 iztro **逐字段零差异**，由 716,314 例金标数据守着。
+功能对齐之外，排盘结果与 iztro **逐字段零差异**，由 747,572 例金标数据守着。
 覆盖矩阵与验证方式见[准确性保证](/zh/docs/guide/about/accuracy)。

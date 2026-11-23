@@ -1,6 +1,6 @@
 ---
 title: 知识包
-description: 解读文本与门派属性怎么与内核分开、内嵌默认包里有什么、怎么写覆盖包、三语言怎么读。
+description: 解读文本与门派属性怎么与内核分开、内嵌默认包里有什么、怎么写覆盖包、各语言怎么读。
 ---
 
 *适合：要在排盘结果之上给出文字解读的人*
@@ -38,15 +38,17 @@ x-iztro 把这两件事分开：内核只做事实判定（排盘、运限、格
 | `patterns` | 64 | 每条带古籍引文、成立条件的文字描述与解读正文 |
 | `palaces` | 12 | 十二宫各自的含义 |
 | `mutagens` | 4 | 禄权科忌各自的含义 |
-| `concepts` | 49 | 术语与基础概念（同宫、本宫、身宫、地支六合、三方四正、飞星四化…） |
+| `concepts` | 50 | 术语与基础概念（同宫、本宫、身宫、地支六合、三方四正、飞星四化…） |
+| `topics` | 13 | 解读主题：每类问题看哪些宫，见[主题](#主题) |
 
-内容取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
+释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页
 （MIT License，作者 Sylar Long），锁定来源 commit（`source.commit`），文本经 x-iztro 整理改写为第三人称释义口吻（`source.adapted` 注明），
 包的 `source` 段完整记录来源、commit、许可与作者。文本字段是 Markdown。
+正文较长的 134 条（主辅星 28、双星组合 48、格局 43、宫位 11、四化 4）另有不超过 50 字的[摘要](#摘要)。
 
 <Callout type="warn" title="默认包目前只有 zh-CN">
 其他五种语言没有内嵌默认包：Rust 的 `KnowledgePack::builtin` 返回 `None`，
-Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
+Python、Go、JavaScript 报 `invalid_argument`。要别的语言，自己写一份包，
 或者把中文条目连同盘一起交给大模型，让它边译边解读。
 </Callout>
 
@@ -93,7 +95,9 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
         "energyColor": "紫光"
       },
       "intro": "紫微星号称 `帝王星`，并非指紫微坐命者能成帝王……",
-      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
+      "summary": "帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；……",
+      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" },
+      "combinationSummaries": { "tianfuMaj": "双帝星加重控制占有欲，虚荣与务实相冲难决断；……" }
     }
   },
   "patterns": {
@@ -110,9 +114,61 @@ Python 与 Go 报 `invalid_argument`。要别的语言，自己写一份包，
 }
 ```
 
+## 摘要
+
+正文可以配一段摘要：`intro` 配 `summary`，`combinations` 里的每一条配 `combinationSummaries` 里同键的一条。
+带释义的 to_text 在摘要层用摘要代替正文，一张盘的释义从两万字量级降到几千字。
+
+- 长度按显示宽度计：汉字、假名、谚文与全角标点计 2，其余字符计 1；
+- 正文宽度不超过 240（中文 120 字）的条目，正文本身就是摘要的长度，摘要层直接用正文，不另写摘要；
+- 正文更长的条目要写摘要：单段，宽度不超过 100（中文 50 字），只压缩原文，不增减内容；
+- 格局的成立条件（`conditions`）不进摘要层。
+
+包里只要有一条「正文超过 240 却没有摘要」，请求摘要层就报错并列出全部缺项，不截断、也不改用全文。
+自己写的包要支持摘要层，按这几条补齐即可。
+
+## 主题
+
+「婚恋看哪些宫」「财运看哪些宫」是论法，各家说法不一，所以主题也写在包里（`topics` 段），
+内核只按定义选宫，生成[主题文本](/zh/docs/guide/guides/to-text#按主题取材)。一个主题有两组宫位：
+`surround` 的宫连同各自的三方四正一起取，`palaces` 的宫只取本宫（可写 `bodyPalace`、`originalPalace`）。
+
+```json
+"topics": {
+  "romance": {
+    "title": "婚恋",
+    "surround": ["spousePalace"],
+    "palaces": ["soulPalace", "bodyPalace", "childrenPalace"],
+    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。"
+  }
+}
+```
+
+默认包的 13 个主题：
+
+| slug | 主题 | 连三方四正 | 只取本宫 |
+| --- | --- | --- | --- |
+| `overall` | 总论 | 命宫 | 身宫、福德 |
+| `personality` | 性格 | — | 命宫、迁移、福德、身宫 |
+| `wealth` | 财运 | 财帛 | 田宅 |
+| `career` | 事业 | 官禄 | — |
+| `romance` | 婚恋 | 夫妻 | 命宫、身宫、子女 |
+| `children` | 子女 | 子女 | 命宫 |
+| `parents` | 父母 | 父母 | 兄弟、命宫 |
+| `siblings` | 兄弟 | 兄弟 | 命宫 |
+| `friends` | 交友 | 仆役 | 命宫 |
+| `property` | 田宅 | 田宅 | 财帛 |
+| `travel` | 迁移 | 迁移 | — |
+| `spirit` | 精神 | 福德 | 命宫、身宫 |
+| `health` | 健康 | 疾厄 | 命宫 |
+
+选宫依据默认包宫位条目的释义：财富的积累看田宅宫、与母亲的相处看兄弟宫、桃花看子女宫。
+主题按本命盘的宫位取材，运限问题用运限文本。不同意某个主题的取宫，用覆盖包整组改写
+`surround` / `palaces`（数组整体替换），或者新增自己的主题。
+
 ## 读一份包
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -170,6 +226,24 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { KnowledgePack, MajorStar } from 'x-iztro';
+
+const pack = KnowledgePack.builtin();
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+
+console.log(ziwei.name, ziwei.attributes.aliases);
+console.log(pack.starIntro(MajorStar.ZIWEI)!.slice(0, 12));
+```
+
+```text
+紫微 [ '帝王星', '老板星', '俸禄星' ]
+紫微星号称 `帝王星`，
+```
+
+</Tab>
 </Tabs>
 
 查不到的键统一返回空：Rust / Python 是 `None`，Go 是 `nil`（`StarIntro` 为空串）。
@@ -178,7 +252,7 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 
 格局命中的 `key` 就是知识包 `patterns` 段的键，一一对上：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -231,6 +305,23 @@ for _, hit := range hits {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+
+for (const hit of chart.patterns()) {
+  const entry = pack.pattern(hit.key)!;
+  console.log(hit.name, '|', entry.quotes![0]);
+}
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+```
+
+</Tab>
 </Tabs>
 
 星耀同理：盘上每颗星的 `key` 直接拿去 `pack.star(key)`，宫位用 `palaceNameKey`，
@@ -243,13 +334,16 @@ for _, hit := range hits {
 
 | 段 | `for_astrolabe` | `for_horoscope` 另加 |
 | --- | --- | --- |
-| `stars` | 十二宫上出现的星：主星、辅星、杂耀与四组十二神；14 主星的 `combinations` 只保留对方主星确在同宫的那些 | 各层流耀 |
-| `patterns` | 按格局口径命中的格局 | 大限到流时各层视角命中的格局 |
+| `stars` | 十二宫上出现的星：主星、辅星、杂耀与四组十二神；14 主星的 `combinations` 只保留对方主星确在同宫的那些 | 大限到查询精度各层的流耀 |
+| `patterns` | 按格局口径命中的格局 | 大限到查询精度各层视角命中的格局 |
 | `mutagens` | 禄权科忌四条，与盘无关 | — |
 | `palaces` / `concepts` | 空——宫位与术语与盘无关，按需从整包直接查 | — |
 
+运限层只取到运限目标的查询精度：按日期取的到流时，按农历年取的到流年，按农历月取的到流月——
+比精度细的层级是内核挑的代表日的，不进子包。各语言都传运限对象，按它的精度取材。
+
 格局口径可选传：Rust 走 `for_astrolabe_with(&chart, &PatternConfig)` /
-`for_horoscope_with(&chart, &h, &PatternConfig)`（不带 `_with` 的两个即默认口径），
+`for_horoscope_with(&h, &PatternConfig)`（不带 `_with` 的两个即默认口径），
 Python 是 `config=` 关键字，Go 是第二个参数 `*PatternConfig`（`nil` 即默认）。
 子包要和 `patterns` / `patterns_to_text` 配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
 Go 另有 `BuiltinKnowledge().ForAstrolabe(chart, nil)` 这条路，让内核直接读内嵌包，不必先取整包再送回。
@@ -259,7 +353,7 @@ Go 另有 `BuiltinKnowledge().ForAstrolabe(chart, nil)` 这条路，让内核直
 本命 108 星 / 1 格局 / 4 四化，序列化约 75 KB（整包约 219 KB）；
 2025-1-1 的运限再加流耀与各层格局，158 星 / 16 格局。
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -268,7 +362,7 @@ let sub = pack.for_astrolabe(&chart);
 println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
 ```
 
@@ -298,9 +392,21 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+let sub = pack.forAstrolabe(chart);
+console.log(sub.stars().length, sub.patterns().length, sub.mutagen('sihuaLu') !== undefined, sub.palace('soulPalace'));
+
+sub = pack.forHoroscope(chart.horoscope('2025-1-1', 0));
+console.log(sub.stars().length, sub.patterns().length);
+```
+
+</Tab>
 </Tabs>
 
-三侧输出一致：`108 1 4 0` 与 `158 16`（Python 第一行的后两项是 `True None`）。
+各侧输出一致：`108 1 4 0` 与 `158 16`（Python 第一行的后两项是 `True None`，JavaScript 是 `true undefined`）。
 带释义的 to_text 按同一套规则取材：子包里有的星与格局，文本里就有对应的释义条目
 （十二神除外——子包收录它们，to_text 不为它们写释义）。
 
@@ -330,7 +436,7 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 
 合并出一份新包：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -377,14 +483,29 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { readFile } from 'node:fs/promises'; // 浏览器里改用 fetch 取文本
+
+const base = KnowledgePack.builtin();
+const overlay = KnowledgePack.fromJSON(await readFile('my-school.json', 'utf8'));
+const pack = base.merged(overlay);
+
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+console.log(ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+console.log(pack.patternIntro(PatternKey.ZI_FU_TONG_GONG));
+```
+
+</Tab>
 </Tabs>
 
-三侧输出一致：紫微的 `name`（紫微）与 `chemistry`（尊贵）保留，`intro` 与 `aliases` 换成覆盖包的；
+各侧输出一致：紫微的 `name`（紫微）与 `chemistry`（尊贵）保留，`intro` 与 `aliases` 换成覆盖包的；
 紫府同宫的 `intro` 换掉，`quotes` 与 `conditions` 保留。
 
 <Callout type="info">
-合并只在 Rust 内核实现了一处，Python 与 Go 的 `merged` / `Merged` 都是调进内核算的，
-所以三侧的合并结果逐字节一致，不会各写各的规则。
+合并只在 Rust 内核实现了一处，Python、JavaScript 的 `merged` 与 Go 的 `Merged` 都是调进内核算的，
+所以各侧的合并结果逐字节一致，不会各写各的规则。
 </Callout>
 
 ## 合并规则
@@ -396,6 +517,8 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 - 数组字段（`aliases`、`quotes`）整体替换，不做逐项合并
 - 底包没有的键直接新增
 - 把某字段显式写成 `null` **不会删除**底包内容（缺省与 null 同义）；要删除请整包替换
+- 唯一会删掉内容的情况：覆盖条目换了 `intro`（或某条组合解读）却没给对应的摘要，合并结果去掉底包的旧摘要——
+  它描述的是被换掉的正文，留着会让摘要层说的是旧门派的话
 - 合并后的 `id` / `version` / `language` / `source` 取覆盖包的（若非空），`extends` 保留底包的
 
 `schema` 高于本库支持的版本直接报错，不做降级解析。
@@ -426,5 +549,6 @@ iztro-docs 星耀卡片本身就对不上：
 
 ## 来源与署名
 
-默认包的全部文本取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
-MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写与三语言 API 是 x-iztro 的实现。
+默认包的释义正文取自 [iztro-docs](https://github.com/SylarLong/iztro-docs) 的《学习》各页，
+MIT License，作者 Sylar Long。知识包协议、默认包文本的整理改写、流耀等 55 条对照性条目、
+全部摘要、13 个主题与各语言 API 是 x-iztro 的实现。

@@ -59,8 +59,19 @@ cfg := &iztro.Config{
 iztro.BySolar("2000-8-16", 2, iztro.GenderFemale, true, iztro.LanguageEnUS, cfg)
 ```
 
-Python and Go take only the keys you want to change and default the rest; Rust achieves the same
-with `..Config::default()`.
+```ts
+import { astro, Algorithm, YearDivide } from 'x-iztro';
+
+astro.bySolar('2000-8-16', 2, 'female', {
+  language: 'en-US',
+  config: { algorithm: Algorithm.ZHONGZHOU, yearDivide: YearDivide.EXACT },
+});
+```
+
+Python, Go and JavaScript take only the keys you want to change and default the rest; Rust achieves the same
+with `..Config::default()`. A misspelled key is never ignored: JavaScript and hand-written config JSON return
+`invalid_argument` listing the valid keys, and Python's `ChartConfig` and Go's `Config` reject it at
+construction or compile time.
 
 ---
 
@@ -154,7 +165,7 @@ Decides which day the day pillar is taken from for someone born between 23:00 an
 `forward` pushes both the day pillar **and the lunar day used for placing Ziwei** to the following
 day, while the lunar date string shown on the chart still reads the **day of birth**.
 
-Take 2000-8-16 in the late Zi hour: the lunar date still displays `二〇〇〇年七月十七` (the 17th day of
+Take 2000-8-16 in the late Zi hour: the lunar date still displays `Lunar 2000-7-17` (the 17th day of
 the 7th lunar month), yet the four pillars come out as
 `geng chen - jia shen - ding wei - geng zi` — the day pillar ding wei (丁未) already belongs to
 17 August. Do not try to reason backwards from the lunar display string to the day pillar.
@@ -299,7 +310,7 @@ flies out comes from the same table.
 ### The brightness table
 
 One star takes twelve brightness values, ordered by slot on the chart (slot 0 is the Yin palace),
-and all twelve must be given; use an empty value (an empty string in Python and Go) where a slot has
+and all twelve must be given; use an empty value (an empty string in Python, Go and JavaScript) where a slot has
 no brightness.
 
 ```python
@@ -338,7 +349,7 @@ h, _ := chart.Horoscope("2024-10-1", 0)   // as above
 
 ## Test coverage
 
-The non-default values of the four boundary switches have 9,696 dedicated golden cases (covering
+The non-default values of the four boundary switches have 11,424 dedicated golden cases (covering
 combinations at both the charting and horoscope layers), and the Zhongzhou chart types have another
 12,488, spanning the Beginning-of-Spring window day by day, the late Zi hour, and the days around a
 birthday — every boundary that produces a divergence. The custom mutagen and brightness tables have

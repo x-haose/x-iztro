@@ -8,7 +8,7 @@ description: go get and go — embedded WebAssembly, no cgo, cross-compilation p
 ## Installation
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
 ```
 
 The package embeds a WebAssembly module compiled from the core library (`wasm32-wasip1`) and calls
@@ -62,7 +62,7 @@ func main() {
 
 ```text
 2000-8-16
-二〇〇〇年七月十七
+Lunar 2000-7-17
 geng chen - jia shen - bing woo - geng yin
 Tiger hour 03:00~05:00
 leo dragon
@@ -71,8 +71,8 @@ wood 3rd
 ```
 
 <Callout title="Reading the output">
-`LunarDate` is the one field that stays in Chinese in an English chart: the lunar date is written
-with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 7th lunar month, 2000.
+`LunarDate` is the lunar date: `Lunar 2000-7-17` is the 17th day of the 7th lunar month, 2000
+(a leap month reads `leap-4`); a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 `ChineseDate` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
 </Callout>
 

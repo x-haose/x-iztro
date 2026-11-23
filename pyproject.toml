@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "x-iztro"
-version = "0.6.1"
+version = "0.7.0"
 description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"
 readme = "README.md"
 license = { text = "MIT" }
@@ -29,7 +29,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/x-haose/x-iztro"
 Repository = "https://github.com/x-haose/x-iztro"
-Documentation = "https://ziwei.x-haose.com/en/docs/python"
+Documentation = "https://x-iztro.x-haose.com/en/docs/python"
 Issues = "https://github.com/x-haose/x-iztro/issues"
 
 [tool.maturin]

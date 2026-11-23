@@ -1,11 +1,11 @@
 ---
 title: Overview
-description: The inputs a chart needs, what each parameter accepts, and how to install for each of the three programming languages.
+description: The inputs a chart needs, what each parameter accepts, and how to install for each programming language.
 ---
 
 *For: everyone. The parameter table is readable without writing code*
 
-All three bindings share one Rust core, so parameter meanings and chart results are identical —
+All bindings share one Rust core, so parameter meanings and chart results are identical —
 only the spelling differs. Get clear on what you need to supply, then pick your programming
 language.
 
@@ -16,7 +16,7 @@ required; the last three have defaults.
 
 | Parameter | Meaning | Accepts |
 | --- | --- | --- |
-| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`. Gregorian range 1583–9999 |
+| `solar_date` / `lunar_date` | Date of birth | `"YYYY-M-D"`, e.g. `"2000-8-16"`; `/` or `.` separators and a ` HH:mm` time are accepted too (the time does not affect the chart). Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | Hour of birth | Integer 0–12, see the table below |
 | `gender` | Gender | `"male"` / `"female"` (a `Gender` enum in Rust) |
 | `fix_leap` | Correct for leap months | Boolean, defaults to `true` |
@@ -71,16 +71,17 @@ Only people born in a leap month are affected; otherwise the parameter does noth
 ## Pick a programming language
 
 <Cards>
-  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="cargo add x-iztro" />
-  <Card title="Python" href="/en/docs/guide/getting-started/python" description="pip install x-iztro" />
-  <Card title="Go" href="/en/docs/guide/getting-started/go" description="go get .../go/iztro" />
+  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="cargo add x-iztro@0.7" />
+  <Card title="Python" href="/en/docs/guide/getting-started/python" description='pip install "x-iztro~=0.7.0"' />
+  <Card title="Go" href="/en/docs/guide/getting-started/go" description="go get .../go/iztro@v0.7.0" />
+  <Card title="JavaScript" href="/en/docs/guide/getting-started/js" description="npm install x-iztro@0.7" />
 </Cards>
 
 ## Input validation
 
 <small>For developers</small>
 
-Dates and hour indexes are validated up front in the **core**, so all three programming languages
+Dates and hour indexes are validated up front in the **core**, so all programming languages
 sit behind the same line of defence. Invalid input never panics; it is reported the way each
 language expects:
 
@@ -89,9 +90,10 @@ language expects:
 | Rust | Returns `Err(IztroError)`; `.code()` gives a machine-readable category |
 | Python | Raises `IztroError` (a subclass of `ValueError`) with the same `.code` |
 | Go | Returns `*iztro.Error`, matchable against sentinels with `errors.Is` |
+| JavaScript | Throws `IztroError`; `.code` as above |
 | C FFI | Returns `{"error":"...","code":"..."}` as JSON |
 
-The core validates date format and real existence, the Gregorian range 1583–9999, and hour index
+The core validates date format and real existence (the 1582 reform gap included), the range 1–9999, and hour index
 0–12. Gender, chart language and configuration switches — the parameters passed as strings — are
 validated in the **binding layer** as they are parsed; in Rust they are enums to begin with, so
 there is no invalid value to reject.

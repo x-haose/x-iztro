@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -119,20 +120,23 @@ func TestStage1Parity(t *testing.T) {
 	if h.AgePalace() == nil {
 		t.Fatal("小限宫位取不到")
 	}
-	if h.Palace(PalaceSoul, ScopeYearly) == nil {
-		t.Fatal("流年命宫取不到")
+	if p, err := h.Palace(PalaceSoul, ScopeYearly); p == nil || err != nil {
+		t.Fatalf("流年命宫取不到: %v", err)
 	}
-	if h.SurroundPalaces(PalaceSoul, ScopeYearly) == nil {
-		t.Fatal("流年命宫三方四正取不到")
+	if sp, err := h.SurroundPalaces(PalaceSoul, ScopeYearly); sp == nil || err != nil {
+		t.Fatalf("流年命宫三方四正取不到: %v", err)
 	}
-	if h.HasHoroscopeMutagen(PalaceSoul, ScopeOrigin, MutagenLu) {
-		t.Fatal("ScopeOrigin 下运限四化恒为 false")
+	if has, err := h.HasHoroscopeMutagen(PalaceSoul, ScopeOrigin, MutagenLu); has || err != nil {
+		t.Fatalf("ScopeOrigin 下运限四化恒为 false: %v", err)
 	}
 	// 三个流耀判断互相自洽
 	probe := []string{"流禄"}
-	has := h.HasHoroscopeStars(PalaceSoul, ScopeYearly, probe)
-	one := h.HasOneOfHoroscopeStars(PalaceSoul, ScopeYearly, probe)
-	not := h.NotHaveHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	has, err1 := h.HasHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	one, err2 := h.HasOneOfHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	not, err3 := h.NotHaveHoroscopeStars(PalaceSoul, ScopeYearly, probe)
+	if err := errors.Join(err1, err2, err3); err != nil {
+		t.Fatal(err)
+	}
 	if has != one || has == not {
 		t.Fatalf("流耀判断不自洽: has=%v one=%v not=%v", has, one, not)
 	}
@@ -608,7 +612,8 @@ func textSnapshot(t *testing.T, name string) string {
 // TestTextParity 断言 Go 侧各 ToText 输出与 Rust 侧快照逐字节相同。
 //
 // 快照由 Rust 侧写在 tests/golden/text_snapshots/，固定盘 2000-8-16 时辰 2
-// 女命、运限目标 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫。措辞、字段顺序、
+// 女命、运限目标 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，流年一览取农历 2001-2012 年，
+// 流月一览取农历 2025 年（含闰六月）。措辞、字段顺序、
 // 段落增删任一处漂移都会暴露；有意改动文本时按 Rust 侧的流程重建快照，两侧一起更新。
 func TestTextParity(t *testing.T) {
 	for _, lang := range []Language{LanguageZhCN, LanguageEnUS} {
@@ -629,6 +634,8 @@ func TestTextParity(t *testing.T) {
 			"surrounded": func() (string, error) { return chart.SurroundedPalacesToText(PalaceTarget{Key: PalaceSoul}) },
 			"flanking":   func() (string, error) { return chart.FlankingPalacesToText(PalaceTarget{Key: PalaceSoul}) },
 			"decadals":   chart.DecadalListToText,
+			"yearlies":   func() (string, error) { return chart.YearlyOverviewToText(2001, 2012) },
+			"monthlies":  func() (string, error) { return chart.MonthlyListToText(2025) },
 		} {
 			got, err := get()
 			if err != nil {
@@ -636,6 +643,24 @@ func TestTextParity(t *testing.T) {
 			}
 			if want := textSnapshot(t, name+"_"+string(lang)); got != want {
 				t.Errorf("%s %s 文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, name, got, want)
+			}
+		}
+
+		overview := TextOptions{Detail: TextDetailOverview}
+		soul := PalaceTarget{Key: PalaceSoul}
+		for name, get := range map[string]func() (string, error){
+			"astrolabe":  func() (string, error) { return chart.ToTextWith(overview) },
+			"horoscope":  func() (string, error) { return horoscope.ToTextWith(overview) },
+			"palace":     func() (string, error) { return chart.PalaceToTextWith(soul, overview) },
+			"surrounded": func() (string, error) { return chart.SurroundedPalacesToTextWith(soul, overview) },
+			"flanking":   func() (string, error) { return chart.FlankingPalacesToTextWith(soul, overview) },
+		} {
+			got, err := get()
+			if err != nil {
+				t.Fatalf("%s %s overview: %v", lang, name, err)
+			}
+			if want := textSnapshot(t, name+"_overview_"+string(lang)); got != want {
+				t.Errorf("%s %s 总览文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", lang, name, got, want)
 			}
 		}
 	}
@@ -647,6 +672,43 @@ func TestTextParity(t *testing.T) {
 	}
 	if _, err := chart.Horoscope("garbage", 0); !errors.Is(err, ErrInvalidDate) {
 		t.Fatalf("非法目标日期应报 ErrInvalidDate，实际 %v", err)
+	}
+}
+
+// TestHoroscopeTextThrough 校验 TextOptions.Through：写到流年为止时大限、小限、流年三节在，
+// 流月、流日、流时不在；写到流时与不设同文；本命层与不认识的层级报错。
+func TestHoroscopeTextThrough(t *testing.T) {
+	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	horoscope, err := chart.Horoscope("2024-10-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	text, err := horoscope.ToTextWith(TextOptions{Through: ScopeYearly})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, heading := range []string{"## 大限 · ", "## 小限 · ", "## 流年 · ", "## 流月 · ", "## 流日 · ", "## 流时 · "} {
+		if got, want := strings.Contains(text, heading), i < 3; got != want {
+			t.Errorf("写到流年时 %q 是否出现应为 %v", heading, want)
+		}
+	}
+
+	full, err := horoscope.ToText()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hourly, err := horoscope.ToTextWith(TextOptions{Through: ScopeHourly}); err != nil || hourly != full {
+		t.Errorf("写到流时应与不设同文（err=%v）", err)
+	}
+
+	for _, bad := range []string{ScopeOrigin, "weekly"} {
+		if _, err := horoscope.ToTextWith(TextOptions{Through: bad}); !errors.Is(err, ErrInvalidArgument) {
+			t.Errorf("Through=%q 应报 ErrInvalidArgument，实际 %v", bad, err)
+		}
 	}
 }
 

@@ -59,7 +59,7 @@ Every condition is optional, but at least one must be given.
 | `five_elements_class` | `Option<FiveElementsClass>` | `None` | five elements class |
 | `stars` | `Vec<StarPosition>` | empty | star placements, all of which must hold |
 | `mutagens` | `[Option<StarKey>; 4]` | all `None` | which star carries each birth-year mutagen [Lu, Quan, Ke, Ji] |
-| `year_range` | `(i64, i64)` | `(1900, 2100)` | inclusive solar year range, within 1583–9999 |
+| `year_range` | `(i64, i64)` | `(1900, 2100)` | inclusive solar year range, within 1–9999 |
 | `fix_leap` | `bool` | `true` | leap month correction, same meaning as the charting parameter |
 | `limit` | `usize` | `0` | candidate cap; `0` takes `DEFAULT_REVERSE_LIMIT` |
 
@@ -124,7 +124,7 @@ for c in &cands {
 ```
 
 **Errors** A pillar with mismatched stem/branch polarity (such as 甲丑 Jia-Chou — a yang stem on a yin branch), or a
-year range that is reversed or outside 1583–9999, returns
+year range that is reversed or outside 1–9999, returns
 [`IztroError::InvalidArgument`](/en/docs/rust/errors#invalidargument).
 
 ---

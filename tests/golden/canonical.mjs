@@ -59,6 +59,14 @@ export function canonicalAstrolabe(result) {
   return `${top}#${palaces}`;
 }
 
+/** 哈希型金标记录的位数：规范化串 SHA-256 的前 32 个 hex 字符（与 tests/common 的 HASH_LEN 一致）。 */
+const HASH_LEN = 32;
+
+/** 规范化串的 SHA-256 前 HASH_LEN 个 hex 字符，即哈希型金标（tier3 / 边界年代 / 变体 / Config 开关…）记录的值。 */
 export function hashAstrolabe(result) {
-  return crypto.createHash('sha256').update(canonicalAstrolabe(result)).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(canonicalAstrolabe(result))
+    .digest('hex')
+    .slice(0, HASH_LEN);
 }

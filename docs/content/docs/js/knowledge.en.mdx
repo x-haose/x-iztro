@@ -1,0 +1,89 @@
+---
+title: Knowledge packs
+description: Building, querying, merging and chart-scoped subsets of a KnowledgePack, and readings inside the text.
+---
+
+A knowledge pack is an open format mapping language-independent keys to reading texts and school attributes;
+see [Knowledge packs](/en/docs/guide/guides/knowledge-pack) and `knowledge/SCHEMA.md` in the repository. Merging
+happens in the core, with the same rules in every binding.
+
+## KnowledgePack
+
+| Member | Description |
+| --- | --- |
+| `KnowledgePack.builtin(language = 'zh-CN')` | The built-in pack (from iztro-docs, MIT); throws `IztroError` if that language has none |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | Your own pack; a missing or too-new `schema` throws `IztroError`, bad JSON throws `SyntaxError` |
+| `toJSON()` | A deep copy of the pack object; `JSON.stringify(pack)` gives the pack's JSON |
+| `merged(...overlays)` | This pack with overlays (instances or plain objects) applied in order, as a new pack |
+| `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | Chart-scoped subsets |
+| `schema` `id` `version` `language` `extends` `source` | Metadata |
+| `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | One entry, `undefined` when missing |
+| `stars()` `patterns()` `topics()` | All entries |
+| `starIntro(key)` / `patternIntro(key)` | The reading text |
+
+Entry types: `StarEntry` (`attributes`, `combinations` and `combinationSummaries` default to empty objects),
+`PatternEntry`, `TextEntry` (palaces, mutagens), `ConceptEntry`, `TopicEntry` (`surround` and `palaces` drive the
+palace selection).
+
+```ts
+const pack = KnowledgePack.builtin();
+console.log(pack.id, pack.version, pack.language, pack.source.license, pack.stars().length, pack.patterns().length,
+  pack.topics().map((t) => t.slug).join(','));
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summary);
+```
+
+```text
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
+紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+```
+
+## merged
+
+An overlay's non-empty fields replace the matching fields of the same entry; `attributes` and `combinations`
+merge field by field, arrays are replaced whole. When an overlay changes a text without supplying its summary,
+the merged pack drops the summary of the old text.
+
+```ts
+const mine = pack.merged({
+  schema: 1, id: 'mine', version: '1', language: 'zh-CN', extends: 'iztro-docs',
+  stars: { ziweiMaj: { intro: '我的紫微释义' } },
+});
+console.log(mine.id, mine.starIntro(MajorStar.ZIWEI), mine.star(MajorStar.ZIWEI)!.summary);
+```
+
+```text
+mine 我的紫微释义 undefined
+```
+
+## forAstrolabe / forHoroscope
+
+The natal subset holds only the stars on the chart (major, minor and adjective stars plus the four
+twelve-spirit cycles; same-palace major-star pairings are kept), the patterns that hit under the given settings,
+and the four mutagens — no palaces or glossary. The horoscope subset adds each layer's horoscope stars and
+patterns, down to the horoscope's query precision. Both are ordinary packs.
+
+```ts
+const sub = pack.forAstrolabe(chart);
+console.log(sub.stars().length, sub.patterns().map((e) => e.name).join(','));
+```
+
+```text
+108 府相朝垣
+```
+
+## Readings inside the text
+
+Every `toText` takes `knowledge` and `knowledgeDepth`: `knowledge: true` uses the built-in pack of the chart
+language, or pass a `KnowledgePack` (your own or a merged one); `knowledgeDepth: 'summary'` uses the summary
+layer and fails, listing what is missing, when a long text has no summary. A user's own pack works straight in
+the browser's chart text, without going through any server.
+
+```ts
+console.log(chart.toText({ knowledge: true, knowledgeDepth: KnowledgeDepth.SUMMARY }).length,
+  chart.toText({ knowledge: mine }).includes('我的紫微释义'));
+```
+
+```text
+8385 true
+```

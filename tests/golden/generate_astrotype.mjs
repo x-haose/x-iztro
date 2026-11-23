@@ -30,7 +30,6 @@ const MONTH_DAYS = [
 /** CSV 里性别记 0/1，与其他生成器一致 */
 const GENDERS = ['男', '女'];
 const ASTRO_TYPES = ['earth', 'human'];
-const HASH_LEN = 32;
 
 /**
  * 以指定视角排盘。
@@ -77,7 +76,7 @@ for (let year = START_YEAR; year <= END_YEAR; year++) {
     for (let timeIndex = 0; timeIndex <= 12; timeIndex++) {
       for (const g of [0, 1]) {
         for (const astroType of ASTRO_TYPES) {
-          const hash = hashAstrolabe(chart(date, timeIndex, GENDERS[g], astroType)).slice(0, HASH_LEN);
+          const hash = hashAstrolabe(chart(date, timeIndex, GENDERS[g], astroType));
           lines.push(`${date},${timeIndex},${g},${astroType},${hash}`);
         }
       }

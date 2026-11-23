@@ -1,0 +1,40 @@
+---
+title: Lightweight queries
+description: Zodiac, sign and Soul-palace major star without casting a full chart (astro module).
+---
+
+They share the core logic with charting, so their results always match the corresponding fields of a full chart.
+
+```ts
+astro.getZodiacBySolarDate(solarDate: string, language?: Language, config?: ChartConfig): string;
+astro.getSignBySolarDate(solarDate: string, language?: Language): string;
+astro.getSignByLunarDate(lunarDate: string, isLeapMonth?: boolean, language?: Language): string;
+astro.getMajorStarBySolarDate(solarDate: string, timeIndex: TimeIndex, options?: { fixLeap?; language?; config? }): string;
+astro.getMajorStarByLunarDate(lunarDate: string, timeIndex: TimeIndex, options?: { isLeapMonth?; fixLeap?; language?; config? }): string;
+astro.getMajorStarKeysBySolarDate(solarDate: string, timeIndex: TimeIndex, options?: { fixLeap?; config? }): string[];
+astro.getMajorStarKeysByLunarDate(lunarDate: string, timeIndex: TimeIndex, options?: { isLeapMonth?; fixLeap?; config? }): string[];
+```
+
+- The zodiac follows the year branch, so where the year turns depends on `config.yearDivide`; the sign
+  depends on the solar date alone.
+- Several major stars are joined with commas; an empty Soul palace borrows the opposite palace's stars, as in
+  iztro. The `*Keys*` variants are the key projection of the same result and do not depend on language.
+- An invalid date or hour index throws `IztroError`.
+
+```ts
+console.log(astro.getZodiacBySolarDate('2000-8-16'), astro.getZodiacBySolarDate('2000-8-16', 'en-US'));
+console.log(astro.getSignBySolarDate('2000-8-16'), astro.getSignByLunarDate('2000-7-17'));
+console.log(astro.getMajorStarBySolarDate('2000-8-16', 2), astro.getMajorStarByLunarDate('2000-7-17', 2, { language: 'en-US' }));
+console.log(astro.getMajorStarKeysBySolarDate('2000-8-16', 2));
+console.log(astro.getZodiacBySolarDate('2000-2-1'), astro.getZodiacBySolarDate('2000-2-1', 'zh-CN', { yearDivide: 'exact' }));
+```
+
+```text
+龙 dragon
+狮子座 狮子座
+紫微 emperor
+[ 'ziweiMaj' ]
+兔 兔
+```
+
+2000-2-1 falls before both the lunar new year (2-5) and Lichun (2-4), so either boundary still puts it in the Rabbit year.

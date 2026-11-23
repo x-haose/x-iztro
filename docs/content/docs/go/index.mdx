@@ -12,7 +12,7 @@ Go 包内嵌一份 WebAssembly 编译的核心，经纯 Go 的 wazero 运行时�
 ## 安装
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
 ```
 
 ```go
@@ -224,7 +224,7 @@ true
 | 无 ctx | 带 ctx |
 | --- | --- |
 | `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
-| `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
+| `Astrolabe.Horoscope` / `HoroscopeNow` / `HoroscopeOfYear` / `HoroscopeOfMonth` | `HoroscopeContext` / `HoroscopeNowContext` / `HoroscopeOfYearContext` / `HoroscopeOfMonthContext` |
 | `Astrolabe.Rearranged` | `RearrangedContext` |
 | `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` / `PatternsToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` / `PatternsToTextContext` |
 | 上列各方法的 `With` 形态（`ToTextWith(opts TextOptions)` 等） | `ToTextWithContext` / `PalaceToTextWithContext` / `SurroundedPalacesToTextWithContext` / `PatternsToTextWithContext` |

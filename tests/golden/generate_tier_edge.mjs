@@ -1,10 +1,10 @@
 /**
  * 边界年代金标生成器：补齐其它金标（1984-2043）之外的日期区间。
  *
- * 覆盖：1583-1983 与 2044-2100 每 10 年取 1 年（另单取 2100）
- * × 12 个月 × 日 {1,15,28} × 13 时辰 × 男女，闰月日期额外生成 fix_leap=0。
- * 1583 是 x-iztro 的公历下界；JS 侧 iztro/lunar-lite 对更早年份不报错而是
- * 外推，故区间上下界由 x-iztro 的入口校验决定，非 JS 能力所限。
+ * 覆盖：1-1551 每 50 年取 1 年、1582、1583-1983 与 2044-2094 每 10 年取 1 年、2100，
+ * × 12 个月 × 日 {1,15,28}；另加儒略历特例日（公元 1 年元旦、世纪年的儒略闰日、改历前后两日）。
+ * 每个日期 × 13 时辰 × 男女，闰月日期额外生成 fix_leap=0。历法换算本身由 calendar.csv 逐日全量覆盖，
+ * 此处验证排盘流程在各年代端到端一致。
  *
  * 输出：tier_edge/year_YYYY.csv，行格式与 tier3 一致（`date,ti,g,fl,hash`），
  * hash 为规范化串（见 canonical.mjs）SHA-256 的前 32 个 hex 字符。
@@ -25,15 +25,29 @@ const outDir = join(__dirname, 'tier_edge');
 
 const GENDERS = ['男', '女'];
 const DAYS = [1, 15, 28];
-const HASH_LEN = 32;
+/** 儒略历特例日：公元 1 年元旦、儒略闰日（含格里历下不存在的世纪年闰日）、改历前后两日。 */
+const SPECIAL_DATES = ['1-1-1', '4-2-29', '900-2-29', '1000-2-29', '1500-2-29', '1582-10-4', '1582-10-15'];
 
-/** 早期与晚期两段各每 10 年一个采样年，2100 作为区间末端单列。 */
-function sampleYears() {
+/** 采样日期按年分组。 */
+function sampleDates() {
   const years = [];
+  for (let y = 1; y <= 1551; y += 50) years.push(y);
+  years.push(1582);
   for (let y = 1583; y <= 1983; y += 10) years.push(y);
   for (let y = 2044; y <= 2094; y += 10) years.push(y);
   years.push(2100);
-  return years;
+  const byYear = new Map(years.map((y) => [y, []]));
+  for (const y of years) {
+    for (let month = 1; month <= 12; month++) {
+      for (const day of DAYS) byYear.get(y).push(`${y}-${month}-${day}`);
+    }
+  }
+  for (const date of SPECIAL_DATES) {
+    const y = Number(date.split('-')[0]);
+    if (!byYear.has(y)) byYear.set(y, []);
+    if (!byYear.get(y).includes(date)) byYear.get(y).push(date);
+  }
+  return byYear;
 }
 
 if (process.argv[2] === '--inspect') {
@@ -46,7 +60,7 @@ if (process.argv[2] === '--inspect') {
 mkdirSync(outDir, { recursive: true });
 
 let totalCases = 0;
-for (const year of sampleYears()) {
+for (const [year, dates] of sampleDates()) {
   const outPath = join(outDir, `year_${year}.csv`);
   if (existsSync(outPath)) {
     console.log(`Year ${year}: exists, skipped`);
@@ -54,16 +68,13 @@ for (const year of sampleYears()) {
   }
 
   const lines = [];
-  for (let month = 1; month <= 12; month++) {
-    for (const day of DAYS) {
-      const dateStr = `${year}-${month}-${day}`;
-      const fixLeaps = solar2lunar(dateStr).isLeap ? [1, 0] : [1];
-      for (let t = 0; t <= 12; t++) {
-        for (let gi = 0; gi < GENDERS.length; gi++) {
-          for (const fl of fixLeaps) {
-            const result = astro.bySolar(dateStr, t, GENDERS[gi], fl === 1, 'zh-CN');
-            lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
-          }
+  for (const dateStr of dates) {
+    const fixLeaps = solar2lunar(dateStr).isLeap ? [1, 0] : [1];
+    for (let t = 0; t <= 12; t++) {
+      for (let gi = 0; gi < GENDERS.length; gi++) {
+        for (const fl of fixLeaps) {
+          const result = astro.bySolar(dateStr, t, GENDERS[gi], fl === 1, 'zh-CN');
+          lines.push(`${dateStr},${t},${gi},${fl},${hashAstrolabe(result)}`);
         }
       }
     }

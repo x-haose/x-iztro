@@ -1,11 +1,11 @@
 ---
 title: 概览
-description: 排盘要准备哪些输入、每个参数取什么值，以及三种编程语言的安装方式。
+description: 排盘要准备哪些输入、每个参数取什么值，以及各编程语言的安装方式。
 ---
 
 *适合：所有人。参数表不需要会写代码也能看懂*
 
-三套绑定共用同一个 Rust 核心，因此参数含义与排盘结果完全一致，只是写法不同。
+各语言绑定共用同一个 Rust 核心，因此参数含义与排盘结果完全一致，只是写法不同。
 先看清楚要准备什么，再挑你的编程语言。
 
 ## 你需要准备的输入
@@ -14,7 +14,7 @@ description: 排盘要准备哪些输入、每个参数取什么值，以及三�
 
 | 参数 | 含义 | 取值 |
 | --- | --- | --- |
-| `solar_date` / `lunar_date` | 出生日期 | `"YYYY-M-D"`，如 `"2000-8-16"`。公历范围 1583–9999 年 |
+| `solar_date` / `lunar_date` | 出生日期 | `"YYYY-M-D"`，如 `"2000-8-16"`；也接受 `/`、`.` 分隔与 ` HH:mm` 时间（时间不参与排盘）。支持 1–9999 年（1582-10-15 以前按儒略历） |
 | `time_index` | 出生时辰 | 整数 0–12，见下表 |
 | `gender` | 性别 | `"male"` / `"female"`（Rust 为 `Gender` 枚举） |
 | `fix_leap` | 是否修正闰月 | 布尔值，默认 `true` |
@@ -58,16 +58,17 @@ description: 排盘要准备哪些输入、每个参数取什么值，以及三�
 ## 选择编程语言
 
 <Cards>
-  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro" />
-  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="pip install x-iztro" />
-  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro" />
+  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro@0.7" />
+  <Card title="Python" href="/zh/docs/guide/getting-started/python" description='pip install "x-iztro~=0.7.0"' />
+  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro@v0.7.0" />
+  <Card title="JavaScript" href="/zh/docs/guide/getting-started/js" description="npm install x-iztro@0.7" />
 </Cards>
 
 ## 输入校验
 
 <small>给开发者</small>
 
-日期与时辰在**核心层**前置校验，三种编程语言共用同一道防线；非法输入不会 panic，
+日期与时辰在**核心层**前置校验，各编程语言共用同一道防线；非法输入不会 panic，
 而是按各自的惯例报错：
 
 | 编程语言 | 表现 |
@@ -75,9 +76,10 @@ description: 排盘要准备哪些输入、每个参数取什么值，以及三�
 | Rust | 返回 `Err(IztroError)`，`.code()` 给出机器可读分类 |
 | Python | 抛 `IztroError`（继承 `ValueError`），`.code` 同上 |
 | Go | 返回 `*iztro.Error`，可用 `errors.Is` 匹配哨兵 |
+| JavaScript | 抛 `IztroError`，`.code` 同上 |
 | C FFI | 返回 `{"error":"...","code":"..."}` JSON |
 
-核心层校验的是日期格式与真实存在性、公历 1583–9999 范围、时辰索引 0–12。
+核心层校验的是日期格式与真实存在性（含 1582 年改历空缺）、1–9999 年范围、时辰索引 0–12。
 性别、盘面语言、配置开关这些以字符串传入的参数，在**绑定层**解析时校验 ——
 Rust 侧它们本来就是枚举，不存在非法取值。
 

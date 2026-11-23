@@ -783,8 +783,34 @@ type Horoscope struct {
 	// astrolabe 为发起这次运限查询的本命盘。
 	// 运限依附于某一张盘，宫位与流耀查询都要落回盘上，因此运限随身携带它。
 	astrolabe *Astrolabe
-	// targetTimeIndex 为发起这次查询的目标时辰索引；再次发起运限层计算（如格局）时用。
-	targetTimeIndex uint8
+	// targetDate 为发起这次查询的目标日期串（原样，可带时间）；再次发起运限层计算（如格局）时原样转发。
+	// 按农历年发起的运限不用它。
+	targetDate string
+	// targetTimeIndex 为发起这次查询的目标时辰索引；nil 表示由 targetDate 的时间换算，再次发起计算时同样省略。
+	targetTimeIndex *uint8
+	// targetYear 为发起这次查询的目标农历年份（Astrolabe.HoroscopeOfYear / HoroscopeOfMonth）；按日期发起的为 nil。
+	// 再次发起计算时转发年份而不是 SolarDate，内核按同一约定重新取该年的运限。
+	targetYear *int
+	// targetMonth 为发起这次查询的目标农历月号（Astrolabe.HoroscopeOfMonth），与 targetYear 成对；
+	// 其余发起方式为 nil。再次发起计算时随年份一起转发。
+	targetMonth *int
+}
+
+// addTarget 把发起这次运限查询的目标写进入参：按农历年发起的写年份（按月发起的再写月号），
+// 否则写目标日期与时辰。
+// 首次计算与再次发起的计算（文本、格局、按盘取材）都经这里，目标键只在此一处写。
+func (h *Horoscope) addTarget(payload map[string]any) {
+	if h.targetYear != nil {
+		payload["targetYear"] = *h.targetYear
+		if h.targetMonth != nil {
+			payload["targetMonth"] = *h.targetMonth
+		}
+		return
+	}
+	payload["targetDate"] = h.targetDate
+	if h.targetTimeIndex != nil {
+		payload["targetTimeIndex"] = *h.targetTimeIndex
+	}
 }
 
 // Astrolabe 返回发起这次运限查询的本命盘。
@@ -793,6 +819,22 @@ func (h *Horoscope) Astrolabe() *Astrolabe {
 		return nil
 	}
 	return h.astrolabe
+}
+
+// Precision 返回查询精度：目标实际指定到的最细层级。HoroscopeOfYear 为 ScopeYearly，HoroscopeOfMonth 为
+// ScopeMonthly，按日期发起的为 ScopeHourly。比它细的层级是内核替调用方挑的代表日的，不是查询的答案：
+// 文本默认只写到这一层，宫位查询、文本与格局的层级参数比它细时报 ErrInvalidArgument。nil 运限返回空串。
+func (h *Horoscope) Precision() string {
+	switch {
+	case h == nil:
+		return ""
+	case h.targetYear == nil:
+		return ScopeHourly
+	case h.targetMonth == nil:
+		return ScopeYearly
+	default:
+		return ScopeMonthly
+	}
 }
 
 // ScopeItem 按层级取运限项；scope 传 ScopeDecadal 等常量，取不到返回 nil。
@@ -824,64 +866,89 @@ func (h *Horoscope) AgePalace() *Palace {
 	return h.astrolabe.PalaceByIndex(h.Age.Index)
 }
 
+// scopeDepth 为层级深浅：本命 0、大限 1 … 流时 5，越大越细；与 Rust 内核 Scope::depth 一致。
+var scopeDepth = map[string]int{
+	ScopeOrigin:  0,
+	ScopeDecadal: 1,
+	ScopeYearly:  2,
+	ScopeMonthly: 3,
+	ScopeDaily:   4,
+	ScopeHourly:  5,
+}
+
+// checkScope 校验宫位查询的 scope：须是层级标识，且不比查询精度（Precision）细；
+// 报错正文与内核同类校验相同。h 须非 nil。
+func (h *Horoscope) checkScope(scope string) error {
+	depth, ok := scopeDepth[scope]
+	if !ok {
+		return invalidArgument("invalid scope '" + scope +
+			"': expected 'origin', 'decadal', 'yearly', 'monthly', 'daily' or 'hourly'")
+	}
+	precision := h.Precision()
+	if depth > scopeDepth[precision] {
+		return invalidArgument("invalid scope '" + scope +
+			"': the horoscope target only specifies layers down to '" + precision + "'")
+	}
+	return nil
+}
+
 // Palace 取指定运限层级下某宫名对应的宫位。
 //
 // 运限层级会把宫名重排（该层级所在位置视为命宫），因此同一格在不同层级下宫名不同。
-// scope 传 ScopeOrigin 时直接按本命盘宫名查找。
-func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace {
+// scope 传 ScopeOrigin 时直接按本命盘宫名查找。宫名查不到返回 nil, nil；nil 运限返回 nil, nil。
+// scope 不是层级标识，或比查询精度（Precision）细时报 ErrInvalidArgument：那一层是内核挑的代表日的，
+// 不是查询的答案。
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) (*Palace, error) {
 	if h == nil {
-		return nil
+		return nil, nil
+	}
+	if err := h.checkScope(scope); err != nil {
+		return nil, err
 	}
 	a := h.astrolabe
 	if a == nil {
-		return nil
+		return nil, nil
 	}
 	if scope == ScopeOrigin {
-		return a.Palace(nameKeyOrName)
+		return a.Palace(nameKeyOrName), nil
 	}
 	idx := h.ScopeItem(scope).PalaceIndexByName(nameKeyOrName)
 	if idx < 0 {
-		return nil
+		return nil, nil
 	}
-	return a.PalaceByIndex(idx)
+	return a.PalaceByIndex(idx), nil
 }
 
-// SurroundPalaces 取指定运限层级下某宫的三方四正。
-func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces {
-	p := h.Palace(nameKeyOrName, scope)
-	if p == nil {
-		return nil
+// SurroundPalaces 取指定运限层级下某宫的三方四正；宫名查不到返回 nil, nil，报错同 Palace。
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) (*SurroundedPalaces, error) {
+	p, err := h.Palace(nameKeyOrName, scope)
+	if p == nil || err != nil {
+		return nil, err
 	}
-	return h.astrolabe.SurroundedPalacesByIndex(p.Index)
+	return h.astrolabe.SurroundedPalacesByIndex(p.Index), nil
 }
 
-// HasHoroscopeMutagen 判断指定运限层级下某宫是否落有该层级的四化星。
+// HasHoroscopeMutagen 判断指定运限层级下某宫是否落有该层级的四化星，报错同 Palace。
 // scope 为 ScopeOrigin 时恒为 false（本命四化请用 Palace.HasMutagen）。
-func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool {
-	if scope == ScopeOrigin {
-		return false
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) (bool, error) {
+	p, err := h.Palace(nameKeyOrName, scope)
+	if p == nil || err != nil || scope == ScopeOrigin {
+		return false, err
 	}
 	item := h.ScopeItem(scope)
-	if item == nil {
-		return false
-	}
 	idx, ok := mutagenIndex[mutagenKey]
 	if !ok || idx >= len(item.MutagenStarKeys) {
-		return false
-	}
-	p := h.Palace(nameKeyOrName, scope)
-	if p == nil {
-		return false
+		return false, nil
 	}
 	starKey := item.MutagenStarKeys[idx]
 	for _, group := range [][]Star{p.MajorStars, p.MinorStars} {
 		for _, s := range group {
 			if s.Key == starKey {
-				return true
+				return true, nil
 			}
 		}
 	}
-	return false
+	return false, nil
 }
 
 // horoscopeStarIdentifiers 汇集指定宫位上大限与流年两层流耀的 key 与翻译名。
@@ -901,47 +968,47 @@ func (h *Horoscope) horoscopeStarIdentifiers(palaceIndex int) map[string]struct{
 	return ids
 }
 
-// HasHoroscopeStars 判断指定运限宫位是否包含全部指定流耀。
-func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool {
-	p := h.Palace(nameKeyOrName, scope)
-	if p == nil {
-		return false
+// HasHoroscopeStars 判断指定运限宫位是否包含全部指定流耀；宫名查不到为 false，报错同 Palace。
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error) {
+	p, err := h.Palace(nameKeyOrName, scope)
+	if p == nil || err != nil {
+		return false, err
 	}
 	ids := h.horoscopeStarIdentifiers(p.Index)
 	for _, s := range stars {
 		if _, ok := ids[s]; !ok {
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
-// HasOneOfHoroscopeStars 判断指定运限宫位是否包含指定流耀中的任意一颗。
-func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool {
-	p := h.Palace(nameKeyOrName, scope)
-	if p == nil {
-		return false
+// HasOneOfHoroscopeStars 判断指定运限宫位是否包含指定流耀中的任意一颗；宫名查不到为 false，报错同 Palace。
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error) {
+	p, err := h.Palace(nameKeyOrName, scope)
+	if p == nil || err != nil {
+		return false, err
 	}
 	ids := h.horoscopeStarIdentifiers(p.Index)
 	for _, s := range stars {
 		if _, ok := ids[s]; ok {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-// NotHaveHoroscopeStars 判断指定运限宫位是否一颗指定流耀都不包含。
-func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool {
-	p := h.Palace(nameKeyOrName, scope)
-	if p == nil {
-		return false
+// NotHaveHoroscopeStars 判断指定运限宫位是否一颗指定流耀都不包含；宫名查不到为 false，报错同 Palace。
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error) {
+	p, err := h.Palace(nameKeyOrName, scope)
+	if p == nil || err != nil {
+		return false, err
 	}
 	ids := h.horoscopeStarIdentifiers(p.Index)
 	for _, s := range stars {
 		if _, ok := ids[s]; ok {
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }

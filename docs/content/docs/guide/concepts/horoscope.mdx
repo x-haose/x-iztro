@@ -131,8 +131,8 @@ for palace_index, stars in enumerate(h.yearly.stars or []):
         print(palace_index, s.name, s.scope)
 ```
 
-<Callout title="三侧读法一致">
+<Callout title="各语言读法一致">
 小限与流年各自多带一项专属数据（虚岁、流年十二神），Rust 里通用字段收在 `.base` 下，
-但两个类型都实现了 `Deref`，`h.yearly.heavenly_stem` 直接可读；序列化到 Python / Go 时
-这一层被展平，同样写 `h.yearly.heavenly_stem`。
+但两个类型都实现了 `Deref`，`h.yearly.heavenly_stem` 直接可读；序列化到 Python / Go / JavaScript 时
+这一层被展平，同样写 `h.yearly.heavenly_stem`（JavaScript 为 `h.yearly.heavenlyStem`）。
 </Callout>

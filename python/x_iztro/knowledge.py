@@ -16,6 +16,7 @@ import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from x_iztro._bridge import invalid_argument
 from x_iztro.enums import LanguageType
 
 if TYPE_CHECKING:
@@ -55,20 +56,13 @@ def _validate_schema(raw: object) -> dict[str, Any]:
     Raises:
         IztroError: 不符合格式（code 为 invalid_argument）
     """
-    from x_iztro._x_iztro import IztroError
-
-    def invalid(message: str) -> IztroError:
-        err = IztroError(message)
-        err.code = "invalid_argument"
-        return err
-
     if not isinstance(raw, dict):
-        raise invalid("knowledge pack must be a JSON object")
+        raise invalid_argument("knowledge pack must be a JSON object")
     schema = raw.get("schema", 0)
     if not isinstance(schema, int) or isinstance(schema, bool) or schema <= 0:
-        raise invalid('knowledge pack must declare "schema" (currently 1)')
+        raise invalid_argument('knowledge pack must declare "schema" (currently 1)')
     if schema > _SCHEMA_VERSION:
-        raise invalid(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
+        raise invalid_argument(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
     return raw
 
 
@@ -162,15 +156,19 @@ class StarEntry:
     name: str | None = None
     """该语言的显示名"""
     category: str | None = None
-    """类别（major / minor / adjective / dec）"""
+    """类别（major / minor / adjective / dec / flow）"""
     group: str | None = None
     """分组（杂耀的分类、神煞的组别）"""
     attributes: StarAttributes = field(default_factory=StarAttributes)
     """门派属性"""
     intro: str | None = None
     """解读正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目不写"""
     combinations: dict[str, str] = field(default_factory=dict)
     """与另一颗主星同宫的组合解读，键为对方星耀标识"""
+    combination_summaries: dict[str, str] = field(default_factory=dict)
+    """组合解读的摘要，与 `combinations` 同键成对"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> StarEntry:
@@ -181,7 +179,9 @@ class StarEntry:
             group=d.get("group"),
             attributes=StarAttributes._from_dict(d.get("attributes")),
             intro=d.get("intro"),
+            summary=d.get("summary"),
             combinations=dict(d.get("combinations") or {}),
+            combination_summaries=dict(d.get("combinationSummaries") or {}),
         )
 
 
@@ -199,6 +199,8 @@ class PatternEntry:
     """来源对成立条件的文字描述"""
     intro: str | None = None
     """解读正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> PatternEntry:
@@ -208,6 +210,7 @@ class PatternEntry:
             quotes=list(d["quotes"]) if d.get("quotes") is not None else None,
             conditions=d.get("conditions"),
             intro=d.get("intro"),
+            summary=d.get("summary"),
         )
 
 
@@ -221,10 +224,12 @@ class TextEntry:
     """该语言的显示名"""
     intro: str | None = None
     """正文"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
 
     @classmethod
     def _from_dict(cls, key: str, d: dict) -> TextEntry:
-        return cls(key=key, name=d.get("name"), intro=d.get("intro"))
+        return cls(key=key, name=d.get("name"), intro=d.get("intro"), summary=d.get("summary"))
 
 
 @dataclass(frozen=True, slots=True)
@@ -241,6 +246,35 @@ class ConceptEntry:
     @classmethod
     def _from_dict(cls, slug: str, d: dict) -> ConceptEntry:
         return cls(slug=slug, title=d.get("title"), intro=d.get("intro"))
+
+
+@dataclass(frozen=True, slots=True)
+class TopicEntry:
+    """解读主题（如婚恋、财运）：读这类问题要看哪些宫，由 `Astrolabe.topic_to_text` 按它选宫"""
+
+    slug: str
+    """主题 slug"""
+    title: str | None = None
+    """显示名"""
+    surround: list[str] | None = None
+    """连同各自三方四正一起取的宫位标识，按出现顺序渲染"""
+    palaces: list[str] | None = None
+    """只取本宫的宫位标识（可含 `bodyPalace` / `originalPalace`），排在 `surround` 各组之后"""
+    intro: str | None = None
+    """这个主题看什么、为什么取这些宫"""
+    summary: str | None = None
+    """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
+
+    @classmethod
+    def _from_dict(cls, slug: str, d: dict) -> TopicEntry:
+        return cls(
+            slug=slug,
+            title=d.get("title"),
+            surround=list(d["surround"]) if d.get("surround") is not None else None,
+            palaces=list(d["palaces"]) if d.get("palaces") is not None else None,
+            intro=d.get("intro"),
+            summary=d.get("summary"),
+        )
 
 
 class KnowledgePack:
@@ -297,7 +331,8 @@ class KnowledgePack:
         self, horoscope: Horoscope, config: PatternConfig | None = None
     ) -> KnowledgePack:
         """
-        按运限取材的子包：在 `for_astrolabe` 之上再加各层流耀的条目与各层视角命中的格局。
+        按运限取材的子包：在 `for_astrolabe` 之上再加各层流耀的条目与各层视角命中的格局，
+        只取到运限的查询精度（`Horoscope.precision()`）那一层。
 
         Args:
             config: 格局判定口径，与 `Horoscope.patterns` 同一参数；不传取默认
@@ -348,7 +383,8 @@ class KnowledgePack:
         以本包为底，依次叠加覆盖包，返回新包（本包不变）。
 
         合并规则见 knowledge/SCHEMA.md：覆盖包的非空字段覆盖同键条目的对应字段，
-        `attributes` / `combinations` 逐字段合并，数组字段整体替换。
+        `attributes` / `combinations` 逐字段合并，数组字段整体替换；覆盖条目换了正文却没给
+        对应摘要时，合并结果去掉描述旧正文的摘要。
 
         Raises:
             IztroError: 某个包不符合格式或格式版本过新
@@ -416,6 +452,15 @@ class KnowledgePack:
         """术语条目"""
         d = (self._raw.get("concepts") or {}).get(slug)
         return ConceptEntry._from_dict(slug, d) if d is not None else None
+
+    def topic(self, slug: str) -> TopicEntry | None:
+        """主题条目"""
+        d = (self._raw.get("topics") or {}).get(slug)
+        return TopicEntry._from_dict(slug, d) if d is not None else None
+
+    def topics(self) -> list[TopicEntry]:
+        """全部主题条目"""
+        return [TopicEntry._from_dict(k, v) for k, v in (self._raw.get("topics") or {}).items()]
 
     def stars(self) -> list[StarEntry]:
         """全部星耀条目"""

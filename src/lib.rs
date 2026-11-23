@@ -1,4 +1,4 @@
-//! 紫微斗数排盘核心库，移植自 JS iztro v2.6.1。
+//! 紫微斗数排盘核心库，移植自 JS iztro v2.6.3。
 //!
 //! 入口：[`by_solar`] / [`by_lunar`] 排盘，[`get_horoscope`] 计算运限，
 //! [`astrolabe_to_text`] / [`horoscope_to_text`] 生成语义化文本（星盘对象也有
@@ -10,32 +10,24 @@
 // 「unsafe 只出现在边界」由编译期保证而非约定。
 #![deny(unsafe_code)]
 
-/// 绑定层共用的编组与分派。
-///
-/// 排盘入口只被 `python` feature 与 wasm32 目标的绑定文件消费——两者都不在
-/// 默认的本机构建里，故豁免 dead_code；C FFI 只经它走统一查询入口。
+// 排盘入口只被 `python` feature 与 wasm32 目标的绑定文件消费——两者都不在
+// 默认的本机构建里，故豁免 dead_code；C FFI 只经它走统一查询入口。
 #[allow(dead_code)]
 pub(crate) mod bridge;
 
 /// 排盘与运限主流程
 pub mod astro;
+pub(crate) mod calendar;
 /// 枚举、常量与星耀数据表
 pub mod data;
-/// 跨语言绑定的序列化 DTO（camelCase + 翻译值 + 语言无关标识）
 pub mod dto;
-/// 排盘入口的错误类型
 pub mod error;
-/// 六语言词表与翻译入口
 pub mod i18n;
-/// 知识包：解读文本与门派属性
 pub mod knowledge;
 /// 星盘、宫位、星耀与运限的数据结构
 pub mod models;
-/// 格局判定引擎
 pub mod pattern;
-/// 安星算法
 pub mod star;
-/// 语义化文本投影（to_text）
 pub mod text;
 /// 通用索引工具
 pub mod utils;
@@ -43,7 +35,6 @@ pub mod utils;
 #[cfg(feature = "python")]
 mod python;
 
-/// C ABI 导出（供 Go/C 等语言调用）
 #[doc(hidden)]
 pub mod ffi;
 
@@ -89,11 +80,12 @@ pub use pattern::{
     ALL_PATTERNS, BrightnessSource, PatternConfig, PatternHit, PatternKey, StarAt, patterns_at,
 };
 pub use text::{
-    TextOptions, astrolabe_to_text, astrolabe_to_text_with, decadal_list_to_text,
-    decadal_list_to_text_with, flanking_palaces_to_text, flanking_palaces_to_text_with,
-    horoscope_to_text, horoscope_to_text_with, palace_to_text, palace_to_text_with,
-    patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
-    surrounded_palaces_to_text_with,
+    KnowledgeDepth, TextDetail, TextOptions, astrolabe_to_text, astrolabe_to_text_with,
+    decadal_list_to_text, decadal_list_to_text_with, flanking_palaces_to_text,
+    flanking_palaces_to_text_with, horoscope_to_text, horoscope_to_text_with, monthly_list_to_text,
+    monthly_list_to_text_with, palace_to_text, palace_to_text_with, patterns_to_text,
+    patterns_to_text_with, surrounded_palaces_to_text, surrounded_palaces_to_text_with,
+    topic_to_text, yearly_overview_to_text, yearly_overview_to_text_with,
 };
 
 /// 便捷函数：排盘并返回 JSON

@@ -1,6 +1,6 @@
 ---
 title: 三方四正
-description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，夹宫与它有什么不同，以及在三种编程语言里怎么取。
+description: 为什么一个宫不能单独看，三方四正由哪四个宫组成，夹宫与它有什么不同，以及在各编程语言里怎么取。
 ---
 
 *适合：所有人。代码与判断方法表在页尾*
@@ -44,9 +44,9 @@ description: 为什么一个宫不能单独看，三方四正由哪四个宫组�
 
 ## 在代码里怎么取
 
-三种编程语言都既接受宫位索引，也接受宫名：
+各编程语言都既接受宫位索引，也接受宫名：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -71,6 +71,14 @@ sp = chart.SurroundedPalacesByIndex(soul.Index)          // 按索引
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+let sp = chart.surroundedPalaces(PalaceName.SOUL);   // 按宫名
+sp = chart.surroundedPalaces(soul.index);            // 按索引
+```
+
+</Tab>
 </Tabs>
 
 四个成员分别是 `target`（本宫）、`opposite`（对宫）、`career`（官禄位）、
@@ -78,7 +86,7 @@ sp = chart.SurroundedPalacesByIndex(soul.Index)          // 按索引
 
 ### 判断方法
 
-三方四正的判断方法与单宫同名，但检查范围是四个宫的并集，三种编程语言一致：
+三方四正的判断方法与单宫同名，但检查范围是四个宫的并集，各编程语言一致：
 
 | 方法 | 作用 |
 | --- | --- |
@@ -170,7 +178,7 @@ True False False
 判定看的是两宫合计的集合，不看它们分在哪一宫。
 </Callout>
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -214,6 +222,23 @@ f, _ := chart.FlankingPalaces(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 fmt.Println(f.Previous.Name, f.Next.Name)
 fmt.Println(f.Have(iztro.StarTianjiMaj, iztro.StarTianyueMin))
 fmt.Println(f.HaveOneOf(iztro.StarQingyangMin, iztro.StarTuoluoMin))
+```
+
+```text
+兄弟 父母
+true
+true
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const f = chart.flankingPalaces(PalaceName.SOUL)!;
+
+console.log(f.previous.name, f.next.name);
+console.log(f.have([MajorStar.TIANJI, MinorStar.TIANYUE]));
+console.log(f.haveOneOf([MinorStar.QINGYANG, MinorStar.TUOLUO]));
 ```
 
 ```text

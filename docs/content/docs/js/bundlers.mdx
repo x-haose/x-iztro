@@ -1,0 +1,135 @@
+---
+title: 在打包器与框架里使用
+description: 内核文件怎么被打包；React Router、Vite、Tauri、Next.js、Worker、CSP，以及只渲染结果的组件。
+---
+
+包里的内核按 `new URL('./x_iztro.wasm', import.meta.url)` 取用。Vite、webpack、Turbopack 都识别这个写法：
+把 wasm 作为静态资源产出、改写成最终地址，不需要额外配置。下列组合都在真实工程里构建并运行过
+（2026-11-23：React Router 8.5.2、Vite 8.3.8、Tauri 2.12.6、Next.js 16.4.6，Chrome 与 macOS WebView）。
+
+| 环境 | 结果 | 需要的配置 |
+| --- | --- | --- |
+| React Router 8 framework 模式（`ssr: false` + `prerender`，Vite 8 构建），主线程、`clientLoader` 与模块 Worker | 可用；预渲染阶段在 Node 里求值路由模块，包的导入不触发加载 | Worker 里有动态 `import()` 时 `worker: { format: 'es' }` |
+| 同一份 React Router 静态产物作为 Tauri 2 的 `frontendDist`，打包后在 `tauri://localhost` 下运行 | 可用，主线程与 Worker 各装载一次 | CSP 需 `script-src 'wasm-unsafe-eval'` |
+| Next.js 16，Turbopack（`next dev` / `next build`），客户端组件 | 可用，wasm 以 `application/wasm` 提供 | 无 |
+| Next.js 16，Turbopack，服务端（路由处理、服务端组件） | 可用 | 无 |
+| Next.js 16，webpack（`next build --webpack`），客户端组件 | 可用 | 无 |
+| Next.js 16，webpack，服务端 | 需要配置 | `serverExternalPackages: ['x-iztro']` |
+| Vite 8（`vite dev` / `vite build`），主线程与 Worker | 可用 | Worker 里有动态 `import()` 时 `worker: { format: 'es' }` |
+| Tauri 2 + Vite（`tauri dev` / `tauri build`） | 可用，资源协议以 `application/wasm` 提供 | CSP 需 `script-src 'wasm-unsafe-eval'` |
+
+## 初始化放在哪
+
+`init()` 在第一次排盘之前调用一次即可，之后的调用都是同步的。包的模块在导入时不做任何事，
+服务端渲染与预渲染阶段导入它不会取 wasm。
+
+客户端组件里两种写法都可以：
+
+```tsx
+'use client';
+import { useEffect, useState } from 'react';
+
+export function Chart() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    (async () => {
+      const { init, astro } = await import('x-iztro'); // 用到时才下载内核
+      await init();
+      setText(astro.bySolar('2000-8-16', 2, 'female').toText());
+    })();
+  }, []);
+  return <pre>{text}</pre>;
+}
+```
+
+静态导入（`import { init, astro } from 'x-iztro'`）同样可用，内核在 `init()` 被调用时才下载。
+
+## 只渲染结果的组件
+
+只负责展示排盘结果的组件（网页与桌面共用的组件库等）从 `x-iztro/types` 导入 DTO 类型与枚举，
+数据由应用把 `chart.toJSON()` 传进来：
+
+```ts
+import { MajorStar, PalaceName, type AstrolabeData } from 'x-iztro/types';
+
+export function soulStars(chart: AstrolabeData): string[] {
+  const soul = chart.palaces.find((p) => p.nameKey === PalaceName.SOUL)!;
+  return soul.majorStars.map((s) => s.name);
+}
+```
+
+这个入口只含常量与类型，导入它不会把内核或 wasm 带进产物（在 Next.js 的产物里核对过）。
+
+## React Router：预渲染与 clientLoader
+
+`ssr: false` 加 `prerender` 时，构建会在 Node 里求值路由模块来产出静态 HTML。路由模块顶层静态导入 `x-iztro` 没有问题，
+排盘放进 `useEffect` 或 `clientLoader`（只在浏览器里运行）：
+
+```tsx title="app/routes/chart.tsx"
+import { init, astro } from 'x-iztro';
+
+export async function clientLoader() {
+  await init();
+  return astro.bySolar('2000-8-16', 2, 'female').toText();
+}
+
+export function HydrateFallback() {
+  return <p>…</p>;
+}
+
+export default function Chart({ loaderData }: Route.ComponentProps) {
+  return <pre>{loaderData}</pre>;
+}
+```
+
+`build/client` 就是可以直接交给静态托管或 Tauri `frontendDist` 的产物，wasm 在 `build/client/assets/` 下。
+
+## Next.js：webpack 模式的服务端
+
+webpack 把服务端包里的 `new URL(..., import.meta.url)` 改写成站点公开路径（`/_next/static/media/…`），
+Node 端无法据此读到文件，`init()` 抛 `IztroError`（`internal`，原因为 `Invalid URL`）。让 Next 不打包这个包即可：
+
+```ts title="next.config.ts"
+const nextConfig = { serverExternalPackages: ['x-iztro'] };
+export default nextConfig;
+```
+
+Turbopack（Next 16 的默认）不需要这一项。
+
+## Worker
+
+排盘与文本生成都很快；大范围的[反推](/zh/docs/js/reverse)这类重活可以放进 Worker。Worker 里同样先 `init()`：
+
+```ts title="worker.ts"
+const { init, astro } = await import('x-iztro');
+await init();
+postMessage(astro.bySolar('2000-8-16', 2, 'female').soul);
+```
+
+Vite 默认把 Worker 打成 iife，Worker 里有动态 `import()` 时构建会失败，需要：
+
+```ts title="vite.config.ts"
+export default defineConfig({ worker: { format: 'es' } });
+```
+
+## Content-Security-Policy
+
+页面设置了 CSP 时，实例化 WebAssembly 需要 `script-src 'wasm-unsafe-eval'`。Tauri 2 的写法：
+
+```json title="src-tauri/tauri.conf.json"
+"security": {
+  "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self'"
+}
+```
+
+## 自行托管内核
+
+把 `x-iztro/x_iztro.wasm` 放到 CDN 或离线包里时，把地址、`Response` 或字节交给 `init`：
+
+```ts
+await init('https://cdn.example.com/x_iztro.wasm');
+await init(await fetch('/assets/x_iztro.wasm'));
+await init(bytes); // Uint8Array / ArrayBuffer
+```
+
+服务端给出 `Content-Type: application/wasm` 时边下载边编译；不是这个类型时读完整个文件再编译，结果相同。

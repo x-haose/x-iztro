@@ -37,7 +37,8 @@ fn by_solar_rejects_malformed_dates() {
     for date in [
         "",
         "not-a-date",
-        "2000/8/16",
+        "2000-8/16",
+        "2000-8-16T10:30",
         "2000-8",
         "2000-8-16-1",
         "两千-8-16",
@@ -68,15 +69,34 @@ fn by_solar_rejects_nonexistent_dates() {
     assert!(solar("2000-2-29", 2).is_ok());
 }
 
+/// 1582-10-04（儒略历）的次日是 1582-10-15（格里历），其间十天不存在；
+/// 1600 年以前按儒略历四年一闰，世纪年也有 2 月 29 日。
+#[test]
+fn by_solar_follows_julian_calendar_before_1582_reform() {
+    for date in ["1582-10-5", "1582-10-14"] {
+        assert!(
+            matches!(solar(date, 2), Err(IztroError::InvalidDate(_))),
+            "by_solar({date:?}) falls in the 1582 reform gap"
+        );
+    }
+    for date in ["1582-10-4", "1582-10-15", "1500-2-29", "900-2-29"] {
+        assert!(solar(date, 2).is_ok(), "{date} exists");
+    }
+    assert!(matches!(
+        solar("1700-2-29", 2),
+        Err(IztroError::InvalidDate(_))
+    ));
+}
+
 #[test]
 fn by_solar_enforces_supported_year_range() {
-    for date in ["1582-12-31", "1000-1-1", "10000-1-1"] {
+    for date in ["0-12-31", "10000-1-1"] {
         assert!(
             matches!(solar(date, 2), Err(IztroError::InvalidDate(_))),
             "by_solar({date:?}) should be out of the supported range"
         );
     }
-    assert!(solar("1583-1-1", 0).is_ok(), "1583-1-1 is the lower bound");
+    assert!(solar("1-1-1", 0).is_ok(), "1-1-1 is the lower bound");
     assert!(
         solar("9999-12-31", 12).is_ok(),
         "9999-12-31 is the upper bound"
@@ -116,10 +136,12 @@ fn by_lunar_rejects_invalid_dates() {
 
 #[test]
 fn by_lunar_rejects_out_of_range_year_and_time_index() {
-    assert!(matches!(
-        lunar("1582-1-1", 2, false),
-        Err(IztroError::InvalidDate(_))
-    ));
+    for date in ["0-1-1", "10000-1-1"] {
+        assert!(
+            matches!(lunar(date, 2, false), Err(IztroError::InvalidDate(_))),
+            "by_lunar({date:?}) should be out of the supported range"
+        );
+    }
     assert_eq!(
         lunar("2000-7-17", 13, false).err(),
         Some(IztroError::InvalidTimeIndex(13))
@@ -144,7 +166,14 @@ fn by_lunar_handles_nonexistent_leap_month() {
 fn get_horoscope_rejects_invalid_targets() {
     let astrolabe = solar("2000-8-16", 2).unwrap();
 
-    for date in ["", "garbage", "2025/1/1", "2025-2-30", "2025-13-1"] {
+    for date in [
+        "",
+        "garbage",
+        "2025/1-1",
+        "2025-1-1 24:00",
+        "2025-2-30",
+        "2025-13-1",
+    ] {
         assert!(
             matches!(
                 get_horoscope(&astrolabe, date, 0, LANG),
@@ -154,13 +183,13 @@ fn get_horoscope_rejects_invalid_targets() {
         );
     }
 
-    for date in ["1582-12-31", "10000-1-1"] {
+    for date in ["0-1-1", "1582-10-10", "10000-1-1"] {
         assert!(
             matches!(
                 get_horoscope(&astrolabe, date, 0, LANG),
                 Err(IztroError::InvalidDate(_))
             ),
-            "get_horoscope({date:?}) should be out of the supported range"
+            "get_horoscope({date:?}) should be rejected as nonexistent or out of range"
         );
     }
 
@@ -169,6 +198,21 @@ fn get_horoscope_rejects_invalid_targets() {
         Some(IztroError::InvalidTimeIndex(13))
     );
     assert!(get_horoscope(&astrolabe, "2025-1-1", 12, LANG).is_ok());
+}
+
+#[test]
+fn monthly_list_rejects_years_outside_supported_range() {
+    let astrolabe = solar("2000-8-16", 2).unwrap();
+    for year in [0, 10000, -1] {
+        assert!(
+            matches!(
+                astrolabe.monthly_list(year, true),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "monthly_list({year}) should be rejected"
+        );
+    }
+    assert!(astrolabe.monthly_list(1, true).is_ok());
 }
 
 /// `rearranged` 对非法 `raw_dates` 报错而非 panic：排盘入口产出的盘不会触发，

@@ -9,13 +9,13 @@ description: IztroError 的四个变体、code() 分类标识、BridgeError 与�
 ```rust
 #[non_exhaustive]
 pub enum IztroError {
-    /// 日期串格式错、日期不存在，或超出公历 1583–9999
+    /// 日期串格式错、日期不存在（含改历空缺 1582-10-05 至 10-14），或超出 1–9999 年
     InvalidDate(String),
     /// 时辰索引超出 0–12
     InvalidTimeIndex(u8),
     /// 反推入参不合法：干支阴阳不配、条件为空或含流耀、年份范围非法
     InvalidArgument(String),
-    /// 依赖的历法库没给出本应存在的干支或星座取值
+    /// 库内部的不变量不成立（只可能来自反序列化或手工构造的星盘）
     Internal(String),
 }
 
@@ -66,11 +66,11 @@ invalid_date / invalid solar date '2000-2-30': day is out of range for that mont
 
 | 情形 | 例 | 消息 |
 | --- | --- | --- |
-| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
-| 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
+| 写法不符（分隔符混用、用 `T` 连接时间、年月日含非数字、年份超过 4 位等） | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
 | 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
-| 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
+| 改历空缺 | `"1582-10-10"` | `1582-10-05 to 1582-10-14 do not exist` |
+| 年份超出支持范围 | `"0-1-1"` | `year must be within 1-9999` |
 
 农历专有（只有 `by_lunar` 与 `get_sign_by_lunar_date`、`get_major_star_by_lunar_date` 会碰到）：
 
@@ -87,7 +87,7 @@ invalid_date / invalid solar date '2000-2-30': day is out of range for that mont
 ```rust
 let cfg = Config::default();
 
-for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
+for date in ["2000-13-1", "2000-2-30", "1582-10-10"] {
     match by_solar(date, 2, Gender::Female, true, Language::ZhCN, cfg.clone()) {
         Ok(_) => println!("{date}: ok"),
         Err(e) => println!("{e}"),
@@ -100,7 +100,7 @@ for date in ["2000-13-1", "2000-2-30", "1500-1-1"] {
 ```text
 invalid solar date '2000-13-1': month must be within 1-12
 invalid solar date '2000-2-30': day is out of range for that month
-invalid solar date '1500-1-1': year must be within 1583-9999
+invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)
 ```
 
 消息里带上了原始输入，便于在批量处理时定位是哪一条数据出的问题。
@@ -108,12 +108,12 @@ invalid solar date '1500-1-1': year must be within 1583-9999
 **边界与陷阱**
 
 <Accordions>
-<Accordion title="年份下限 1583 的由来">
-1582 年格里历改革当年有一段不存在的日期。底层历法库在这些日期上没有定义，
-因此支持范围从改革完成后的 1583 年起算。上限 9999 是农历数据表的覆盖终点。
+<Accordion title="1582 年以前按儒略历">
+支持范围是 1–9999 年，与 iztro 一致。1582-10-04（儒略历）的次日是 1582-10-15（格里历），
+其间十天不存在；1600 年以前四年一闰，所以 `"1500-2-29"` 是合法日期，`"1700-2-29"` 不是。
 </Accordion>
 <Accordion title="月日不必补零">
-`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符必须是 `-`。
+`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符可以是 `-`、`/` 或 `.`，同一串内须一致。
 </Accordion>
 <Accordion title="农历闰月的校验">
 `by_lunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。
@@ -159,7 +159,7 @@ time_index must be 0-12, got 13
 | 四柱干支阴阳不配 | 甲丑（阳干配阴支） | `invalid yearly pillar: stem and branch must have the same polarity` |
 | 反推条件为空 | `ReverseCriteria::default()` | `reverse criteria must contain at least one condition` |
 | 条件含运限流曜 | 流禄 | `star 'liulu' is a horoscope-scope star and never appears on the natal chart` |
-| 年份范围非法 | `(2100, 1900)` | `invalid year range 2100-1900: expected 1583-9999 with start <= end` |
+| 年份范围非法 | `(2100, 1900)` | `invalid year range 2100-1900: expected 1-9999 with start <= end` |
 
 **示例**
 
@@ -187,8 +187,9 @@ invalid_argument / invalid yearly pillar: stem and branch must have the same pol
 
 ## Internal
 
-**触发条件**　依赖的历法库 `lunar_rust` 没有交回本应存在的干支或星座取值。
-这是库内部缺陷而非调用方过错。
+**触发条件**　库内部的不变量不成立：农历年月表里查不到本应存在的月份，或星盘的 `raw_dates`
+带着月表中不存在的农历月——后者只可能来自反序列化或手工构造的星盘（如对它调用 `rearranged`）。
+这是缺陷而非调用方过错。
 
 **为什么不 panic**　wasm 目标下 panic 即 trap，而且每次 trap 都会永久损耗模块实例的
 栈空间。把这类情况落成错误值，非法调用就不会累积损坏 Go 侧的 wasm 实例。
@@ -196,7 +197,7 @@ invalid_argument / invalid yearly pillar: stem and branch must have the same pol
 **消息形状**　`internal error: <细节>`，`code()` 为 `internal`。
 
 <Callout type="warn">
-在金标覆盖的全部日期上都没有触发过这个变体。真的碰到请当作 bug 上报，
+排盘入口在公历 1–9999 年的每一天上都不会触发这个变体（有全域逐日扫描守着）。真的碰到请当作 bug 上报，
 并附上完整的排盘入参。
 </Callout>
 
@@ -205,7 +206,7 @@ invalid_argument / invalid yearly pillar: stem and branch must have the same pol
 ## BridgeError
 
 绑定层（C FFI / wasm / PyO3）对外报错的统一形状。Rust 调用方一般用不到它——
-它是 Python 与 Go 侧错误对象的来源。
+它是 Python、Go、JavaScript 侧错误对象的来源。
 
 ```rust
 pub struct BridgeError {
@@ -327,5 +328,5 @@ enum AppError {
 
 <Callout type="warn" title="wasm 目标下尤其重要">
 wasm 上 panic 即 trap，而且每次 trap 都会永久损耗模块实例的栈空间。
-因此校验放在核心层而非绑定层——三种语言共用同一道防线。
+因此校验放在核心层而非绑定层——各语言绑定共用同一道防线。
 </Callout>

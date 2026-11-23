@@ -10,6 +10,12 @@ description: 六个运限层级的数据结构、整层取回的三个列表，�
 h, _ := chart.Horoscope("2025-6-1", 0)
 ```
 
+只问某一年时按农历年取：`chart.HoroscopeOfYear(2027)`，见
+[HoroscopeOfYear](/zh/docs/go/astrolabe#horoscopeofyear)；只问某个月时按农历年加月取：
+`chart.HoroscopeOfMonth(2025, 7)`，见
+[HoroscopeOfMonth](/zh/docs/go/astrolabe#horoscopeofmonth)。两者的结果只答到所问的那一层，
+见[Precision](#precision)。
+
 `Horoscope` 持有发起它的那张本命盘，因此所有查询方法都不必再把星盘传进去。
 
 <Callout type="info">
@@ -20,7 +26,7 @@ h, _ := chart.Horoscope("2025-6-1", 0)
 
 | 字段 | 类型 | 跨度 | 说明 |
 | --- | --- | --- | --- |
-| `SolarDate` / `LunarDate` | `string` | — | **目标**日期的公历串与农历中文写法。出生日期在本命盘上，用 `h.Astrolabe().SolarDate` 取 |
+| `SolarDate` / `LunarDate` | `string` | — | **目标**日期的公历串（不补零、不带时间的 `Y-M-D`）与农历中文写法；按农历年、月取的运限为内核挑的代表日。出生日期在本命盘上，用 `h.Astrolabe().SolarDate` 取 |
 | `Decadal` | `HoroscopeScope` | 十年 | 大限。未起运的幼年期为童限 |
 | `Age` | `HoroscopeScope` | 一年 | 小限。按虚岁逐年走一宫 |
 | `Yearly` | `HoroscopeScope` | 一年 | 流年。按流年干支定宫 |
@@ -284,6 +290,60 @@ fmt.Println(len(years), len(byPalace))
 
 ---
 
+## YearlyOverviewToText
+
+**用途**　连续若干农历年的流年一览文本：每年一行，面向语言模型与人。问「接下来几年」「哪年适合做某事」时一次拿到，
+不必逐年取运限。
+
+**签名**
+
+```go
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `fromYear` | `int` | 是 | — | 起始农历年份，1–9999，含 |
+| `toYear` | `int` | 是 | — | 截止农历年份，1–9999，含；不早于 `fromYear` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各年四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `YearlyOverviewToText` |
+
+**返回值**　`string`——`# 流年一览 <起始年>-<截止年>` 标题加一张表，一年一行，列为年份、干支、正月初一的阳历日期、虚岁、
+大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。各年与
+[`HoroscopeOfYear(year)`](/zh/docs/go/astrolabe#horoscopeofyear) 同一口径；未起运的年份大限一格写 `童限 · <宫>`，
+改历年里没有正月时正月初一一格写 `—`。格式见[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。
+`fromYear` 晚于 `toYear`、某一年不在 1–9999 返回 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+text, _ := chart.YearlyOverviewToText(2001, 2012)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 2001 ") || strings.HasPrefix(l, "| 2012 ") {
+        fmt.Println(l)
+    }
+}
+```
+
+**输出**
+
+```text
+# 流年一览 2001-2012
+| 2001 | 辛巳 | 2001-1-24 | 2 | 童限 · 财帛 | 田宅 | 兄弟 | 巨门化禄→本命疾厄, 太阳化权→本命子女, 文曲化科→本命命宫, 文昌化忌→本命福德 |
+| 2012 | 壬辰 | 2012-1-23 | 13 | 兄弟 | 官禄 | 夫妻 | 天梁化禄→本命子女, 紫微化权→本命命宫, 左辅化科→本命官禄, 武曲化忌→本命财帛 |
+```
+
+2001 年虚岁 2 尚未起运，大限一格写童限；2012 年虚岁 13 进入第二个大限（兄弟）。
+
+---
+
 ## MonthlyList
 
 **用途**　取一个农历年的全部流月。
@@ -357,6 +417,57 @@ fmt.Println(len(whole), len(plain))
 
 ---
 
+## MonthlyListToText
+
+**用途**　一个农历年的流月一览文本：每个流月一行，面向语言模型与人。
+
+**签名**
+
+```go
+func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextContext(ctx context.Context, lunarYear int) (string, error)
+func (a *Astrolabe) MonthlyListToTextWith(lunarYear int, opts TextOptions) (string, error)
+func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear int, opts TextOptions) (string, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | 是 | — | 农历年份，1–9999 |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各月四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `MonthlyListToText` |
+
+**返回值**　`string`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
+干支与四化落宫。与 [`MonthlyList(lunarYear, nil)`](#monthlylist) 同一套数据：无闰月 12 行；有闰月 14 行，
+闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+[语义化文本](/zh/docs/guide/guides/to-text#九个入口)。年份不在 1–9999 返回 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+text, _ := chart.MonthlyListToText(2025)
+
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+for _, l := range lines {
+    if strings.HasPrefix(l, "| 闰") {
+        fmt.Println(l)
+    }
+}
+```
+
+**输出**
+
+```text
+# 流月一览 2025
+| 闰6 (1-15) | 2025-7-25 ~ 2025-8-8 | 命宫 | 癸未 | 破军化禄→本命福德, 巨门化权→本命疾厄, 太阴化科→本命仆役, 贪狼化忌→本命迁移 |
+| 闰6 (16-29) | 2025-8-9 ~ 2025-8-22 | 父母 | 甲申 | 廉贞化禄→本命官禄, 破军化权→本命福德, 武曲化科→本命财帛, 太阳化忌→本命子女 |
+```
+
+农历 2025 年闰六月：前半月的流月同六月（癸未），后半月同七月（甲申）。
+
+---
+
 ## AgePalace
 
 **用途**　取小限当年所在的宫。
@@ -396,7 +507,7 @@ fmt.Println(h.AgePalace().Name)
 **签名**
 
 ```go
-func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
+func (h *Horoscope) Palace(nameKeyOrName string, scope string) (*Palace, error)
 ```
 
 **参数**
@@ -407,15 +518,20 @@ func (h *Horoscope) Palace(nameKeyOrName string, scope string) *Palace
 | `scope` | `string` | 是 | — | 在哪个层级的十二宫里找 |
 
 **返回值**　`*Palace`——本命盘上的宫位（同一格宫位在不同层级有不同宫名）。
-层级为 `ScopeOrigin` 时即本命十二宫。查不到返回 `nil`。
+层级为 `ScopeOrigin` 时即本命十二宫。宫名查不到返回 `nil` 与 `nil` 错误。
+`scope` 不是层级标识，或比[查询精度](#precision)细（如按年取的运限传 `ScopeMonthly`）时报 `ErrInvalidArgument`：
+那一层是内核挑的代表日的，不是查询的答案。
 
 **示例**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println("大限命宫落在本命的", h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal).Name)
-fmt.Println("本命命宫是", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Name)
+decadalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeDecadal)
+natalSoul, _ := h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin)
+
+fmt.Println("大限命宫落在本命的", decadalSoul.Name)
+fmt.Println("本命命宫是", natalSoul.Name)
 ```
 
 **输出**
@@ -441,18 +557,18 @@ fmt.Println("本命命宫是", h.Palace(iztro.PalaceSoul, iztro.ScopeOrigin).Nam
 **签名**
 
 ```go
-func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) *SurroundedPalaces
+func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) (*SurroundedPalaces, error)
 ```
 
 **参数**　同 `Palace`。
 
-**返回值**　`*SurroundedPalaces`，判断方法见[三方四正](/zh/docs/go/surpalaces)。
+**返回值**　`*SurroundedPalaces`，判断方法见[三方四正](/zh/docs/go/surpalaces)。错误同 `Palace`。
 
 **示例**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
-sp := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
+sp, _ := h.SurroundPalaces(iztro.PalaceWealth, iztro.ScopeYearly)
 
 fmt.Println("流年财帛的三方四正以本命", sp.Target.Name, "为本宫")
 ```
@@ -476,9 +592,9 @@ fmt.Println("流年财帛的三方四正以本命", sp.Target.Name, "为本宫")
 **签名**
 
 ```go
-func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
-func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) bool
+func (h *Horoscope) HasHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) HasOneOfHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
+func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, stars []string) (bool, error)
 ```
 
 **参数**
@@ -497,14 +613,20 @@ func (h *Horoscope) NotHaveHoroscopeStars(nameKeyOrName string, scope string, st
 | `HasOneOfHoroscopeStars` | 至少一颗在 |
 | `NotHaveHoroscopeStars` | 一颗都不在 |
 
+宫名查不到时三者都为 `false`；错误同 `Palace`。
+
 **示例**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"}))
-fmt.Println(h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"}))
-fmt.Println(h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"}))
+has, _ := h.HasHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu"})
+one, _ := h.HasOneOfHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yunlu", "yunyang"})
+none, _ := h.NotHaveHoroscopeStars(iztro.PalaceSoul, iztro.ScopeDecadal, []string{"yuntuo"})
+
+fmt.Println(has)
+fmt.Println(one)
+fmt.Println(none)
 ```
 
 **输出**
@@ -551,7 +673,7 @@ true
 **签名**
 
 ```go
-func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) bool
+func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) (bool, error)
 ```
 
 **参数**
@@ -562,14 +684,16 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 | `scope` | `string` | 是 | — | 运限层级 |
 | `mutagenKey` | `string` | 是 | — | 四化标识 |
 
-**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。
+**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。错误同 `Palace`。
 
 **示例**
 
 ```go
 h, _ := chart.Horoscope("2025-6-1", 0)
 
-fmt.Println(h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu))
+lu, _ := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+
+fmt.Println(lu)
 fmt.Println(h.Decadal.Mutagen)
 ```
 
@@ -633,6 +757,41 @@ fmt.Println(h.Astrolabe().SolarDate)
 
 ---
 
+## Precision
+
+**用途**　查询精度：运限目标实际指定到的最细层级。
+
+**签名**
+
+```go
+func (h *Horoscope) Precision() string
+```
+
+**返回值**　层级常量——[`HoroscopeOfYear`](/zh/docs/go/astrolabe#horoscopeofyear) 为 `ScopeYearly`，
+[`HoroscopeOfMonth`](/zh/docs/go/astrolabe#horoscopeofmonth) 为 `ScopeMonthly`，
+按日期取（`Horoscope` / `HoroscopeAt` / `HoroscopeAtTime` / `HoroscopeNow`，给不给时辰都一样）为 `ScopeHourly`；`nil` 运限返回空串。
+
+字段里六个层级恒齐全，比精度细的层级是内核替调用方挑的代表日（六月初一、月初一或交节次日）的，
+不是查询的答案：`ToText` / `ToTextWith` 与 [`ForHoroscope`](/zh/docs/go/knowledge#forastrolabe--forhoroscope)
+只取到这一层，`TextOptions.Through`、`Patterns` / `PatternsToText` 与[宫位查询](#palace)的 `scope` 比它细时报 `ErrInvalidArgument`。
+
+**示例**
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+day, _ := chart.Horoscope("2025-6-1", 0)
+
+fmt.Println(year.Precision(), day.Precision())
+```
+
+**输出**
+
+```text
+yearly hourly
+```
+
+---
+
 ## ToText
 
 **用途**　运限的语义化文本：面向语言模型与人的完整描述。
@@ -644,8 +803,9 @@ func (h *Horoscope) ToText() (string, error)
 func (h *Horoscope) ToTextContext(ctx context.Context) (string, error)
 ```
 
-**返回值**　`string`——按星盘排盘语言输出的 Markdown 子集：`# 运限 <日期> (<农历>)` 标题下，
-大限（未起运写童限）、小限、流年、流月、流日、流时各一个 `## ` 节，每节带该层命宫落在本命何宫、
+**返回值**　`string`——按星盘排盘语言输出的 Markdown 子集：`# 运限 <日期> (<农历>)` 标题（只写到流年、流月时只写农历年份与干支，
+如 `# 运限 2027 (丁未)`、`# 运限 2025 (乙巳) · 流月 (甲申)`）下，
+大限（未起运写童限）、小限、流年、流月、流日、流时各一个 `## ` 节（写到[查询精度](#precision)为止：按年、按月取的运限只到流年、流月），每节带该层命宫落在本命何宫、
 四化（带落宫）、流耀与该层视角的格局行；大限与流年另展开十二宫表。
 完整格式见[语义化文本](/zh/docs/guide/guides/to-text#五个入口)。
 
@@ -689,7 +849,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 
 | 参数 | 类型 | 说明 |
 | --- | --- | --- |
-| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 输出选项。`Knowledge` 字段给释义材料来源：`BuiltinKnowledge()` 取盘语言的内嵌默认包，`KnowledgeFrom(pack)` 用给定的包；`PatternConfig` 字段给各层格局行与格局释义的判定口径；零值 `TextOptions{}` 等同 `ToText` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 输出选项。`Knowledge` 字段给释义材料来源：`BuiltinKnowledge()` 取盘语言的内嵌默认包，`KnowledgeFrom(pack)` 用给定的包；`PatternConfig` 字段给各层格局行与格局释义的判定口径；`Through` 字段让文本[写到某一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)（`ScopeDecadal` … `ScopeHourly`，空串写到[查询精度](#precision)，比查询精度细报 `ErrInvalidArgument`）；零值 `TextOptions{}` 等同 `ToText` |
 
 释义的插入位置与去重规则见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本)。
 
@@ -721,5 +881,46 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 两份文本的 `## ` 节完全相同：释义不另起节，插在各层之后。
+
+按农历年取的运限查询精度是流年，文本只写到流年：
+
+```go
+year, _ := chart.HoroscopeOfYear(2027)
+text, _ = year.ToText()
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2027 (丁未)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命父母 · 虚岁 28
+## 流年 · 命宫: 本命父母 (丁未)
+```
+
+按农历月取的运限只写到流月：
+
+```go
+month, _ := chart.HoroscopeOfMonth(2025, 7)
+text, _ = month.ToText()
+
+for _, l := range strings.Split(text, "\n") {
+    if strings.HasPrefix(l, "#") {
+        fmt.Println(l)
+    }
+}
+```
+
+```text
+# 运限 2025 (乙巳) · 流月 (甲申)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
+```
 
 `BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`。

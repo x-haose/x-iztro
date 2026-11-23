@@ -292,8 +292,8 @@ fn date_out_of_supported_years_returns_error() {
         let json = by_solar(bad, 2, "male", "zh-CN");
         assert!(is_error(&json), "expected error for {bad}, got: {json}");
     }
-    let json = by_solar("1583-1-1", 2, "male", "zh-CN");
-    assert!(!is_error(&json), "1583 should be supported: {json}");
+    let json = by_solar("1-1-1", 2, "male", "zh-CN");
+    assert!(!is_error(&json), "year 1 should be supported: {json}");
     let json = by_solar("9999-12-31", 2, "male", "zh-CN");
     assert!(!is_error(&json), "9999 should be supported: {json}");
 }

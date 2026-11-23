@@ -340,7 +340,7 @@ func (a *Astrolabe) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 	return out, utilQueryContext(ctx, payload, &out)
 }
 
-// ToText 生成运限的语义化文本；本命信息与运限一并写入。
+// ToText 生成运限的语义化文本，写到查询精度（Precision）那一层为止。
 func (h *Horoscope) ToText() (string, error) {
 	return h.ToTextContext(context.Background())
 }
@@ -351,6 +351,7 @@ func (h *Horoscope) ToTextContext(ctx context.Context) (string, error) {
 }
 
 // ToTextWith 生成运限的语义化文本并按 opts.Knowledge 追加释义节：各层流耀与各层命中格局的解读。
+// opts.Through 为空时写到查询精度（Precision），比查询精度细时报 ErrInvalidArgument。
 func (h *Horoscope) ToTextWith(opts TextOptions) (string, error) {
 	return h.ToTextWithContext(context.Background(), opts)
 }
@@ -361,8 +362,7 @@ func (h *Horoscope) ToTextWithContext(ctx context.Context, opts TextOptions) (st
 		return "", invalidArgument("horoscopeToText: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := h.astrolabe.textPayload("horoscopeToText")
-	payload["targetDate"] = h.SolarDate
-	payload["targetTimeIndex"] = h.targetTimeIndex
+	h.addTarget(payload)
 	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)
@@ -494,6 +494,86 @@ func (a *Astrolabe) DecadalListToTextWithContext(ctx context.Context, opts TextO
 		return "", invalidArgument("decadalListToText: nil astrolabe")
 	}
 	payload := a.textPayload("decadalListToText")
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// YearlyOverviewToText 生成流年一览的语义化文本：农历 fromYear 年到 toYear 年（含两端）每年一行，
+// 写年份、干支、正月初一的阳历日期、虚岁、大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。
+// 各年与 HoroscopeOfYear 同一口径；未起运的年份大限一格写童限，改历年里没有正月时正月初一一格写「—」。
+// fromYear 晚于 toYear、某一年不在 1-9999 时返回 ErrInvalidArgument。
+func (a *Astrolabe) YearlyOverviewToText(fromYear, toYear int) (string, error) {
+	return a.YearlyOverviewToTextContext(context.Background(), fromYear, toYear)
+}
+
+// YearlyOverviewToTextContext 为 YearlyOverviewToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) YearlyOverviewToTextContext(ctx context.Context, fromYear, toYear int) (string, error) {
+	return a.YearlyOverviewToTextWithContext(ctx, fromYear, toYear, TextOptions{})
+}
+
+// YearlyOverviewToTextWith 生成流年一览的语义化文本并按 opts.Knowledge 在表后追加各年四化星的释义节。
+func (a *Astrolabe) YearlyOverviewToTextWith(fromYear, toYear int, opts TextOptions) (string, error) {
+	return a.YearlyOverviewToTextWithContext(context.Background(), fromYear, toYear, opts)
+}
+
+// YearlyOverviewToTextWithContext 为 YearlyOverviewToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYear, toYear int, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("yearlyOverviewToText: nil astrolabe")
+	}
+	payload := a.textPayload("yearlyOverviewToText")
+	payload["fromYear"] = fromYear
+	payload["toYear"] = toYear
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// MonthlyListToText 生成流月一览的语义化文本：指定农历年每个流月一行，写农历月、阳历起止日、
+// 流月命宫所在的本命宫、干支与四化落宫。闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），
+// 月号前加「闰」并注明农历日区间。lunarYear 不在 1-9999 时返回 ErrInvalidArgument。
+func (a *Astrolabe) MonthlyListToText(lunarYear int) (string, error) {
+	return a.MonthlyListToTextContext(context.Background(), lunarYear)
+}
+
+// MonthlyListToTextContext 为 MonthlyListToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) MonthlyListToTextContext(ctx context.Context, lunarYear int) (string, error) {
+	return a.MonthlyListToTextWithContext(ctx, lunarYear, TextOptions{})
+}
+
+// MonthlyListToTextWith 生成流月一览的语义化文本并按 opts.Knowledge 在表后追加各月四化星的释义节。
+func (a *Astrolabe) MonthlyListToTextWith(lunarYear int, opts TextOptions) (string, error) {
+	return a.MonthlyListToTextWithContext(context.Background(), lunarYear, opts)
+}
+
+// MonthlyListToTextWithContext 为 MonthlyListToTextWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear int, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("monthlyListToText: nil astrolabe")
+	}
+	payload := a.textPayload("monthlyListToText")
+	payload["year"] = lunarYear
+	opts.apply(payload)
+	var out string
+	return out, utilQueryContext(ctx, payload, &out)
+}
+
+// TopicToText 生成按主题取材的语义化文本：按知识包里该主题的定义选宫——Surround 的各宫连同三方四正
+// 各成一组，Palaces 的各宫只取本宫，同一宫只出一次——每宫一段，标题下写主题说明，文末附落在选中宫内的
+// 格局与四化释义。主题定义与释义都取自 opts.Knowledge，零值 Knowledge 报 ErrInvalidArgument；
+// 包里没有该主题、主题里有不认识的宫位标识同样报 ErrInvalidArgument。
+func (a *Astrolabe) TopicToText(topic string, opts TextOptions) (string, error) {
+	return a.TopicToTextContext(context.Background(), topic, opts)
+}
+
+// TopicToTextContext 为 TopicToText 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) TopicToTextContext(ctx context.Context, topic string, opts TextOptions) (string, error) {
+	if a == nil {
+		return "", invalidArgument("topicToText: nil astrolabe")
+	}
+	payload := a.textPayload("topicToText")
+	payload["topic"] = topic
 	opts.apply(payload)
 	var out string
 	return out, utilQueryContext(ctx, payload, &out)

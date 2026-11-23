@@ -35,6 +35,7 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 | `Palaces` | `map[string]TextEntry` | 宫位条目，键为宫位标识 |
 | `Mutagens` | `map[string]TextEntry` | 四化条目，键为四化标识 |
 | `Concepts` | `map[string]ConceptEntry` | 术语条目，键为 slug |
+| `Topics` | `map[string]TopicEntry` | 解读主题，键为 slug |
 
 ### KnowledgeSource
 
@@ -49,7 +50,9 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 | `Group` | `string` | 分组：杂耀的分类、神煞的组别 |
 | `Attributes` | `StarAttributes` | 门派属性 |
 | `Intro` | `string` | 解读正文（Markdown） |
+| `Summary` | `string` | 正文的摘要；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目为空 |
 | `Combinations` | `map[string]string` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `CombinationSummaries` | `map[string]string` | 组合解读的摘要，与 `Combinations` 同键成对 |
 
 ### StarAttributes
 
@@ -65,11 +68,16 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 
 ### PatternEntry
 
-`Name`、`Quotes`（`[]string`）、`Conditions`、`Intro`。
+`Name`、`Quotes`（`[]string`）、`Conditions`、`Intro`、`Summary`。
 
 ### TextEntry / ConceptEntry
 
-`TextEntry`（宫位、四化）有 `Name` 与 `Intro`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
+`TextEntry`（宫位、四化）有 `Name`、`Intro` 与 `Summary`；`ConceptEntry`（术语）有 `Title` 与 `Intro`。
+
+### TopicEntry
+
+解读主题：`Title`、`Surround`（`[]string`，连同三方四正一起取的宫位标识）、`Palaces`（`[]string`，只取本宫的宫位标识，
+可含 `bodyPalace` / `originalPalace`）、`Intro`、`Summary`；[`TopicToText`](/zh/docs/go/astrolabe#topictotext) 按它选宫。
 
 <Callout type="warn" title="缺省一律是零值">
 Go 侧不用指针区分「没写」与「写了空串」，字段缺省即空串 / nil。
@@ -118,7 +126,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-162 64 12 4 49
+162 64 12 4 50
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -196,7 +204,7 @@ func (p *KnowledgePack) MergedContext(ctx context.Context, overlays ...*Knowledg
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`Attributes` 与 `Combinations` 逐字段合并，
-数组字段整体替换。合并本身在 wasm 内核里算，三语言结果一致。
+数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 wasm 内核里算，各语言绑定结果一致。
 
 **示例**
 
@@ -228,9 +236,9 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept
+## Star / Pattern / Palace / Mutagen / Concept / Topic
 
-**用途**　按语言无关标识取条目。
+**用途**　按语言无关标识（术语与主题按 slug）取条目。
 
 **签名**
 
@@ -240,6 +248,7 @@ func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
 func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+func (p *KnowledgePack) Topic(slug string) *TopicEntry
 ```
 
 **返回值**　包里没有该条目时返回 `nil`；接收者为 `nil` 时同样返回 `nil`，不会 panic。
@@ -308,15 +317,19 @@ for _, hit := range hits {
 ## TextOptions
 
 **用途**　`ToTextWith` 家族（`ToTextWith` / `PalaceToTextWith` / `SurroundedPalacesToTextWith` /
-`PatternsToTextWith` 与 `Horoscope` 上的同名方法）的输出选项：释义材料来源与格局判定口径。
-零值只输出盘面事实、按默认口径判格局，与不带 `With` 的方法输出逐字节相同。
+`PatternsToTextWith` 与 `Horoscope` 上的同名方法）的输出选项：事实详略、释义材料与深度、运限文本写到哪一层、格局判定口径。
+零值写完整事实、不带释义、按默认口径判格局，与不带 `With` 的方法输出逐字节相同。
+两个开关的取舍与篇幅见[分层](/zh/docs/guide/guides/to-text#分层)。
 
 **定义**
 
 ```go
 type TextOptions struct {
-    Knowledge     Knowledge
-    PatternConfig *PatternConfig
+    Knowledge      Knowledge
+    Detail         string
+    KnowledgeDepth string
+    Through        string
+    PatternConfig  *PatternConfig
 }
 ```
 
@@ -325,6 +338,9 @@ type TextOptions struct {
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | 释义材料来源；零值不带释义。给出时每宫事实之后紧跟该宫星耀释义、格局列表之后紧跟格局释义、本命文本末尾附 `## 四化释义`，见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `Detail` | `string` | 事实详略：`TextDetailOverview` 时本命只写基本信息、十二宫总览表与格局；运限各层（小限除外）写宫名对照、四化、流耀与格局，不展开十二宫表；宫位段落只写主星、辅星与杂耀。`TextDetailFull` 或空串为完整。对格局、大限一览、流年一览与流月一览不起作用 |
+| `KnowledgeDepth` | `string` | 释义深度：`KnowledgeDepthSummary` 用摘要层（条目摘要，或本身够短的正文；格局不附成立条件），`KnowledgeDepthFull` 或空串用全文。摘要层须同时给 `Knowledge`，所给包有长正文缺摘要时报 `ErrInvalidArgument` 并列出缺项 |
+| `Through` | `string` | 运限文本[写到哪一层为止](/zh/docs/guide/guides/to-text#运限写到哪一层)，更细的层级不写：`ScopeDecadal` 只写大限，`ScopeYearly` 写大限、小限、流年，`ScopeMonthly` / `ScopeDaily` / `ScopeHourly` 依次各多一层；空串写到运限的[查询精度](/zh/docs/go/horoscope#precision)。只写到大限时大限段不列风云际会。只对 `Horoscope.ToTextWith` 起作用；`ScopeOrigin`、不是运限层级、比查询精度细的取值报 `ErrInvalidArgument` |
 | `PatternConfig` | [`*PatternConfig`](/zh/docs/go/patterns#patternconfig) | 格局判定口径，与 `Patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`nil` 取内核默认 |
 
 **示例**
@@ -343,7 +359,7 @@ byPosition, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnow
 **输出**
 
 ```text
-true 3389 20767
+true 3389 20552
 ```
 
 ---
@@ -407,7 +423,8 @@ func (p *KnowledgePack) ForHoroscopeContext(ctx context.Context, horoscope *Horo
 **返回值**　`(*KnowledgePack, error)`。标准知识包，元信息沿用本包：`Stars` 是盘上出现的星
 （主辅杂与四组十二神，14 主星的 `Combinations` 只留对方主星确在同宫的），
 `Patterns` 是按 `config` 口径命中的格局，`Mutagens` 四条全留，`Palaces` 与 `Concepts` 为空。
-`ForHoroscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+`ForHoroscope` 在此之上再加大限到运限[查询精度](/zh/docs/go/horoscope#precision)各层的流耀与各层视角命中的格局：
+按日期取的到流时，`HoroscopeOfYear` 取的到流年，`HoroscopeOfMonth` 取的到流月。
 子包要和 `Patterns(config)` / `PatternsToTextWith` 配同一口径：口径不同，命中集合不同，
 释义就会缺项或多项。
 取材以本包当前内容为准（整包发给内核），就地改过的条目照样进入子包。

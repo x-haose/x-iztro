@@ -12,12 +12,14 @@ use serde_json::{Value, json};
 use crate::data::constants::*;
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::heavenly_stems::get_heavenly_stem_info;
+use crate::data::keyed::unknown_key_message;
 use crate::data::stars::{STARS_WITH_INFO, StarKey, get_star_info};
 use crate::data::types::*;
 use crate::dto::parse_config_value;
 use crate::error::BridgeError;
 use crate::i18n::lookup::{key_of, key_of_in, translate_key};
 use crate::models::astrolabe::Astrolabe;
+use crate::models::horoscope::HoroscopeRef;
 use crate::models::star::Star;
 use crate::star::decorative::{get_changsheng12_start_index, get_jiangqian12_start_index};
 use crate::star::query::{self as star_query, StarParam};
@@ -30,7 +32,7 @@ use crate::star::query::{self as star_query, StarParam};
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SolarChartInput {
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -52,7 +54,7 @@ pub struct SolarChartInput {
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct LunarChartInput {
-    /// 农历日期，格式 `YYYY-M-D`
+    /// 农历日期，写法同公历
     pub lunar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -72,11 +74,11 @@ pub struct LunarChartInput {
     pub from_branch: Option<String>,
 }
 
-/// 运限入参：本命盘参数 + 运限目标
+/// 运限入参：本命盘参数 + 运限目标（`target_date` 与 `target_year` 二选一，后者可配 `target_month`）
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct HoroscopeInput {
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -88,10 +90,16 @@ pub struct HoroscopeInput {
     pub language: String,
     /// 排盘配置，部分键对象；省略取默认
     pub config: Option<Value>,
-    /// 运限目标日期，格式 `YYYY-M-D`
+    /// 运限目标日期，格式 `YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`）；
+    /// 空串即未给，此时须给 `target_year`
     pub target_date: String,
-    /// 运限目标时辰索引 0-12
-    pub target_time_index: u8,
+    /// 运限目标时辰索引 0-12；省略时按目标日期串的小时换算，不带时间即早子时。只配 `target_date`
+    pub target_time_index: Option<u8>,
+    /// 运限目标农历年份（1-9999）：目标日期取该年六月初一，时辰取出生时柱地支对应的时辰
+    /// （与运限列表同）；与 `target_date` 二选一
+    pub target_year: Option<i64>,
+    /// 运限目标农历月号（1-12，闰月不单独成月号）：给出时目标日期改取 `target_year` 该月初一；只配 `target_year`
+    pub target_month: Option<u32>,
     /// 重排起点天干标识；与 `from_branch` 同时给出时先按该干支重排星盘再算运限
     pub from_stem: Option<String>,
     /// 重排起点地支标识；与 `from_stem` 同时给出
@@ -108,9 +116,9 @@ pub struct QueryInput {
     /// 查询种类，决定调用哪个函数
     pub kind: String,
 
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期，`YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`，时间不参与排盘）
     pub solar_date: String,
-    /// 农历日期，格式 `YYYY-M-D`
+    /// 农历日期，写法同公历
     pub lunar_date: String,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,
@@ -158,8 +166,12 @@ pub struct QueryInput {
     pub is_leap: bool,
     /// 大限序号（0 为第一个大限）；`yearlyList` 与 `palace_key` 二选一，后者优先
     pub decadal_ordinal: Option<usize>,
-    /// 农历年份，`monthlyList` 用
+    /// 农历年份，`monthlyList` 与 `monthlyListToText` 用
     pub year: Option<i64>,
+    /// `yearlyOverviewToText` 的起始农历年（含）；与 `to_year` 都必给
+    pub from_year: Option<i64>,
+    /// `yearlyOverviewToText` 的截止农历年（含）；早于 `from_year` 由内核报 invalid_argument
+    pub to_year: Option<i64>,
     /// `monthlyList` 是否把闰月拆成前后半月；独立于排盘的 `fix_leap`，
     /// 缺省为 true（与 iztro `monthlyList(year, fixLeap = true)` 一致）。
     /// 复用排盘那个会让「盘按闰月下半月安星」与「列表拆不拆闰月」这两件事纠缠在一起
@@ -184,10 +196,16 @@ pub struct QueryInput {
     pub key_filter: String,
 
     // Prompt 与运限用
-    /// 运限目标日期，格式 `YYYY-M-D`
+    /// 运限目标日期，格式 `YYYY-M-D`（分隔符可为 `-` `/` `.`，可带 ` HH:mm(:ss)`）；
+    /// 空串即未给。运限类 kind 须给它或 `target_year` 之一
     pub target_date: String,
-    /// 运限目标时辰索引 0-12
-    pub target_time_index: u8,
+    /// 运限目标时辰索引 0-12；省略时按目标日期串的小时换算，不带时间即早子时。只配 `target_date`
+    pub target_time_index: Option<u8>,
+    /// 运限目标农历年份（1-9999）：目标日期取该年六月初一，时辰取出生时柱地支对应的时辰
+    /// （与运限列表同）；与 `target_date` 二选一
+    pub target_year: Option<i64>,
+    /// 运限目标农历月号（1-12，闰月不单独成月号）：给出时目标日期改取 `target_year` 该月初一；只配 `target_year`
+    pub target_month: Option<u32>,
 
     // 格局用
     /// 格局判定口径，部分键对象（brightnessSource/borrow/flowStars）；省略取默认
@@ -199,6 +217,15 @@ pub struct QueryInput {
     /// to_text 家族的释义材料来源：字符串 `"builtin"` 取盘语言的内嵌包，
     /// 或直接给一个知识包对象（自定义/合并后的包）；省略则只输出盘面事实
     pub knowledge: Option<Value>,
+    /// to_text 家族的事实详略标识（`overview` / `full`）；空串取 `full`
+    pub detail: String,
+    /// to_text 家族的释义深度标识（`summary` / `full`）；空串取 `full`，`summary` 须同时给 `knowledge`
+    pub knowledge_depth: String,
+    /// `horoscopeToText` 写到哪一层为止的运限层级标识（`decadal` / `yearly` / `monthly` / `daily` /
+    /// `hourly`），小限随流年；空串即写到运限目标的查询精度，比查询精度细报 invalid_argument
+    pub through: String,
+    /// `topicToText` 的主题 slug（知识包 `topics` 段的键）
+    pub topic: String,
 
     // 反推用
     /// 反推范围起始公历年（含）
@@ -224,21 +251,17 @@ fn serialize_failed(e: serde_json::Error) -> BridgeError {
     BridgeError::internal(format!("failed to serialize result: {e}"))
 }
 
+/// 性别标识，大小写不敏感（`Male` 与 `male` 等价）
 fn parse_gender(s: &str) -> Result<Gender, BridgeError> {
-    match s.to_ascii_lowercase().as_str() {
-        "male" => Ok(Gender::Male),
-        "female" => Ok(Gender::Female),
-        _ => Err(BridgeError::invalid_argument(format!(
-            "invalid gender '{s}': expected 'male' or 'female'"
-        ))),
-    }
+    Gender::from_key(&s.to_ascii_lowercase()).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message("gender", s, Gender::KEYS))
+    })
 }
 
+/// 语言代码，宽松写法见 [`Language::from_code`]
 fn parse_language(s: &str) -> Result<Language, BridgeError> {
     Language::from_code(s).ok_or_else(|| {
-        BridgeError::invalid_argument(format!(
-            "invalid language '{s}': expected one of zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN"
-        ))
+        BridgeError::invalid_argument(unknown_key_message("language", s, Language::KEYS))
     })
 }
 
@@ -405,9 +428,7 @@ fn parse_branch_key(key: &str) -> Result<EarthlyBranch, BridgeError> {
 
 fn parse_scope_key(key: &str) -> Result<Scope, BridgeError> {
     Scope::from_key(key).ok_or_else(|| {
-        BridgeError::invalid_argument(format!(
-            "unknown scope '{key}' (expected one of: origin, decadal, yearly, monthly, daily, hourly)"
-        ))
+        BridgeError::invalid_argument(unknown_key_message("scope", key, Scope::KEYS))
     })
 }
 
@@ -475,6 +496,43 @@ fn apply_rearrange(
 // 排盘与运限
 // ============================================================
 
+/// 按运限目标取运限：`target_date`（可配 `target_time_index`）按公历日期算；`target_year` 按农历年算
+/// （[`Astrolabe::horoscope_of_year`]），再给 `target_month` 则按该年的农历月算
+/// （[`Astrolabe::horoscope_of_month`]）。日期与年份必给其一且只给其一，月份只配年份；按农历年、月取时，
+/// 时辰由内核按出生时柱定，同给 `target_time_index` 报错（它不会生效）。
+/// 结果带查询精度（[`HoroscopeRef::precision`]）：日期为流时、年为流年、年月为流月。
+fn horoscope_at<'a>(
+    astrolabe: &'a Astrolabe,
+    target_date: &str,
+    target_time_index: Option<u8>,
+    target_year: Option<i64>,
+    target_month: Option<u32>,
+) -> Result<HoroscopeRef<'a>, BridgeError> {
+    match (target_date.is_empty(), target_year, target_month) {
+        (false, None, None) => Ok(astrolabe.horoscope(target_date, target_time_index)?),
+        (true, Some(year), month) => {
+            if target_time_index.is_some() {
+                return Err(BridgeError::invalid_argument(
+                    "invalid horoscope target: targetTimeIndex cannot be combined with targetYear",
+                ));
+            }
+            Ok(match month {
+                Some(month) => astrolabe.horoscope_of_month(year, month)?,
+                None => astrolabe.horoscope_of_year(year)?,
+            })
+        }
+        (_, None, Some(_)) => Err(BridgeError::invalid_argument(
+            "invalid horoscope target: targetMonth requires targetYear",
+        )),
+        (false, Some(_), _) => Err(BridgeError::invalid_argument(
+            "invalid horoscope target: targetDate and targetYear are mutually exclusive",
+        )),
+        (true, None, None) => Err(BridgeError::invalid_argument(
+            "horoscope target is required: pass 'targetDate' or 'targetYear'",
+        )),
+    }
+}
+
 /// 阳历排盘，返回星盘 DTO
 pub fn by_solar(input: &SolarChartInput) -> Result<Value, BridgeError> {
     let astrolabe = crate::by_solar(
@@ -505,7 +563,8 @@ pub fn by_lunar(input: &LunarChartInput) -> Result<Value, BridgeError> {
     serde_json::to_value(astrolabe.to_dto()).map_err(serialize_failed)
 }
 
-/// 运限，返回运限 DTO；给出 `fromStem`/`fromBranch` 时先按该干支重排星盘再算——
+/// 运限，返回运限 DTO；目标为 `targetDate`，或 `targetYear`（可配 `targetMonth`），见 [`horoscope_at`]。
+/// 给出 `fromStem`/`fromBranch` 时先按该干支重排星盘再算——
 /// 重排改变五行局与命宫，大限步长与各层宫名随之不同。
 pub fn horoscope(input: &HoroscopeInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
@@ -518,14 +577,15 @@ pub fn horoscope(input: &HoroscopeInput) -> Result<Value, BridgeError> {
         parse_config(&input.config)?,
     )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
-    let horoscope = crate::get_horoscope(
+    let horoscope = horoscope_at(
         &astrolabe,
         &input.target_date,
         input.target_time_index,
-        language,
+        input.target_year,
+        input.target_month,
     )?;
 
-    serde_json::to_value(horoscope.to_dto(language)).map_err(serialize_failed)
+    serde_json::to_value(horoscope.data().to_dto(language)).map_err(serialize_failed)
 }
 
 // ============================================================
@@ -549,8 +609,11 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "surroundedPalacesToText"
         | "flankingPalacesToText"
         | "decadalListToText"
+        | "yearlyOverviewToText"
+        | "monthlyListToText"
         | "patternsToText"
-        | "horoscopePatternsToText" => to_text(input),
+        | "horoscopePatternsToText"
+        | "topicToText" => to_text(input),
 
         // ---- 知识包按盘取材 ----
         "knowledgeForChart" => knowledge_for_chart(input),
@@ -764,15 +827,12 @@ fn parse_palace_target(
             })?;
         return Ok(PalaceTarget::Index(index));
     }
-    match input.palace_key.as_str() {
-        "bodyPalace" => Ok(PalaceTarget::Body),
-        "originalPalace" => Ok(PalaceTarget::Original),
-        key => Palace::from_key(key).map(PalaceTarget::Name).ok_or_else(|| {
-            BridgeError::invalid_argument(format!(
-                "invalid palaceKey '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
-            ))
-        }),
-    }
+    let key = input.palace_key.as_str();
+    PalaceTarget::from_key(key).ok_or_else(|| {
+        BridgeError::invalid_argument(format!(
+            "invalid palaceKey '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
+        ))
+    })
 }
 
 /// 释义材料来源：`"builtin"` 取盘语言的内嵌包（无该语言内嵌包即报错，不静默回退），
@@ -790,7 +850,7 @@ fn parse_knowledge(
             .ok_or_else(|| {
                 BridgeError::invalid_argument(format!(
                     "no builtin knowledge pack for language '{}'",
-                    language.as_code()
+                    language.as_key()
                 ))
             }),
         Some(Value::String(other)) => Err(BridgeError::invalid_argument(format!(
@@ -802,8 +862,9 @@ fn parse_knowledge(
     }
 }
 
-/// 知识包按盘取材：`knowledge` 必填；给 `targetDate` 时按运限取材（含本命部分），
-/// 否则按本命盘取材。格局按 `patternConfig` 口径判定（与 patterns/to_text kind 同一入参），
+/// 知识包按盘取材：`knowledge` 必填；运限目标（`targetDate`、`targetYear`、`targetMonth`）给了任一个即按运限
+/// 取材（含本命部分，目标见 [`horoscope_at`]，只取到查询精度那一层），都不给按本命盘取材。格局按 `patternConfig` 口径判定
+/// （与 patterns/to_text kind 同一入参），
 /// 给出 `fromStem`/`fromBranch` 时先重排再取材
 fn knowledge_for_chart(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
@@ -823,22 +884,70 @@ fn knowledge_for_chart(input: &QueryInput) -> Result<Value, BridgeError> {
         config,
     )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
-    let sub = if input.target_date.is_empty() {
+    let sub = if input.target_date.is_empty()
+        && input.target_year.is_none()
+        && input.target_month.is_none()
+    {
         pack.for_astrolabe_with(&astrolabe, &pattern_config)
     } else {
-        let h = crate::get_horoscope(
+        let h = horoscope_at(
             &astrolabe,
             &input.target_date,
             input.target_time_index,
-            language,
+            input.target_year,
+            input.target_month,
         )?;
-        pack.for_horoscope_with(&astrolabe, &h, &pattern_config)
+        pack.for_horoscope_with(&h, &pattern_config)
     };
     serde_json::to_value(sub).map_err(serialize_failed)
 }
 
+/// 事实详略：空串取默认（完整）
+fn parse_text_detail(s: &str) -> Result<crate::TextDetail, BridgeError> {
+    use crate::TextDetail;
+    if s.is_empty() {
+        return Ok(TextDetail::default());
+    }
+    TextDetail::from_key(s).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message("detail", s, TextDetail::KEYS))
+    })
+}
+
+/// 释义深度：空串取默认（完整）
+fn parse_knowledge_depth(s: &str) -> Result<crate::KnowledgeDepth, BridgeError> {
+    use crate::KnowledgeDepth;
+    if s.is_empty() {
+        return Ok(KnowledgeDepth::default());
+    }
+    KnowledgeDepth::from_key(s).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message(
+            "knowledgeDepth",
+            s,
+            KnowledgeDepth::KEYS,
+        ))
+    })
+}
+
+/// 运限文本写到哪一层为止：空串即不设（写到运限目标的查询精度）。`origin` 能解析，由
+/// [`crate::TextOptions::horoscope_through`] 拒绝
+fn parse_text_through(s: &str) -> Result<Option<Scope>, BridgeError> {
+    if s.is_empty() {
+        return Ok(None);
+    }
+    Scope::from_key(s).map(Some).ok_or_else(|| {
+        BridgeError::invalid_argument(unknown_key_message(
+            "through",
+            s,
+            &HOROSCOPE_SCOPES.map(Scope::as_key),
+        ))
+    })
+}
+
 /// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
-/// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时追加按盘取材的释义节
+/// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时按 `knowledgeDepth` 附按盘取材的释义，
+/// 事实详略按 `detail`，运限文本写到 `through` 这一层为止（不给即写到查询精度，比查询精度细报错）；
+/// `horoscopePatternsToText` 的 `scope` 比查询精度细报错；运限类 kind 的目标见 [`horoscope_at`]，
+/// `yearlyOverviewToText` 的农历年区间取 `fromYear` 与 `toYear`，`monthlyListToText` 的农历年份取 `year`
 fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
@@ -853,21 +962,35 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
     let pack = parse_knowledge(&input.knowledge, language)?;
     let pattern_config = parse_pattern_config(&input.pattern_config)?;
-    let mut opts = crate::TextOptions::new().pattern_config(&pattern_config);
-    if let Some(k) = pack.as_deref() {
-        opts = opts.knowledge(k);
+    let depth = parse_knowledge_depth(&input.knowledge_depth)?;
+    let mut opts = crate::TextOptions::new()
+        .pattern_config(&pattern_config)
+        .detail(parse_text_detail(&input.detail)?);
+    match (pack.as_deref(), depth) {
+        (Some(k), crate::KnowledgeDepth::Full) => opts = opts.knowledge(k),
+        (Some(k), crate::KnowledgeDepth::Summary) => opts = opts.knowledge_summary(k)?,
+        (None, crate::KnowledgeDepth::Summary) => {
+            return Err(BridgeError::invalid_argument(
+                "knowledgeDepth 'summary' requires knowledge: pass \"builtin\" or a knowledge pack object",
+            ));
+        }
+        (None, crate::KnowledgeDepth::Full) => {}
+    }
+    if let Some(scope) = parse_text_through(&input.through)? {
+        opts = opts.horoscope_through(scope)?;
     }
 
     let text = match input.kind.as_str() {
         "astrolabeToText" => crate::astrolabe_to_text_with(&astrolabe, &opts, language),
         "horoscopeToText" => {
-            let h = crate::get_horoscope(
+            let h = horoscope_at(
                 &astrolabe,
                 &input.target_date,
                 input.target_time_index,
-                language,
+                input.target_year,
+                input.target_month,
             )?;
-            crate::horoscope_to_text_with(&astrolabe, &h, &opts, language)
+            h.to_text_with(&opts)?
         }
         "palaceToText" => {
             let target = parse_palace_target(input)?;
@@ -891,6 +1014,21 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
             crate::flanking_palaces_to_text_with(&f, &opts, language)
         }
         "decadalListToText" => crate::decadal_list_to_text_with(&astrolabe, &opts, language),
+        "yearlyOverviewToText" => {
+            let (Some(from), Some(to)) = (input.from_year, input.to_year) else {
+                return Err(BridgeError::invalid_argument(
+                    "yearlyOverviewToText requires 'fromYear' and 'toYear'",
+                ));
+            };
+            crate::yearly_overview_to_text_with(&astrolabe, from, to, &opts, language)?
+        }
+        "monthlyListToText" => {
+            let year = input.year.ok_or_else(|| {
+                BridgeError::invalid_argument("monthlyListToText requires 'year'".to_string())
+            })?;
+            crate::monthly_list_to_text_with(&astrolabe, year, &opts, language)?
+        }
+        "topicToText" => crate::topic_to_text(&astrolabe, &input.topic, &opts, language)?,
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);
@@ -900,13 +1038,14 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
         "horoscopePatternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let scope = parse_scope_key(&input.scope)?;
-            let h = crate::get_horoscope(
+            let h = horoscope_at(
                 &astrolabe,
                 &input.target_date,
                 input.target_time_index,
-                language,
+                input.target_year,
+                input.target_month,
             )?;
-            let hits = crate::pattern::patterns_at(&astrolabe, &h, scope, &pattern_config);
+            let hits = h.patterns_with(scope, &pattern_config)?;
             // 宫名按判定视角取：本命视角用本命宫名，运限层用该层重排宫名
             let names: Vec<Palace> = match h.scope_item(scope) {
                 Some(item) => item.palace_names.clone(),
@@ -990,7 +1129,8 @@ fn parse_decadal_target(
     ))
 }
 
-/// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`）。
+/// 格局判定：`patterns` 为本命，`horoscopePatterns` 为运限某层视角（`scope`，目标见 [`horoscope_at`]，
+/// 比查询精度细报错）。
 /// 给出 `fromStem`/`fromBranch` 时先按该干支重排星盘再判——重排改变五行局与
 /// 十二宫名，格局结论随之不同，判原盘会静默给出错的盘的答案。
 /// 返回命中 DTO 数组，名称按语言翻译、标识语言无关。
@@ -1011,13 +1151,17 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
         "patterns" => astrolabe.patterns_dto(&pattern_config),
         _ => {
             let scope = parse_scope_key(&input.scope)?;
-            let horoscope = crate::get_horoscope(
+            let horoscope = horoscope_at(
                 &astrolabe,
                 &input.target_date,
                 input.target_time_index,
-                language,
+                input.target_year,
+                input.target_month,
             )?;
-            horoscope.patterns_dto(&astrolabe, scope, &pattern_config)
+            horoscope.check_within_precision(scope, "scope")?;
+            horoscope
+                .data()
+                .patterns_dto(&astrolabe, scope, &pattern_config)
         }
     };
     serde_json::to_value(hits).map_err(serialize_failed)
@@ -1694,6 +1838,357 @@ mod tests {
         // 寻址缺省不许静默取默认宫
         assert!(run(json!({"kind": "palaceToText"})).is_err());
         assert!(run(json!({"kind": "surroundedPalacesToText"})).is_err());
+    }
+
+    /// 运限目标给 `targetYear` 时走 `horoscope_of_year`，再给 `targetMonth` 时走 `horoscope_of_month`：
+    /// DTO 与原生一致；文本与格局 kind 只取到查询精度（年为流年、年月为流月），结果等于给「目标日 +
+    /// 出生时辰」这个日期目标并把层级限在精度的结果，按盘取材等于原生按精度取材；层级比精度细报错。
+    /// 目标给重、给漏、月份不配年份或年月配时辰都报错，按盘取材只给月份时不退回本命取材。
+    #[test]
+    fn horoscope_target_is_a_date_a_lunar_year_or_a_lunar_month() {
+        let base = json!({
+            "solarDate": "2000-8-16",
+            "timeIndex": 2,
+            "gender": "female",
+            "language": "zh-CN",
+        });
+        let with = |extras: &[&Value]| {
+            let mut v = base.clone();
+            for extra in extras {
+                for (k, x) in extra.as_object().unwrap() {
+                    v[k] = x.clone();
+                }
+            }
+            v
+        };
+        let run_horoscope =
+            |v: Value| horoscope(&serde_json::from_value::<HoroscopeInput>(v).unwrap());
+        let run_query = |v: Value| query(&serde_json::from_value::<QueryInput>(v).unwrap());
+
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let pack = crate::knowledge::KnowledgePack::builtin(Language::ZhCN).unwrap();
+        // 农历 2027 年六月初一；农历 2025 年七月初一（闰六月之后）
+        for (target, native, solar_date, finer) in [
+            (
+                json!({"targetYear": 2027}),
+                chart.horoscope_of_year(2027).unwrap(),
+                "2027-7-4",
+                "monthly",
+            ),
+            (
+                json!({"targetYear": 2025, "targetMonth": 7}),
+                chart.horoscope_of_month(2025, 7).unwrap(),
+                "2025-8-23",
+                "daily",
+            ),
+        ] {
+            let dto = run_horoscope(with(&[&target])).unwrap();
+            assert_eq!(
+                dto,
+                serde_json::to_value(native.to_dto(Language::ZhCN)).unwrap(),
+                "{target}"
+            );
+            assert_eq!(dto["solarDate"], solar_date, "{target}");
+
+            let precision = native.precision().as_key();
+            let same_day = json!({"targetDate": solar_date, "targetTimeIndex": 2});
+            for (extra, on_same_day) in [
+                (
+                    json!({"kind": "horoscopeToText"}),
+                    json!({"kind": "horoscopeToText", "through": precision}),
+                ),
+                (
+                    json!({"kind": "horoscopePatternsToText", "scope": precision}),
+                    json!({"kind": "horoscopePatternsToText", "scope": precision}),
+                ),
+                (
+                    json!({"kind": "horoscopePatterns", "scope": precision}),
+                    json!({"kind": "horoscopePatterns", "scope": precision}),
+                ),
+            ] {
+                assert_eq!(
+                    run_query(with(&[&extra, &target])).unwrap(),
+                    run_query(with(&[&on_same_day, &same_day])).unwrap(),
+                    "{target} {extra}"
+                );
+            }
+            assert_eq!(
+                run_query(with(&[
+                    &json!({"kind": "knowledgeForChart", "knowledge": "builtin"}),
+                    &target,
+                ]))
+                .unwrap(),
+                serde_json::to_value(
+                    pack.for_horoscope_with(&native, &crate::pattern::PatternConfig::default()),
+                )
+                .unwrap(),
+                "{target}"
+            );
+
+            for extra in [
+                json!({"kind": "horoscopeToText", "through": finer}),
+                json!({"kind": "horoscopePatternsToText", "scope": finer}),
+                json!({"kind": "horoscopePatterns", "scope": finer}),
+            ] {
+                let err = run_query(with(&[&extra, &target])).unwrap_err();
+                assert_eq!(err.code, "invalid_argument", "{target} {extra}");
+                assert!(
+                    err.message.contains(&format!(
+                        "'{finer}': the horoscope target only specifies layers down to '{precision}'"
+                    )),
+                    "{target} {extra}: {}",
+                    err.message
+                );
+            }
+        }
+
+        // 按年取材只到流年：代表日（六月初一）流月、流日、流时视角才命中的格局不进子包，
+        // 按那一天的日期取材时它们都在
+        let pack_of = |target: Value| {
+            run_query(with(&[
+                &json!({"kind": "knowledgeForChart", "knowledge": "builtin"}),
+                &target,
+            ]))
+            .unwrap()
+        };
+        let year_pack = pack_of(json!({"targetYear": 2027}));
+        let day_pack = pack_of(json!({"targetDate": "2027-7-4", "targetTimeIndex": 2}));
+        for key in [
+            "kui_yue_jia_ming",
+            "lu_ma_jiao_chi",
+            "lu_shuai_ma_kun",
+            "sheng_bu_feng_shi",
+            "yang_tuo_jia_ming",
+        ] {
+            assert!(year_pack["patterns"].get(key).is_none(), "{key}");
+            assert!(day_pack["patterns"].get(key).is_some(), "{key}");
+        }
+        // 比精度粗的层级照收
+        assert!(
+            run_query(with(&[&json!({
+                "kind": "horoscopeToText",
+                "targetYear": 2027,
+                "through": "decadal",
+            })]))
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .contains("## 大限 · ")
+        );
+
+        for (target, want) in [
+            (
+                json!({"targetDate": "2027-1-1", "targetYear": 2027}),
+                "mutually exclusive",
+            ),
+            (
+                json!({"targetDate": "2027-1-1", "targetYear": 2027, "targetMonth": 7}),
+                "mutually exclusive",
+            ),
+            (json!({}), "pass 'targetDate' or 'targetYear'"),
+            (
+                json!({"targetYear": 2027, "targetTimeIndex": 0}),
+                "targetTimeIndex cannot be combined with targetYear",
+            ),
+            (
+                json!({"targetYear": 2027, "targetMonth": 7, "targetTimeIndex": 0}),
+                "targetTimeIndex cannot be combined with targetYear",
+            ),
+            (json!({"targetMonth": 7}), "targetMonth requires targetYear"),
+            (
+                json!({"targetDate": "2027-1-1", "targetMonth": 7}),
+                "targetMonth requires targetYear",
+            ),
+            (json!({"targetYear": 0}), "invalid year 0"),
+            (
+                json!({"targetYear": 2027, "targetMonth": 0}),
+                "invalid lunar month 0",
+            ),
+            (
+                json!({"targetYear": 2027, "targetMonth": 13}),
+                "invalid lunar month 13",
+            ),
+        ] {
+            let err = run_horoscope(with(&[&target])).unwrap_err();
+            assert_eq!(err.code, "invalid_argument", "{target}");
+            assert!(err.message.contains(want), "{target}: {}", err.message);
+        }
+
+        let err = run_query(with(&[
+            &json!({"kind": "knowledgeForChart", "knowledge": "builtin", "targetMonth": 7}),
+        ]))
+        .unwrap_err();
+        assert!(
+            err.message.contains("targetMonth requires targetYear"),
+            "{}",
+            err.message
+        );
+    }
+
+    /// `monthlyListToText` 按 `year` 出流月一览，与原生同文；`detail` 不影响它；缺年份或年份越界报错。
+    #[test]
+    fn monthly_list_text_takes_the_lunar_year() {
+        let run = |extra: Value| {
+            let mut q = json!({
+                "kind": "monthlyListToText",
+                "solarDate": "2000-8-16",
+                "timeIndex": 2,
+                "gender": "female",
+                "language": "zh-CN",
+            });
+            for (k, v) in extra.as_object().unwrap() {
+                q[k] = v.clone();
+            }
+            query(&serde_json::from_value::<QueryInput>(q).unwrap())
+        };
+
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let text = run(json!({"year": 2025})).unwrap();
+        assert_eq!(text, json!(chart.monthly_list_to_text(2025).unwrap()));
+        assert_eq!(
+            run(json!({"year": 2025, "detail": "overview"})).unwrap(),
+            text
+        );
+
+        for (extra, want) in [
+            (json!({}), "monthlyListToText requires 'year'"),
+            (json!({"year": 0}), "invalid year 0"),
+        ] {
+            let err = run(extra.clone()).unwrap_err();
+            assert_eq!(err.code, "invalid_argument", "{extra}");
+            assert!(err.message.contains(want), "{extra}: {}", err.message);
+        }
+    }
+
+    /// `yearlyOverviewToText` 按 `fromYear`/`toYear` 出流年一览，与原生同文；`detail`、`through` 不影响它；
+    /// 缺任一端、区间颠倒或年份越界报错。
+    #[test]
+    fn yearly_overview_text_takes_a_lunar_year_range() {
+        let run = |extra: Value| {
+            let mut q = json!({
+                "kind": "yearlyOverviewToText",
+                "solarDate": "2000-8-16",
+                "timeIndex": 2,
+                "gender": "female",
+                "language": "zh-CN",
+            });
+            for (k, v) in extra.as_object().unwrap() {
+                q[k] = v.clone();
+            }
+            query(&serde_json::from_value::<QueryInput>(q).unwrap())
+        };
+
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let text = run(json!({"fromYear": 2001, "toYear": 2012})).unwrap();
+        assert_eq!(
+            text,
+            json!(chart.yearly_overview_to_text(2001, 2012).unwrap())
+        );
+        assert_eq!(
+            run(json!({"fromYear": 2001, "toYear": 2012, "detail": "overview", "through": "decadal"}))
+                .unwrap(),
+            text
+        );
+
+        let missing = "yearlyOverviewToText requires 'fromYear' and 'toYear'";
+        for (extra, want) in [
+            (json!({}), missing),
+            (json!({"fromYear": 2001}), missing),
+            (json!({"toYear": 2012}), missing),
+            (
+                json!({"fromYear": 2012, "toYear": 2001}),
+                "invalid year range 2012-2001",
+            ),
+            (json!({"fromYear": 0, "toYear": 1}), "invalid year 0"),
+        ] {
+            let err = run(extra.clone()).unwrap_err();
+            assert_eq!(err.code, "invalid_argument", "{extra}");
+            assert!(err.message.contains(want), "{extra}: {}", err.message);
+        }
+    }
+
+    /// `through` 只管运限文本写到哪一层：与原生 `horoscope_through` 同文；本命层与不认识的层级报错；
+    /// 其余文本 kind 收下而不受影响。
+    #[test]
+    fn through_stops_horoscope_text_at_a_scope() {
+        let run = |extra: Value| {
+            let mut q = json!({
+                "solarDate": "2000-8-16",
+                "timeIndex": 2,
+                "gender": "female",
+                "language": "zh-CN",
+                "targetDate": "2024-10-1",
+                "targetTimeIndex": 0,
+            });
+            for (k, v) in extra.as_object().unwrap() {
+                q[k] = v.clone();
+            }
+            query(&serde_json::from_value::<QueryInput>(q).unwrap())
+        };
+
+        let chart = crate::by_solar(
+            "2000-8-16",
+            2,
+            Gender::Female,
+            false,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap();
+        let h = crate::get_horoscope(&chart, "2024-10-1", 0, Language::ZhCN).unwrap();
+        let opts = crate::TextOptions::new()
+            .horoscope_through(Scope::Yearly)
+            .unwrap();
+        assert_eq!(
+            run(json!({"kind": "horoscopeToText", "through": "yearly"})).unwrap(),
+            json!(crate::horoscope_to_text_with(
+                &chart,
+                &h,
+                &opts,
+                Language::ZhCN
+            ))
+        );
+
+        for (through, want) in [
+            ("origin", "cannot stop at 'origin'"),
+            (
+                "weekly",
+                "invalid through 'weekly': expected 'decadal', 'yearly', 'monthly', 'daily' or 'hourly'",
+            ),
+        ] {
+            let err = run(json!({"kind": "horoscopeToText", "through": through})).unwrap_err();
+            assert_eq!(err.code, "invalid_argument", "{through}");
+            assert!(err.message.contains(want), "{through}: {}", err.message);
+        }
+
+        assert_eq!(
+            run(json!({"kind": "astrolabeToText", "through": "yearly"})).unwrap(),
+            run(json!({"kind": "astrolabeToText"})).unwrap()
+        );
     }
 
     /// 测试盘（2000-8-16 女，寅时）命宫的宫位索引

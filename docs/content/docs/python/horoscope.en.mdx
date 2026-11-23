@@ -10,6 +10,13 @@ layout in different years — which is exactly what "the decadal scope has moved
 h = chart.horoscope("2025-6-1", 0)
 ```
 
+When the question is about a year, take the horoscope of the lunar year:
+`chart.horoscope_of_year(2027)` — see
+[horoscope_of_year](/en/docs/python/astrolabe#horoscope_of_year). When it is about a month, take
+the horoscope of the lunar year and month: `chart.horoscope_of_month(2025, 7)` — see
+[horoscope_of_month](/en/docs/python/astrolabe#horoscope_of_month). Their results answer only down
+to the scope asked about; see [precision](#precision).
+
 `Horoscope` holds the natal chart that produced it, so none of the query methods need the astrolabe
 passed in again. The trailing `astrolabe=None` parameter on every query method is there for the case
 where you hold horoscope data but keep the chart elsewhere; day to day you never pass it.
@@ -23,7 +30,7 @@ are the English translations.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `solar_date` | `str` | The **target** solar date, as passed in |
+| `solar_date` | `str` | The **target** solar date as `Y-M-D` without zero padding or time (input `"2025-01-05 13:00"` gives `"2025-1-5"`); for a horoscope taken by lunar year or month, the representative day the core picked |
 | `lunar_date` | `str` | The target date as a Chinese lunar date string |
 | `decadal` `age` `yearly` `monthly` `daily` `hourly` | See below | The six horoscope scopes |
 
@@ -255,6 +262,69 @@ would turn a forgotten argument into a plausible-looking wrong answer.
 
 ---
 
+## yearly_overview_to_text
+
+**Purpose** The yearly timeline text of a run of lunar years: one row per year, for language models
+and people. Questions such as "the next few years" or "which year suits this" get every year in one
+call instead of one horoscope per year.
+
+**Signature**
+
+```python
+def yearly_overview_to_text(
+    self,
+    from_year: int,
+    to_year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `from_year` | `int` | Yes | — | First lunar year, 1–9999, inclusive |
+| `to_year` | `int` | Yes | — | Last lunar year, 1–9999, inclusive; not before `from_year` |
+| `knowledge` | `bool \| KnowledgePack \| None` | No | `None` | Reading material: `True` takes the bundled default pack for the chart language, a `KnowledgePack` uses that pack; when given, the readings of the years' mutagen stars follow the table, each star once |
+| `knowledge_depth` | `KnowledgeDepth` | No | `KnowledgeDepth.FULL` | Reading depth: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers), `FULL` the full text. `SUMMARY` requires `knowledge` |
+
+**Return value** `str` — a `# Yearly Timeline <first year>-<last year>` heading plus one table, one row per year, whose columns are the year, its
+stem-branch, the solar date of its first lunar day, the nominal age, the natal palaces the decadal
+and age fortune land on, the natal palace the yearly Soul palace lands on, and where the yearly
+mutagens land. Each year follows the same convention as [`horoscope_of_year(year)`](/en/docs/python/astrolabe#horoscope_of_year); a
+year before the decadals start shows `Childhood Fortune · <palace>` in the decadal cell, and in a
+calendar-reform year without a first lunar month the Lunar New Year cell is `—`. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+
+**Raises** `IztroError` (`invalid_argument`) when `from_year` is after `to_year` or a year is outside
+1–9999; likewise when `knowledge=True` and the chart language has no bundled pack (only zh-CN has
+one), or with `SUMMARY` when `knowledge` is missing or the pack lacks summaries.
+
+**Example**
+
+```python
+text = chart.yearly_overview_to_text(2001, 2012)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith(("| 2001 ", "| 2012 "))))
+```
+
+**Output**
+
+```text
+# Yearly Timeline 2001-2012
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+In 2001 (nominal age 2) the decadals have not started, so the decadal cell reads `Childhood Fortune`; in 2012
+(nominal age 13) the second decadal (siblings) begins.
+
+---
+
 ## monthly_list
 
 **Purpose** Get every monthly scope of one lunar year.
@@ -286,8 +356,8 @@ def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem
 The leap month follows the ordinary month of the same number. Each item is computed from the first day of
 its segment (day 16 for a second half).
 
-**Raises** `IztroError` when that lunar year does not exist, or a segment's target date falls outside the
-supported range.
+**Raises** `IztroError` when the year is outside 1–9999, or a segment's target date falls outside the
+supported range (the last months of 9999 fall in the solar year 10000).
 
 **Example**
 
@@ -328,6 +398,66 @@ splits the leap month. The two may differ and do not affect each other.
 The leap fourth month also has `month == 4`; `is_leap_month` is what tells them apart. Deduplicating by
 `month` drops the leap month.
 </Callout>
+
+---
+
+## monthly_list_to_text
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```python
+def monthly_list_to_text(
+    self,
+    year: int,
+    *,
+    knowledge: bool | KnowledgePack | None = None,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+) -> str
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | Yes | — | Lunar year, 1–9999 |
+| `knowledge` | `bool \| KnowledgePack \| None` | No | `None` | Reading material: `True` takes the bundled default pack for the chart language, a `KnowledgePack` uses that pack; when given, the readings of the months' mutagen stars follow the table, each star once |
+| `knowledge_depth` | `KnowledgeDepth` | No | `KnowledgeDepth.FULL` | Reading depth: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers), `FULL` the full text. `SUMMARY` requires `knowledge` |
+
+**Return value** `str` — a `# Monthly Timeline <lunar year>` heading plus one table whose columns are
+the lunar month, its first and last solar day, the natal palace the month's Soul palace lands on,
+the stem-branch and where the mutagens land. The data is the same as
+[`monthly_list(year)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap month
+split into two rows, one per half, marked `leap` and carrying its lunar day range. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+
+**Raises** `IztroError` when the year is outside 1–9999 or a segment's first day falls outside the
+supported range; `IztroError` (`invalid_argument`) when `knowledge=True` and the chart language has
+no bundled pack (only zh-CN has one), or with `SUMMARY` when `knowledge` is missing or the pack
+lacks summaries.
+
+**Example**
+
+```python
+text = chart.monthly_list_to_text(2025)
+
+lines = text.splitlines()
+print(lines[0])
+print("\n".join(l for l in lines if l.startswith("| leap")))
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
 
 ---
 
@@ -398,7 +528,11 @@ def palace(
 
 **Return value** `Palace | None` — a palace on the natal chart (the same cell carries different names
 under different scopes). With `"origin"` as the scope, these are the natal twelve palaces. A
-misspelled palace name or scope key returns `None` rather than raising.
+misspelled palace name returns `None` rather than raising.
+
+**Raises** `IztroError` (`invalid_argument`) when `scope` is not a scope key or is finer than the
+[query precision](#precision) (for example `Scope.MONTHLY` on the horoscope of a year): that scope
+belongs to a representative day the kernel picked and is not the answer to the query.
 
 **Example**
 
@@ -446,7 +580,7 @@ def surround_palaces(
 **Parameters** Same as `palace`.
 
 **Return value** `SurroundedPalaces | None`; its predicates are on
-[Surrounded palaces](/en/docs/python/surpalaces).
+[Surrounded palaces](/en/docs/python/surpalaces). Raises as `palace` does.
 
 **Example**
 
@@ -498,6 +632,8 @@ def not_have_horoscope_stars(self, name, scope, stars: list[str], astrolabe=None
 | `has_horoscope_stars` | All of them are present |
 | `has_one_of_horoscope_stars` | At least one is present |
 | `not_have_horoscope_stars` | None is present |
+
+**Raises** As `palace` does.
 
 **Example**
 
@@ -565,7 +701,7 @@ def has_horoscope_mutagen(self, name, scope, mutagen: Mutagen, astrolabe=None) -
 | `mutagen` | `str` | Yes | — | A mutagen key |
 | `astrolabe` | `Astrolabe \| None` | No | `None` | Usually omitted |
 
-**Return value** `bool`.
+**Return value** `bool`. Raises as `palace` does.
 
 **Example**
 
@@ -663,6 +799,42 @@ None
 
 ---
 
+## precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```python
+def precision(self) -> Scope
+```
+
+**Return value** `Scope` — `Scope.YEARLY` for [`horoscope_of_year`](/en/docs/python/astrolabe#horoscope_of_year),
+`Scope.MONTHLY` for [`horoscope_of_month`](/en/docs/python/astrolabe#horoscope_of_month), and
+`Scope.HOURLY` for a date (`horoscope`, with or without an hour).
+
+The data always holds all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `to_text` and [`KnowledgePack.for_horoscope`](/en/docs/python/knowledge#for_astrolabe--for_horoscope)
+stop at this scope, and a `through` for `to_text` or a `scope` for `patterns` / `patterns_to_text`
+or the [palace queries](#palace) finer than it raises `IztroError` (`invalid_argument`).
+
+**Example**
+
+```python
+print(chart.horoscope_of_year(2027).precision())
+print(chart.horoscope("2025-6-1", 0).precision())
+```
+
+**Output**
+
+```text
+yearly
+hourly
+```
+
+---
+
 ## to_text
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people;
@@ -675,6 +847,9 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    through: Scope | ScopeLiteral | None = None,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -684,11 +859,17 @@ def to_text(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | no | `None` | Reading material: `True` takes the bundled default pack for the charting language, a `KnowledgePack` uses that pack; when given, each scope's facts are followed by readings of that scope's flowing stars and of the patterns hit from its perspective (deduplicated across scopes) — natal stars are not repeated |
+| `detail` | `TextDetail` | no | `TextDetail.FULL` | Level of detail: `OVERVIEW` gives each scope (age fortune aside) palace names, mutagens, scope stars and patterns without the twelve-palace table; `FULL` writes everything |
+| `knowledge_depth` | `KnowledgeDepth` | no | `KnowledgeDepth.FULL` | Depth of readings: `SUMMARY` uses the [summary layer](/en/docs/guide/guides/to-text#layers) (an entry's summary, or a body short enough on its own; patterns without their conditions), `FULL` the full bodies. `SUMMARY` needs `knowledge`, and a pack with a long body lacking its summary raises `IztroError` (`invalid_argument`) listing every missing entry |
+| `through` | `Scope \| ScopeLiteral \| None` | no | `None` | [The scope the text stops at](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Scope.DECADAL` writes the decadal only, `YEARLY` the decadal, age fortune and yearly, and `MONTHLY` / `DAILY` / `HOURLY` one more scope each; `None` stops at the [query precision](#precision). Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui. `Scope.ORIGIN`, any value that is not a horoscope scope, and a scope finer than the query precision raise `IztroError` (`invalid_argument`) |
 | `config` | `PatternConfig \| None` | no | `None` | Pattern criteria, the same argument as `patterns(config)`; acts on both the text's pattern section and the pattern readings. `None` takes the default criteria |
 
 **Return value** `str` — a Markdown subset in the chart's charting language: a
-`# Horoscope <date> (<lunar>)` title, then one `## ` section each for the decadal (childhood before
-the decadals start), age fortune, yearly, monthly, daily and hourly scopes; the decadal and yearly
+`# Horoscope <date> (<lunar>)` title (only the lunar year and its stem-branch when the text stops at
+the yearly or monthly scope, such as `# Horoscope 2027 (ding wei)` and
+`# Horoscope 2025 (yi si) · Monthly (jia shen)`), then one `## ` section each for the decadal (childhood before
+the decadals start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or
+a month stops at the yearly or monthly scope); the decadal and yearly
 sections expand into a twelve-palace table, and every scope carries its mutagen, flowing-star and
 pattern lines from its own perspective. The full format is on
 [Semantic text](/en/docs/guide/guides/to-text#format-conventions); where readings are inserted is on
@@ -716,6 +897,37 @@ print(len(zh.to_text()), len(zh.to_text(knowledge=True)))
 ## Daily · Soul Palace: Natal surface (geng woo)
 ## Hourly · Soul Palace: Natal surface (bing zi)
 2457 8458
+```
+
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
+
+```python
+year = chart.horoscope_of_year(2027)
+
+print("\n".join(l for l in year.to_text().splitlines() if l.startswith("#")))
+```
+
+```text
+# Horoscope 2027 (ding wei)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
+## Yearly · Soul Palace: Natal parents (ding wei)
+```
+
+The horoscope of a lunar month stops at the monthly scope:
+
+```python
+month = chart.horoscope_of_month(2025, 7)
+
+print("\n".join(l for l in month.to_text().splitlines() if l.startswith("#")))
+```
+
+```text
+# Horoscope 2025 (yi si) · Monthly (jia shen)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal property · Nominal Age 26
+## Yearly · Soul Palace: Natal siblings (yi si)
+## Monthly · Soul Palace: Natal parents (jia shen)
 ```
 
 **Edge cases and pitfalls**

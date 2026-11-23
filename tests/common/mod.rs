@@ -190,7 +190,7 @@ fn check_scope(
     }
 }
 
-/// 对照单个运限用例（generate_horoscope.mjs / generate_config.mjs 的紧凑格式）：
+/// 对照单个运限用例（`horoscope_case.mjs` 的紧凑格式，运限 / Config / 输入写法三个生成器共用）：
 /// 按用例参数与给定配置排盘、算运限，逐字段断言六个层级与流年十二神。
 pub fn check_horoscope_case(case: &Value, config: Config, failures: &mut Vec<String>) {
     let p = &case["p"];
@@ -202,14 +202,23 @@ pub fn check_horoscope_case(case: &Value, config: Config, failures: &mut Vec<Str
         Gender::Female
     };
     let target_date = case["td"].as_str().unwrap();
-    let target_ti = case["tt"].as_u64().unwrap() as u8;
+    // tt 为 null：省略目标时辰，由目标日期串的时间部分换算
+    let target_ti = case["tt"].as_u64().map(|t| t as u8);
     let case_label = format!(
-        "[{birth_date} t{birth_ti} g{}] -> {target_date} t{target_ti}",
+        "[{birth_date} t{birth_ti} g{}] -> {target_date} t{target_ti:?}",
         p["g"]
     );
 
     let astrolabe = by_solar(birth_date, birth_ti, gender, true, LANG, config).unwrap();
     let h = get_horoscope(&astrolabe, target_date, target_ti, LANG).unwrap();
+
+    let exp_sd = case["sd"].as_str().unwrap();
+    if h.solar_date != exp_sd {
+        failures.push(format!(
+            "{case_label}: solar_date expected={exp_sd} actual={}",
+            h.solar_date
+        ));
+    }
 
     let exp_ld = case["ld"].as_str().unwrap();
     if h.lunar_date != exp_ld {

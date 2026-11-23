@@ -19,7 +19,7 @@ from x_iztro import IztroError
 
 | `code` | 含义 | 典型触发 |
 | --- | --- | --- |
-| `invalid_date` | 日期非法 | 格式错、日期不存在、超出 1583–9999 |
+| `invalid_date` | 日期非法 | 格式错、日期不存在（含改历空缺）、超出 1–9999 年 |
 | `invalid_time_index` | 时辰索引越界 | 不在 0–12 |
 | `invalid_argument` | 其余入参或配置非法 | 性别、语言、星耀标识、宫名、自定义表 |
 | `internal` | 库内部缺陷 | 应视为 bug 上报 |
@@ -56,11 +56,11 @@ invalid_argument | invalid gender 'x': expected 'male' or 'female'
 
 | 情形 | 例 | 消息 |
 | --- | --- | --- |
-| 格式不是 `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
-| 年、月、日不是数字 | `"abc-8-16"` | `year is not a number` |
+| 写法不符（分隔符混用、用 `T` 连接时间、年月日含非数字、年份超过 4 位等） | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | 月份越界 | `"2000-13-1"` | `month must be within 1-12` |
 | 该月没有这一天 | `"2000-2-30"` | `day is out of range for that month` |
-| 年份超出支持范围 | `"1500-1-1"` | `year must be within 1583-9999` |
+| 改历空缺 | `"1582-10-10"` | `1582-10-05 to 1582-10-14 do not exist` |
+| 年份超出支持范围 | `"0-1-1"` | `year must be within 1-9999` |
 
 农历专有（只有 `by_lunar` 与两个 `*_by_lunar_date` 查询会碰到）：
 
@@ -77,7 +77,7 @@ invalid_argument | invalid gender 'x': expected 'male' or 'female'
 ```python
 from x_iztro import Astro
 
-for date in ["2000-13-1", "2000-2-30", "1500-1-1"]:
+for date in ["2000-13-1", "2000-2-30", "1582-10-10"]:
     try:
         Astro().by_solar(date, 2, "female")
     except IztroError as e:
@@ -89,7 +89,7 @@ for date in ["2000-13-1", "2000-2-30", "1500-1-1"]:
 ```text
 invalid solar date '2000-13-1': month must be within 1-12
 invalid solar date '2000-2-30': day is out of range for that month
-invalid solar date '1500-1-1': year must be within 1583-9999
+invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)
 ```
 
 消息里带上了原始输入，便于在批量处理时定位是哪一条数据出的问题。
@@ -97,12 +97,12 @@ invalid solar date '1500-1-1': year must be within 1583-9999
 **边界与陷阱**
 
 <Accordions>
-<Accordion title="年份下限 1583 的由来">
-1582 年格里历改革当年有一段不存在的日期。底层历法库在这些日期上没有定义，
-因此支持范围从改革完成后的 1583 年起算。上限 9999 是农历数据表的覆盖终点。
+<Accordion title="1582 年以前按儒略历">
+支持范围是 1–9999 年，与 iztro 一致。1582-10-04（儒略历）的次日是 1582-10-15（格里历），
+其间十天不存在；1600 年以前四年一闰，所以 `"1500-2-29"` 是合法日期，`"1700-2-29"` 不是。
 </Accordion>
 <Accordion title="月日不必补零">
-`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符必须是 `-`。
+`"2000-8-16"` 与 `"2000-08-16"` 都接受。分隔符可以是 `-`、`/` 或 `.`，同一串内须一致。
 </Accordion>
 <Accordion title="农历闰月的校验">
 `by_lunar` 会检查该农历年该月是否真的存在，以及该月有多少天（大月 30、小月 29）。

@@ -1,0 +1,75 @@
+---
+title: Data tables
+description: The data module's star and stem/branch tables, ordering constants and horoscope-star mapping, plus every enum.
+---
+
+The tables are charting input and do not depend on the output language; every value is a language-independent key.
+
+```ts
+data.starsInfo(): Record<string, StarInfo>;              // the 14 major stars plus Wenchang, Wenqu, Huoxing, Lingxing, Qingyang, Tuoluo
+data.heavenlyStems(): Record<HeavenlyStem, HeavenlyStemInfo>;
+data.earthlyBranches(): Record<string, EarthlyBranchInfo>;
+data.constants(): Constants;                             // languages, stems, branches, zodiac, signs, palace names, tiger and rat rules …
+data.flowStarCounterparts(): Record<string, string>;     // horoscope star → natal minor star, 50 entries
+```
+
+```ts
+console.log(data.starsInfo().ziweiMaj, data.heavenlyStems().gengHeavenly, data.earthlyBranches().wuEarthly);
+const c = data.constants();
+console.log(c.languages, c.fiveElementsClass, Object.keys(data.flowStarCounterparts()).length, data.flowStarCounterparts().liulu);
+```
+
+```text
+{
+  brightness: [
+    'wang', 'wang', 'de',
+    'wang', 'miao', 'miao',
+    'wang', 'wang', 'de',
+    'wang', 'ping', 'miao'
+  ],
+  fiveElements: '土',
+  yinYang: '阴'
+} {
+  crash: 'jiaHeavenly',
+  fiveElements: '金',
+  mutagen: [ 'taiyangMaj', 'wuquMaj', 'taiyinMaj', 'tiantongMaj' ],
+  yinYang: '阳'
+} {
+  body: 'huoxingMin',
+  crash: 'ziEarthly',
+  fiveElements: '火',
+  healthTip: '心脏、视觉、味觉障碍、火难',
+  inside: '心',
+  outside: '头',
+  soul: 'pojunMaj',
+  yinYang: '阳'
+}
+[ 'en-US', 'ja-JP', 'ko-KR', 'zh-CN', 'zh-TW', 'vi-VN' ] { earth5th: 5, fire6th: 6, metal4th: 4, water2nd: 2, wood3rd: 3 } 50 lucunMin
+```
+
+Entries left blank in the source table are `null` (the five elements of Taiyang, Qisha and six minor stars, the
+yin-yang of some stars, and the clashing stem of Wu and Ji).
+
+## Enum list
+
+Every enum is both a constant object (`MajorStar.ZIWEI`) and a union type of its values under the same name
+(`MajorStar`). Import them from `x-iztro` or from the core-free `x-iztro/types`.
+
+| Enum | Values |
+| --- | --- |
+| `Gender` | `male` `female` |
+| `Language` | `zh-CN` `zh-TW` `en-US` `ja-JP` `ko-KR` `vi-VN` |
+| `Algorithm` / `AstroType` | `default` `zhongzhou` / `heaven` `earth` `human` |
+| `YearDivide` / `HoroscopeDivide` / `AgeDivide` / `DayDivide` | See [ChartConfig](/en/docs/js/astro#chartconfig) |
+| `HeavenlyStem` / `EarthlyBranch` | `jiaHeavenly` … `guiHeavenly` / `ziEarthly` … `haiEarthly` |
+| `PalaceName` | The twelve palace names, plus `BODY` (`bodyPalace`) and `ORIGINAL` (`originalPalace`) for locating |
+| `FiveElementsClass` | `water2nd` `wood3rd` `metal4th` `earth5th` `fire6th`; the numbers are in `FIVE_ELEMENTS_CLASS_NUMBER` |
+| `Mutagen` | `sihuaLu` `sihuaQuan` `sihuaKe` `sihuaJi`; the fixed order is `MUTAGEN_ORDER` |
+| `Brightness` | `miao` `wang` `de` `li` `ping` `bu` `xian` |
+| `StarType` / `Scope` / `MonthPart` | Star type / layer / monthly segment |
+| `MajorStar` / `MinorStar` / `AdjectiveStar` / `HoroscopeStar` | All 162 star keys |
+| `Changsheng12` / `Boshi12` / `Suiqian12` / `Jiangqian12` | The four twelve-spirit cycles |
+| `PatternKey` | The 64 pattern keys |
+| `BrightnessSource` / `TextDetail` / `KnowledgeDepth` | Pattern and text options |
+
+`TimeIndex` is the type `0 | 1 | … | 12`.

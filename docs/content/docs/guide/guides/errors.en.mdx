@@ -5,7 +5,7 @@ description: What is validated, at which layer, what the four error categories m
 
 *For: developers*
 
-x-iztro validates external input as far in as it can, so all three programming languages sit behind
+x-iztro validates external input as far in as it can, so every programming language sits behind
 one line of defence. Each language only translates the error into its own conventional type; none of
 them re-validates or reinterprets.
 
@@ -16,14 +16,14 @@ it, do not parse the message**.
 
 | Category | Meaning |
 | --- | --- |
-| `invalid_date` | Malformed date, a date that does not exist, or one outside the supported range (Gregorian 1583–9999) |
+| `invalid_date` | Malformed date, a date that does not exist (the 1582 reform gap included), or one outside the supported range (years 1–9999) |
 | `invalid_time_index` | Hour index out of range (0–12 are legal) |
 | `invalid_argument` | Any other invalid argument or config: unknown gender, chart language, star key, switch value, a wrong override-table length; or reverse-lookup input — mismatched pillar polarity, empty or flow-star criteria, a bad year range |
 | `internal` | A defect or runtime failure inside the library. Not the caller's fault; please report it |
 
 ## The error type in each language
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 The `IztroError` enum, with `code()` giving the category:
@@ -37,7 +37,7 @@ match by_solar(date, ti, Gender::Female, true, Language::EnUS, Config::default()
 
 ```text
 invalid_date         invalid solar date '2000-2-30': day is out of range for that month
-invalid_date         invalid solar date '1000-1-1': year must be within 1583-9999
+invalid_date         invalid solar date '0-1-1': year must be within 1-9999
 invalid_time_index   time_index must be 0-12, got 13
 ```
 
@@ -92,6 +92,26 @@ invalid_date invalid solar date '2000-13-1': month must be within 1-12
 `Error()` prints with an `iztro: ` prefix; `Message` is the unprefixed text.
 
 </Tab>
+<Tab value="JavaScript">
+
+`IztroError`, with a `.code`; misuse such as calling before `init()` or a wrong argument type throws a standard `Error` / `TypeError` instead:
+
+```ts
+import { init, astro, IztroError } from 'x-iztro';
+
+await init();
+try {
+  astro.bySolar('2000-2-30', 2, 'female');
+} catch (e) {
+  if (e instanceof IztroError) console.log(e.code, e.message);
+}
+```
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+```
+
+</Tab>
 </Tabs>
 
 The C FFI and wasm exits render the same error as `{"error":"<message>","code":"<code>"}`, generated
@@ -104,9 +124,10 @@ batch processing can pinpoint which record went wrong.
 
 | Input | Sample message |
 | --- | --- |
-| Gregorian date format | `invalid solar date 'not-a-date': year is not a number` |
+| Gregorian date format | `invalid solar date 'not-a-date': expected 'YYYY-M-D' ('-', '/' or '.' as the separator), optionally followed by ' HH:mm' or ' HH:mm:ss'` |
 | Gregorian date does not exist | `invalid solar date '2000-2-30': day is out of range for that month` |
-| Gregorian year range | `invalid solar date '1000-1-1': year must be within 1583-9999` |
+| The 1582 reform gap | `invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)` |
+| Year range | `invalid solar date '0-1-1': year must be within 1-9999` |
 | Lunar month | `invalid lunar date '2000-13-1': month must be within 1-12` |
 | Days in that lunar month | `invalid lunar date '2000-2-31': day is out of range for that lunar month` |
 | Hour index | `time_index must be 0-12, got 13` |
@@ -116,8 +137,8 @@ batch processing can pinpoint which record went wrong.
 | Override table given a translated name | `invalid mutagens for 'gengHeavenly': unknown star '太阳'` |
 
 <Callout title="Which layer validates what">
-Dates and hour indexes are validated in the **core**, identically for all three programming
-languages. Gender, chart language, configuration switches and star keys — the things passed as
+Dates and hour indexes are validated in the **core**, identically for every programming
+language. Gender, chart language, configuration switches and star keys — the things passed as
 strings — are validated in the **binding layer** as they are parsed; on the Rust side they are enums
 to begin with, so there is no invalid value to reject.
 </Callout>
@@ -129,15 +150,15 @@ than an error — "this chart does not have that star" is a normal result, not a
 
 | Situation | Returns |
 | --- | --- |
-| A star is not on this chart | `None` / `nil` |
-| Palace index out of range | `None` / `nil` |
-| The star has no brightness table | `None` / empty string |
-| Reverse lookup of a name that does not exist | `None` / empty string |
+| A star is not on this chart | `None` / `nil` / `undefined` |
+| Palace index out of range | `None` / `nil` / `undefined` |
+| The star has no brightness table | `None` / empty string / `undefined` |
+| Reverse lookup of a name that does not exist | `None` / empty string / `undefined` |
 
 <Callout type="warn" title="A misspelled key fails silently">
 `chart.palace("soulPalce")` raises nothing and simply returns empty; `has(["ziweiMj"])` returns
 `False` forever. Use enums or constants in predicates (Python's `PalaceName.SOUL`, Go's
-`iztro.PalaceSoul`) — then a misspelling is a compile-time or construction-time error, not a silent
+`iztro.PalaceSoul`, JavaScript's `PalaceName.SOUL`) — then a misspelling is a compile-time or construction-time error, not a silent
 runtime one. To validate a string that came from outside, feed it to the enum constructor:
 `PalaceName("x")` raises `ValueError`.
 </Callout>
@@ -166,7 +187,7 @@ bug — not something callers are expected to defend against.
 
 Skip the bad records, keep going with the good ones, rather than failing the whole batch:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -202,6 +223,23 @@ for _, row := range rows {
         continue
     }
     charts = append(charts, chart)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+const charts: Astrolabe[] = [];
+const failed: [Row, string, string][] = [];
+
+for (const row of rows) {
+  try {
+    charts.push(astro.bySolar(row.date, row.ti, row.gender));
+  } catch (e) {
+    if (!(e instanceof IztroError)) throw e;
+    failed.push([row, e.code, e.message]);
+  }
 }
 ```
 

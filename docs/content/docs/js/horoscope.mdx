@@ -1,0 +1,193 @@
+---
+title: 运限对象
+description: Horoscope 的六个层级、宫位查询、流耀与运限四化判断、查询精度、三个列表与文本。
+---
+
+运限由星盘发起（`chart.horoscope`、`horoscopeOfYear`、`horoscopeOfMonth`），持有发起它的那张盘，
+查询方法可免传星盘。各层的斗数含义见 [Python 参考](/zh/docs/python/horoscope) 与[运限概念](/zh/docs/guide/concepts/horoscope)。
+
+```ts
+const h = chart.horoscope('2024-10-1', 0);
+```
+
+## 字段
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `solarDate` / `lunarDate` | `string` | 目标日期的公历串（不补零、不带时间的 `Y-M-D`）与农历中文写法；按农历年、月取的运限为内核挑的代表日 |
+| `decadal` | `HoroscopeItem` | 大限（未起运时 `nameKey` 为 `childhood`，即童限） |
+| `age` | `AgeItem` | 小限，另有 `nominalAge`（虚岁） |
+| `yearly` | `HoroscopeYearly` | 流年，另有 `yearlyDecStar`（岁前、将前十二神） |
+| `monthly` / `daily` / `hourly` | `HoroscopeItem` | 流月 / 流日 / 流时 |
+
+### HoroscopeItem
+
+| 字段 | 说明 |
+| --- | --- |
+| `index` | 该层命宫所在的宫位索引 |
+| `name` / `nameKey` | 层级名 / 标识（大限层未起运为 `childhood`；小限为 `turn`） |
+| `heavenlyStem(Key)` / `earthlyBranch(Key)` | 该层干支 / 标识 |
+| `palaceNames` / `palaceNameKeys` | 以该层命宫起排的十二宫名，按宫位索引排列 |
+| `mutagen` / `mutagenStarKeys` | 该层四化星 [禄, 权, 科, 忌] |
+| `stars` | 流耀，十二宫各一组；该层没有流耀时为 `undefined` |
+| `palaceIndexByName(name)` | 宫名在该层所在的宫位索引 |
+
+```ts
+for (const it of [h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly]) {
+  console.log(it.nameKey, it.name, it.index, it.heavenlyStem + it.earthlyBranch, it.mutagen.join(''));
+}
+console.log(h.age.nominalAge, h.yearly.yearlyDecStar.suiqian12.slice(0, 3));
+```
+
+```text
+decadal 大限 2 庚辰 太阳武曲太阴天同
+turn 小限 8 丙戌 天同天机文昌廉贞
+yearly 流年 2 甲辰 廉贞破军武曲太阳
+monthly 流月 5 癸酉 破军巨门太阴贪狼
+daily 流日 9 戊戌 贪狼太阴右弼天机
+hourly 流时 9 壬子 天梁紫微左辅武曲
+25 [ '吊客', '病符', '岁建' ]
+```
+
+---
+
+## 宫位查询
+
+```ts
+palace(name: PalaceName | string, scope: Scope, astrolabe?: Astrolabe): Palace | undefined;
+surroundPalaces(name: PalaceName | string, scope: Scope, astrolabe?: Astrolabe): SurroundedPalaces | undefined;
+agePalace(astrolabe?: Astrolabe): Palace | undefined;
+scopeItem(scope: Scope): HoroscopeItem | undefined;
+astrolabe(): Astrolabe;
+```
+
+`palace(name, scope)`：该层宫名为 `name` 的那一宫（返回的是本命盘上的宫位对象）；`scope` 为 `origin` 时按本命宫名取。
+`agePalace` 是小限所在宫。
+
+## hasHoroscopeStars / hasOneOfHoroscopeStars / notHaveHoroscopeStars / hasHoroscopeMutagen
+
+```ts
+hasHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+hasOneOfHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+notHaveHoroscopeStars(name, scope, stars: readonly string[], astrolabe?): boolean;
+hasHoroscopeMutagen(name, scope, mutagen: Mutagen, astrolabe?): boolean;
+```
+
+流耀判断取大限与流年两层的流耀（与 iztro 一致）；运限四化看该宫主星与辅星是否被该层四化，`origin` 恒为 `false`。
+
+```ts
+console.log(h.palace(PalaceName.SOUL, Scope.YEARLY)!.name, h.agePalace()!.name,
+  h.surroundPalaces(PalaceName.WEALTH, Scope.DECADAL)!.target.name);
+console.log(h.hasHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['流禄']),
+  h.hasOneOfHoroscopeStars(PalaceName.SOUL, Scope.YEARLY, ['流禄', '流羊']),
+  h.hasHoroscopeMutagen(PalaceName.SOUL, Scope.YEARLY, Mutagen.LU));
+```
+
+```text
+夫妻 官禄 迁移
+false false false
+```
+
+---
+
+## precision
+
+```ts
+precision(): Scope;
+```
+
+查询精度：目标实际指定到的最细层级。`horoscopeOfYear` 为 `yearly`，`horoscopeOfMonth` 为 `monthly`，按日期发起的为 `hourly`。
+比它细的层级是内核替调用方挑的代表日的，不是查询的答案：`toText` 默认只写到这一层，
+宫位查询、文本与格局的层级参数比它细时抛 `IztroError`。
+
+```ts
+try {
+  chart.horoscopeOfYear(2027).palace(PalaceName.SOUL, Scope.MONTHLY);
+} catch (e) {
+  console.log((e as IztroError).code, (e as IztroError).message);
+}
+```
+
+```text
+invalid_argument invalid scope 'monthly': the horoscope target only specifies layers down to 'yearly'
+```
+
+---
+
+## 三个列表
+
+都是星盘的方法：
+
+```ts
+decadalList(): DecadalListItem[];                               // 12 个大限，按起运先后
+yearlyList(decadal?: number | PalaceName): YearlyListItem[];     // 某大限内 10 个流年；定位缺省即报错
+monthlyList(year: number, fixLeap = true): MonthlyListItem[];    // 某农历年的流月；fixLeap 决定闰月拆不拆段
+decadalListToText(options?: KnowledgeOptions): string;
+yearlyOverviewToText(fromYear: number, toYear: number, options?: KnowledgeOptions): string;
+monthlyListToText(year: number, options?: KnowledgeOptions): string;
+```
+
+| 列表项 | 额外字段 |
+| --- | --- |
+| `DecadalListItem` | `palaceName(Key)`（所在本命宫）、`ageRange`、`yearRange` |
+| `YearlyListItem` | `age`、`year` |
+| `MonthlyListItem` | `age`、`year`、`month`、`isLeapMonth`、`part`（`normal` / `first` / `second`）、`dayRange` |
+
+`monthlyList` 的 `fixLeap` 与排盘的同名开关无关：无闰月 12 项；有闰月时拆为前后半月两项（共 14 项），不拆则闰月整月一项（共 13 项）。
+
+```ts
+const d = chart.decadalList()[2]!;
+console.log(d.palaceName, d.ageRange, d.yearRange, d.heavenlyStem + d.earthlyBranch, d.mutagen.join(''));
+const y = chart.yearlyList(2)[0]!;
+console.log(y.year, y.age, y.heavenlyStem + y.earthlyBranch);
+console.log(chart.monthlyList(2025).map((m) => `${m.isLeapMonth ? '闰' : ''}${m.month}${m.part === 'normal' ? '' : m.part[0]}`).join(' '));
+console.log(chart.yearlyOverviewToText(2025, 2027));
+```
+
+```text
+夫妻 [ 23, 32 ] [ 2022, 2031 ] 庚辰 太阳武曲太阴天同
+2022 23 壬寅
+1 2 3 4 5 6 闰6f 闰6s 7 8 9 10 11 12
+# 流年一览 2025-2027
+
+| 年份 | 干支 | 正月初一 | 虚岁 | 大限 | 小限 | 流年命宫 | 四化 |
+|---|---|---|---|---|---|---|---|
+| 2025 | 乙巳 | 2025-1-29 | 26 | 夫妻 | 田宅 | 兄弟 | 天机化禄→本命兄弟, 天梁化权→本命子女, 紫微化科→本命命宫, 太阴化忌→本命仆役 |
+| 2026 | 丙午 | 2026-2-17 | 27 | 夫妻 | 福德 | 命宫 | 天同化禄→本命疾厄, 天机化权→本命兄弟, 文昌化科→本命福德, 廉贞化忌→本命官禄 |
+| 2027 | 丁未 | 2027-2-6 | 28 | 夫妻 | 父母 | 父母 | 太阴化禄→本命仆役, 天同化权→本命疾厄, 天机化科→本命兄弟, 巨门化忌→本命疾厄 |
+```
+
+---
+
+## toText
+
+```ts
+toText(options?: TextOptions & { through?: 'decadal' | 'yearly' | 'monthly' | 'daily' | 'hourly' }): string;
+```
+
+运限的语义化文本，`String(h)` 等于 `h.toText()`。`through` 写到哪一层为止，省略写到查询精度；
+只写到大限时大限段不列风云际会。`through` 为 `origin`、不是层级或比查询精度细时抛 `IztroError`。
+
+```ts
+const text = h.toText({ through: Scope.YEARLY, detail: TextDetail.OVERVIEW });
+console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+# 运限 2024 (甲辰)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命官禄 · 虚岁 25
+## 流年 · 命宫: 本命夫妻 (甲辰)
+```
+
+## patterns / patternsToText
+
+见[格局](/zh/docs/js/patterns#horoscopepatterns)。
+
+## toJSON
+
+```ts
+toJSON(): HoroscopeData;
+```
+
+运限的 DTO（与 iztro 的 JSON 同形）的深拷贝。

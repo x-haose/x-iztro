@@ -13,7 +13,7 @@ entry.
 ## Install
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
 ```
 
 ```go
@@ -29,7 +29,7 @@ if err != nil {
 }
 
 fmt.Println(chart.SolarDate, chart.LunarDate)
-// 2000-8-16 二〇〇〇年七月十七
+// 2000-8-16 Lunar 2000-7-17
 
 soul := chart.Palace(iztro.PalaceSoul)
 if len(soul.MajorStars) > 0 {
@@ -40,8 +40,8 @@ if len(soul.MajorStars) > 0 {
 }
 ```
 
-`LunarDate` stays in Chinese under every language — it is a lunar date written in Chinese numerals.
-`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+`LunarDate` follows the chart language: `Lunar 2000-7-17` is the 17th day of the 7th lunar month of
+2000; a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 
 <Callout type="warn" title="The major-star list can be empty">
 A chart usually has two palaces with no major star (empty palaces), and the Soul palace may well be
@@ -239,7 +239,7 @@ The entry points that cross into wasm — charting, horoscope, rearranging, text
 | Without ctx | With ctx |
 | --- | --- |
 | `BySolar` / `ByLunar` | `BySolarContext` / `ByLunarContext` |
-| `Astrolabe.Horoscope` / `HoroscopeNow` | `HoroscopeContext` / `HoroscopeNowContext` |
+| `Astrolabe.Horoscope` / `HoroscopeNow` / `HoroscopeOfYear` / `HoroscopeOfMonth` | `HoroscopeContext` / `HoroscopeNowContext` / `HoroscopeOfYearContext` / `HoroscopeOfMonthContext` |
 | `Astrolabe.Rearranged` | `RearrangedContext` |
 | `Astrolabe.ToText` / `Horoscope.ToText` / `PalaceToText` / `SurroundedPalacesToText` / `PatternsToText` | `ToTextContext` / `PalaceToTextContext` / `SurroundedPalacesToTextContext` / `PatternsToTextContext` |
 | The `With` form of each (`ToTextWith(opts TextOptions)` etc.) | `ToTextWithContext` / `PalaceToTextWithContext` / `SurroundedPalacesToTextWithContext` / `PatternsToTextWithContext` |

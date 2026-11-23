@@ -1,0 +1,83 @@
+---
+title: 知识包
+description: KnowledgePack 的构造、查询、合并、按盘取材，以及把释义融入文本。
+---
+
+知识包是语言无关标识 → 解读文本与门派属性的开放格式，见[知识包指南](/zh/docs/guide/guides/knowledge-pack)
+与仓库的 `knowledge/SCHEMA.md`。合并在内核完成，各语言绑定规则一致。
+
+## KnowledgePack
+
+| 成员 | 说明 |
+| --- | --- |
+| `KnowledgePack.builtin(language = 'zh-CN')` | 内嵌默认包（源自 iztro-docs，MIT）；该语言没有包抛 `IztroError` |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | 读自己的包；未声明 `schema` 或版本过新抛 `IztroError`，JSON 语法错抛 `SyntaxError` |
+| `toJSON()` | 包对象的深拷贝；`JSON.stringify(pack)` 即包的 JSON |
+| `merged(...overlays)` | 以本包为底依次叠加覆盖包（实例或普通对象），返回新包 |
+| `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | 按盘取材的子包 |
+| `schema` `id` `version` `language` `extends` `source` | 元信息 |
+| `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | 按标识取条目，没有为 `undefined` |
+| `stars()` `patterns()` `topics()` | 全部条目 |
+| `starIntro(key)` / `patternIntro(key)` | 解读正文 |
+
+条目类型：`StarEntry`（`attributes`、`combinations`、`combinationSummaries` 缺省为空对象）、
+`PatternEntry`、`TextEntry`（宫位、四化）、`ConceptEntry`、`TopicEntry`（`surround`、`palaces` 决定选宫）。
+
+```ts
+const pack = KnowledgePack.builtin();
+console.log(pack.id, pack.version, pack.language, pack.source.license, pack.stars().length, pack.patterns().length,
+  pack.topics().map((t) => t.slug).join(','));
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summary);
+```
+
+```text
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
+紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+```
+
+## merged
+
+覆盖包的非空字段覆盖同键条目的对应字段，`attributes` / `combinations` 逐字段合并，数组整体替换；
+覆盖条目换了正文却没给摘要时，合并结果去掉描述旧正文的摘要。
+
+```ts
+const mine = pack.merged({
+  schema: 1, id: 'mine', version: '1', language: 'zh-CN', extends: 'iztro-docs',
+  stars: { ziweiMaj: { intro: '我的紫微释义' } },
+});
+console.log(mine.id, mine.starIntro(MajorStar.ZIWEI), mine.star(MajorStar.ZIWEI)!.summary);
+```
+
+```text
+mine 我的紫微释义 undefined
+```
+
+## forAstrolabe / forHoroscope
+
+本命子包只含盘上出现的星（十二宫主辅杂与四组十二神；同宫主星的双星组合保留）、按口径命中的格局、四化四条，
+不含宫位与术语。运限子包再加各层流耀与各层视角的格局，只取到运限的查询精度。结果仍是标准包。
+
+```ts
+const sub = pack.forAstrolabe(chart);
+console.log(sub.stars().length, sub.patterns().map((e) => e.name).join(','));
+```
+
+```text
+108 府相朝垣
+```
+
+## 释义融入文本
+
+所有 `toText` 家族都收 `knowledge` 与 `knowledgeDepth`：`knowledge: true` 取排盘语言的内嵌包，
+或传一个 `KnowledgePack`（自定义或合并后的包）；`knowledgeDepth: 'summary'` 用摘要层，包里长正文缺摘要时报错并列出缺项。
+用户自己的包可以直接用于浏览器里的排盘文本，不经过任何服务器。
+
+```ts
+console.log(chart.toText({ knowledge: true, knowledgeDepth: KnowledgeDepth.SUMMARY }).length,
+  chart.toText({ knowledge: mine }).includes('我的紫微释义'));
+```
+
+```text
+8385 true
+```

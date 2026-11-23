@@ -1,0 +1,106 @@
+---
+title: 格局
+description: PatternHit、PatternStar、PatternConfig，本命与运限视角的格局命中与文本。
+---
+
+判定在内核完成，规则口径见[格局概念](/zh/docs/guide/concepts/patterns)；多口径格局以 `variant` 报出。
+
+## 类型
+
+### PatternHit
+
+| 字段 / 方法 | 说明 |
+| --- | --- |
+| `key` | 格局标识（`PatternKey` 取值） |
+| `name` | 格局名译名 |
+| `scope` | 判定视角：本命为 `origin`，运限为该层 |
+| `palaceIndex` / `palaceName` / `palaceNameKey` | 成格宫位（宫名按该视角） |
+| `broken` | 「破格 / 加杀平常」条件是否触发：成格照报，仅作标记 |
+| `stars` | 参与成格的星（`PatternStar[]`） |
+| `variant` | 多口径格局的口径，单口径为 `undefined` |
+| `is(key)` / `inPalace(name)` | 是否为某格局 / 成格宫名是否为某宫 |
+| `toJSON()` | 命中的 DTO |
+
+### PatternStar
+
+`key`、`name`、`palaceIndex`、`brightness(Key)`、`mutagen(Key)`（判定视角下的四化），方法 `hasBrightness`、`hasMutagen`。
+
+### PatternConfig
+
+| 字段 | 默认 | 说明 |
+| --- | --- | --- |
+| `brightnessSource` | `'table'` | 日月明暗依据：`table` 按 iztro 亮度表，`positional` 按传统位置 |
+| `borrow` | `true` | 空宫是否借对宫主星参与判定 |
+| `flowStars` | `true` | 运限视角下流曜是否等同对应本命辅星参与判定 |
+
+---
+
+## patterns
+
+```ts
+chart.patterns(config?: PatternConfig): PatternHit[];
+```
+
+本命盘的全部命中，按《格局》页条目顺序；重排盘按重排后的布局判定。
+
+```ts
+for (const hit of chart.patterns()) {
+  console.log(hit.key, hit.name, hit.palaceName, hit.broken, hit.variant ?? '-', hit.stars.map((s) => s.name).join('+'));
+}
+console.log(astro.bySolar('1985-6-10', 8, 'female')
+  .patterns({ brightnessSource: BrightnessSource.POSITIONAL })
+  .some((h) => h.is(PatternKey.RI_YUE_FAN_BEI)));
+```
+
+```text
+fu_xiang_chao_yuan 府相朝垣 命宫 false - 天府+天相
+true
+```
+
+后一盘的太阳在酉：亮度表判「平」不算暗，位置法判暗，日月反背因此只在位置法下成格。
+
+## Horoscope.patterns
+
+```ts
+horoscope.patterns(scope: Scope, config?: PatternConfig, astrolabe?: Astrolabe): PatternHit[];
+```
+
+以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，另加两条行运格（禄衰马困、风云际会）；
+`origin` 等同本命。`scope` 比查询精度细时抛 `IztroError`。
+
+```ts
+console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `${h.name}@${h.palaceName}`).join(' '));
+```
+
+```text
+杀破狼@命宫 禄马交驰@夫妻 禄马佩印@夫妻 昌曲夹命@命宫 文星暗拱@命宫
+```
+
+## toJSON
+
+```ts
+console.log(JSON.stringify(chart.patterns()[0]));
+```
+
+```text
+{"broken":false,"key":"fu_xiang_chao_yuan","name":"府相朝垣","palaceIndex":4,"palaceName":"命宫","palaceNameKey":"soulPalace","scope":"origin","stars":[{"brightness":"庙","brightnessKey":"miao","key":"tianfuMaj","name":"天府","palaceIndex":8},{"brightness":"庙","brightnessKey":"miao","key":"tianxiangMaj","name":"天相","palaceIndex":0}]}
+```
+
+## patternsToText
+
+```ts
+chart.patternsToText(options?: { config?: PatternConfig; knowledge?: Knowledge; knowledgeDepth?: KnowledgeDepth }): string;
+horoscope.patternsToText(scope: Scope, options?: { config?; knowledge?; knowledgeDepth? }, astrolabe?: Astrolabe): string;
+```
+
+给出 `knowledge` 时格局列表之后紧跟各格局的释义。
+
+```ts
+console.log(chart.patternsToText());
+```
+
+```text
+# 格局
+
+- **府相朝垣** (命宫): 天府(庙), 天相(庙)
+```

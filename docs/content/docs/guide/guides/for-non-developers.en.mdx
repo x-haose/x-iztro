@@ -67,9 +67,9 @@ Passing along the following is enough:
 | Item | Detail |
 | --- | --- |
 | Repository | [github.com/x-haose/x-iztro](https://github.com/x-haose/x-iztro) |
-| Programming language | Rust, Python or Go — pick one, the results are identical |
-| Installation | Python: `pip install x-iztro`; Go: `go get`; Rust: `cargo add` |
-| Requirements | Python 3.10 or later / Go 1.22 or later / Rust edition 2024 |
+| Programming language | Rust, Python, Go or JavaScript — pick one, the results are identical |
+| Installation | Python: `pip install "x-iztro~=0.7.0"`; Go: `go get`; Rust: `cargo add`; JavaScript: `npm install x-iztro@0.7` |
+| Requirements | Python 3.10 or later / Go 1.22 or later / Rust edition 2024 / Node.js 22 or later, or a modern browser |
 | Inputs | Three things: date of birth, hour index (0–12), gender |
 | For AI use | Call `chart.to_text()` to get the chart text and feed it straight to a model |
 | Docs | [Getting started](/en/docs/guide/getting-started), [Semantic text](/en/docs/guide/guides/to-text) |
@@ -89,7 +89,7 @@ table is on [The inputs you need](/en/docs/guide/getting-started#hour-index).
 
 iztro is one of the most complete and longest-maintained open-source Zi Wei Dou Shu charting
 implementations, and a fair number of frontend projects use it. x-iztro treats it as the reference
-and checks against it field by field across 716,314 test cases — any divergence is treated
+and checks against it field by field across 747,572 test cases — any divergence is treated
 as a bug and fixed.
 
 The **boundary** of that claim matters too: agreeing with iztro is not the same as being "the one

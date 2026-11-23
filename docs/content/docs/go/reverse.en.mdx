@@ -70,7 +70,7 @@ least one must be given.
 | `FiveElementsClass` | `string` | five elements class key, empty = unconstrained |
 | `Stars` | `[]StarPosition` | star placements, all of which must hold |
 | `Mutagens` | `[4]string` | star key carrying each birth-year mutagen [Lu, Quan, Ke, Ji]; empty = unconstrained |
-| `YearRange` | `[2]int` | inclusive solar year range, within 1583–9999 |
+| `YearRange` | `[2]int` | inclusive solar year range, within 1–9999 |
 | `FixLeap` | `*bool` | leap month correction, same meaning as the charting parameter; `nil` takes the core default `true` |
 | `Limit` | `int` | candidate cap |
 
@@ -130,7 +130,7 @@ for _, c := range cands {
 ```
 
 **Errors** A pillar with mismatched stem/branch polarity (such as 甲丑 Jia-Chou — a yang stem on a yin branch), or a
-year range that is reversed or outside 1583–9999, returns an
+year range that is reversed or outside 1–9999, returns an
 `ErrInvalidArgument`-class error (matchable with `errors.Is`). See
 [Error handling](/en/docs/go/errors).
 

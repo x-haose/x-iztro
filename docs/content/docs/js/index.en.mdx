@@ -1,0 +1,121 @@
+---
+title: Overview
+description: Installation, initialization, entry points and module layout, and how to read this reference.
+icon: FileCode
+---
+
+The JS package is the same Rust core compiled to WebAssembly, wrapped in TypeScript: the computation
+happens in wasm, and the JS side offers an object API with type declarations. ESM, zero runtime
+dependencies, for browsers and Node.js alike.
+
+This section is the complete JS API reference. Its semantics match the [Python reference](/en/docs/python)
+one to one, and the same chart gives the same result on both sides; this section spells out the JS
+signatures, values and differences.
+
+## Installation
+
+```bash
+npm install x-iztro@0.7
+```
+
+Requires Node.js 22 or later, or a browser with WebAssembly and ES2022. The bundled `x_iztro.wasm` is
+about 1.7 MB (about 0.5 MB gzipped); bundlers emit it as a static asset. No Rust toolchain needed.
+The type declarations need TypeScript 5.0 or later (declared as an optional peer dependency in `package.json`) and a `lib`
+that includes at least `ES2022`; the DOM library is not required, so a Node project with only `@types/node` type-checks too.
+CI checks them with TypeScript 5.0.4 under `skipLibCheck: false` in both a browser setup (`ES2022` + `DOM`) and a Node setup
+(`ES2022` + `@types/node`).
+
+## Your first chart
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init(); // loads the WebAssembly core, once
+
+const chart = astro.bySolar('2000-8-16', 2, 'female'); // 2 = Tiger hour (03:00–05:00)
+console.log(chart.solarDate, chart.lunarDate);
+console.log(chart.palace('soulPalace')!.majorStars.map((s) => s.name).join(' '));
+```
+
+**Output**
+
+```text
+2000-8-16 二〇〇〇年七月十七
+紫微
+```
+
+<Callout type="info" title="init is the only async step">
+`init()` fetches, compiles and instantiates, so it is asynchronous; once it has finished every API is
+synchronous pure computation. Calling `init()` again returns immediately, and concurrent calls share one
+load. Calling any other API before initialization throws an `Error`.
+</Callout>
+
+## Entry points
+
+| Import path | Contents | Use it for |
+| --- | --- | --- |
+| `x-iztro` | The whole API plus `init` | Charting, queries, text |
+| `x-iztro/types` | DTO types and enum constants, without the core | Components that only render chart results; importing it never fetches the wasm |
+| `x-iztro/x_iztro.wasm` | The core file itself | Self-hosting or prefetching the wasm |
+
+`x-iztro` ships two implementations behind package.json conditional exports: the Node condition reads
+the file, everything else (browsers, bundlers) uses `fetch`. The two expose exactly the same API. For
+bundlers and frameworks see [Using it with bundlers and frameworks](/en/docs/js/bundlers).
+
+## Module layout
+
+Matches iztro's module split:
+
+| Export | Contents | Page |
+| --- | --- | --- |
+| `astro` | `bySolar` / `byLunar`, lightweight queries, palace derivation, plugins | [Charting](/en/docs/js/astro), [Lightweight queries](/en/docs/js/query), [Extending the astrolabe](/en/docs/js/extend) |
+| `Astrolabe`, `Palace`, `Star`, `Horoscope` and friends | Chart results and their methods | The five pages from [Astrolabe](/en/docs/js/astrolabe) |
+| `util` | Index conversion, brightness and mutagen lookup, pillar spelling | [Utilities](/en/docs/js/util) |
+| `star` | Star placement from birth data | [Star placement](/en/docs/js/star) |
+| `data` | Star and stem/branch tables, ordering constants | [Data tables](/en/docs/js/data) |
+| `i18n` | Two-way lookup between keys and translations | [Translation](/en/docs/js/i18n) |
+| `KnowledgePack` | Knowledge packs | [Knowledge packs](/en/docs/js/knowledge) |
+| `solarDatesByBazi`, `reverseChart` | Reverse lookup | [Reverse lookup](/en/docs/js/reverse) |
+| `IztroError` | The error type | [Errors](/en/docs/js/errors) |
+| Enums (`MajorStar`, `PalaceName`, …) | Every language-independent key | [Data tables](/en/docs/js/data#enum-list) |
+
+## Enums are keys
+
+Every enum is both a constant object and a union type of its values under the same name:
+
+```ts
+import { MajorStar, PalaceName } from 'x-iztro';
+
+const soul = chart.palace(PalaceName.SOUL)!;
+soul.majorStars[0]!.key === MajorStar.ZIWEI; // true
+
+const key: MajorStar = 'ziweiMaj'; // literals are fine too
+```
+
+The values are the language-independent keys, comparable directly with the `key` / `*Key` fields on the
+data objects; string literals work as well, so `chart.palace('soulPalace')` and
+`chart.palace(PalaceName.SOUL)` are equivalent.
+
+<Callout type="warn" title="Compare keys, not names">
+`star.name` changes with the chart language (`紫微` on a Chinese chart, `emperor` on an English one);
+`star.key` is `ziweiMaj` in every language. Base every check on the `*Key` fields or the built-in predicates.
+</Callout>
+
+## Data objects are read-only
+
+Fields are `readonly` and arrays are `readonly` arrays. For a variant, use the methods that return a new
+object, such as `chart.rearranged(...)`. `toJSON()` returns a deep copy of the DTO; changing it leaves the
+original untouched.
+
+## Misses return undefined
+
+A palace, star or entry that cannot be located comes back as `undefined` (`None` in Python). Invalid input
+throws [`IztroError`](/en/docs/js/errors); misuse (not initialized, wrong argument type) throws a standard
+`Error` / `TypeError`.
+
+## How to read the entries
+
+Every example uses the same chart: **female, born 16 August 2000 in the Tiger hour**
+(`astro.bySolar('2000-8-16', 2, 'female')`), in the default `zh-CN` chart language; output blocks are real
+runs. The Zi Wei meaning of each entry is the same as in the Python reference and is not repeated here —
+follow the links where needed.

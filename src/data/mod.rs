@@ -4,6 +4,7 @@ pub mod constants;
 pub mod earthly_branches;
 /// 天干信息（阴阳五行与四化表）
 pub mod heavenly_stems;
+pub(crate) mod keyed;
 /// 星耀标识与亮度表
 pub mod stars;
 /// 基础枚举与排盘配置

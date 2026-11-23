@@ -1,0 +1,84 @@
+---
+title: Utilities
+description: The util module's index conversion, brightness and mutagen lookup and pillar spelling, plus palace derivation in the astro module.
+---
+
+Enum arguments and results are language-independent keys throughout, so none of this depends on the output
+language. The names match iztro's `util`.
+
+## The util module
+
+```ts
+util.fixIndex(index: number, max = 12): number;                         // wrap into 0..max
+util.earthlyBranchIndexToPalaceIndex(branch: EarthlyBranch): number;    // branch → palace index (Yin is 0)
+util.timeToIndex(hour: number): TimeIndex;                              // hour 0–23 → hour index
+util.getAgeIndex(branch: EarthlyBranch): number;                        // birth-year branch → first age palace
+util.getBrightness(star: string, palaceIndex: number, config?): Brightness | undefined;
+util.getMutagen(star: string, stem: HeavenlyStem, config?): Mutagen | undefined;
+util.getMutagensByHeavenlyStem(stem: HeavenlyStem, config?): string[];  // [lu, quan, ke, ji]
+util.fixLunarMonthIndex(lunarMonth, lunarDay, isLeap, timeIndex, fixLeap): number; // first month is 0
+util.fixLunarDayIndex(lunarDay: number, timeIndex: TimeIndex): number;
+util.translateChineseDate(pillars: [HeavenlyStem, EarthlyBranch][], language?: Language): string;
+util.mergeStars(...groups: Star[][][]): Star[][];                       // merge twelve-palace star groups by palace
+```
+
+```ts
+console.log(util.fixIndex(-1), util.fixIndex(13), util.earthlyBranchIndexToPalaceIndex(EarthlyBranch.ZI),
+  util.timeToIndex(23), util.getAgeIndex(EarthlyBranch.CHEN));
+console.log(util.getBrightness(MajorStar.ZIWEI, 4), util.getBrightness(MinorStar.ZUOFU, 0),
+  util.getMutagen(MajorStar.TAIYANG, HeavenlyStem.GENG), util.getMutagensByHeavenlyStem(HeavenlyStem.GENG));
+console.log(util.fixLunarMonthIndex(7, 17, false, 2, true), util.fixLunarDayIndex(17, 2));
+console.log(util.translateChineseDate(chart.rawDates.chineseDate.pillarKeys(), 'en-US'));
+```
+
+```text
+11 1 10 12 8
+miao undefined sihuaLu [ 'taiyangMaj', 'wuquMaj', 'taiyinMaj', 'tiantongMaj' ]
+6 16
+geng chen - jia shen - bing woo - geng yin
+```
+
+- `getBrightness` is `undefined` for a star without a brightness table, `getMutagen` for a star outside that
+  stem's row; both follow the override tables in `config`.
+- `translateChineseDate`: single-character terms are joined inside a pillar and pillars are separated by
+  spaces; if any term is longer, terms are spaced and pillars joined with " - ". Not four pillars, or an
+  unknown key, throws `IztroError`.
+- `mergeStars` throws `RangeError` when a group does not cover twelve palaces.
+
+## Palace derivation in the astro module
+
+As in iztro, these live under `astro`:
+
+```ts
+astro.getSoulAndBody(monthIndex: number, timeIndex: TimeIndex, yearlyStem: HeavenlyStem): SoulAndBody;
+astro.getFiveElementsClass(stem: HeavenlyStem, branch: EarthlyBranch): FiveElementsClass;
+astro.getPalaceNames(soulIndex: number): PalaceName[];
+astro.getHoroscope(soulIndex, fiveElementsClass, gender, yearlyStem, yearlyBranch): { decadals: Decadal[]; ages: number[][] };
+```
+
+`getHoroscope` is iztro's function of that name: the decadals and age fortunes of the twelve palaces, by palace
+index (`get_decadals_and_ages` in Python). A chart's horoscope is `chart.horoscope(...)`.
+
+```ts
+console.log(astro.getSoulAndBody(6, 2, HeavenlyStem.GENG));
+console.log(astro.getFiveElementsClass(HeavenlyStem.REN, EarthlyBranch.WU), astro.getPalaceNames(4).slice(0, 3));
+const r = astro.getHoroscope(4, 'wood3rd', 'female', HeavenlyStem.GENG, EarthlyBranch.CHEN);
+console.log(r.decadals[4], r.ages[4]!.slice(0, 3));
+```
+
+```text
+{
+  bodyIndex: 8,
+  earthlyBranchOfSoul: 'wuEarthly',
+  heavenlyStemOfSoul: 'renHeavenly',
+  soulIndex: 4
+}
+wood3rd [ 'wealthPalace', 'childrenPalace', 'spousePalace' ]
+{
+  earthlyBranch: '午',
+  earthlyBranchKey: 'wuEarthly',
+  heavenlyStem: '壬',
+  heavenlyStemKey: 'renHeavenly',
+  range: [ 3, 12 ]
+} [ 5, 17, 29 ]
+```

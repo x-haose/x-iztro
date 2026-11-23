@@ -1,38 +1,47 @@
 ---
 title: "Migrating from iztro: API mapping"
-description: Where each public iztro API lands in the three x-iztro bindings, the few that changed shape and why, and the ones not provided.
+description: Where each public iztro API lands in the x-iztro bindings, the few that changed shape and why, and the ones not provided.
 ---
 
 *For: developers, especially anyone migrating from JS iztro*
 
-x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.1. Every public iztro API has
-an equivalent in all three bindings — Rust, Python and Go — with identical capability and a form
-that suits each language.
+x-iztro is a port of [iztro](https://github.com/SylarLong/iztro) v2.6.3. Every public iztro API has
+an equivalent in all four bindings — Rust, Python, Go and JavaScript — with identical capability and a
+form that suits each language.
 
 This page is for people coming from iztro: when a name does not line up, look it up here. For how to
 use each API, see that language's API reference.
 
 ## Names that map directly
 
-| iztro | Rust | Python | Go |
-| --- | --- | --- | --- |
-| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` |
-| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` |
-| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` |
-| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` |
-| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` |
-| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` |
-| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` |
-| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` |
-| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` |
-| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` |
-| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` |
-| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` |
-| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` |
-| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` |
+| iztro | Rust | Python | Go | JavaScript |
+| --- | --- | --- | --- | --- |
+| `astro.bySolar` | `by_solar` | `astro.by_solar` | `BySolar` | `astro.bySolar` |
+| `astro.byLunar` | `by_lunar` | `astro.by_lunar` | `ByLunar` | `astro.byLunar` |
+| `chart.horoscope` | `chart.horoscope` | `chart.horoscope` | `Horoscope` | `chart.horoscope` |
+| `chart.palace` | `chart.palace` | `chart.palace` | `Palace` / `PalaceByIndex` | `chart.palace` |
+| `chart.surroundedPalaces` | `chart.surrounded_palaces` | `chart.surrounded_palaces` | `SurroundedPalaces` | `chart.surroundedPalaces` |
+| `chart.flankingPalaces` | `chart.flanking_palaces` | `chart.flanking_palaces` | `FlankingPalaces` | `chart.flankingPalaces` |
+| `chart.decadalList` | `chart.decadal_list` | `chart.decadal_list` | `DecadalList` | `chart.decadalList` |
+| `chart.yearlyList` | `chart.yearly_list` | `chart.yearly_list` | `YearlyList` / `YearlyListByPalace` | `chart.yearlyList` |
+| `chart.monthlyList` | `chart.monthly_list` | `chart.monthly_list` | `MonthlyList` | `chart.monthlyList` |
+| `palace.fliesTo` | `flies_to` | `flies_to` | `FliesTo` | `palace.fliesTo` |
+| `util.fixIndex` | `utils::fix_index` | `utils.fix_index` | `FixIndex` | `util.fixIndex` |
+| `star.getMajorStar` | `star::query::get_major_stars` | `star.get_major_star` | `GetMajorStar` | `star.getMajorStar` |
+| `i18n.t` | `translate_key` | `i18n.translate` | `Translate` | `i18n.translate` |
+| `i18n.kot` | `key_of` | `i18n.key_of` | `KeyOf` | `i18n.keyOf` |
 
-The rest follow the same pattern: JS camelCase becomes snake_case in Rust and Python, and
-PascalCase in Go.
+The rest follow the same pattern: JS camelCase becomes snake_case in Rust and Python, PascalCase in
+Go, and stays camelCase in the x-iztro JS package.
+
+### JavaScript: init first, then synchronous calls
+
+The x-iztro JS package runs the Rust core as WebAssembly, so loading is asynchronous: `await init()`
+once, and from then on the API is synchronous like iztro's. The module layout follows iztro's
+`astro` / `util` / `star` / `data`; the optional arguments after `gender` in `bySolar` and friends go
+in one object (`{ fixLeap, language, config }`) rather than by position. Star-placement functions take
+a birth-data object (the same idea as iztro's `AstrolabeParam`), and every value is a
+language-independent key. See the [JavaScript API reference](/en/docs/js).
 
 ## The ones that changed shape
 
@@ -55,21 +64,37 @@ chart = Astro().by_solar("2000-8-16", 2, "female",
 ```
 
 Charting from an arbitrary stem and branch corresponds to `rearrangeAstrolable`, and is an astrolabe
-method `rearranged(stem, branch)` in all three bindings.
+method `rearranged(stem, branch)` in every binding.
 
 ### No global config and no global language
 
 iztro's `astro.config()` and `i18n.setLanguage()` mutate module-level singletons, which is why
-`astro.getConfig()` also has to exist to read the value back.
+`astro.getConfig()`, `astro.resetConfig()` and `i18n.getLanguage()` also have to exist to read them back or reset them.
 
 x-iztro has no global state: both the config and the language are passed on every call and held by
-the caller. So `getConfig` and `setLanguage` are not provided — to read the value back, read your
-own copy.
+the caller. So `getConfig`, `resetConfig`, `setLanguage` and `getLanguage` are not provided — to read
+the value back, read your own copy.
+
+### The target instant of a horoscope
+
+iztro's `horoscope(targetDate?, timeIndex?)` takes both arguments optionally: with the hour index omitted it
+is derived from the target date's time, and a date without a time means the early Zi hour; the target date
+may also be a `Date` object. Each binding maps it in its own idiom:
+
+| iztro | Rust | Python | Go | JavaScript |
+| --- | --- | --- | --- | --- |
+| `horoscope(date, i)` | `horoscope(date, i)` | `horoscope(date, i)` | `Horoscope(date, i)` | `horoscope(date, i)` |
+| `horoscope(date)` | `horoscope(date, None)` | `horoscope(date)` | `HoroscopeAt(date)` | `horoscope(date)` |
+| `horoscope(new Date(…))` | format it as `"Y-M-D H:m"` yourself | `horoscope(datetime(…))` | `HoroscopeAtTime(t)` | `horoscope(new Date(…))` |
+| `horoscope()` | `horoscope_now()` | `horoscope()` | `HoroscopeNow()` | `horoscope()` |
+
+Date strings are spelled as in iztro: `-`, `/` or `.` as the separator and an optional ` HH:mm(:ss)`; the time
+part plays no role in charting, and the chart's `solarDate` echoes the input verbatim.
 
 ### Decadals and age fortune
 
 `getHoroscope(param)` in `astro/palace` takes an `AstrolabeParam`. x-iztro's
-`get_decadals_and_ages` takes a Soul palace index and a Five Elements class directly, so you do not
+`get_decadals_and_ages` (in JS it keeps iztro's name, `astro.getHoroscope`) takes a Soul palace index and a Five Elements class directly, so you do not
 have to assemble a full set of birth data first; its capability is a superset of iztro's.
 
 ### The leap-month arguments of the lunar entry point
@@ -79,7 +104,8 @@ month with two adjacent booleans: swap them and nothing complains while the char
 month — and `fixLeap` only means anything when the input is a leap month in the first place. x-iztro
 folds the pair into one three-way value: Rust `LeapMonth::{NotLeap, Leap, LeapFixed}`, Go
 `NotLeapMonth / LeapMonthKeep / LeapMonthFixed`; Python keeps the two booleans but makes them
-keyword-only (`is_leap_month=`, `fix_leap=`). The JSON wire protocol of the bindings still carries the
+keyword-only (`is_leap_month=`, `fix_leap=`); JavaScript takes them in the options object
+(`{ isLeapMonth, fixLeap }`). The JSON wire protocol of the bindings still carries the
 `isLeapMonth`/`fixLeap` keys, as in iztro. The solar entry point's `fixLeap` is a single boolean with
 nothing to swap against, so it stays as it is.
 
@@ -89,28 +115,28 @@ position is rejected at compile time.
 
 ### Plugins
 
-iztro's `loadPlugin` / `use(plugin)` attaches functions to the astrolabe object at run time — a
-product of JS having no other extension mechanism. All three bindings implement the same capability
-using the answer their own language gives, at compile time or load time, without sacrificing type
-checking:
+iztro's `loadPlugin` / `use(plugin)` attaches functions to each astrolabe object at run time. Every
+binding implements the same capability using the answer its own language gives, at compile time or
+load time, without sacrificing type checking:
 
 | | Approach |
 | --- | --- |
 | Rust | Extension trait |
 | Python | `load_plugin` / `load_plugins` from `x_iztro.plugin`, attaching methods to the `Astrolabe` class |
 | Go | Embedding `*Astrolabe` (Go does not allow adding methods to another package's type; embedding is the language's answer) |
+| JavaScript | `astro.loadPlugin` / `loadPlugins`, attaching methods to the `Astrolabe` prototype (charts made earlier get them too); TypeScript adds the types by declaration merging |
 
 For the syntax, see [Extending the astrolabe](/en/docs/guide/guides/plugins).
 
 ### Disambiguating a reverse lookup
 
-The second parameter of `kot(value, k)` is a separate entry point in each binding: `key_of_in`
-(Rust), `key_of(text, key_filter)` (Python), `KeyOfIn` (Go). The values match iztro case for case,
+The second parameter of `kot(value, k)` maps to `key_of_in` (Rust), `key_of(text, key_filter)`
+(Python), `KeyOfIn` (Go) and `i18n.keyOf(text, keyFilter)` (JavaScript). The values match iztro case for case,
 including which key homographic names such as `horse`, `dragon` and `유시` (Korean for the You hour) resolve to.
 
 <Callout type="warn" title="A miss returns empty, not the input">
-iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust and Python) or an
-empty string (Go). If you were relying on "treat a miss as the original value and carry on", that
+iztro's `kot` echoes the argument back on a miss; x-iztro returns `None` (Rust and Python), an
+empty string (Go) or `undefined` (JavaScript). If you were relying on "treat a miss as the original value and carry on", that
 has to change when migrating.
 </Callout>
 
@@ -119,9 +145,9 @@ has to change when migrating.
 | iztro | Why not |
 | --- | --- |
 | `astro.astrolabeBySolarDate` / `astrolabeByLunarDate` | Aliases deprecated since iztro v2.0.5, with the same parameters and behaviour as `bySolar` / `byLunar` |
-| `star.initStars` | In JS it is a factory returning 12 empty arrays; all three type systems already give a fixed-length array of 12 |
+| `star.initStars` | In JS it is a factory returning 12 empty arrays; every binding's data structures already give a fixed-length array of 12 |
 | `util.fixEarthlyBranchIndex` | Synonymous with `earthlyBranchIndexToPalaceIndex` |
-| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | Wiring references between objects is internal behaviour, done automatically after parsing in all three bindings |
+| `palace.setAstrolabe` / `star.setPalace` / `star.setAstrolabe` | Wiring references between objects is internal behaviour, done automatically after parsing in every binding |
 | The `astro/analyzer` module | Its 11 functions are free-function versions of palace and surrounded-palace methods (`hasStars` is `palace.has`); the capability is already covered by the object methods |
 | The `calendar` module | Dead code as of iztro v2.5.8 — every live code path goes through the `lunar-lite` dependency instead, and the module was not in the package's root exports; v2.6.1 removed it from the package |
 | The i18next instance in `i18n`'s default export | Third-party library instances are not passed through; translation and reverse lookup are covered by `translate` / `key_of` |
@@ -161,26 +187,26 @@ between competing readings are x-iztro's own work.
 
 The entry points on each side: `Astrolabe::patterns` / `HoroscopeRef::patterns` in Rust,
 `Astrolabe.patterns` / `Horoscope.patterns` in Python, `Astrolabe.Patterns` / `Horoscope.Patterns`
-in Go, plus the language-independent pattern keys (`PatternKey` in Rust and Python, the `PatternXxx`
-constants in Go). The concepts and the full table of 64 are on
+in Go, `chart.patterns` / `horoscope.patterns` in JavaScript, plus the language-independent pattern
+keys (`PatternKey` in Rust, Python and JavaScript, the `PatternXxx` constants in Go). The concepts and the full table of 64 are on
 [Patterns](/en/docs/guide/concepts/patterns).
 
 Since iztro has nothing to compare against, this area has no golden data; its correctness is held by
 four layers of tests: a unit test per rule, a reproduction of the source page's 32 example charts on
 real charts, a bulk invariant sweep over the 1,560 tier-1 charts, and output snapshots that all
-three bindings read back from the same files.
+bindings read back from the same files.
 
 ### Knowledge packs (no iztro equivalent)
 
 iztro ships facts only; the reading texts for stars and patterns live on its documentation site, not
 in the library. x-iztro turns interpretation into data behind a protocol: a knowledge pack is JSON
 mapping "language-independent key → text and attributes", and one default pack ships inside the
-library (107 stars, 64 patterns, 12 palaces, 4 transformations, 49 glossary entries, taken from the
-学习 (Learn) pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
+library (all 162 stars, 64 patterns, 12 palaces, 4 transformations, 50 glossary entries, with readings
+taken from the 学习 (Learn) pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
 pack that merges field by field.
 
-The entry points: Rust's `KnowledgePack::builtin` / `merged`, Python's `KnowledgePack.builtin` /
-`merged`, Go's `BuiltinKnowledgePack` / `Merged`, with the merge implemented once in the Rust core.
+The entry points: Rust's `KnowledgePack::builtin` / `merged`, Python's and JavaScript's
+`KnowledgePack.builtin` / `merged`, Go's `BuiltinKnowledgePack` / `Merged`, with the merge implemented once in the Rust core.
 A star's yin-yang, five elements, dipper and chemistry are **attributes** that live in the pack
 rather than the core tables — the core `StarInfo` stays value-for-value identical to iztro's, while
 those attributes are a school's reading. See
@@ -199,7 +225,8 @@ of pillars recurs roughly every 60 years, so multiple solutions are inherent;
 chart any candidate to reproduce the target.
 
 The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
-`SolarDatesByBazi` / `ReverseChart` in Go (each with a Context variant). See
+`SolarDatesByBazi` / `ReverseChart` in Go (each with a Context variant), `solarDatesByBazi` /
+`reverseChart` in JavaScript. See
 [Reverse lookup](/en/docs/guide/guides/reverse).
 
 ### Everything else
@@ -220,6 +247,6 @@ The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
 
 ## Numeric consistency
 
-Beyond API parity, chart output has **zero field-level divergence** from iztro, held by 716,314
+Beyond API parity, chart output has **zero field-level divergence** from iztro, held by 747,572
 golden cases. The coverage matrix and how it is verified are on
 [Accuracy](/en/docs/guide/about/accuracy).

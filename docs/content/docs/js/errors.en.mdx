@@ -1,0 +1,73 @@
+---
+title: Errors
+description: IztroError codes, how they differ from usage errors, and WebAssembly instance failures.
+---
+
+Entry points that take external input throw `IztroError` when the input is invalid. Date format and existence,
+the year range and the hour index are validated in the core; gender, language, keys and configuration — the
+string-valued inputs — in the binding layer.
+
+```ts
+import { IztroError } from 'x-iztro';
+```
+
+## code
+
+The message is the core's English text and may be reworded between versions; branch on `.code` in code:
+
+| `code` | Meaning | Typical cause |
+| --- | --- | --- |
+| `invalid_date` | Invalid date | Bad format, a date that does not exist (including the reform gap), outside years 1–9999 |
+| `invalid_time_index` | Hour index out of range | Not within 0–12 |
+| `invalid_argument` | Any other invalid input or configuration | Gender, language, star key, palace name, override tables, a layer finer than the query precision, `NaN` / `±Infinity` in the input |
+| `internal` | Core failed to load, the core stopped mid-call, or a defect in the library | `init()` cannot fetch or compile the wasm; a trap, stack overflow or corrupt result buffer during a call |
+
+The same values as Rust's `IztroError::code()`, Python's `IztroError.code` and Go's `iztro.Error.Code`.
+
+```ts
+for (const call of [
+  () => astro.bySolar('2000-2-30', 2, 'female'),
+  () => astro.bySolar('2000-8-16', 13 as TimeIndex, 'female'),
+  () => astro.bySolar('2000-8-16', 2, 'x' as Gender),
+  () => astro.bySolar('2000-8-16', 2, 'female', { language: 'fr-FR' as Language }),
+]) {
+  try {
+    call();
+  } catch (e) {
+    if (e instanceof IztroError) console.log(e.code, e.message);
+  }
+}
+```
+
+**Output**
+
+```text
+invalid_date invalid solar date '2000-2-30': day is out of range for that month
+invalid_time_index time_index must be 0-12, got 13
+invalid_argument invalid gender 'x': expected 'male' or 'female'
+invalid_argument invalid language 'fr-FR': expected 'zh-CN', 'zh-TW', 'en-US', 'ja-JP', 'ko-KR' or 'vi-VN'
+```
+
+## Errors that are not IztroError
+
+Misusing the API throws JS's standard errors; these point at a defect in the calling code rather than bad input:
+
+| Error | Cause |
+| --- | --- |
+| `Error` | Calling before `await init()`; `toText` on a palace that belongs to no chart |
+| `TypeError` | `knowledge` that is neither `true` nor a `KnowledgePack`; a plugin that is not a function |
+| `RangeError` | A group passed to `util.mergeStars` that does not cover twelve palaces |
+| `SyntaxError` | Bad JSON in `KnowledgePack.fromJSON` |
+
+## Non-finite numbers
+
+`NaN` and `±Infinity` turn into `null` when converted to JSON, which the core would read as "not given" and
+silently compute a plausible default (`horoscopeOfMonth(2024, NaN)` would become a yearly horoscope, for example).
+So a non-finite number anywhere in the input throws `invalid_argument`.
+
+## WebAssembly instance failures
+
+The core does not fail on invalid input. If a library defect ever makes a call stop midway — a trap, a wasm stack
+overflow, or a result buffer that is out of bounds or not valid UTF-8 — that call throws `IztroError` (`internal`,
+with the original exception as `cause`) and the instance is retired: after an interrupted run its stack and heap
+can no longer be trusted. Later calls throw "not initialized"; `await init()` builds a fresh instance and work continues.

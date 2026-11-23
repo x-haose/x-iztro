@@ -1,0 +1,199 @@
+---
+title: Charting
+description: init loads the core, bySolar / byLunar cast the chart, ChartConfig configures it.
+---
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+```
+
+Every entry point throws `IztroError` on invalid input, with a machine-readable `.code`; see [Errors](/en/docs/js/errors).
+
+---
+
+## init
+
+**Purpose**　Load the WebAssembly core. Every other API is synchronous and must wait for it.
+
+**Signature**
+
+```ts
+function init(source?: WasmSource): Promise<void>;
+
+type WasmSource =
+  | URL | string                 // wasm address; in Node, file: URLs and file paths are read from disk, others fetched
+  | Response | Promise<Response> // a request already made
+  | ArrayBuffer | ArrayBufferView // the wasm bytes
+  | WebAssembly.Module;          // an already compiled module
+```
+
+**Parameters**
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source` | `WasmSource` | no | Where the core comes from; omitted, the packaged `x_iztro.wasm` (`new URL('./x_iztro.wasm', import.meta.url)`). In Node a string starting with `file:`, `http(s):` or `data:` is a URL and anything else a file path (Windows absolute paths included) |
+
+**Behaviour**
+
+- Returns immediately once loaded; calls made while a load is in progress share that load, and their own `source` is not used.
+- A response with `Content-Type: application/wasm` is compiled while it downloads (`instantiateStreaming`);
+  anything else is read in full and then compiled, with the same result.
+- A failure to fetch, compile or instantiate throws `IztroError` (code `internal`, reason in `cause`); calling again retries.
+- If the core ever stops mid-call (a trap, a stack overflow, a corrupt result buffer), that call throws `internal`
+  and the instance is retired; `init()` again rebuilds it. Neither valid nor invalid input causes this.
+
+`isInitialized()` tells whether the core is currently usable.
+
+---
+
+## ChartConfig
+
+Chart configuration: six switches plus two optional override tables. Every field is optional and defaults
+to iztro's value, so `{}` is the same as passing nothing.
+
+| Field | Type | Default | Values |
+| --- | --- | --- | --- |
+| `yearDivide` | `YearDivide` | `'normal'` | `normal` lunar new year / `exact` Lichun |
+| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` first of the month / `exact` solar term |
+| `ageDivide` | `AgeDivide` | `'normal'` | `normal` at new year / `birthday` on the birthday |
+| `dayDivide` | `DayDivide` | `'forward'` | `forward` late Rat hour belongs to the next day / `current` to the same day |
+| `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
+| `astroType` | `AstroType` | `'heaven'` | `heaven` / `earth` / `human` chart |
+| `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | stem key → four star keys (lu, quan, ke, ji), replacing that stem's row |
+| `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | star key → twelve brightness keys, index 0 is Yin, empty string for none |
+
+The meaning of each switch and its school background are in [Configuration](/en/docs/guide/guides/config).
+
+```ts
+const earth = astro.bySolar('2000-8-16', 2, 'female', {
+  config: {
+    astroType: 'earth',
+    mutagens: { gengHeavenly: ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj'] },
+  },
+});
+console.log(earth.fiveElementsClass, earth.config.astroType);
+console.log(earth.palace('soulPalace')!.mutagenStarKeys);
+```
+
+**Output**
+
+```text
+土五局 earth
+[ 'tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj' ]
+```
+
+**Edge cases**
+
+<Accordions>
+<Accordion title="Keys only, never translated names">
+Both tables take language-independent keys as keys and values (`'gengHeavenly'`, `'taiyangMaj'`). Mutagen rows
+must have exactly four entries and brightness rows exactly twelve; anything else throws `IztroError`.
+</Accordion>
+<Accordion title="The override tables are not echoed in chart.config">
+`chart.config` holds the six switches only — the tables are chart input and stay out of the DTO (as in iztro's
+field contract). The chart keeps your original object internally, so `rearranged`, `horoscope` and `toText`
+still use it.
+</Accordion>
+</Accordions>
+
+---
+
+## bySolar
+
+**Purpose**　Cast a natal chart from a solar date. For the Zi Wei meaning see the [Python reference](/en/docs/python/astro#by_solar).
+
+**Signature**
+
+```ts
+function bySolar(
+  solarDate: string,
+  timeIndex: TimeIndex,
+  gender: Gender,
+  options?: { fixLeap?: boolean; language?: Language; config?: ChartConfig },
+): Astrolabe;
+```
+
+**Parameters**
+
+| Name | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `solarDate` | `string` | yes | — | `'Y-M-D'`, separator `-` `/` or `.`, optional ` HH:mm(:ss)` (the time is ignored), years 1–9999 |
+| `timeIndex` | `TimeIndex` | yes | — | Hour index 0–12; 0 early Rat, 12 late Rat |
+| `gender` | `Gender` | yes | — | `'male'` / `'female'` |
+| `options.fixLeap` | `boolean` | no | `true` | First half of a leap month counts as that month, second half as the next |
+| `options.language` | `Language` | no | `'zh-CN'` | Display language |
+| `options.config` | `ChartConfig` | no | defaults | See above |
+
+The optional arguments after `gender` go in an object: with two booleans and a language code side by side,
+positional arguments are easy to swap without any error.
+
+```ts
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+console.log(chart.solarDate, chart.chineseDate, chart.time, chart.timeRange);
+console.log(chart.soul, chart.body, chart.fiveElementsClass);
+
+const en = astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' });
+console.log(en.lunarDate, en.soul, en.palace('soulPalace')!.name);
+```
+
+**Output**
+
+```text
+2000-8-16 庚辰 甲申 丙午 庚寅 寅时 03:00~05:00
+破军 文昌 木三局
+Lunar 2000-7-17 rebel soul
+```
+
+**Edge cases**
+
+<Accordions>
+<Accordion title="solarDate is echoed verbatim">
+`chart.solarDate` is the input string minus its time part, without zero padding: pass `'2000/08/16'` and you get
+`'2000/08/16'` back. Use `chart.rawDates` for structured dates.
+</Accordion>
+<Accordion title="Late Rat hour is 12">
+Births between 23:00 and 24:00 use `12`, not `0`; the two give different charts — see
+[hour index](/en/docs/guide/getting-started#hour-index).
+</Accordion>
+</Accordions>
+
+---
+
+## byLunar
+
+**Purpose**　Cast a chart from a lunar date.
+
+**Signature**
+
+```ts
+function byLunar(
+  lunarDate: string,
+  timeIndex: TimeIndex,
+  gender: Gender,
+  options?: { isLeapMonth?: boolean; fixLeap?: boolean; language?: Language; config?: ChartConfig },
+): Astrolabe;
+```
+
+`options.isLeapMonth` defaults to `false` and has no effect when the month has no leap month; the rest is as in `bySolar`.
+
+```ts
+const lunar = astro.byLunar('2000-7-17', 2, 'female');
+console.log(lunar.solarDate, lunar.lunarDate);
+```
+
+**Output**
+
+```text
+2000-8-16 二〇〇〇年七月十七
+```
+
+---
+
+## Horoscopes and rearranging
+
+Horoscopes, rearranging and semantic text are astrolabe methods, see [Astrolabe](/en/docs/js/astrolabe):
+`chart.horoscope(date, timeIndex)`, `chart.horoscopeOfYear(year)`, `chart.horoscopeOfMonth(year, month)`,
+`chart.rearranged(stem, branch)`, `chart.toText(options)`.

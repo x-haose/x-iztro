@@ -1,0 +1,342 @@
+---
+title: Upgrading from 0.6 to 0.7
+description: Each breaking change in 0.7 — the code it affects, how to change it, before-and-after code per language — plus the fixes that change output.
+---
+
+*For: developers already on x-iztro 0.6*
+
+0.7 adds the JavaScript / TypeScript binding and brings the eight incompatible changes below. Use the table
+to find the ones that concern you, then follow the matching section. The JavaScript binding is new in 0.7, so
+there is nothing to upgrade there; JavaScript snippets below only show how things work now.
+
+| Change | Rust | Python | Go | Hand-written JSON (C FFI, bridge) |
+| --- | --- | --- | --- | --- |
+| [Enum serde form is now the language-independent key](#enum-serde-form-is-now-the-language-independent-key) | Affected | — | — | — |
+| [Model structs no longer implement serde](#model-structs-no-longer-implement-serde) | Affected | — | — | — |
+| [`Language::as_code` is now `as_key`](#languageas_code-is-now-as_key) | Affected | — | — | — |
+| [Config JSON shape and unknown keys](#config-json-shape-and-unknown-keys) | Affected | — | — | Affected |
+| [Horoscope palace queries can now fail](#horoscope-palace-queries-can-now-fail) | Affected | Affected | Affected | — |
+| [52 Japanese, Korean and Vietnamese translations](#52-japanese-korean-and-vietnamese-translations) | If you match on names | If you match on names | If you match on names | If you match on names |
+| [The chart's `lunarDate` follows the chart language](#the-charts-lunardate-follows-the-chart-language) | If you parse it | If you parse it | If you parse it | If you parse it |
+| [How the horoscope's `solarDate` is written](#how-the-horoscopes-solardate-is-written) | If you compare it | If you compare it | If you compare it | If you compare it |
+
+Dependency lines:
+
+```toml
+x-iztro = "0.7"
+```
+
+```bash
+pip install "x-iztro~=0.7.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
+```
+
+---
+
+## Enum serde form is now the language-independent key
+
+**Affected**: Rust code that serializes or deserializes public enums (`Gender`, `Language`, `Palace`, `StarKey`,
+`Scope`, `YearDivide` and about 45 in all) directly with serde. 0.6 used the Rust variant name (`"Male"`,
+`"ZhCN"`), a second spelling next to the language-independent keys of the DTO and the binding wire protocol
+(`"male"`, `"zh-CN"`). 0.7 uses the key everywhere, and deserialization accepts only the spellings in `KEYS`.
+
+**Change**: rewrite stored JSON to the keys; new code uses the keys directly — the same values as the Python
+enums, Go constants and JavaScript constants.
+
+```rust title="0.6"
+serde_json::to_string(&Gender::Male)?;    // "Male"
+serde_json::to_string(&Language::ZhCN)?;  // "ZhCN"
+```
+
+```rust title="0.7"
+serde_json::to_string(&Gender::Male)?;    // "male"
+serde_json::to_string(&Language::ZhCN)?;  // "zh-CN"
+let g: Gender = serde_json::from_str("\"male\"")?;
+```
+
+## Model structs no longer implement serde
+
+**Affected**: Rust code that serializes the chart, palace, star or horoscope structs directly. In 0.6 they
+derived serde, with snake_case keys and variant-name values; in 0.7 they do not, and such code fails to compile.
+
+**Change**: serialize the DTO instead. Its keys are camelCase, its values are translated into the chart's language
+with `*Key` keys alongside — the same structure as iztro's JSON and what Python, Go and JavaScript receive.
+
+```rust title="0.6"
+let json = serde_json::to_string(&chart)?;
+// {"gender":"Female","solar_date":"2000-8-16","lunar_date":"二〇〇〇年七月十七",…}
+```
+
+```rust title="0.7"
+let json = serde_json::to_string(&chart.to_dto())?;
+// {"gender":"女","solarDate":"2000-8-16","lunarDate":"二〇〇〇年七月十七",…}
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let json = serde_json::to_string(&h.to_dto(chart.language))?;
+```
+
+## `Language::as_code` is now `as_key`
+
+**Affected**: Rust code calling `Language::as_code()`.
+
+**Change**: rename it to `as_key()`; the return value is the same (`"zh-CN"` and so on). `Language::from_code`
+stays and still accepts other casing and underscores (`zh_cn`); `from_key` accepts only the canonical spelling.
+
+```rust title="0.6"
+let code = Language::JaJP.as_code();  // "ja-JP"
+```
+
+```rust title="0.7"
+let code = Language::JaJP.as_key();   // "ja-JP"
+```
+
+## Config JSON shape and unknown keys
+
+**Affected**:
+
+- Rust code that runs `Config` through serde. In 0.6 that was the derived form — snake_case keys,
+  variant-name values, all six keys required — and it dropped custom mutagen and brightness tables. In 0.7 it
+  is the binding layer's config JSON.
+- Callers writing config JSON by hand (C FFI, bridge). 0.6 silently ignored a misspelled key and cast the chart
+  with the default config — the result looked normal but was not the config you wanted. 0.7 returns
+  `invalid_argument`, with a message starting `config:` that lists the valid keys.
+
+Python's `ChartConfig` and Go's `Config` are typed, so a wrong field name fails at construction or compile time;
+they are not affected. JavaScript's `config` option rejects unknown keys as well.
+
+**Change**: rewrite stored Rust configs in the new shape; JSON callers fix the key names. The 0.7 shape is a
+partial patch — absent keys take their defaults, and custom tables round-trip intact. The values are listed in
+[Rust data types · Config](/en/docs/rust/data).
+
+```rust title="0.6"
+let c: Config = serde_json::from_str(
+    r#"{"year_divide":"Exact","horoscope_divide":"Normal","age_divide":"Normal",
+        "day_divide":"Forward","algorithm":"Default","astro_type":"Heaven"}"#,
+)?;
+```
+
+```rust title="0.7"
+let c: Config = serde_json::from_str(r#"{"yearDivide":"exact"}"#)?;
+
+// A misspelled key is an error, not a chart cast with the default config
+let bad = serde_json::from_str::<Config>(r#"{"yearDivid":"exact"}"#);
+assert!(bad.is_err());
+```
+
+```json title="Hand-written JSON: ignored in 0.6, invalid_argument in 0.7"
+{ "config": { "yearDivid": "exact" } }
+```
+
+```js title="JavaScript (TypeScript rejects this key at compile time)"
+astro.bySolar('2000-8-16', 2, 'female', { config: { yearDivid: 'exact' } });
+// IztroError (invalid_argument): config: unknown field `yearDivid`, expected one of `yearDivide`, …
+```
+
+## Horoscope palace queries can now fail
+
+0.7 adds horoscopes by lunar year and lunar month (`horoscope_of_year`, `horoscope_of_month`). They are precise
+only to the yearly or monthly layer, and the horoscope's `precision()` records that. Asking such a horoscope for a
+palace at a finer layer would answer from the representative day the core picked, not from what you asked, so
+0.7 returns `invalid_argument` instead. The palace queries change signature accordingly:
+
+| Method | Rust | Go | Python |
+| --- | --- | --- | --- |
+| Palace | `palace` → `Result<Option<PalaceRef>>` | `Palace` → `(*Palace, error)` | `palace` raises `IztroError` |
+| Surrounded palaces | `surround_palaces` → `Result<Option<…>>` | `SurroundPalaces` → `(*SurroundedPalaces, error)` | `surround_palaces` raises `IztroError` |
+| Horoscope mutagen and star checks | `has_horoscope_mutagen`, `has_horoscope_stars`, `has_one_of_horoscope_stars`, `not_have_horoscope_stars` → `Result<bool>` | `HasHoroscopeMutagen`, `HasHoroscopeStars`, `HasOneOfHoroscopeStars`, `NotHaveHoroscopeStars` → `(bool, error)` | The same methods raise `IztroError` |
+
+A horoscope taken by date — the only kind 0.6 had — is precise to the hour, so no layer fails on precision; the
+change is only to handle the new error return:
+
+- **Rust**: three more `HoroscopeRef` methods return `Result`: `to_text_with`, `patterns`, `patterns_with`.
+  `KnowledgePack::for_horoscope` / `for_horoscope_with` take `&HoroscopeRef` instead of the chart and the horoscope
+  data separately. The methods of the same names on `HoroscopeData` that take a chart argument are unchanged.
+- **Go**: a nil horoscope still returns the zero value without an error.
+- **Python**: a misspelled scope (`"yarly"`) is an error too; 0.6 returned `None`.
+
+```rust title="Rust 0.6"
+let soul = h.palace(Palace::Soul, Scope::Yearly).unwrap();
+let lu = h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu);
+let text = h.to_text_with(&opts);
+let sub = pack.for_horoscope(&chart, &h);
+```
+
+```rust title="Rust 0.7"
+let soul = h.palace(Palace::Soul, Scope::Yearly)?.unwrap();
+let lu = h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu)?;
+let text = h.to_text_with(&opts)?;
+let sub = pack.for_horoscope(&h);
+```
+
+```go title="Go 0.6"
+soul := h.Palace(iztro.PalaceSoul, iztro.ScopeYearly)
+lu := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+```
+
+```go title="Go 0.7"
+soul, err := h.Palace(iztro.PalaceSoul, iztro.ScopeYearly)
+if err != nil {
+    return err // errors.Is(err, iztro.ErrInvalidArgument)
+}
+lu, err := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+```
+
+```python title="Python 0.6"
+h.palace(PalaceName.SOUL, "yarly")   # None
+```
+
+```python title="Python 0.7"
+from x_iztro import IztroError
+
+try:
+    h.palace(PalaceName.SOUL, "yarly")
+except IztroError as e:
+    print(e.code)                    # invalid_argument
+
+chart.horoscope_of_year(2027).palace(PalaceName.SOUL, "monthly")
+# IztroError: invalid scope 'monthly': the horoscope target only specifies layers down to 'yearly'
+```
+
+```ts title="JavaScript"
+chart.horoscopeOfYear(2027).palace(PalaceName.SOUL, Scope.MONTHLY);  // throws IztroError (invalid_argument)
+```
+
+## 52 Japanese, Korean and Vietnamese translations
+
+**Affected**: code that compares, stores or reverse-looks-up Japanese, Korean or Vietnamese names. The
+translations follow iztro v2.6.3: Japanese switches to shinjitai forms, and several Korean and Vietnamese
+mistranslations are corrected. The language-independent keys do not change.
+
+**Change**: always decide by key (the `*Key` fields, the enum constants) — see
+[Language-independent keys](/en/docs/guide/guides/keys); replace stored names using the table below.
+
+| Language | Key | 0.6 | 0.7 |
+| --- | --- | --- | --- |
+| ja-JP | `lucunMin` | 祿存 | 禄存 |
+| ja-JP | `tianxu` | 天虛 | 天虚 |
+| ja-JP | `longchi` | 龍池 | 竜池 |
+| ja-JP | `tianshou` | 天壽 | 天寿 |
+| ja-JP | `yuede` | 月德 | 月徳 |
+| ja-JP | `tianchu` | 天廚 | 天厨 |
+| ja-JP | `guandai` | 冠帶 | 冠帯 |
+| ja-JP | `jue` | 絕 | 絶 |
+| ja-JP | `qinglong` | 青龍 | 青竜 |
+| ja-JP | `jiangjun` | 將軍 | 将軍 |
+| ja-JP | `suipo` | 歲破 | 歳破 |
+| ja-JP | `suijian` | 歲建 | 歳建 |
+| ja-JP | `huiqi` | 晦氣 | 晦気 |
+| ja-JP | `longde` | 龍德 | 竜徳 |
+| ja-JP | `tiande` | 天德 | 天徳 |
+| ja-JP | `jiangxing` | 將星 | 将星 |
+| ja-JP | `suiyi` | 歲驛 | 歳駅 |
+| ja-JP | `yunyue` | 限の钺 | 限の鉞 |
+| ja-JP | `yunluan` | 限の鸾 | 限の鸞 |
+| ja-JP | `yunlu` | 限の祿 | 限の禄 |
+| ja-JP | `liuyue` | 年の钺 | 年の鉞 |
+| ja-JP | `liuluan` | 年の鸾 | 年の鸞 |
+| ja-JP | `liulu` | 年の祿 | 年の禄 |
+| ja-JP | `yueyue` | 月の钺 | 月の鉞 |
+| ja-JP | `yueluan` | 月の鸾 | 月の鸞 |
+| ja-JP | `yuelu` | 月の祿 | 月の禄 |
+| ja-JP | `riyue` | 日の钺 | 日の鉞 |
+| ja-JP | `riluan` | 日の鸾 | 日の鸞 |
+| ja-JP | `rilu` | 日の祿 | 日の禄 |
+| ja-JP | `shiyue` | 時の钺 | 時の鉞 |
+| ja-JP | `shiluan` | 時の鸾 | 時の鸞 |
+| ja-JP | `shilu` | 時の祿 | 時の禄 |
+| ja-JP | `spiritPalace` | 福德 | 福徳 |
+| ja-JP | `careerPalace` | 官祿 | 官禄 |
+| ja-JP | `friendsPalace` | 僕役 | 奴僕 |
+| ja-JP | `xian` (brightness) | 陷 | 陥 |
+| ja-JP | `sihuaLu` | 祿 | 禄 |
+| ja-JP | `sihuaQuan` | 權 | 権 |
+| ja-JP | `lateRatHour` (hour) | 晚子時 | 晩子時 |
+| ja-JP | `dragon` (zodiac) | 龍 | 竜 |
+| ja-JP | `rooster` (zodiac) | 雞 | 鶏 |
+| ko-KR | `lingxingMin` | 령성 | 영성 |
+| ko-KR | `jiekong` | 절중 | 절공 |
+| ko-KR | `suipo` | 태파 | 세파 |
+| ko-KR | `tiande` | 복덕 | 천덕 |
+| ko-KR | `childhood` (childhood fortune) | 어린 | 동한 |
+| vi-VN | `muyu` | Mục Dục | Mộc Dục |
+| vi-VN | `yueyue` | Thiên Nguyệt(M) | Thiên Việt(M) |
+| vi-VN | `riyue` | Thiên Nguyệt(d) | Thiên Việt(d) |
+| vi-VN | `shiyue` | Thiên Nguyệt(H) | Thiên Việt(H) |
+| vi-VN | `xian` (brightness) | Hạn | Hãm |
+| vi-VN | `childhood` (childhood fortune) | đứa trẻ Hạn | Vận hạn thời thơ ấu |
+
+Korean 天德 used to be 복덕, the same spelling as the Spirit palace, so a reverse lookup by name landed on the
+palace; from 0.7 the two are distinct.
+
+## The chart's `lunarDate` follows the chart language
+
+**Affected**: code that parses the chart's `lunarDate` string. In 0.6 it was the Chinese spelling in every
+language (`二〇〇〇年七月十七`); in 0.7, following iztro v2.6.3, Simplified and Traditional Chinese are unchanged
+and the other languages write the word for "lunar" plus numbers, with a prefix for leap months:
+
+| Language | 0.7 spelling |
+| --- | --- |
+| zh-CN / zh-TW | 二〇〇〇年七月十七 |
+| en-US | Lunar 2000-7-17 |
+| ja-JP | 旧暦2000年7月17日 |
+| ko-KR | 음력 2000년 7월 17일 |
+| vi-VN | Âm lịch ngày 17 tháng 7 năm 2000 |
+
+The horoscope's `lunarDate` is unchanged — Chinese in every language.
+
+**Change**: for the lunar year, month and day as numbers, read `lunarYear` / `lunarMonth` / `lunarDay` / `isLeap`
+under `rawDates.lunarDate` instead of parsing the display string.
+
+```rust title="Rust"
+let ld = &chart.raw_dates.lunar_date;
+println!("{} {} {} {}", ld.lunar_year, ld.lunar_month, ld.lunar_day, ld.is_leap);
+```
+
+```python title="Python"
+ld = chart.raw_dates.lunar_date
+print(ld.lunar_year, ld.lunar_month, ld.lunar_day, ld.is_leap)
+```
+
+```go title="Go"
+ld := chart.RawDates.LunarDate
+fmt.Println(ld.LunarYear, ld.LunarMonth, ld.LunarDay, ld.IsLeap)
+```
+
+## How the horoscope's `solarDate` is written
+
+**Affected**: code that compares a horoscope's `solarDate` with the date string it passed in. 0.6 echoed the input
+(`"2025-01-05"` in, `"2025-01-05"` out); in 0.7 date input may be zero-padded, use other separators or carry a time,
+and the horoscope's `solarDate` is always `Y-M-D` without zero padding or time. The chart's `solarDate` still
+echoes the birth-date input as given.
+
+**Change**: normalize your own date to `Y-M-D` before comparing, or compare year, month and day as numbers.
+
+```python title="0.6"
+h = chart.horoscope("2025-01-05", 6)
+h.solar_date   # "2025-01-05"
+```
+
+```python title="0.7"
+h = chart.horoscope("2025-01-05 13:00")
+h.solar_date   # "2025-1-5"
+```
+
+---
+
+## Fixes that change output
+
+These do not change any signature, but the same input gives a different result in 0.7 than in 0.6. The 0.6
+results were wrong, and there is no switch to keep them.
+
+- **Lunar dates and solar-term month pillars**: with the calendar replaced by an in-house port of
+  lunar-typescript, 540 lunar dates between 1583 and 9999 that the former dependency got wrong are corrected
+  (for example, a month from 1925-05-22 where the leap fourth month was labelled the fourth month), as are 23
+  solar-term instants that crossed half past the hour — the month pillars of those hours under
+  `horoscope_divide=exact` change with them.
+- **Python horoscope with a date but no hour**: 0.6 took the current hour; 0.7 uses the early Rat hour, as iztro does.
+- **Out-of-range years in the monthly list**: for years outside 1–9999, 0.6 returned `invalid_date`; 0.7 returns
+  `invalid_argument` at the entry point.
+- **Wider supported input**: years extend from 1583–9999 to 1–9999 (Julian calendar before 1582-10-15); dates may
+  use `/` or `.` separators, zero-padded months and days, and a ` HH:mm` time. Inputs that 0.6 rejected now cast.
+
+The full list of changes is in the [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md).

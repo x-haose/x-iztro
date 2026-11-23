@@ -44,12 +44,12 @@ x-iztro **只判定组合是否成立，不给任何评价**——断语属于�
    所以这部分不像排盘那样有逐字段对照的金标数据。代之以四层测试：
    每条规则的正反例单测（约 80 个）、来源页 32 张示例盘的真实盘复现、
    tier1 那 1,560 张盘上的批量合理性与不变量检查（含每个格局的命中盘数统计），
-   以及 4 张盘 × 6 种语言的输出快照——快照由 Rust 写基线，Python 与 Go 读同一批文件比对，
-   三侧结果必须逐字节一致。
+   以及 4 张盘 × 6 种语言的输出快照——快照由 Rust 写基线，Python、Go、JavaScript 读同一批文件比对，
+   各侧结果必须逐字节一致。
 
 ## 一次命中长什么样
 
-一次命中就是一个 `PatternHit`，字段在三种编程语言里同名（大小写随语言习惯；
+一次命中就是一个 `PatternHit`，字段在各编程语言里同名（大小写随语言习惯；
 唯 Rust 结构体把 `palace_index` 叫 `palace`，序列化 DTO 的键统一是 `palaceIndex`）：
 
 | 字段 | 说明 |
@@ -65,7 +65,7 @@ x-iztro **只判定组合是否成立，不给任何评价**——断语属于�
 
 拿一张盘列出它的全部格局：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -100,6 +100,20 @@ hits, _ := chart.Patterns(nil)
 
 for _, h := range hits {
     fmt.Println(h.Name, h.PalaceName)
+}
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('1985-5-3', 9, 'male');
+
+for (const hit of chart.patterns()) {
+  console.log(hit.name, hit.palaceName);
 }
 ```
 
@@ -159,12 +173,12 @@ x-iztro 不把它当成格条件，只标注）；文星朝命的 `broken` 表�
 在大限视角下重跑本命规则即可。运限视角**没有身宫**，
 「身命」类格局在运限层只判该层命宫。
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-for hit in h.patterns(Scope::Decadal) {
+for hit in h.patterns(Scope::Decadal)? {
     println!("{} {:?}", translate_pattern(hit.key, zh), hit.variant);
 }
 ```
@@ -190,6 +204,16 @@ for _, x := range hits {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const h = chart.horoscope('2025-6-1', 0);
+for (const hit of h.patterns(Scope.DECADAL)) {
+  console.log(hit.name, hit.scope, hit.variant);
+}
+```
+
+</Tab>
 </Tabs>
 
 用 2000-8-16 寅时的女命盘，大限视角（Python 版）：
@@ -207,6 +231,9 @@ for _, x := range hits {
 运限对象上传 `origin` 层，结果与直接在星盘上调 `patterns()` 完全一致。
 </Callout>
 
+视角不能比运限目标的查询精度细：按农历年取的运限最细到流年、按农历月取的到流月，
+再往细的层级是内核挑的代表日的，传进来报 `invalid_argument`。
+
 ### 两条只在运限出现的格局
 
 64 条里有两条是**行运格**：只在运限视角判定，本命盘上永远不报。
@@ -220,6 +247,8 @@ for _, x := range hits {
 取「大限 + 小限」，`yearly` 或 `yearly_same_palace` 取「大限 + 流年」（另有流派取这一种）；
 带 `same_palace` 的是两限命宫皆本宫坐禄马的严口径，不带的是三方四正会照。
 两种组合各报一条，最多两条，上面那张盘正是两种组合都成立。
+它报在大限视角，有无却随小限与流年逐年变；运限文本[只写到大限](/zh/docs/guide/guides/to-text#运限写到哪一层)时
+大限段因此不列它。
 
 ## 日月的明暗按哪张表
 
@@ -385,7 +414,7 @@ print([h.name for h in chart.patterns(
 
 ## 格局释义在知识包里
 
-这一页与三个 API 参考页讲的是**判定**：哪几颗星怎么凑在一起才算成格。
+这一页与各语言的 API 参考页讲的是**判定**：哪几颗星怎么凑在一起才算成格。
 成格之后「这条格局意味着什么」是解读，属于门派观点，
 放在[知识包](/zh/docs/guide/guides/knowledge-pack)里——
 内嵌的默认包给了 64 条格局各自的古籍引文、成立条件的文字描述与解读正文。

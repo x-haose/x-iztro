@@ -1,13 +1,13 @@
 [package]
 name = "x-iztro"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2024"
 # 摘要用英文：crates.io 的搜索与列表面向的是国际读者，中文说明在 README 里。
 description = "Zi Wei Dou Shu (Purple Star Astrology) chart engine, field-for-field identical to iztro"
 license = "MIT"
 repository = "https://github.com/x-haose/x-iztro"
-homepage = "https://ziwei.x-haose.com"
-documentation = "https://ziwei.x-haose.com/en/docs/rust"
+homepage = "https://x-iztro.x-haose.com"
+documentation = "https://x-iztro.x-haose.com/en/docs/rust"
 readme = "README.md"
 keywords = ["ziwei", "iztro", "astrology", "horoscope", "chinese"]
 categories = ["date-and-time", "science"]
@@ -22,12 +22,20 @@ include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE", "/include/*.h"]
 name = "x_iztro"
 crate-type = ["cdylib", "rlib"]
 
+# 历法模块的星历级数系数里有 3.14、3.14159 之类的相位常数（四舍五入后的数据值，不是在近似 π），
+# approx_constant 无法区分；本 crate 的浮点运算只在历法模块，π 一律取 std::f64::consts::PI。
+[lints.clippy]
+approx_constant = "allow"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-lunar_rust = "1.0"
-# 仅 horoscope_now 用到本地时钟；lunar_rust 已依赖 chrono，不引入额外编译体积
+# 历法的三角函数：各平台同一实现，节气与合朔时刻逐位一致
+libm = "0.2.16"
+# 仅 horoscope_now 取本地时钟与时区
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# 知识包正文的显示宽度（UAX #11）：摘要层的长度口径对中文与拉丁字母文本同样适用
+unicode-width = "0.2.2"
 
 [dependencies.pyo3]
 version = "0.23"
@@ -38,8 +46,16 @@ optional = true
 version = "0.23"
 optional = true
 
+# 带语言无关标识的枚举的 JSON Schema（取值即全部标识），供下游从内核类型派生入参 schema
+[dependencies.schemars]
+version = "1"
+default-features = false
+features = ["std"]
+optional = true
+
 [features]
 python = ["pyo3", "pythonize"]
+schemars = ["dep:schemars"]
 
 [dev-dependencies]
 pretty_assertions = "1"

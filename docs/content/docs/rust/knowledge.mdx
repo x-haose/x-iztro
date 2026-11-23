@@ -36,6 +36,7 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `palaces` | `BTreeMap<String, TextEntry>` | 宫位条目，键为 `Palace::as_key` |
 | `mutagens` | `BTreeMap<String, TextEntry>` | 四化条目，键为 `Mutagen::as_key` |
 | `concepts` | `BTreeMap<String, ConceptEntry>` | 术语条目，键为 slug |
+| `topics` | `BTreeMap<String, TopicEntry>` | 解读主题，键为 slug |
 
 实现 `Clone`、`Default`、`PartialEq`、`Eq`、`Debug`、`Serialize`、`Deserialize`。
 
@@ -60,7 +61,9 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `group` | `Option<String>` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性，缺省为全 `None` |
 | `intro` | `Option<String>` | 解读正文（Markdown） |
+| `summary` | `Option<String>` | 正文的摘要；正文不超过 `SUMMARY_FALLBACK_WIDTH` 的条目不写 |
 | `combinations` | `BTreeMap<String, String>` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `combination_summaries` | `BTreeMap<String, String>` | 组合解读的摘要，与 `combinations` 同键成对 |
 
 ### StarAttributes
 
@@ -83,11 +86,26 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | `quotes` | `Option<Vec<String>>` | 古籍引文 |
 | `conditions` | `Option<String>` | 来源对成立条件的文字描述 |
 | `intro` | `Option<String>` | 解读正文 |
+| `summary` | `Option<String>` | 正文的摘要 |
 
 ### TextEntry / ConceptEntry
 
-`TextEntry`（宫位、四化）有 `name` 与 `intro`；`ConceptEntry`（术语）有 `title` 与 `intro`，
+`TextEntry`（宫位、四化）有 `name`、`intro` 与 `summary`；`ConceptEntry`（术语）有 `title` 与 `intro`，
 都是 `Option<String>`。
+
+### TopicEntry
+
+解读主题：读这类问题要看哪些宫，[`topic_to_text`](/zh/docs/rust/astro#topic_to_text) 按它选宫。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `title` | `Option<String>` | 显示名 |
+| `surround` | `Option<Vec<String>>` | 连同各自三方四正一起取的宫位标识，按出现顺序渲染 |
+| `palaces` | `Option<Vec<String>>` | 只取本宫的宫位标识（可含 `bodyPalace` / `originalPalace`），排在 `surround` 各组之后 |
+| `intro` | `Option<String>` | 这个主题看什么、为什么取这些宫 |
+| `summary` | `Option<String>` | 正文的摘要 |
+
+另有 `brief()`，规则同 [`StarEntry::brief`](#brief--combination_brief--missing_summaries)。
 
 ### SCHEMA_VERSION
 
@@ -96,6 +114,15 @@ pub const SCHEMA_VERSION: u32 = 1;
 ```
 
 本库支持的最高格式版本。解析到更高的 `schema` 会报错。
+
+### SUMMARY_FALLBACK_WIDTH
+
+```rust
+pub const SUMMARY_FALLBACK_WIDTH: usize = 240;
+```
+
+摘要层的正文上限，单位是显示宽度（汉字、假名、谚文与全角标点计 2，其余计 1；中文 120 字）。
+正文不超过它时，摘要层直接用正文；超过它的条目必须带摘要，见[指南](/zh/docs/guide/guides/knowledge-pack#摘要)。
 
 ---
 
@@ -206,7 +233,7 @@ Err("knowledge pack must declare \"schema\" (currently 1)")
 <Accordions>
 <Accordion title="缺省与 null 等价">
 所有条目与字段都可选。映射类字段（`source`、`stars`、`combinations`…）写成 `null`
-等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样三侧的默认序列化产物可以互相解析。
+等同于缺省——Go 等语言序列化 nil map 就是 `null`，这样各语言的默认序列化产物可以互相解析。
 </Accordion>
 <Accordion title="未知的键不报错">
 `stars` 里出现不是星耀标识的键、`patterns` 里出现未知格局标识，都会照原样留在包里。
@@ -255,7 +282,8 @@ impl KnowledgePack {
 **返回值**　`KnowledgePack`，本包与覆盖包都不变。
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：
 逐段按键合并，覆盖包的非 `None` 字段覆盖同键条目的对应字段，
-`attributes` 与 `combinations` 逐字段合并，数组字段整体替换。
+`attributes` 与 `combinations` 逐字段合并，数组字段整体替换；
+覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。
 
 **示例**
 
@@ -303,9 +331,9 @@ impl KnowledgePack {
 
 ---
 
-## star / pattern / palace / mutagen
+## star / pattern / palace / mutagen / topic
 
-**用途**　按语言无关标识取条目。
+**用途**　按语言无关标识（主题按 slug）取条目。
 
 **签名**
 
@@ -315,10 +343,11 @@ impl KnowledgePack {
     pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+    pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
 }
 ```
 
-**返回值**　包里没有该条目时为 `None`。四个方法都是在对应 `BTreeMap` 上按
+**返回值**　包里没有该条目时为 `None`。前四个方法都是在对应 `BTreeMap` 上按
 `as_key()` 取值，等价于自己写 `pack.stars.get(key.as_key())`；
 术语没有专门的方法，直接 `pack.concepts.get(slug)`。
 
@@ -383,6 +412,56 @@ for hit in chart.patterns() {
 
 ---
 
+## brief / combination_brief / missing_summaries
+
+**用途**　按摘要层的规则取材，以及检查一份包能否用于摘要层。
+
+**签名**
+
+```rust
+impl StarEntry {
+    pub fn brief(&self) -> Option<&str>
+    pub fn combination_brief(&self, other: &str) -> Option<&str>
+}
+impl PatternEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl TextEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl KnowledgePack {
+    pub fn missing_summaries(&self) -> Vec<String>
+}
+```
+
+**返回值**　`brief` 有摘要取摘要，没有摘要且正文不超过 `SUMMARY_FALLBACK_WIDTH` 取正文本身，
+正文过长又无摘要为 `None`；`combination_brief` 对 `other`（对方主星标识）的组合解读同理。
+包通过 `missing_summaries` 检查（返回空列表）时，`None` 只表示没有正文。
+`missing_summaries` 列出「正文超过上限却没有摘要」的条目路径，如 `stars.ziweiMaj`、
+`stars.ziweiMaj.combinations.tianfuMaj`、`patterns.zi_fu_tong_gong`，按段、按键排序；术语条目不进文本，不在检查之列。
+
+**示例**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{}", ziwei.brief().unwrap());
+println!("{}", pack.star(StarKey::Hongluan).unwrap().brief().unwrap());
+println!("{:?}", pack.missing_summaries());
+```
+
+**输出**
+
+```text
+帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+红鸾星会增加亲切感，同时会比较含蓄，看起来给人一种比较端庄、温柔贤淑的感觉。不过这只是一种观感，实际如何须结合主星和辅星一起判断。
+[]
+```
+
+红鸾的正文本身不超过上限，摘要层直接用正文。
+
+---
+
 ## for_astrolabe / for_horoscope
 
 **用途**　按盘取材：裁出只含这张盘相关条目的子包。
@@ -393,13 +472,8 @@ for hit in chart.patterns() {
 impl KnowledgePack {
     pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
     pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
-    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
-    pub fn for_horoscope_with(
-        &self,
-        chart: &Astrolabe,
-        horoscope: &HoroscopeData,
-        config: &PatternConfig,
-    ) -> KnowledgePack
+    pub fn for_horoscope(&self, horoscope: &HoroscopeRef) -> KnowledgePack
+    pub fn for_horoscope_with(&self, horoscope: &HoroscopeRef, config: &PatternConfig) -> KnowledgePack
 }
 ```
 
@@ -407,14 +481,15 @@ impl KnowledgePack {
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `chart` | `&Astrolabe` | 是 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
-| `horoscope` | `&HoroscopeData` | 是 | — | 运限数据，`HoroscopeRef::data()` 可得 |
+| `chart` | `&Astrolabe` | `for_astrolabe` 系必填 | — | 取材依据的星盘；重排盘按重排后的布局取材 |
+| `horoscope` | `&HoroscopeRef` | `for_horoscope` 系必填 | — | 运限，连同它的星盘与[查询精度](/zh/docs/rust/horoscope#precision) |
 | `config` | `&PatternConfig` | `_with` 必填 | — | 格局判定口径；无 `_with` 的两个即 `PatternConfig::default()` |
 
 **返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
 （主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
 `patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
-`for_horoscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+`for_horoscope` / `for_horoscope_with` 在此之上再加大限到查询精度各层的流耀与各层视角命中的格局；
+按年、按月取的运限里比精度细的层级是内核挑的代表日的，不取。
 子包要和[`patterns_with`](/zh/docs/rust/patterns#patterns_with) / `patterns_to_text_with`
 配同一口径：口径不同，命中集合不同，释义就会缺项或多项。
 取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。
@@ -430,8 +505,11 @@ println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(),
 println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
+
+let year = chart.horoscope_of_year(2027)?;
+let sub = pack.for_horoscope(&year);   // 只取到流年
 ```
 
 **输出**

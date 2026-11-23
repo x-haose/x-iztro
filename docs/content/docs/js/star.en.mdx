@@ -1,0 +1,75 @@
+---
+title: Star placement
+description: The star module — place one group of stars from birth data without casting a full chart.
+---
+
+Star keys and indices are language-independent. Every index is a palace index: 0 is Yin, 11 is Chou. The
+function names match iztro's `star` module.
+
+## Shared parameter
+
+The functions placing stars from birth data take one object:
+
+```ts
+interface BirthParam {
+  solarDate: string;
+  timeIndex: TimeIndex;
+  gender?: Gender;      // default 'male'
+  fixLeap?: boolean;    // default true
+  language?: Language;  // star-name language, default 'zh-CN'
+  config?: ChartConfig;
+}
+// getStartIndex, getMajorStar and getChangsheng12 also take fromStem / fromBranch to derive the Five Elements class from that pair
+```
+
+## From birth data
+
+| Function | Returns |
+| --- | --- |
+| `getStartIndex(param)` | `{ ziweiIndex, tianfuIndex }` |
+| `getLuYangTuoMaIndex(param)` | `{ luIndex, yangIndex, tuoIndex, maIndex }` |
+| `getKuiYueIndex(param)` | `{ kuiIndex, yueIndex }` |
+| `getChangQuIndex(param)` | `{ changIndex, quIndex }` (by hour branch) |
+| `getKongJieIndex(param)` | `{ kongIndex, jieIndex }` |
+| `getTimelyStarIndex(param)` | `{ taifuIndex, fenggaoIndex }` |
+| `getLuanXiIndex(param)` | `{ hongluanIndex, tianxiIndex }` |
+| `getDailyStarIndex(param)` | Santai, Bazuo, Enguang, Tiangui |
+| `getMonthlyStarIndex(param)` | Jieshen, Tianyao, Tianxing, Yinsha, Tianyue, Tianwu |
+| `getYearlyStarIndex(param)` | The whole set of year-based adjective stars (`YearlyStarIndex`, 27 indices) |
+| `getMajorStar` / `getMinorStar` / `getAdjectiveStar(param)` | `Star[][]`, one group per palace |
+| `getChangsheng12` / `getBoShi12(param)` | Twelve-spirit keys from Yin |
+| `getYearly12(param)` | `{ suiqian12, jiangqian12 }` |
+
+## From stems, branches and hours
+
+| Function | Description |
+| --- | --- |
+| `getHoroscopeStar(stem, branch, scope, language?)` | Horoscope stars per palace, named by layer (运魁, 流魁 …); the yearly layer adds 年解 |
+| `getChangesheng12StartIndex(fiveElementsClass)` | Starting palace of the Changsheng twelve |
+| `getJiangqian12StartIndex(branch)` | Starting palace of the Jiangqian twelve |
+| `getZuoYouIndex(lunarMonth)` | Zuofu and Youbi; `lunarMonth` is the leap-adjusted month 1–12 |
+| `getHuoLingIndex(branch, timeIndex)` | Huoxing and Lingxing |
+| `getHuagaiXianchiIndex(branch)` / `getGuGuaIndex(branch)` | Huagai and Xianchi / Guchen and Guasu |
+| `getJieshaAdjIndex` / `getDahaoIndex` / `getNianjieIndex(branch)` | Jiesha / Dahao / Nianjie |
+| `getTianshiTianshangIndex(gender, branch, soulIndex, config?)` | Tianshang and Tianshi; the school follows `config.algorithm` |
+| `getChangQuIndexByHeavenlyStem(stem)` | Wenchang and Wenqu by stem (the horoscope-layer versions) |
+
+```ts
+const birth = { solarDate: '2000-8-16', timeIndex: 2, gender: 'female' } as const;
+console.log(star.getStartIndex(birth), star.getLuYangTuoMaIndex(birth), star.getKuiYueIndex(birth));
+console.log(star.getMajorStar(birth)[4]!.map((s) => s.name), star.getChangsheng12(birth).slice(0, 3),
+  star.getYearly12(birth).suiqian12.slice(0, 3));
+console.log(star.getHoroscopeStar(HeavenlyStem.JIA, EarthlyBranch.ZI, Scope.YEARLY)
+  .map((g) => g.map((s) => s.name).join('')).join('|'));
+console.log(star.getZuoYouIndex(7), star.getHuoLingIndex(EarthlyBranch.CHEN, 2),
+  star.getChangesheng12StartIndex('wood3rd'), star.getJiangqian12StartIndex(EarthlyBranch.CHEN));
+```
+
+```text
+{ tianfuIndex: 8, ziweiIndex: 4 } { luIndex: 6, maIndex: 0, tuoIndex: 5, yangIndex: 7 } { kuiIndex: 11, yueIndex: 5 }
+[ '紫微' ] [ 'jue', 'mu', 'si' ] [ 'diaoke', 'bingfu', 'suijian' ]
+流禄流马|流羊流鸾||流昌||流钺||流曲流喜|年解|||流魁流陀
+{ youIndex: 2, zuoIndex: 8 } { huoIndex: 2, lingIndex: 10 } 9 10
+```
+
+iztro writes the natal Hongluan as `hongluanMin`; the key placed here is the correct `hongluan`.

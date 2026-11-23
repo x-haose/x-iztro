@@ -1,12 +1,10 @@
-use serde::{Deserialize, Serialize};
-
 use crate::data::heavenly_stems::get_heavenly_stem_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::models::star::Star;
 
 /// 宫位上的大限信息。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Decadal {
     /// 大限起止虚岁（含两端）
     pub range: (u32, u32),
@@ -17,7 +15,7 @@ pub struct Decadal {
 }
 
 /// 单个宫位：星耀、干支、四组十二神与大限小限信息。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct PalaceData {
     /// 宫位索引（0-11，寅宫为 0）
     pub index: usize,
@@ -52,8 +50,7 @@ pub struct PalaceData {
     /// 排盘时生效的自定义四化与亮度表。
     ///
     /// 飞星族方法要按宫干查四化，而自定义表可能改写了某个天干的四化，
-    /// 因此宫位需要随身携带它。不参与序列化：属于输入配置而非排盘结果。
-    #[serde(skip)]
+    /// 因此宫位需要随身携带它。
     pub overrides: Option<std::sync::Arc<TableOverrides>>,
 }
 

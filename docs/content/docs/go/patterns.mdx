@@ -235,7 +235,8 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 
 **错误**　运限不是由 `Astrolabe.Horoscope` 发起时返回
 `iztro: horoscopePatterns: horoscope must be created by Astrolabe.Horoscope`；
-`scope` 不是合法层级标识时返回 `unknown scope`。
+`scope` 不是合法层级标识时返回 `unknown scope`；`scope` 比运限的[查询精度](/zh/docs/go/horoscope#precision)细
+（如 `HoroscopeOfYear` 取的运限传 `ScopeMonthly`）时返回 `ErrInvalidArgument`，`PatternsToText` 同理。
 
 **示例**
 
@@ -289,7 +290,7 @@ for _, x := range hits {
 ## 序列化
 
 `PatternHit` 与 `PatternStar` 的 JSON tag 就是绑定层 DTO 的键名，
-`encoding/json` 直接序列化即得与 Rust、Python 两侧一致的结构：
+`encoding/json` 直接序列化即得与 Rust、Python、JavaScript 一致的结构：
 
 ```go
 chart, _ := iztro.BySolar("1985-5-3", 9, iztro.GenderMale, true, iztro.LanguageZhCN, nil)

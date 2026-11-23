@@ -1,6 +1,6 @@
 ---
 title: 语言无关的 key 契约
-description: 为什么星名不能拿来做判断，key 字段是什么，三种编程语言各自怎么用。
+description: 为什么星名不能拿来做判断，key 字段是什么，各编程语言怎么用。
 ---
 
 *适合：开发者*
@@ -56,7 +56,7 @@ key 的取值是 iztro 的 i18n 键名，与盘面语言无关，永远不变。
 | 岁前十二神 | `suiqian12` | `suiqian12Key` | `suijian` |
 | 宫干四化星 | — | `mutagenStarKeys` | `["taiyangMaj", …]` |
 
-## 三种编程语言的用法
+## 各编程语言的用法
 
 ### Python：枚举
 
@@ -101,6 +101,26 @@ star.WithMutagen(iztro.MutagenQuan)
 star.WithBrightness(iztro.BrightnessMiao)
 ```
 
+### JavaScript：常量对象
+
+每个枚举既是常量对象、又是同名的取值联合类型，**属性值就是 key**：
+
+```ts
+import { MajorStar, Mutagen, PalaceName, Brightness } from 'x-iztro';
+
+MajorStar.ZIWEI      // 'ziweiMaj'
+Mutagen.LU           // 'sihuaLu'
+PalaceName.SOUL      // 'soulPalace'
+Brightness.MIAO      // 'miao'
+
+const soul = chart.palace(PalaceName.SOUL)!;
+soul.has([MajorStar.ZIWEI]);
+soul.hasMutagen(Mutagen.LU);
+star.key === MajorStar.ZIWEI;   // true
+```
+
+TypeScript 下参数类型就是取值联合，拼错的字面量在编译期报错。
+
 ### Rust：枚举本身
 
 Rust 侧不需要 key 字段 —— 结构体里存的本来就是枚举，翻译是显示时才做的事。
@@ -120,7 +140,7 @@ Brightness::Miao.as_key();    // "miao"
 ## 验证方式
 
 同一个生日分别用六种盘面语言排盘，所有 key 字段必须逐一相等 ——
-这条由绑定契约测试（`golden_contract`）与 Go / Python 的端到端金标测试守着。
+这条由绑定契约测试（`golden_contract`）与 Go / Python / JavaScript 的端到端金标测试守着。
 
 所以下面这段代码在任何盘面语言下结果都相同：
 

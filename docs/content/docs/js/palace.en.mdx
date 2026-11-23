@@ -1,0 +1,147 @@
+---
+title: Palace
+description: Palace fields, star and mutagen checks, empty palaces, the flying-star family and single-palace text.
+---
+
+```ts
+const soul = chart.palace(PalaceName.SOUL)!;
+```
+
+Methods taking stars accept both star keys and star names in the chart language; methods taking a palace
+accept a palace object, an index, a palace key or a palace name in the chart language.
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `index` | `number` | Palace index 0–11, 0 is Yin |
+| `name` / `nameKey` | `string` / `PalaceName` | Palace name / key |
+| `isBodyPalace` / `isOriginalPalace` | `boolean` | Body palace / Origin palace |
+| `heavenlyStem(Key)` / `earthlyBranch(Key)` | `string` | Palace stem and branch / keys |
+| `majorStars` / `minorStars` / `adjectiveStars` | `readonly Star[]` | Major / minor / adjective stars |
+| `changsheng12(Key)`, `boshi12(Key)`, `jiangqian12(Key)`, `suiqian12(Key)` | `string` | The four twelve-spirit cycles / keys |
+| `decadal` | `Decadal` | Decadal: `range` (ages) plus stem and branch with keys |
+| `ages` | `readonly number[]` | Nominal ages of the age fortune passing through |
+| `mutagenStarKeys` | `readonly [string, string, string, string]` | The four stars transformed by this palace's stem (lu, quan, ke, ji); follows custom mutagen tables |
+
+---
+
+## has / notHave / hasOneOf
+
+```ts
+has(stars: readonly string[]): boolean;      // all of them
+notHave(stars: readonly string[]): boolean;  // none of them
+hasOneOf(stars: readonly string[]): boolean; // any of them
+```
+
+Major, minor and adjective stars all count.
+
+## hasMutagen / notHaveMutagen
+
+```ts
+hasMutagen(mutagen: Mutagen): boolean;
+notHaveMutagen(mutagen: Mutagen): boolean;
+```
+
+Looks at the birth-year transformations of the major and minor stars only.
+
+```ts
+console.log(soul.has([MajorStar.ZIWEI]), soul.has(['紫微', '文曲']),
+  soul.notHave([MinorStar.WENCHANG]), soul.hasOneOf([MinorStar.WENCHANG, MinorStar.WENQU]));
+console.log(chart.palace(PalaceName.CHILDREN)!.hasMutagen(Mutagen.LU), soul.notHaveMutagen(Mutagen.LU));
+```
+
+```text
+true true true true
+true true
+```
+
+---
+
+## isEmpty
+
+```ts
+isEmpty(excludeStars?: readonly string[]): boolean;
+```
+
+A palace without any of the fourteen major stars is empty; if any star in `excludeStars` sits in the palace it
+does not count as empty.
+
+```ts
+const parents = chart.palace(PalaceName.PARENTS)!;
+console.log(parents.isEmpty(), parents.isEmpty([MinorStar.WENQU]), parents.majorStars.length, parents.oppositePalace()!.name);
+```
+
+```text
+true true 0 疾厄
+```
+
+---
+
+## The flying-star family
+
+```ts
+mutagenStars(mutagens: Mutagen | readonly Mutagen[]): string[];
+fliesTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean;      // all land in the target
+fliesOneOfTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean; // any lands in the target
+notFlyTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean;     // none lands
+selfMutaged(mutagens: Mutagen | readonly Mutagen[]): boolean;                        // all self-transform
+selfMutagedOneOf(mutagens?: Mutagen | readonly Mutagen[]): boolean;                  // any; omitted means all four
+notSelfMutaged(mutagens?: Mutagen | readonly Mutagen[]): boolean;
+mutagedPlaces(allPalaces?: readonly Palace[]): (Palace | undefined)[];               // where [lu, quan, ke, ji] fly
+```
+
+`PalaceTarget` is a palace object, an index, a palace key or a palace name in the chart language. As in iztro,
+an empty mutagen list makes `fliesTo` `false` and `fliesOneOfTo` / `notFlyTo` `true`; when the target cannot
+be located all three are `false`.
+
+```ts
+console.log(soul.mutagenStars([Mutagen.LU, Mutagen.JI]));
+console.log(soul.fliesTo(PalaceName.CHILDREN, Mutagen.LU),
+  soul.fliesOneOfTo(PalaceName.WEALTH, [Mutagen.LU, Mutagen.JI]), soul.notFlyTo(PalaceName.SOUL, Mutagen.JI));
+console.log(soul.selfMutaged(Mutagen.QUAN), soul.selfMutagedOneOf(), soul.notSelfMutaged([Mutagen.LU]));
+console.log(soul.mutagedPlaces().map((p) => p?.name));
+```
+
+```text
+[ 'tianliangMaj', 'wuquMaj' ]
+true true true
+true true true
+[ '子女', '命宫', '官禄', '财帛' ]
+```
+
+With the Soul palace's Ren stem: Tianliang's lu flies to Children, Ziwei's quan stays in the Soul palace
+(a self-transformation), Zuofu's ke flies to Career, Wuqu's ji to Wealth.
+
+---
+
+## oppositePalace / surroundedPalaces / astrolabe
+
+```ts
+oppositePalace(): Palace | undefined;           // index +6
+surroundedPalaces(): SurroundedPalaces | undefined;
+astrolabe(): Astrolabe | undefined;
+```
+
+All three are `undefined` for a palace constructed on its own, outside a chart.
+
+---
+
+## toText
+
+```ts
+toText(options?: TextOptions): string;
+```
+
+The palace's semantic text; options as in [`Astrolabe.toText`](/en/docs/js/astrolabe#totext).
+
+```ts
+console.log(soul.toText({ detail: TextDetail.OVERVIEW }));
+```
+
+```text
+### 命宫 (壬午) · 大限 3-12
+- 主星: 紫微(庙)
+- 辅星: 文曲(陷)
+- 杂耀: 凤阁, 天福, 截路, 蜚廉, 年解
+```

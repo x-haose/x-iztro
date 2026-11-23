@@ -13,13 +13,13 @@
           "brightness": "平",
           "brightnessKey": "ping",
           "key": "tianjiMaj",
-          "mutagen": "祿",
+          "mutagen": "禄",
           "mutagenKey": "sihuaLu",
           "name": "天機",
           "palaceIndex": 9
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "mutagen": "忌",
@@ -38,7 +38,7 @@
           "brightness": "得",
           "brightnessKey": "de",
           "key": "tianliangMaj",
-          "mutagen": "權",
+          "mutagen": "権",
           "mutagenKey": "sihuaQuan",
           "name": "天梁",
           "palaceIndex": 7
@@ -57,7 +57,7 @@
       "stars": [
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         },
         {
@@ -81,14 +81,14 @@
           "brightness": "平",
           "brightnessKey": "ping",
           "key": "tianjiMaj",
-          "mutagen": "祿",
+          "mutagen": "禄",
           "mutagenKey": "sihuaLu",
           "name": "天機",
           "palaceIndex": 9
         },
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         }
       ],
@@ -113,7 +113,7 @@
           "palaceIndex": 7
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "name": "太陰",
@@ -138,7 +138,7 @@
           "palaceIndex": 7
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "name": "太陰",
@@ -184,7 +184,7 @@
       "scope": "decadal",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "name": "文昌",
@@ -211,7 +211,7 @@
       "scope": "decadal",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "name": "文昌",
@@ -270,14 +270,14 @@
           "palaceIndex": 4
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "name": "文昌",
           "palaceIndex": 0
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "tuoluoMin",
           "name": "陀羅",
@@ -287,7 +287,7 @@
           "brightness": "得",
           "brightnessKey": "de",
           "key": "wuquMaj",
-          "mutagen": "祿",
+          "mutagen": "禄",
           "mutagenKey": "sihuaLu",
           "name": "武曲",
           "palaceIndex": 6
@@ -321,7 +321,7 @@
           "brightness": "旺",
           "brightnessKey": "wang",
           "key": "tanlangMaj",
-          "mutagen": "權",
+          "mutagen": "権",
           "mutagenKey": "sihuaQuan",
           "name": "貪狼",
           "palaceIndex": 4
@@ -339,7 +339,7 @@
       "stars": [
         {
           "key": "yunlu",
-          "name": "限の祿",
+          "name": "限の禄",
           "palaceIndex": 4
         },
         {
@@ -378,7 +378,7 @@
       "stars": [
         {
           "key": "yunlu",
-          "name": "限の祿",
+          "name": "限の禄",
           "palaceIndex": 4
         },
         {
@@ -399,7 +399,7 @@
       "scope": "hourly",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "name": "文昌",
@@ -422,7 +422,7 @@
       "scope": "hourly",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "name": "文昌",
@@ -451,13 +451,13 @@
           "brightness": "平",
           "brightnessKey": "ping",
           "key": "tianjiMaj",
-          "mutagen": "權",
+          "mutagen": "権",
           "mutagenKey": "sihuaQuan",
           "name": "天機",
           "palaceIndex": 9
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "name": "太陰",
@@ -467,7 +467,7 @@
           "brightness": "不",
           "brightnessKey": "bu",
           "key": "tiantongMaj",
-          "mutagen": "祿",
+          "mutagen": "禄",
           "mutagenKey": "sihuaLu",
           "name": "天同",
           "palaceIndex": 5
@@ -499,7 +499,7 @@
           "palaceIndex": 7
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "name": "太陰",
@@ -537,7 +537,7 @@
         },
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         }
       ]
@@ -553,7 +553,7 @@
       "stars": [
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         },
         {
@@ -575,7 +575,7 @@
       "stars": [
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         },
         {
@@ -652,7 +652,7 @@
           "palaceIndex": 7
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "taiyinMaj",
           "mutagen": "忌",
@@ -754,14 +754,14 @@
       "stars": [
         {
           "key": "yunlu",
-          "name": "限の祿",
+          "name": "限の禄",
           "palaceIndex": 4
         },
         {
           "brightness": "不",
           "brightnessKey": "bu",
           "key": "tiantongMaj",
-          "mutagen": "祿",
+          "mutagen": "禄",
           "mutagenKey": "sihuaLu",
           "name": "天同",
           "palaceIndex": 5
@@ -779,7 +779,7 @@
       "stars": [
         {
           "key": "yunlu",
-          "name": "限の祿",
+          "name": "限の禄",
           "palaceIndex": 4
         },
         {
@@ -804,7 +804,7 @@
       "scope": "yearly",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "mutagen": "科",
@@ -829,7 +829,7 @@
       "scope": "yearly",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenchangMin",
           "mutagen": "科",

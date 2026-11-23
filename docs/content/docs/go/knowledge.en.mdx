@@ -38,6 +38,7 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 | `Palaces` | `map[string]TextEntry` | Palace entries, keyed by palace key |
 | `Mutagens` | `map[string]TextEntry` | Transformation entries, keyed by transformation key |
 | `Concepts` | `map[string]ConceptEntry` | Glossary entries, keyed by slug |
+| `Topics` | `map[string]TopicEntry` | Reading topics, keyed by slug |
 
 ### KnowledgeSource
 
@@ -52,7 +53,9 @@ All fields are exported and tagged, so `encoding/json` works on them directly.
 | `Group` | `string` | Grouping: the adjective star's category, the decorative star's group |
 | `Attributes` | `StarAttributes` | School attributes |
 | `Intro` | `string` | Reading (Markdown) |
+| `Summary` | `string` | Summary of the reading; empty when the reading is within the summary-layer limit (display width 240, 120 Chinese characters) |
 | `Combinations` | `map[string]string` | Reading for sharing a palace with another major star, keyed by that star |
+| `CombinationSummaries` | `map[string]string` | Summaries of the pairing readings, keyed like `Combinations` |
 
 ### StarAttributes
 
@@ -68,12 +71,18 @@ data, which is value-for-value identical to iztro's. The reason is in the
 
 ### PatternEntry
 
-`Name`, `Quotes` (`[]string`), `Conditions`, `Intro`.
+`Name`, `Quotes` (`[]string`), `Conditions`, `Intro`, `Summary`.
 
 ### TextEntry / ConceptEntry
 
-`TextEntry` (palaces, transformations) has `Name` and `Intro`; `ConceptEntry` (glossary) has `Title`
+`TextEntry` (palaces, transformations) has `Name`, `Intro` and `Summary`; `ConceptEntry` (glossary) has `Title`
 and `Intro`.
+
+### TopicEntry
+
+A reading topic: `Title`, `Surround` (`[]string`, palace keys taken with their trine & opposite),
+`Palaces` (`[]string`, palace keys taken on their own, `bodyPalace` / `originalPalace` allowed),
+`Intro`, `Summary`; [`TopicToText`](/en/docs/go/astrolabe#topictotext) selects palaces by it.
 
 <Callout type="warn" title="Absent means the zero value">
 The Go side does not use pointers to separate "not written" from "written as empty". An absent field
@@ -123,7 +132,7 @@ fmt.Println(err, errors.Is(err, iztro.ErrInvalidArgument))
 
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT
-162 64 12 4 49
+162 64 12 4 50
 iztro: no builtin knowledge pack for language 'en-US' true
 ```
 
@@ -201,8 +210,9 @@ here) all return an `ErrInvalidArgument`-class error.
 
 The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
 key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `Attributes` and
-`Combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
-the wasm core, so all three languages agree.
+`Combinations` merge field by field, array fields are replaced wholesale; when an overlay entry
+replaces a reading without the matching summary, the base's old summary is dropped. The merge itself
+runs in the wasm core, so every language binding agrees.
 
 **Example**
 
@@ -234,9 +244,9 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept
+## Star / Pattern / Palace / Mutagen / Concept / Topic
 
-**Purpose**　Look up an entry by language-independent key.
+**Purpose**　Look up an entry by language-independent key (glossary entries and topics by slug).
 
 **Signature**
 
@@ -246,6 +256,7 @@ func (p *KnowledgePack) Pattern(patternKey string) *PatternEntry
 func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
+func (p *KnowledgePack) Topic(slug string) *TopicEntry
 ```
 
 **Returns**　`nil` when the pack has no such entry, and `nil` for a nil receiver rather than a
@@ -315,15 +326,21 @@ for _, hit := range hits {
 
 **Purpose**　Output options for the `ToTextWith` family (`ToTextWith` / `PalaceToTextWith` /
 `SurroundedPalacesToTextWith` / `PatternsToTextWith`, and the same-named methods on `Horoscope`):
-the source of readings and the pattern criteria. The zero value emits the chart facts only under
-the default criteria, byte-identical to the method without `With`.
+level of detail, source and depth of readings, the scope the horoscope text stops at, and the
+pattern criteria. The zero value writes the
+full facts without readings under the default criteria, byte-identical to the method without
+`With`. What the two switches keep and how long the results are is on
+[Layers](/en/docs/guide/guides/to-text#layers).
 
 **Definition**
 
 ```go
 type TextOptions struct {
-    Knowledge     Knowledge
-    PatternConfig *PatternConfig
+    Knowledge      Knowledge
+    Detail         string
+    KnowledgeDepth string
+    Through        string
+    PatternConfig  *PatternConfig
 }
 ```
 
@@ -332,6 +349,9 @@ type TextOptions struct {
 | Field | Type | Description |
 | --- | --- | --- |
 | `Knowledge` | [`Knowledge`](#knowledge--builtinknowledge--knowledgefrom) | Source of readings; the zero value adds none. When given, each palace's star readings follow that palace's fact lines, the pattern readings follow the pattern list, and the natal text closes with `## Mutagen Notes` — see [Text with readings](/en/docs/guide/guides/to-text#text-with-readings) |
+| `Detail` | `string` | Level of detail: with `TextDetailOverview` the natal text keeps basic info, the palace overview table and the patterns; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace sections give major, minor and adjective stars only. `TextDetailFull` or empty means full. No effect on patterns or the decadal, yearly and monthly timelines |
+| `KnowledgeDepth` | `string` | Depth of readings: `KnowledgeDepthSummary` uses the summary layer (an entry's summary, or a body short enough on its own; patterns without their conditions), `KnowledgeDepthFull` or empty the full bodies. The summary layer needs `Knowledge`, and a pack with a long body lacking its summary returns `ErrInvalidArgument` listing every missing entry |
+| `Through` | `string` | [The scope the horoscope text stops at](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `ScopeDecadal` writes the decadal only, `ScopeYearly` the decadal, age fortune and yearly, and `ScopeMonthly` / `ScopeDaily` / `ScopeHourly` one more scope each; empty stops at the horoscope's [query precision](/en/docs/go/horoscope#precision). Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui. Acts on `Horoscope.ToTextWith` only; `ScopeOrigin`, any value that is not a horoscope scope, and a scope finer than the query precision return `ErrInvalidArgument` |
 | `PatternConfig` | [`*PatternConfig`](/en/docs/go/patterns#patternconfig) | Pattern criteria, the same argument as `Patterns(config)`; acts on both the text's pattern section and the pattern readings. `nil` takes the core default |
 
 **Example** (on a zh-CN chart, since the bundled pack is Chinese)
@@ -350,7 +370,7 @@ byPosition, _ := chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnow
 **Output**
 
 ```text
-true 3389 20767
+true 3389 20552
 ```
 
 ---
@@ -416,8 +436,9 @@ func (p *KnowledgePack) ForHoroscopeContext(ctx context.Context, horoscope *Horo
 holds the stars on the chart (major, minor, adjective and the four groups of twelve gods; the 14
 major stars' `Combinations` keep only partners that actually share the palace), `Patterns` the hits
 under the `config` criteria, `Mutagens` all four entries, `Palaces` and `Concepts` empty.
-`ForHoroscope` adds each scope's flowing stars and the patterns hit from the decadal down to the
-hourly perspective. Pair the sub-pack with `Patterns(config)` / `PatternsToTextWith` under the same
+`ForHoroscope` adds the flowing stars and the patterns hit from each perspective from the decadal
+scope down to the horoscope's [query precision](/en/docs/go/horoscope#precision): hourly for a date,
+yearly for `HoroscopeOfYear`, monthly for `HoroscopeOfMonth`. Pair the sub-pack with `Patterns(config)` / `PatternsToTextWith` under the same
 criteria: different criteria hit different sets, and the readings would then miss or over-include
 entries. Selection reads the pack as it currently is (the whole pack is sent to the core), so
 entries edited in place make it into the sub-pack. A `nil` receiver or argument, or a horoscope not

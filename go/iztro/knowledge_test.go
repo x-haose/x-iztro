@@ -7,9 +7,10 @@ import (
 	"testing"
 )
 
-// TestTextWithKnowledgeParity 断言七类带释义文本与 Rust 侧快照逐字节相同
+// TestTextWithKnowledgeParity 断言九类带释义文本与 Rust 侧快照逐字节相同
 // （固定盘 2000-8-16 时辰 2 女命 zh-CN，运限 2025-1-1 时辰 0，palace/surrounded/flanking 取命宫，
-// patterns 默认口径），并确认零值 Knowledge 的输出仍等于不带释义的原快照。
+// patterns 默认口径，流年一览取农历 2001-2012 年，流月一览取农历 2025 年），
+// 并确认零值 Knowledge 的输出仍等于不带释义的原快照。
 func TestTextWithKnowledgeParity(t *testing.T) {
 	chart, err := BySolar("2000-8-16", 2, GenderFemale, true, LanguageZhCN, nil)
 	if err != nil {
@@ -32,6 +33,12 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 			return chart.FlankingPalacesToTextWith(soul, o)
 		},
 		"decadals": chart.DecadalListToTextWith,
+		"yearlies": func(o TextOptions) (string, error) {
+			return chart.YearlyOverviewToTextWith(2001, 2012, o)
+		},
+		"monthlies": func(o TextOptions) (string, error) {
+			return chart.MonthlyListToTextWith(2025, o)
+		},
 	}
 	for name, get := range cases {
 		got, err := get(TextOptions{Knowledge: BuiltinKnowledge()})
@@ -48,6 +55,54 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 		if want := textSnapshot(t, name+"_zh-CN"); plain != want {
 			t.Errorf("%s 零值 TextOptions 应等于无释义快照", name)
 		}
+	}
+
+	for name, get := range cases {
+		got, err := get(TextOptions{Knowledge: BuiltinKnowledge(), KnowledgeDepth: KnowledgeDepthSummary})
+		if err != nil {
+			t.Fatalf("%s summary: %v", name, err)
+		}
+		if want := textSnapshot(t, name+"_summary_zh-CN"); got != want {
+			t.Errorf("%s 摘要层文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
+		}
+	}
+
+	// 摘要层要有知识包，且包里的长正文都要有摘要：缺了即报错并列出缺项，不回退全文
+	if _, err := chart.ToTextWith(TextOptions{KnowledgeDepth: KnowledgeDepthSummary}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("summary without knowledge should be ErrInvalidArgument, got %v", err)
+	}
+	pack, err := BuiltinKnowledgePack(LanguageZhCN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mine, err := pack.Merged(&KnowledgePack{Schema: 1, ID: "mine", Version: "1", Language: "zh-CN",
+		Stars: map[string]StarEntry{StarZiweiMaj: {Intro: strings.Repeat("长", 121)}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = chart.ToTextWith(TextOptions{Knowledge: KnowledgeFrom(mine), KnowledgeDepth: KnowledgeDepthSummary})
+	if !errors.Is(err, ErrInvalidArgument) || !strings.Contains(err.Error(), "stars.ziweiMaj") {
+		t.Fatalf("pack missing a summary should be rejected naming the entry, got %v", err)
+	}
+
+	// 主题文本（婚恋）两种释义深度
+	for depth, name := range map[string]string{"": "topic_knowledge_zh-CN", KnowledgeDepthSummary: "topic_summary_zh-CN"} {
+		got, err := chart.TopicToText("romance", TextOptions{Knowledge: BuiltinKnowledge(), KnowledgeDepth: depth})
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if want := textSnapshot(t, name); got != want {
+			t.Errorf("%s 主题文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
+		}
+	}
+	if romance := pack.Topic("romance"); romance == nil || romance.Title != "婚恋" || len(romance.Surround) != 1 {
+		t.Fatalf("romance topic entry: %+v", romance)
+	}
+	if _, err := chart.TopicToText("nope", TextOptions{Knowledge: BuiltinKnowledge()}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("unknown topic should be ErrInvalidArgument, got %v", err)
+	}
+	if _, err := chart.TopicToText("romance", TextOptions{}); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("topic text without knowledge should be ErrInvalidArgument, got %v", err)
 	}
 
 	// 英文盘没有内嵌包：报错而非静默回退
@@ -306,6 +361,11 @@ func TestBuiltinKnowledgePack(t *testing.T) {
 	if _, ok := zi.Combinations[StarTianfuMaj]; !ok {
 		t.Fatal("ziwei should have tianfu combination")
 	}
+	// 摘要字段经结构体往返不丢：KnowledgeFrom(pack) 发回内核的是结构体序列化结果
+	if zi.Summary == "" || zi.CombinationSummaries[StarTianfuMaj] == "" ||
+		p.Pattern(PatternZiFuTongGong).Summary == "" || p.Mutagen(MutagenJi).Summary == "" {
+		t.Fatalf("summaries: %+v", zi)
+	}
 	if p.Pattern(PatternZiFuTongGong) == nil || p.PatternIntro(PatternZiFuTongGong) == "" {
 		t.Fatal("pattern entry")
 	}
@@ -316,7 +376,7 @@ func TestBuiltinKnowledgePack(t *testing.T) {
 		t.Fatalf("patterns: %d", len(p.Patterns))
 	}
 	// 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
-	if len(p.Concepts) != 49 {
+	if len(p.Concepts) != 50 {
 		t.Fatalf("concepts: %d", len(p.Concepts))
 	}
 	if p.Star("nope") != nil || p.StarIntro("nope") != "" {

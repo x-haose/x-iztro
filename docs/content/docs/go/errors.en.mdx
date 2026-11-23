@@ -28,7 +28,7 @@ func (e *Error) Unwrap() error   // returns the sentinel of this category, for e
 
 | Sentinel | `Code` constant | Value | Meaning |
 | --- | --- | --- | --- |
-| `ErrInvalidDate` | `CodeInvalidDate` | `invalid_date` | Malformed date, non-existent date, or a solar year outside 1583–9999 |
+| `ErrInvalidDate` | `CodeInvalidDate` | `invalid_date` | Malformed date, non-existent date (the 1582-10-05..14 reform gap included), or a year outside 1–9999 |
 | `ErrInvalidTimeIndex` | `CodeInvalidTimeIndex` | `invalid_time_index` | Hour index out of range (0–12 are legal) |
 | `ErrInvalidArgument` | `CodeInvalidArgument` | `invalid_argument` | Any other illegal argument or configuration: gender, language, star keys, custom tables |
 | `ErrInternal` | `CodeInternal` | `internal` | A defect inside the library or a Go-side runtime failure, such as wasm instantiation or result decoding |
@@ -66,7 +66,7 @@ iztro: invalid solar date '2000-2-30': day is out of range for that month
 <Callout type="info" title="Error messages all carry the iztro: prefix">
 `Error()` prepends `iztro: ` to `Message`, keeping these errors easy to tell apart from the caller's
 own; the `Message` field itself has no prefix. The body of the message comes from the core and is
-identical across the three language bindings, but **the wording may change between versions** — branch
+identical across the language bindings, but **the wording may change between versions** — branch
 on `errors.Is` or `Code`, never by parsing the text.
 </Callout>
 
@@ -76,11 +76,11 @@ on `errors.Is` or `Code`, never by parsing the text.
 
 | Situation | Example | Message body |
 | --- | --- | --- |
-| The format is not `YYYY-M-D` | `"2000/8/16"` | `expected 'YYYY-M-D'` |
-| Year, month or day is not a number | `"abc-8-16"` | `year is not a number` |
+| The spelling is wrong (mixed separators, a `T` before the time, non-digits, a year of more than four digits, …) | `"2000-8/16"` | `expected 'YYYY-M-D'` |
 | Month out of range | `"2000-13-1"` | `month must be within 1-12` |
 | That month has no such day | `"2000-2-30"` | `day is out of range for that month` |
-| Year outside the supported range | `"1500-1-1"` | `year must be within 1583-9999` |
+| The 1582 reform gap | `"1582-10-10"` | `1582-10-05 to 1582-10-14 do not exist` |
+| Year outside the supported range | `"0-1-1"` | `year must be within 1-9999` |
 
 `Code` is `invalid_date`. Lunar-only cases (reachable through `ByLunar` and the two `*ByLunarDate`
 queries):
@@ -96,7 +96,7 @@ Lunar messages are prefixed `invalid lunar date '<input>': ` and solar ones
 **Example**
 
 ```go
-for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
+for _, date := range []string{"2000-13-1", "2000-2-30", "1582-10-10"} {
     if _, err := iztro.BySolar(date, 2, iztro.GenderFemale, true, iztro.LanguageEnUS, nil); err != nil {
         fmt.Println(err)
     }
@@ -108,7 +108,7 @@ for _, date := range []string{"2000-13-1", "2000-2-30", "1500-1-1"} {
 ```text
 iztro: invalid solar date '2000-13-1': month must be within 1-12
 iztro: invalid solar date '2000-2-30': day is out of range for that month
-iztro: invalid solar date '1500-1-1': year must be within 1583-9999
+iztro: invalid solar date '1582-10-10': 1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)
 ```
 
 The message carries the original input, so batch jobs can pinpoint which record failed.
@@ -116,13 +116,14 @@ The message carries the original input, so batch jobs can pinpoint which record 
 **Edge cases and pitfalls**
 
 <Accordions>
-<Accordion title="Where the 1583 lower bound comes from">
-The Gregorian reform year of 1582 contains a stretch of dates that never existed. The underlying
-calendar library has no definition for them, so support starts from 1583, after the reform. The upper
-bound of 9999 is where the lunar data tables end.
+<Accordion title="The Julian calendar before 1582">
+The supported range is years 1–9999, as in iztro. 1582-10-04 (Julian) is followed by 1582-10-15
+(Gregorian); the ten days between never existed. Before 1600 every fourth year is a leap year, so
+`"1500-2-29"` is a valid date and `"1700-2-29"` is not.
 </Accordion>
 <Accordion title="No zero padding needed">
-Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator must be `-`.
+Both `"2000-8-16"` and `"2000-08-16"` are accepted. The separator may be `-`, `/` or `.`, the same
+one throughout.
 </Accordion>
 <Accordion title="Validation of lunar leap months">
 `ByLunar` checks whether that month really exists in that lunar year and how many days it has (30 in a

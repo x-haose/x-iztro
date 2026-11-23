@@ -29,10 +29,10 @@ func TestErrorClassification(t *testing.T) {
 		},
 		{
 			name:     "公历下限",
-			call:     func() error { _, err := BySolar("1500-8-16", 2, GenderMale, true, LanguageZhCN, nil); return err },
+			call:     func() error { _, err := BySolar("0-8-16", 2, GenderMale, true, LanguageZhCN, nil); return err },
 			sentinel: ErrInvalidDate,
 			code:     CodeInvalidDate,
-			message:  "year must be within 1583-9999",
+			message:  "year must be within 1-9999",
 		},
 		{
 			name:     "时辰越界",
@@ -207,10 +207,13 @@ func TestNilHoroscopeIsSafe(t *testing.T) {
 	if h.Astrolabe() != nil || h.ScopeItem(ScopeYearly) != nil || h.AgePalace() != nil {
 		t.Error("nil 运限的查询应返回 nil")
 	}
-	if h.Palace(PalaceSoul, ScopeYearly) != nil || h.SurroundPalaces(PalaceSoul, ScopeYearly) != nil {
+	if p, err := h.Palace(PalaceSoul, ScopeYearly); p != nil || err != nil {
 		t.Error("nil 运限的宫位查询应返回 nil")
 	}
-	if h.HasHoroscopeMutagen(PalaceSoul, ScopeYearly, MutagenLu) {
+	if sp, err := h.SurroundPalaces(PalaceSoul, ScopeYearly); sp != nil || err != nil {
+		t.Error("nil 运限的三方四正查询应返回 nil")
+	}
+	if has, err := h.HasHoroscopeMutagen(PalaceSoul, ScopeYearly, MutagenLu); has || err != nil {
 		t.Error("nil 运限的四化判断应为 false")
 	}
 	var item *HoroscopeScope

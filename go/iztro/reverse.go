@@ -39,7 +39,7 @@ type ReverseCriteria struct {
 	Stars []StarPosition
 	// Mutagens 为生年四化 [禄, 权, 科, 忌] 各自的星耀标识，空串表示该位不限
 	Mutagens [4]string
-	// YearRange 为公历年闭区间（含两端），零值取 [1900, 2100]；须落在 1583-9999 内
+	// YearRange 为公历年闭区间（含两端），零值取 [1900, 2100]；须落在 1-9999 内
 	YearRange [2]int
 	// FixLeap 为是否修正闰月（与排盘入参同义）；nil 取内核默认 true。
 	// 值类型 bool 的零值会把「未设置」静默当成 false、与内核默认相反，
@@ -100,7 +100,7 @@ type ReverseResult struct {
 //
 // 四柱按 config 的分界口径解释（年柱 YearDivide、月柱 HoroscopeDivide、晚子归属 DayDivide），
 // 与星盘 RawDates.ChineseDate 同一套语义。一组四柱在范围内通常每约 60 年出现一次；
-// 子时因早晚子之分可能给出两个候选。年份区间含两端，须落在 1583-9999 内。
+// 子时因早晚子之分可能给出两个候选。年份区间含两端，须落在 1-9999 内。
 func SolarDatesByBazi(yearly, monthly, daily, hourly Pillar, startYear, endYear int, config *Config) ([]BirthCandidate, error) {
 	return SolarDatesByBaziContext(context.Background(), yearly, monthly, daily, hourly, startYear, endYear, config)
 }

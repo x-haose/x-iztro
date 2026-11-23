@@ -41,7 +41,7 @@ func BySolar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `solarDate` | `string` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `timeIndex` | `uint8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `Gender` | Yes | — | `GenderMale` or `GenderFemale` (the literals `"male"`/`"female"` also work). Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fixLeap` | `bool` | Yes | — | Whether to correct for lunar leap months. When true, the sixteenth of a leap month onward counts as the next month (the late Zi hour excepted, see below) |
@@ -67,13 +67,13 @@ fmt.Println("soul", chart.Soul, "body", chart.Body)
 **Output**
 
 ```text
-2000-8-16 | 二〇〇〇年七月十七 | geng chen - jia shen - bing woo - geng yin
+2000-8-16 | Lunar 2000-7-17 | geng chen - jia shen - bing woo - geng yin
 leo dragon wood 3rd
 soul rebel body scholar
 ```
 
-`LunarDate` is a lunar date in Chinese numerals and stays Chinese under every language;
-`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+`LunarDate` follows the chart language: `Lunar 2000-7-17` is the 17th day of the 7th lunar month of
+2000; a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 
 **Edge cases and pitfalls**
 
@@ -124,7 +124,7 @@ func ByLunar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `lunarDate` | `string` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `lunarDate` | `string` | Yes | — | Lunar date in `YYYY-M-D` (separators and time part as for solar dates); write the month as a positive number (leap months are flagged by the next parameter) |
 | `leap` | `LeapMonth` | Yes | — | `NotLeapMonth` — not a leap month; `LeapMonthKeep` — leap month, charted as itself; `LeapMonthFixed` — leap month, and days after the 15th are treated as the next month (iztro `fixLeap`). Flagging a leap month that does not exist in that year falls back to the ordinary month; any other value returns `ErrInvalidArgument` |
 
 **Return value** Same as `BySolar`.
@@ -381,7 +381,7 @@ fmt.Println(strings.Join(strings.Split(text, "\n")[:4], "\n"))
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 ```
 
 **Edge cases and pitfalls**

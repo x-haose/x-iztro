@@ -1,6 +1,6 @@
 ---
 title: Extending the astrolabe
-description: Hanging your own analysis rules off a chart — the extension point in each of the three programming languages.
+description: Hanging your own analysis rules off a chart — the extension point in each programming language.
 ---
 
 *For: developers*
@@ -19,8 +19,9 @@ Each language uses the mechanism most natural to it; they are not forced into on
 | [Rust](/en/docs/rust/extend) | Extension trait | Compile time | Visible where the trait is `use`d |
 | [Python](/en/docs/python/extend) | Attaching methods to the class | Run time | Process-wide |
 | [Go](/en/docs/go/extend) | Struct embedding | Compile time | Only your own type |
+| [JavaScript](/en/docs/js/extend) | Methods on the `Astrolabe` prototype; TypeScript adds types by declaration merging | Load time (types at compile time) | Process-wide |
 
-All three do the same thing: you call `chart.my_method()` and have the astrolabe's full built-in
+Every language does the same thing: you call `chart.my_method()` and have the astrolabe's full built-in
 capability available. Exact syntax and runnable examples are on the respective pages.
 
 ## Shared conventions
@@ -40,20 +41,20 @@ Keep `WealthAnalysis`, `CareerAnalysis` and `HealthAnalysis` as separate groups 
 what they need. One big bundle forces every call site to carry every method.
 </Accordion>
 <Accordion title="Cross-language consistency comes from assertions, not shared code">
-When the same rule has to work in all three programming languages, the current approach is to write
-it three times and hold the line with a set of tests asserting the same values on the same chart.
+When the same rule has to work in several programming languages, the current approach is to write
+it once per language and hold the line with a set of tests asserting the same values on the same chart.
 
-Because the predicates rest on language-independent keys, three implementations with the same logic
+Because the predicates rest on language-independent keys, implementations with the same logic
 necessarily produce the same results — the tests exist to prove the logic really is the same.
 </Accordion>
 </Accordions>
 
 ## An example
 
-The same plugin in all three programming languages: take the Soul palace's major stars (borrowing
+The same plugin in every programming language: take the Soul palace's major stars (borrowing
 from the opposite palace when it is empty).
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -116,7 +117,27 @@ MyChart{chart}.MajorStar()   // emperor
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+declare module 'x-iztro' {
+  interface Astrolabe {
+    majorStar(): string;
+  }
+}
+
+astro.loadPlugin((cls) => {
+  cls.prototype.majorStar = function (this: Astrolabe): string {
+    const soul = this.palace(PalaceName.SOUL)!;
+    const source = soul.isEmpty() ? soul.oppositePalace()! : soul;
+    return source.majorStars.map((s) => s.name).join(',');
+  };
+});
+chart.majorStar();   // emperor
+```
+
+</Tab>
 </Tabs>
 
-All three return `emperor` on an English chart of this birthday, and `紫微` on a Simplified Chinese
+Every version returns `emperor` on an English chart of this birthday, and `紫微` on a Simplified Chinese
 one — the same star, written differently.

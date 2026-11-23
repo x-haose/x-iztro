@@ -54,13 +54,13 @@
     "kot": "childhood"
   },
   {
-    "text": "어린",
+    "text": "동한",
     "lang": "ko-KR",
     "key": "childhood",
     "kot": "childhood"
   },
   {
-    "text": "đứa trẻ Hạn",
+    "text": "Vận hạn thời thơ ấu",
     "lang": "vi-VN",
     "key": "childhood",
     "kot": "childhood"
@@ -408,7 +408,7 @@
     "kot": "dragon"
   },
   {
-    "text": "龍",
+    "text": "竜",
     "lang": "ja-JP",
     "key": "dragon",
     "kot": "dragon"
@@ -588,7 +588,7 @@
     "kot": "rooster"
   },
   {
-    "text": "雞",
+    "text": "鶏",
     "lang": "ja-JP",
     "key": "rooster",
     "kot": "rooster"
@@ -1128,7 +1128,7 @@
     "kot": "lateRatHour"
   },
   {
-    "text": "晚子時",
+    "text": "晩子時",
     "lang": "ja-JP",
     "key": "lateRatHour",
     "kot": "lateRatHour"
@@ -2784,7 +2784,7 @@
     "kot": "xian"
   },
   {
-    "text": "陷",
+    "text": "陥",
     "lang": "ja-JP",
     "key": "xian",
     "kot": "xian"
@@ -2796,7 +2796,7 @@
     "kot": "xian"
   },
   {
-    "text": "Hạn",
+    "text": "Hãm",
     "lang": "vi-VN",
     "key": "xian",
     "kot": "xian"
@@ -2820,7 +2820,7 @@
     "kot": "sihuaLu"
   },
   {
-    "text": "祿",
+    "text": "禄",
     "lang": "ja-JP",
     "key": "sihuaLu",
     "kot": "sihuaLu"
@@ -2856,7 +2856,7 @@
     "kot": "sihuaQuan"
   },
   {
-    "text": "權",
+    "text": "権",
     "lang": "ja-JP",
     "key": "sihuaQuan",
     "kot": "sihuaQuan"
@@ -3612,7 +3612,7 @@
     "kot": "lucunMin"
   },
   {
-    "text": "祿存",
+    "text": "禄存",
     "lang": "ja-JP",
     "key": "lucunMin",
     "kot": "lucunMin"
@@ -3798,7 +3798,7 @@
     "kot": "lingxingMin"
   },
   {
-    "text": "령성",
+    "text": "영성",
     "lang": "ko-KR",
     "key": "lingxingMin",
     "kot": "lingxingMin"
@@ -4332,7 +4332,7 @@
     "kot": "tianxu"
   },
   {
-    "text": "天虛",
+    "text": "天虚",
     "lang": "ja-JP",
     "key": "tianxu",
     "kot": "tianxu"
@@ -4368,7 +4368,7 @@
     "kot": "longchi"
   },
   {
-    "text": "龍池",
+    "text": "竜池",
     "lang": "ja-JP",
     "key": "longchi",
     "kot": "longchi"
@@ -4944,7 +4944,7 @@
     "kot": "tianshou"
   },
   {
-    "text": "天壽",
+    "text": "天寿",
     "lang": "ja-JP",
     "key": "tianshou",
     "kot": "tianshou"
@@ -4986,7 +4986,7 @@
     "kot": "jiekong"
   },
   {
-    "text": "절중",
+    "text": "절공",
     "lang": "ko-KR",
     "key": "jiekong",
     "kot": "jiekong"
@@ -5160,7 +5160,7 @@
     "kot": "yuede"
   },
   {
-    "text": "月德",
+    "text": "月徳",
     "lang": "ja-JP",
     "key": "yuede",
     "kot": "yuede"
@@ -5268,7 +5268,7 @@
     "kot": "tianchu"
   },
   {
-    "text": "天廚",
+    "text": "天厨",
     "lang": "ja-JP",
     "key": "tianchu",
     "kot": "tianchu"
@@ -5352,7 +5352,7 @@
     "kot": "muyu"
   },
   {
-    "text": "Mục Dục",
+    "text": "Mộc Dục",
     "lang": "vi-VN",
     "key": "muyu",
     "kot": "muyu"
@@ -5376,7 +5376,7 @@
     "kot": "guandai"
   },
   {
-    "text": "冠帶",
+    "text": "冠帯",
     "lang": "ja-JP",
     "key": "guandai",
     "kot": "guandai"
@@ -5628,7 +5628,7 @@
     "kot": "jue"
   },
   {
-    "text": "絕",
+    "text": "絶",
     "lang": "ja-JP",
     "key": "jue",
     "kot": "jue"
@@ -5808,7 +5808,7 @@
     "kot": "dragon"
   },
   {
-    "text": "青龍",
+    "text": "青竜",
     "lang": "ja-JP",
     "key": "qinglong",
     "kot": "qinglong"
@@ -5880,7 +5880,7 @@
     "kot": "jiangjun"
   },
   {
-    "text": "將軍",
+    "text": "将軍",
     "lang": "ja-JP",
     "key": "jiangjun",
     "kot": "jiangjun"
@@ -6096,13 +6096,13 @@
     "kot": "suipo"
   },
   {
-    "text": "歲破",
+    "text": "歳破",
     "lang": "ja-JP",
     "key": "suipo",
     "kot": "suipo"
   },
   {
-    "text": "태파",
+    "text": "세파",
     "lang": "ko-KR",
     "key": "suipo",
     "kot": "suipo"
@@ -6204,7 +6204,7 @@
     "kot": "suijian"
   },
   {
-    "text": "歲建",
+    "text": "歳建",
     "lang": "ja-JP",
     "key": "suijian",
     "kot": "suijian"
@@ -6240,7 +6240,7 @@
     "kot": "huiqi"
   },
   {
-    "text": "晦氣",
+    "text": "晦気",
     "lang": "ja-JP",
     "key": "huiqi",
     "kot": "huiqi"
@@ -6384,7 +6384,7 @@
     "kot": "longde"
   },
   {
-    "text": "龍德",
+    "text": "竜徳",
     "lang": "ja-JP",
     "key": "longde",
     "kot": "longde"
@@ -6456,13 +6456,13 @@
     "kot": "tiande"
   },
   {
-    "text": "天德",
+    "text": "天徳",
     "lang": "ja-JP",
     "key": "tiande",
     "kot": "tiande"
   },
   {
-    "text": "복덕",
+    "text": "천덕",
     "lang": "ko-KR",
     "key": "tiande",
     "kot": "tiande"
@@ -6528,7 +6528,7 @@
     "kot": "jiangxing"
   },
   {
-    "text": "將星",
+    "text": "将星",
     "lang": "ja-JP",
     "key": "jiangxing",
     "kot": "jiangxing"
@@ -6600,7 +6600,7 @@
     "kot": "suiyi"
   },
   {
-    "text": "歲驛",
+    "text": "歳駅",
     "lang": "ja-JP",
     "key": "suiyi",
     "kot": "suiyi"
@@ -6996,7 +6996,7 @@
     "kot": "yunyue"
   },
   {
-    "text": "限の钺",
+    "text": "限の鉞",
     "lang": "ja-JP",
     "key": "yunyue",
     "kot": "yunyue"
@@ -7104,7 +7104,7 @@
     "kot": "yunluan"
   },
   {
-    "text": "限の鸾",
+    "text": "限の鸞",
     "lang": "ja-JP",
     "key": "yunluan",
     "kot": "yunluan"
@@ -7176,7 +7176,7 @@
     "kot": "yunlu"
   },
   {
-    "text": "限の祿",
+    "text": "限の禄",
     "lang": "ja-JP",
     "key": "yunlu",
     "kot": "yunlu"
@@ -7356,7 +7356,7 @@
     "kot": "liuyue"
   },
   {
-    "text": "年の钺",
+    "text": "年の鉞",
     "lang": "ja-JP",
     "key": "liuyue",
     "kot": "liuyue"
@@ -7464,7 +7464,7 @@
     "kot": "liuluan"
   },
   {
-    "text": "年の鸾",
+    "text": "年の鸞",
     "lang": "ja-JP",
     "key": "liuluan",
     "kot": "liuluan"
@@ -7536,7 +7536,7 @@
     "kot": "liulu"
   },
   {
-    "text": "年の祿",
+    "text": "年の禄",
     "lang": "ja-JP",
     "key": "liulu",
     "kot": "liulu"
@@ -7752,7 +7752,7 @@
     "kot": "yueyue"
   },
   {
-    "text": "月の钺",
+    "text": "月の鉞",
     "lang": "ja-JP",
     "key": "yueyue",
     "kot": "yueyue"
@@ -7764,7 +7764,7 @@
     "kot": "yueyue"
   },
   {
-    "text": "Thiên Nguyệt(M)",
+    "text": "Thiên Việt(M)",
     "lang": "vi-VN",
     "key": "yueyue",
     "kot": "yueyue"
@@ -7860,7 +7860,7 @@
     "kot": "yueluan"
   },
   {
-    "text": "月の鸾",
+    "text": "月の鸞",
     "lang": "ja-JP",
     "key": "yueluan",
     "kot": "yueluan"
@@ -7932,7 +7932,7 @@
     "kot": "yuelu"
   },
   {
-    "text": "月の祿",
+    "text": "月の禄",
     "lang": "ja-JP",
     "key": "yuelu",
     "kot": "yuelu"
@@ -8112,7 +8112,7 @@
     "kot": "riyue"
   },
   {
-    "text": "日の钺",
+    "text": "日の鉞",
     "lang": "ja-JP",
     "key": "riyue",
     "kot": "riyue"
@@ -8124,7 +8124,7 @@
     "kot": "riyue"
   },
   {
-    "text": "Thiên Nguyệt(d)",
+    "text": "Thiên Việt(d)",
     "lang": "vi-VN",
     "key": "riyue",
     "kot": "riyue"
@@ -8220,7 +8220,7 @@
     "kot": "riluan"
   },
   {
-    "text": "日の鸾",
+    "text": "日の鸞",
     "lang": "ja-JP",
     "key": "riluan",
     "kot": "riluan"
@@ -8292,7 +8292,7 @@
     "kot": "rilu"
   },
   {
-    "text": "日の祿",
+    "text": "日の禄",
     "lang": "ja-JP",
     "key": "rilu",
     "kot": "rilu"
@@ -8472,7 +8472,7 @@
     "kot": "shiyue"
   },
   {
-    "text": "時の钺",
+    "text": "時の鉞",
     "lang": "ja-JP",
     "key": "shiyue",
     "kot": "shiyue"
@@ -8484,7 +8484,7 @@
     "kot": "shiyue"
   },
   {
-    "text": "Thiên Nguyệt(H)",
+    "text": "Thiên Việt(H)",
     "lang": "vi-VN",
     "key": "shiyue",
     "kot": "shiyue"
@@ -8580,7 +8580,7 @@
     "kot": "shiluan"
   },
   {
-    "text": "時の鸾",
+    "text": "時の鸞",
     "lang": "ja-JP",
     "key": "shiluan",
     "kot": "shiluan"
@@ -8652,7 +8652,7 @@
     "kot": "shilu"
   },
   {
-    "text": "時の祿",
+    "text": "時の禄",
     "lang": "ja-JP",
     "key": "shilu",
     "kot": "shilu"
@@ -9084,7 +9084,7 @@
     "kot": "friendsPalace"
   },
   {
-    "text": "僕役",
+    "text": "奴僕",
     "lang": "ja-JP",
     "key": "friendsPalace",
     "kot": "friendsPalace"
@@ -9120,7 +9120,7 @@
     "kot": "careerPalace"
   },
   {
-    "text": "官祿",
+    "text": "官禄",
     "lang": "ja-JP",
     "key": "careerPalace",
     "kot": "careerPalace"
@@ -9192,7 +9192,7 @@
     "kot": "spiritPalace"
   },
   {
-    "text": "福德",
+    "text": "福徳",
     "lang": "ja-JP",
     "key": "spiritPalace",
     "kot": "spiritPalace"
@@ -9201,7 +9201,7 @@
     "text": "복덕",
     "lang": "ko-KR",
     "key": "spiritPalace",
-    "kot": "tiande"
+    "kot": "spiritPalace"
   },
   {
     "text": "Phúc Đức",

@@ -6,13 +6,14 @@ description: The type and meaning of every field on Astrolabe, Palace, Star and 
 *For: developers*
 
 This page is written against the serialized JSON field names (camelCase), which are the contract
-shared by all three bindings. Naming translates as follows:
+shared by every binding. Naming translates as follows:
 
 | Layer | Naming | Example |
 | --- | --- | --- |
 | JSON / binding contract | camelCase | `isBodyPalace` |
 | Python | snake_case | `is_body_palace` |
 | Go | PascalCase | `IsBodyPalace` |
+| JavaScript | camelCase, same as the JSON | `isBodyPalace` |
 | Rust | snake_case, values are enums | `is_body_palace` |
 
 ## Astrolabe
@@ -24,7 +25,7 @@ The return value of a charting entry point.
 | `gender` | string | Gender, translated text |
 | `genderKey` | string | `"male"` / `"female"` |
 | `solarDate` | string | Gregorian birthday, echoing the input |
-| `lunarDate` | string | The lunar birthday written out (always Chinese numerals) |
+| `lunarDate` | string | The lunar birthday written out: Chinese numerals in Chinese charts (`二〇〇〇年七月十七`), otherwise the word for "lunar" plus numbers (`Lunar 2000-7-17`) |
 | `chineseDate` | string | The four pillars as a display string |
 | `rawDates` | [RawDates](#rawdates) | Structured lunar birthday and four pillars |
 | `time` | string | Hour name, e.g. `Tiger hour` |
@@ -155,8 +156,8 @@ For what they mean, see [Config in depth](/en/docs/guide/guides/config).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `solarDate` | string | Target Gregorian date |
-| `lunarDate` | string | Target lunar date |
+| `solarDate` | string | Target Gregorian date as `Y-M-D` without zero padding or time (e.g. `2025-1-5`) |
+| `lunarDate` | string | Target lunar date, in Chinese in every language |
 | `decadal` | [HoroscopeScope](#horoscopescope) | The decadal, or the childhood scope before the decadals begin |
 | `age` | HoroscopeScope | Age fortune, carrying `nominalAge` |
 | `yearly` | HoroscopeScope | The yearly scope, carrying `yearlyDecStar` |
@@ -195,9 +196,9 @@ tell whether the scope is a childhood one; do not compare `name` translations.
 | `jiangqian12` / `jiangqian12Keys` | string[12] | The twelve Jiang-qian gods placed from the yearly branch |
 
 <Callout title="The base layer on the Rust side">
-In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`)
-and are flattened with `#[serde(flatten)]` on serialization, so the JSON — and the Python and Go
-sides — see a flat structure.
+In Rust the common fields of `age` and `yearly` live under `.base` (`AgeItem { base, nominal_age }`);
+the DTO flattens that layer (`#[serde(flatten)]` on the DTO), so the JSON — and the Python, Go and
+JavaScript sides — see a flat structure.
 </Callout>
 
 ## A complete JSON example
@@ -210,7 +211,7 @@ entries of `palaces` elided):
   "gender": "female",
   "genderKey": "female",
   "solarDate": "2000-8-16",
-  "lunarDate": "二〇〇〇年七月十七",
+  "lunarDate": "Lunar 2000-7-17",
   "chineseDate": "geng chen - jia shen - bing woo - geng yin",
   "rawDates": {
     "lunarDate": { "lunarYear": 2000, "lunarMonth": 7, "lunarDay": 17, "isLeap": false },
@@ -244,11 +245,11 @@ entries of `palaces` elided):
 }
 ```
 
-<Callout title="Two fields stay Chinese in an English chart">
-`lunarDate` is rendered with Chinese numerals whatever the language — `二〇〇〇年七月十七` is the 17th
-day of the 7th lunar month, 2000. And the stems and branches under `rawDates.chineseDate` are
-deliberately unlocalized originals; the localized form is the top-level `chineseDate`, romanized in
-pinyin for English.
+<Callout title="What stays Chinese in an English chart">
+The stems and branches under `rawDates.chineseDate` are deliberately unlocalized originals; the
+localized form is the top-level `chineseDate`, romanized in pinyin for English. `lunarDate` follows the
+chart language (`Lunar 2000-7-17` is the 17th day of the 7th lunar month, 2000), while the horoscope's
+`lunarDate` is written in Chinese numerals in every language.
 </Callout>
 
 ### One palace

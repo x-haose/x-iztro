@@ -67,7 +67,7 @@ const HOROSCOPE_NAMES: [(&str, HoroscopeName); 7] = [
 /// 十二宫与身宫、来因宫合排的标识顺序
 ///
 /// iztro 的 `palace` 翻译文件把身宫排在命宫之后、来因宫排在末尾，十二宫本身
-/// 按顺行排列，与 [`PALACES`] 的逆行布局顺序不同。[`all_keys`] 照这里排，
+/// 按顺行排列，与 [`crate::data::constants::PALACES`] 的逆行布局顺序不同。[`all_keys`] 照这里排，
 /// 反查结果才与 iztro 的 `kot` 一致。
 const LOOKUP_PALACE_KEYS: [&str; 14] = [
     "soulPalace",

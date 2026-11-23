@@ -26,7 +26,7 @@ every predicate stay the same.
 | --- | --- | --- |
 | `Gender` | `string` | Translated gender |
 | `SolarDate` | `string` | Solar date, as passed in |
-| `LunarDate` | `string` | The lunar date written in Chinese |
+| `LunarDate` | `string` | The lunar date in the chart language: `Lunar 2000-7-17` in English, `二〇〇〇年七月十七` in Chinese |
 | `ChineseDate` | `string` | Display string of the four pillars |
 | `Time` | `string` | Hour name |
 | `TimeRange` | `string` | The clock range of that hour |
@@ -453,7 +453,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 
 ---
 
-## Horoscope / HoroscopeNow
+## Horoscope / HoroscopeAt / HoroscopeAtTime / HoroscopeNow
 
 **Purpose** Compute the horoscope for a target date, starting from this chart.
 
@@ -461,6 +461,8 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 
 ```go
 func (a *Astrolabe) Horoscope(targetDate string, targetTimeIndex uint8) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAt(targetDate string) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeAtTime(t time.Time) (*Horoscope, error)
 func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 ```
 
@@ -468,10 +470,13 @@ func (a *Astrolabe) HoroscopeNow() (*Horoscope, error)
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `targetDate` | `string` | Yes | — | Target solar date in `YYYY-M-D` |
+| `targetDate` | `string` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed) |
 | `targetTimeIndex` | `uint8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
 
-`HoroscopeNow` takes the current date and hour from the local clock and has no parameters.
+`HoroscopeAt` takes no hour index: it is derived from the time part of `targetDate` (23:00 is the late Zi
+hour), and a date without a time means the early Zi hour — iztro's `horoscope(targetDate)` with `timeIndex`
+omitted. `HoroscopeAtTime` takes the date and hour of the instant `t` (read in `t`'s own time zone) — iztro's
+`horoscope` with a `Date` object. `HoroscopeNow` is `HoroscopeAtTime(time.Now())`. Each has a `…Context` variant.
 
 **Return value** `*Horoscope` — a horoscope object holding this chart, so palace lookups across the
 six scopes need not be passed the astrolabe again.
@@ -492,6 +497,122 @@ fmt.Println("yearly ", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch)
 decadal gengchen
 yearly  yisi
 ```
+
+---
+
+## HoroscopeOfYear
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```go
+func (a *Astrolabe) HoroscopeOfYear(lunarYear int) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeOfYearContext(ctx context.Context, lunarYear int) (*Horoscope, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `*Horoscope` — its target date is the first day of that lunar year's sixth month and
+its hour follows the hour pillar's branch, the same convention as
+[`YearlyList`](/en/docs/go/horoscope#yearlylist--yearlylistbypalace). Whatever it computes afterwards
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year; its precision
+([`Precision()`](/en/docs/go/horoscope#precision)) is `ScopeYearly`.
+
+**Example**
+
+```go
+h, _ := chart.HoroscopeOfYear(2027)
+
+fmt.Println(h.SolarDate, h.LunarDate)
+fmt.Println("yearly", h.Yearly.HeavenlyStem+h.Yearly.EarthlyBranch, "nominal age", h.Age.NominalAge)
+
+jan, _ := chart.Horoscope("2027-1-1", 0)
+fmt.Println("2027-1-1 yearly", jan.Yearly.HeavenlyStem+jan.Yearly.EarthlyBranch)
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly dingwei nominal age 28
+2027-1-1 yearly bingwoo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`Config.AgeDivide` set to `AgeDivideBirthday` or `Config.HoroscopeDivide` set to
+`HoroscopeDivideExact` they can still change within the year, and the result is the one for the
+first day of the sixth month. The monthly, daily and hourly scopes are in the result too, likewise
+for that day, and are not the answer to the query: `ToText` and picking knowledge by chart stop at
+the yearly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions), palace-query or pattern scope
+finer than yearly returns `ErrInvalidArgument`. A year outside 1–9999 returns `ErrInvalidArgument`. For one row per year
+over a run of years, use [`YearlyOverviewToText`](/en/docs/go/horoscope#yearlyoverviewtotext).
+</Callout>
+
+---
+
+## HoroscopeOfMonth
+
+**Purpose** Take the horoscope of one month of a lunar year: when the question is about a month,
+use it instead of picking a day on the asker's behalf.
+
+**Signature**
+
+```go
+func (a *Astrolabe) HoroscopeOfMonth(lunarYear int, lunarMonth int) (*Horoscope, error)
+func (a *Astrolabe) HoroscopeOfMonthContext(ctx context.Context, lunarYear int, lunarMonth int) (*Horoscope, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `lunarYear` | `int` | Yes | — | Lunar year, 1–9999 |
+| `lunarMonth` | `int` | Yes | — | Lunar month number, 1–12; a leap month has no number of its own |
+
+**Return value** `*Horoscope` — its target date is the first day of that (non-leap) month and its
+hour follows the hour pillar's branch, the same convention as a whole-month entry of
+[`MonthlyList`](/en/docs/go/horoscope#monthlylist). Whatever it computes afterwards
+(`ToText`, `Patterns`, `Knowledge.ForHoroscope`) is still taken for that lunar year and month; its
+precision ([`Precision()`](/en/docs/go/horoscope#precision)) is `ScopeMonthly`.
+
+**Example**
+
+```go
+h, _ := chart.HoroscopeOfMonth(2025, 7)
+
+fmt.Println(h.SolarDate, h.LunarDate)
+fmt.Println("monthly", h.Monthly.HeavenlyStem+h.Monthly.EarthlyBranch)
+```
+
+**Output**
+
+```text
+2025-8-23 二〇二五年七月初一
+monthly jiashen
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A leap month has no number of its own: under the default dividing configuration the first half of a
+leap month follows the month it repeats and the second half the next one —
+[`MonthlyListToText`](/en/docs/go/horoscope#monthlylisttotext) gives the dates. The daily and hourly
+scopes are in the result too, for the first day of that month: `ToText` and picking knowledge by
+chart stop at the monthly scope, and a [`TextOptions.Through`](/en/docs/go/knowledge#textoptions),
+palace-query or pattern scope finer than monthly returns `ErrInvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns `ErrInvalidArgument`.
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
+</Callout>
 
 ---
 
@@ -580,7 +701,7 @@ fmt.Println(strings.Join(heads, " "))
 **Output**
 
 ```text
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 
@@ -595,6 +716,57 @@ to.
 `ErrInvalidArgument` rather than silently dropping the readings; on an English chart give the pack
 explicitly with `KnowledgeFrom(pack)`.
 </Callout>
+
+---
+
+## TopicToText
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature**
+
+```go
+func (a *Astrolabe) TopicToText(topic string, opts TextOptions) (string, error)
+func (a *Astrolabe) TopicToTextContext(ctx context.Context, topic string, opts TextOptions) (string, error)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `string` | Topic slug, a key of the pack's `Topics` |
+| `opts` | [`TextOptions`](/en/docs/go/knowledge#textoptions) | `Knowledge` is required (source of the topic definition and readings); `Detail`, `KnowledgeDepth` and `PatternConfig` work as for the other texts |
+
+**Returns**　`string` — a `# Topic · Natal Chart …` title and the topic description, one trine &
+opposite section per `Surround` palace, the `Palaces` under `## Related Palaces` (no palace twice),
+then the patterns landing in those palaces and the mutagen notes. A zero `Knowledge`, an unknown
+topic or an unknown palace key in the topic returns `ErrInvalidArgument`.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```go
+text, _ := chart.TopicToText("romance", iztro.TextOptions{
+    Knowledge:      iztro.BuiltinKnowledge(),
+    KnowledgeDepth: iztro.KnowledgeDepthSummary,
+})
+lines := strings.Split(text, "\n")
+fmt.Println(lines[0])
+var heads []string
+for _, l := range lines {
+    if strings.HasPrefix(l, "## ") {
+        heads = append(heads, l)
+    }
+}
+fmt.Println(strings.Join(heads, " "))
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
 
 ---
 

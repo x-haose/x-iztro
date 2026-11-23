@@ -47,8 +47,8 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | `to_dict()` | 包对象的深拷贝 |
 | `to_json(**kwargs)` | JSON 文本，`kwargs` 透传给 `json.dumps` |
 | `merged(*overlays)` | 叠加覆盖包，返回新包 |
-| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | 取单条条目，没有返回 `None` |
-| `stars()` / `patterns()` | 全部星耀 / 格局条目 |
+| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` / `topic(slug)` | 取单条条目，没有返回 `None` |
+| `stars()` / `patterns()` / `topics()` | 全部星耀 / 格局 / 主题条目 |
 | `star_intro(key)` / `pattern_intro(key)` | 直接取解读正文 |
 | `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | 按盘取材，返回只含该盘相关条目的子包 |
 
@@ -69,16 +69,21 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | `group` | `str \| None` | 分组：杂耀的分类、神煞的组别 |
 | `attributes` | `StarAttributes` | 门派属性 |
 | `intro` | `str \| None` | 解读正文（Markdown） |
+| `summary` | `str \| None` | 正文的摘要；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目不写 |
 | `combinations` | `dict[str, str]` | 与另一颗主星同宫的组合解读，键为对方星耀标识 |
+| `combination_summaries` | `dict[str, str]` | 组合解读的摘要，与 `combinations` 同键成对 |
 
 `StarAttributes`：`yin_yang`（`yin` / `yang`）、
 `five_elements`（`wood` / `fire` / `earth` / `metal` / `water`）、`stem`（`jia`…`gui`）、
 `five_elements_note`、`dipper`、`chemistry`、`career`、`duty`、`aliases`（`list[str] | None`）、
 `element_color`、`energy_color`。
 
-`PatternEntry`：`key`、`name`、`quotes`（`list[str] | None`）、`conditions`、`intro`。
+`PatternEntry`：`key`、`name`、`quotes`（`list[str] | None`）、`conditions`、`intro`、`summary`。
 
-`TextEntry`（宫位、四化）：`key`、`name`、`intro`。
+`TextEntry`（宫位、四化）：`key`、`name`、`intro`、`summary`。
+`TopicEntry`（主题）：`slug`、`title`、`surround`（连同三方四正一起取的宫位标识，`list[str] | None`）、
+`palaces`（只取本宫的宫位标识，可含 `bodyPalace` / `originalPalace`）、`intro`、`summary`，
+[`Astrolabe.topic_to_text`](/zh/docs/python/astrolabe#topic_to_text) 按它选宫。
 `ConceptEntry`（术语）：`slug`、`title`、`intro`。
 
 `Source`：`name`、`url`、`commit`、`license`、`author`、`retrieved_at`、`adapted`（改编说明）。
@@ -210,7 +215,7 @@ def merged(self, *overlays: KnowledgePack | dict[str, Any]) -> KnowledgePack
 
 合并规则见[指南](/zh/docs/guide/guides/knowledge-pack#合并规则)：逐段按键合并，
 覆盖包的非空字段覆盖同键条目的对应字段，`attributes` 与 `combinations` 逐字段合并，
-数组字段整体替换。合并本身在 Rust 内核里算，三语言结果一致。
+数组字段整体替换；覆盖条目换了正文却没给对应摘要时，去掉底包的旧摘要。合并本身在 Rust 内核里算，各语言绑定结果一致。
 
 **示例**
 
@@ -368,7 +373,8 @@ def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = Non
 **返回值**　标准 `KnowledgePack`，元信息沿用本包：`stars` 是盘上出现的星
 （主辅杂与四组十二神，14 主星的 `combinations` 只留对方主星确在同宫的），
 `patterns` 是按 `config` 口径命中的格局，`mutagens` 四条全留，`palaces` 与 `concepts` 为空。
-`for_horoscope` 在此之上再加各层流耀与大限到流时各层视角命中的格局。
+`for_horoscope` 在此之上再加大限到运限[查询精度](/zh/docs/python/horoscope#precision)各层的流耀与各层视角命中的格局：
+按日期取的到流时，`horoscope_of_year` 取的到流年，`horoscope_of_month` 取的到流月。
 子包要和 `patterns(config)` / `patterns_to_text(config)` 配同一口径：口径不同，命中集合不同，
 释义就会缺项或多项。
 取材规则见[按盘取材](/zh/docs/guide/guides/knowledge-pack#按盘取材)。

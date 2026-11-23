@@ -26,7 +26,7 @@ another language changes those strings only; the `*_key` fields and every predic
 | --- | --- | --- |
 | `gender` | `Gender` | Gender |
 | `solar_date` | `String` | Solar date, as passed in |
-| `lunar_date` | `String` | The lunar date written in Chinese numerals, e.g. `二〇〇〇年七月十七` — "the 17th day of the 7th lunar month of 2000" |
+| `lunar_date` | `String` | The lunar date in the chart language: `Lunar 2000-7-17` in English (a leap month reads `leap-4`), `二〇〇〇年七月十七` in Chinese |
 | `chinese_date` | `String` | Display string of the four pillars, e.g. `geng chen - jia shen - bing woo - geng yin` |
 | `time` | `String` | Hour name, e.g. `Tiger hour` |
 | `time_range` | `String` | The clock range of that hour, e.g. `03:00~05:00` |
@@ -440,7 +440,7 @@ Indices wrap modulo 12, so every one of the twelve palaces has a complete pair.
 **Signature**
 
 ```rust
-pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope(&self, target_date: &str, target_time_index: impl Into<Option<u8>>) -> Result<HoroscopeRef<'_>, IztroError>
 pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 ```
 
@@ -448,13 +448,14 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `target_date` | `&str` | Yes | — | Target solar date in `YYYY-M-D` |
-| `target_time_index` | `u8` | Yes | — | Target hour index 0–12, which fixes the hourly scope |
+| `target_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed) |
+| `target_time_index` | `impl Into<Option<u8>>` | Yes | — | A number or `None`: Target hour index 0–12, which fixes the hourly scope; with `None` it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time means the early Zi hour |
 
 `horoscope_now` takes the current date and hour from the local clock and has no parameters.
 
 **Return value** `HoroscopeRef<'_>` — a horoscope view holding this chart, so palace lookups across
-the six scopes need not be passed the astrolabe again.
+the six scopes need not be passed the astrolabe again; its precision (`precision()`) is the hourly
+scope, with or without an hour.
 Details on [the horoscope object](/en/docs/rust/horoscope).
 
 **Example**
@@ -483,6 +484,125 @@ but both implement `Deref`, so `h.yearly.heavenly_stem` reads directly as well.
 decadal geng chen
 yearly  yi si
 ```
+
+---
+
+## horoscope_of_year
+
+**Purpose** Take the horoscope of a lunar year: when the question is about a year, use it instead of
+picking a solar date yourself.
+
+**Signature**
+
+```rust
+pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+
+**Return value** `HoroscopeRef<'_>` — its target date is the first day of that lunar year's sixth
+month and its hour follows the hour pillar's branch, the same convention as
+[`yearly_list`](/en/docs/rust/horoscope#yearly_list); its precision (`precision()`) is `Scope::Yearly`.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope_of_year(2027)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("yearly {} {} nominal age {}",
+    translate_heavenly_stem(h.yearly.heavenly_stem, en),
+    translate_earthly_branch(h.yearly.earthly_branch, en),
+    h.age.nominal_age);
+
+let jan = chart.horoscope("2027-1-1", 0)?;
+println!("2027-1-1 yearly {} {}",
+    translate_heavenly_stem(jan.yearly.heavenly_stem, en),
+    translate_earthly_branch(jan.yearly.earthly_branch, en));
+```
+
+**Output**
+
+```text
+2027-7-4 二〇二七年六月初一
+yearly ding wei nominal age 28
+2027-1-1 yearly bing woo
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+The days from 1 January up to the lunar new year still belong to the previous lunar year, which is
+why the yearly scope of solar 2027-1-1 is still bing woo. Under the default dividing configuration
+the decadal, age-fortune and yearly scopes stay the same for the whole lunar year; with
+`age_divide` set to `AgeDivide::Birthday` or `horoscope_divide` set to `HoroscopeDivide::Exact`
+they can still change within the year, and the result is the one for the first day of the sixth
+month. The monthly, daily and hourly scopes are in the result too, likewise for that day, and are
+not the answer to the query: `to_text` stops at the yearly scope by default, and a text, palace-query or pattern
+scope finer than yearly returns `IztroError::InvalidArgument`. A year outside 1–9999 returns `IztroError::InvalidArgument`. For one row per
+year over a run of years, use [`yearly_overview_to_text`](/en/docs/rust/horoscope#yearly_overview_to_text).
+</Callout>
+
+---
+
+## horoscope_of_month
+
+**Purpose** Take the horoscope of one month of a lunar year: when the question is about a month,
+use it instead of picking a day on the asker's behalf.
+
+**Signature**
+
+```rust
+pub fn horoscope_of_month(&self, year: i64, month: u32) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+| `month` | `u32` | Yes | — | Lunar month number, 1–12; a leap month has no number of its own |
+
+**Return value** `HoroscopeRef<'_>` — its target date is the first day of that (non-leap) month and
+its hour follows the hour pillar's branch, the same convention as a whole-month entry of
+[`monthly_list`](/en/docs/rust/horoscope#monthly_list); its precision (`precision()`) is `Scope::Monthly`.
+
+**Example**
+
+```rust
+let en = Language::EnUS;
+let h = chart.horoscope_of_month(2025, 7)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("monthly {} {}",
+    translate_heavenly_stem(h.monthly.heavenly_stem, en),
+    translate_earthly_branch(h.monthly.earthly_branch, en));
+```
+
+**Output**
+
+```text
+2025-8-23 二〇二五年七月初一
+monthly jia shen
+```
+
+**Edge cases and pitfalls**
+
+<Callout type="info">
+A leap month has no number of its own: under the default dividing configuration the first half of a
+leap month follows the month it repeats and the second half the next one —
+[`monthly_list_to_text`](/en/docs/rust/horoscope#monthly_list_to_text) gives the dates. The daily
+and hourly scopes are in the result too, for the first day of that month: `to_text` stops at the
+monthly scope by default, and a text, palace-query or pattern scope finer than monthly returns
+`IztroError::InvalidArgument`. A year outside 1–9999 or a month outside 1–12 returns
+`IztroError::InvalidArgument`.
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
+</Callout>
 
 ---
 
@@ -517,7 +637,7 @@ for line in chart.to_text().lines().take(5) {
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 ```
 
@@ -561,7 +681,7 @@ println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>()
 **Output**
 
 ```text
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 

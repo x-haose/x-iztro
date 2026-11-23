@@ -117,8 +117,8 @@ func (a *Astrolabe) PatternsContext(ctx context.Context, config *PatternConfig) 
 }
 
 // Patterns 返回某运限层视角的格局命中：以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，
-// 另加两条行运格（禄衰马困、风云际会）。scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘；
-// config 传 nil 取默认口径。
+// 另加两条行运格（禄衰马困、风云际会）。scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘，
+// 比查询精度（Precision）细时报 ErrInvalidArgument；config 传 nil 取默认口径。
 func (h *Horoscope) Patterns(scope string, config *PatternConfig) ([]PatternHit, error) {
 	return h.PatternsContext(context.Background(), scope, config)
 }
@@ -130,18 +130,17 @@ func (h *Horoscope) PatternsContext(ctx context.Context, scope string, config *P
 	}
 	a := h.astrolabe
 	payload := map[string]any{
-		"kind":            "horoscopePatterns",
-		"solarDate":       a.SolarDate,
-		"timeIndex":       a.TimeIndex,
-		"gender":          a.GenderKey,
-		"fixLeap":         a.FixLeap,
-		"language":        a.Language,
-		"config":          a.requestConfig(),
-		"targetDate":      h.SolarDate,
-		"targetTimeIndex": h.targetTimeIndex,
-		"scope":           scope,
-		"patternConfig":   config,
+		"kind":          "horoscopePatterns",
+		"solarDate":     a.SolarDate,
+		"timeIndex":     a.TimeIndex,
+		"gender":        a.GenderKey,
+		"fixLeap":       a.FixLeap,
+		"language":      a.Language,
+		"config":        a.requestConfig(),
+		"scope":         scope,
+		"patternConfig": config,
 	}
+	h.addTarget(payload)
 	a.addRearrange(payload)
 	var out []PatternHit
 	return out, utilQueryContext(ctx, payload, &out)
@@ -175,7 +174,8 @@ func (a *Astrolabe) PatternsToTextWithContext(ctx context.Context, opts TextOpti
 }
 
 // PatternsToText 生成某运限层视角格局命中的语义化文本。
-// scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘；config 传 nil 取默认口径。
+// scope 传 ScopeDecadal 等常量，ScopeOrigin 等同本命盘，比查询精度（Precision）细时报 ErrInvalidArgument；
+// config 传 nil 取默认口径。
 func (h *Horoscope) PatternsToText(scope string, config *PatternConfig) (string, error) {
 	return h.PatternsToTextContext(context.Background(), scope, config)
 }
@@ -197,8 +197,7 @@ func (h *Horoscope) PatternsToTextWithContext(ctx context.Context, scope string,
 		return "", invalidArgument("horoscopePatternsToText: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := h.astrolabe.textPayload("horoscopePatternsToText")
-	payload["targetDate"] = h.SolarDate
-	payload["targetTimeIndex"] = h.targetTimeIndex
+	h.addTarget(payload)
 	payload["scope"] = scope
 	opts.apply(payload)
 	var out string

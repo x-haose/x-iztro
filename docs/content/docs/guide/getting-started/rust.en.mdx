@@ -8,14 +8,14 @@ description: Install the x-iztro crate, produce your first chart, and see how en
 ## Installation
 
 ```bash
-cargo add x-iztro
+cargo add x-iztro@0.7
 ```
 
 Or in `Cargo.toml`:
 
 ```toml
 [dependencies]
-x-iztro = "0.3"
+x-iztro = "0.7"
 ```
 
 The crate is named `x-iztro`; in code the library is `x_iztro`. No C dependencies, pure Rust build.
@@ -37,7 +37,7 @@ fn main() -> Result<(), IztroError> {
     )?;
 
     println!("Solar: {}", astrolabe.solar_date);
-    println!("Lunar: {}", astrolabe.lunar_date);
+    println!("{}", astrolabe.lunar_date);
     println!("Pillars: {}", astrolabe.chinese_date);
     println!("Hour: {} ({})", astrolabe.time, astrolabe.time_range);
     Ok(())
@@ -46,14 +46,14 @@ fn main() -> Result<(), IztroError> {
 
 ```text
 Solar: 2000-8-16
-Lunar: 二〇〇〇年七月十七
+Lunar 2000-7-17
 Pillars: geng chen - jia shen - bing woo - geng yin
 Hour: Tiger hour (03:00~05:00)
 ```
 
 <Callout title="Reading the output">
-`lunar_date` is the one field that stays in Chinese in an English chart: the lunar date is written
-with Chinese numerals, and `二〇〇〇年七月十七` is the 17th day of the 7th lunar month, 2000.
+`lunar_date` is the lunar date: `Lunar 2000-7-17` is the 17th day of the 7th lunar month, 2000
+(a leap month reads `leap-4`); a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 `chinese_date` is the four pillars romanized in pinyin — `geng chen` is 庚辰, `bing woo` is 丙午.
 Pass `Language::ZhCN` instead and both come out in Chinese.
 </Callout>

@@ -1,0 +1,53 @@
+---
+title: 三方四正与夹宫
+description: SurroundedPalaces 与 FlankingPalaces 的字段、星耀与四化判断、文本。
+---
+
+## SurroundedPalaces
+
+| 字段 | 说明 |
+| --- | --- |
+| `target` | 本宫 |
+| `opposite` | 对宫（+6） |
+| `wealth` | 财帛位（+8） |
+| `career` | 官禄位（+4） |
+
+三种取法结果相同：`chart.surroundedPalaces(target)`、`palace.surroundedPalaces()`、`star.surroundedPalaces()`。
+
+```ts
+have(stars: readonly string[]): boolean;
+notHave(stars: readonly string[]): boolean;
+haveOneOf(stars: readonly string[]): boolean;
+haveMutagen(mutagen: Mutagen): boolean;
+notHaveMutagen(mutagen: Mutagen): boolean;
+toText(options?: TextOptions): string;
+```
+
+判断对四宫的星耀取并集。
+
+```ts
+const sp = chart.palace(PalaceName.CAREER)!.surroundedPalaces()!;
+console.log(sp.have([MajorStar.TIANFU, MajorStar.TIANXIANG]), sp.haveOneOf(['擎羊', '陀罗']),
+  sp.notHave([MinorStar.DIKONG]), sp.haveMutagen(Mutagen.QUAN));
+console.log(sp.toText({ detail: TextDetail.OVERVIEW }).split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+true false true true
+## 官禄 三方四正
+### 本宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+### 对宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+### 财帛位 · 命宫 (壬午) · 大限 3-12
+### 官禄位 · 财帛 (戊寅) · 大限 43-52
+```
+
+## FlankingPalaces
+
+| 字段 / 方法 | 说明 |
+| --- | --- |
+| `previous` / `next` | 前一宫（索引 −1）/ 后一宫（+1），十二宫首尾相连 |
+| `astrolabe()` | 两宫所属星盘 |
+| `have` / `notHave` / `haveOneOf` / `haveMutagen` / `notHaveMutagen` | 对两宫取并集，同上 |
+| `toText(options?)` | 两宫各一节的文本 |
+
+由 `chart.flankingPalaces(target)` 取得，例子见[星盘对象](/zh/docs/js/astrolabe#flankingpalaces)。

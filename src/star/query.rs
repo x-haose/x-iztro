@@ -22,7 +22,7 @@ use crate::star::location::{
 ///
 /// 对应 iztro 的 `AstrolabeParam`，另收 iztro 挂在全局单例上的语言与配置。
 pub struct StarParam<'a> {
-    /// 公历日期，格式 `YYYY-M-D`
+    /// 公历日期（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`）
     pub solar_date: &'a str,
     /// 时辰索引 0-12（0 为早子时，12 为晚子时）
     pub time_index: u8,

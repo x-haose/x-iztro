@@ -39,6 +39,7 @@ iteration order is stable and sorted by key.
 | `palaces` | `BTreeMap<String, TextEntry>` | Palace entries, keyed by `Palace::as_key` |
 | `mutagens` | `BTreeMap<String, TextEntry>` | Transformation entries, keyed by `Mutagen::as_key` |
 | `concepts` | `BTreeMap<String, ConceptEntry>` | Glossary entries, keyed by slug |
+| `topics` | `BTreeMap<String, TopicEntry>` | Reading topics, keyed by slug |
 
 Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deserialize`.
 
@@ -63,7 +64,9 @@ Implements `Clone`, `Default`, `PartialEq`, `Eq`, `Debug`, `Serialize`, `Deseria
 | `group` | `Option<String>` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes; all `None` when absent |
 | `intro` | `Option<String>` | Reading (Markdown) |
+| `summary` | `Option<String>` | Summary of the reading; absent when the reading is no wider than `SUMMARY_FALLBACK_WIDTH` |
 | `combinations` | `BTreeMap<String, String>` | Reading for sharing a palace with another major star, keyed by that star |
+| `combination_summaries` | `BTreeMap<String, String>` | Summaries of the pairing readings, keyed like `combinations` |
 
 ### StarAttributes
 
@@ -86,11 +89,27 @@ the [guide](/en/docs/guide/guides/knowledge-pack#why-the-star-attributes-live-he
 | `quotes` | `Option<Vec<String>>` | Classical quotations |
 | `conditions` | `Option<String>` | The source's prose description of the conditions |
 | `intro` | `Option<String>` | Reading |
+| `summary` | `Option<String>` | Summary of the reading |
 
 ### TextEntry / ConceptEntry
 
-`TextEntry` (palaces, transformations) has `name` and `intro`; `ConceptEntry` (glossary) has `title`
+`TextEntry` (palaces, transformations) has `name`, `intro` and `summary`; `ConceptEntry` (glossary) has `title`
 and `intro`. All are `Option<String>`.
+
+### TopicEntry
+
+A reading topic: which palaces a kind of question looks at; [`topic_to_text`](/en/docs/rust/astro#topic_to_text)
+selects palaces by it.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `title` | `Option<String>` | Display name |
+| `surround` | `Option<Vec<String>>` | Palace keys taken with their trine & opposite, rendered in order |
+| `palaces` | `Option<Vec<String>>` | Palace keys taken on their own (`bodyPalace` / `originalPalace` allowed), after the `surround` groups |
+| `intro` | `Option<String>` | What the topic reads and why these palaces |
+| `summary` | `Option<String>` | Summary of the intro |
+
+`brief()` follows the same rule as [`StarEntry::brief`](#brief--combination_brief--missing_summaries).
 
 ### SCHEMA_VERSION
 
@@ -99,6 +118,17 @@ pub const SCHEMA_VERSION: u32 = 1;
 ```
 
 The highest format version this library supports. Parsing a higher `schema` is an error.
+
+### SUMMARY_FALLBACK_WIDTH
+
+```rust
+pub const SUMMARY_FALLBACK_WIDTH: usize = 240;
+```
+
+The summary layer's limit on a reading, in display width (CJK characters, kana, hangul and
+full-width punctuation count 2, everything else 1; 120 Chinese characters). A reading within it is
+used as is at the summary layer; an entry with a longer reading must carry a summary — see the
+[guide](/en/docs/guide/guides/knowledge-pack#summaries).
 
 ---
 
@@ -214,7 +244,7 @@ Err("knowledge pack must declare \"schema\" (currently 1)")
 <Accordion title="Absent and null mean the same thing">
 Every entry and field is optional. A map field (`source`, `stars`, `combinations` …) written as
 `null` is the same as leaving it out — Go serializes a nil map as `null`, and this keeps the default
-serialization of all three languages mutually parseable.
+serialization of every language mutually parseable.
 </Accordion>
 <Accordion title="Unknown keys are not an error">
 A key in `stars` that is not a star key, or an unknown pattern key in `patterns`, is kept verbatim.
@@ -263,7 +293,8 @@ impl KnowledgePack {
 **Returns**　A `KnowledgePack`; neither this pack nor the overlays change. The rules are in the
 [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section, key by key, an
 overlay's non-`None` fields replace the same-keyed entry's fields, `attributes` and `combinations`
-merge field by field, array fields are replaced wholesale.
+merge field by field, array fields are replaced wholesale; when an overlay entry replaces a reading
+without the matching summary, the base's old summary is dropped.
 
 **Example**
 
@@ -311,9 +342,9 @@ already hold a mutable pack and are layering many overlays, to skip the clone.
 
 ---
 
-## star / pattern / palace / mutagen
+## star / pattern / palace / mutagen / topic
 
-**Purpose**　Look up an entry by language-independent key.
+**Purpose**　Look up an entry by language-independent key (a topic by slug).
 
 **Signature**
 
@@ -323,10 +354,11 @@ impl KnowledgePack {
     pub fn pattern(&self, key: PatternKey) -> Option<&PatternEntry>
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
+    pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
 }
 ```
 
-**Returns**　`None` when the pack has no such entry. All four look the key up in the corresponding
+**Returns**　`None` when the pack has no such entry. The first four look the key up in the corresponding
 `BTreeMap` by `as_key()`, exactly as `pack.stars.get(key.as_key())` would; the glossary has no
 dedicated method, use `pack.concepts.get(slug)`.
 
@@ -391,6 +423,59 @@ for hit in chart.patterns() {
 
 ---
 
+## brief / combination_brief / missing_summaries
+
+**Purpose**　Pick material by the summary-layer rule, and check whether a pack can serve the summary
+layer.
+
+**Signature**
+
+```rust
+impl StarEntry {
+    pub fn brief(&self) -> Option<&str>
+    pub fn combination_brief(&self, other: &str) -> Option<&str>
+}
+impl PatternEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl TextEntry {
+    pub fn brief(&self) -> Option<&str>
+}
+impl KnowledgePack {
+    pub fn missing_summaries(&self) -> Vec<String>
+}
+```
+
+**Returns**　`brief` gives the summary when there is one, otherwise the reading itself when it is no
+wider than `SUMMARY_FALLBACK_WIDTH`, and `None` for a long reading without a summary;
+`combination_brief` does the same for the pairing with `other` (the partner's star key). Once a pack
+passes `missing_summaries` (an empty list), `None` only means there is no reading.
+`missing_summaries` lists the paths of entries whose reading exceeds the limit without a summary,
+such as `stars.ziweiMaj`, `stars.ziweiMaj.combinations.tianfuMaj` or `patterns.zi_fu_tong_gong`,
+sorted by section and key; glossary entries never reach the text and are not checked.
+
+**Example**
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let ziwei = pack.star(StarKey::ZiweiMaj).unwrap();
+println!("{}", ziwei.brief().unwrap());
+println!("{}", pack.star(StarKey::Hongluan).unwrap().brief().unwrap());
+println!("{:?}", pack.missing_summaries());
+```
+
+**Output**
+
+```text
+帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+红鸾星会增加亲切感，同时会比较含蓄，看起来给人一种比较端庄、温柔贤淑的感觉。不过这只是一种观感，实际如何须结合主星和辅星一起判断。
+[]
+```
+
+Hongluan's reading is within the limit, so the summary layer uses it as is.
+
+---
+
 ## for_astrolabe / for_horoscope
 
 **Purpose**　Pick by chart: cut a sub-pack holding only the entries relevant to this chart.
@@ -401,13 +486,8 @@ for hit in chart.patterns() {
 impl KnowledgePack {
     pub fn for_astrolabe(&self, chart: &Astrolabe) -> KnowledgePack
     pub fn for_astrolabe_with(&self, chart: &Astrolabe, config: &PatternConfig) -> KnowledgePack
-    pub fn for_horoscope(&self, chart: &Astrolabe, horoscope: &HoroscopeData) -> KnowledgePack
-    pub fn for_horoscope_with(
-        &self,
-        chart: &Astrolabe,
-        horoscope: &HoroscopeData,
-        config: &PatternConfig,
-    ) -> KnowledgePack
+    pub fn for_horoscope(&self, horoscope: &HoroscopeRef) -> KnowledgePack
+    pub fn for_horoscope_with(&self, horoscope: &HoroscopeRef, config: &PatternConfig) -> KnowledgePack
 }
 ```
 
@@ -415,15 +495,17 @@ impl KnowledgePack {
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `chart` | `&Astrolabe` | yes | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
-| `horoscope` | `&HoroscopeData` | yes | — | Horoscope data, available from `HoroscopeRef::data()` |
+| `chart` | `&Astrolabe` | `for_astrolabe*` | — | The chart to select by; a re-anchored chart selects by its re-anchored layout |
+| `horoscope` | `&HoroscopeRef` | `for_horoscope*` | — | The horoscope, with its chart and [query precision](/en/docs/rust/horoscope#precision) |
 | `config` | `&PatternConfig` | `_with` only | — | Pattern criteria; the two without `_with` use `PatternConfig::default()` |
 
 **Returns**　A standard `KnowledgePack` with the metadata carried over: `stars` holds the stars on
 the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
 `combinations` keep only partners that actually share the palace), `patterns` the hits under the
-`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
-each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+`config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` /
+`for_horoscope_with` add the flowing stars and the patterns hit from each perspective from the decadal
+scope down to the query precision; for a horoscope of a year or a month, the finer scopes belong to a
+representative day the kernel picked and are left out.
 Pair the sub-pack with [`patterns_with`](/en/docs/rust/patterns#patterns_with) /
 `patterns_to_text_with` under the same criteria: different criteria hit different sets, and the
 readings would then miss or over-include entries.
@@ -440,8 +522,11 @@ println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(),
 println!("{:?}", sub.star(StarKey::WuquMaj).unwrap().combinations.keys().collect::<Vec<_>>());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
+
+let year = chart.horoscope_of_year(2027)?;
+let sub = pack.for_horoscope(&year);   // yearly at most
 ```
 
 **Output**

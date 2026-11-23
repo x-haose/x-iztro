@@ -249,6 +249,9 @@ def patterns(
 
 **Raises**　`ValueError` — when no `astrolabe` was passed and this horoscope did not come from a
 chart. A horoscope obtained through `chart.horoscope(...)` never hits this.
+`IztroError` (`invalid_argument`) — when `scope` is finer than the horoscope's
+[query precision](/en/docs/python/horoscope#precision), such as `Scope.MONTHLY` on a horoscope of a
+lunar year; likewise for `patterns_to_text`.
 
 **Example**
 
@@ -376,8 +379,8 @@ parentheses next to the palace.
 **Signature**
 
 ```python
-def patterns_to_text(self, config: PatternConfig | None = None, *, knowledge=None) -> str          # Astrolabe
-def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None) -> str           # Horoscope
+def patterns_to_text(self, config: PatternConfig | None = None, *, knowledge=None, knowledge_depth=KnowledgeDepth.FULL) -> str  # Astrolabe
+def patterns_to_text(self, scope, config=None, astrolabe=None, *, knowledge=None, knowledge_depth=KnowledgeDepth.FULL) -> str  # Horoscope
 ```
 
 The same judgment as `patterns` (including re-anchoring context and judging criteria); the horoscope
@@ -386,6 +389,8 @@ version writes palace names as re-laid out at that scope. `knowledge`
 `KnowledgePack` uses that pack; when given, a reading for each hit pattern (`**pattern**: ` the
 body plus a "Conditions" line, each pattern once) follows the hit list — see
 [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
+`knowledge_depth=KnowledgeDepth.SUMMARY` uses the summaries and drops the conditions — see
+[Layers](/en/docs/guide/guides/to-text#layers).
 
 **Example**
 

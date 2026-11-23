@@ -13,7 +13,7 @@ entry.
 ## Install
 
 ```bash
-pip install x-iztro
+pip install "x-iztro~=0.7.0"
 ```
 
 Requires Python 3.10 or newer. The distribution ships a precompiled native extension (an abi3-py310
@@ -33,15 +33,15 @@ from x_iztro import Astro
 chart = Astro().by_solar("2000-8-16", 2, "female", language="en-US")  # 2 = Tiger hour (03:00–05:00)
 
 print(chart.solar_date, chart.lunar_date)
-# 2000-8-16 二〇〇〇年七月十七
+# 2000-8-16 Lunar 2000-7-17
 
 soul = chart.palace("soulPalace")
 print(" ".join(s.name for s in soul.major_stars))
 # emperor
 ```
 
-`lunar_date` is a Chinese-numeral lunar date string and stays Chinese under every language:
-`二〇〇〇年七月十七` is the 17th day of the 7th lunar month of 2000.
+`lunar_date` follows the chart language: `Lunar 2000-7-17` is the 17th day of the 7th lunar month of
+2000; a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`.
 
 ## Package layout
 

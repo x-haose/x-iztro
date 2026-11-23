@@ -63,7 +63,7 @@ type StarAttributes struct {
 type StarEntry struct {
 	// Name 为该语言的显示名
 	Name string `json:"name,omitempty"`
-	// Category 为类别（major / minor / adjective / dec）
+	// Category 为类别（major / minor / adjective / dec / flow）
 	Category string `json:"category,omitempty"`
 	// Group 为分组（杂耀的分类、神煞的组别）
 	Group string `json:"group,omitempty"`
@@ -71,8 +71,12 @@ type StarEntry struct {
 	Attributes StarAttributes `json:"attributes"`
 	// Intro 为解读正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限（显示宽度 240，中文 120 字）的条目为空
+	Summary string `json:"summary,omitempty"`
 	// Combinations 为与另一颗主星同宫的组合解读，键为对方星耀标识
 	Combinations map[string]string `json:"combinations,omitempty"`
+	// CombinationSummaries 为组合解读的摘要，与 Combinations 同键成对
+	CombinationSummaries map[string]string `json:"combinationSummaries,omitempty"`
 }
 
 // PatternEntry 为一条格局的知识条目。
@@ -85,6 +89,8 @@ type PatternEntry struct {
 	Conditions string `json:"conditions,omitempty"`
 	// Intro 为解读正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
 }
 
 // TextEntry 为只有名称与正文的条目（宫位、四化）。
@@ -93,6 +99,8 @@ type TextEntry struct {
 	Name string `json:"name,omitempty"`
 	// Intro 为正文
 	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
 }
 
 // ConceptEntry 为术语与基础概念条目。
@@ -101,6 +109,20 @@ type ConceptEntry struct {
 	Title string `json:"title,omitempty"`
 	// Intro 为正文
 	Intro string `json:"intro,omitempty"`
+}
+
+// TopicEntry 为一个解读主题（如婚恋、财运）：读这类问题要看哪些宫，由 Astrolabe.TopicToText 按它选宫。
+type TopicEntry struct {
+	// Title 为显示名
+	Title string `json:"title,omitempty"`
+	// Surround 为连同各自三方四正一起取的宫位标识，按出现顺序渲染
+	Surround []string `json:"surround,omitempty"`
+	// Palaces 为只取本宫的宫位标识（可含 bodyPalace / originalPalace），排在 Surround 各组之后
+	Palaces []string `json:"palaces,omitempty"`
+	// Intro 为这个主题看什么、为什么取这些宫
+	Intro string `json:"intro,omitempty"`
+	// Summary 为正文的摘要（单段）；正文不超过摘要层上限的条目为空
+	Summary string `json:"summary,omitempty"`
 }
 
 // KnowledgePack 为一份知识包。
@@ -127,6 +149,8 @@ type KnowledgePack struct {
 	Mutagens map[string]TextEntry `json:"mutagens"`
 	// Concepts 为术语与基础概念，键为 slug
 	Concepts map[string]ConceptEntry `json:"concepts"`
+	// Topics 为解读主题，键为 slug
+	Topics map[string]TopicEntry `json:"topics"`
 }
 
 // Knowledge 为语义化文本（ToTextWith 家族）的释义材料来源。零值表示不带释义，
@@ -162,6 +186,16 @@ func (k Knowledge) apply(payload map[string]any) {
 type TextOptions struct {
 	// Knowledge 为释义材料来源；零值不带释义
 	Knowledge Knowledge
+	// Detail 为事实详略：TextDetailOverview 或 TextDetailFull；空串取完整
+	Detail string
+	// KnowledgeDepth 为释义深度：KnowledgeDepthSummary 或 KnowledgeDepthFull；空串取全文。
+	// 取摘要层须同时给 Knowledge，所给包缺摘要时报 ErrInvalidArgument 并列出缺项
+	KnowledgeDepth string
+	// Through 为运限文本写到哪一层为止，更细的层级不写：ScopeDecadal 只写大限，ScopeYearly 写大限、
+	// 小限、流年，ScopeMonthly / ScopeDaily / ScopeHourly 依次各多一层；空串写到运限的查询精度
+	// （Horoscope.Precision）。只写到大限时大限段不列风云际会（它要读小限与流年才判得出）。
+	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin、不是运限层级、比查询精度细的取值报 ErrInvalidArgument
+	Through string
 	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
 	PatternConfig *PatternConfig
 }
@@ -169,6 +203,15 @@ type TextOptions struct {
 // apply 把全部选项写进查询入参；零值不加任何键。
 func (o TextOptions) apply(payload map[string]any) {
 	o.Knowledge.apply(payload)
+	if o.Detail != "" {
+		payload["detail"] = o.Detail
+	}
+	if o.KnowledgeDepth != "" {
+		payload["knowledgeDepth"] = o.KnowledgeDepth
+	}
+	if o.Through != "" {
+		payload["through"] = o.Through
+	}
 	if o.PatternConfig != nil {
 		payload["patternConfig"] = o.PatternConfig
 	}
@@ -209,7 +252,8 @@ func (k Knowledge) ForAstrolabeContext(ctx context.Context, chart *Astrolabe, co
 	return k.forChart(ctx, chart.textPayload("knowledgeForChart"), config)
 }
 
-// ForHoroscope 按运限取材：在 ForAstrolabe 的本命内容之上，另加各运限层的流耀与各层按 config 口径命中的格局。
+// ForHoroscope 按运限取材：在 ForAstrolabe 的本命内容之上，另加各运限层的流耀与各层按 config 口径命中的格局，
+// 只取到运限的查询精度（Horoscope.Precision）那一层。
 func (k Knowledge) ForHoroscope(horoscope *Horoscope, config *PatternConfig) (*KnowledgePack, error) {
 	return k.ForHoroscopeContext(context.Background(), horoscope, config)
 }
@@ -220,8 +264,7 @@ func (k Knowledge) ForHoroscopeContext(ctx context.Context, horoscope *Horoscope
 		return nil, invalidArgument("knowledgeForChart: horoscope must be created by Astrolabe.Horoscope")
 	}
 	payload := horoscope.astrolabe.textPayload("knowledgeForChart")
-	payload["targetDate"] = horoscope.SolarDate
-	payload["targetTimeIndex"] = horoscope.targetTimeIndex
+	horoscope.addTarget(payload)
 	return k.forChart(ctx, payload, config)
 }
 
@@ -286,7 +329,8 @@ func ParseKnowledgePack(data []byte) (*KnowledgePack, error) {
 
 // Merged 以本包为底依次叠加覆盖包，返回新包（本包不变）。
 // 合并规则见 knowledge/SCHEMA.md：覆盖包的非空字段覆盖同键条目的对应字段，
-// attributes / combinations 逐字段合并，数组字段整体替换。
+// attributes / combinations 逐字段合并，数组字段整体替换；覆盖条目换了正文却没给
+// 对应摘要时，合并结果去掉描述旧正文的摘要。
 func (p *KnowledgePack) Merged(overlays ...*KnowledgePack) (*KnowledgePack, error) {
 	return p.MergedContext(context.Background(), overlays...)
 }
@@ -353,6 +397,17 @@ func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry {
 		return nil
 	}
 	if e, ok := p.Mutagens[mutagenKey]; ok {
+		return &e
+	}
+	return nil
+}
+
+// Topic 取主题条目，没有返回 nil。
+func (p *KnowledgePack) Topic(slug string) *TopicEntry {
+	if p == nil {
+		return nil
+	}
+	if e, ok := p.Topics[slug]; ok {
 		return &e
 	}
 	return nil

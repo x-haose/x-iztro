@@ -24,11 +24,16 @@ well, so pasting it into a chat box loses no structure.
 | Surrounded palaces `to_text` | The target palace, its opposite, and the wealth and career positions, one section each |
 | Flanking palaces `to_text` | The two palaces immediately either side of the target, one section each |
 | Decadal timeline `to_text` | All twelve decadals in one table: natal palace, nominal ages, years, stem-branch, mutagens |
+| Yearly timeline `to_text` | A run of lunar years in one table: year, stem-branch, lunar new year, nominal age, the natal palaces of the decadal, age fortune and yearly Soul palace, mutagens |
+| Monthly timeline `to_text` | The months of one lunar year in one table: lunar month, first and last solar day, natal palace, stem-branch, mutagens; a leap month takes two rows, one per half |
 | `patterns_to_text` | The pattern-hit list on its own, from the natal or any horoscope perspective |
+| `topic_to_text` | Material by question: the palaces a knowledge-pack topic names (romance takes the spouse palace with its trine & opposite, plus soul, body and children) — see [Text by topic](#text-by-topic) |
 
 Everything generates in the **chart language**: a Chinese chart yields Chinese text, an English
 chart English text. With a [knowledge pack](#text-with-readings), readings are inlined next to the
-facts they belong to rather than appended (the mutagen notes are the one appendix).
+facts they belong to rather than appended (the mutagen notes are the one appendix). How much fact
+and how much reading to write each have a switch — see [Layers](#layers); the horoscope text has
+one more for the scope it stops at — see [How far the horoscope text goes](#how-far-the-horoscope-text-goes).
 
 ## Usage
 
@@ -54,6 +59,14 @@ natal, _ := chart.ToText()
 fortune, _ := h.ToText()
 ```
 
+```ts
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female', { language: 'en-US' });
+const h = chart.horoscope('2025-1-1', 0);
+
+const text = `${chart.toText()}\n${h.toText()}`;   // String(chart) / String(h) are equivalent
+```
+
 The finer-grained entries:
 
 ```python
@@ -61,6 +74,8 @@ chart.palace("soul").to_text()                  # one palace
 chart.surrounded_palaces("soul").to_text()      # surrounded palaces
 chart.flanking_palaces("soul").to_text()        # flanking palaces
 chart.decadal_list_to_text()                    # decadal timeline
+chart.yearly_overview_to_text(2001, 2012)       # yearly timeline of lunar years 2001-2012
+chart.monthly_list_to_text(2025)                # monthly timeline of lunar year 2025
 chart.patterns_to_text()                        # natal patterns
 h.patterns_to_text("yearly")                    # patterns from the yearly perspective
 ```
@@ -70,16 +85,30 @@ chart.PalaceToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.SurroundedPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.FlankingPalacesToText(iztro.PalaceTarget{Key: iztro.PalaceSoul})
 chart.DecadalListToText()
+chart.YearlyOverviewToText(2001, 2012)
+chart.MonthlyListToText(2025)
 chart.PatternsToText(nil)
 h.PatternsToText(iztro.ScopeYearly, nil)
 ```
 
+```ts
+chart.palace(PalaceName.SOUL)!.toText();
+chart.surroundedPalaces(PalaceName.SOUL)!.toText();
+chart.flankingPalaces(PalaceName.SOUL)!.toText();
+chart.decadalListToText();
+chart.yearlyOverviewToText(2001, 2012);
+chart.monthlyListToText(2025);
+chart.patternsToText();
+h.patternsToText('yearly');
+```
+
 On the Rust side these are `PalaceRef::to_text()`, `SurroundedPalaces::to_text()`,
-`FlankingPalaces::to_text()`, `Astrolabe::decadal_list_to_text()` and the free functions of the
+`FlankingPalaces::to_text()`, `Astrolabe::decadal_list_to_text()`,
+`Astrolabe::yearly_overview_to_text(from, to)`, `Astrolabe::monthly_list_to_text(year)` and the free functions of the
 `text` module (`astrolabe_to_text` / `horoscope_to_text` / `palace_to_text` /
 `surrounded_palaces_to_text` / `flanking_palaces_to_text` / `decadal_list_to_text` /
-`patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
-explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). All three languages emit identical text.
+`yearly_overview_to_text` / `monthly_list_to_text` / `patterns_to_text`); the convenience methods emit in the chart language, the free functions take an
+explicit language — see [Rust — TextOptions](/en/docs/rust/astro#textoptions). Every language emits identical text.
 
 ## Structure at a glance
 
@@ -99,7 +128,7 @@ The skeleton of a natal text, top to bottom:
 A horoscope text:
 
 ```text
-# Horoscope <solar date> (<lunar date>)
+# Horoscope <solar date> (<lunar date>)                   down to daily or hourly; down to monthly: # Horoscope <lunar year> (stem-branch) · Monthly (stem-branch); down to yearly or decadal: # Horoscope <lunar year> (stem-branch)
 ## Decadal Fortune · Soul Palace: Natal X (stem-branch)   mutagens, patterns + a twelve-palace table (Decadal | Natal | Major | Minor | Scope Stars); "Childhood Fortune" before the decadals start
 ## Age Fortune · Soul Palace: Natal X · Nominal Age N      palace names, mutagens, that palace's three star groups
 ## Yearly · Soul Palace: Natal X (stem-branch)             mutagens, patterns + a twelve-palace table (with a Twelve Gods column)
@@ -118,7 +147,7 @@ follow in the same shape:
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 - Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
 - Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
@@ -171,10 +200,10 @@ spirit, parents) — not by cell position on the chart. The `Patterns` section l
 [pattern engine](/en/docs/guide/concepts/patterns) on the natal chart, one per line: pattern name,
 landing palace, forming stars; with no hits the section is omitted.
 
-<Callout title="Lunar dates stay in Chinese">
-`Lunar` is the one field that is not localized: the lunar date is written with Chinese numerals
-whatever the chart language. `二〇二四年腊月初二` below is the 2nd day of the 12th lunar month,
-2024. `Pillars` is the four pillars in iztro's romanization (午 renders as `woo` to keep it apart
+<Callout title="How lunar dates are written">
+`Lunar` follows the chart language: `2000-7-17` is the 17th day of the 7th lunar month, 2000 (a leap
+month reads `leap-4`). The lunar date in a horoscope heading is written with Chinese numerals in every
+language, as in iztro: `二〇二四年腊月初二` below is the 2nd day of the 12th lunar month, 2024. `Pillars` is the four pillars in iztro's romanization (午 renders as `woo` to keep it apart
 from 戊 `wu`).
 </Callout>
 
@@ -253,7 +282,7 @@ different reading semantics.
 
 | Notation | Meaning |
 | --- | --- |
-| `# Natal Chart 2000-8-16 Tiger hour female`, `# Horoscope 2025-1-1 (…)` | Document title: the natal chart carries solar date, hour and gender; the horoscope carries the target date in solar and lunar form |
+| `# Natal Chart 2000-8-16 Tiger hour female`, `# Horoscope 2025-1-1 (…)` | Document title: the natal chart carries solar date, hour and gender; the horoscope carries the target date in solar and lunar form. A horoscope text that stops at the monthly scope titles itself with the lunar year, the yearly stem-branch and the monthly stem-branch instead (`# Horoscope 2025 (yi si) · Monthly (jia shen)`), and one that stops at the yearly or decadal scope with the lunar year and the yearly stem-branch only (`# Horoscope 2027 (ding wei)`) — the target date of a horoscope of a year or a month is a representative day the kernel picked and stays out of the title |
 | `## Basic Info`, `## Palace Overview`, `## Patterns`, `## Palaces`, `## Mutagen Notes` | The natal sections; `## Decadal Fortune`, `## Age Fortune`, `## Yearly`, `## Monthly`, `## Daily`, `## Hourly` are the horoscope sections |
 | `### soul (ren woo) · Decadal 3-12` | One section per palace: palace name, its stem and branch, and the nominal-age range when this palace is the decadal |
 | `### career (bing xu) · Decadal 83-92 [Body Palace]` | The bracket marks this palace as also being the Body palace; `[Original Palace]` marks the [Original palace](/en/docs/guide/concepts/palaces#the-original-palace). The overview table's Palace column carries the same marks |
@@ -269,6 +298,10 @@ different reading semantics.
 | `### Target Palace · soul (ren woo) · Decadal 3-12` | A palace heading in the surrounded-palaces text: the palace name is preceded by its role — `Target Palace`, `Opposite Palace`, `Wealth Palace`, `Career Palace` |
 | `### Previous Palace · siblings (xin si) · Decadal 13-22` | A palace heading in the flanking-palaces text: the roles are `Previous Palace` and `Next Palace`, and the fact lines match the surrounded-palaces text |
 | `\| # \| Natal Palace \| Nominal Age \| Years \| Stem-Branch \| Mutagen \|` | The decadal timeline's header: twelve rows, one per decadal, in starting order; the arrows in the Mutagen column point at natal palaces |
+| `\| Year \| Stem-Branch \| Lunar New Year \| Nominal Age \| Decadal Fortune \| Age Fortune \| Yearly Soul Palace \| Mutagen \|` | The yearly timeline's header: one row per lunar year; the Lunar New Year column is the solar date of that year's first lunar day, and the Decadal Fortune, Age Fortune and Yearly Soul Palace columns are the natal palaces each scope's Soul palace lands on |
+| `Childhood Fortune · wealth` | The decadal cell of the yearly timeline for a year before the decadals start: `Childhood Fortune` and the natal palace it lands on |
+| `\| Lunar Month \| Solar \| Natal Palace \| Stem-Branch \| Mutagen \|` | The monthly timeline's header: one row per month, in calendar order; the Solar column is the row's first and last day, the Natal Palace column is the natal palace the month's Soul palace lands on |
+| `leap 6 (1-15)` | A leap-month row of the monthly timeline: `leap` before the month number, and in parentheses the lunar days the row covers; a leap month is split into two rows, one per half |
 | `- Stem ren Flying: sage [A]→children, …` | The [flying-star mutagens](/en/docs/guide/concepts/mutagen#flying-stars) driven by this palace's stem: the mutagen stars and where each lands |
 | `- Twelve Gods: Changsheng·weak, Boshi·dragon, Suiqian·downcast, Jiangqian·disastery` | One god from each of the four groups, written `group·god`, always in the order Changsheng-12, Boshi-12, Sui-qian-12, Jiang-qian-12; the yearly table's Twelve Gods column holds only the Sui-qian and Jiang-qian pair |
 | `- Age Fortune Years: 5, 17, 29, …` | The [nominal ages](/en/docs/guide/concepts#four-concepts-to-get-straight-first) (虚岁) at which age fortune lands on this palace |
@@ -301,7 +334,7 @@ key, never by parsing the name.
 Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` and you get
 `Solar: 2000-8-16`.
 
-## The seven entries
+## The nine entries
 
 | Entry | Output |
 | --- | --- |
@@ -311,10 +344,12 @@ Date fields echo the input verbatim, without zero padding: pass `"2000-8-16"` an
 | Surrounded palaces | A `## soul Trine & Opposite` heading plus one section each for the target, its opposite, and the wealth and career positions; each heading carries a role prefix (`### Target Palace · soul …`), and the fact lines are character-for-character the palace text |
 | Flanking palaces | A `## Flanking Palaces` heading plus one section each for the [two neighbours](/en/docs/guide/concepts/surrounded#flanking-palaces), structured like the surrounded text with the role prefixes `Previous Palace` / `Next Palace` |
 | Decadal timeline | A `# Decadal Timeline` heading plus a twelve-row table, one row per decadal |
+| Yearly timeline | A `# Yearly Timeline <first year>-<last year>` heading plus a table with one row per lunar year |
+| Monthly timeline | A `# Monthly Timeline <lunar year>` heading plus a table with one row per month: 12 rows without a leap month, 14 with one |
 | `patterns_to_text` | Pattern lines only, one per hit; from the natal perspective or any horoscope scope |
 
-Eight bridge kinds map onto these: `patterns_to_text` splits into a natal and a horoscope kind
-(`patternsToText` / `horoscopePatternsToText`), and each of the other six entries is one kind.
+Ten bridge kinds map onto these: `patterns_to_text` splits into a natal and a horoscope kind
+(`patternsToText` / `horoscopePatternsToText`), and each of the other eight entries is one kind.
 
 Surrounded palaces and a single palace:
 
@@ -389,6 +424,47 @@ That table deliberately **does not expand each decadal's years** — twelve deca
 would run to a hundred and twenty rows, whereas the point of this table is to take in all twelve
 decades of a life at once. For the years within one decadal, use `yearly_list`.
 
+The yearly timeline takes a range of lunar years, one row per year, and may cross decadals (2001-2003
+and 2011-2012 shown):
+
+```text
+# Yearly Timeline 2001-2012
+
+| Year | Stem-Branch | Lunar New Year | Nominal Age | Decadal Fortune | Age Fortune | Yearly Soul Palace | Mutagen |
+|---|---|---|---|---|---|---|---|
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2002 | ren woo | 2002-2-12 | 3 | soul | spirit | soul | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+| 2003 | gui wei | 2003-2-1 | 4 | soul | parents | parents | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| 2011 | xin mao | 2011-2-3 | 12 | soul | friends | children | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+Each year follows the same convention as the [horoscope of a lunar year](#horoscope-of-a-lunar-year)
+(the first day of its sixth lunar month); a year before the decadals start shows `Childhood Fortune`
+in the decadal cell. The years are lunar years, both ends included, in 1-9999; a first year after the
+last year, or a year out of range, is `invalid_argument`. In a calendar-reform year without a first
+lunar month, the Lunar New Year cell is `—`.
+
+The monthly timeline is per lunar year, one row per month. Lunar 2025 has a leap sixth month, which
+is split into two rows: the first half shares the monthly scope of month 6, the second half that of
+month 7 (months 5 to 7 shown, the others are the same shape):
+
+```text
+# Monthly Timeline 2025
+
+| Lunar Month | Solar | Natal Palace | Stem-Branch | Mutagen |
+|---|---|---|---|---|
+| 5 | 2025-5-27 ~ 2025-6-24 | siblings | ren woo | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+| 6 | 2025-6-25 ~ 2025-7-24 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+| 7 | 2025-8-23 ~ 2025-9-21 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+The Natal Palace column is the natal palace that month's Soul palace lands on. The year is a lunar
+year in 1-9999; anything else is `invalid_argument`. The data is the same as `monthly_list(year)`;
+for one month's full horoscope, see [Horoscope of a lunar month](#horoscope-of-a-lunar-month).
+
 The pattern text:
 
 ```text
@@ -415,6 +491,8 @@ chart.palace("soul").to_text(knowledge=True)
 chart.surrounded_palaces("soul").to_text(knowledge=True)
 chart.flanking_palaces("soul").to_text(knowledge=True)
 chart.decadal_list_to_text(knowledge=True)
+chart.yearly_overview_to_text(2001, 2012, knowledge=True)
+chart.monthly_list_to_text(2025, knowledge=True)
 chart.patterns_to_text(knowledge=True)
 h.patterns_to_text("yearly", knowledge=True)
 
@@ -426,11 +504,13 @@ let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let opts = TextOptions::new().knowledge(&pack);
 
 chart.to_text_with(&opts);
-h.to_text_with(&opts);
+h.to_text_with(&opts)?;
 chart.palace(Palace::Soul).unwrap().to_text_with(&opts);
 chart.surrounded_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.flanking_palaces(Palace::Soul).unwrap().to_text_with(&opts);
 chart.decadal_list_to_text_with(&opts);
+chart.yearly_overview_to_text_with(2001, 2012, &opts)?;
+chart.monthly_list_to_text_with(2025, &opts)?;
 text::patterns_to_text_with(&hits, &names, &opts, chart.language);
 
 let cfg = PatternConfig { borrow: false, ..PatternConfig::default() };
@@ -446,6 +526,8 @@ chart.PalaceToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.SurroundedPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.FlankingPalacesToTextWith(iztro.PalaceTarget{Key: iztro.PalaceSoul}, opts)
 chart.DecadalListToTextWith(opts)
+chart.YearlyOverviewToTextWith(2001, 2012, opts)
+chart.MonthlyListToTextWith(2025, opts)
 chart.PatternsToTextWith(opts)
 h.PatternsToTextWith(iztro.ScopeYearly, opts)
 
@@ -456,7 +538,8 @@ chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), PatternC
 The pattern criteria (`config` / `pattern_config` / `PatternConfig`) are the same argument as
 `patterns(config)` and act on both the text's pattern section and the pattern readings: change the
 criteria and the hits and the readings that follow them change together. Omitted, the default
-criteria apply. The decadal timeline has no pattern section, so it does not take the argument.
+criteria apply. The decadal, yearly and monthly timelines have no pattern section, so they do not
+take the argument.
 
 ### Where readings go, and deduplication
 
@@ -468,11 +551,13 @@ criteria apply. The decadal timeline has no pattern section, so it does not take
 | Surrounded palaces | After each of the four palaces' fact lines |
 | Flanking palaces | After each of the two palaces' fact lines |
 | Decadal timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across decadals read only once |
+| Yearly timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across years read only once |
+| Monthly timeline | After the table, under `## Star Notes`: one entry per mutagen star, a star repeated across months read only once |
 | `patterns_to_text` | After the pattern list |
 
 - A reading entry is written `**heading**: body`; the heading is the star exactly as written on its
-  fact line (`**emperor([+3])**`, `**sun([+3]) [A]**`), the body is the pack's `intro` verbatim
-  (Markdown, untrimmed), with a blank line between entries.
+  fact line (`**emperor([+3])**`, `**sun([+3]) [A]**`); at the full layer the body is the pack's
+  `intro` verbatim (Markdown, untrimmed), with a blank line between entries.
 - A combined reading between major stars sharing a palace (the pack's `combinations`) is written
   `**emperor × empress (same palace)**: …` and comes first in that palace's readings; both
   directions are checked, so a reading recorded under only one of the two stars still appears,
@@ -480,6 +565,8 @@ criteria apply. The decadal timeline has no pattern section, so it does not take
 - Within a palace the stars are read in major, minor, adjective order; **the twelve gods get no
   readings**.
 - A pattern reading is the `intro` body followed by a `Conditions: …` paragraph.
+- The summary layer swaps those bodies for the summaries (a body already short enough is used as
+  is) and drops the pattern conditions; placement and deduplication stay the same.
 - The horoscope text reads only scope stars and each scope's patterns; natal stars are not repeated
   (those readings are in the natal text). A scope star or pattern that appears at several scopes is
   read only at the first scope it appears in.
@@ -524,26 +611,10 @@ Section and entry headings are translated into the chart language: on an English
 
 ### Length
 
-Readings come in full; trimming belongs to the application. Measured character counts for the same
-chart (Chinese chart, default pack):
-
-| Entry | Facts only | With readings |
-| --- | --- | --- |
-| Natal chart | 3,389 | 20,765 |
-| Horoscope | 2,697 | 8,698 |
-| Palace (Soul) | 222 | 1,141 |
-| Surrounded palaces (Soul) | 924 | 6,312 |
-| Flanking palaces (Soul) | 436 | 1,874 |
-| Decadal timeline | 1,045 | 6,447 |
-| Patterns | 36 | 328 |
-
-An English chart is longer (star names are words rather than two characters, and the structural
-labels are longer): natal 6,757, horoscope 6,378, palace 464, surrounded palaces 1,911, flanking
-palaces 895, decadal timeline 1,893, patterns 95.
-Any mainstream model's context window holds either comfortably; trimming is normally unnecessary.
-The natal chart's readings dominate because every major, minor and adjective star on the chart has
-an entry. For readings on a few palaces only, use the palace or surrounded-palaces entry; to lay
-things out yourself, take the chart's sub-pack with
+Full readings are copied verbatim, and the natal chart's readings dominate because every major,
+minor and adjective star on the chart has an entry. For something shorter, use the overview and
+summary [layers](#layers) — sizes are in that section; for readings on a few palaces only, use the
+palace or surrounded-palaces entry; to lay things out yourself, take the chart's sub-pack with
 [`for_astrolabe`](/en/docs/guide/guides/knowledge-pack#picking-by-chart) and assemble from it.
 
 ### Custom packs
@@ -565,15 +636,245 @@ pack's language is not tied to the chart's, so an English chart with the Chinese
 headings and Chinese bodies.
 </Callout>
 
+## Text by topic
+
+A user asks about romance, or about money, and each question reads different palaces. Topic text
+selects palaces by a knowledge-pack [topic](/en/docs/guide/guides/knowledge-pack#topics): each palace
+in `surround` forms a group with its trine & opposite (target, opposite, wealth and career positions),
+the palaces in `palaces` go under "Related Palaces", and no palace appears twice; the topic's
+description sits under the title, and the patterns landing in those palaces plus the mutagen notes
+close the text. Topics are defined in the pack, so a pack is required.
+
+```python
+chart.topic_to_text("romance")                                              # knowledge defaults to True
+chart.topic_to_text("wealth", knowledge_depth=KnowledgeDepth.SUMMARY)
+pack.topics()                                                               # the topics a pack defines
+```
+
+```rust
+let opts = TextOptions::new().knowledge_summary(pack)?;
+chart.topic_to_text("romance", &opts)?;                    // the free function text::topic_to_text takes a language
+```
+
+```go
+chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
+```
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+
+看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。
+
+## 夫妻 三方四正
+
+### 本宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+…
+### 对宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+…
+## 相关宫位
+
+### 命宫 (壬午) · 大限 3-12
+…
+### 子女 (己卯) · 大限 33-42
+…
+## 格局
+…
+## 四化释义
+…
+```
+
+On this chart the body palace is the career palace, already shown in the spouse palace's trine &
+opposite, so "Related Palaces" does not repeat it. Topic text takes both [layer](#layers) switches:
+the romance topic is 3,758 characters with full facts and summaries, 2,851 as an overview with
+summaries, 11,390 with full facts and full readings. An unknown topic, an unknown palace key in the
+topic, or no pack at all is `invalid_argument`.
+
+## Layers
+
+Two independent switches: **detail** decides how much fact to write, **knowledge depth** how much
+reading. Both default to full, giving the output shown above.
+
+| Switch | Values | Effect |
+| --- | --- | --- |
+| Detail | overview / full (default) | Overview: the natal text keeps basic info, the palace overview table and the patterns, without the twelve palaces in detail; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace, surrounded-palaces and flanking text give each palace's major, minor and adjective stars only. Patterns and the decadal, yearly and monthly timelines are overviews already and do not change |
+| Knowledge depth | summary / full (default) | Summary: the pack entries' [summaries](/en/docs/guide/guides/knowledge-pack#summaries), a body short enough on its own used as is; patterns without their conditions. Meaningful only with a knowledge pack; a pack with a long body lacking its summary is an error that lists every missing entry |
+
+Readings follow sections, not tables: the natal overview has no palace sections, so it carries no
+star readings — only the pattern and mutagen readings; the palace, surrounded-palaces and flanking
+overviews are still palace sections and keep their star readings; each scope of the horoscope
+overview keeps its scope-star and pattern readings.
+
+```python
+from x_iztro import KnowledgeDepth, TextDetail
+
+chart.to_text(detail=TextDetail.OVERVIEW)                                   # overview, facts only
+chart.to_text(knowledge=True, knowledge_depth=KnowledgeDepth.SUMMARY)       # full facts + summaries
+chart.palace("soul").to_text(detail=TextDetail.OVERVIEW, knowledge=True, knowledge_depth=KnowledgeDepth.SUMMARY)
+```
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+
+chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview));
+chart.to_text_with(&TextOptions::new().knowledge_summary(pack)?);            // Err if the pack lacks summaries
+chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview).knowledge_summary(pack)?);
+```
+
+```go
+chart.ToTextWith(iztro.TextOptions{Detail: iztro.TextDetailOverview})
+chart.ToTextWith(iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge(), KnowledgeDepth: iztro.KnowledgeDepthSummary})
+```
+
+`knowledge_depth` is accepted by all ten to_text entries; `detail` only by the five it affects
+(chart, horoscope, palace, surrounded palaces, flanking palaces), and Go's `TextOptions.Detail` has
+no effect on patterns or the decadal, yearly and monthly timelines.
+
+Measured character counts for each form of the same chart (Chinese chart, default pack):
+
+| Entry | Full facts | Full + summary | Full + full readings | Overview | Overview + summary | Overview + full readings |
+| --- | --- | --- | --- | --- | --- | --- |
+| Natal chart | 3,389 | 8,385 | 20,552 | 756 | 1,054 | 3,545 |
+| Horoscope | 2,697 | 6,132 | 8,698 | 1,932 | 5,367 | 7,933 |
+| Palace (Soul) | 222 | 654 | 1,141 | 71 | 503 | 990 |
+| Surrounded palaces (Soul) | 924 | 2,721 | 6,314 | 319 | 2,116 | 5,709 |
+| Flanking palaces (Soul) | 436 | 963 | 1,874 | 133 | 660 | 1,571 |
+| Decadal timeline | 1,045 | 1,936 | 6,447 | — | — | — |
+| Yearly timeline (lunar 2001-2012) | 1,183 | 2,074 | 6,585 | — | — | — |
+| Monthly timeline (lunar 2025) | 1,278 | 2,169 | 6,680 | — | — | — |
+| Patterns | 36 | 95 | 328 | — | — | — |
+
+An English chart's facts are longer (star names are words rather than two characters, and the
+structural labels are longer): full facts — natal 6,757, horoscope 6,378, palace 464, surrounded
+palaces 1,911, flanking palaces 895, decadal timeline 1,893, yearly timeline 2,170, monthly timeline 2,260, patterns 95; overview — natal 1,374,
+horoscope 5,112, palace 164, surrounded palaces 710, flanking palaces 299.
+
+## How far the horoscope text goes
+
+By default the horoscope text stops at the **precision** of its target: a horoscope of a date writes
+all six sections, a [horoscope of a lunar year](#horoscope-of-a-lunar-year) stops at the yearly scope
+and a [horoscope of a lunar month](#horoscope-of-a-lunar-month) at the monthly scope — the scopes
+finer than the precision belong to a representative day the kernel picked, not to the question.
+`through` stops the horoscope text at a scope and leaves the finer ones out:
+
+| Value | Sections written | Characters (full / overview) |
+| --- | --- | --- |
+| `decadal` | decadal | 579 / 290 |
+| `yearly` | decadal, age fortune, yearly | 1,625 / 860 |
+| `monthly` | plus monthly | 2,014 / 1,249 |
+| `daily` | plus daily | 2,356 / 1,591 |
+| `hourly` | all six | 2,697 / 1,932 |
+
+The age fortune is written or left out together with the yearly scope. The character counts are
+measured on the horoscope text of the table in [Layers](#layers) (Chinese chart, target 2025-1-1). `through` is independent of the two switches in
+[Layers](#layers) and acts on the horoscope text only: Python accepts it on the horoscope's
+`to_text` alone, and Go's `TextOptions.Through` has no effect on the other texts. The natal scope
+`origin`, any value that is not a horoscope scope, and a scope finer than the precision (such as the
+monthly scope on a horoscope of a year) are `invalid_argument`; a coarser scope is fine. The title
+stops at the same scope, see [Format conventions](#format-conventions).
+
+Stopped at the decadal scope, the decadal section leaves out Feng Yun Ji Hui: it is reported at the
+decadal view but reads whether the age fortune's and the yearly scope's Soul Palaces meet Lu or Ma,
+so within one decade it comes and goes year by year. The decadal section is therefore the same for
+every year of a decade. The [horoscope patterns](/en/docs/guide/concepts/patterns) themselves still
+report Feng Yun Ji Hui; the text scope does not affect them.
+
+```python
+from x_iztro import Scope
+
+h.to_text(through=Scope.YEARLY)
+```
+
+```rust
+h.to_text_with(&TextOptions::new().horoscope_through(Scope::Yearly)?)?;
+```
+
+```go
+h.ToTextWith(iztro.TextOptions{Through: iztro.ScopeYearly})
+```
+
+### Horoscope of a lunar year
+
+When the question is about a year, give the target as a **lunar year** instead of picking a solar
+date yourself. The days from 1 January up to the lunar new year still belong to the previous lunar
+year, so computing from 1 January yields the previous year's yearly scope — the 2025-1-1 target above
+has the yearly stem-branch jia chen, not 2025's yi si. The horoscope of a year takes the first day of
+that year's sixth lunar month as its target date, the same convention as `yearly_list`; its precision
+is the yearly scope, so the text stops there by default, and the title names only the lunar year and
+its yearly stem-branch, not that day:
+
+```python
+h = chart.horoscope_of_year(2027)
+h.to_text()
+```
+
+```rust
+let h = chart.horoscope_of_year(2027)?;
+h.to_text();
+```
+
+```go
+h, _ := chart.HoroscopeOfYear(2027)
+h.ToText()
+```
+
+```text
+# Horoscope 2027 (ding wei)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal parents · Nominal Age 28
+## Yearly · Soul Palace: Natal parents (ding wei)
+```
+
+When the question spans several years ("the next few years", "which year suits this"), the
+[yearly timeline](#the-nine-entries) gives one row per year in a single call instead of one horoscope
+per year.
+
+### Horoscope of a lunar month
+
+When the question is about a month, give the target as a **lunar year plus a lunar month** instead
+of picking a day on the asker's behalf. The horoscope of a month takes the first day of that
+(non-leap) month as its target date, the same convention as a whole-month entry of `monthly_list`;
+its precision is the monthly scope, so the text stops there by default, and the title names the
+lunar year, the yearly stem-branch and the monthly stem-branch, not that day. The month
+number is 1-12 and a leap month has no number of its own: under the default divide settings the
+first half of a leap month follows the month it repeats and the second half the next one — the
+monthly timeline gives the dates.
+When `horoscope_divide` is the solar-term divide (exact), the target date is instead the day after the solar term that opens the `month`-th solar-term month (the Yin month is 1), so the yearly scope belongs to the same Li Chun year as the horoscope of that year. Under the default divide, a month the lunar year lacks (calendar-reform years such as 8 and 237) is also an input error.
+
+```python
+h = chart.horoscope_of_month(2025, 7)
+h.to_text()
+```
+
+```rust
+let h = chart.horoscope_of_month(2025, 7)?;
+h.to_text();
+```
+
+```go
+h, _ := chart.HoroscopeOfMonth(2025, 7)
+h.ToText()
+```
+
+```text
+# Horoscope 2025 (yi si) · Monthly (jia shen)
+## Decadal Fortune · Soul Palace: Natal spouse (geng chen)
+## Age Fortune · Soul Palace: Natal property · Nominal Age 26
+## Yearly · Soul Palace: Natal siblings (yi si)
+## Monthly · Soul Palace: Natal parents (jia shen)
+```
+
 ## Six languages
 
 The structural labels (`Basic Info`, `Major Stars`, `Trine & Opposite`, `Decadal`, …) exist in six
 sets — zh-CN, zh-TW, en-US, ja-JP, ko-KR, vi-VN — and star names, palace names, stems and branches,
 brightness, mutagens and pattern names are translated into the chart language. The same chart in
-all six languages has a line-for-line matching skeleton; only the words differ. The lunar date is
-written with Chinese numerals in every language (`二〇〇〇年七月十七`).
+all six languages has a line-for-line matching skeleton; only the words differ. The natal lunar date
+follows the language (`2000-7-17`, `2000年7月17日`, `2000년 7월 17일`, `ngày 17 tháng 7 năm 2000`;
+Chinese numerals in Chinese); the horoscope heading keeps Chinese numerals in every language. A
+heading that stops at the monthly, yearly or decadal scope carries no date: the year is in Arabic
+numerals and the stem-branch is translated into the chart language.
 
-The mutagen mark follows the language: Chinese writes `化禄` and Japanese `化祿`, English `[A]`
+The mutagen mark follows the language: Simplified Chinese and Japanese write `化禄`, Traditional Chinese `化祿`, English `[A]`
 (`[A]`/`[B]`/`[C]`/`[D]` are Lu, Quan, Ke, Ji), Korean `화록`, Vietnamese `hóa Lộc`. Word spacing
 follows the language too: in Latin-script languages a space separates the star name from its
 mutagen mark and the stem from the branch (English `sun [A]`, `### soul (ren woo)`; Vietnamese
@@ -607,14 +908,16 @@ system = ("You are a Zi Wei Dou Shu analyst. Answer from the given chart only; "
           "do not invent information that is not on it.")
 user = f"""{chart.to_text()}
 
-{chart.horoscope("2025-1-1", 0).to_text()}
+{chart.horoscope_of_year(2025).to_text()}
 
 Analyse this person's career prospects for 2025."""
 ```
 
 To have the model interpret along one school's lines rather than freely, replace `chart.to_text()`
 with `chart.to_text(knowledge=True)` (or pass your own pack) and the readings enter the context with
-the chart. The text is Markdown, so a model reads the palace overview as a table and treats each
+the chart. When the client caps the size of a tool result, give the overview first and fetch a single
+palace or a surrounded set per question, with readings at the summary layer — see [Layers](#layers).
+The text is Markdown, so a model reads the palace overview as a table and treats each
 `### ` heading as a palace boundary — asking it to "quote the palace section" has a stable anchor.
 For a fuller integration (tool calls, and not letting the model chart for itself) see
 [Letting an AI read the chart](/en/docs/guide/guides/llm).

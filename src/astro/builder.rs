@@ -2,20 +2,16 @@
 //!
 //! 提供 `by_solar` 和 `by_lunar` 两个入口函数，从阳历或阴历日期生成完整的紫微斗数星盘。
 
-use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::lunar_year::{self, LunarYearRefHelper};
-use lunar_rust::solar::SolarRefHelper;
-use lunar_rust::{lunar, solar};
-
 use crate::astro::context::{self, AstroContext};
-use crate::astro::lunar_table;
+use crate::astro::date_input::{self, DateInput};
 use crate::astro::palace::{get_decadals_and_ages, get_palace_names};
+use crate::calendar::{self, SolarTime};
 use crate::data::constants::{SIGNS, TIGER_RULE, TIME_RANGES, ZODIAC};
 use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::IztroError;
-use crate::i18n::{translate_sign, translate_time, translate_zodiac};
+use crate::i18n::{translate_lunar_date, translate_sign, translate_time, translate_zodiac};
 use crate::models::astrolabe::{Astrolabe, RawChineseDate, RawDates, RawLunarDate};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
@@ -34,56 +30,8 @@ use crate::utils::{fix_index, translate_chinese_date};
 // 辅助函数
 // ============================================================
 
-/// lunar_rust 星座中文名转黄道索引（白羊=0 … 双鱼=11）
-fn parse_sign_index(name: &str) -> Result<usize, IztroError> {
-    const XING_ZUO: [&str; 12] = [
-        "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶",
-        "双鱼",
-    ];
-    XING_ZUO
-        .iter()
-        .position(|s| *s == name)
-        .ok_or_else(|| lunar_defect("sign", name))
-}
-
-/// lunar_rust 交回了本该在表内、实际却查不到的干支或星座原文时的错误。
-///
-/// 这是依赖库行为超出预期，不是调用方的过错，故不 panic：wasm 下 panic 即
-/// trap，且每次 trap 都永久损耗模块实例的栈空间。
-fn lunar_defect(what: &str, value: &str) -> IztroError {
-    IztroError::Internal(format!("lunar_rust returned an unknown {what}: '{value}'"))
-}
-
-/// 把 lunar_rust 交回的天干原文落成枚举，`what` 说明它是哪一柱。
-pub(crate) fn stem_of(value: &str, what: &str) -> Result<HeavenlyStem, IztroError> {
-    parse_heavenly_stem(value).ok_or_else(|| lunar_defect(&format!("{what} heavenly stem"), value))
-}
-
-/// 把 lunar_rust 交回的地支原文落成枚举，`what` 说明它是哪一柱。
-pub(crate) fn branch_of(value: &str, what: &str) -> Result<EarthlyBranch, IztroError> {
-    parse_earthly_branch(value)
-        .ok_or_else(|| lunar_defect(&format!("{what} earthly branch"), value))
-}
-
-/// 支持的公历年份范围。下限避开 1582 年格里历改革（lunar_rust 对改革空洞
-/// 日期 panic），上限为 lunar_rust 农历表的覆盖终点。
-const SUPPORTED_YEARS: std::ops::RangeInclusive<i64> = 1583..=9999;
-
-/// 公历某月天数（格里历闰年规则）；月份非法返回 0。
-fn days_in_month(year: i64, month: i64) -> i64 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 0,
-    }
-}
+/// 支持的年份范围（公历与农历同），与 iztro 一致。1582-10-15 以前的公历按儒略历。
+pub(crate) const SUPPORTED_YEARS: std::ops::RangeInclusive<i64> = 1..=9999;
 
 /// 校验时辰索引在 0-12（0=早子时，12=晚子时）。
 pub(crate) fn validate_time_index(time_index: u8) -> Result<(), IztroError> {
@@ -93,19 +41,16 @@ pub(crate) fn validate_time_index(time_index: u8) -> Result<(), IztroError> {
     Ok(())
 }
 
-/// 解析并校验 "YYYY-M-D" 公历日期串，返回 (年, 月, 日)。
-/// 拒绝格式错误、不存在的日期与超出 [`SUPPORTED_YEARS`] 的年份。
-pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), IztroError> {
+/// 解析并校验公历日期串（文法见 [`date_input`]），返回年月日与时间部分的小时。
+/// 拒绝文法不符、不存在的日期（含改历空缺 1582-10-05 至 10-14）与超出 [`SUPPORTED_YEARS`] 的年份。
+pub(crate) fn parse_solar_input(solar_date: &str) -> Result<DateInput, IztroError> {
     let err = |detail: &str| {
         IztroError::InvalidDate(format!("invalid solar date '{solar_date}': {detail}"))
     };
-    let parts: Vec<&str> = solar_date.split('-').collect();
-    if parts.len() != 3 {
-        return Err(err("expected 'YYYY-M-D'"));
-    }
-    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
-    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
-    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    let input = date_input::parse(solar_date).map_err(err)?;
+    let DateInput {
+        year, month, day, ..
+    } = input;
     if !SUPPORTED_YEARS.contains(&year) {
         return Err(err(&format!(
             "year must be within {}-{}",
@@ -116,27 +61,32 @@ pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), Iztr
     if !(1..=12).contains(&month) {
         return Err(err("month must be within 1-12"));
     }
-    if day < 1 || day > days_in_month(year, month) {
+    if day < 1 || day > calendar::days_in_month(year, month) {
         return Err(err("day is out of range for that month"));
     }
-    Ok((year, month, day))
+    if calendar::is_reform_gap(year, month, day) {
+        return Err(err(
+            "1582-10-05 to 1582-10-14 do not exist (the Julian calendar ends on 1582-10-04)",
+        ));
+    }
+    Ok(input)
 }
 
-/// 解析并校验 "YYYY-M-D" 农历日期串，返回 (年, 带符号月, 日)。
+/// 解析并校验公历日期串，只取年月日；时间部分不参与排盘。
+pub(crate) fn parse_solar_date(solar_date: &str) -> Result<(i64, i64, i64), IztroError> {
+    parse_solar_input(solar_date).map(|d| (d.year, d.month, d.day))
+}
+
+/// 解析并校验农历日期串（文法见 [`date_input`]，时间部分不参与排盘），返回 (年, 带符号月, 日)。
 /// 月为负值表示闰月；该年该月并非闰月时 `is_leap_month` 不生效，
-/// 与 JS iztro 行为一致。日按修正后的农历月表校验（大月 30 / 小月 29，
-/// 见 [`lunar_table`]）。
+/// 与 JS iztro 行为一致。日按该月天数校验（大月 30 / 小月 29）。
 fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, i64), IztroError> {
     let err = |detail: &str| {
         IztroError::InvalidDate(format!("invalid lunar date '{lunar_date}': {detail}"))
     };
-    let parts: Vec<&str> = lunar_date.split('-').collect();
-    if parts.len() != 3 {
-        return Err(err("expected 'YYYY-M-D'"));
-    }
-    let year: i64 = parts[0].parse().map_err(|_| err("year is not a number"))?;
-    let month: i64 = parts[1].parse().map_err(|_| err("month is not a number"))?;
-    let day: i64 = parts[2].parse().map_err(|_| err("day is not a number"))?;
+    let DateInput {
+        year, month, day, ..
+    } = date_input::parse(lunar_date).map_err(err)?;
     if !SUPPORTED_YEARS.contains(&year) {
         return Err(err(&format!(
             "year must be within {}-{}",
@@ -147,16 +97,12 @@ fn parse_lunar_date(lunar_date: &str, is_leap_month: bool) -> Result<(i64, i64, 
     if !(1..=12).contains(&month) {
         return Err(err("month must be within 1-12"));
     }
-    let year_has_this_leap = lunar_year::LunarYear::from_lunar_year(year)
-        .get_leap_months()
-        .abs()
-        == month;
-    let signed_month = if is_leap_month && year_has_this_leap {
+    let signed_month = if is_leap_month && calendar::leap_month(year) == Some(month) {
         -month
     } else {
         month
     };
-    let day_count = lunar_table::month_day_count(year, signed_month)
+    let day_count = calendar::month_day_count(year, signed_month)
         .ok_or_else(|| err("month does not exist in that lunar year"))?;
     if day < 1 || day > day_count {
         return Err(err("day is out of range for that lunar month"));
@@ -241,21 +187,32 @@ pub(crate) fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 
     }
 }
 
-/// 构造时刻用的分钟数。
+/// 排盘时刻的分钟数。
 ///
 /// lunar-lite 取时辰整点后的 30 分（`ganzhi.js` 的 `Solar.fromYmdHms(…, 30, 0)`）。
 /// 按节气取干支是时刻级比较：用 0 分会让节气时刻落在 `HH:00`~`HH:30` 的那些日子
 /// 判到节气的另一侧，`horoscope_divide=Exact` 下的月柱静默差一个月。
 /// 农历年月日与日柱不受影响——前者是日期级，后者分界在 23:00，两个分钟数同侧。
-pub(crate) const CHART_MINUTE: i64 = 30;
+const CHART_MINUTE: i64 = 30;
 
-/// 时辰索引转小时数（用于 lunar_rust 日期创建）
+/// 时辰索引转小时数：0 → 0 点，1-11 → 2t-1 点，12 → 23 点。
 pub(crate) fn time_index_to_hour(time_index: u8) -> i64 {
     match time_index {
         0 => 0,
         12 => 23,
         i => (i as i64) * 2 - 1,
     }
+}
+
+/// 排盘时刻：某日某时辰的代表时刻（该时辰首个整点后 [`CHART_MINUTE`] 分）。
+pub(crate) fn chart_moment(year: i64, month: i64, day: i64, time_index: u8) -> SolarTime {
+    SolarTime::new(
+        year,
+        month,
+        day,
+        time_index_to_hour(time_index),
+        CHART_MINUTE,
+    )
 }
 
 // ============================================================
@@ -448,15 +405,8 @@ fn build_palaces(
 /// 推算八字四柱中的月、日、时三柱
 ///
 /// 月柱按 `horoscope_divide` 分界：初一分界时由年干经五虎遁推，闰月下半月归下月；
-/// 节气分界时取 lunar_rust 的精确时刻月柱。日柱晚子时归次日，时柱天干随日柱推算。
-///
-/// # Errors
-/// lunar_rust 交回表外的干支原文时返回 [`IztroError::Internal`]。
-fn build_pillars(
-    ctx: &AstroContext,
-    lunar_ref: &lunar::LunarRef,
-    config: &Config,
-) -> Result<Pillars, IztroError> {
+/// 节气分界时取交节时刻换月的月柱。日柱晚子时归次日，时柱天干随日柱推算。
+fn build_pillars(ctx: &AstroContext, config: &Config) -> Pillars {
     let monthly = match config.horoscope_divide {
         HoroscopeDivide::Normal => {
             let month_fix: i32 = if ctx.is_leap && ctx.lunar_day > 15 {
@@ -476,23 +426,14 @@ fn build_pillars(
                 )),
             )
         }
-        HoroscopeDivide::Exact => {
-            let gan = lunar_ref.get_month_gan_exact();
-            let zhi = lunar_ref.get_month_zhi_exact();
-            (stem_of(&gan, "month")?, branch_of(&zhi, "month")?)
-        }
+        HoroscopeDivide::Exact => calendar::month_exact(&ctx.moment, ctx.lunar_year),
     };
 
-    let day_gan = lunar_ref.get_day_gan_exact();
-    let day_zhi = lunar_ref.get_day_zhi_exact();
-    let time_gan = lunar_ref.get_time_gan();
-    let time_zhi = lunar_ref.get_time_zhi();
-
-    Ok(Pillars {
+    Pillars {
         monthly,
-        daily: (stem_of(&day_gan, "day")?, branch_of(&day_zhi, "day")?),
-        hourly: (stem_of(&time_gan, "time")?, branch_of(&time_zhi, "time")?),
-    })
+        daily: ctx.lunar.day_exact,
+        hourly: ctx.lunar.time,
+    }
 }
 
 /// 一次生辰的完整四柱 [年, 月, 日, 时]（按 `config` 的分界口径，与排盘 `raw_dates` 一致）。
@@ -507,16 +448,7 @@ pub(crate) fn four_pillars(
     config: &Config,
 ) -> Result<[(HeavenlyStem, EarthlyBranch); 4], IztroError> {
     let ctx = context::derive(solar_date, time_index, true, config)?;
-    let (year, month, day) = parse_solar_date(solar_date)?;
-    let lunar_ref = lunar::from_solar(&solar::from_ymdhms(
-        year,
-        month,
-        day,
-        time_index_to_hour(ctx.effective_time_index),
-        CHART_MINUTE,
-        0,
-    ));
-    let pillars = build_pillars(&ctx, &lunar_ref, config)?;
+    let pillars = build_pillars(&ctx, config);
     Ok([
         (ctx.yearly_stem, ctx.yearly_branch),
         pillars.monthly,
@@ -528,7 +460,7 @@ pub(crate) fn four_pillars(
 /// 通过阳历日期排盘
 ///
 /// # 参数
-/// - `solar_date`: 阳历日期字符串，格式 "YYYY-M-D"（支持 1583-9999 年）
+/// - `solar_date`: 阳历日期字符串（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`；时间不参与排盘；支持 1-9999 年，1582-10-15 以前按儒略历），原样记入星盘的 `solar_date`
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
 /// - `fix_leap`: 是否修正闰月
@@ -548,18 +480,6 @@ pub fn by_solar(
     // 1. 派生上下文：生效时辰、农历年月日、两套年干支、月索引、命身宫、五行局
     let ctx = context::derive(solar_date, time_index, fix_leap, &config)?;
 
-    let (year, month, day) = parse_solar_date(solar_date)?;
-    let solar_ref = solar::from_ymd(year, month, day);
-    // 时柱随生效时辰推算，因此日期对象要带上对应小时
-    let lunar_ref = lunar::from_solar(&solar::from_ymdhms(
-        year,
-        month,
-        day,
-        time_index_to_hour(ctx.effective_time_index),
-        CHART_MINUTE,
-        0,
-    ));
-
     // 2. 安星与组装十二宫
     let stars = place_stars(&ctx, gender, language, &config);
     let palaces = build_palaces(&ctx, &stars, gender, &config);
@@ -577,7 +497,7 @@ pub fn by_solar(
     let body_star = get_earthly_branch_info(ctx.yearly_branch).body;
 
     // 4. 八字四柱：年柱与安星年干支同分界，其余三柱另算
-    let pillars = build_pillars(&ctx, &lunar_ref, &config)?;
+    let pillars = build_pillars(&ctx, &config);
     let chinese_date = translate_chinese_date(
         [
             (ctx.yearly_stem, ctx.yearly_branch),
@@ -588,17 +508,23 @@ pub fn by_solar(
         language,
     );
 
-    // 5. 展示字段：星座、生肖、时辰、农历日期串
-    //    （月/日名取修正后的农历日期，闰月带「闰」前缀；年名不经月表，直接取）
-    let sign_index = parse_sign_index(&solar_ref.get_xing_zuo())?;
+    // 5. 展示字段：星座、生肖、时辰、农历日期串（按排盘语言）
+    let sign_index = calendar::sign_index(ctx.moment.month, ctx.moment.day);
+    let raw_lunar_date = RawLunarDate {
+        lunar_year: ctx.lunar_year,
+        lunar_month: ctx.lunar_month,
+        lunar_day: ctx.lunar_day,
+        is_leap: ctx.is_leap,
+    };
     let chart = Astrolabe {
         gender,
         solar_date: solar_date.to_string(),
-        lunar_date: format!(
-            "{}年{}月{}",
-            lunar_ref.get_year_in_chinese(),
-            lunar_table::month_in_chinese(ctx.lunar_month, ctx.is_leap),
-            lunar_table::day_in_chinese(ctx.lunar_day),
+        lunar_date: translate_lunar_date(
+            raw_lunar_date.lunar_year,
+            raw_lunar_date.lunar_month,
+            raw_lunar_date.lunar_day,
+            raw_lunar_date.is_leap,
+            language,
         ),
         chinese_date,
         time: translate_time(time_index, language).to_string(),
@@ -614,12 +540,7 @@ pub fn by_solar(
         five_elements_class: ctx.five_elements_class,
         palaces,
         raw_dates: RawDates {
-            lunar_date: RawLunarDate {
-                lunar_year: lunar_ref.get_year(),
-                lunar_month: ctx.lunar_month,
-                lunar_day: ctx.lunar_day,
-                is_leap: ctx.is_leap,
-            },
+            lunar_date: raw_lunar_date,
             chinese_date: RawChineseDate {
                 yearly: (ctx.yearly_stem, ctx.yearly_branch),
                 monthly: pillars.monthly,
@@ -657,7 +578,7 @@ fn rearrange_from_palace(
 /// 通过农历日期排盘
 ///
 /// # 参数
-/// - `lunar_date`: 农历日期字符串，格式 "YYYY-M-D"
+/// - `lunar_date`: 农历日期字符串（写法同公历）
 /// - `time_index`: 时辰索引 (0=早子, 1=丑, ..., 12=晚子)
 /// - `gender`: 性别
 /// - `leap`: 输入月是否闰月及闰月处理方式（见 [`LeapMonth`]）
@@ -676,12 +597,13 @@ pub fn by_lunar(
     // 1. 解析并校验农历日期（闰月用负数月号表示）
     let (year, lunar_month, day) = parse_lunar_date(lunar_date, leap.is_leap_month())?;
 
-    // 2. 转换为阳历（日期串不带前导零）
-    let solar_date = lunar_table::solar_date_of(year, lunar_month, day);
+    // 2. 转换为阳历（日期串不带前导零）；月与日已在第 1 步校验，必有对应日期
+    let (sy, sm, sd) = calendar::solar_date_of(year, lunar_month, day)
+        .expect("parse_lunar_date 已校验该农历月存在且日在当月天数内");
 
     // 3. 用阳历日期排盘
     by_solar(
-        &solar_date,
+        &format!("{sy}-{sm}-{sd}"),
         time_index,
         gender,
         leap.fix_leap(),

@@ -1,6 +1,6 @@
 ---
 title: 扩展星盘
-description: 把自己的分析规则挂到星盘上——三种编程语言各自的扩展点。
+description: 把自己的分析规则挂到星盘上——各编程语言的扩展点。
 ---
 
 *适合：开发者*
@@ -9,7 +9,7 @@ description: 把自己的分析规则挂到星盘上——三种编程语言各�
 把它们全塞进核心既不可能也不该做。x-iztro 的做法是让你把自己的规则
 以方法的形式挂到星盘上，调用语法与内置方法一致。
 
-## 三种编程语言的扩展点
+## 各编程语言的扩展点
 
 每种编程语言用它自己最自然的机制，不强行统一成一套：
 
@@ -18,8 +18,9 @@ description: 把自己的分析规则挂到星盘上——三种编程语言各�
 | [Rust](/zh/docs/rust/extend) | 扩展 trait | 编译期 | `use` 了才可见 |
 | [Python](/zh/docs/python/extend) | 往类上挂方法 | 运行期 | 进程内全局 |
 | [Go](/zh/docs/go/extend) | 结构体嵌入 | 编译期 | 只影响自己的类型 |
+| [JavaScript](/zh/docs/js/extend) | 往 `Astrolabe` 原型挂方法，TypeScript 用声明合并补类型 | 加载期（类型在编译期） | 进程内全局 |
 
-三者都做同一件事：`chart.my_method()` 这样调用，且能用上星盘的全部内置能力。
+各语言都做同一件事：`chart.my_method()` 这样调用，且能用上星盘的全部内置能力。
 具体写法与可运行示例见各自的页面。
 
 ## 共同的约定
@@ -38,19 +39,19 @@ description: 把自己的分析规则挂到星盘上——三种编程语言各�
 使用方按需引入。堆成一个大集合会让所有调用点都被迫带上全部方法。
 </Accordion>
 <Accordion title="跨语言一致靠断言，不靠共享代码">
-同一套规则要在三种编程语言上都可用时，当前的做法是三侧各写一遍，
+同一套规则要在多种编程语言上都可用时，当前的做法是各侧各写一遍，
 再用一组断言同一张盘上同一组取值的测试守住。
 
-因为判断基于语言无关标识，三份实现只要逻辑相同，结果必然相同——
+因为判断基于语言无关标识，各份实现只要逻辑相同，结果必然相同——
 测试负责证明「逻辑确实相同」。
 </Accordion>
 </Accordions>
 
 ## 一个例子
 
-三种编程语言实现同一个插件：取命宫主星（空宫借对宫），并读出五行局的局数。
+各编程语言实现同一个插件：取命宫主星（空宫借对宫），并读出五行局的局数。
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -113,6 +114,26 @@ MyChart{chart}.MajorStar()   // 紫微
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+declare module 'x-iztro' {
+  interface Astrolabe {
+    majorStar(): string;
+  }
+}
+
+astro.loadPlugin((cls) => {
+  cls.prototype.majorStar = function (this: Astrolabe): string {
+    const soul = this.palace(PalaceName.SOUL)!;
+    const source = soul.isEmpty() ? soul.oppositePalace()! : soul;
+    return source.majorStars.map((s) => s.name).join(',');
+  };
+});
+chart.majorStar();   // 紫微
+```
+
+</Tab>
 </Tabs>
 
-三段代码在同一张盘上都返回 `紫微`，换成英文盘则都返回 `emperor`。
+各段代码在同一张盘上都返回 `紫微`，换成英文盘则都返回 `emperor`。

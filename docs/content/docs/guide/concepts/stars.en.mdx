@@ -293,7 +293,7 @@ Each field also has a `*_key` variant (`changsheng12_key` and so on); predicate 
 
 ### Finding where a star is
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -318,6 +318,16 @@ star, palace = chart.star_in_palace(MajorStar.ZIWEI)   # the star and its palace
 
 ```go
 star, palace := chart.Star(iztro.StarZiweiMaj)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { MajorStar } from 'x-iztro';
+
+const star = chart.star(MajorStar.ZIWEI);                       // the star alone
+const [found, palace] = chart.starInPalace(MajorStar.ZIWEI)!;   // the star and its palace
 ```
 
 </Tab>

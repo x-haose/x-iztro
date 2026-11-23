@@ -1,12 +1,12 @@
 ---
 title: 架构
-description: 核心层与三套绑定的分层、各自的实现取舍，以及不 panic 的设计约束。
+description: 核心层与各语言绑定的分层、各自的实现取舍，以及不 panic 的设计约束。
 ---
 
 *适合：开发者*
 
-x-iztro 是一份 Rust 核心加三套绑定。算法只实现一次，
-Python、Go 与 C 调用方拿到的是同一份计算结果。
+x-iztro 是一份 Rust 核心加各语言绑定。算法只实现一次，
+Python、Go、JavaScript 与 C 调用方拿到的是同一份计算结果。
 
 ## 分层
 
@@ -25,21 +25,21 @@ Python、Go 与 C 调用方拿到的是同一份计算结果。
         ┌────────────────────┼────────────────────┐
         │                    │                    │
    python.rs             wasm.rs               ffi.rs
-   PyO3 扩展         wasm32-wasip1           C ABI
-        │                    │                    │
-   Python 包            Go 包（wazero）       C / C++ / 其他
+   PyO3 扩展    wasm32-wasip1 / -unknown       C ABI
+        │               ┌────┴────┐               │
+   Python 包       Go 包（wazero） JS 包      C / C++ / 其他
 ```
 
 两个共用层各司其职：
 
 | 层 | 职责 |
 | --- | --- |
-| `bridge.rs` | 入参解析、按名分派、结果编组。Python 与 Go 走同一个函数，行为没有分叉的余地。它是 crate 内部模块，不在公开 API 面上 |
+| `bridge.rs` | 入参解析、按名分派、结果编组。Python、Go、JavaScript 走同一个函数，行为没有分叉的余地。它是 crate 内部模块，不在公开 API 面上 |
 | `dto.rs` | 序列化契约：camelCase 键、按盘面语言翻译的值，外加 `*Key` 标识与排盘上下文 |
 
 绑定文件因此很薄——只剩语言特有的部分：wasm 的内存协定、PyO3 的异常类型。
 
-## 三套绑定的取舍
+## 各语言绑定的取舍
 
 ### Python：PyO3 原生扩展
 
@@ -70,6 +70,17 @@ wazero 的编译器后端只支持 amd64 与 arm64，其余架构走解释器，
 
 每次调用另有一次 JSON 编解码与 wasm 内存拷贝，热路径上单次排盘在 0.5ms 量级。
 
+### JavaScript：WebAssembly + TypeScript
+
+同一份 `wasm.rs` 编为 `wasm32-unknown-unknown`（不导入任何宿主函数），TypeScript 外壳按与 Go 相同的
+alloc/free + JSON 协议调用，再把 DTO 包成带方法的对象。
+
+- `init()` 异步装载一次，之后全部同步计算；浏览器用 `fetch`，Node 读文件，打包器按
+  `new URL('./x_iztro.wasm', import.meta.url)` 把 wasm 产出为静态资源
+- 生辰与知识包都在调用方的进程里计算，浏览器里排盘不经过任何服务器
+- 一个页面或 Worker 一个实例；trap 后实例作废，再 `init()` 重建
+- `x-iztro/types` 只导出类型与枚举，给不需要内核的界面代码用
+
 ### C FFI
 
 标准 C ABI，收 C 字符串、返回 JSON 字符串。
@@ -86,34 +97,35 @@ wazero 的编译器后端只支持 amd64 与 arm64，其余架构走解释器，
 <Callout type="warn" title="这条约束由 wasm 目标决定">
 wasm 上 panic 会变成 trap，而 `catch_unwind` 在 wasm 上无效——兜不住。
 更糟的是每次 trap 都会永久损耗模块实例的栈空间，累积之后连合法调用都会失败。
-校验因此必须在更靠内的一层，三种编程语言共用同一道防线。
+校验因此必须在更靠内的一层，各编程语言共用同一道防线。
 </Callout>
 
-各语言的错误类型见 [Rust](/zh/docs/rust/errors)、[Python](/zh/docs/python/errors)、[Go](/zh/docs/go/errors) 三页。
+各语言的错误类型见 [Rust](/zh/docs/rust/errors)、[Python](/zh/docs/python/errors)、[Go](/zh/docs/go/errors)、[JavaScript](/zh/docs/js/errors)。
 
 ## 一致性怎么保证
 
-三种编程语言的行为一致不靠纪律，靠三层结构约束：
+各编程语言的行为一致不靠纪律，靠三层结构约束：
 
 <Steps>
 <Step>**算法只有一份** —— 全部计算在 Rust 核心完成，绑定层不含任何斗数逻辑</Step>
-<Step>**编组只有一份** —— Python 与 Go 调用同一个 `bridge::query`，入参解析与结果形状不可能分叉</Step>
-<Step>**断言成对** —— 每组对外能力在 Python 与 Go 两侧各有一组 parity 测试，断言同一张盘上的同一组取值</Step>
+<Step>**编组只有一份** —— Python、Go、JavaScript 调用同一个 `bridge::query`，入参解析与结果形状不可能分叉</Step>
+<Step>**断言成对** —— 每组对外能力在 Python、Go、JavaScript 各有一组 parity 测试，断言同一张盘上的同一组取值；`binding_coverage` 要求每个分派入口在各绑定的源码里都有包装</Step>
 </Steps>
 
-判断方法一律基于语言无关标识，因此同一条分析规则在三种编程语言上写出来、结果也相同。
+判断方法一律基于语言无关标识，因此同一条分析规则在各编程语言上写出来、结果也相同。
 标识约定见[语言无关标识](/zh/docs/guide/guides/keys)。
 
 ## 版本
 
 | 项目 | 版本 |
 | --- | --- |
-| 对照的 iztro | v2.6.1（版本锁定） |
+| 对照的 iztro | v2.6.3（版本锁定） |
 | Rust edition | 2024 |
 | Python 要求 | 3.10 及以上 |
 | Go 要求 | 1.22 及以上 |
+| Node.js 要求 | 22 及以上（浏览器需支持 WebAssembly） |
 
-当前版本号见 [crates.io](https://crates.io/crates/x-iztro) 与 [PyPI](https://pypi.org/project/x-iztro/)。
+当前版本号见 [crates.io](https://crates.io/crates/x-iztro)、[PyPI](https://pypi.org/project/x-iztro/) 与 [npm](https://www.npmjs.com/package/x-iztro)。
 
 ## 许可
 

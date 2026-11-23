@@ -65,7 +65,7 @@ optional, but at least one must be given.
 | `five_elements_class` | `FiveElementsClass \| str \| None` | `None` | five elements class |
 | `stars` | `list[StarPosition]` | `[]` | star placements, all of which must hold |
 | `mutagens` | 4-tuple of `str \| None` | all `None` | which star carries each birth-year mutagen [Lu, Quan, Ke, Ji] |
-| `year_range` | `tuple[int, int]` | `(1900, 2100)` | inclusive solar year range, within 1583–9999 |
+| `year_range` | `tuple[int, int]` | `(1900, 2100)` | inclusive solar year range, within 1–9999 |
 | `fix_leap` | `bool` | `True` | leap month correction, same meaning as the charting parameter |
 | `limit` | `int` | `0` | candidate cap; `0` takes the core default (512) |
 
@@ -130,7 +130,7 @@ one raises `unknown heavenly stem key '庚'`.
 
 **Raises** `IztroError` with `code` `invalid_argument` for a pillar with
 mismatched stem/branch polarity (such as 甲丑 Jia-Chou — a yang stem on a yin branch) or a year range that is reversed
-or outside 1583–9999. See [Error handling](/en/docs/python/errors).
+or outside 1–9999. See [Error handling](/en/docs/python/errors).
 
 ---
 

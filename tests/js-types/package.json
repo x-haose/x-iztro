@@ -1,0 +1,14 @@
+{
+  "name": "x-iztro-js-types",
+  "private": true,
+  "description": "按 package.json 声明的 TypeScript 下限（5.0）对 x-iztro 的类型声明做 skipLibCheck:false 检查：浏览器工程（DOM 库）与 Node 工程（@types/node，无 DOM 库）各一份配置",
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p tsconfig.dom.json && tsc -p tsconfig.node.json"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "typescript": "5.0.4",
+    "x-iztro": "file:../../js"
+  }
+}

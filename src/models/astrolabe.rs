@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::models::flanking::FlankingPalaces;
@@ -9,7 +7,7 @@ use crate::models::surpalaces::SurroundedPalaces;
 use crate::utils::fix_index;
 
 /// 数字化农历日期
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct RawLunarDate {
     /// 农历年
     pub lunar_year: i64,
@@ -22,7 +20,7 @@ pub struct RawLunarDate {
 }
 
 /// 四柱干支（枚举形式）
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct RawChineseDate {
     /// 年柱 [天干, 地支]
     pub yearly: (HeavenlyStem, EarthlyBranch),
@@ -35,7 +33,7 @@ pub struct RawChineseDate {
 }
 
 /// 结构化的出生日期信息（lunar_date / chinese_date 展示串的数据形式）
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct RawDates {
     /// 数字化农历生日
     pub lunar_date: RawLunarDate,
@@ -44,13 +42,13 @@ pub struct RawDates {
 }
 
 /// 完整星盘：排盘入口的返回值，承载十二宫与全部命盘信息。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Astrolabe {
     /// 性别
     pub gender: Gender,
-    /// 阳历日期（与排盘入参一致，"YYYY-M-D"）
+    /// 阳历日期（排盘入参原样回显，可带分隔符变体与时间部分）
     pub solar_date: String,
-    /// 农历日期中文表示（如「二〇〇〇年七月十七」）
+    /// 农历日期展示串：简繁中文为中文数字写法（如「二〇〇〇年七月十七」），其余语言为该语言的数字写法（如 `Lunar 2000-7-17`）
     pub lunar_date: String,
     /// 干支纪日四柱展示串（按排盘语言）
     pub chinese_date: String,
@@ -104,6 +102,19 @@ pub enum PalaceTarget {
     Body,
     /// 来因宫所在的那一宫（可能不存在）
     Original,
+}
+
+impl PalaceTarget {
+    /// 由宫位标识解析：宫名标识（`Palace::as_key`，如 `soulPalace`）、`bodyPalace` 或
+    /// `originalPalace`；不认识的标识返回 `None`。绑定层的 `palaceKey` 与知识包主题的宫位
+    /// 列表都用这一套写法。
+    pub fn from_key(key: &str) -> Option<Self> {
+        match key {
+            "bodyPalace" => Some(PalaceTarget::Body),
+            "originalPalace" => Some(PalaceTarget::Original),
+            _ => Palace::from_key(key).map(PalaceTarget::Name),
+        }
+    }
 }
 
 impl From<usize> for PalaceTarget {

@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from x_iztro.enums import Mutagen
+from x_iztro.enums import KnowledgeDepth, Mutagen, TextDetail
 from x_iztro.palace import Palace
 from x_iztro.star_object import _star_identifiers
 
@@ -41,6 +41,8 @@ class SurroundedPalaces:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -52,11 +54,15 @@ class SurroundedPalaces:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时每宫事实之后紧跟该宫星耀的释义
+            detail: 事实详略：`TextDetail.OVERVIEW` 每宫只写主星、辅星与杂耀，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本宫脱离星盘单独构造，无排盘上下文可转发
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         astrolabe = self.target.astrolabe()
         if astrolabe is None:
@@ -69,6 +75,8 @@ class SurroundedPalaces:
             "surroundedPalacesToText",
             palace_index=self.target.index,
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
         )
 
@@ -125,6 +133,8 @@ class FlankingPalaces:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -136,11 +146,15 @@ class FlankingPalaces:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时每宫事实之后紧跟该宫星耀的释义
+            detail: 事实详略：`TextDetail.OVERVIEW` 每宫只写主星、辅星与杂耀，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 两宫脱离星盘单独构造，无排盘上下文可转发
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         astrolabe = self.astrolabe()
         if astrolabe is None:
@@ -154,6 +168,8 @@ class FlankingPalaces:
             # 被夹的宫是前一宫的下一宫；十二宫首尾相连，索引对 12 回绕
             palace_index=(self.previous.index + 1) % 12,
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
         )
 

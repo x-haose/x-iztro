@@ -22,9 +22,9 @@ import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalAstrolabe, hashAstrolabe } from './canonical.mjs';
+import { horoscopeCase } from './horoscope_case.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const HASH_LEN = 32;
 const GENDERS = ['男', '女'];
 
 const DEFAULTS = {
@@ -42,43 +42,6 @@ if (process.argv[2] === '--inspect') {
   process.exit(0);
 }
 
-/** 单个运限层级的紧凑导出（宫位名序列原序，流耀分布每宫排序）。 */
-function scopeItem(item) {
-  const out = {
-    i: item.index,
-    n: item.name,
-    hs: item.heavenlyStem,
-    eb: item.earthlyBranch,
-    pn: item.palaceNames,
-    m: item.mutagen,
-  };
-  if (item.stars) {
-    out.s = item.stars.map((g) => g.map((s) => s.name).sort());
-  }
-  return out;
-}
-
-/** 完整运限用例导出（与 generate_horoscope.mjs 同构）。 */
-function horoscopeCase(astrolabe, birth, td, tt) {
-  const h = astrolabe.horoscope(td, tt);
-  return {
-    p: birth,
-    td,
-    tt,
-    ld: h.lunarDate,
-    dec: scopeItem(h.decadal),
-    age: { ...scopeItem(h.age), na: h.age.nominalAge },
-    yr: {
-      ...scopeItem(h.yearly),
-      sq: h.yearly.yearlyDecStar.suiqian12,
-      jq: h.yearly.yearlyDecStar.jiangqian12,
-    },
-    mo: scopeItem(h.monthly),
-    da: scopeItem(h.daily),
-    hr: scopeItem(h.hourly),
-  };
-}
-
 // ============================================================
 // 1. yearDivide=exact：立春/初一分歧窗口逐日
 // ============================================================
@@ -94,7 +57,7 @@ for (let year = 1984; year <= 2043; year++) {
       for (const t of [0, 6]) {
         for (const g of [0, 1]) {
           const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
-          ydLines.push(`${dateStr},${t},${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+          ydLines.push(`${dateStr},${t},${g},${hashAstrolabe(result)}`);
         }
       }
     }
@@ -125,7 +88,7 @@ for (let year = 1984; year <= 2043; year++) {
   for (const dateStr of dates) {
     for (const g of [0, 1]) {
       const result = astro.bySolar(dateStr, 12, GENDERS[g], true, 'zh-CN');
-      ddLines.push(`${dateStr},12,${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+      ddLines.push(`${dateStr},12,${g},${hashAstrolabe(result)}`);
     }
   }
 }
@@ -213,7 +176,7 @@ for (const [cfg, overrides] of Object.entries(CHART_COMBOS)) {
       for (const t of [0, 12]) {
         for (const g of [0, 1]) {
           const result = astro.bySolar(dateStr, t, GENDERS[g], true, 'zh-CN');
-          comboLines.push(`${cfg},${dateStr},${t},${g},${hashAstrolabe(result).slice(0, HASH_LEN)}`);
+          comboLines.push(`${cfg},${dateStr},${t},${g},${hashAstrolabe(result)}`);
         }
       }
     }
@@ -288,20 +251,12 @@ const hourToTimeIndex = (h) => (h === 0 ? 0 : h === 23 ? 12 : Math.floor((h + 1)
 astro.config({ ...DEFAULTS, horoscopeDivide: 'exact' });
 
 const jieCases = [];
-const jieSkipped = [];
 for (let year = 1984; year <= 2043; year++) {
   const table = Solar.fromYmd(year, 6, 1).getLunar().getJieQiTable();
   for (const name of JIE) {
     const s = table[name];
     if (!s || s.getYear() !== year) continue;
     const ti = hourToTimeIndex(s.getHour());
-    // 节气时刻落在构造时刻（HH:30:00）前后一分钟内的，两个天文库的秒级差异会跨越
-    // 构造时刻，判到节气两侧：lunar-typescript 与 lunar_rust 对同一节气可差数十秒
-    // （白露 2043 一个算 01:30:13、一个算 01:29:44）。这类边界不属于实现差异，不取。
-    if (s.getMinute() === 30 || (s.getMinute() === 29 && s.getSecond() >= 30)) {
-      jieSkipped.push(`${name} ${s.toYmdHms()}`);
-      continue;
-    }
     const d = `${s.getYear()}-${s.getMonth()}-${s.getDay()}`;
     for (const g of [0, 1]) {
       const a = astro.bySolar(d, ti, GENDERS[g], true, 'zh-CN');
@@ -310,7 +265,4 @@ for (let year = 1984; year <= 2043; year++) {
   }
 }
 writeFileSync(join(__dirname, 'config_jieqi.json'), JSON.stringify(jieCases));
-console.log(
-  `horoscopeDivide=exact 节气取样: ${jieCases.length} cases` +
-    `（跳过 ${jieSkipped.length} 个骑在构造时刻上的节气，两个天文库秒级差异所致）`
-);
+console.log(`horoscopeDivide=exact 节气取样: ${jieCases.length} cases`);

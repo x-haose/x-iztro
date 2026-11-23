@@ -1,0 +1,326 @@
+---
+title: 从 0.6 升级到 0.7
+description: 0.7 的破坏性变更逐条对照：受影响的写法、改法与各语言前后代码，以及会改变输出的修正。
+---
+
+*适合：已在用 x-iztro 0.6 的开发者*
+
+0.7 新增了 JavaScript / TypeScript 绑定，并带来下面八处不兼容的改动。先看总表确定哪几条与你有关，
+再到对应小节照着改。JavaScript 绑定从 0.7 才有，不存在升级问题；下文给出 JavaScript 写法只为说明现状。
+
+| 改动 | Rust | Python | Go | 直接写 JSON（C FFI、bridge） |
+| --- | --- | --- | --- | --- |
+| [枚举的 serde 表示改为语言无关标识](#枚举的-serde-表示改为语言无关标识) | 受影响 | — | — | — |
+| [模型结构不再实现 serde](#模型结构不再实现-serde) | 受影响 | — | — | — |
+| [`Language::as_code` 改为 `as_key`](#languageas_code-改为-as_key) | 受影响 | — | — | — |
+| [配置 JSON 的形态与未知键](#配置-json-的形态与未知键) | 受影响 | — | — | 受影响 |
+| [运限按宫查询改为可失败](#运限按宫查询改为可失败) | 受影响 | 受影响 | 受影响 | — |
+| [日文、韩文、越南文 52 处译名](#日文韩文越南文-52-处译名) | 按译名判断时 | 按译名判断时 | 按译名判断时 | 按译名判断时 |
+| [星盘的 `lunarDate` 随排盘语言](#星盘的-lunardate-随排盘语言) | 解析该串时 | 解析该串时 | 解析该串时 | 解析该串时 |
+| [运限的 `solarDate` 写法](#运限的-solardate-写法) | 比对该串时 | 比对该串时 | 比对该串时 | 比对该串时 |
+
+依赖写法：
+
+```toml
+x-iztro = "0.7"
+```
+
+```bash
+pip install "x-iztro~=0.7.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
+```
+
+---
+
+## 枚举的 serde 表示改为语言无关标识
+
+**受影响**：Rust 里对公开枚举（`Gender`、`Language`、`Palace`、`StarKey`、`Scope`、`YearDivide` 等约 45 个）
+直接做 serde 序列化或反序列化的代码。0.6 用 Rust 变体名（`"Male"`、`"ZhCN"`），与 DTO、绑定线协议用的
+语言无关标识（`"male"`、`"zh-CN"`）是两套写法；0.7 统一为标识，反序列化只认 `KEYS` 里的写法。
+
+**改法**：存下来的旧 JSON 要按标识重写；新代码直接用标识，与 Python 枚举、Go 常量、JavaScript 常量的值相同。
+
+```rust title="0.6"
+serde_json::to_string(&Gender::Male)?;    // "Male"
+serde_json::to_string(&Language::ZhCN)?;  // "ZhCN"
+```
+
+```rust title="0.7"
+serde_json::to_string(&Gender::Male)?;    // "male"
+serde_json::to_string(&Language::ZhCN)?;  // "zh-CN"
+let g: Gender = serde_json::from_str("\"male\"")?;
+```
+
+## 模型结构不再实现 serde
+
+**受影响**：Rust 里直接序列化星盘、宫位、星耀、运限结构的代码。0.6 它们派生了 serde，键是 snake_case、
+枚举是变体名；0.7 不再实现，编译即报错。
+
+**改法**：改为序列化 DTO。DTO 的键是 camelCase、值按排盘语言翻译并附 `*Key` 标识，与 iztro 的 JSON 及
+Python、Go、JavaScript 拿到的结构相同。
+
+```rust title="0.6"
+let json = serde_json::to_string(&chart)?;
+// {"gender":"Female","solar_date":"2000-8-16","lunar_date":"二〇〇〇年七月十七",…}
+```
+
+```rust title="0.7"
+let json = serde_json::to_string(&chart.to_dto())?;
+// {"gender":"女","solarDate":"2000-8-16","lunarDate":"二〇〇〇年七月十七",…}
+
+let h = chart.horoscope("2025-1-1", 0)?;
+let json = serde_json::to_string(&h.to_dto(chart.language))?;
+```
+
+## `Language::as_code` 改为 `as_key`
+
+**受影响**：Rust 调用 `Language::as_code()` 的代码。
+
+**改法**：改名为 `as_key()`，返回值相同（`"zh-CN"` 等）。`Language::from_code` 保留，仍接受大小写不同与
+下划线的写法（`zh_cn`）；`from_key` 只认规范写法。
+
+```rust title="0.6"
+let code = Language::JaJP.as_code();  // "ja-JP"
+```
+
+```rust title="0.7"
+let code = Language::JaJP.as_key();   // "ja-JP"
+```
+
+## 配置 JSON 的形态与未知键
+
+**受影响**：
+
+- Rust 里对 `Config` 做 serde 的代码。0.6 是派生形态：snake_case 键、变体名取值、六个键缺一不可，
+  并且会丢掉自定义四化表与亮度表。0.7 改为与绑定层相同的 config JSON。
+- 直接写 config JSON 的调用方（C FFI、bridge）。0.6 静默忽略拼错的键、按默认配置排盘，
+  结果看上去正常却不是想要的配置；0.7 报 `invalid_argument`，消息以 `config:` 开头并列出合法的键。
+
+Python 的 `ChartConfig` 与 Go 的 `Config` 是带字段的类型，写错字段名在构造或编译时就失败，不受影响。
+JavaScript 的 `config` 选项同样拒绝未知键。
+
+**改法**：Rust 侧按新形态改写存下来的配置；JSON 调用方修正键名。0.7 的形态是部分键补丁，缺省的键取默认值，
+自定义表往返不丢，取值见 [Rust 数据类型 · Config](/zh/docs/rust/data)。
+
+```rust title="0.6"
+let c: Config = serde_json::from_str(
+    r#"{"year_divide":"Exact","horoscope_divide":"Normal","age_divide":"Normal",
+        "day_divide":"Forward","algorithm":"Default","astro_type":"Heaven"}"#,
+)?;
+```
+
+```rust title="0.7"
+let c: Config = serde_json::from_str(r#"{"yearDivide":"exact"}"#)?;
+
+// 拼错的键报错，不再按默认配置排盘
+let bad = serde_json::from_str::<Config>(r#"{"yearDivid":"exact"}"#);
+assert!(bad.is_err());
+```
+
+```json title="直接写 JSON：0.6 静默忽略，0.7 报 invalid_argument"
+{ "config": { "yearDivid": "exact" } }
+```
+
+```js title="JavaScript（TypeScript 在编译期就拒绝这个键）"
+astro.bySolar('2000-8-16', 2, 'female', { config: { yearDivid: 'exact' } });
+// IztroError（invalid_argument）：config: unknown field `yearDivid`, expected one of `yearDivide`, …
+```
+
+## 运限按宫查询改为可失败
+
+0.7 新增按农历年、农历月取运限（`horoscope_of_year`、`horoscope_of_month`），这类运限只精确到流年、流月，
+运限的查询精度 `precision()` 记下这一点。在这样的运限上按更细的层级查宫位，答出来的会是内核替你挑的代表日那一层，
+不是你问的答案，所以 0.7 改为报 `invalid_argument`。几个按宫查询的签名随之改变：
+
+| 方法 | Rust | Go | Python |
+| --- | --- | --- | --- |
+| 取宫位 | `palace` → `Result<Option<PalaceRef>>` | `Palace` → `(*Palace, error)` | `palace` 抛 `IztroError` |
+| 三方四正 | `surround_palaces` → `Result<Option<…>>` | `SurroundPalaces` → `(*SurroundedPalaces, error)` | `surround_palaces` 抛 `IztroError` |
+| 运限四化与流耀判断 | `has_horoscope_mutagen`、`has_horoscope_stars`、`has_one_of_horoscope_stars`、`not_have_horoscope_stars` → `Result<bool>` | `HasHoroscopeMutagen`、`HasHoroscopeStars`、`HasOneOfHoroscopeStars`、`NotHaveHoroscopeStars` → `(bool, error)` | 同名方法抛 `IztroError` |
+
+按日期取的运限（0.6 只有这一种）精确到流时，任何层级都不会因精度报错，所以改法只是接住新的错误返回：
+
+- **Rust**：`HoroscopeRef` 上另有三处签名改为返回 `Result`：`to_text_with`、`patterns`、`patterns_with`。
+  `KnowledgePack::for_horoscope` / `for_horoscope_with` 改收 `&HoroscopeRef`，不再分别传星盘与运限数据。
+  `HoroscopeData` 上带星盘参数的同名方法签名不变。
+- **Go**：nil 运限仍返回零值、不报错。
+- **Python**：层级标识拼错（如 `"yarly"`）也报错，0.6 返回 `None`。
+
+```rust title="Rust 0.6"
+let soul = h.palace(Palace::Soul, Scope::Yearly).unwrap();
+let lu = h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu);
+let text = h.to_text_with(&opts);
+let sub = pack.for_horoscope(&chart, &h);
+```
+
+```rust title="Rust 0.7"
+let soul = h.palace(Palace::Soul, Scope::Yearly)?.unwrap();
+let lu = h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu)?;
+let text = h.to_text_with(&opts)?;
+let sub = pack.for_horoscope(&h);
+```
+
+```go title="Go 0.6"
+soul := h.Palace(iztro.PalaceSoul, iztro.ScopeYearly)
+lu := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+```
+
+```go title="Go 0.7"
+soul, err := h.Palace(iztro.PalaceSoul, iztro.ScopeYearly)
+if err != nil {
+    return err // errors.Is(err, iztro.ErrInvalidArgument)
+}
+lu, err := h.HasHoroscopeMutagen(iztro.PalaceSoul, iztro.ScopeDecadal, iztro.MutagenLu)
+```
+
+```python title="Python 0.6"
+h.palace(PalaceName.SOUL, "yarly")   # None
+```
+
+```python title="Python 0.7"
+from x_iztro import IztroError
+
+try:
+    h.palace(PalaceName.SOUL, "yarly")
+except IztroError as e:
+    print(e.code)                    # invalid_argument
+
+chart.horoscope_of_year(2027).palace(PalaceName.SOUL, "monthly")
+# IztroError: invalid scope 'monthly': the horoscope target only specifies layers down to 'yearly'
+```
+
+```ts title="JavaScript"
+chart.horoscopeOfYear(2027).palace(PalaceName.SOUL, Scope.MONTHLY);  // 抛 IztroError（invalid_argument）
+```
+
+## 日文、韩文、越南文 52 处译名
+
+**受影响**：按日文、韩文、越南文译名做比较、存储或反查的代码。译文随 iztro v2.6.3 修订：日文改用新字体，
+韩文与越南文改正若干误译。语言无关标识不变。
+
+**改法**：判断一律用标识（`*Key` 字段、枚举常量），见[语言无关标识](/zh/docs/guide/guides/keys)；
+存下来的旧译名按下表换成新译名或标识。
+
+| 语言 | 标识 | 0.6 | 0.7 |
+| --- | --- | --- | --- |
+| ja-JP | `lucunMin` | 祿存 | 禄存 |
+| ja-JP | `tianxu` | 天虛 | 天虚 |
+| ja-JP | `longchi` | 龍池 | 竜池 |
+| ja-JP | `tianshou` | 天壽 | 天寿 |
+| ja-JP | `yuede` | 月德 | 月徳 |
+| ja-JP | `tianchu` | 天廚 | 天厨 |
+| ja-JP | `guandai` | 冠帶 | 冠帯 |
+| ja-JP | `jue` | 絕 | 絶 |
+| ja-JP | `qinglong` | 青龍 | 青竜 |
+| ja-JP | `jiangjun` | 將軍 | 将軍 |
+| ja-JP | `suipo` | 歲破 | 歳破 |
+| ja-JP | `suijian` | 歲建 | 歳建 |
+| ja-JP | `huiqi` | 晦氣 | 晦気 |
+| ja-JP | `longde` | 龍德 | 竜徳 |
+| ja-JP | `tiande` | 天德 | 天徳 |
+| ja-JP | `jiangxing` | 將星 | 将星 |
+| ja-JP | `suiyi` | 歲驛 | 歳駅 |
+| ja-JP | `yunyue` | 限の钺 | 限の鉞 |
+| ja-JP | `yunluan` | 限の鸾 | 限の鸞 |
+| ja-JP | `yunlu` | 限の祿 | 限の禄 |
+| ja-JP | `liuyue` | 年の钺 | 年の鉞 |
+| ja-JP | `liuluan` | 年の鸾 | 年の鸞 |
+| ja-JP | `liulu` | 年の祿 | 年の禄 |
+| ja-JP | `yueyue` | 月の钺 | 月の鉞 |
+| ja-JP | `yueluan` | 月の鸾 | 月の鸞 |
+| ja-JP | `yuelu` | 月の祿 | 月の禄 |
+| ja-JP | `riyue` | 日の钺 | 日の鉞 |
+| ja-JP | `riluan` | 日の鸾 | 日の鸞 |
+| ja-JP | `rilu` | 日の祿 | 日の禄 |
+| ja-JP | `shiyue` | 時の钺 | 時の鉞 |
+| ja-JP | `shiluan` | 時の鸾 | 時の鸞 |
+| ja-JP | `shilu` | 時の祿 | 時の禄 |
+| ja-JP | `spiritPalace` | 福德 | 福徳 |
+| ja-JP | `careerPalace` | 官祿 | 官禄 |
+| ja-JP | `friendsPalace` | 僕役 | 奴僕 |
+| ja-JP | `xian`（亮度） | 陷 | 陥 |
+| ja-JP | `sihuaLu` | 祿 | 禄 |
+| ja-JP | `sihuaQuan` | 權 | 権 |
+| ja-JP | `lateRatHour`（时辰） | 晚子時 | 晩子時 |
+| ja-JP | `dragon`（生肖） | 龍 | 竜 |
+| ja-JP | `rooster`（生肖） | 雞 | 鶏 |
+| ko-KR | `lingxingMin` | 령성 | 영성 |
+| ko-KR | `jiekong` | 절중 | 절공 |
+| ko-KR | `suipo` | 태파 | 세파 |
+| ko-KR | `tiande` | 복덕 | 천덕 |
+| ko-KR | `childhood`（童限） | 어린 | 동한 |
+| vi-VN | `muyu` | Mục Dục | Mộc Dục |
+| vi-VN | `yueyue` | Thiên Nguyệt(M) | Thiên Việt(M) |
+| vi-VN | `riyue` | Thiên Nguyệt(d) | Thiên Việt(d) |
+| vi-VN | `shiyue` | Thiên Nguyệt(H) | Thiên Việt(H) |
+| vi-VN | `xian`（亮度） | Hạn | Hãm |
+| vi-VN | `childhood`（童限） | đứa trẻ Hạn | Vận hạn thời thơ ấu |
+
+韩文天德原译 복덕 与福德宫同形，按译名反查会落到宫位上；0.7 起两者分开。
+
+## 星盘的 `lunarDate` 随排盘语言
+
+**受影响**：解析星盘 `lunarDate` 字符串的代码。0.6 任何语言都是中文写法（「二〇〇〇年七月十七」）；
+0.7 随 iztro v2.6.3，简繁中文不变，其余语言为「农历」一词加数字，闰月带前缀：
+
+| 语言 | 0.7 写法 |
+| --- | --- |
+| zh-CN / zh-TW | 二〇〇〇年七月十七 |
+| en-US | Lunar 2000-7-17 |
+| ja-JP | 旧暦2000年7月17日 |
+| ko-KR | 음력 2000년 7월 17일 |
+| vi-VN | Âm lịch ngày 17 tháng 7 năm 2000 |
+
+运限的 `lunarDate` 不变，任何语言都是中文写法。
+
+**改法**：要农历年月日的数值，读 `rawDates.lunarDate` 的 `lunarYear` / `lunarMonth` / `lunarDay` / `isLeap`，
+不解析展示串。
+
+```rust title="Rust"
+let ld = &chart.raw_dates.lunar_date;
+println!("{} {} {} {}", ld.lunar_year, ld.lunar_month, ld.lunar_day, ld.is_leap);
+```
+
+```python title="Python"
+ld = chart.raw_dates.lunar_date
+print(ld.lunar_year, ld.lunar_month, ld.lunar_day, ld.is_leap)
+```
+
+```go title="Go"
+ld := chart.RawDates.LunarDate
+fmt.Println(ld.LunarYear, ld.LunarMonth, ld.LunarDay, ld.IsLeap)
+```
+
+## 运限的 `solarDate` 写法
+
+**受影响**：拿运限的 `solarDate` 与自己传入的日期串做比较的代码。0.6 原样回显入参（`"2025-01-05"` 进、`"2025-01-05"` 出）；
+0.7 的日期入参可以补零、换分隔符、带时间部分，运限的 `solarDate` 统一为不补零、不带时间的 `Y-M-D`。
+星盘的 `solarDate` 仍原样回显出生日期入参。
+
+**改法**：比较前把自己的日期也规范成 `Y-M-D`，或直接比较年月日数值。
+
+```python title="0.6"
+h = chart.horoscope("2025-01-05", 6)
+h.solar_date   # "2025-01-05"
+```
+
+```python title="0.7"
+h = chart.horoscope("2025-01-05 13:00")
+h.solar_date   # "2025-1-5"
+```
+
+---
+
+## 会改变输出的修正
+
+以下不改签名，但同一输入在 0.7 得到的结果与 0.6 不同。0.6 的结果是错的，不提供保留旧行为的开关。
+
+- **农历日期与节气月柱**：历法换成移植自 lunar-typescript 的自有内核后，1583–9999 年间原依赖算错的 540 天
+  农历日期改正（如 1925-05-22 起一个月闰四月被标成四月），23 个跨过整点后 30 分的节气时刻改正，
+  这些时辰在 `horoscope_divide=exact` 下的月柱随之改变。
+- **Python 运限只给日期不给时辰**：0.6 取此刻的时辰，0.7 与 iztro 一致按早子时算。
+- **流月列表的年份越界**：1–9999 以外的年份，0.6 报 `invalid_date`，0.7 在入口报 `invalid_argument`。
+- **支持范围扩大**：年份由 1583–9999 扩到 1–9999（1582-10-15 以前按儒略历）；日期可用 `/`、`.` 分隔、
+  月日补零、带 ` HH:mm` 时间。0.6 报错的这些输入在 0.7 能排盘。
+
+完整变更见 [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md)。

@@ -1,10 +1,8 @@
-use serde::{Deserialize, Serialize};
-
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 
 /// 一颗已安放的星耀。
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Star {
     /// 星耀标识
     pub key: StarKey,

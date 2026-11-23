@@ -46,7 +46,7 @@ pub fn by_solar(
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. Years 1583–9999 |
+| `solar_date` | `&str` | Yes | — | Solar date in `YYYY-M-D`; month and day need no zero padding. `/` or `.` also work as the separator (the same one throughout), and a trailing ` HH:mm` or ` HH:mm:ss` is accepted (it does not affect the chart); the string is echoed back verbatim. Years 1–9999 (Julian calendar before 1582-10-15) |
 | `time_index` | `u8` | Yes | — | Hour index 0–12. 0 is the early Zi hour (00:00–01:00), 12 the late Zi hour (23:00–24:00) |
 | `gender` | `Gender` | Yes | — | `Gender::Male` or `Gender::Female`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | Yes | — | Whether to correct for lunar leap months. When `true`, days after the fifteenth of a leap month count as the next month (except in the late Zi hour, see below) |
@@ -81,13 +81,13 @@ language.
 **Output**
 
 ```text
-2000-8-16 | 二〇〇〇年七月十七 | geng chen - jia shen - bing woo - geng yin
+2000-8-16 | Lunar 2000-7-17 | geng chen - jia shen - bing woo - geng yin
 leo dragon wood 3rd
 soul rebel body scholar
 ```
 
-`lunar_date` stays in Chinese numerals in every language: `二〇〇〇年七月十七` is "the 17th day of the
-7th lunar month of 2000". The star names are iztro's en-US vocabulary — `rebel` is Pojun, `scholar`
+`lunar_date` follows the chart language: `Lunar 2000-7-17` is the 17th day of the 7th lunar month of
+2000; a Chinese chart writes it in Chinese numerals, `二〇〇〇年七月十七`. The star names are iztro's en-US vocabulary — `rebel` is Pojun, `scholar`
 is Wenchang.
 
 **Edge cases and pitfalls**
@@ -107,10 +107,9 @@ hour). Miss any one and the month index is that of the month itself.
 Only for someone born in a lunar leap month after the fifteenth do `true` and `false` give different
 month indices, which in turn affects Zuofu, Youbi and every month-based star.
 </Accordion>
-<Accordion title="The lower year bound is 1583">
-The Gregorian reform of 1582 left a hole of dates that never existed, and the underlying calendar
-library panics on them. The crate therefore limits solar support to 1583–9999 and returns
-`IztroError::InvalidDate` outside that range.
+<Accordion title="The Julian calendar before 1582">
+Years 1–9999 are supported, as in iztro. 1582-10-04 (Julian) is followed by 1582-10-15 (Gregorian);
+those ten missing days and years outside the range return `IztroError::InvalidDate`.
 </Accordion>
 <Accordion title="language does not affect predicates">
 Every predicate on the chart (`has`, `flies_to`, `with_mutagen` and so on) rests on
@@ -148,7 +147,7 @@ Identical to `by_solar` apart from the following two; `by_solar`'s `fix_leap` is
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `lunar_date` | `&str` | Yes | — | Lunar date in `YYYY-M-D`; write the month as a positive number (leap months are flagged by the next parameter) |
+| `lunar_date` | `&str` | Yes | — | Lunar date in `YYYY-M-D` (separators and time part as for solar dates); write the month as a positive number (leap months are flagged by the next parameter) |
 | `leap` | `LeapMonth` | Yes | — | `NotLeap` — not a leap month; `Leap` — leap month, charted as itself; `LeapFixed` — leap month, and days after the 15th are treated as the next month (iztro `fixLeap`). Flagging a leap month that does not exist in that year falls back to the ordinary month |
 
 **Return value** Same as `by_solar`.
@@ -346,7 +345,7 @@ onto the natal chart, each with its own starting palace, pillar and scope stars.
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
-    time_index: u8,
+    time_index: impl Into<Option<u8>>,
     language: Language,
 ) -> Result<HoroscopeData, IztroError>
 ```
@@ -356,8 +355,8 @@ pub fn get_horoscope(
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `astrolabe` | `&Astrolabe` | Yes | — | The natal chart |
-| `solar_date` | `&str` | Yes | — | Target solar date in `YYYY-M-D`, years 1583–9999 |
-| `time_index` | `u8` | Yes | — | Target hour index 0–12 |
+| `solar_date` | `&str` | Yes | — | Target solar date, spelled as for charting (a ` HH:mm` time is allowed), years 1–9999 |
+| `time_index` | `impl Into<Option<u8>>` | Yes | — | A number or `None`: Target hour index 0–12, which fixes the hourly scope; with `None` it is derived from the target date's time (23:00 is the late Zi hour), and a date without a time means the early Zi hour |
 | `language` | `Language` | Yes | — | Output language |
 
 **Return value** `Result<HoroscopeData, IztroError>`. Details on
@@ -423,7 +422,10 @@ Convenience methods that emit in the chart language: `Astrolabe::to_text()`,
 `to_text_with` taking `&TextOptions`. The free functions' `lang` may differ from the charting
 language: structural labels, star names, hours, zodiac signs, stems and branches and flowing stars
 are all re-translated by key into the target language, byte-identical to a chart cast in that
-language.
+language. `HoroscopeData` carries no query precision, so `horoscope_to_text(_with)` without
+`horoscope_through` writes through the hourly scope; `HoroscopeRef::to_text()` / `to_text_with`
+stop at the horoscope's query precision by default, and `to_text_with` returns
+`IztroError::InvalidArgument` for a scope finer than it.
 
 **Parameters**
 
@@ -456,7 +458,7 @@ print!("{}", chart.to_text());
 # Natal Chart 2000-8-16 Tiger hour female
 
 ## Basic Info
-- Solar: 2000-8-16 · Lunar: 二〇〇〇年七月十七 · Hour: Tiger hour (03:00~05:00)
+- Solar: 2000-8-16 · Lunar: 2000-7-17 · Hour: Tiger hour (03:00~05:00)
 - Pillars: geng chen - jia shen - bing woo - geng yin · Zodiac: dragon · Sign: leo
 - Five Elements Class: wood 3rd · Soul Star: rebel · Body Star: scholar
 - Soul Palace: woo · Body Palace: xu (career) · Original Palace: chen (spouse)
@@ -499,20 +501,23 @@ print!("{}", chart.to_text());
 The complete output with a field-by-field walkthrough is on
 [Semantic text](/en/docs/guide/guides/to-text).
 
-This is an addition of x-iztro's beyond iztro, available in all three languages.
+This is an addition of x-iztro's beyond iztro, available in every language binding.
 Wiring it to a model is covered on [Docs for AI](/en/docs/guide/guides/llm).
 
 ---
 
 ## TextOptions
 
-**Purpose** Output options for the to_text family: the source of readings and the pattern
-criteria. By default only the chart's facts are emitted and patterns are judged under the default
-criteria; with a knowledge pack, each palace's facts are followed by readings of that palace's stars
-(same-palace major-star combinations `**A × B (same palace)**: ` first), the pattern list is
-followed by pattern readings (with a `Conditions: ` line), the natal text closes with
-`## Mutagen Notes`, and each horoscope scope carries readings of its flowing stars and patterns
-(deduplicated across scopes). The twelve gods carry no readings.
+**Purpose** Output options for the to_text family: level of detail, source and depth of readings,
+the scope the horoscope text stops at, and the pattern criteria. By default the full facts are
+written, without readings, the horoscope text stops at the query precision (the free functions go
+through the hourly scope), and patterns are
+judged under the default criteria. With a knowledge pack, each palace section's facts are followed by
+readings of that palace's stars (same-palace major-star combinations `**A × B (same palace)**: `
+first), the pattern list is followed by pattern readings (with a `Conditions: ` line at the full
+layer), the natal text closes with `## Mutagen Notes`, and each horoscope scope carries readings of
+its flowing stars and patterns (deduplicated across scopes). The twelve gods carry no readings. What
+the two switches keep and how long the results are is on [Layers](/en/docs/guide/guides/to-text#layers).
 
 **Signature** (`x_iztro::text`, re-exported from the crate root)
 
@@ -522,22 +527,32 @@ pub struct TextOptions<'a> { /* private fields */ }
 
 impl<'a> TextOptions<'a> {
     pub fn new() -> Self
+    pub fn detail(self, detail: TextDetail) -> Self
     pub fn knowledge(self, pack: &'a KnowledgePack) -> Self
+    pub fn knowledge_summary(self, pack: &'a KnowledgePack) -> Result<Self, IztroError>
+    pub fn horoscope_through(self, scope: Scope) -> Result<Self, IztroError>
     pub fn pattern_config(self, config: &'a PatternConfig) -> Self
     pub fn knowledge_pack(&self) -> Option<&'a KnowledgePack>
 }
+
+pub enum TextDetail { Overview, Full }        // default Full; keys "overview" / "full"
+pub enum KnowledgeDepth { Summary, Full }     // default Full; keys "summary" / "full"
 ```
 
 **Methods**
 
 | Method | Description |
 | --- | --- |
-| `new()` / `default()` | Facts-only options under the default pattern criteria |
-| `knowledge(&pack)` | Pick readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
+| `new()` / `default()` | Full facts, no readings, default pattern criteria |
+| `detail(TextDetail)` | Level of detail: with `Overview` the natal text keeps basic info, the palace overview table and the patterns; each horoscope scope (age fortune aside) gives palace names, mutagens, scope stars and patterns without the twelve-palace table; palace sections give major, minor and adjective stars only. Patterns and the decadal, yearly and monthly timelines are unaffected |
+| `knowledge(&pack)` | Pick full readings from `pack` by chart; `pack` is the bundled default pack or a custom pack merged from overlays, and its borrow must outlive the options |
+| `knowledge_summary(&pack)` | As above, at the summary layer: an entry's summary, or a body no wider than [`SUMMARY_FALLBACK_WIDTH`](/en/docs/rust/knowledge#summary_fallback_width); patterns without their conditions. Returns `IztroError::InvalidArgument` listing every missing entry when a long body lacks its summary |
+| `horoscope_through(Scope)` | [Stop the horoscope text at `scope`](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), leaving the finer ones out: `Decadal` writes the decadal only, `Yearly` the decadal, age fortune and yearly, and `Monthly` / `Daily` / `Hourly` one more scope each; unset, `HoroscopeRef::to_text_with` stops at the query precision and the free functions write through the hourly scope. Stopped at `Decadal`, the decadal section leaves out Feng Yun Ji Hui. Acts on the horoscope text only; `Scope::Origin` returns `IztroError::InvalidArgument`, and `HoroscopeRef::to_text_with` returns the same error for a scope finer than the query precision |
 | `pattern_config(&config)` | Judge patterns under `config`, the same argument as [`patterns_with`](/en/docs/rust/patterns#patterns_with); acts on both the text's pattern section and the pattern readings. Unset means `PatternConfig::default()` |
 | `knowledge_pack()` | The current source of readings; `None` means facts only |
 
-`Copy`, so one value can be handed to any number of `to_text_with` calls. Reading bodies are the
+`Copy`, so one value can be handed to any number of `to_text_with` calls. Of `knowledge` and
+`knowledge_summary`, the later call wins. Reading bodies are the
 pack's Markdown verbatim; entry headings (star, pattern and mutagen names) are translated into the
 output language. Selection follows the same rule as
 [`KnowledgePack::for_astrolabe`](/en/docs/rust/knowledge#for_astrolabe--for_horoscope); placement
@@ -554,6 +569,10 @@ let noted = chart.to_text_with(&opts);
 println!("{} {}", plain.chars().count(), noted.chars().count());
 assert!(plain.lines().all(|l| noted.contains(l)));
 
+let overview = chart.to_text_with(&TextOptions::new().detail(TextDetail::Overview));
+let brief = chart.to_text_with(&TextOptions::new().knowledge_summary(pack)?);
+println!("{} {}", overview.chars().count(), brief.chars().count());
+
 let positional = PatternConfig { brightness_source: BrightnessSource::Positional, ..PatternConfig::default() };
 let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pattern section and readings both follow it
 ```
@@ -561,9 +580,62 @@ let by_position = chart.to_text_with(&opts.pattern_config(&positional));   // pa
 **Output**
 
 ```text
-3389 20767
+3389 20552
+756 8385
 ```
 
 The bundled default pack is zh-CN only; `KnowledgePack::builtin` returns `None` for the other
 languages. An English chart needs an explicit pack for readings — a pack's language is not tied to
 the chart's, so an English chart with the Chinese pack gives English headings and Chinese bodies.
+
+---
+
+## topic_to_text
+
+**Purpose**　Text with material picked by question: palaces selected by a knowledge-pack
+[topic](/en/docs/guide/guides/knowledge-pack#topics) — see [Text by topic](/en/docs/guide/guides/to-text#text-by-topic).
+
+**Signature** (`x_iztro::text`, re-exported from the crate root)
+
+```rust
+pub fn topic_to_text(
+    astrolabe: &Astrolabe,
+    topic: &str,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError>
+
+impl Astrolabe {
+    pub fn topic_to_text(&self, topic: &str, opts: &TextOptions) -> Result<String, IztroError>
+}
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `&str` | Topic slug, a key of the pack's `topics` section |
+| `opts` | `&TextOptions` | Must carry a pack (`knowledge` or `knowledge_summary`); the topic definition and the readings both come from it. Detail and pattern criteria work as for the other texts |
+| `lang` | `Language` | Output language; the convenience method uses the charting language |
+
+**Returns**　`Result<String, IztroError>` — a `# Topic · Natal Chart …` title and the topic
+description, one trine & opposite section per `surround` palace, the `palaces` under
+`## Related Palaces` (no palace twice), then the patterns landing in those palaces and the mutagen
+notes. No pack in `opts`, an unknown topic or an unknown palace key in the topic returns
+`IztroError::InvalidArgument`.
+
+**Example** (on a zh-CN chart, since the bundled pack is Chinese)
+
+```rust
+let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+let text = chart.topic_to_text("romance", &TextOptions::new().knowledge_summary(pack)?)?;
+println!("{}", text.lines().next().unwrap());
+println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>().join(" "));
+```
+
+**Output**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```

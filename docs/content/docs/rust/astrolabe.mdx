@@ -24,7 +24,7 @@ let chart = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, Confi
 | --- | --- | --- |
 | `gender` | `Gender` | 性别 |
 | `solar_date` | `String` | 公历日期，与入参一致 |
-| `lunar_date` | `String` | 农历日期的中文写法，如「二〇〇〇年七月十七」 |
+| `lunar_date` | `String` | 农历日期，随盘面语言：中文为「二〇〇〇年七月十七」，英文为 `Lunar 2000-7-17`（闰月写作 `leap-4`） |
 | `chinese_date` | `String` | 四柱展示串，如「庚辰 甲申 丙午 庚寅」 |
 | `time` | `String` | 时辰名，如「寅时」 |
 | `time_range` | `String` | 时辰对应的钟点区间，如「03:00~05:00」 |
@@ -424,7 +424,7 @@ true true
 **签名**
 
 ```rust
-pub fn horoscope(&self, target_date: &str, target_time_index: u8) -> Result<HoroscopeRef<'_>, IztroError>
+pub fn horoscope(&self, target_date: &str, target_time_index: impl Into<Option<u8>>) -> Result<HoroscopeRef<'_>, IztroError>
 pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 ```
 
@@ -432,13 +432,13 @@ pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError>
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `target_date` | `&str` | 是 | — | 目标公历日期，格式 `YYYY-M-D` |
-| `target_time_index` | `u8` | 是 | — | 目标时辰索引 0–12，决定流时 |
+| `target_date` | `&str` | 是 | — | 目标公历日期，写法同排盘入参（可带 ` HH:mm`） |
+| `target_time_index` | `impl Into<Option<u8>>` | 是 | — | 传数字或 `None`：目标时辰索引 0–12，决定流时；`None` 时按目标日期的时间换算（23 点为晚子），不带时间即早子时 |
 
-`horoscope_now` 取本地时钟的当前日期与当前时辰，无参数。
+`horoscope_now` 取本地时钟的此刻（日期与时辰），无参数。
 
-**返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘。
-详见[运限对象](/zh/docs/rust/horoscope)。
+**返回值**　`HoroscopeRef<'_>`——持有本盘的运限视图，六个层级的宫位查询不必再传星盘；
+查询精度（`precision()`）为流时，给不给时辰都一样。详见[运限对象](/zh/docs/rust/horoscope)。
 
 **示例**
 
@@ -466,6 +466,117 @@ println!("流年 {}{}",
 大限 庚辰
 流年 乙巳
 ```
+
+---
+
+## horoscope_of_year
+
+**用途**　取指定农历年的运限：只问某一年时用它，不必自己挑公历日期。
+
+**签名**
+
+```rust
+pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年份，1–9999 |
+
+**返回值**　`HoroscopeRef<'_>`——目标日期取该农历年六月初一、时辰按时柱地支，与
+[`yearly_list`](/zh/docs/rust/horoscope#yearly_list) 同一约定；查询精度（`precision()`）为 `Scope::Yearly`。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let h = chart.horoscope_of_year(2027)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("流年 {}{} 虚岁 {}",
+    translate_heavenly_stem(h.yearly.heavenly_stem, zh),
+    translate_earthly_branch(h.yearly.earthly_branch, zh),
+    h.age.nominal_age);
+
+let jan = chart.horoscope("2027-1-1", 0)?;
+println!("2027-1-1 流年 {}{}",
+    translate_heavenly_stem(jan.yearly.heavenly_stem, zh),
+    translate_earthly_branch(jan.yearly.earthly_branch, zh));
+```
+
+**输出**
+
+```text
+2027-7-4 二〇二七年六月初一
+流年 丁未 虚岁 28
+2027-1-1 流年 丙午
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+公历年初到正月初一之前仍属上一个农历年，所以公历 2027-1-1 的流年还是丙午。
+大限、小限与流年在默认分界配置下整个农历年不变；`age_divide` 取 `AgeDivide::Birthday` 或
+`horoscope_divide` 取 `HoroscopeDivide::Exact` 时年内仍会换层，结果是六月初一当天的。
+流月、流日、流时也在结果里，同样是六月初一那一天的，不是查询的答案：`to_text` 默认只写到流年，
+宫位查询、文本与格局的层级参数比流年细时返回 `IztroError::InvalidArgument`。
+年份不在 1–9999 返回 `IztroError::InvalidArgument`。
+连续若干年各要一行时用 [`yearly_overview_to_text`](/zh/docs/rust/horoscope#yearly_overview_to_text)。
+</Callout>
+
+---
+
+## horoscope_of_month
+
+**用途**　取指定农历年某月的运限：只问某个月时用它，不必替提问的人挑一天。
+
+**签名**
+
+```rust
+pub fn horoscope_of_month(&self, year: i64, month: u32) -> Result<HoroscopeRef<'_>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年份，1–9999 |
+| `month` | `u32` | 是 | — | 农历月号，1–12；闰月不单独成月号 |
+
+**返回值**　`HoroscopeRef<'_>`——目标日期取该月（非闰）初一、时辰按时柱地支，与
+[`monthly_list`](/zh/docs/rust/horoscope#monthly_list) 整月一段的约定相同；查询精度（`precision()`）为 `Scope::Monthly`。
+
+**示例**
+
+```rust
+let zh = Language::ZhCN;
+let h = chart.horoscope_of_month(2025, 7)?;
+
+println!("{} {}", h.solar_date, h.lunar_date);
+println!("流月 {}{}",
+    translate_heavenly_stem(h.monthly.heavenly_stem, zh),
+    translate_earthly_branch(h.monthly.earthly_branch, zh));
+```
+
+**输出**
+
+```text
+2025-8-23 二〇二五年七月初一
+流月 甲申
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+闰月不单独成月号：默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止日见
+[`monthly_list_to_text`](/zh/docs/rust/horoscope#monthly_list_to_text)。
+流日与流时也在结果里，是该月初一那一天的：`to_text` 默认只写到流月，
+宫位查询、文本与格局的层级参数比流月细时返回 `IztroError::InvalidArgument`。
+年份不在 1–9999 或月份不在 1–12 返回 `IztroError::InvalidArgument`。
+`horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与按年取的同属立春起算的那一年。初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）同样是入参错误。
+</Callout>
 
 ---
 
@@ -540,7 +651,7 @@ println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>()
 **输出**
 
 ```text
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 

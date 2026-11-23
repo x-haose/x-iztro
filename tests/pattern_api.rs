@@ -60,13 +60,13 @@ fn rust_api_natal_and_horoscope_agree_with_dto() {
         assert!(!d.name.is_empty() && !d.palace_name.is_empty());
     }
     let h = a.horoscope("2026-8-19", 3).unwrap();
-    let dec = h.patterns(Scope::Decadal);
+    let dec = h.patterns(Scope::Decadal).unwrap();
     assert!(
         !dec.is_empty(),
         "该盘大限层应有命中，空列表会让下方核对空转"
     );
     assert!(dec.iter().all(|x| x.scope == Scope::Decadal));
-    assert_eq!(h.patterns(Scope::Origin), hits);
+    assert_eq!(h.patterns(Scope::Origin).unwrap(), hits);
 }
 
 /// `flow_stars` 开关的行为：流曜等同本命辅星只在开关开时成立。
@@ -78,7 +78,9 @@ fn flow_stars_switch_changes_horoscope_judgement() {
     let a = chart();
     let h = a.horoscope("2026-8-19", 3).unwrap();
 
-    let on = h.patterns_with(Scope::Yearly, &PatternConfig::default());
+    let on = h
+        .patterns_with(Scope::Yearly, &PatternConfig::default())
+        .unwrap();
     let with_flow: Vec<_> = on
         .iter()
         .filter(|x| x.key == PatternKey::LuMaJiaoChi)
@@ -90,13 +92,15 @@ fn flow_stars_switch_changes_horoscope_judgement() {
         "默认口径下该盘流年禄马交驰的证据应含流马"
     );
 
-    let off = h.patterns_with(
-        Scope::Yearly,
-        &PatternConfig {
-            flow_stars: false,
-            ..PatternConfig::default()
-        },
-    );
+    let off = h
+        .patterns_with(
+            Scope::Yearly,
+            &PatternConfig {
+                flow_stars: false,
+                ..PatternConfig::default()
+            },
+        )
+        .unwrap();
     assert!(
         !off.iter().any(|x| x.key == PatternKey::LuMaJiaoChi),
         "关掉 flow_stars 后流马不算天马，该盘流年禄马交驰应消失"
@@ -142,7 +146,7 @@ fn bridge_horoscope_patterns_needs_scope_and_target() {
         json!({"targetDate": "2026-8-19", "targetTimeIndex": 3, "scope": "nope"}),
     )
     .unwrap_err();
-    assert!(err.contains("unknown scope"), "{err}");
+    assert!(err.contains("invalid scope"), "{err}");
 }
 
 #[test]

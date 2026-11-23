@@ -271,3 +271,137 @@ mod ffi_kinds {
         assert_ne!(plain, rearranged, "重排后的大限列表应与原盘不同");
     }
 }
+
+/// 按农历年取运限：流年是该农历年的，而公历同年 1 月 1 日还在上一个农历年；
+/// 流年一层与流年列表里同一年的那项一致。
+#[test]
+fn horoscope_of_year_is_the_lunar_year_not_new_years_day() {
+    let a = chart("2000-8-16", 2);
+    let of_year = a.horoscope_of_year(2027).unwrap();
+    assert_eq!(
+        (of_year.yearly.heavenly_stem, of_year.yearly.earthly_branch),
+        (HeavenlyStem::Ding, EarthlyBranch::Wei),
+        "农历 2027 年是丁未年"
+    );
+    let new_years_day = a.horoscope("2027-1-1", 0).unwrap();
+    assert_eq!(
+        (
+            new_years_day.yearly.heavenly_stem,
+            new_years_day.yearly.earthly_branch
+        ),
+        (HeavenlyStem::Bing, EarthlyBranch::Wu),
+        "公历 2027-1-1 仍在丙午年"
+    );
+
+    let age = (2027 - 2000 + 1) as u32;
+    let listed = a
+        .decadal_list()
+        .iter()
+        .position(|d| d.age_range.0 <= age && age <= d.age_range.1)
+        .map(|ordinal| a.yearly_list(ordinal).unwrap())
+        .unwrap()
+        .into_iter()
+        .find(|y| y.year == 2027)
+        .unwrap();
+    assert_eq!(of_year.yearly.mutagen, listed.mutagen);
+    assert_eq!(of_year.yearly.index, listed.index);
+    assert_eq!(of_year.age.nominal_age, age);
+
+    for year in [0, 10000] {
+        assert!(
+            matches!(
+                a.horoscope_of_year(year),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "年份 {year} 越界应报错"
+        );
+    }
+}
+
+/// 按农历月取运限：流月与流月列表里同一月的那项一致；闰月不单独成月号，月号越界报错。
+#[test]
+fn horoscope_of_month_matches_the_monthly_list() {
+    let a = chart("2000-8-16", 2);
+    let list = a.monthly_list(2025, true).unwrap();
+    for month in 1..=12u32 {
+        let of_month = a.horoscope_of_month(2025, month).unwrap();
+        let listed = list
+            .iter()
+            .find(|m| m.month == month && !m.is_leap_month)
+            .unwrap();
+        assert_eq!(of_month.monthly.index, listed.index, "{month} 月");
+        assert_eq!(of_month.monthly.mutagen, listed.mutagen, "{month} 月");
+    }
+    for (year, month) in [(2025, 0), (2025, 13), (0, 1), (10000, 1)] {
+        assert!(
+            matches!(
+                a.horoscope_of_month(year, month),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "{year} 年 {month} 月应报错"
+        );
+    }
+}
+
+/// 节气分界下按月取运限：第 N 个月的流月地支恒为寅起第 N 支，流年与按年取的一致（正月不落回上一年）。
+#[test]
+fn horoscope_of_month_follows_the_jie_under_exact_division() {
+    let config = Config {
+        horoscope_divide: HoroscopeDivide::Exact,
+        ..Config::default()
+    };
+    let a = by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN, config).unwrap();
+    for year in 1950..2050 {
+        let yearly = a.horoscope_of_year(year).unwrap().yearly.earthly_branch;
+        for month in 1..=12u32 {
+            let h = a.horoscope_of_month(year, month).unwrap();
+            assert_eq!(
+                h.monthly.earthly_branch.index(),
+                (month as usize + 1) % 12,
+                "{year} 年第 {month} 月"
+            );
+            assert_eq!(h.yearly.earthly_branch, yearly, "{year} 年第 {month} 月");
+        }
+    }
+}
+
+/// 初一分界下改历年里不存在的农历月是入参错误，不是内部错误。
+#[test]
+fn horoscope_of_month_rejects_a_month_the_lunar_year_lacks() {
+    let a = chart("2000-8-16", 2);
+    for (year, month) in [(237, 3), (8, 12)] {
+        assert!(
+            matches!(
+                a.horoscope_of_month(year, month),
+                Err(IztroError::InvalidArgument(_))
+            ),
+            "{year} 年 {month} 月"
+        );
+    }
+}
+
+/// 流年一览每行与按年取运限一致；未起运的年份大限写童限；区间颠倒报错。
+#[test]
+fn yearly_overview_rows_follow_the_horoscope_of_each_year() {
+    let a = chart("2000-8-16", 2);
+    let text = a.yearly_overview_to_text(2001, 2012).unwrap();
+    let rows: Vec<&str> = text.lines().filter(|l| l.starts_with("| 20")).collect();
+    assert_eq!(rows.len(), 12);
+    let name = |index: usize| translate_palace(a.palaces[index].name, Language::ZhCN);
+    for (row, year) in rows.iter().zip(2001..=2012) {
+        let h = a.horoscope_of_year(year).unwrap();
+        let cells: Vec<&str> = row.split(" | ").collect();
+        assert_eq!(cells[3], h.age.nominal_age.to_string(), "{year}");
+        assert!(cells[4].ends_with(name(h.decadal.index)), "{year}: {row}");
+        assert_eq!(
+            cells[4].contains("童限"),
+            h.decadal.name_key == HoroscopeName::Childhood,
+            "{year}: {row}"
+        );
+        assert_eq!(cells[6], name(h.yearly.index), "{year}");
+    }
+    assert!(matches!(
+        a.yearly_overview_to_text(2012, 2001),
+        Err(IztroError::InvalidArgument(_))
+    ));
+}

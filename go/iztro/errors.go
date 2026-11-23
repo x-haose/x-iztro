@@ -16,7 +16,7 @@ import "errors"
 
 // 错误类别哨兵，配合 errors.Is 使用。
 var (
-	// ErrInvalidDate 表示日期格式非法、日期不存在，或超出支持范围（公历 1583-9999）。
+	// ErrInvalidDate 表示日期格式非法、日期不存在（含改历空缺 1582-10-05 至 10-14），或超出支持范围（1-9999 年）。
 	ErrInvalidDate = errors.New("invalid date")
 	// ErrInvalidTimeIndex 表示时辰索引越界（合法值 0-12）。
 	ErrInvalidTimeIndex = errors.New("invalid time index")

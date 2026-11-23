@@ -1,0 +1,278 @@
+---
+title: Astrolabe
+description: Astrolabe fields, locating palaces and stars, surrounded and flanking palaces, horoscope entry points, text and JSON.
+---
+
+`Astrolabe` is what charting produces and where every query starts: the twelve palaces plus chart-level
+facts such as the four pillars, Soul and Body stars and the Five Elements class.
+
+```ts
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+```
+
+## Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `gender` / `genderKey` | `string` / `Gender` | Gender name / key |
+| `solarDate` | `string` | Solar date, the input echoed without its time part |
+| `lunarDate` | `string` | Lunar date, in the chart language |
+| `chineseDate` | `string` | Four pillars for display |
+| `rawDates` | `RawDates` | Structured lunar birthday (`lunarDate`) and pillars (`chineseDate`: a `RawChineseDate` with `yearlyKeys` and friends; `pillarKeys()` returns the [year, month, day, hour] pillar keys, ready for `util.translateChineseDate` or to spread into `solarDatesByBazi`) |
+| `time` / `timeRange` | `string` | Hour name / clock range |
+| `sign` / `signKey` | `string` | Western sign / key |
+| `zodiac` / `zodiacKey` | `string` | Chinese zodiac / key |
+| `soul` / `soulKey`, `body` / `bodyKey` | `string` | Soul and Body stars / keys |
+| `fiveElementsClass` / `fiveElementsClassKey` | `string` / `FiveElementsClass` | Five Elements class / key |
+| `earthlyBranchOfSoulPalace(Key)` / `earthlyBranchOfBodyPalace(Key)` | `string` | Branches of the Soul and Body palaces / keys |
+| `timeIndex`, `fixLeap`, `language` | — | Charting input |
+| `config` | `ChartConfigData` | The values of the six switches |
+| `palaces` | `readonly Palace[]` | The twelve palaces, index 0 is Yin, 11 is Chou |
+
+`palaces` is indexed by palace position, not by palace name; get the Soul palace with `chart.palace('soulPalace')`.
+
+---
+
+## palace
+
+```ts
+palace(target: number | PalaceName | string): Palace | undefined;
+```
+
+Find a palace by index, palace key or palace name in the chart language; `PalaceName.BODY` and
+`PalaceName.ORIGINAL` locate the Body palace and the Origin palace.
+
+```ts
+const soul = chart.palace(PalaceName.SOUL)!;
+console.log(soul.index, soul.name, soul.heavenlyStem + soul.earthlyBranch);
+console.log(chart.palace(PalaceName.BODY)!.name, chart.palace(PalaceName.ORIGINAL)!.name,
+  chart.palace('财帛')!.index, chart.palace(0)!.name);
+console.log(chart.palace('nope'));
+```
+
+```text
+4 命宫 壬午
+官禄 夫妻 0 财帛
+undefined
+```
+
+---
+
+## star / starInPalace
+
+```ts
+star(star: string): Star | undefined;
+starInPalace(star: string): [Star, Palace] | undefined;
+```
+
+Find a natal star (major, minor or adjective) by key or by its name in the chart language.
+
+```ts
+const [s, p] = chart.starInPalace(MajorStar.WUQU)!;
+console.log(s.name, s.brightness, s.mutagen, p.name);
+console.log(chart.star('文昌')!.palace()!.name);
+```
+
+```text
+武曲 得 权 财帛
+福德
+```
+
+---
+
+## surroundedPalaces
+
+```ts
+surroundedPalaces(target: number | PalaceName | string): SurroundedPalaces | undefined;
+```
+
+Target, opposite, wealth and career positions; see [Surrounded and flanking palaces](/en/docs/js/surpalaces).
+
+## isSurrounded / isSurroundedOneOf / notSurrounded
+
+```ts
+isSurrounded(target, stars: readonly string[]): boolean;      // all of them
+isSurroundedOneOf(target, stars: readonly string[]): boolean; // any of them
+notSurrounded(target, stars: readonly string[]): boolean;     // none of them
+```
+
+```ts
+const sp = chart.surroundedPalaces(PalaceName.SOUL)!;
+console.log([sp.target, sp.opposite, sp.wealth, sp.career].map((p) => p.name).join(' '));
+console.log(
+  chart.isSurrounded(PalaceName.SOUL, [MajorStar.ZIWEI, MajorStar.WUQU]),
+  chart.isSurroundedOneOf(PalaceName.SOUL, [MinorStar.QINGYANG, MinorStar.TUOLUO]),
+  chart.notSurrounded(PalaceName.SOUL, [MinorStar.DIKONG]),
+);
+```
+
+```text
+命宫 迁移 财帛 官禄
+true false true
+```
+
+All three return `false` when the palace cannot be located.
+
+---
+
+## flankingPalaces
+
+```ts
+flankingPalaces(target: number | PalaceName | string): FlankingPalaces | undefined;
+```
+
+The two palaces on either side of the target; the twelve wrap around.
+
+```ts
+const f = chart.flankingPalaces(PalaceName.SOUL)!;
+console.log(f.previous.name, f.next.name, f.have(['天机']), f.haveMutagen(Mutagen.JI));
+```
+
+```text
+兄弟 父母 true false
+```
+
+---
+
+## horoscope / horoscopeOfYear / horoscopeOfMonth
+
+```ts
+horoscope(targetDate?: string | Date, targetTimeIndex?: TimeIndex): Horoscope;
+horoscopeOfYear(year: number): Horoscope;
+horoscopeOfMonth(year: number, month: number): Horoscope;
+```
+
+- `horoscope`: target solar date (a string may carry a time; a `Date` contributes its local date and time);
+  omitted, now. Without an hour index it is derived from the target's time, and no time means the early Rat
+  hour. Precision: hourly.
+- `horoscopeOfYear`: a lunar year, targeting the first day of its sixth month. Use it when asking about a
+  year — the start of a solar year up to the lunar new year still belongs to the previous lunar year. Precision: yearly.
+- `horoscopeOfMonth`: a month of a lunar year, targeting the first day of that (non-leap) month. Precision: monthly.
+
+```ts
+const h = chart.horoscope('2024-10-1 13:20');
+console.log(h.solarDate, h.lunarDate, h.hourly.heavenlyStem + h.hourly.earthlyBranch, h.precision());
+const y = chart.horoscopeOfYear(2027);
+console.log(y.solarDate, y.yearly.heavenlyStem + y.yearly.earthlyBranch, y.precision());
+const m = chart.horoscopeOfMonth(2025, 7);
+console.log(m.solarDate, m.monthly.heavenlyStem + m.monthly.earthlyBranch, m.precision());
+```
+
+```text
+2024-10-1 二〇二四年八月廿九 己未 hourly
+2027-7-4 丁未 yearly
+2025-8-23 甲申 monthly
+```
+
+The horoscope object is on [Horoscope](/en/docs/js/horoscope); precision is explained under
+[precision](/en/docs/js/horoscope#precision).
+
+## decadalList / yearlyList / monthlyList and the overview texts
+
+See [Horoscope · The three lists](/en/docs/js/horoscope#the-three-lists).
+
+## patterns / patternsToText
+
+See [Patterns](/en/docs/js/patterns).
+
+---
+
+## rearranged
+
+```ts
+rearranged(fromStem: HeavenlyStem, fromBranch: EarthlyBranch): Astrolabe;
+```
+
+Recast with the given stem and branch as the Soul palace, returning a new chart and leaving this one
+unchanged. Horoscopes, patterns and text on the rearranged chart follow the rearranged layout. For the usual
+earth and human charts, `config.astroType` is enough.
+
+---
+
+## toText
+
+```ts
+toText(options?: {
+  knowledge?: boolean | KnowledgePack | null; // true for the built-in pack, or a pack
+  detail?: TextDetail;                        // 'overview' | 'full' (default)
+  knowledgeDepth?: KnowledgeDepth;            // 'summary' | 'full' (default); summary needs knowledge
+  config?: PatternConfig;                     // pattern judgement settings
+}): string;
+```
+
+The chart's semantic text: a Markdown subset for language models and people, in the chart language.
+`String(chart)` equals `chart.toText()`. The format is described in [to_text](/en/docs/guide/guides/to-text).
+
+```ts
+console.log(chart.toText({ detail: TextDetail.OVERVIEW }).split('\n').slice(0, 12).join('\n'));
+```
+
+```text
+# 命盘 2000-8-16 寅时 女
+
+## 基本信息
+- 阳历: 2000-8-16 · 农历: 二〇〇〇年七月十七 · 时辰: 寅时 (03:00~05:00)
+- 四柱: 庚辰 甲申 丙午 庚寅 · 生肖: 龙 · 星座: 狮子座
+- 五行局: 木三局 · 命主: 破军 · 身主: 文昌
+- 命宫: 午 · 身宫: 戌 (官禄) · 来因宫: 辰 (夫妻)
+- 生年四化: 太阳化禄→子女, 武曲化权→财帛, 太阴化科→仆役, 天同化忌→疾厄
+
+## 十二宫总览
+| 宫位 | 主星 | 辅星 | 大限 |
+|---|---|---|---|
+```
+
+`knowledge: true` on a chart language without a built-in pack (only zh-CN has one), or `summary` with a pack
+that lacks summaries, throws `IztroError`. `knowledge` accepts only `true` or a `KnowledgePack` instance;
+anything else throws `TypeError`.
+
+## topicToText
+
+```ts
+topicToText(topic: string, options?: TextOptions): string;
+```
+
+Selects palaces by the topic's definition in the knowledge pack, one section per palace, with the patterns and
+mutagen readings that fall in the selection at the end. `knowledge` defaults to the built-in pack of the chart
+language (the topic definitions live in the pack).
+
+```ts
+const text = chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY });
+console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
+```
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正
+### 本宫 · 夫妻 (庚辰) · 大限 23-32 [来因宫]
+### 对宫 · 官禄 (丙戌) · 大限 83-92 [身宫]
+### 财帛位 · 迁移 (戊子) · 大限 63-72
+### 官禄位 · 福德 (甲申) · 大限 103-112
+## 相关宫位
+### 命宫 (壬午) · 大限 3-12
+### 子女 (己卯) · 大限 33-42
+## 格局
+## 四化释义
+```
+
+A topic missing from the pack, or a palace key the topic names but the core does not know, throws `IztroError`.
+
+---
+
+## toJSON
+
+```ts
+toJSON(): AstrolabeData;
+```
+
+The chart's DTO: camelCase keys and translated values matching iztro's `JSON.stringify(astrolabe)` key for key,
+plus the language-independent keys. Returns a deep copy; `JSON.stringify(chart)` serializes it.
+
+```ts
+const raw = chart.toJSON();
+console.log(raw.palaces.length, JSON.parse(JSON.stringify(chart)).solarDate);
+```
+
+```text
+12 2000-8-16
+```

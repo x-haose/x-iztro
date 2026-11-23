@@ -68,7 +68,7 @@ class ReverseCriteria:
     """生年四化 [禄, 权, 科, 忌] 各自是哪颗星（星耀标识），可只给其中几个"""
 
     year_range: tuple[int, int] = (1900, 2100)
-    """公历年闭区间（含两端），须落在 1583-9999 内"""
+    """公历年闭区间（含两端），须落在 1-9999 内"""
 
     fix_leap: bool = True
     """是否修正闰月（与排盘入参同义）"""
@@ -124,7 +124,7 @@ def solar_dates_by_bazi(
 
     Args:
         yearly/monthly/daily/hourly: 四柱干支，各为 (天干标识, 地支标识)
-        year_range: 公历年闭区间（含两端），须落在 1583-9999 内
+        year_range: 公历年闭区间（含两端），须落在 1-9999 内
         config: 排盘配置（`ChartConfig`）；不传取默认
 
     Returns:

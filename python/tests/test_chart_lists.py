@@ -1,6 +1,6 @@
-"""夹宫与大限/流年/流月列表的端到端测试。
+"""夹宫、大限/流年/流月列表与按农历年、农历月取运限的端到端测试。
 
-四组查询都经绑定层无状态再发起排盘，因此这里同时盯两件事：返回值的项数与
+这些查询都经绑定层无状态再发起排盘，因此这里同时盯两件事：返回值的项数与
 字段类型符合契约，以及排盘上下文（重排起点、修正闰月开关）真的被转发——
 上下文丢失时结果仍是一份「看起来合理」的错答案，只有拿它同原盘结果对比才看得出来。
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from x_iztro import Astro, FlankingPalaces
+from x_iztro import Astro, FlankingPalaces, KnowledgePack
 from x_iztro._x_iztro import IztroError
 from x_iztro.enums import (
     EarthlyBranch,
@@ -19,6 +19,7 @@ from x_iztro.enums import (
     MonthPart,
     Mutagen,
     PalaceName,
+    Scope,
 )
 from x_iztro.horoscope import DecadalListItem, MonthlyListItem, YearlyListItem
 
@@ -209,3 +210,118 @@ def test_monthly_list_fix_leap_is_independent_of_the_chart():
 def test_monthly_list_rejects_unsupported_year():
     with pytest.raises(IztroError):
         chart().monthly_list(99999)
+    with pytest.raises(IztroError) as info:
+        chart().monthly_list_to_text(99999)
+    assert info.value.code == "invalid_argument"
+
+
+# ------ 按农历年取运限 ------
+
+
+def test_horoscope_of_year_is_the_lunar_year_not_new_years_day():
+    """流年是该农历年的；公历同年 1 月 1 日还在上一个农历年。"""
+    a = chart()
+    of_year = a.horoscope_of_year(2027)
+    assert (of_year.yearly.heavenly_stem_key, of_year.yearly.earthly_branch_key) == (
+        HeavenlyStem.DING,
+        EarthlyBranch.WEI,
+    )
+    new_years_day = a.horoscope("2027-1-1", 0)
+    assert (
+        new_years_day.yearly.heavenly_stem_key,
+        new_years_day.yearly.earthly_branch_key,
+    ) == (HeavenlyStem.BING, EarthlyBranch.WU)
+
+    for year in (0, 10000):
+        with pytest.raises(IztroError) as info:
+            a.horoscope_of_year(year)
+        assert info.value.code == "invalid_argument"
+
+
+def test_horoscope_of_year_recomputes_by_year():
+    """年份运限再发起计算时转发的是年份，查询精度为流年：文本只写到流年，与「六月初一 + 出生时辰
+    （寅时，索引 2）」的运限写到流年同文；转发 DTO 的 solar_date 会成为日期目标、写到流时。
+    比流年细的层级报错：宫位查询在 Python 侧本地算，报错与内核校验的格局同一句。"""
+    a = chart()
+    of_year = a.horoscope_of_year(2027)
+    assert of_year.precision() == Scope.YEARLY
+    text = of_year.to_text()
+    assert "## 流年 · " in text
+    assert "## 流月 · " not in text
+    assert text == a.horoscope(of_year.solar_date, 2).to_text(through=Scope.YEARLY)
+    assert of_year.palace(PalaceName.SOUL, Scope.YEARLY) is not None
+    messages = []
+    for call in (
+        lambda: of_year.to_text(through=Scope.MONTHLY),
+        lambda: of_year.patterns(Scope.MONTHLY),
+        lambda: of_year.palace(PalaceName.SOUL, Scope.MONTHLY),
+        lambda: of_year.has_horoscope_mutagen(PalaceName.SOUL, Scope.DAILY, Mutagen.LU),
+    ):
+        with pytest.raises(IztroError) as info:
+            call()
+        assert info.value.code == "invalid_argument"
+        messages.append(str(info.value))
+    assert messages[2] == messages[1]
+
+
+def test_yearly_overview_to_text_rejects_bad_ranges():
+    """流年一览的区间颠倒、年份越界报 invalid_argument。"""
+    for from_year, to_year in ((2012, 2001), (0, 1), (9999, 10000)):
+        with pytest.raises(IztroError) as info:
+            chart().yearly_overview_to_text(from_year, to_year)
+        assert info.value.code == "invalid_argument", (from_year, to_year)
+
+
+# ------ 按农历月取运限 ------
+
+
+def test_horoscope_of_month_matches_the_monthly_list():
+    """流月与流月列表里同月号的常规月那项一致；闰月不单独成月号，年份、月号越界报错。"""
+    a = chart()
+    listed = {m.month: m for m in a.monthly_list(2025) if not m.is_leap_month}
+    for month in range(1, 13):
+        monthly = a.horoscope_of_month(2025, month).monthly
+        want = listed[month]
+        assert (
+            monthly.index,
+            monthly.heavenly_stem_key,
+            monthly.earthly_branch_key,
+            monthly.mutagen_star_keys,
+        ) == (
+            want.index,
+            want.heavenly_stem_key,
+            want.earthly_branch_key,
+            want.mutagen_star_keys,
+        ), month
+
+    for year, month in ((2025, 0), (2025, 13), (2025, -1), (0, 1), (10000, 1)):
+        with pytest.raises(IztroError) as info:
+            a.horoscope_of_month(year, month)
+        assert info.value.code == "invalid_argument", (year, month)
+
+
+def test_horoscope_of_month_recomputes_by_year_and_month():
+    """月份运限再发起计算时转发的是年份与月号，查询精度为流月：结果与「该月初一 + 出生时辰（寅时，索引 2）」
+    的运限取到流月相同。只转发年份会退成六月初一、只取到流年，转发 DTO 的 solar_date 会取到流时。
+    农历 2025 年七月初一是 2025-8-23。"""
+    a = chart()
+    of_month = a.horoscope_of_month(2025, 7)
+    assert of_month.solar_date == "2025-8-23"
+    assert of_month.precision() == Scope.MONTHLY
+    same_hour = a.horoscope("2025-8-23", 2)
+
+    text = of_month.to_text()
+    assert text == same_hour.to_text(through=Scope.MONTHLY)
+    assert "## 流月 · " in text
+    for heading in ("## 流日 · ", "## 流时 · "):
+        assert heading not in text
+
+    assert of_month.patterns(Scope.MONTHLY) == same_hour.patterns(Scope.MONTHLY)
+    assert of_month.patterns_to_text(Scope.MONTHLY) == same_hour.patterns_to_text(Scope.MONTHLY)
+    # 按盘取材取到流月：有该月的流耀，没有代表日流日的流耀
+    stars = KnowledgePack.builtin().for_horoscope(of_month).to_dict()["stars"]
+    monthly = {s.key for group in of_month.monthly.stars or [] for s in group}
+    daily = {s.key for group in of_month.daily.stars or [] for s in group}
+    assert monthly and daily
+    assert monthly <= stars.keys()
+    assert not daily & stars.keys()

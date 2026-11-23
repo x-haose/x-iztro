@@ -12,7 +12,16 @@ import json
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
-from x_iztro.enums import _MUTAGEN_INDEX, Mutagen, PalaceName, Scope, ScopeLiteral
+from x_iztro._bridge import invalid_argument
+from x_iztro.enums import (
+    _MUTAGEN_INDEX,
+    KnowledgeDepth,
+    Mutagen,
+    PalaceName,
+    Scope,
+    ScopeLiteral,
+    TextDetail,
+)
 from x_iztro.star_object import Star, _star_identifiers
 
 if TYPE_CHECKING:
@@ -21,6 +30,9 @@ if TYPE_CHECKING:
     from x_iztro.palace import Palace
     from x_iztro.pattern import PatternConfig, PatternHit
     from x_iztro.surpalaces import SurroundedPalaces
+
+_SCOPE_DEPTH: dict[str, int] = {scope: depth for depth, scope in enumerate(Scope)}
+"""层级深浅：本命 0、大限 1 … 流时 5，越大越细；与 Rust 内核 `Scope::depth` 一致"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,8 +298,20 @@ class Horoscope:
     _raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
     """绑定层返回的原始 DTO，供 `to_dict` / `to_json` 导出"""
 
-    _target_time_index: int = field(default=0, compare=False, repr=False)
-    """发起本次查询的目标时辰索引；再次发起运限层计算（如格局）时用"""
+    _target_date: str | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标日期串（原样，可带时间）；按农历年发起的为 `None`。
+    再次发起运限层计算（如格局）时原样转发"""
+
+    _target_time_index: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标时辰索引；`None` 表示由目标日期串换算，再次发起计算时同样转发"""
+
+    _target_year: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标农历年份（`Astrolabe.horoscope_of_year` / `horoscope_of_month`）；
+    按日期发起的为 `None`。再次发起计算时转发年份而不是 `solar_date`，内核按同一约定重新取该年的运限"""
+
+    _target_month: int | None = field(default=None, compare=False, repr=False)
+    """发起本次查询的目标农历月号（`Astrolabe.horoscope_of_month`），与 `_target_year` 成对；
+    其余发起方式为 `None`。再次发起计算时随年份一起转发"""
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -312,6 +336,9 @@ class Horoscope:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+        through: Scope | ScopeLiteral | None = None,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -323,18 +350,30 @@ class Horoscope:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时各层事实之后紧跟该层流耀释义与格局释义
+            detail: 事实详略：`TextDetail.OVERVIEW` 各层只写宫名对照、四化、流耀与格局，
+                不展开十二宫表，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+            through: 写到哪一层为止，更细的层级不写：`Scope.DECADAL` 只写大限，`YEARLY` 写大限、
+                小限、流年，`MONTHLY` / `DAILY` / `HOURLY` 依次各多一层；默认 None 写到查询精度
+                （`precision()`）。只写到大限时大限段不列风云际会（它要读小限与流年才判得出）
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起（脱离星盘无排盘上下文可转发）
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要；
+                `through` 为 `Scope.ORIGIN`、不是运限层级，或比查询精度细
         """
-        from x_iztro.pattern import _pattern_config
+        from x_iztro.pattern import _pattern_config, _scope_key
 
         return self._context_query(
             "horoscopeToText",
             None,
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
+            through=_scope_key(through) if through is not None else None,
             pattern_config=_pattern_config(config),
         )
 
@@ -349,9 +388,42 @@ class Horoscope:
         """发起这次运限查询的星盘；脱离星盘单独构造的运限返回 None"""
         return self._astrolabe
 
+    def precision(self) -> Scope:
+        """
+        查询精度：目标实际指定到的最细层级。`Astrolabe.horoscope_of_year` 为 `Scope.YEARLY`，
+        `horoscope_of_month` 为 `Scope.MONTHLY`，按日期发起的为 `Scope.HOURLY`。
+
+        比它细的层级是内核替调用方挑的代表日的，不是查询的答案：`to_text` 默认只写到这一层，
+        宫位查询、文本与格局的层级参数比它细时报 `IztroError`。
+        """
+        if self._target_year is None:
+            return Scope.HOURLY
+        if self._target_month is None:
+            return Scope.YEARLY
+        return Scope.MONTHLY
+
+    def _check_scope(self, scope: Scope | ScopeLiteral) -> None:
+        """
+        校验宫位查询的 `scope`：须是层级标识，且不比查询精度（`precision()`）细。
+        报错正文与内核同类校验相同。
+
+        Raises:
+            IztroError: 不认识的层级，或比查询精度细（code 为 invalid_argument）
+        """
+        depth = _SCOPE_DEPTH.get(scope)
+        if depth is None:
+            keys = [f"'{s}'" for s in Scope]
+            raise invalid_argument(f"invalid scope '{scope}': expected {', '.join(keys[:-1])} or {keys[-1]}")
+        precision = self.precision()
+        if depth > _SCOPE_DEPTH[precision]:
+            raise invalid_argument(
+                f"invalid scope '{scope}': the horoscope target only specifies layers down to '{precision}'"
+            )
+
     def _context_query(self, kind: str, astrolabe: Astrolabe | None, **extra: Any) -> Any:
         """以发起本次运限查询的排盘上下文调用绑定层：星盘上下文（含重排起点）
-        委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加目标日期。"""
+        委托给 `Astrolabe._context_query`（上下文键只维护那一处），再附加发起时的运限目标
+        （日期与时辰，或农历年份与月号）。"""
         chart = self._chart(astrolabe)
         if chart is None:
             raise ValueError(
@@ -359,8 +431,10 @@ class Horoscope:
             )
         return chart._context_query(
             kind,
-            target_date=self.solar_date,
+            target_date=self._target_date,
             target_time_index=self._target_time_index,
+            target_year=self._target_year,
+            target_month=self._target_month,
             **extra,
         )
 
@@ -396,9 +470,14 @@ class Horoscope:
 
         Args:
             name: 宫位标识（`PalaceName` 枚举，或当前语言的宫名）
-            scope: 运限范围
+            scope: 运限范围；`origin` 按本命宫名取
             astrolabe: 星盘对象；不传则取发起本次查询的那张盘
+
+        Raises:
+            IztroError: `scope` 不是层级标识，或比查询精度（`precision()`）细——那一层是内核挑的
+                代表日的，不是查询的答案
         """
+        self._check_scope(scope)
         chart = self._chart(astrolabe)
         if chart is None:
             return None
@@ -418,7 +497,13 @@ class Horoscope:
         scope: Scope | ScopeLiteral,
         astrolabe: Astrolabe | None = None,
     ) -> SurroundedPalaces | None:
-        """获取指定运限范围下某宫的三方四正；不传星盘则取发起本次查询的那张盘"""
+        """
+        获取指定运限范围下某宫的三方四正；不传星盘则取发起本次查询的那张盘
+
+        Raises:
+            IztroError: 同 `palace`
+        """
+        self._check_scope(scope)
         chart = self._chart(astrolabe)
         if chart is None:
             return None
@@ -442,7 +527,11 @@ class Horoscope:
             scope: 运限范围（origin 总是返回 False）
             mutagen: 四化类型
             astrolabe: 星盘对象；不传则取发起本次查询的那张盘
+
+        Raises:
+            IztroError: 同 `palace`
         """
+        self._check_scope(scope)
         if scope == "origin":
             return False
         item = self.scope_item(scope)
@@ -466,7 +555,12 @@ class Horoscope:
         stars: list[str],
         astrolabe: Astrolabe | None = None,
     ) -> bool:
-        """判断指定运限宫位是否包含指定的所有流耀（接受星耀枚举或翻译名）"""
+        """
+        判断指定运限宫位是否包含指定的所有流耀（接受星耀枚举或翻译名）
+
+        Raises:
+            IztroError: 同 `palace`
+        """
         p = self.palace(name, scope, astrolabe)
         if p is None:
             return False
@@ -480,7 +574,12 @@ class Horoscope:
         stars: list[str],
         astrolabe: Astrolabe | None = None,
     ) -> bool:
-        """判断指定运限宫位是否包含指定流耀中的任意一颗（接受星耀枚举或翻译名）"""
+        """
+        判断指定运限宫位是否包含指定流耀中的任意一颗（接受星耀枚举或翻译名）
+
+        Raises:
+            IztroError: 同 `palace`
+        """
         p = self.palace(name, scope, astrolabe)
         if p is None:
             return False
@@ -494,7 +593,12 @@ class Horoscope:
         stars: list[str],
         astrolabe: Astrolabe | None = None,
     ) -> bool:
-        """判断指定运限宫位是否不包含指定的所有流耀"""
+        """
+        判断指定运限宫位是否不包含指定的所有流耀
+
+        Raises:
+            IztroError: 同 `palace`
+        """
         p = self.palace(name, scope, astrolabe)
         if p is None:
             return False
@@ -523,6 +627,7 @@ class Horoscope:
 
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
+            IztroError: `scope` 比查询精度（`precision()`）细
         """
         from x_iztro.pattern import PatternHit, _pattern_config, _scope_key
 
@@ -541,6 +646,7 @@ class Horoscope:
         astrolabe: Astrolabe | None = None,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         某运限层视角格局命中的语义化文本。
@@ -554,10 +660,14 @@ class Horoscope:
             astrolabe: 星盘；省略时取发起本次运限查询的那张盘
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时格局列表之后紧跟各格局的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
             ValueError: 既未传星盘、本运限也不是由星盘发起
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要；
+                `scope` 比查询精度（`precision()`）细
         """
         from x_iztro.pattern import _pattern_config, _scope_key
 
@@ -567,6 +677,7 @@ class Horoscope:
             scope=_scope_key(scope),
             pattern_config=_pattern_config(config),
             knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
         )
 
     def _collect_horoscope_star_identifiers(self, palace_idx: int) -> set[str]:
@@ -580,11 +691,20 @@ class Horoscope:
 
     @classmethod
     def _from_dict(
-        cls, d: dict, astrolabe: Astrolabe | None = None, target_time_index: int = 0
+        cls,
+        d: dict,
+        astrolabe: Astrolabe | None,
+        target_date: str | None,
+        target_time_index: int | None,
+        target_year: int | None,
+        target_month: int | None,
     ) -> Horoscope:
         return cls(
             _raw=d,
+            _target_date=target_date,
             _target_time_index=target_time_index,
+            _target_year=target_year,
+            _target_month=target_month,
             lunar_date=d["lunarDate"],
             solar_date=d["solarDate"],
             decadal=HoroscopeItem._from_dict(d["decadal"]),

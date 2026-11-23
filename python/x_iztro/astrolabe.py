@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import copy
 import json
+from datetime import date, datetime
 from dataclasses import dataclass, field
 from typing import Any
 
 from x_iztro.config import ChartConfig
-from x_iztro.enums import PalaceName
+from x_iztro.enums import KnowledgeDepth, PalaceName, TextDetail
 from x_iztro.horoscope import (
     DecadalListItem,
     Horoscope,
@@ -26,6 +27,15 @@ from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
 from x_iztro.surpalaces import FlankingPalaces, SurroundedPalaces
 
+
+
+def _date_param(value: str | datetime | date) -> str:
+    """把目标日期落成绑定层的日期串：`datetime` 带时分秒，`date` 只有年月日，字符串原样。"""
+    if isinstance(value, datetime):
+        return f"{value.year}-{value.month}-{value.day} {value.hour}:{value.minute}:{value.second}"
+    if isinstance(value, date):
+        return f"{value.year}-{value.month}-{value.day}"
+    return value
 
 @dataclass(frozen=True, slots=True)
 class RawLunarDate:
@@ -293,6 +303,8 @@ class Astrolabe:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
         config: PatternConfig | None = None,
     ) -> str:
         """
@@ -306,16 +318,60 @@ class Astrolabe:
             knowledge: 释义材料。True 取排盘语言的内嵌知识包，KnowledgePack 用该包
                 （自定义或合并后的包）；给出时每宫事实之后紧跟该宫星耀释义、格局之后
                 紧跟格局释义，文末另起四化释义一节，不给只输出盘面事实
+            detail: 事实详略：`TextDetail.OVERVIEW` 只写基本信息、十二宫总览表与格局
+                （没有十二宫详解，因而不附星耀释义），默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
             config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config
 
         return self._context_query(
             "astrolabeToText",
             knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
+            pattern_config=_pattern_config(config),
+        )
+
+    def topic_to_text(
+        self,
+        topic: str,
+        *,
+        knowledge: bool | KnowledgePack = True,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+        config: PatternConfig | None = None,
+    ) -> str:
+        """
+        按主题取材的语义化文本：按知识包里该主题的定义选宫——`surround` 的各宫连同三方四正各成一组，
+        `palaces` 的各宫只取本宫，同一宫只出一次——每宫一段，标题下写主题说明，文末附落在选中宫内的
+        格局与四化释义。主题定义与释义都取自 `knowledge`。
+
+        Args:
+            topic: 主题 slug（知识包 `topics` 段的键，默认包见 `KnowledgePack.topics()`）
+            knowledge: 主题定义与释义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+            detail: 事实详略：`TextDetail.OVERVIEW` 每宫只写主星、辅星与杂耀，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文
+            config: 格局判定口径，与 `patterns(config)` 同形态；None 取默认口径
+
+        Raises:
+            IztroError: 包里没有该主题、主题里有不认识的宫位标识、`knowledge=True` 而排盘语言
+                没有内嵌包（目前只有 zh-CN），或 `SUMMARY` 而所给的包缺摘要
+        """
+        from x_iztro.pattern import _pattern_config
+
+        return self._context_query(
+            "topicToText",
+            topic=topic,
+            knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
         )
 
@@ -465,17 +521,17 @@ class Astrolabe:
 
     def horoscope(
         self,
-        target_date: str | None = None,
+        target_date: str | datetime | date | None = None,
         target_time_index: int | None = None,
     ) -> Horoscope:
         """
         以本命盘为起点计算目标日期的运限，结果持有本盘。
 
-        两个参数都可省略，省略时取本地时钟的当前日期与当前时辰。
-
         Args:
-            target_date: 目标阳历日期，如 "2024-1-1"；不传取今天
-            target_time_index: 目标时辰索引 (0-12)；不传取此刻所属时辰
+            target_date: 目标阳历日期。字符串写作 "2024-1-1"（分隔符可为 `-` `/` `.`，
+                可带 " 13:20" 或 " 13:20:05"）；也可传 `datetime` / `date`。不传取此刻
+            target_time_index: 目标时辰索引 (0-12)。不传时按目标日期的时间换算，
+                不带时间（字符串无时间部分、或传 `date`）即早子时
 
         Returns:
             Horoscope 运限对象；其查询方法不必再传星盘
@@ -483,17 +539,65 @@ class Astrolabe:
         Raises:
             IztroError: 目标日期或时辰索引非法
         """
+        target = _date_param(datetime.now() if target_date is None else target_date)
+        return self._horoscope(target_date=target, target_time_index=target_time_index)
+
+    def horoscope_of_year(self, year: int) -> Horoscope:
+        """
+        指定农历年的运限，结果持有本盘：目标日期取该年六月初一，与 `yearly_list` 同一约定。
+
+        只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
+        拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
+        `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
+        查询精度（`Horoscope.precision()`）为流年：流月、流日、流时也在结果里，是六月初一那一天的，
+        文本与按盘取材只取到流年，宫位查询、文本与格局的层级参数比流年细时报错。
+
+        Args:
+            year: 农历年份 (1-9999)
+
+        Returns:
+            Horoscope 运限对象；它再发起的计算（`to_text`、格局、按盘取材）仍按该农历年取运限
+
+        Raises:
+            IztroError: 年份不在 1-9999，或该年六月初一落在支持范围外
+        """
+        return self._horoscope(target_year=year)
+
+    def horoscope_of_month(self, year: int, month: int) -> Horoscope:
+        """
+        指定农历年某月的运限，结果持有本盘：目标日期取该月（非闰）初一，与 `monthly_list` 整月一段的
+        约定相同。
+
+        只问某个月时用它，不必替提问的人挑一天。闰月不单独成月号：默认分界配置下闰月前半月的流月
+        随本月、后半月随下月，闰月的起止见 `monthly_list`。查询精度（`Horoscope.precision()`）为流月：
+        流日与流时也在结果里，是那一天的，文本与按盘取材只取到流月，宫位查询、文本与格局的层级参数比流月细时报错。
+        星盘配置的 `horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的
+        交节次日，流年与 `horoscope_of_year` 同属立春起算的那一年。
+
+        Args:
+            year: 农历年份 (1-9999)
+            month: 农历月号 (1-12)
+
+        Returns:
+            Horoscope 运限对象；它再发起的计算（`to_text`、格局、按盘取材）仍按该农历年月取运限
+
+        Raises:
+            IztroError: 年份不在 1-9999、月份不在 1-12、初一分界下该农历年没有这个月（公历 8 年、
+                237 年这类改历年），或目标日期落在支持范围外
+        """
+        return self._horoscope(target_year=year, target_month=month)
+
+    def _horoscope(
+        self,
+        *,
+        target_date: str | None = None,
+        target_time_index: int | None = None,
+        target_year: int | None = None,
+        target_month: int | None = None,
+    ) -> Horoscope:
+        """按运限目标（日期与时辰，或农历年份、可再配农历月号）发起运限计算；目标入参原样记在
+        返回的运限上，供它再发起计算时转发。"""
         from x_iztro._bridge import horoscope as bridge_horoscope
-        from x_iztro.utils import time_to_index
-
-        if target_date is None or target_time_index is None:
-            from datetime import datetime
-
-            now = datetime.now()
-            if target_date is None:
-                target_date = f"{now.year}-{now.month}-{now.day}"
-            if target_time_index is None:
-                target_time_index = time_to_index(now.hour)
 
         data = bridge_horoscope(
             solar_date=self.solar_date,
@@ -506,8 +610,12 @@ class Astrolabe:
             from_branch=self._from_branch,
             target_date=target_date,
             target_time_index=target_time_index,
+            target_year=target_year,
+            target_month=target_month,
         )
-        return Horoscope._from_dict(data, self, target_time_index)
+        return Horoscope._from_dict(
+            data, self, target_date, target_time_index, target_year, target_month
+        )
 
     def decadal_list(self) -> list[DecadalListItem]:
         """
@@ -526,6 +634,7 @@ class Astrolabe:
         self,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         大限一览的语义化文本：十二个大限一张表，按起运先后排。
@@ -536,11 +645,16 @@ class Astrolabe:
         Args:
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时表后附各限四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
-        return self._context_query("decadalListToText", knowledge=knowledge)
+        return self._context_query(
+            "decadalListToText", knowledge=knowledge, knowledge_depth=str(knowledge_depth)
+        )
 
     def yearly_list(
         self, decadal: int | PalaceName | str | None = None
@@ -567,6 +681,42 @@ class Astrolabe:
         data = self._context_query("yearlyList", decadal_ordinal=ordinal, palace_key=key)
         return [YearlyListItem._from_dict(d) for d in data]
 
+    def yearly_overview_to_text(
+        self,
+        from_year: int,
+        to_year: int,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    ) -> str:
+        """
+        流年一览的语义化文本：农历 `from_year` 年到 `to_year` 年（含两端）每年一行，写年份、干支、
+        正月初一的阳历日期、虚岁、大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。
+
+        各年与 `horoscope_of_year` 同一口径；未起运的年份大限一格写童限，改历年里没有正月时正月初一
+        一格写「—」。区间可跨大限，连续若干年一次拿到，不必逐年取运限。
+
+        Args:
+            from_year: 起始农历年份 (1-9999)
+            to_year: 截止农历年份 (1-9999)，不早于 `from_year`
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各年四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文），
+                默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+
+        Raises:
+            IztroError: `from_year` 晚于 `to_year`、某一年不在 1-9999，或某一年六月初一落在支持范围外；
+                `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+        """
+        return self._context_query(
+            "yearlyOverviewToText",
+            from_year=from_year,
+            to_year=to_year,
+            knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
+        )
+
     def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem]:
         """
         指定农历年的全部流月，按月份先后排列。
@@ -580,10 +730,43 @@ class Astrolabe:
                 不拆则闰月整月一项（共 13 项）
 
         Raises:
-            IztroError: 该农历年不存在，或某一段的目标日期落在支持范围外
+            IztroError: 年份不在 1-9999，或某一段的目标日期落在支持范围外
         """
         data = self._context_query("monthlyList", year=year, month_fix_leap=fix_leap)
         return [MonthlyListItem._from_dict(m) for m in data]
+
+    def monthly_list_to_text(
+        self,
+        year: int,
+        *,
+        knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    ) -> str:
+        """
+        流月一览的语义化文本：指定农历年每个流月一行，写农历月、阳历起止日、流月命宫所在的本命宫、
+        干支与四化落宫。
+
+        与 `monthly_list(year)` 同一套数据，输出面向语言模型与人的文本而非结构化列表。
+        闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
+
+        Args:
+            year: 农历年份 (1-9999)
+            knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
+                给出时表后附各月四化星的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文），
+                默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
+
+        Raises:
+            IztroError: 年份不在 1-9999，或某一段的首日落在支持范围外；
+                `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
+        """
+        return self._context_query(
+            "monthlyListToText",
+            year=year,
+            knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
+        )
 
     def patterns(self, config: PatternConfig | None = None) -> list[PatternHit]:
         """
@@ -609,6 +792,7 @@ class Astrolabe:
         config: PatternConfig | None = None,
         *,
         knowledge: bool | KnowledgePack | None = None,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     ) -> str:
         """
         本命盘格局命中的语义化文本。
@@ -620,9 +804,12 @@ class Astrolabe:
             config: 判定口径；不传取默认
             knowledge: 释义材料（True 取排盘语言的内嵌包，或给 KnowledgePack）；
                 给出时格局列表之后紧跟各格局的释义
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层（条目摘要，或本身够短的正文；
+                格局不附成立条件），默认 `FULL` 用全文；`SUMMARY` 须同时给 `knowledge`
 
         Raises:
-            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）
+            IztroError: `knowledge=True` 而排盘语言没有内嵌包（目前只有 zh-CN）；
+                `knowledge_depth=SUMMARY` 而未给 `knowledge`，或所给的包缺摘要
         """
         from x_iztro.pattern import _pattern_config
 
@@ -630,6 +817,7 @@ class Astrolabe:
             "patternsToText",
             pattern_config=_pattern_config(config),
             knowledge=knowledge,
+            knowledge_depth=str(knowledge_depth),
         )
 
     def _link(self, palaces: list[Palace]) -> None:

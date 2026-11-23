@@ -42,17 +42,20 @@ enters into it.
 | `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
-| `concepts` | 49 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
+| `concepts` | 50 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
+| `topics` | 13 | Reading topics: which palaces each kind of question looks at — see [Topics](#topics) |
 
 The content comes from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs) (MIT License, by Sylar Long), pinned to a
 source commit; the pack's `source` section records the origin, commit, licence and author in full.
 The text has been edited by x-iztro into third-person reference prose (declared in
-`source.adapted`). Text fields are Markdown.
+`source.adapted`). Text fields are Markdown. The 134 longer bodies (28 major and minor stars,
+48 pairings, 43 patterns, 11 palaces, 4 transformations) also carry a [summary](#summaries) of at most
+50 Chinese characters.
 
 <Callout type="warn" title="The default pack is zh-CN only">
 There is no bundled pack for the other five languages: Rust's `KnowledgePack::builtin` returns
-`None`, Python and Go raise `invalid_argument`. For another language, write your own pack — or hand
+`None`, Python, Go and JavaScript raise `invalid_argument`. For another language, write your own pack — or hand
 the Chinese entries to an LLM along with the chart and let it translate as it interprets.
 </Callout>
 
@@ -101,7 +104,9 @@ repository. Every entry and every field is optional — what is missing simply w
         "energyColor": "紫光"
       },
       "intro": "紫微星号称 `帝王星`，并非指紫微坐命者能成帝王……",
-      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" }
+      "summary": "帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；……",
+      "combinations": { "tianfuMaj": "紫微星和 `天府星` 都是帝星……" },
+      "combinationSummaries": { "tianfuMaj": "双帝星加重控制占有欲，虚荣与务实相冲难决断；……" }
     }
   },
   "patterns": {
@@ -121,9 +126,71 @@ repository. Every entry and every field is optional — what is missing simply w
 Keys are always language-independent; the values above are Chinese because the bundled pack is
 zh-CN.
 
+## Summaries
+
+A body can carry a summary: `intro` pairs with `summary`, and every entry in `combinations` pairs with
+the same key in `combinationSummaries`. Text with readings uses the summaries in place of the bodies
+at the summary layer, bringing one chart's readings down from tens of thousands of characters to a
+few thousand.
+
+- Length is measured in display width: CJK characters, kana, hangul and full-width punctuation count
+  2, every other character 1;
+- A body no wider than 240 (120 Chinese characters) is already summary-sized; the summary layer uses
+  it as is, and no separate summary is written;
+- A longer body needs a summary: one paragraph, no wider than 100 (50 Chinese characters), condensing
+  the original without adding or removing content;
+- A pattern's `conditions` stay out of the summary layer.
+
+If a pack has even one body wider than 240 without a summary, asking for the summary layer fails and
+lists every missing entry — nothing is truncated, and the full text is never substituted. A pack you
+write supports the summary layer once it follows these rules.
+
+## Topics
+
+Which palaces to read for romance, which for wealth — that is a school's method and schools differ,
+so topics live in the pack too (the `topics` section); the core only selects palaces by the
+definition and writes the [topic text](/en/docs/guide/guides/to-text#text-by-topic). A topic has two
+palace groups: those in `surround` are taken together with their trine & opposite, those in
+`palaces` on their own (`bodyPalace` and `originalPalace` are allowed).
+
+```json
+"topics": {
+  "romance": {
+    "title": "婚恋",
+    "surround": ["spousePalace"],
+    "palaces": ["soulPalace", "bodyPalace", "childrenPalace"],
+    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。"
+  }
+}
+```
+
+The default pack's 13 topics:
+
+| slug | Topic | With trine & opposite | Palace only |
+| --- | --- | --- | --- |
+| `overall` | 总论 overall | soul | body, spirit |
+| `personality` | 性格 personality | — | soul, surface, spirit, body |
+| `wealth` | 财运 wealth | wealth | property |
+| `career` | 事业 career | career | — |
+| `romance` | 婚恋 romance | spouse | soul, body, children |
+| `children` | 子女 children | children | soul |
+| `parents` | 父母 parents | parents | siblings, soul |
+| `siblings` | 兄弟 siblings | siblings | soul |
+| `friends` | 交友 friends | friends | soul |
+| `property` | 田宅 property | property | wealth |
+| `travel` | 迁移 travel | surface | — |
+| `spirit` | 精神 spirit | spirit | soul, body |
+| `health` | 健康 health | health | soul |
+
+The choices follow the default pack's palace readings: accumulated wealth is read in the property
+palace, the relationship with the mother in the siblings palace, romance in the children palace.
+Topics read the natal palaces; questions about a period use the horoscope text. To disagree with a
+topic's palaces, rewrite `surround` / `palaces` as a whole in an overlay (arrays are replaced
+wholesale), or add topics of your own.
+
 ## Reading a pack
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -181,6 +248,24 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { KnowledgePack, MajorStar } from 'x-iztro';
+
+const pack = KnowledgePack.builtin();
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+
+console.log(ziwei.name, ziwei.attributes.aliases);
+console.log(pack.starIntro(MajorStar.ZIWEI)!.slice(0, 12));
+```
+
+```text
+紫微 [ '帝王星', '老板星', '俸禄星' ]
+紫微星号称 `帝王星`，
+```
+
+</Tab>
 </Tabs>
 
 A key that is not in the pack comes back empty everywhere: `None` in Rust and Python, `nil` in Go
@@ -190,7 +275,7 @@ A key that is not in the pack comes back empty everywhere: `None` in Rust and Py
 
 The `key` on a pattern hit is exactly the key used in the pack's `patterns` section:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -243,6 +328,23 @@ for _, hit := range hits {
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+
+for (const hit of chart.patterns()) {
+  const entry = pack.pattern(hit.key)!;
+  console.log(hit.name, '|', entry.quotes![0]);
+}
+```
+
+```text
+府相朝垣 | 府相朝垣命必荣
+```
+
+</Tab>
 </Tabs>
 
 Stars work the same way: take each star's `key` from the chart to `pack.star(key)`, a palace's
@@ -256,13 +358,18 @@ material on top:
 
 | Section | `for_astrolabe` | `for_horoscope` adds |
 | --- | --- | --- |
-| `stars` | The stars on the twelve palaces: major, minor, adjective and the four groups of twelve gods; the 14 major stars' `combinations` keep only partners that actually share the palace | Each scope's flowing stars |
-| `patterns` | Patterns hit under the pattern criteria | Patterns hit from the decadal down to the hourly perspective |
+| `stars` | The stars on the twelve palaces: major, minor, adjective and the four groups of twelve gods; the 14 major stars' `combinations` keep only partners that actually share the palace | The flowing stars of each scope from the decadal down to the query precision |
+| `patterns` | Patterns hit under the pattern criteria | Patterns hit from the decadal perspective down to the query precision |
 | `mutagens` | All four entries Lu, Quan, Ke, Ji, independent of the chart | — |
 | `palaces` / `concepts` | Empty — palaces and glossary do not depend on the chart; read them from the full pack as needed | — |
 
+The horoscope scopes go only down to the precision of the horoscope's target: hourly for a date,
+yearly for a lunar year, monthly for a lunar month — the finer scopes belong to a representative day
+the kernel picked and stay out of the sub-pack. Every language takes the horoscope object and
+follow its precision.
+
 The pattern criteria are optional: Rust takes `for_astrolabe_with(&chart, &PatternConfig)` /
-`for_horoscope_with(&chart, &h, &PatternConfig)` (the two without `_with` use the default),
+`for_horoscope_with(&h, &PatternConfig)` (the two without `_with` use the default),
 Python a `config=` keyword, Go a second `*PatternConfig` argument (`nil` for the default). Pair the
 sub-pack with `patterns` / `patterns_to_text` under the same criteria: different criteria hit
 different sets, and the readings would then miss or over-include entries. Go also offers
@@ -275,7 +382,7 @@ sub-pack cut from the default pack for the 2000-8-16 Yin-hour female chart: 108 
 4 mutagens for the natal chart, about 75 KB serialised (the full pack is about 219 KB); the
 2025-1-1 horoscope adds flowing stars and each scope's patterns for 158 stars / 16 patterns.
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -284,7 +391,7 @@ let sub = pack.for_astrolabe(&chart);
 println!("{} {} {} {}", sub.stars.len(), sub.patterns.len(), sub.mutagens.len(), sub.palaces.len());
 
 let h = chart.horoscope("2025-1-1", 0)?;
-let sub = pack.for_horoscope(&chart, h.data());
+let sub = pack.for_horoscope(&h);
 println!("{} {}", sub.stars.len(), sub.patterns.len());
 ```
 
@@ -314,9 +421,21 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+const pack = KnowledgePack.builtin();
+let sub = pack.forAstrolabe(chart);
+console.log(sub.stars().length, sub.patterns().length, sub.mutagen('sihuaLu') !== undefined, sub.palace('soulPalace'));
+
+sub = pack.forHoroscope(chart.horoscope('2025-1-1', 0));
+console.log(sub.stars().length, sub.patterns().length);
+```
+
+</Tab>
 </Tabs>
 
-All three sides agree: `108 1 4 0` and `158 16` (Python's first line ends `True None`). The
+Every side agrees: `108 1 4 0` and `158 16` (Python's first line ends `True None`, JavaScript's `true undefined`). The
 to_text-with-readings form selects by the same rule: every star and pattern in the sub-pack has a
 reading entry in the text (except the twelve gods — the sub-pack includes them, to_text writes no
 readings for them).
@@ -348,7 +467,7 @@ the reading for 紫府同宫, leaving everything else untouched:
 
 Merging produces a new pack:
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -395,15 +514,30 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { readFile } from 'node:fs/promises'; // in a browser, fetch the text instead
+
+const base = KnowledgePack.builtin();
+const overlay = KnowledgePack.fromJSON(await readFile('my-school.json', 'utf8'));
+const pack = base.merged(overlay);
+
+const ziwei = pack.star(MajorStar.ZIWEI)!;
+console.log(ziwei.name, ziwei.attributes.aliases, ziwei.attributes.chemistry);
+console.log(pack.patternIntro(PatternKey.ZI_FU_TONG_GONG));
+```
+
+</Tab>
 </Tabs>
 
-All three produce the same result: Ziwei keeps its `name` (紫微) and `chemistry` (尊贵) while
+Every language produces the same result: Ziwei keeps its `name` (紫微) and `chemistry` (尊贵) while
 `intro` and `aliases` come from the overlay; 紫府同宫 keeps its `quotes` and `conditions` and takes
 the new `intro`.
 
 <Callout type="info">
-Merging is implemented once, in the Rust core. Python's `merged` and Go's `Merged` both call into
-it, so the merged result is byte-identical across the three languages instead of each side
+Merging is implemented once, in the Rust core. Python's and JavaScript's `merged` and Go's `Merged` all call into
+it, so the merged result is byte-identical across the languages instead of each side
 re-implementing the rules.
 </Callout>
 
@@ -419,6 +553,9 @@ is merged key by key:
 - Keys the base does not have are added
 - Writing a field explicitly as `null` does **not** delete the base content (absent and null mean
   the same thing); to delete, replace the whole pack
+- The one case that removes content: when an overlay entry replaces `intro` (or a pairing reading)
+  without supplying the matching summary, the base's old summary is dropped — it describes the text
+  that was replaced, and keeping it would make the summary layer speak for the old school
 - After merging, `id`, `version`, `language` and `source` come from the overlay when non-empty,
   while `extends` stays the base's
 
@@ -452,6 +589,7 @@ layer, not to this library.
 
 ## Sources and credit
 
-Every text in the default pack comes from the 学习 (Learn) pages of
+The readings in the default pack come from the 学习 (Learn) pages of
 [iztro-docs](https://github.com/SylarLong/iztro-docs), MIT License, by Sylar Long. The pack
-protocol, the editorial rewrite of the default pack and the three-language API are x-iztro's own work.
+protocol, the editorial rewrite of the default pack, the 55 cross-reference entries such as the
+flowing stars, every summary, the 13 topics and the API in every language are x-iztro's own work.

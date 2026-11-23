@@ -7,7 +7,15 @@ from pathlib import Path
 import pytest
 
 from x_iztro import Astro, IztroError, KnowledgePack, PatternKey
-from x_iztro.enums import BrightnessSource, MajorStar, Mutagen, PalaceName, Scope
+from x_iztro.enums import (
+    BrightnessSource,
+    KnowledgeDepth,
+    MajorStar,
+    Mutagen,
+    PalaceName,
+    Scope,
+    TextDetail,
+)
 from x_iztro.pattern import PatternConfig
 
 SNAPSHOTS = Path(__file__).resolve().parents[2] / "tests" / "golden" / "text_snapshots"
@@ -35,7 +43,7 @@ def _snapshot(name: str) -> str:
 
 
 def _texts(chart, horoscope, **kw) -> dict[str, str]:
-    """七类语义化文本，键与快照文件名前缀一致。"""
+    """九类语义化文本，键与快照文件名前缀一致；流年一览取农历 2001-2012 年，流月一览取农历 2025 年。"""
     soul = chart.palace(PalaceName.SOUL)
     return {
         "astrolabe": chart.to_text(**kw),
@@ -45,6 +53,8 @@ def _texts(chart, horoscope, **kw) -> dict[str, str]:
         "surrounded": soul.surrounded_palaces().to_text(**kw),
         "flanking": chart.flanking_palaces(PalaceName.SOUL).to_text(**kw),
         "decadals": chart.decadal_list_to_text(**kw),
+        "yearlies": chart.yearly_overview_to_text(2001, 2012, **kw),
+        "monthlies": chart.monthly_list_to_text(2025, **kw),
     }
 
 
@@ -58,13 +68,15 @@ def test_builtin_metadata_and_entries(pack):
     assert ziwei.attributes.yin_yang == "yin" and ziwei.attributes.five_elements == "earth"
     assert "帝王星" in (ziwei.attributes.aliases or [])
     assert MajorStar.TIANFU in ziwei.combinations
+    assert ziwei.summary and ziwei.combination_summaries[MajorStar.TIANFU]
+    assert pack.pattern(PatternKey.ZI_FU_TONG_GONG).summary and pack.mutagen(Mutagen.JI).summary
     assert pack.pattern(PatternKey.ZI_FU_TONG_GONG).name == "紫府同宫"
     assert pack.pattern_intro(PatternKey.ZI_FU_TONG_GONG)
     assert pack.palace(PalaceName.SOUL).name == "命宫"
     assert pack.mutagen(Mutagen.JI).intro
     assert pack.concept("tong-gong") is not None
     # 概念条目数钉死：绑定层若丢字段或默认包被误删条目，这里立即报
-    assert len(pack.to_dict()["concepts"]) == 49
+    assert len(pack.to_dict()["concepts"]) == 50
     assert len(pack.patterns()) == 64
     assert pack.star("nope") is None
     with pytest.raises(IztroError):
@@ -113,9 +125,53 @@ def test_merge_overrides_only_given_fields(pack):
 
 
 def test_text_with_builtin_knowledge_matches_rust_snapshots(chart, horoscope):
-    """`knowledge=True` 的七类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
+    """`knowledge=True` 的九类输出与 Rust 快照逐字节相同；快照由 Rust 侧生成。"""
     for kind, text in _texts(chart, horoscope, knowledge=True).items():
         assert text == _snapshot(f"{kind}_knowledge_zh-CN"), kind
+
+
+def test_text_with_summary_knowledge_matches_rust_snapshots(chart, horoscope):
+    """摘要层的九类输出与 Rust 快照逐字节相同。"""
+    summary = KnowledgeDepth.SUMMARY
+    for kind, text in _texts(chart, horoscope, knowledge=True, knowledge_depth=summary).items():
+        assert text == _snapshot(f"{kind}_summary_zh-CN"), kind
+
+
+def test_summary_layer_needs_a_pack_with_summaries(chart, pack):
+    """摘要层要有知识包，且包里的长正文都要有摘要：缺了即报错并列出缺项，不回退全文。"""
+    with pytest.raises(IztroError) as info:
+        chart.to_text(knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert info.value.code == "invalid_argument"
+    mine = pack.merged(
+        {
+            "schema": 1,
+            "id": "mine",
+            "version": "1",
+            "language": "zh-CN",
+            "stars": {"ziweiMaj": {"intro": "长" * 121}},
+        }
+    )
+    with pytest.raises(IztroError) as info:
+        chart.to_text(knowledge=mine, knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert "stars.ziweiMaj" in str(info.value)
+    with pytest.raises(IztroError):
+        chart.to_text(detail="brief")
+    assert chart.to_text(detail=TextDetail.FULL) == _snapshot("astrolabe_zh-CN")
+
+
+def test_topic_text_matches_rust_snapshots(chart, pack):
+    """主题文本（婚恋）两种释义深度与 Rust 快照逐字节相同；主题定义可从包上读到。"""
+    assert chart.topic_to_text("romance") == _snapshot("topic_knowledge_zh-CN")
+    summary = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+    assert summary == _snapshot("topic_summary_zh-CN")
+    romance = pack.topic("romance")
+    assert romance.title == "婚恋" and romance.surround == [PalaceName.SPOUSE]
+    assert {t.slug for t in pack.topics()} >= {"overall", "romance", "wealth", "career"}
+    with pytest.raises(IztroError) as info:
+        chart.topic_to_text("nope")
+    assert info.value.code == "invalid_argument" and "romance" in str(info.value)
+    with pytest.raises(IztroError):
+        chart.topic_to_text("romance", knowledge=False)
 
 
 def test_text_with_pack_instance_equals_builtin_flag(chart, horoscope, pack):

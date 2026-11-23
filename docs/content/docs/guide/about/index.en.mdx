@@ -9,7 +9,7 @@ description: Accuracy guarantees, documentation endpoints for AI, and notes on t
   <Card
     title="Accuracy"
     href="/en/docs/guide/about/accuracy"
-    description="How 716,314 golden cases hold zero divergence from JS iztro, and where that claim stops"
+    description="How 747,572 golden cases hold zero divergence from JS iztro, and where that claim stops"
   />
   <Card
     title="Documentation endpoints for AI"
@@ -19,12 +19,17 @@ description: Accuracy guarantees, documentation endpoints for AI, and notes on t
   <Card
     title="Notes on the port"
     href="/en/docs/guide/about/architecture"
-    description="The relationship to iztro and the architectural trade-offs behind the three bindings"
+    description="The relationship to iztro and the architectural trade-offs behind the language bindings"
   />
   <Card
     title="Migrating from iztro: API mapping"
     href="/en/docs/guide/about/iztro-parity"
     description="Where each iztro API landed, the few that changed shape, and the ones not provided"
+  />
+  <Card
+    title="Upgrading from 0.6 to 0.7"
+    href="/en/docs/guide/about/upgrade-0-7"
+    description="How to handle the eight incompatible changes, with before-and-after code per language, and the fixes that change output"
   />
 </Cards>
 
@@ -32,10 +37,13 @@ description: Accuracy guarantees, documentation endpoints for AI, and notes on t
 
 | Item | Value |
 | --- | --- |
-| iztro reference | v2.6.1 (version pinned) |
+| iztro reference | v2.6.3 (version pinned) |
 | Licence | MIT |
 | Repository | [github.com/x-haose/x-iztro](https://github.com/x-haose/x-iztro) |
 | crates.io | [x-iztro](https://crates.io/crates/x-iztro) |
 | PyPI | [x-iztro](https://pypi.org/project/x-iztro/) |
+| npm | [x-iztro](https://www.npmjs.com/package/x-iztro) |
+| Go module | [github.com/x-haose/x-iztro/go/iztro](https://pkg.go.dev/github.com/x-haose/x-iztro/go/iztro) |
 
-The current version number is whatever is published on crates.io and PyPI.
+All four channels publish the same version number together; the current version is whatever the registries show,
+and the changes in each version are in the [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md).

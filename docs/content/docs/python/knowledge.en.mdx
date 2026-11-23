@@ -49,8 +49,8 @@ Holds the raw pack object (a dict); the lookups return typed entries.
 | `to_dict()` | A deep copy of the pack object |
 | `to_json(**kwargs)` | JSON text; `kwargs` are passed through to `json.dumps` |
 | `merged(*overlays)` | Layer overlays on, returning a new pack |
-| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` | One entry, or `None` |
-| `stars()` / `patterns()` | All star / pattern entries |
+| `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` / `topic(slug)` | One entry, or `None` |
+| `stars()` / `patterns()` / `topics()` | All star / pattern / topic entries |
 | `star_intro(key)` / `pattern_intro(key)` | The reading text directly |
 | `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | Pick by chart: a sub-pack holding only that chart's entries |
 
@@ -72,16 +72,22 @@ each object's `to_text`).
 | `group` | `str \| None` | Grouping: the adjective star's category, the decorative star's group |
 | `attributes` | `StarAttributes` | School attributes |
 | `intro` | `str \| None` | Reading (Markdown) |
+| `summary` | `str \| None` | Summary of the reading; absent when the reading is within the summary-layer limit (display width 240, 120 Chinese characters) |
 | `combinations` | `dict[str, str]` | Reading for sharing a palace with another major star, keyed by that star |
+| `combination_summaries` | `dict[str, str]` | Summaries of the pairing readings, keyed like `combinations` |
 
 `StarAttributes`: `yin_yang` (`yin` / `yang`), `five_elements`
 (`wood` / `fire` / `earth` / `metal` / `water`), `stem` (`jia`…`gui`), `five_elements_note`,
 `dipper`, `chemistry`, `career`, `duty`, `aliases` (`list[str] | None`), `element_color`,
 `energy_color`.
 
-`PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`.
+`PatternEntry`: `key`, `name`, `quotes` (`list[str] | None`), `conditions`, `intro`, `summary`.
 
-`TextEntry` (palaces, transformations): `key`, `name`, `intro`.
+`TextEntry` (palaces, transformations): `key`, `name`, `intro`, `summary`.
+`TopicEntry` (topics): `slug`, `title`, `surround` (palace keys taken with their trine & opposite,
+`list[str] | None`), `palaces` (palace keys taken on their own, `bodyPalace` / `originalPalace`
+allowed), `intro`, `summary`; [`Astrolabe.topic_to_text`](/en/docs/python/astrolabe#topic_to_text)
+selects palaces by it.
 `ConceptEntry` (glossary): `slug`, `title`, `intro`.
 
 `Source`: `name`, `url`, `commit`, `license`, `author`, `retrieved_at`, `adapted` (adaptation note).
@@ -214,8 +220,9 @@ is newer than this library supports.
 
 The rules are in the [guide](/en/docs/guide/guides/knowledge-pack#merge-rules): section by section,
 key by key, an overlay's non-empty fields replace the same-keyed entry's fields, `attributes` and
-`combinations` merge field by field, array fields are replaced wholesale. The merge itself runs in
-the Rust core, so all three languages agree.
+`combinations` merge field by field, array fields are replaced wholesale; when an overlay entry
+replaces a reading without the matching summary, the base's old summary is dropped. The merge itself
+runs in the Rust core, so every language binding agrees.
 
 **Example**
 
@@ -375,7 +382,9 @@ def for_horoscope(self, horoscope: Horoscope, config: PatternConfig | None = Non
 the chart (major, minor, adjective and the four groups of twelve gods; the 14 major stars'
 `combinations` keep only partners that actually share the palace), `patterns` the hits under the
 `config` criteria, `mutagens` all four entries, `palaces` and `concepts` empty. `for_horoscope` adds
-each scope's flowing stars and the patterns hit from the decadal down to the hourly perspective.
+the flowing stars and the patterns hit from each perspective from the decadal scope down to the
+horoscope's [query precision](/en/docs/python/horoscope#precision): hourly for a date, yearly for
+`horoscope_of_year`, monthly for `horoscope_of_month`.
 Pair the sub-pack with `patterns(config)` / `patterns_to_text(config)` under the same criteria:
 different criteria hit different sets, and the readings would then miss or over-include entries.
 The selection rule is on [Picking by chart](/en/docs/guide/guides/knowledge-pack#picking-by-chart).

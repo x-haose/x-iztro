@@ -24,7 +24,7 @@ chart = Astro().by_solar("2000-8-16", 2, "female")
 | --- | --- | --- |
 | `gender` | `str` | 性别译名 |
 | `solar_date` | `str` | 公历日期，与入参一致 |
-| `lunar_date` | `str` | 农历日期的中文写法 |
+| `lunar_date` | `str` | 农历日期，随盘面语言：中文为「二〇〇〇年七月十七」，英文为 `Lunar 2000-7-17` |
 | `chinese_date` | `str` | 四柱展示串 |
 | `time` | `str` | 时辰名 |
 | `time_range` | `str` | 时辰对应的钟点区间 |
@@ -458,7 +458,7 @@ True True
 ```python
 def horoscope(
     self,
-    target_date: str | None = None,
+    target_date: str | datetime | date | None = None,
     target_time_index: int | None = None,
 ) -> Horoscope
 ```
@@ -467,8 +467,8 @@ def horoscope(
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
-| `target_date` | `str \| None` | 否 | `None` | 目标公历日期；不传取今天 |
-| `target_time_index` | `int \| None` | 否 | `None` | 目标时辰索引；不传取此刻所属时辰 |
+| `target_date` | `str \| datetime \| date \| None` | 否 | `None` | 目标公历日期：字符串（写法同排盘入参，可带 ` HH:mm`）或 `datetime` / `date`；不传取此刻 |
+| `target_time_index` | `int \| None` | 否 | `None` | 目标时辰索引；不传时按目标日期的时间换算（23 点为晚子），不带时间（无时间部分或传 `date`）即早子时 |
 
 **返回值**　`Horoscope`——持有本盘的运限对象，六个层级的宫位查询不必再传星盘。
 详见[运限对象](/zh/docs/python/horoscope)。
@@ -494,6 +494,111 @@ now = chart.horoscope()
 
 ---
 
+## horoscope_of_year
+
+**用途**　取指定农历年的运限：只问某一年时用它，不必自己挑公历日期。
+
+**签名**
+
+```python
+def horoscope_of_year(self, year: int) -> Horoscope
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年份，1–9999 |
+
+**返回值**　`Horoscope`——目标日期取该农历年六月初一、时辰按时柱地支，与
+[`yearly_list`](/zh/docs/python/horoscope#yearly_list) 同一约定。它再发起的计算
+（`to_text`、`patterns`、`KnowledgePack.for_horoscope`）仍按该农历年取运限，
+查询精度（[`precision()`](/zh/docs/python/horoscope#precision)）为 `Scope.YEARLY`。
+
+**示例**
+
+```python
+h = chart.horoscope_of_year(2027)
+
+print(h.solar_date, h.lunar_date)
+print("流年", h.yearly.heavenly_stem + h.yearly.earthly_branch, "虚岁", h.age.nominal_age)
+
+jan = chart.horoscope("2027-1-1", 0)
+print("2027-1-1 流年", jan.yearly.heavenly_stem + jan.yearly.earthly_branch)
+```
+
+**输出**
+
+```text
+2027-7-4 二〇二七年六月初一
+流年 丁未 虚岁 28
+2027-1-1 流年 丙午
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+公历年初到正月初一之前仍属上一个农历年，所以公历 2027-1-1 的流年还是丙午。
+大限、小限与流年在默认分界配置下整个农历年不变；`age_divide` 取 `birthday`（生日分界）或
+`horoscope_divide` 取 `exact`（立春分界）时年内仍会换层，结果是六月初一当天的。流月、流日、流时也在结果里，同样是六月初一那一天的，不是查询的答案：
+[`to_text`](/zh/docs/python/horoscope#to_text) 与按盘取材只取到流年，宫位查询、文本与格局的层级参数比流年细时抛 `IztroError`（`invalid_argument`）。
+年份不在 1–9999 抛 `IztroError`（`invalid_argument`）。
+连续若干年各要一行时用 [`yearly_overview_to_text`](/zh/docs/python/horoscope#yearly_overview_to_text)。
+</Callout>
+
+---
+
+## horoscope_of_month
+
+**用途**　取指定农历年某月的运限：只问某个月时用它，不必替提问的人挑一天。
+
+**签名**
+
+```python
+def horoscope_of_month(self, year: int, month: int) -> Horoscope
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年份，1–9999 |
+| `month` | `int` | 是 | — | 农历月号，1–12；闰月不单独成月号 |
+
+**返回值**　`Horoscope`——目标日期取该月（非闰）初一、时辰按时柱地支，与
+[`monthly_list`](/zh/docs/python/horoscope#monthly_list) 整月一段的约定相同。它再发起的计算
+（`to_text`、`patterns`、`KnowledgePack.for_horoscope`）仍按该农历年月取运限，
+查询精度（[`precision()`](/zh/docs/python/horoscope#precision)）为 `Scope.MONTHLY`。
+
+**示例**
+
+```python
+h = chart.horoscope_of_month(2025, 7)
+
+print(h.solar_date, h.lunar_date)
+print("流月", h.monthly.heavenly_stem + h.monthly.earthly_branch)
+```
+
+**输出**
+
+```text
+2025-8-23 二〇二五年七月初一
+流月 甲申
+```
+
+**边界与陷阱**
+
+<Callout type="info">
+闰月不单独成月号：默认分界配置下闰月前半月的流月随本月、后半月随下月，闰月的起止日见
+[`monthly_list_to_text`](/zh/docs/python/horoscope#monthly_list_to_text)。
+流日与流时也在结果里，是该月初一那一天的：[`to_text`](/zh/docs/python/horoscope#to_text) 与按盘取材只取到流月，
+宫位查询、文本与格局的层级参数比流月细时抛 `IztroError`（`invalid_argument`）。
+年份不在 1–9999 或月份不在 1–12 抛 `IztroError`（`invalid_argument`）。
+`horoscope_divide` 取节气分界（exact）时，目标日期改取第 `month` 个节令月（寅月为 1）的交节次日，流年与按年取的同属立春起算的那一年。初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）同样是入参错误。
+</Callout>
+
+---
+
 ## to_text
 
 **用途**　星盘的语义化文本：面向语言模型与人的完整描述，`str(chart)` 等价。
@@ -505,6 +610,8 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -514,6 +621,8 @@ def to_text(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包（自定义或合并后的包）；给出时释义内联在事实之后——格局列表后跟格局释义（含成立条件），每宫事实后跟该宫星耀释义（同宫主星组合在前），文末附 `## 四化释义` |
+| `detail` | `TextDetail` | 否 | `TextDetail.FULL` | 事实详略：`OVERVIEW` 只写基本信息、十二宫总览表与格局（没有十二宫详解，因而不附星耀释义），`FULL` 为完整 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用[摘要层](/zh/docs/guide/guides/to-text#分层)（条目摘要，或本身够短的正文；格局不附成立条件），`FULL` 用全文。`SUMMARY` 须同时给 `knowledge`，所给包有长正文缺摘要时抛 `IztroError`（`invalid_argument`）并列出缺项 |
 | `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
 
 **返回值**　`str`——按排盘语言输出的 Markdown 子集：`# 命盘 …` 标题、`## 基本信息`、
@@ -535,7 +644,7 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ```text
 # 命盘 2000-8-16 寅时 女
-3389 20767
+3389 20552
 ## 基本信息 ## 十二宫总览 ## 格局 ## 十二宫 ## 四化释义
 ```
 
@@ -548,6 +657,60 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 单宫与三方四正的文本见 `palace(...).to_text()` 与 `surrounded_palaces(...).to_text()`，
 格局文本见 `patterns_to_text`（[格局判定](/zh/docs/python/patterns)）。
+
+---
+
+## topic_to_text
+
+**用途**　按问题取材的语义化文本：按知识包里[主题](/zh/docs/guide/guides/knowledge-pack#主题)的定义选宫，
+见[按主题取材](/zh/docs/guide/guides/to-text#按主题取材)。
+
+**签名**
+
+```python
+def topic_to_text(
+    self,
+    topic: str,
+    *,
+    knowledge: bool | KnowledgePack = True,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+    config: PatternConfig | None = None,
+) -> str
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `topic` | `str` | 是 | — | 主题 slug，知识包 `topics` 段的键；默认包有哪些见 `KnowledgePack.topics()` |
+| `knowledge` | `bool \| KnowledgePack` | 否 | `True` | 主题定义与释义的来源：`True` 取排盘语言的内嵌包，或给 `KnowledgePack` |
+| `detail` | `TextDetail` | 否 | `TextDetail.FULL` | 事实详略：`OVERVIEW` 每宫只写主星、辅星与杂耀 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用摘要层，`FULL` 用全文 |
+| `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参 |
+
+**返回值**　`str`——`# 主题 · 命盘 …` 标题、主题说明，`surround` 各宫的三方四正各一节，`palaces` 各宫归入
+`## 相关宫位`，同一宫只出一次，文末是落在这些宫内的格局与四化释义。
+
+**异常**　`IztroError`（`invalid_argument`）——包里没有该主题、主题里有不认识的宫位标识、`knowledge=False`、
+排盘语言没有内嵌包，或 `SUMMARY` 而所给的包缺摘要。
+
+**示例**
+
+```python
+from x_iztro import KnowledgeDepth
+
+text = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
+print(text.splitlines()[0])
+print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
+```
+
+**输出**
+
+```text
+# 婚恋 · 命盘 2000-8-16 寅时 女
+## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
+```
 
 ---
 

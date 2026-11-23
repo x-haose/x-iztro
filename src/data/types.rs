@@ -1,7 +1,10 @@
-use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+
+use crate::data::keyed::keyed_enum;
+use crate::data::stars::StarKey;
 
 /// 阴阳
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YinYang {
     /// 阳
     Yang,
@@ -22,7 +25,7 @@ impl YinYang {
 }
 
 /// 五行
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FiveElements {
     /// 木
     Wood,
@@ -52,7 +55,7 @@ impl FiveElements {
 }
 
 /// 天干
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(usize)]
 pub enum HeavenlyStem {
     /// 甲
@@ -77,8 +80,21 @@ pub enum HeavenlyStem {
     Gui,
 }
 
+keyed_enum!(HeavenlyStem, "heavenly stem" {
+    Jia => "jiaHeavenly",
+    Yi => "yiHeavenly",
+    Bing => "bingHeavenly",
+    Ding => "dingHeavenly",
+    Wu => "wuHeavenly",
+    Ji => "jiHeavenly",
+    Geng => "gengHeavenly",
+    Xin => "xinHeavenly",
+    Ren => "renHeavenly",
+    Gui => "guiHeavenly",
+});
+
 /// 地支
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(usize)]
 pub enum EarthlyBranch {
     /// 子
@@ -107,8 +123,23 @@ pub enum EarthlyBranch {
     Hai,
 }
 
+keyed_enum!(EarthlyBranch, "earthly branch" {
+    Zi => "ziEarthly",
+    Chou => "chouEarthly",
+    Yin => "yinEarthly",
+    Mao => "maoEarthly",
+    Chen => "chenEarthly",
+    Si => "siEarthly",
+    Wu => "wuEarthly",
+    Wei => "weiEarthly",
+    Shen => "shenEarthly",
+    You => "youEarthly",
+    Xu => "xuEarthly",
+    Hai => "haiEarthly",
+});
+
 /// 十二宫位
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(usize)]
 pub enum Palace {
     /// 命宫
@@ -137,8 +168,23 @@ pub enum Palace {
     Siblings,
 }
 
+keyed_enum!(Palace, "palace" {
+    Soul => "soulPalace",
+    Parents => "parentsPalace",
+    Spirit => "spiritPalace",
+    Property => "propertyPalace",
+    Career => "careerPalace",
+    Friends => "friendsPalace",
+    Surface => "surfacePalace",
+    Health => "healthPalace",
+    Wealth => "wealthPalace",
+    Children => "childrenPalace",
+    Spouse => "spousePalace",
+    Siblings => "siblingsPalace",
+});
+
 /// 五行局
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum FiveElementsClass {
     /// 水二局
@@ -153,8 +199,16 @@ pub enum FiveElementsClass {
     Fire6th = 6,
 }
 
+keyed_enum!(FiveElementsClass, "five elements class" {
+    Water2nd => "water2nd",
+    Wood3rd => "wood3rd",
+    Metal4th => "metal4th",
+    Earth5th => "earth5th",
+    Fire6th => "fire6th",
+});
+
 /// 四化
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mutagen {
     /// 禄
     Lu,
@@ -166,8 +220,15 @@ pub enum Mutagen {
     Ji,
 }
 
+keyed_enum!(Mutagen, "mutagen" {
+    Lu => "sihuaLu",
+    Quan => "sihuaQuan",
+    Ke => "sihuaKe",
+    Ji => "sihuaJi",
+});
+
 /// 星曜亮度
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Brightness {
     /// 庙
     Miao,
@@ -185,8 +246,18 @@ pub enum Brightness {
     Xian,
 }
 
+keyed_enum!(Brightness, "brightness" {
+    Miao => "miao",
+    Wang => "wang",
+    De => "de",
+    Li => "li",
+    Ping => "ping",
+    Bu => "bu",
+    Xian => "xian",
+});
+
 /// 星曜类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum StarType {
     /// 主星
@@ -207,24 +278,19 @@ pub enum StarType {
     Tianma,
 }
 
-impl StarType {
-    /// 语言无关标识（与 JS iztro 的 `type` 取值一致）
-    pub fn as_key(self) -> &'static str {
-        match self {
-            StarType::Major => "major",
-            StarType::Soft => "soft",
-            StarType::Tough => "tough",
-            StarType::Adjective => "adjective",
-            StarType::Flower => "flower",
-            StarType::Helper => "helper",
-            StarType::Lucun => "lucun",
-            StarType::Tianma => "tianma",
-        }
-    }
-}
+keyed_enum!(StarType, "star type" {
+    Major => "major",
+    Soft => "soft",
+    Tough => "tough",
+    Adjective => "adjective",
+    Flower => "flower",
+    Helper => "helper",
+    Lucun => "lucun",
+    Tianma => "tianma",
+});
 
 /// 运限范围
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Scope {
     /// 本命
@@ -241,29 +307,26 @@ pub enum Scope {
     Hourly,
 }
 
-impl Scope {
-    /// 语言无关标识（与 JS iztro 的 `scope` 取值一致）
-    pub fn as_key(self) -> &'static str {
-        match self {
-            Scope::Origin => "origin",
-            Scope::Decadal => "decadal",
-            Scope::Yearly => "yearly",
-            Scope::Monthly => "monthly",
-            Scope::Daily => "daily",
-            Scope::Hourly => "hourly",
-        }
-    }
+keyed_enum!(Scope, "scope" {
+    Origin => "origin",
+    Decadal => "decadal",
+    Yearly => "yearly",
+    Monthly => "monthly",
+    Daily => "daily",
+    Hourly => "hourly",
+});
 
-    /// 由语言无关标识还原；未知标识返回 `None`
-    pub fn from_key(key: &str) -> Option<Self> {
-        match key {
-            "origin" => Some(Scope::Origin),
-            "decadal" => Some(Scope::Decadal),
-            "yearly" => Some(Scope::Yearly),
-            "monthly" => Some(Scope::Monthly),
-            "daily" => Some(Scope::Daily),
-            "hourly" => Some(Scope::Hourly),
-            _ => None,
+impl Scope {
+    /// 层级深浅：本命 0、大限 1、流年 2、流月 3、流日 4、流时 5，越大越细；
+    /// 运限层级的先后即 [`HOROSCOPE_SCOPES`] 的顺序。
+    pub(crate) fn depth(self) -> u8 {
+        match self {
+            Scope::Origin => 0,
+            Scope::Decadal => 1,
+            Scope::Yearly => 2,
+            Scope::Monthly => 3,
+            Scope::Daily => 4,
+            Scope::Hourly => 5,
         }
     }
 }
@@ -278,7 +341,7 @@ pub const HOROSCOPE_SCOPES: [Scope; 5] = [
 ];
 
 /// 运限层级显示名
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HoroscopeName {
     /// 大限
     Decadal,
@@ -296,43 +359,29 @@ pub enum HoroscopeName {
     Hourly,
 }
 
-impl HoroscopeName {
-    /// 语言无关标识（iztro i18n key；小限为 `turn`）
-    pub fn as_key(self) -> &'static str {
-        match self {
-            HoroscopeName::Decadal => "decadal",
-            HoroscopeName::Childhood => "childhood",
-            HoroscopeName::Age => "turn",
-            HoroscopeName::Yearly => "yearly",
-            HoroscopeName::Monthly => "monthly",
-            HoroscopeName::Daily => "daily",
-            HoroscopeName::Hourly => "hourly",
-        }
-    }
-
-    /// 由语言无关标识还原；未知标识返回 `None`
-    pub fn from_key(key: &str) -> Option<Self> {
-        match key {
-            "decadal" => Some(HoroscopeName::Decadal),
-            "childhood" => Some(HoroscopeName::Childhood),
-            "turn" => Some(HoroscopeName::Age),
-            "yearly" => Some(HoroscopeName::Yearly),
-            "monthly" => Some(HoroscopeName::Monthly),
-            "daily" => Some(HoroscopeName::Daily),
-            "hourly" => Some(HoroscopeName::Hourly),
-            _ => None,
-        }
-    }
-}
+keyed_enum!(HoroscopeName, "horoscope name" {
+    Decadal => "decadal",
+    Childhood => "childhood",
+    Age => "turn",
+    Yearly => "yearly",
+    Monthly => "monthly",
+    Daily => "daily",
+    Hourly => "hourly",
+});
 
 /// 性别
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Gender {
     /// 男
     Male,
     /// 女
     Female,
 }
+
+keyed_enum!(Gender, "gender" {
+    Male => "male",
+    Female => "female",
+});
 
 impl Gender {
     /// 性别的阴阳：男为阳、女为阴，决定大限与长生十二神的顺逆
@@ -345,7 +394,7 @@ impl Gender {
 }
 
 /// 语言
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     /// 简体中文
     ZhCN,
@@ -361,36 +410,29 @@ pub enum Language {
     ViVN,
 }
 
-impl Language {
-    /// 语言代码，取值与 iztro 的 `Language` 一致
-    pub fn as_code(self) -> &'static str {
-        match self {
-            Language::ZhCN => "zh-CN",
-            Language::ZhTW => "zh-TW",
-            Language::EnUS => "en-US",
-            Language::JaJP => "ja-JP",
-            Language::KoKR => "ko-KR",
-            Language::ViVN => "vi-VN",
-        }
-    }
+keyed_enum!(Language, "language" {
+    ZhCN => "zh-CN",
+    ZhTW => "zh-TW",
+    EnUS => "en-US",
+    JaJP => "ja-JP",
+    KoKR => "ko-KR",
+    ViVN => "vi-VN",
+});
 
-    /// 由语言代码还原，大小写不敏感，连字符与下划线等价（`zh-CN` / `zh_cn` 都可）；
-    /// 未知代码返回 `None`
+impl Language {
+    /// 由人写的语言代码还原：大小写不敏感，连字符与下划线等价（`zh-CN` / `zh_cn` 都可）；
+    /// 未知代码返回 `None`。规范写法见 [`Language::KEYS`]，serde 与 [`Language::from_key`] 只认规范写法。
     pub fn from_code(code: &str) -> Option<Self> {
-        match code.to_ascii_lowercase().replace('_', "-").as_str() {
-            "zh-cn" => Some(Language::ZhCN),
-            "zh-tw" => Some(Language::ZhTW),
-            "en-us" => Some(Language::EnUS),
-            "ja-jp" => Some(Language::JaJP),
-            "ko-kr" => Some(Language::KoKR),
-            "vi-vn" => Some(Language::ViVN),
-            _ => None,
-        }
+        let normalized = code.replace('_', "-");
+        Self::KEYS
+            .iter()
+            .find(|key| key.eq_ignore_ascii_case(&normalized))
+            .and_then(|key| Self::from_key(key))
     }
 }
 
 /// 算法
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Algorithm {
     /// 默认
@@ -399,8 +441,13 @@ pub enum Algorithm {
     Zhongzhou,
 }
 
+keyed_enum!(Algorithm, "algorithm" {
+    Default => "default",
+    Zhongzhou => "zhongzhou",
+});
+
 /// 排盘视角：中州派把同一组出生数据看作三张盘，差别在于用哪一宫的干支起五行局。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum AstroType {
     /// 天盘：以命宫干支起五行局，即常规排盘结果
@@ -411,6 +458,12 @@ pub enum AstroType {
     Human,
 }
 
+keyed_enum!(AstroType, "astroType" {
+    Heaven => "heaven",
+    Earth => "earth",
+    Human => "human",
+});
+
 /// 农历输入的闰月处理方式（`by_lunar` 专用）。
 ///
 /// 把 iztro `byLunar` 的 `isLeapMonth` 与 `fixLeap` 两个布尔合成一个三态值：
@@ -418,7 +471,7 @@ pub enum AstroType {
 /// 三态恰好覆盖全部有效组合。阳历排盘的 `fix_leap` 仍是单个布尔（见 [`by_solar`]）。
 ///
 /// [`by_solar`]: crate::by_solar
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LeapMonth {
     /// 输入的农历月不是闰月
     NotLeap,
@@ -427,6 +480,12 @@ pub enum LeapMonth {
     /// 输入的农历月是闰月，且十五之后视作次月（iztro `fixLeap`）
     LeapFixed,
 }
+
+keyed_enum!(LeapMonth, "leap month" {
+    NotLeap => "notLeap",
+    Leap => "leap",
+    LeapFixed => "leapFixed",
+});
 
 impl LeapMonth {
     /// 由 iztro 风格的两个布尔（`isLeapMonth`、`fixLeap`）合成；非闰月时 `fix_leap` 被忽略
@@ -450,7 +509,7 @@ impl LeapMonth {
 }
 
 /// 年分界点：排盘年干支（及其驱动的四化、命主身主等）按哪一天换年
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YearDivide {
     /// 正月初一分界
     Normal,
@@ -458,8 +517,13 @@ pub enum YearDivide {
     Exact,
 }
 
+keyed_enum!(YearDivide, "yearDivide" {
+    Normal => "normal",
+    Exact => "exact",
+});
+
 /// 运限分界点：运限干支与干支纪日的月柱按初一还是节气推算
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HoroscopeDivide {
     /// 年按正月初一分界，月按初一以五虎遁推算
     Normal,
@@ -467,8 +531,13 @@ pub enum HoroscopeDivide {
     Exact,
 }
 
+keyed_enum!(HoroscopeDivide, "horoscopeDivide" {
+    Normal => "normal",
+    Exact => "exact",
+});
+
 /// 虚岁分界点
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AgeDivide {
     /// 以自然农历年为界，跨年即加一岁
     Normal,
@@ -476,8 +545,13 @@ pub enum AgeDivide {
     Birthday,
 }
 
+keyed_enum!(AgeDivide, "ageDivide" {
+    Normal => "normal",
+    Birthday => "birthday",
+});
+
 /// 晚子时（23:00-00:00）归属
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DayDivide {
     /// 晚子时归次日
     Forward,
@@ -485,38 +559,10 @@ pub enum DayDivide {
     Current,
 }
 
-/// 为配置开关枚举生成语言无关标识的双向映射。
-///
-/// 绑定层 config JSON 的取值与这里一一对应，是该映射的唯一来源——
-/// 解析入参与回写 `ConfigDto` 都走它，两处不会各抄一份而走样。
-macro_rules! config_switch_keys {
-    ($ty:ident { $($variant:ident => $key:literal),+ $(,)? }) => {
-        impl $ty {
-            /// 语言无关标识（与 JS iztro 同名配置项的取值一致）
-            pub fn as_key(self) -> &'static str {
-                match self {
-                    $($ty::$variant => $key),+
-                }
-            }
-
-            /// 由语言无关标识还原；未知标识返回 `None`
-            pub fn from_key(key: &str) -> Option<Self> {
-                match key {
-                    $($key => Some($ty::$variant),)+
-                    _ => None,
-                }
-            }
-        }
-    };
-}
-
-config_switch_keys!(YearDivide { Normal => "normal", Exact => "exact" });
-config_switch_keys!(HoroscopeDivide { Normal => "normal", Exact => "exact" });
-config_switch_keys!(AgeDivide { Normal => "normal", Birthday => "birthday" });
-config_switch_keys!(DayDivide { Forward => "forward", Current => "current" });
-config_switch_keys!(Algorithm { Default => "default", Zhongzhou => "zhongzhou" });
-config_switch_keys!(AstroType { Heaven => "heaven", Earth => "earth", Human => "human" });
-config_switch_keys!(LeapMonth { NotLeap => "notLeap", Leap => "leap", LeapFixed => "leapFixed" });
+keyed_enum!(DayDivide, "dayDivide" {
+    Forward => "forward",
+    Current => "current",
+});
 
 /// 自定义四化与亮度表。
 ///
@@ -567,7 +613,7 @@ impl TableOverrides {
 }
 
 /// 排盘配置：控制分界点、算法派别与自定义表的全部开关
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     /// 年分界点
     pub year_divide: YearDivide,
@@ -583,9 +629,7 @@ pub struct Config {
     pub astro_type: AstroType,
     /// 自定义四化与亮度表；`None` 表示全部使用默认表。
     ///
-    /// 不参与序列化：它是排盘的输入配置，不属于排盘结果，
-    /// 加入 DTO 会破坏与 JS iztro 的字段契约。
-    #[serde(skip)]
+    /// 属于排盘输入：随 `Config` 的 serde（即绑定线协议）往返；星盘 DTO 的 `config` 只记六个开关。
     pub overrides: Option<std::sync::Arc<TableOverrides>>,
 }
 
@@ -670,6 +714,130 @@ impl Config {
     }
 }
 
+/// `Config` 线协议的部分键补丁：缺省键取默认值，未知键报错（拼错的键不会被静默忽略）。
+///
+/// 六个开关取语言无关标识；`mutagens` 为天干标识 → 四化星标识（禄、权、科、忌四项），
+/// `brightness` 为星耀标识 → 十二宫亮度标识（按宫位索引、寅宫为 0，空串表示该宫无亮度）。
+#[derive(Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default, deny_unknown_fields)]
+struct ConfigPatch {
+    year_divide: Option<YearDivide>,
+    horoscope_divide: Option<HoroscopeDivide>,
+    age_divide: Option<AgeDivide>,
+    day_divide: Option<DayDivide>,
+    algorithm: Option<Algorithm>,
+    astro_type: Option<AstroType>,
+    mutagens: Option<BTreeMap<String, Vec<String>>>,
+    brightness: Option<BTreeMap<String, Vec<String>>>,
+}
+
+impl ConfigPatch {
+    /// 在默认配置上打补丁；自定义表里任一标识非法或项数不对即报错，报错带出所在的键。
+    fn into_config(self) -> Result<Config, String> {
+        let defaults = Config::default();
+        let mut config = Config {
+            year_divide: self.year_divide.unwrap_or(defaults.year_divide),
+            horoscope_divide: self.horoscope_divide.unwrap_or(defaults.horoscope_divide),
+            age_divide: self.age_divide.unwrap_or(defaults.age_divide),
+            day_divide: self.day_divide.unwrap_or(defaults.day_divide),
+            algorithm: self.algorithm.unwrap_or(defaults.algorithm),
+            astro_type: self.astro_type.unwrap_or(defaults.astro_type),
+            overrides: None,
+        };
+        for (stem_key, star_keys) in self.mutagens.unwrap_or_default() {
+            let stem = HeavenlyStem::from_key(&stem_key).ok_or_else(|| {
+                format!("invalid mutagens key '{stem_key}': unknown heavenly stem")
+            })?;
+            let stars: [StarKey; 4] = star_keys
+                .iter()
+                .map(|key| {
+                    StarKey::from_key(key).ok_or_else(|| {
+                        format!("invalid mutagens for '{stem_key}': unknown star '{key}'")
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?
+                .try_into()
+                .map_err(|got: Vec<StarKey>| {
+                    format!(
+                        "invalid mutagens for '{stem_key}': expected 4 stars (lu, quan, ke, ji), got {}",
+                        got.len()
+                    )
+                })?;
+            config = config.with_mutagens(stem, stars);
+        }
+        for (star_key, brightness_keys) in self.brightness.unwrap_or_default() {
+            let star = StarKey::from_key(&star_key)
+                .ok_or_else(|| format!("invalid brightness key '{star_key}': unknown star"))?;
+            if brightness_keys.len() != 12 {
+                return Err(format!(
+                    "invalid brightness for '{star_key}': expected 12 entries, got {}",
+                    brightness_keys.len()
+                ));
+            }
+            let mut table = [None; 12];
+            for (slot, key) in table.iter_mut().zip(&brightness_keys) {
+                if key.is_empty() {
+                    continue;
+                }
+                *slot = Some(Brightness::from_key(key).ok_or_else(|| {
+                    format!("invalid brightness for '{star_key}': unknown brightness '{key}'")
+                })?);
+            }
+            config = config.with_brightness(star, table);
+        }
+        Ok(config)
+    }
+}
+
+/// 反序列化即绑定层的 config JSON：部分键补丁，缺省键取默认值，未知键报错；
+/// `mutagens` / `brightness` 的写法同序列化输出。
+impl<'de> serde::Deserialize<'de> for Config {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        ConfigPatch::deserialize(deserializer)?
+            .into_config()
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+/// 序列化写出六个开关与已覆盖的自定义表（键按标识排序），可被反序列化原样还原。
+impl serde::Serialize for Config {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("yearDivide", &self.year_divide)?;
+        map.serialize_entry("horoscopeDivide", &self.horoscope_divide)?;
+        map.serialize_entry("ageDivide", &self.age_divide)?;
+        map.serialize_entry("dayDivide", &self.day_divide)?;
+        map.serialize_entry("algorithm", &self.algorithm)?;
+        map.serialize_entry("astroType", &self.astro_type)?;
+        if let Some(tables) = self.overrides.as_deref() {
+            if !tables.mutagens.is_empty() {
+                let mutagens: BTreeMap<&str, &[StarKey; 4]> = tables
+                    .mutagens
+                    .iter()
+                    .map(|(stem, stars)| (stem.as_key(), stars))
+                    .collect();
+                map.serialize_entry("mutagens", &mutagens)?;
+            }
+            if !tables.brightness.is_empty() {
+                let brightness: BTreeMap<&str, Vec<&str>> = tables
+                    .brightness
+                    .iter()
+                    .map(|(star, table)| {
+                        let keys = table
+                            .iter()
+                            .map(|b| b.map_or("", Brightness::as_key))
+                            .collect();
+                        (star.as_key(), keys)
+                    })
+                    .collect();
+                map.serialize_entry("brightness", &brightness)?;
+            }
+        }
+        map.end()
+    }
+}
+
 /// 时辰索引
 pub type TimeIndex = u8;
 
@@ -713,342 +881,105 @@ impl FiveElementsClass {
     }
 }
 
-impl Palace {
-    /// 语言无关的宫位标识（iztro i18n key，如 "soulPalace"）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            Palace::Soul => "soulPalace",
-            Palace::Parents => "parentsPalace",
-            Palace::Spirit => "spiritPalace",
-            Palace::Property => "propertyPalace",
-            Palace::Career => "careerPalace",
-            Palace::Friends => "friendsPalace",
-            Palace::Surface => "surfacePalace",
-            Palace::Health => "healthPalace",
-            Palace::Wealth => "wealthPalace",
-            Palace::Children => "childrenPalace",
-            Palace::Spouse => "spousePalace",
-            Palace::Siblings => "siblingsPalace",
-        }
-    }
-}
-
-impl HeavenlyStem {
-    /// 语言无关的天干标识（iztro i18n key，如 "jiaHeavenly"）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            HeavenlyStem::Jia => "jiaHeavenly",
-            HeavenlyStem::Yi => "yiHeavenly",
-            HeavenlyStem::Bing => "bingHeavenly",
-            HeavenlyStem::Ding => "dingHeavenly",
-            HeavenlyStem::Wu => "wuHeavenly",
-            HeavenlyStem::Ji => "jiHeavenly",
-            HeavenlyStem::Geng => "gengHeavenly",
-            HeavenlyStem::Xin => "xinHeavenly",
-            HeavenlyStem::Ren => "renHeavenly",
-            HeavenlyStem::Gui => "guiHeavenly",
-        }
-    }
-}
-
-impl EarthlyBranch {
-    /// 语言无关的地支标识（iztro i18n key，如 "ziEarthly"）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            EarthlyBranch::Zi => "ziEarthly",
-            EarthlyBranch::Chou => "chouEarthly",
-            EarthlyBranch::Yin => "yinEarthly",
-            EarthlyBranch::Mao => "maoEarthly",
-            EarthlyBranch::Chen => "chenEarthly",
-            EarthlyBranch::Si => "siEarthly",
-            EarthlyBranch::Wu => "wuEarthly",
-            EarthlyBranch::Wei => "weiEarthly",
-            EarthlyBranch::Shen => "shenEarthly",
-            EarthlyBranch::You => "youEarthly",
-            EarthlyBranch::Xu => "xuEarthly",
-            EarthlyBranch::Hai => "haiEarthly",
-        }
-    }
-}
-
-impl Mutagen {
-    /// 语言无关的四化标识（iztro i18n key，如 "sihuaLu"）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            Mutagen::Lu => "sihuaLu",
-            Mutagen::Quan => "sihuaQuan",
-            Mutagen::Ke => "sihuaKe",
-            Mutagen::Ji => "sihuaJi",
-        }
-    }
-}
-
-impl Brightness {
-    /// 语言无关的亮度标识（iztro i18n key，如 "miao"）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            Brightness::Miao => "miao",
-            Brightness::Wang => "wang",
-            Brightness::De => "de",
-            Brightness::Li => "li",
-            Brightness::Ping => "ping",
-            Brightness::Bu => "bu",
-            Brightness::Xian => "xian",
-        }
-    }
-}
-
-impl FiveElementsClass {
-    /// 语言无关的五行局标识（"water2nd" 等）。
-    pub fn as_key(&self) -> &'static str {
-        match self {
-            FiveElementsClass::Water2nd => "water2nd",
-            FiveElementsClass::Wood3rd => "wood3rd",
-            FiveElementsClass::Metal4th => "metal4th",
-            FiveElementsClass::Earth5th => "earth5th",
-            FiveElementsClass::Fire6th => "fire6th",
-        }
-    }
-}
-
-impl Palace {
-    /// 由语言无关标识反查宫位名；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<Palace> {
-        match key {
-            "soulPalace" => Some(Palace::Soul),
-            "parentsPalace" => Some(Palace::Parents),
-            "spiritPalace" => Some(Palace::Spirit),
-            "propertyPalace" => Some(Palace::Property),
-            "careerPalace" => Some(Palace::Career),
-            "friendsPalace" => Some(Palace::Friends),
-            "surfacePalace" => Some(Palace::Surface),
-            "healthPalace" => Some(Palace::Health),
-            "wealthPalace" => Some(Palace::Wealth),
-            "childrenPalace" => Some(Palace::Children),
-            "spousePalace" => Some(Palace::Spouse),
-            "siblingsPalace" => Some(Palace::Siblings),
-            _ => None,
-        }
-    }
-}
-
-impl HeavenlyStem {
-    /// 由语言无关标识反查天干；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<HeavenlyStem> {
-        match key {
-            "jiaHeavenly" => Some(HeavenlyStem::Jia),
-            "yiHeavenly" => Some(HeavenlyStem::Yi),
-            "bingHeavenly" => Some(HeavenlyStem::Bing),
-            "dingHeavenly" => Some(HeavenlyStem::Ding),
-            "wuHeavenly" => Some(HeavenlyStem::Wu),
-            "jiHeavenly" => Some(HeavenlyStem::Ji),
-            "gengHeavenly" => Some(HeavenlyStem::Geng),
-            "xinHeavenly" => Some(HeavenlyStem::Xin),
-            "renHeavenly" => Some(HeavenlyStem::Ren),
-            "guiHeavenly" => Some(HeavenlyStem::Gui),
-            _ => None,
-        }
-    }
-}
-
-impl EarthlyBranch {
-    /// 由语言无关标识反查地支；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<EarthlyBranch> {
-        match key {
-            "ziEarthly" => Some(EarthlyBranch::Zi),
-            "chouEarthly" => Some(EarthlyBranch::Chou),
-            "yinEarthly" => Some(EarthlyBranch::Yin),
-            "maoEarthly" => Some(EarthlyBranch::Mao),
-            "chenEarthly" => Some(EarthlyBranch::Chen),
-            "siEarthly" => Some(EarthlyBranch::Si),
-            "wuEarthly" => Some(EarthlyBranch::Wu),
-            "weiEarthly" => Some(EarthlyBranch::Wei),
-            "shenEarthly" => Some(EarthlyBranch::Shen),
-            "youEarthly" => Some(EarthlyBranch::You),
-            "xuEarthly" => Some(EarthlyBranch::Xu),
-            "haiEarthly" => Some(EarthlyBranch::Hai),
-            _ => None,
-        }
-    }
-}
-
-impl Mutagen {
-    /// 由语言无关标识反查四化；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<Mutagen> {
-        match key {
-            "sihuaLu" => Some(Mutagen::Lu),
-            "sihuaQuan" => Some(Mutagen::Quan),
-            "sihuaKe" => Some(Mutagen::Ke),
-            "sihuaJi" => Some(Mutagen::Ji),
-            _ => None,
-        }
-    }
-}
-
-impl Brightness {
-    /// 由语言无关标识反查亮度；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<Brightness> {
-        match key {
-            "miao" => Some(Brightness::Miao),
-            "wang" => Some(Brightness::Wang),
-            "de" => Some(Brightness::De),
-            "li" => Some(Brightness::Li),
-            "ping" => Some(Brightness::Ping),
-            "bu" => Some(Brightness::Bu),
-            "xian" => Some(Brightness::Xian),
-            _ => None,
-        }
-    }
-}
-
-impl FiveElementsClass {
-    /// 由语言无关标识反查五行局；标识未知时返回 `None`。
-    pub fn from_key(key: &str) -> Option<FiveElementsClass> {
-        match key {
-            "water2nd" => Some(FiveElementsClass::Water2nd),
-            "wood3rd" => Some(FiveElementsClass::Wood3rd),
-            "metal4th" => Some(FiveElementsClass::Metal4th),
-            "earth5th" => Some(FiveElementsClass::Earth5th),
-            "fire6th" => Some(FiveElementsClass::Fire6th),
-            _ => None,
-        }
-    }
-}
-
 #[cfg(test)]
-mod key_roundtrip_tests {
+mod tests {
     use super::*;
-    use crate::astro::builder::by_solar;
-    use crate::data::constants::{EARTHLY_BRANCHES, HEAVENLY_STEMS, PALACES};
-    use crate::data::stars::StarKey;
 
-    /// 语言代码大小写与连字符/下划线写法都能还原，`as_code` 与 `from_code` 互逆。
+    /// 语言代码大小写与连字符/下划线写法都能还原到规范写法。
     #[test]
-    fn test_language_code_aliases() {
-        for lang in [
-            Language::ZhCN,
-            Language::ZhTW,
-            Language::EnUS,
-            Language::JaJP,
-            Language::KoKR,
-            Language::ViVN,
-        ] {
-            let code = lang.as_code();
-            assert_eq!(Language::from_code(code), Some(lang));
-            assert_eq!(Language::from_code(&code.to_lowercase()), Some(lang));
-            assert_eq!(Language::from_code(&code.replace('-', "_")), Some(lang));
+    fn language_code_aliases() {
+        for key in Language::KEYS {
+            let lang = Language::from_key(key).unwrap();
+            assert_eq!(Language::from_code(key), Some(lang));
+            assert_eq!(Language::from_code(&key.to_lowercase()), Some(lang));
+            assert_eq!(Language::from_code(&key.replace('-', "_")), Some(lang));
         }
-        assert_eq!(Language::from_code("zh_cn"), Some(Language::ZhCN));
         assert_eq!(Language::from_code("klingon"), None);
+        assert_eq!(Language::from_key("zh_cn"), None);
     }
 
-    /// `as_key` 与 `from_key` 必须互为逆运算，否则绑定层的 key 往返会失真。
+    /// 两个布尔与三态互转：非闰月时 `fix_leap` 不起作用。
     #[test]
-    fn test_enum_key_roundtrip() {
-        for p in PALACES {
-            assert_eq!(Palace::from_key(p.as_key()), Some(p), "{p:?}");
-        }
-        for s in HEAVENLY_STEMS {
-            assert_eq!(HeavenlyStem::from_key(s.as_key()), Some(s), "{s:?}");
-        }
-        for b in EARTHLY_BRANCHES {
-            assert_eq!(EarthlyBranch::from_key(b.as_key()), Some(b), "{b:?}");
-        }
-        for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
-            assert_eq!(Mutagen::from_key(m.as_key()), Some(m), "{m:?}");
-        }
-        for b in [
-            Brightness::Miao,
-            Brightness::Wang,
-            Brightness::De,
-            Brightness::Li,
-            Brightness::Ping,
-            Brightness::Bu,
-            Brightness::Xian,
-        ] {
-            assert_eq!(Brightness::from_key(b.as_key()), Some(b), "{b:?}");
-        }
-        for c in [
-            FiveElementsClass::Water2nd,
-            FiveElementsClass::Wood3rd,
-            FiveElementsClass::Metal4th,
-            FiveElementsClass::Earth5th,
-            FiveElementsClass::Fire6th,
-        ] {
-            assert_eq!(FiveElementsClass::from_key(c.as_key()), Some(c), "{c:?}");
-        }
-
-        for v in [YearDivide::Normal, YearDivide::Exact] {
-            assert_eq!(YearDivide::from_key(v.as_key()), Some(v), "{v:?}");
-        }
-        for v in [HoroscopeDivide::Normal, HoroscopeDivide::Exact] {
-            assert_eq!(HoroscopeDivide::from_key(v.as_key()), Some(v), "{v:?}");
-        }
-        for v in [AgeDivide::Normal, AgeDivide::Birthday] {
-            assert_eq!(AgeDivide::from_key(v.as_key()), Some(v), "{v:?}");
-        }
-        for v in [DayDivide::Forward, DayDivide::Current] {
-            assert_eq!(DayDivide::from_key(v.as_key()), Some(v), "{v:?}");
-        }
-        for v in [Algorithm::Default, Algorithm::Zhongzhou] {
-            assert_eq!(Algorithm::from_key(v.as_key()), Some(v), "{v:?}");
-        }
-        for v in [AstroType::Heaven, AstroType::Earth, AstroType::Human] {
-            assert_eq!(AstroType::from_key(v.as_key()), Some(v), "{v:?}");
-        }
+    fn leap_month_flags() {
         for v in [LeapMonth::NotLeap, LeapMonth::Leap, LeapMonth::LeapFixed] {
-            assert_eq!(LeapMonth::from_key(v.as_key()), Some(v), "{v:?}");
-            assert_eq!(
-                LeapMonth::from_flags(v.is_leap_month(), v.fix_leap()),
-                v,
-                "{v:?}"
-            );
+            assert_eq!(LeapMonth::from_flags(v.is_leap_month(), v.fix_leap()), v);
         }
         assert_eq!(LeapMonth::from_flags(false, true), LeapMonth::NotLeap);
-
-        assert_eq!(Palace::from_key("bodyPalace"), None);
-        assert_eq!(StarKey::from_key("nope"), None);
-        assert_eq!(Algorithm::from_key("normal"), None);
     }
 
-    /// 盘上出现的每一颗星（含运限流耀）都要能由 key 还原。
+    /// 线协议是部分键补丁：缺省键取默认值。
     #[test]
-    fn test_star_key_roundtrip_over_chart() {
-        let chart = by_solar(
-            "2000-8-16",
-            2,
-            Gender::Female,
-            true,
-            Language::ZhCN,
-            Config::default(),
-        )
-        .unwrap();
+    fn config_patch_defaults_missing_keys() {
+        let c: Config = serde_json::from_str(r#"{"algorithm":"zhongzhou"}"#).unwrap();
+        assert_eq!(c.algorithm, Algorithm::Zhongzhou);
+        assert_eq!(c.year_divide, Config::default().year_divide);
+        assert!(c.overrides.is_none());
+    }
 
-        let mut checked = 0;
-        for palace in &chart.palaces {
-            for star in palace
-                .major_stars
-                .iter()
-                .chain(palace.minor_stars.iter())
-                .chain(palace.adjective_stars.iter())
-            {
-                assert_eq!(
-                    StarKey::from_key(star.key.as_key()),
-                    Some(star.key),
-                    "{:?} 的 key 往返失败",
-                    star.key
-                );
-                checked += 1;
-            }
-            assert_eq!(
-                StarKey::from_key(palace.changsheng12.as_key()),
-                Some(palace.changsheng12)
-            );
-            assert_eq!(
-                StarKey::from_key(palace.suiqian12.as_key()),
-                Some(palace.suiqian12)
-            );
+    /// 拼错的键报错，不静默按默认配置排盘。
+    #[test]
+    fn config_rejects_unknown_key() {
+        let err = serde_json::from_str::<Config>(r#"{"yearDivde":"exact"}"#).unwrap_err();
+        assert!(err.to_string().contains("yearDivde"), "{err}");
+    }
+
+    /// 开关取值非法时，报错带字段名与全部合法取值。
+    #[test]
+    fn config_rejects_unknown_switch_value() {
+        let err = serde_json::from_str::<Config>(r#"{"yearDivide":"lichun"}"#).unwrap_err();
+        assert!(
+            err.to_string()
+                .starts_with("invalid yearDivide 'lichun': expected 'normal' or 'exact'"),
+            "{err}"
+        );
+    }
+
+    /// 自定义四化与亮度表随序列化往返，不丢失。
+    #[test]
+    fn config_roundtrip_keeps_overrides() {
+        let mut brightness = [None; 12];
+        brightness[0] = Some(Brightness::Miao);
+        brightness[11] = Some(Brightness::Xian);
+        let config = Config {
+            year_divide: YearDivide::Exact,
+            ..Config::default()
         }
-        assert!(checked > 60, "覆盖的星耀太少：{checked}");
+        .with_mutagens(
+            HeavenlyStem::Geng,
+            [
+                StarKey::TaiyangMaj,
+                StarKey::WuquMaj,
+                StarKey::TiantongMaj,
+                StarKey::TaiyinMaj,
+            ],
+        )
+        .with_brightness(StarKey::ZiweiMaj, brightness);
+
+        let json = serde_json::to_value(&config).unwrap();
+        assert_eq!(json["yearDivide"], "exact");
+        assert_eq!(
+            json["mutagens"]["gengHeavenly"],
+            serde_json::json!(["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"])
+        );
+        assert_eq!(json["brightness"]["ziweiMaj"][0], "miao");
+        assert_eq!(json["brightness"]["ziweiMaj"][1], "");
+        let back: Config = serde_json::from_value(json).unwrap();
+        assert_eq!(back, config);
+    }
+
+    /// 自定义表的项数或标识不对时，报错指出是哪一个键。
+    #[test]
+    fn config_rejects_malformed_tables() {
+        let err = serde_json::from_str::<Config>(r#"{"mutagens":{"jiaHeavenly":["ziweiMaj"]}}"#)
+            .unwrap_err();
+        assert!(err.to_string().contains("'jiaHeavenly'"), "{err}");
+        let err = serde_json::from_str::<Config>(
+            r#"{"brightness":{"ziweiMaj":["miao","","","","","","","","","","","dim"]}}"#,
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string().contains("unknown brightness 'dim'"),
+            "{err}"
+        );
     }
 }

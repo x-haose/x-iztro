@@ -10,6 +10,12 @@ layout in different years — which is exactly what "the decadal scope has moved
 let h = chart.horoscope("2025-6-1", 0)?;
 ```
 
+When the question is about a year, take the horoscope of the lunar year:
+`chart.horoscope_of_year(2027)?` — see
+[horoscope_of_year](/en/docs/rust/astrolabe#horoscope_of_year). When it is about a month, take
+the horoscope of the lunar year and month: `chart.horoscope_of_month(2025, 7)?` — see
+[horoscope_of_month](/en/docs/rust/astrolabe#horoscope_of_month).
+
 `HoroscopeRef` holds the natal chart that produced it, so none of the query methods need the
 astrolabe passed in again.
 
@@ -24,7 +30,7 @@ output are iztro's en-US vocabulary.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `solar_date` | `String` | Target solar date, as passed in |
+| `solar_date` | `String` | The target solar date as `Y-M-D` without zero padding or time (input `"2025-01-05 13:00"` gives `"2025-1-5"`); for a horoscope taken by lunar year or month, the representative day the core picked |
 | `lunar_date` | `String` | The target date's lunar form, written in Chinese numerals |
 | `decadal` | `HoroscopeItem` | The decadal scope |
 | `age` | `AgeItem` | The age scope |
@@ -278,6 +284,64 @@ Silently picking a default would turn a forgotten argument into a plausible-look
 
 ---
 
+## yearly_overview_to_text
+
+**Purpose** The yearly timeline text of a run of lunar years: one row per year, for language models
+and people. Questions such as "the next few years" or "which year suits this" get every year in one
+call instead of one horoscope per year.
+
+**Signature**
+
+```rust
+pub fn yearly_overview_to_text(&self, from: i64, to: i64) -> Result<String, IztroError>
+pub fn yearly_overview_to_text_with(&self, from: i64, to: i64, opts: &TextOptions) -> Result<String, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `from` | `i64` | Yes | — | First lunar year, 1–9999, inclusive |
+| `to` | `i64` | Yes | — | Last lunar year, 1–9999, inclusive; not before `from` |
+| `opts` | `&TextOptions` | Yes | — | Output options; with `TextOptions::new().knowledge(pack)` the readings of the years' mutagen stars follow the table, each star once; the detail level, the scope to stop at and the pattern criteria have no effect here |
+
+**Return value** `Result<String, IztroError>` — a `# Yearly Timeline <first year>-<last year>` heading plus one table, one row per year, whose columns are the year, its
+stem-branch, the solar date of its first lunar day, the nominal age, the natal palaces the decadal
+and age fortune land on, the natal palace the yearly Soul palace lands on, and where the yearly
+mutagens land. Each year follows the same convention as [`horoscope_of_year(year)`](/en/docs/rust/astrolabe#horoscope_of_year); a
+year before the decadals start shows `Childhood Fortune · <palace>` in the decadal cell, and in a
+calendar-reform year without a first lunar month the Lunar New Year cell is `—`. The format is
+described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
+`from` greater than `to`, or a year outside 1–9999, returns `IztroError::InvalidArgument`.
+
+Defined on `Astrolabe` and emitted in the chart language; to pick the language use the free
+functions `text::yearly_overview_to_text(astrolabe, from, to, lang)` and
+`text::yearly_overview_to_text_with(astrolabe, from, to, opts, lang)`.
+
+**Example**
+
+```rust
+let text = chart.yearly_overview_to_text(2001, 2012)?;
+
+println!("{}", text.lines().next().unwrap());
+for line in text.lines().filter(|l| l.starts_with("| 2001 ") || l.starts_with("| 2012 ")) {
+    println!("{line}");
+}
+```
+
+**Output**
+
+```text
+# Yearly Timeline 2001-2012
+| 2001 | xin si | 2001-1-24 | 2 | Childhood Fortune · wealth | property | siblings | advocator [A]→Natal health, sun [B]→Natal children, artist [C]→Natal soul, scholar [D]→Natal spirit |
+| 2012 | ren chen | 2012-1-23 | 13 | siblings | career | spouse | sage [A]→Natal children, emperor [B]→Natal soul, officer [C]→Natal career, warrior [D]→Natal wealth |
+```
+
+In 2001 (nominal age 2) the decadals have not started, so the decadal cell reads `Childhood Fortune`; in 2012
+(nominal age 13) the second decadal (siblings) begins.
+
+---
+
 ## monthly_list
 
 **Purpose** Get every monthly scope of one lunar year.
@@ -356,6 +420,61 @@ The leap fourth month also has `month == 4`; `is_leap_month` is what tells them 
 
 ---
 
+## monthly_list_to_text
+
+**Purpose** The monthly timeline text of one lunar year: one row per month, for language models and
+people.
+
+**Signature**
+
+```rust
+pub fn monthly_list_to_text(&self, year: i64) -> Result<String, IztroError>
+pub fn monthly_list_to_text_with(&self, year: i64, opts: &TextOptions) -> Result<String, IztroError>
+```
+
+**Parameters**
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | Yes | — | Lunar year, 1–9999 |
+| `opts` | `&TextOptions` | Yes | — | Output options; with `TextOptions::new().knowledge(pack)` the readings of the months' mutagen stars follow the table, each star once; the detail level, the scope to stop at and the pattern criteria have no effect here |
+
+**Return value** `Result<String, IztroError>` — a `# Monthly Timeline <lunar year>` heading plus one
+table whose columns are the lunar month, its first and last solar day, the natal palace the month's
+Soul palace lands on, the stem-branch and where the mutagens land. The data is the same as
+[`monthly_list(year, true)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap
+month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
+is described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries). A year outside
+1–9999 returns `IztroError::InvalidArgument`.
+
+Defined on `Astrolabe` and emitted in the chart language; to pick the language use the free
+functions `text::monthly_list_to_text(astrolabe, year, lang)` and
+`text::monthly_list_to_text_with(astrolabe, year, opts, lang)`.
+
+**Example**
+
+```rust
+let text = chart.monthly_list_to_text(2025)?;
+
+println!("{}", text.lines().next().unwrap());
+for line in text.lines().filter(|l| l.starts_with("| leap")) {
+    println!("{line}");
+}
+```
+
+**Output**
+
+```text
+# Monthly Timeline 2025
+| leap 6 (1-15) | 2025-7-25 ~ 2025-8-8 | soul | gui wei | rebel [A]→Natal spirit, advocator [B]→Natal health, moon [C]→Natal friends, wolf [D]→Natal surface |
+| leap 6 (16-29) | 2025-8-9 ~ 2025-8-22 | parents | jia shen | judge [A]→Natal career, rebel [B]→Natal spirit, warrior [C]→Natal wealth, sun [D]→Natal children |
+```
+
+Lunar 2025 has a leap sixth month: its first half shares the monthly scope of month 6 (gui wei), its
+second half that of month 7 (jia shen).
+
+---
+
 ## age_palace
 
 **Purpose** Get the palace the age scope occupies this year.
@@ -397,7 +516,7 @@ naming, and it is usually not the same palace as the natal Spouse palace.
 **Signature**
 
 ```rust
-pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
+pub fn palace(&self, name: Palace, scope: Scope) -> Result<Option<PalaceRef<'a>>, IztroError>
 ```
 
 **Parameters**
@@ -411,6 +530,10 @@ pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>>
 different names under different scopes). With `Origin` as the scope, these are the natal twelve
 palaces.
 
+**Errors** `IztroError::InvalidArgument` when `scope` is finer than the [query precision](#precision)
+(for example `Scope::Monthly` on the horoscope of a year): that scope belongs to a representative day
+the kernel picked and is not the answer to the query.
+
 **Example**
 
 ```rust
@@ -418,9 +541,9 @@ let en = Language::EnUS;
 let h = chart.horoscope("2025-6-1", 0)?;
 
 println!("the decadal Soul palace is the natal {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Decadal).unwrap().name, en));
+    translate_palace(h.palace(Palace::Soul, Scope::Decadal)?.unwrap().name, en));
 println!("the natal Soul palace is {}",
-    translate_palace(h.palace(Palace::Soul, Scope::Origin).unwrap().name, en));
+    translate_palace(h.palace(Palace::Soul, Scope::Origin)?.unwrap().name, en));
 ```
 
 **Output**
@@ -447,19 +570,19 @@ the decadal layer, read `h.decadal.palace_names[index]`.
 **Signature**
 
 ```rust
-pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>>
+pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Result<Option<SurroundedPalaces<'a>>, IztroError>
 ```
 
 **Parameters** Same as `palace`.
 
 **Return value** `Option<SurroundedPalaces<'a>>`; its predicates are on
-[Surrounded palaces](/en/docs/rust/surpalaces).
+[Surrounded palaces](/en/docs/rust/surpalaces). Errors as for `palace`.
 
 **Example**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
-let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly).unwrap();
+let sp = h.surround_palaces(Palace::Wealth, Scope::Yearly)?.unwrap();
 
 println!("the surrounded set of the yearly Wealth palace is anchored on the natal {}",
     translate_palace(sp.target.name, Language::EnUS));
@@ -485,9 +608,9 @@ Liuyue at the yearly layer — with the same meaning applied to their own time s
 **Signature**
 
 ```rust
-pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
-pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool
+pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn has_one_of_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
+pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> Result<bool, IztroError>
 ```
 
 **Parameters**
@@ -506,6 +629,8 @@ pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[Star
 | `has_one_of_horoscope_stars` | At least one is present |
 | `not_have_horoscope_stars` | None is present |
 
+**Errors** As for `palace`.
+
 **Example**
 
 ```rust
@@ -513,9 +638,9 @@ use x_iztro::StarKey::*;
 
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu]));
-println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang]));
-println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo]));
+println!("{}", h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu])?);
+println!("{}", h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yunlu, Yunyang])?);
+println!("{}", h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &[Yuntuo])?);
 ```
 
 **Output**
@@ -565,7 +690,7 @@ asking about this.
 **Signature**
 
 ```rust
-pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool
+pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> Result<bool, IztroError>
 ```
 
 **Parameters**
@@ -577,14 +702,14 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `mutagen` | `Mutagen` | Yes | — | One of the four mutagens |
 
 **Return value** `bool`. It checks whether the star transformed by that layer's stem sits among the
-target palace's major or minor stars (adjective stars are not considered).
+target palace's major or minor stars (adjective stars are not considered). Errors as for `palace`.
 
 **Example**
 
 ```rust
 let h = chart.horoscope("2025-6-1", 0)?;
 
-println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu));
+println!("{}", h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, Mutagen::Lu)?);
 
 // the four stars this layer transforms can be read directly
 println!("{:?}", h.decadal.mutagen.iter()
@@ -653,6 +778,43 @@ println!("{}", data.solar_date);
 
 ---
 
+## precision
+
+**Purpose** The query precision: the finest scope the horoscope's target actually specifies.
+
+**Signature**
+
+```rust
+pub fn precision(&self) -> Scope
+```
+
+**Return value** `Scope` — `Scope::Yearly` for [`horoscope_of_year`](/en/docs/rust/astrolabe#horoscope_of_year),
+`Scope::Monthly` for [`horoscope_of_month`](/en/docs/rust/astrolabe#horoscope_of_month), and
+`Scope::Hourly` for a date (`horoscope`, with or without an hour).
+
+The data always holds all six scopes; the ones finer than the precision belong to a representative
+day the kernel picked (the first day of the sixth month, the first day of the month, or the day after
+the solar term) and are not the answer to the query: `to_text` / `to_text_with` stop at this scope
+by default, and a `horoscope_through` in `to_text_with` or a `scope` for
+[`patterns`](/en/docs/rust/patterns#horoscoperefpatterns) or the [palace queries](#palace) finer than it returns
+`IztroError::InvalidArgument`. [Picking knowledge by chart](/en/docs/rust/knowledge#for_astrolabe--for_horoscope) also stops at this scope.
+
+**Example**
+
+```rust
+println!("{:?}", chart.horoscope_of_year(2027)?.precision());
+println!("{:?}", chart.horoscope("2025-6-1", 0)?.precision());
+```
+
+**Output**
+
+```text
+Yearly
+Hourly
+```
+
+---
+
 ## to_text
 
 **Purpose** The horoscope's semantic text: a complete description for language models and people,
@@ -664,11 +826,16 @@ as a Markdown subset.
 pub fn to_text(&self) -> String
 ```
 
-Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language use
-the free function `text::horoscope_to_text(astrolabe, horoscope, lang)`.
+Defined on `HoroscopeRef`, emitting in the chart's charting language and stopping at the query
+precision ([`precision`](#precision)); for an explicit language use the free function
+`text::horoscope_to_text(astrolabe, horoscope, lang)`, which writes through the hourly scope unless
+told otherwise.
 
-**Return value** `String` — one section each for the decadal (childhood before the decadals
-start), age fortune, yearly, monthly, daily and hourly scopes, each with its mutagens and the
+**Return value** `String` — a title with the target date in solar and lunar form, or only the
+lunar year and its stem-branch when the text stops at the yearly or monthly scope (such as
+`# Horoscope 2027 (ding wei)` and `# Horoscope 2025 (yi si) · Monthly (jia shen)`); then one section
+each for the decadal (childhood before the decadals start), age fortune, yearly, monthly, daily and hourly scopes (a horoscope of a year or a month
+stops at the yearly or monthly scope), each with its mutagens and the
 patterns and flowing stars from its own perspective; the decadal and yearly sections expand into a
 twelve-palace table. The full format is on [Semantic text](/en/docs/guide/guides/to-text).
 
@@ -704,14 +871,17 @@ across scopes. Natal star readings are not repeated here — they are in the cha
 **Signature**
 
 ```rust
-pub fn to_text_with(&self, opts: &TextOptions) -> String
+pub fn to_text_with(&self, opts: &TextOptions) -> Result<String, IztroError>
 ```
 
 **Parameters**
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `TextOptions::default()` equals `to_text` |
+| `opts` | `&TextOptions` | yes | — | Output options; `TextOptions::new().knowledge(pack)` adds readings, `horoscope_through(scope)?` [stops the text at a scope](/en/docs/guide/guides/to-text#how-far-the-horoscope-text-goes), unset stops at the query precision; `TextOptions::default()` equals `to_text` |
+
+**Errors** A `horoscope_through` finer than the query precision (such as the monthly scope on a
+horoscope of a year) returns `IztroError::InvalidArgument`.
 
 Defined on `HoroscopeRef` and emitting in the chart's charting language; for an explicit language
 use the free function `text::horoscope_to_text_with(astrolabe, horoscope, opts, lang)`. Placement
@@ -722,7 +892,7 @@ is on [Text with readings](/en/docs/guide/guides/to-text#text-with-readings).
 ```rust
 let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
 let h = chart.horoscope("2025-1-1", 0)?;
-let text = h.to_text_with(&TextOptions::new().knowledge(pack));
+let text = h.to_text_with(&TextOptions::new().knowledge(pack))?;
 
 println!("{} {}", h.to_text().chars().count(), text.chars().count());
 for line in text.lines().filter(|l| l.starts_with("## ")) {
@@ -740,6 +910,43 @@ for line in text.lines().filter(|l| l.starts_with("## ")) {
 ## 流月 · 命宫: 本命仆役 (丁丑)
 ## 流日 · 命宫: 本命迁移 (庚午)
 ## 流时 · 命宫: 本命迁移 (丙子)
+```
+
+The horoscope of a lunar year has the yearly scope as its precision, so its text stops there:
+
+```rust
+let year = chart.horoscope_of_year(2027)?;
+let text = year.to_text();
+
+for line in text.lines().filter(|l| l.starts_with('#')) {
+    println!("{line}");
+}
+```
+
+```text
+# 运限 2027 (丁未)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命父母 · 虚岁 28
+## 流年 · 命宫: 本命父母 (丁未)
+```
+
+The horoscope of a lunar month stops at the monthly scope:
+
+```rust
+let month = chart.horoscope_of_month(2025, 7)?;
+let text = month.to_text();
+
+for line in text.lines().filter(|l| l.starts_with('#')) {
+    println!("{line}");
+}
+```
+
+```text
+# 运限 2025 (乙巳) · 流月 (甲申)
+## 大限 · 命宫: 本命夫妻 (庚辰)
+## 小限 · 命宫: 本命田宅 · 虚岁 26
+## 流年 · 命宫: 本命兄弟 (乙巳)
+## 流月 · 命宫: 本命父母 (甲申)
 ```
 
 ---

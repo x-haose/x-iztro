@@ -2,14 +2,12 @@
 //!
 //! 根据出生星盘和目标日期，计算大限、小限、流年、流月、流日、流时。
 
-use lunar_rust::lunar::LunarRefHelper;
-use lunar_rust::{lunar, solar};
-
 use crate::astro::builder::{
-    CHART_MINUTE, branch_of, effective_time_index, parse_solar_date, stem_of, validate_time_index,
+    SUPPORTED_YEARS, chart_moment, effective_time_index, parse_solar_date, parse_solar_input,
+    validate_time_index,
 };
-use crate::astro::lunar_table;
 use crate::astro::palace::get_palace_names;
+use crate::calendar;
 use crate::data::constants::TIGER_RULE;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
@@ -29,7 +27,7 @@ use crate::star::location::{
     get_nianjie_index,
 };
 use crate::utils::get_mutagens_by_heavenly_stem;
-use crate::utils::{earthly_branch_to_palace_index, fix_index};
+use crate::utils::{earthly_branch_to_palace_index, fix_index, time_to_index};
 
 // ============================================================
 // 童限宫位映射
@@ -182,21 +180,13 @@ pub fn get_horoscope_stars(
 // 主函数
 // ============================================================
 
-/// 时辰索引转小时数（用于 lunar_rust 日期创建）
-fn time_index_to_hour(time_index: u8) -> i64 {
-    match time_index {
-        0 => 0,
-        12 => 23,
-        i => (i as i64) * 2 - 1,
-    }
-}
-
 /// 根据出生星盘和目标阳历日期计算运限
 ///
 /// # 参数
 /// - `astrolabe`: 出生星盘
-/// - `solar_date`: 目标阳历日期，格式 "YYYY-M-D"（支持 1583-9999 年）
-/// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)
+/// - `solar_date`: 目标阳历日期（`Y-M-D`，分隔符可为 `-` `/` `.`（前后一致），可带 ` HH:mm` 或 ` HH:mm:ss`，支持 1-9999 年）
+/// - `time_index`: 目标时辰索引 (0=早子, 1=丑, ..., 12=晚子)；`None` 时按目标日期串的小时换算，
+///   不带时间即早子时（与 iztro 省略 `timeIndex` 时一致）
 /// - `language`: 语言
 ///
 /// # Errors
@@ -205,51 +195,41 @@ fn time_index_to_hour(time_index: u8) -> i64 {
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
-    time_index: u8,
+    time_index: impl Into<Option<u8>>,
     language: Language,
 ) -> Result<HoroscopeData, IztroError> {
-    validate_time_index(time_index)?;
+    let target = parse_solar_input(solar_date)?;
+    let time_index = match time_index.into() {
+        Some(index) => {
+            validate_time_index(index)?;
+            index
+        }
+        None => time_to_index(target.hour.map_or(0, |h| h as u8)),
+    };
 
     // ---- 1. 解析出生日期的农历信息 ----
     let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
 
-    let birth_hour = time_index_to_hour(astrolabe.time_index);
-    let birth_solar = solar::from_ymdhms(
-        birth_year,
-        birth_month,
-        birth_day,
-        birth_hour,
-        CHART_MINUTE,
-        0,
-    );
-    let birth_lunar = lunar::from_solar(&birth_solar);
-
-    let birth_ymd = lunar_table::ymd_of(&birth_lunar)?;
+    let birth_ymd = calendar::lunar_date_of(birth_year, birth_month, birth_day);
     let birthday_lunar_year = birth_ymd.year;
     let birthday_lunar_month = birth_ymd.month.unsigned_abs() as i32;
     let birthday_lunar_day = birth_ymd.day as u32;
     let birthday_is_leap = birth_ymd.month < 0;
 
     // ---- 2. 解析目标日期的农历信息 ----
-    let (target_year, target_month, target_day) = parse_solar_date(solar_date)?;
+    let (target_year, target_month, target_day) = (target.year, target.month, target.day);
 
     // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
     // （农历年月日与时辰无关，23:00 仍属同一公历日）
-    let target_hour = time_index_to_hour(effective_time_index(
-        astrolabe.config.day_divide,
-        time_index,
-    ));
-    let target_solar = solar::from_ymdhms(
+    let target_moment = chart_moment(
         target_year,
         target_month,
         target_day,
-        target_hour,
-        CHART_MINUTE,
-        0,
+        effective_time_index(astrolabe.config.day_divide, time_index),
     );
-    let target_lunar = lunar::from_solar(&target_solar);
+    let target_lunar = calendar::lunar_of(&target_moment);
 
-    let target_ymd = lunar_table::ymd_of(&target_lunar)?;
+    let target_ymd = target_lunar.date;
     let target_lunar_year = target_ymd.year;
     let target_is_leap = target_ymd.month < 0;
     let target_lunar_month = target_ymd.month.unsigned_abs() as i32;
@@ -257,7 +237,7 @@ pub fn get_horoscope(
 
     // ---- 3. 计算虚岁（分界点由配置决定） ----
     //     自然年分界：跨农历年即加一岁；生日分界：过了农历生日才加一岁
-    let mut nominal_age = (target_lunar_year - birthday_lunar_year) as i64;
+    let mut nominal_age = target_lunar_year - birthday_lunar_year;
     match astrolabe.config.age_divide {
         AgeDivide::Normal => nominal_age += 1,
         AgeDivide::Birthday => {
@@ -277,20 +257,10 @@ pub fn get_horoscope(
     //     初一分界：年按正月初一换年，月按初一以五虎遁推算（闰月下半月归下月）；
     //     节气分界：年按立春换年，月按节气精确时刻推算。
     //     日柱晚子时归次日；时柱天干随日柱推算
-    let (target_year_gan_str, target_year_zhi_str) = match astrolabe.config.horoscope_divide {
-        HoroscopeDivide::Normal => (target_lunar.get_year_gan(), target_lunar.get_year_zhi()),
-        HoroscopeDivide::Exact => (
-            target_lunar.get_year_gan_by_li_chun(),
-            target_lunar.get_year_zhi_by_li_chun(),
-        ),
+    let (target_year_stem, target_year_branch) = match astrolabe.config.horoscope_divide {
+        HoroscopeDivide::Normal => target_lunar.year,
+        HoroscopeDivide::Exact => calendar::year_by_li_chun(&target_moment, target_lunar_year),
     };
-    let target_day_gan_str = target_lunar.get_day_gan_exact();
-    let target_day_zhi_str = target_lunar.get_day_zhi_exact();
-    let target_time_gan_str = target_lunar.get_time_gan();
-    let target_time_zhi_str = target_lunar.get_time_zhi();
-
-    let target_year_stem = stem_of(&target_year_gan_str, "target year")?;
-    let target_year_branch = branch_of(&target_year_zhi_str, "target year")?;
 
     let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
         HoroscopeDivide::Normal => {
@@ -311,20 +281,10 @@ pub fn get_horoscope(
                 )),
             )
         }
-        HoroscopeDivide::Exact => {
-            let gan = target_lunar.get_month_gan_exact();
-            let zhi = target_lunar.get_month_zhi_exact();
-            (
-                stem_of(&gan, "target month")?,
-                branch_of(&zhi, "target month")?,
-            )
-        }
+        HoroscopeDivide::Exact => calendar::month_exact(&target_moment, target_lunar_year),
     };
-
-    let target_day_stem = stem_of(&target_day_gan_str, "target day")?;
-    let target_day_branch = branch_of(&target_day_zhi_str, "target day")?;
-    let target_time_stem = stem_of(&target_time_gan_str, "target time")?;
-    let target_time_branch = branch_of(&target_time_zhi_str, "target time")?;
+    let (target_day_stem, target_day_branch) = target_lunar.day_exact;
+    let (target_time_stem, target_time_branch) = target_lunar.time;
 
     // ---- 5. 大限 ----
     //     虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
@@ -489,16 +449,16 @@ pub fn get_horoscope(
         stars: Some(hourly_stars.to_vec()),
     };
 
-    // ---- 11. 农历日期字符串（月/日名取修正后的农历日期，闰月带「闰」前缀） ----
-    let lunar_date_str = format!(
-        "{}年{}月{}",
-        target_lunar.get_year_in_chinese(),
-        lunar_table::month_in_chinese(target_lunar_month as u32, target_is_leap),
-        lunar_table::day_in_chinese(target_lunar_day),
+    // ---- 11. 农历日期字符串（恒为中文写法，闰月带「闰」前缀） ----
+    let lunar_date_str = calendar::chinese_lunar_date(
+        target_lunar_year,
+        target_lunar_month as u32,
+        target_lunar_day,
+        target_is_leap,
     );
 
     Ok(HoroscopeData {
-        solar_date: solar_date.to_string(),
+        solar_date: format!("{target_year}-{target_month}-{target_day}"),
         lunar_date: lunar_date_str,
         decadal,
         age,
@@ -713,21 +673,23 @@ impl HoroscopeData {
 }
 
 impl Astrolabe {
-    /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘。
+    /// 以本命盘为起点计算目标日期的运限，结果持有本盘，输出语言随本盘；查询精度
+    /// （[`HoroscopeRef::precision`]）为流时，给不给时辰都一样。
     ///
-    /// - `target_date`: 目标阳历日期，"YYYY-M-D"
-    /// - `target_time_index`: 目标时辰索引 0-12
+    /// - `target_date`: 目标阳历日期，可带 ` HH:mm(:ss)`（文法见 [`get_horoscope`]）
+    /// - `target_time_index`: 目标时辰索引 0-12，可传 `None`：按目标日期串的小时换算，不带时间即早子时
     ///
     /// # Errors
     /// 目标日期非法或目标时辰越界时返回 [`IztroError`]。
     pub fn horoscope(
         &self,
         target_date: &str,
-        target_time_index: u8,
+        target_time_index: impl Into<Option<u8>>,
     ) -> Result<HoroscopeRef<'_>, IztroError> {
         Ok(HoroscopeRef {
             data: get_horoscope(self, target_date, target_time_index, self.language)?,
             astrolabe: self,
+            precision: Scope::Hourly,
         })
     }
 }
@@ -815,12 +777,10 @@ impl Astrolabe {
     ) -> Result<Vec<YearlyHoroscope>, IztroError> {
         let (start, end) = self.decadal_range(target.into())?;
         let birth_year = self.raw_dates.lunar_date.lunar_year;
-        let time_index = self.list_time_index();
         (start..=end)
             .map(|age| {
                 let year = birth_year + age as i64 - 1;
-                let date = lunar_table::solar_date_of(year, 6, 1);
-                let h = get_horoscope(self, &date, time_index, self.language)?;
+                let h = self.horoscope_at_mid_year(year)?;
                 Ok(YearlyHoroscope {
                     base: h.yearly.base,
                     age,
@@ -830,6 +790,95 @@ impl Astrolabe {
             .collect()
     }
 
+    /// 指定农历年六月初一的运限，时辰同逐层列表（[`Self::list_time_index`]）：按年取运限与流年列表共用的代表日。
+    fn horoscope_at_mid_year(&self, year: i64) -> Result<HoroscopeData, IztroError> {
+        let (sy, sm, sd) = calendar::solar_date_of(year, 6, 1)
+            .ok_or_else(|| IztroError::Internal(format!("lunar year {year} has no sixth month")))?;
+        get_horoscope(
+            self,
+            &format!("{sy}-{sm}-{sd}"),
+            self.list_time_index(),
+            self.language,
+        )
+    }
+
+    /// 指定农历年的运限：目标日期取该年六月初一，与 [`Self::yearly_list`] 同一约定。
+    ///
+    /// 只问某一年时用它，不必自己挑公历日期——公历年初到正月初一之前仍属上一个农历年，
+    /// 拿公历 1 月 1 日去算会得到上一年的流年。大限、小限与流年在默认分界配置下整个农历年不变；
+    /// `age_divide` 取生日分界或 `horoscope_divide` 取立春分界时年内仍会换层，结果是六月初一当天的。
+    /// 查询精度（[`HoroscopeRef::precision`]）为流年：流月、流日、流时也在数据里，是六月初一那一天的，
+    /// 文本默认只写到流年，宫位查询、格局与文本的层级参数比流年细时报错。
+    ///
+    /// # Errors
+    /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]；该年六月初一落在支持范围外时返回
+    /// [`IztroError`]。
+    pub fn horoscope_of_year(&self, year: i64) -> Result<HoroscopeRef<'_>, IztroError> {
+        if !SUPPORTED_YEARS.contains(&year) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid year {year}: expected {}-{}",
+                SUPPORTED_YEARS.start(),
+                SUPPORTED_YEARS.end()
+            )));
+        }
+        Ok(HoroscopeRef {
+            data: self.horoscope_at_mid_year(year)?,
+            astrolabe: self,
+            precision: Scope::Yearly,
+        })
+    }
+
+    /// 指定农历年某月的运限，时辰按时柱地支取（同逐层列表）。只问某个月时用它，不必替提问的人挑一天。
+    ///
+    /// `month` 是月序 1-12，目标日期随 `horoscope_divide`：
+    /// - 初一分界（默认）：该农历月（非闰）初一，与 [`Self::monthly_list`] 整月一段的约定相同。
+    ///   闰月前半月的流月随本月、后半月随下月，所以流月只按月号取，闰月的起止见 [`Self::monthly_list`]。
+    /// - 节气分界：第 `month` 个节令月（寅月为 1）交节次日，流年与 [`Self::horoscope_of_year`] 同属立春起算的
+    ///   `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
+    ///
+    /// 查询精度（[`HoroscopeRef::precision`]）为流月：流日与流时也在数据里，是那一天的，
+    /// 文本默认只写到流月，宫位查询、格局与文本的层级参数比流月细时报错。
+    ///
+    /// # Errors
+    /// 年份不在 1-9999、月份不在 1-12，或初一分界下该农历年没有这个月（公历 8 年、237 年这类改历年）时返回
+    /// [`IztroError::InvalidArgument`]；目标日期落在支持范围外（9999 年节气分界的丑月）时返回 [`IztroError`]。
+    pub fn horoscope_of_month(
+        &self,
+        year: i64,
+        month: u32,
+    ) -> Result<HoroscopeRef<'_>, IztroError> {
+        if !SUPPORTED_YEARS.contains(&year) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid year {year}: expected {}-{}",
+                SUPPORTED_YEARS.start(),
+                SUPPORTED_YEARS.end()
+            )));
+        }
+        if !(1..=12).contains(&month) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid lunar month {month}: expected 1-12"
+            )));
+        }
+        let (sy, sm, sd) = match self.config.horoscope_divide {
+            HoroscopeDivide::Normal => {
+                calendar::solar_date_of(year, month as i64, 1).ok_or_else(|| {
+                    IztroError::InvalidArgument(format!("lunar year {year} has no month {month}"))
+                })?
+            }
+            HoroscopeDivide::Exact => calendar::day_after_jie(year, month),
+        };
+        Ok(HoroscopeRef {
+            data: get_horoscope(
+                self,
+                &format!("{sy}-{sm}-{sd}"),
+                self.list_time_index(),
+                self.language,
+            )?,
+            astrolabe: self,
+            precision: Scope::Monthly,
+        })
+    }
+
     /// 指定农历年的全部流月，按月份先后排列。
     ///
     /// 无闰月返回 12 项；有闰月且 `fix_leap` 为真时，闰月按前后半月拆成两项（共 14 项），
@@ -837,15 +886,23 @@ impl Astrolabe {
     /// 目标日期取该段的首日（后半段取十六）。
     ///
     /// # Errors
-    /// 该农历年不存在，或某一段的目标日期落在支持范围外时返回 [`IztroError`]。
+    /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]（与 iztro 的前置校验一致）；
+    /// 某一段的目标日期落在支持范围外（9999 年末几个月对应公历 10000 年）时返回 [`IztroError`]。
     pub fn monthly_list(
         &self,
         year: i64,
         fix_leap: bool,
     ) -> Result<Vec<MonthlyHoroscope>, IztroError> {
+        if !SUPPORTED_YEARS.contains(&year) {
+            return Err(IztroError::InvalidArgument(format!(
+                "invalid year {year}: expected {}-{}",
+                SUPPORTED_YEARS.start(),
+                SUPPORTED_YEARS.end()
+            )));
+        }
         let age = (year - self.raw_dates.lunar_date.lunar_year + 1).max(1) as u32;
         let time_index = self.list_time_index();
-        let leap = lunar_table::leap_month(year);
+        let leap = calendar::leap_month(year);
 
         let mut out = Vec::new();
         for month in 1..=12u32 {
@@ -856,7 +913,7 @@ impl Astrolabe {
             }
             for sm in signed {
                 let is_leap = sm < 0;
-                let Some(day_count) = lunar_table::month_day_count(year, sm) else {
+                let Some(day_count) = calendar::month_day_count(year, sm) else {
                     continue;
                 };
                 let last = day_count as u32;
@@ -866,8 +923,14 @@ impl Astrolabe {
                     vec![(MonthPart::Normal, (1, last))]
                 };
                 for (part, day_range) in segments {
-                    let date = lunar_table::solar_date_of(year, sm, day_range.0 as i64);
-                    let h = get_horoscope(self, &date, time_index, self.language)?;
+                    let (sy, smo, sd) = calendar::solar_date_of(year, sm, day_range.0 as i64)
+                        .expect("段首日在该农历月的天数之内");
+                    let h = get_horoscope(
+                        self,
+                        &format!("{sy}-{smo}-{sd}"),
+                        time_index,
+                        self.language,
+                    )?;
                     out.push(MonthlyHoroscope {
                         base: h.monthly,
                         age,
@@ -886,13 +949,10 @@ impl Astrolabe {
     /// 以本命盘为起点计算**此刻**的运限，日期与时辰取本地时钟。
     ///
     /// # Errors
-    /// 本地日期落在支持范围（公历 1583-9999）之外时返回 [`IztroError`]。
+    /// 本地日期落在支持范围（公历 1-9999）之外时返回 [`IztroError`]。
     pub fn horoscope_now(&self) -> Result<HoroscopeRef<'_>, IztroError> {
-        let now = chrono::Local::now();
-        let date = now.format("%Y-%-m-%-d").to_string();
-        let time_index =
-            crate::utils::time_to_index(now.format("%H").to_string().parse().unwrap_or(0));
-        self.horoscope(&date, time_index)
+        let now = chrono::Local::now().format("%Y-%-m-%-d %H:%M").to_string();
+        self.horoscope(&now, None)
     }
 }
 
@@ -902,43 +962,91 @@ impl<'a> HoroscopeRef<'a> {
         self.data.age_palace(self.astrolabe)
     }
 
-    /// 按宫位名称和运限范围取宫位
-    pub fn palace(&self, name: Palace, scope: Scope) -> Option<PalaceRef<'a>> {
-        self.data.palace(name, scope, self.astrolabe)
+    /// 按宫位名称和运限范围取宫位；`Scope::Origin` 按本命宫名取
+    ///
+    /// # Errors
+    /// `scope` 比查询精度（[`HoroscopeRef::precision`]）细时返回 [`IztroError::InvalidArgument`]：
+    /// 那一层是内核挑的代表日的，不是查询的答案。
+    pub fn palace(&self, name: Palace, scope: Scope) -> Result<Option<PalaceRef<'a>>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self.data.palace(name, scope, self.astrolabe))
     }
 
     /// 按宫位名称和运限范围取三方四正
-    pub fn surround_palaces(&self, name: Palace, scope: Scope) -> Option<SurroundedPalaces<'a>> {
-        self.data.surround_palaces(name, scope, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn surround_palaces(
+        &self,
+        name: Palace,
+        scope: Scope,
+    ) -> Result<Option<SurroundedPalaces<'a>>, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self.data.surround_palaces(name, scope, self.astrolabe))
     }
 
     /// 该运限天干的指定四化星是否落在目标宫位（本命盘范围恒为 false）
-    pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen) -> bool {
-        self.data
-            .has_horoscope_mutagen(name, scope, mutagen, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn has_horoscope_mutagen(
+        &self,
+        name: Palace,
+        scope: Scope,
+        mutagen: Mutagen,
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_horoscope_mutagen(name, scope, mutagen, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否**全部**包含指定星耀
-    pub fn has_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
-        self.data
-            .has_horoscope_stars(name, scope, stars, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn has_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否包含指定星耀中的**任一颗**
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
     pub fn has_one_of_horoscope_stars(
         &self,
         name: Palace,
         scope: Scope,
         stars: &[StarKey],
-    ) -> bool {
-        self.data
-            .has_one_of_horoscope_stars(name, scope, stars, self.astrolabe)
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .has_one_of_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 
     /// 目标宫位的大限与流年流耀是否**一颗都不**包含指定星耀
-    pub fn not_have_horoscope_stars(&self, name: Palace, scope: Scope, stars: &[StarKey]) -> bool {
-        self.data
-            .not_have_horoscope_stars(name, scope, stars, self.astrolabe)
+    ///
+    /// # Errors
+    /// 同 [`Self::palace`]。
+    pub fn not_have_horoscope_stars(
+        &self,
+        name: Palace,
+        scope: Scope,
+        stars: &[StarKey],
+    ) -> Result<bool, IztroError> {
+        self.check_within_precision(scope, "scope")?;
+        Ok(self
+            .data
+            .not_have_horoscope_stars(name, scope, stars, self.astrolabe))
     }
 }
 
@@ -975,12 +1083,16 @@ mod tests {
             .palace(Palace::Soul, Scope::Decadal, &astrolabe)
             .unwrap();
         assert_eq!(
-            h.palace(Palace::Soul, Scope::Decadal).unwrap().index,
+            h.palace(Palace::Soul, Scope::Decadal)
+                .unwrap()
+                .unwrap()
+                .index,
             by_data.index
         );
         assert_eq!(h.age_palace().index, h.data().age_palace(&astrolabe).index);
         assert_eq!(
             h.surround_palaces(Palace::Soul, Scope::Yearly)
+                .unwrap()
                 .unwrap()
                 .target
                 .index,
@@ -988,22 +1100,69 @@ mod tests {
         );
         for m in [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji] {
             assert_eq!(
-                h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m),
+                h.has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m)
+                    .unwrap(),
                 h.data()
                     .has_horoscope_mutagen(Palace::Soul, Scope::Decadal, m, &astrolabe)
             );
         }
         let stars = [StarKey::Yunkui, StarKey::Yunyue];
         assert_eq!(
-            h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            h.has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
+                .unwrap(),
             h.data()
                 .has_horoscope_stars(Palace::Soul, Scope::Decadal, &stars, &astrolabe)
         );
         assert_eq!(
-            h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &stars),
+            h.has_one_of_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
+                .unwrap(),
             !h.not_have_horoscope_stars(Palace::Soul, Scope::Decadal, &stars)
-                || h.palace(Palace::Soul, Scope::Decadal).is_none()
+                .unwrap()
         );
+    }
+
+    /// 按年、按月取的运限，宫位查询的层级比查询精度细时报错，而不是答出代表日那一层的宫位；
+    /// 不比查询精度细的层级与本命照常可查
+    #[test]
+    fn palace_queries_reject_scopes_finer_than_the_precision() {
+        let astrolabe = make_astrolabe();
+        let stars = [StarKey::Yunkui];
+        for (h, finer, within) in [
+            (
+                astrolabe.horoscope_of_year(2027).unwrap(),
+                Scope::Monthly,
+                Scope::Yearly,
+            ),
+            (
+                astrolabe.horoscope_of_month(2025, 7).unwrap(),
+                Scope::Daily,
+                Scope::Monthly,
+            ),
+        ] {
+            let errors = [
+                h.palace(Palace::Soul, finer).err(),
+                h.surround_palaces(Palace::Soul, finer).err(),
+                h.has_horoscope_mutagen(Palace::Soul, finer, Mutagen::Lu)
+                    .err(),
+                h.has_horoscope_stars(Palace::Soul, finer, &stars).err(),
+                h.has_one_of_horoscope_stars(Palace::Soul, finer, &stars)
+                    .err(),
+                h.not_have_horoscope_stars(Palace::Soul, finer, &stars)
+                    .err(),
+            ];
+            for err in errors {
+                assert!(
+                    matches!(err, Some(IztroError::InvalidArgument(_))),
+                    "{finer:?}: {err:?}"
+                );
+            }
+            for scope in [Scope::Origin, Scope::Decadal, within] {
+                assert!(
+                    h.palace(Palace::Soul, scope).unwrap().is_some(),
+                    "{scope:?}"
+                );
+            }
+        }
     }
 
     #[test]

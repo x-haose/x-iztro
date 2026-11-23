@@ -77,7 +77,7 @@ assert zh.soul_key == en.soul_key
 
 手上只有标识（或只有某种语言的译名）时，用双向查找函数换算，不必重新排盘：
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -117,6 +117,15 @@ Go 侧两个函数都返回 `(string, error)`：标识未知或反查不到时�
 `*iztro.Error`（分类 `invalid_argument`）。
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+i18n.translate('ziweiMaj', 'en-US');   // emperor
+i18n.keyOf('emperor');                 // ziweiMaj
+i18n.keyOf('자미');                     // ziweiMaj
+```
+
+</Tab>
 </Tabs>
 
 覆盖十二类共 260 个标识：星耀、宫位（含身宫、来因宫）、天干、地支、亮度、四化、
@@ -133,13 +142,14 @@ Go 侧两个函数都返回 `(string, error)`：标识未知或反查不到时�
 `"Maj"` 只看十四主星、`"Min"` 只看辅星、`"Palace"` 只看宫位、`"Hour"` 只看时辰。
 </Callout>
 
-## 三种编程语言的取值形态不同
+## 各编程语言的取值形态不同
 
 | | 排盘结果里存什么 | 换盘面语言的代价 |
 | --- | --- | --- |
 | Rust | 枚举（`StarKey`、`Palace`…），只有少数展示字段是 `String` | 调翻译函数，同一张盘可同时输出多种语言 |
 | Python | 译名与标识两组字段都已经是字符串 | 重新排盘 |
 | Go | 同上 | 重新排盘 |
+| JavaScript | 同上 | 重新排盘 |
 
 排盘本身是毫秒级，多排几次不是问题。判断逻辑请始终用标识字段，
 这样换盘面语言不需要改任何代码。
@@ -159,10 +169,10 @@ x-iztro 不设「当前语言」这样的全局状态：排盘时语言随参数
 词表不是一个可以外挂的资源文件，是编译进库的静态表。加一种语言要动四处：
 
 <Steps>
-<Step>`src/data/types.rs` 的 `Language` 枚举加一个变体，并在 `as_code` / `from_code` 里补上语言代码</Step>
+<Step>`src/data/types.rs` 的 `Language` 枚举加一个变体，并在紧随其后的 `keyed_enum!` 标识表里补上语言代码</Step>
 <Step>`src/i18n/` 下新增一个词表文件，实现与既有文件相同的一组函数（星名、宫名、干支名、亮度、四化……）</Step>
 <Step>`src/i18n/mod.rs` 里每个翻译函数的 `match` 各加一条分派 —— 这里是逐个函数的，不是一处</Step>
 <Step>`src/i18n/lookup.rs` 的 `lang_index` 与反查扫描顺序表加一项；反查顺序会影响同形译名落到哪个标识，须与金标对照</Step>
 </Steps>
 
-绑定层不需要改：语言代码是字符串传入的，加了枚举变体三侧自动可用。
+绑定层不需要改：语言代码是字符串传入的，加了枚举变体各侧自动可用。

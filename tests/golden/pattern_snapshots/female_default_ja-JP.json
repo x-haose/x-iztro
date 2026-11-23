@@ -11,7 +11,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -42,7 +42,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -63,7 +63,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -91,7 +91,7 @@
           "palaceIndex": 6
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenquMin",
           "name": "文曲",
@@ -116,7 +116,7 @@
           "palaceIndex": 6
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "wenquMin",
           "name": "文曲",
@@ -170,12 +170,12 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         }
       ]
@@ -191,7 +191,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -257,7 +257,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -278,7 +278,7 @@
       "stars": [
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         },
         {
@@ -305,7 +305,7 @@
       "scope": "monthly",
       "stars": [
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "lingxingMin",
           "name": "鈴星",
@@ -401,7 +401,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -440,7 +440,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -461,7 +461,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -483,7 +483,7 @@
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {
@@ -494,7 +494,7 @@
           "palaceIndex": 5
         },
         {
-          "brightness": "陷",
+          "brightness": "陥",
           "brightnessKey": "xian",
           "key": "qingyangMin",
           "name": "擎羊",
@@ -522,7 +522,7 @@
         },
         {
           "key": "liulu",
-          "name": "年の祿",
+          "name": "年の禄",
           "palaceIndex": 3
         }
       ]
@@ -608,13 +608,13 @@
       "key": "lu_ma_jiao_chi",
       "name": "祿馬交馳",
       "palaceIndex": 6,
-      "palaceName": "福德",
+      "palaceName": "福徳",
       "palaceNameKey": "spiritPalace",
       "scope": "yearly",
       "stars": [
         {
           "key": "lucunMin",
-          "name": "祿存",
+          "name": "禄存",
           "palaceIndex": 6
         },
         {

@@ -175,6 +175,8 @@ def to_text(
     self,
     *,
     knowledge: bool | KnowledgePack | None = None,
+    detail: TextDetail = TextDetail.FULL,
+    knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
     config: PatternConfig | None = None,
 ) -> str
 ```
@@ -184,6 +186,8 @@ def to_text(
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `knowledge` | `bool \| KnowledgePack \| None` | 否 | `None` | 释义材料：`True` 取排盘语言的内嵌默认包，`KnowledgePack` 用该包；给出时四宫各自的事实行之后紧跟该宫星耀的释义，见[带释义的文本](/zh/docs/guide/guides/to-text#带释义的文本) |
+| `detail` | `TextDetail` | 否 | `TextDetail.FULL` | 事实详略：`OVERVIEW` 四宫各只写主星、辅星与杂耀，`FULL` 为完整 |
+| `knowledge_depth` | `KnowledgeDepth` | 否 | `KnowledgeDepth.FULL` | 释义深度：`SUMMARY` 用[摘要层](/zh/docs/guide/guides/to-text#分层)（条目摘要，或本身够短的正文；格局不附成立条件），`FULL` 用全文。`SUMMARY` 须同时给 `knowledge`，所给包有长正文缺摘要时抛 `IztroError`（`invalid_argument`）并列出缺项 |
 | `config` | `PatternConfig \| None` | 否 | `None` | 格局判定口径，与 `patterns(config)` 同一入参；同时作用于文本的格局节与格局释义。`None` 取默认口径 |
 
 **返回值**　`str`——`## 命宫 三方四正` 标题之下四宫各一段 `### `，标题带角色前缀（本宫、对宫、财帛位、官禄位），

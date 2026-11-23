@@ -87,6 +87,7 @@ let cfg = PatternConfig {
 | `as_key` | `fn as_key(self) -> &'static str` | snake_case 标识，如 `"sha_po_lang"` |
 | `from_key` | `fn from_key(key: &str) -> Option<Self>` | 由标识反查；未知字符串返回 `None` |
 | `is_horoscope_only` | `fn is_horoscope_only(self) -> bool` | 是否行运格（只在运限视角判定） |
+| `needs_finer_layer` | `fn needs_finer_layer(self) -> bool` | 在某层视角判定时是否还要读更细一层：只有风云际会（大限视角报，却要看小限与流年）。运限文本只写到大限时大限段不列这类格局 |
 
 常量 `ALL_PATTERNS: [PatternKey; 64]` 按来源页条目顺序列出全部格局。
 译名用 `translate_pattern(key, lang)`，六种语言都有。
@@ -249,8 +250,8 @@ println!("{:?}", chart.patterns_with(&cfg).iter()
 
 ```rust
 impl<'a> HoroscopeRef<'a> {
-    pub fn patterns(&self, scope: Scope) -> Vec<PatternHit>
-    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Vec<PatternHit>
+    pub fn patterns(&self, scope: Scope) -> Result<Vec<PatternHit>, IztroError>
+    pub fn patterns_with(&self, scope: Scope, config: &PatternConfig) -> Result<Vec<PatternHit>, IztroError>
 }
 ```
 
@@ -264,13 +265,16 @@ impl<'a> HoroscopeRef<'a> {
 **返回值**　`Vec<PatternHit>`，每条的 `scope` 即传入的层级。
 传 `Scope::Origin` 时结果与本命盘上直接调 `patterns()` 完全一致。
 
+**错误**　`scope` 比运限的[查询精度](/zh/docs/rust/horoscope#precision)细时返回 `IztroError::InvalidArgument`：
+按农历年取的运限最细到 `Scope::Yearly`，按农历月取的到 `Scope::Monthly`，再往细的层级是内核挑的代表日的。
+
 **示例**
 
 ```rust
 let chart = by_solar("2000-8-16", 2, Gender::Female, true, zh, Config::default())?;
 let h = chart.horoscope("2025-6-1", 0)?;
 
-for hit in h.patterns(Scope::Decadal) {
+for hit in h.patterns(Scope::Decadal)? {
     println!("{} {:?} {:?}", translate_pattern(hit.key, zh), hit.scope, hit.variant);
 }
 ```
@@ -322,17 +326,17 @@ pub fn patterns_at(
 ) -> Vec<PatternHit>
 ```
 
-**返回值**　同 `HoroscopeRef::patterns_with`。
+**返回值**　同 `HoroscopeRef::patterns_with` 的成功值。`HoroscopeData` 不带查询精度，任何层级都照判，不报错。
 
 手里只有 `HoroscopeData`（例如从别处反序列化得到）时用它；
-有 `HoroscopeRef` 的场合用方法版更短。
+有 `HoroscopeRef` 的场合用方法版，它按查询精度校验层级。
 
 ---
 
 ## patterns_dto
 
 **用途**　取序列化用的命中列表：键为 camelCase，值按排盘语言翻译，同时给出语言无关标识。
-三语言绑定与 FFI 都走这一层。
+各语言绑定与 C FFI 都走这一层。
 
 **签名**
 

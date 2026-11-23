@@ -1,0 +1,38 @@
+---
+title: 轻量查询
+description: 不排完整星盘取生肖、星座与命宫主星（astro 模块）。
+---
+
+与排盘共用同一套内核逻辑，结果与完整排盘的对应字段永远一致。
+
+```ts
+astro.getZodiacBySolarDate(solarDate: string, language?: Language, config?: ChartConfig): string;
+astro.getSignBySolarDate(solarDate: string, language?: Language): string;
+astro.getSignByLunarDate(lunarDate: string, isLeapMonth?: boolean, language?: Language): string;
+astro.getMajorStarBySolarDate(solarDate: string, timeIndex: TimeIndex, options?: { fixLeap?; language?; config? }): string;
+astro.getMajorStarByLunarDate(lunarDate: string, timeIndex: TimeIndex, options?: { isLeapMonth?; fixLeap?; language?; config? }): string;
+astro.getMajorStarKeysBySolarDate(solarDate: string, timeIndex: TimeIndex, options?: { fixLeap?; config? }): string[];
+astro.getMajorStarKeysByLunarDate(lunarDate: string, timeIndex: TimeIndex, options?: { isLeapMonth?; fixLeap?; config? }): string[];
+```
+
+- 生肖由年支决定，换年时点受 `config.yearDivide` 影响；星座只由公历日期决定。
+- 命宫主星多颗以逗号分隔；命宫为空宫时借对宫主星，与 iztro 一致。`*Keys*` 是同一结果的标识投影，与语言无关。
+- 日期或时辰索引非法抛 `IztroError`。
+
+```ts
+console.log(astro.getZodiacBySolarDate('2000-8-16'), astro.getZodiacBySolarDate('2000-8-16', 'en-US'));
+console.log(astro.getSignBySolarDate('2000-8-16'), astro.getSignByLunarDate('2000-7-17'));
+console.log(astro.getMajorStarBySolarDate('2000-8-16', 2), astro.getMajorStarByLunarDate('2000-7-17', 2, { language: 'en-US' }));
+console.log(astro.getMajorStarKeysBySolarDate('2000-8-16', 2));
+console.log(astro.getZodiacBySolarDate('2000-2-1'), astro.getZodiacBySolarDate('2000-2-1', 'zh-CN', { yearDivide: 'exact' }));
+```
+
+```text
+龙 dragon
+狮子座 狮子座
+紫微 emperor
+[ 'ziweiMaj' ]
+兔 兔
+```
+
+2000-2-1 在春节（2-5）与立春（2-4）之前，两种分界都还在己卯兔年。

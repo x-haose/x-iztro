@@ -213,7 +213,7 @@ for p in chart.palaces:
 
 ### 查一颗星在哪
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -238,6 +238,16 @@ star, palace = chart.star_in_palace(MajorStar.ZIWEI)   # 连所在宫一起
 
 ```go
 star, palace := chart.Star(iztro.StarZiweiMaj)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```ts
+import { MajorStar } from 'x-iztro';
+
+const star = chart.star(MajorStar.ZIWEI);                       // 只要星
+const [found, palace] = chart.starInPalace(MajorStar.ZIWEI)!;   // 连所在宫一起
 ```
 
 </Tab>

@@ -1,12 +1,12 @@
 ---
 title: Architecture
-description: The layering of the core and the three bindings, the trade-offs behind each, and the no-panic design constraint.
+description: The layering of the core and the language bindings, the trade-offs behind each, and the no-panic design constraint.
 ---
 
 *For: developers*
 
-x-iztro is one Rust core plus three bindings. The algorithm is implemented once, and Python, Go and
-C callers all receive the same computed result.
+x-iztro is one Rust core plus language bindings. The algorithm is implemented once, and Python, Go,
+JavaScript and C callers all receive the same computed result.
 
 ## Layering
 
@@ -28,22 +28,22 @@ C callers all receive the same computed result.
         ┌────────────────────┼────────────────────┐
         │                    │                    │
    python.rs             wasm.rs               ffi.rs
-   PyO3 extension    wasm32-wasip1              C ABI
-        │                    │                    │
-   Python package       Go package (wazero)  C / C++ / other
+   PyO3 extension  wasm32-wasip1 / -unknown     C ABI
+        │               ┌────┴────┐               │
+   Python package  Go (wazero)  JS package   C / C++ / other
 ```
 
 The two shared layers have distinct jobs:
 
 | Layer | Responsibility |
 | --- | --- |
-| `bridge.rs` | Argument parsing, dispatch by name, result marshalling. Python and Go go through the same function, leaving no room for behaviour to fork. It is a crate-internal module and not part of the public API surface |
+| `bridge.rs` | Argument parsing, dispatch by name, result marshalling. Python, Go and JavaScript go through the same function, leaving no room for behaviour to fork. It is a crate-internal module and not part of the public API surface |
 | `dto.rs` | The serialization contract: camelCase keys, values translated into the chart language, plus the `*Key` identifiers and the charting context |
 
 That keeps the binding files thin — all that is left in them is the language-specific part: wasm's
 memory protocol, PyO3's exception types.
 
-## Trade-offs in the three bindings
+## Trade-offs in each binding
 
 ### Python: a native PyO3 extension
 
@@ -52,7 +52,7 @@ side, dataclasses wrap the result into a typed API.
 
 - Compiled as an abi3 wheel (`abi3-py310`), so one wheel covers Python 3.10 and later.
 - Zero runtime dependencies, pure stdlib (dataclasses + StrEnum).
-- No JSON serialization round trip, so the overhead is the lowest of the three.
+- No JSON serialization round trip, so the overhead is the lowest of the bindings.
 
 ### Go: embedded WebAssembly
 
@@ -78,6 +78,19 @@ interpreter — slower, same results.
 Each call additionally costs one JSON encode/decode and a wasm memory copy; on the hot path a single
 chart is on the order of 0.5ms.
 
+### JavaScript: WebAssembly + TypeScript
+
+The same `wasm.rs` compiled for `wasm32-unknown-unknown` (no host imports); a TypeScript layer calls it
+through the same alloc/free + JSON protocol as Go and wraps the DTOs in objects with methods.
+
+- `init()` loads the core once, asynchronously; everything after that is synchronous computation. Browsers
+  use `fetch`, Node reads the file, and bundlers emit the wasm as an asset through
+  `new URL('./x_iztro.wasm', import.meta.url)`
+- Birth data and knowledge packs are computed in the caller's own process; charting in a browser never
+  touches a server
+- One instance per page or Worker; a trap retires the instance and `init()` rebuilds it
+- `x-iztro/types` exports only types and enums, for UI code that does not need the core
+
 ### C FFI
 
 A standard C ABI taking C strings and returning JSON strings. Errors come back as
@@ -96,38 +109,39 @@ a backstop for defects inside the library only; it carries no argument-validatio
 On wasm a panic becomes a trap, and `catch_unwind` does not work there — it cannot catch it. Worse,
 every trap permanently consumes stack space in the module instance, and once enough have
 accumulated even legitimate calls start failing. Validation therefore has to live further in, with
-all three programming languages behind one line of defence.
+every programming language behind one line of defence.
 </Callout>
 
 Each language's error type is on the errors page for [Rust](/en/docs/rust/errors),
-[Python](/en/docs/python/errors) and [Go](/en/docs/go/errors).
+[Python](/en/docs/python/errors), [Go](/en/docs/go/errors) and [JavaScript](/en/docs/js/errors).
 
 ## How consistency is enforced
 
-Consistent behaviour across the three programming languages does not rest on discipline; it rests on
+Consistent behaviour across the programming languages does not rest on discipline; it rests on
 three structural constraints:
 
 <Steps>
 <Step>**One algorithm** — all computation happens in the Rust core, and the bindings contain no Zi Wei logic at all</Step>
-<Step>**One marshaller** — Python and Go call the same `bridge::query`, so argument parsing and result shape cannot fork</Step>
-<Step>**Paired assertions** — every outward capability has a parity test on both the Python and Go sides, asserting the same values on the same chart</Step>
+<Step>**One marshaller** — Python, Go and JavaScript call the same `bridge::query`, so argument parsing and result shape cannot fork</Step>
+<Step>**Paired assertions** — every outward capability has a parity test in Python, Go and JavaScript, asserting the same values on the same chart; `binding_coverage` requires every dispatch entry to be wrapped in each binding's source</Step>
 </Steps>
 
 Predicates rest on language-independent keys throughout, so one analysis rule written in any of the
-three programming languages produces the same result. The key conventions are on
+programming languages produces the same result. The key conventions are on
 [The language-independent key contract](/en/docs/guide/guides/keys).
 
 ## Versions
 
 | Item | Version |
 | --- | --- |
-| iztro reference | v2.6.1 (version pinned) |
+| iztro reference | v2.6.3 (version pinned) |
 | Rust edition | 2024 |
 | Python requirement | 3.10 or later |
 | Go requirement | 1.22 or later |
+| Node.js requirement | 22 or later (browsers need WebAssembly) |
 
-For the current version number see [crates.io](https://crates.io/crates/x-iztro) and
-[PyPI](https://pypi.org/project/x-iztro/).
+For the current version number see [crates.io](https://crates.io/crates/x-iztro),
+[PyPI](https://pypi.org/project/x-iztro/) and [npm](https://www.npmjs.com/package/x-iztro).
 
 ## Licence
 

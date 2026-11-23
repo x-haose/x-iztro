@@ -1,6 +1,6 @@
 ---
 title: 文档
-description: 紫微斗数排盘引擎：与 JS iztro 逐字段零差异，附格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go 直接调用。
+description: 紫微斗数排盘引擎：与 JS iztro 逐字段零差异，附格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go / JavaScript 直接调用。
 icon: Star
 ---
 
@@ -54,7 +54,7 @@ icon: Star
 ```
 
 排盘结果对不对，有一条可验证的硬标准：**与 JS [iztro](https://github.com/SylarLong/iztro)
-v2.6.1 逐字段零差异**——这是复现口径，不是流派裁决——由 716,314 例金标测试守着，
+v2.6.3 逐字段零差异**——这是复现口径，不是流派裁决——由 747,572 例金标测试守着，
 见[准确性保证](/zh/docs/guide/about/accuracy)。默认口径与 iztro 一致，
 中州派与各分界点[可切换](/zh/docs/guide/guides/config)。
 
@@ -74,7 +74,7 @@ v2.6.1 逐字段零差异**——这是复现口径，不是流派裁决——�
   <Card
     title="Rust API 参考"
     href="/zh/docs/rust"
-    description="核心库。Python 与 Go 绑定都调用它。"
+    description="核心库。各语言绑定都调用它。"
   />
   <Card
     title="Python API 参考"
@@ -85,6 +85,11 @@ v2.6.1 逐字段零差异**——这是复现口径，不是流派裁决——�
     title="Go API 参考"
     href="/zh/docs/go"
     description="内嵌 WebAssembly，纯 Go 运行时，无 cgo。"
+  />
+  <Card
+    title="JavaScript API 参考"
+    href="/zh/docs/js"
+    description="WebAssembly 内核加 TypeScript 类型，浏览器与 Node.js 通用。"
   />
   <Card
     title="语义化文本（to_text）"
@@ -121,12 +126,12 @@ v2.6.1 逐字段零差异**——这是复现口径，不是流派裁决——�
 - **后端 / AI 应用工程师** → [快速开始](/zh/docs/guide/getting-started)，然后看 [LLM 接入](/zh/docs/guide/guides/llm)
 - **不了解紫微斗数** → [紫微斗数概念](/zh/docs/guide/concepts)，从干支与十二宫讲起
 
-## 三种编程语言，同一套结果
+## 多种编程语言，同一套结果
 
-三套绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
-判断方法基于语言无关标识，同一条分析规则用三种编程语言写出来，结果也一致。
+各语言绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
+判断方法基于语言无关标识，同一条分析规则用哪种编程语言写出来，结果都一致。
 
-<Tabs items={['Rust', 'Python', 'Go']}>
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -161,8 +166,21 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 ```
 
 </Tab>
+<Tab value="JavaScript">
+
+```ts
+import { init, astro } from 'x-iztro';
+
+await init();
+const chart = astro.bySolar('2000-8-16', 2, 'female');
+const soul = chart.palace('soulPalace')!;
+
+console.log(soul.has(['ziweiMaj']));
+```
+
+</Tab>
 </Tabs>
 
-三段代码给出同一个判断：这张盘的命宫里有紫微星（Python 打印 `True`，
-Rust 与 Go 打印 `true`）。三段用的都是语言无关标识 `ziweiMaj`——
+几段代码给出同一个判断：这张盘的命宫里有紫微星（Python 打印 `True`，
+其余打印 `true`）。用的都是语言无关标识 `ziweiMaj`——
 就算把盘换成英文或日文输出，判断结果也不变。
