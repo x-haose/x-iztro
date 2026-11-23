@@ -12,7 +12,7 @@ Python 侧提供 dataclass 与 StrEnum 构成的强类型 API，零外部依赖�
 ## 安装
 
 ```bash
-pip install "x-iztro~=0.7.0"
+pip install "x-iztro~=0.8.0"
 ```
 
 要求 Python 3.10 及以上。发行版内含预编译的原生扩展（abi3-py310 轮子），
@@ -50,6 +50,7 @@ print(" ".join(s.name for s in soul.major_stars))
 | `x_iztro.star` | 按出生数据安星 | [安星模块](/zh/docs/python/star) |
 | `x_iztro.data` | 星耀与干支数据表、顺序常量 | [数据表](/zh/docs/python/data) |
 | `x_iztro.i18n` | 标识与译名的双向查找 | [翻译](/zh/docs/python/i18n) |
+| `x_iztro.calendar` | 农历月份表、公历与农历互换、农历年干支 | [历法查询](/zh/docs/python/calendar) |
 | `x_iztro.plugin` | 给星盘类挂自定义方法 | [扩展星盘](/zh/docs/python/extend) |
 
 `models` 是聚合层：`Astrolabe` 实际定义在 `x_iztro.astrolabe`，`Palace` 在 `x_iztro.palace`，

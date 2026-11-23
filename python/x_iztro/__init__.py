@@ -106,7 +106,7 @@ from x_iztro.enums import (
 )
 
 # 主类
-from x_iztro import data, i18n, knowledge, plugin, query, reverse, star, utils
+from x_iztro import calendar, data, i18n, knowledge, plugin, query, reverse, star, utils
 from x_iztro.knowledge import KnowledgePack
 from x_iztro.reverse import (
     BirthCandidate,
@@ -117,6 +117,16 @@ from x_iztro.reverse import (
     solar_dates_by_bazi,
 )
 from x_iztro.astro import Astro
+
+# 历法查询
+from x_iztro.calendar import (
+    LunarMonthInfo,
+    RawSolarDate,
+    lunar_months,
+    lunar_to_solar,
+    lunar_year_pillar,
+    solar_to_lunar,
+)
 
 # 轻量查询
 from x_iztro.query import (
@@ -142,6 +152,13 @@ __all__ = [
     "get_major_star_by_lunar_date",
     "get_major_star_keys_by_solar_date",
     "get_major_star_keys_by_lunar_date",
+    # 历法查询
+    "lunar_months",
+    "solar_to_lunar",
+    "lunar_to_solar",
+    "lunar_year_pillar",
+    "LunarMonthInfo",
+    "RawSolarDate",
     # 数据模型
     "Astrolabe",
     "Palace",

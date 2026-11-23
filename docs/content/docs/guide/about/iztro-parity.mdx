@@ -222,6 +222,10 @@ JavaScript 的 `solarDatesByBazi` / `reverseChart`。
 - **自定义四化表与亮度表**：按标识整表替换内置数据，
   见 [Config 详解](/zh/docs/guide/guides/config#自定义四化表与亮度表)
 - **`all_keys`**：一次取全部 260 个可翻译标识
+- **历法查询**：农历年的月份表、公历与农历互换、农历年的年干支，与排盘同一份历法内核。
+  iztro 把这些交给依赖 lunar-lite（`solar2lunar`、`lunar2solar` 等），不在自己的 API 里；
+  x-iztro 的入参是整数年月日，农历换公历时没有这个闰月即报错，而不是像 `lunar2solar` 那样退回常规月。
+  见 Rust、Python、Go、JavaScript / TypeScript 各栏的「历法查询」
 
 ## 数值一致性
 

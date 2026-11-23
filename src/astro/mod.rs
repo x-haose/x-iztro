@@ -1,5 +1,6 @@
 // astro 模块
 pub mod builder;
+pub mod calendar;
 pub mod context;
 pub(crate) mod date_input;
 pub mod horoscope;

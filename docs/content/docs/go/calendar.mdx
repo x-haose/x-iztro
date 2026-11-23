@@ -1,0 +1,224 @@
+---
+title: 历法查询
+description: 农历年的月份表、公历与农历互换、农历年的年干支，与排盘同一份历法内核。
+---
+
+不排盘直接查历法：某个农历年有哪些月、各月大小、闰哪个月，公历与农历互换，农历年的年干支。
+与排盘同一份历法内核（逐函数移植自 lunar-typescript），结果与星盘的 `RawDates.LunarDate`、年柱逐日一致，
+由 lunar-typescript 生成的金标按农历 1–9999 年逐日对照。
+
+支持公历与农历 1–9999 年。1582-10-15 以前按儒略历，1582-10-05 至 10-14 不存在。
+
+<Callout title="报错">
+给出完整日期的换算（`SolarToLunar`、`LunarToSolar`）在日期不存在时报 `ErrInvalidDate`，与排盘入口相同；
+只给年份的查询（`LunarMonths`、`LunarYearPillar`）在年份越界时报 `ErrInvalidArgument`，与按农历年取运限相同。
+</Callout>
+
+```go
+import "github.com/x-haose/x-iztro/go/iztro"
+```
+
+---
+
+## LunarMonths
+
+**用途**　取农历某年的全部月份：月份、是否闰月、天数（大小月）与初一的公历日期。
+
+**签名**
+
+```go
+func LunarMonths(year int) ([]LunarMonthInfo, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年，1–9999 |
+
+**返回值**　`[]LunarMonthInfo`，按时间先后排列，闰月紧跟在所闰的月之后。每项：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `Month` | `int` | 月份 1–12；闰月取所闰的月份，闰四月为 4 |
+| `IsLeap` | `bool` | 是否闰月 |
+| `DayCount` | `int` | 天数：29（小月）或 30（大月） |
+| `FirstDay` | `RawSolarDate` | 初一的公历日期：`SolarYear`、`SolarMonth`、`SolarDay` |
+
+**示例**　2023 年闰二月：
+
+```go
+months, _ := iztro.LunarMonths(2023)
+for _, m := range months[:4] {
+    d := m.FirstDay
+    fmt.Println(m.Month, m.IsLeap, m.DayCount, fmt.Sprintf("%d-%d-%d", d.SolarYear, d.SolarMonth, d.SolarDay))
+}
+```
+
+**输出**
+
+```text
+1 false 29 2023-1-22
+2 false 30 2023-2-20
+2 true 29 2023-3-22
+3 false 29 2023-4-20
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="不一定是 12 或 13 个月">
+个别古代年份与 lunar-typescript 一致地少一个月：农历 237 年只有 11 个月、没有三月。
+按 1–12 循环取月份时以返回的列表为准。
+</Accordion>
+<Accordion title="农历 9999 年腊月的后 27 天在公历 10000 年">
+农历 9999 年腊月初一是 9999-12-30，各月初一都在公历 9999 年内，`FirstDay.SolarYear` 不会是 10000；
+腊月初三至廿九这 27 天落在公历 10000 年，`LunarToSolar` 对它们返回的 `SolarYear` 为 10000。
+这些日子不能再交给只收公历 1–9999 年的入口（排盘、`SolarToLunar`）。
+</Accordion>
+</Accordions>
+
+---
+
+## SolarToLunar
+
+**用途**　公历日期换农历日期。
+
+**签名**
+
+```go
+func SolarToLunar(year, month, day int) (RawLunarDate, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 公历年，1–9999 |
+| `month` | `int` | 是 | — | 公历月，1–12 |
+| `day` | `int` | 是 | — | 公历日 |
+
+**返回值**　`RawLunarDate`：`LunarYear`、`LunarMonth`（1–12）、`LunarDay`、`IsLeap`，与星盘的 `RawDates.LunarDate` 同一类型。
+
+**示例**　2023-3-22 是闰二月初一：
+
+```go
+l, _ := iztro.SolarToLunar(2023, 3, 22)
+fmt.Println(l.LunarYear, l.LunarMonth, l.LunarDay, l.IsLeap)
+```
+
+**输出**
+
+```text
+2023 2 1 true
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="公历 1 年年初属农历 0 年">
+公历 1 年 1 月初的几十天还在农历 0 年的冬月、腊月，返回的 `LunarYear` 为 0；
+这个 0 不能再交给只收 1–9999 年的农历入参。
+</Accordion>
+<Accordion title="改历空缺">
+1582-10-05 至 10-14 不存在（儒略历 10 月 4 日的次日是格里历 10 月 15 日），传入即报 `ErrInvalidDate`。
+</Accordion>
+</Accordions>
+
+---
+
+## LunarToSolar
+
+**用途**　农历日期换公历日期。
+
+**签名**
+
+```go
+func LunarToSolar(year, month, day int, isLeap bool) (RawSolarDate, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 农历年，1–9999 |
+| `month` | `int` | 是 | — | 农历月，1–12；闰月写所闰的月份 |
+| `day` | `int` | 是 | — | 农历日，不超过当月天数 |
+| `isLeap` | `bool` | 是 | — | 这一天在闰月里 |
+
+**返回值**　`RawSolarDate`：`SolarYear`、`SolarMonth`、`SolarDay`。
+
+**示例**
+
+```go
+s, _ := iztro.LunarToSolar(2023, 2, 1, true)
+fmt.Printf("%d-%d-%d\n", s.SolarYear, s.SolarMonth, s.SolarDay)
+
+// 2024 年没有闰二月：报错，不退回常规的二月
+_, err := iztro.LunarToSolar(2024, 2, 1, true)
+fmt.Println(errors.Is(err, iztro.ErrInvalidDate))
+```
+
+**输出**
+
+```text
+2023-3-22
+true
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="没有这个闰月就报错">
+`isLeap` 为真而该年不闰这个月时报 `ErrInvalidDate`。排盘入口（`ByLunar` 的 `isLeapMonth`，与 iztro 相同）
+在这种情况下忽略闰月标记、按常规月排盘；历法换算不这样做，因为退回常规月得到的日期差一个月，却看不出错。
+</Accordion>
+<Accordion title="没有 fix_leap">
+排盘的 `fixLeap`（闰月十五之后视作次月）管的是星曜按哪个月安，不改变这一天是公历哪天，
+所以这里只有「是否闰月」一个参数。
+</Accordion>
+</Accordions>
+
+---
+
+## LunarYearPillar
+
+**用途**　农历某年的年干支，返回天干与地支的语言无关标识。
+
+**签名**
+
+```go
+func LunarYearPillar(year int) (Pillar, error)
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `int` | 是 | — | 年号，1–9999 |
+
+**返回值**　`Pillar`（`[天干标识, 地支标识]`）。公历 4 年为甲子，此后按年号循环。
+
+**示例**
+
+```go
+p, _ := iztro.LunarYearPillar(2024)
+fmt.Println(p[0], p[1])
+```
+
+**输出**
+
+```text
+jiaHeavenly chenEarthly
+```
+
+**分界口径**　年干支只由年号决定，与 `year_divide` 无关；分界口径决定的是这一柱从哪天起算。
+排盘的年柱（`RawDates.ChineseDate.YearlyKeys`）按下表取对应年号的这一柱：
+
+| 口径 | 年号 N 的年干支管哪些日子 |
+| --- | --- |
+| 正月初一分界（`YearDivide: "normal"`，默认） | 农历 N 年正月初一至除夕 |
+| 立春分界（`YearDivide: "exact"`） | 公历 N 年立春当日至次年立春前一日 |
+
+以 2024 年为例：立春在 2-4，正月初一在 2-10。2-4 至 2-9 这几天正月初一分界下属癸卯（农历 2023 年），
+立春分界下属甲辰（年号 2024）。按日期取年柱时，先按口径定出年号，再取这一柱。

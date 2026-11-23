@@ -166,8 +166,13 @@ pub struct QueryInput {
     pub is_leap: bool,
     /// 大限序号（0 为第一个大限）；`yearlyList` 与 `palace_key` 二选一，后者优先
     pub decadal_ordinal: Option<usize>,
-    /// 农历年份，`monthlyList` 与 `monthlyListToText` 用
+    /// 年份。`monthlyList`、`monthlyListToText`、`lunarMonths`、`lunarYearPillar`、`lunarToSolar`
+    /// 为农历年，`solarToLunar` 为公历年
     pub year: Option<i64>,
+    /// `solarToLunar` 的公历月（1-12）
+    pub month: Option<u32>,
+    /// `solarToLunar` 的公历日
+    pub day: Option<u32>,
     /// `yearlyOverviewToText` 的起始农历年（含）；与 `to_year` 都必给
     pub from_year: Option<i64>,
     /// `yearlyOverviewToText` 的截止农历年（含）；早于 `from_year` 由内核报 invalid_argument
@@ -618,6 +623,9 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         // ---- 知识包按盘取材 ----
         "knowledgeForChart" => knowledge_for_chart(input),
 
+        // ---- 历法 ----
+        "lunarMonths" | "solarToLunar" | "lunarToSolar" | "lunarYearPillar" => calendar(input),
+
         // ---- 夹宫与运限列表 ----
         "flankingPalaces" | "decadalList" | "yearlyList" | "monthlyList" => chart_lists(input),
 
@@ -707,6 +715,48 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
             "unknown query kind '{other}'"
         ))),
     }
+}
+
+/// 历法查询。`lunarToSolar` 的月、日与闰月取 `lunarMonth`、`lunarDay`、`isLeap`，
+/// `solarToLunar` 的月、日取 `month`、`day`；年都取 `year`。
+fn calendar(input: &QueryInput) -> Result<Value, BridgeError> {
+    use crate::astro::calendar::{lunar_months, lunar_to_solar, lunar_year_pillar, solar_to_lunar};
+    let required = |v: Option<u32>, name: &str| {
+        v.ok_or_else(|| BridgeError::invalid_argument(format!("{name} is required")))
+    };
+    let year = input
+        .year
+        .ok_or_else(|| BridgeError::invalid_argument("year is required"))?;
+    let value = match input.kind.as_str() {
+        "lunarMonths" => serde_json::to_value(
+            lunar_months(year)?
+                .into_iter()
+                .map(crate::dto::LunarMonthDto::from)
+                .collect::<Vec<_>>(),
+        ),
+        "solarToLunar" => {
+            let date = solar_to_lunar(
+                year,
+                required(input.month, "month")?,
+                required(input.day, "day")?,
+            )?;
+            serde_json::to_value(crate::dto::RawLunarDateDto::from(date))
+        }
+        "lunarToSolar" => {
+            let date = lunar_to_solar(year, input.lunar_month, input.lunar_day, input.is_leap)?;
+            serde_json::to_value(crate::dto::RawSolarDateDto::from(date))
+        }
+        "lunarYearPillar" => {
+            let (stem, branch) = lunar_year_pillar(year)?;
+            Ok(json!([stem.as_key(), branch.as_key()]))
+        }
+        other => {
+            return Err(BridgeError::invalid_argument(format!(
+                "unknown query kind '{other}'"
+            )));
+        }
+    };
+    value.map_err(serialize_failed)
 }
 
 fn is_star_kind(kind: &str) -> bool {

@@ -7,6 +7,33 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-23
+
+### 新增
+
+- **历法查询**：不排盘直接查历法，供日期选择器、日历视图这类按数值取用的场合。此前只能借排盘接口凑
+  （排一张盘取 `rawDates` 做公农互换、取流月列表算月长、按农历年取运限拿年干支）。四个入口，
+  入参都是整数年月日，与排盘同一份历法内核，结果与星盘的农历日期、年柱逐日一致：
+  - `lunar_months(year)`：农历某年的全部月份，按先后排列，每项给月份、是否闰月、天数（29 或 30）
+    与初一的公历日期；闰月紧跟在所闰的月之后。个别古代年份与 lunar-typescript 一致地少一个月
+    （农历 237 年没有三月）。
+  - `solar_to_lunar(year, month, day)`：公历换农历，返回与星盘 `raw_dates.lunar_date` 同一类型。
+    公历 1 年年初的几十天属农历 0 年。
+  - `lunar_to_solar(year, month, day, is_leap)`：农历换公历。该年没有这个闰月时报错，
+    不像排盘入口（与 iztro、lunar-lite 的 `lunar2solar` 相同）那样退回同号的常规月——退回得到的日期
+    差一个月却看不出错。排盘的 `fix_leap` 只影响星曜按哪个月安，不出现在日期换算里。
+    农历 9999 年腊月初三起的 27 天落在公历 10000 年，返回的公历年为 10000。
+  - `lunar_year_pillar(year)`：农历年的年干支。干支只由年号决定；正月初一与立春两种分界决定的是
+    这一柱从哪天起算，排盘年柱在两种分界下都按此取。
+
+  范围为公历与农历 1–9999 年，1582-10-15 以前按儒略历。给完整日期的换算在日期不存在时报
+  `invalid_date`（同 `by_solar` / `by_lunar`），只给年份的查询在年份越界时报 `invalid_argument`
+  （同按农历年取运限）。Python `x_iztro.calendar`（四个函数另从包根导出）、Go `LunarMonths` /
+  `SolarToLunar` / `LunarToSolar` / `LunarYearPillar`、JavaScript / TypeScript `calendar` 命名空间，
+  bridge kind `lunarMonths` / `solarToLunar` / `lunarToSolar` / `lunarYearPillar`。
+  新金标 `calendar_api.csv` 由 lunar-typescript 生成，按农历 1–9999 年逐日核对月份表、年干支、
+  农历换公历，以及公历换回原农历日期。文档站各语言新增「历法查询」页。
+
 ## [0.7.1] - 2026-11-23
 
 ### 修正
@@ -495,7 +522,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/x-haose/x-iztro/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/x-haose/x-iztro/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/x-haose/x-iztro/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/x-haose/x-iztro/compare/v0.6.0...v0.6.1

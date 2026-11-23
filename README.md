@@ -115,7 +115,7 @@ must agree to the field.
 
 ```toml
 [dependencies]
-x-iztro = "0.7"
+x-iztro = "0.8"
 ```
 
 **Python** — 3.10+, zero runtime dependencies, typed API (dataclasses +
@@ -124,7 +124,7 @@ universal2 and Windows x64 — no Rust toolchain needed there. Other targets
 (musl/Alpine, 32-bit) fall back to the sdist and compile with one.
 
 ```bash
-pip install "x-iztro~=0.7.0"
+pip install "x-iztro~=0.8.0"
 ```
 
 **Go** — no cgo: the Rust core ships inside the module as a ~1.5 MB
@@ -132,7 +132,7 @@ WebAssembly blob run by [wazero](https://wazero.io), a pure-Go runtime.
 Cross-compilation works as usual.
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro@v0.7.0
+go get github.com/x-haose/x-iztro/go/iztro@v0.8.0
 ```
 
 **JavaScript / TypeScript** — the same Rust core compiled to WebAssembly
@@ -142,7 +142,7 @@ asset on their own. `x-iztro/types` exports the DTO types and enums without
 touching the WebAssembly, for UI code that only renders charts.
 
 ```bash
-npm install x-iztro@0.7
+npm install x-iztro@0.8
 ```
 
 ## Quick start

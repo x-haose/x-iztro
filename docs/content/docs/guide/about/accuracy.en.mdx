@@ -64,7 +64,9 @@ lunar-typescript.
 date, the year pillar turning at lunar New Year and at the Beginning of Spring, the month pillar
 turning at the exact solar-term moment, the day pillar and the zodiac sign; every lunar year checked
 for its month table (first day, length, leap month) and its 31 solar-term moments; and every day
-carrying a "jie" solar term checked for the month, day and hour pillars at all 13 hours.
+carrying a "jie" solar term checked for the month, day and hour pillars at all 13 hours. The public calendar
+lookups are checked separately over every day of lunar years 1–9999: each year's month table and stem-branch,
+the Gregorian date of every day, and that Gregorian date converted back to the original lunar date.
 
 **The chart layer**, 747,572 cases in total:
 
@@ -153,6 +155,9 @@ cargo test --release --test golden_tier3 -- --ignored
 
 # The full calendar: every day of Gregorian years 1–9999, about 10 seconds
 cargo test --release --lib calendar -- --ignored
+
+# The full calendar lookups: every day of lunar years 1–9999, about 2 seconds
+cargo test --release --test calendar_api -- --ignored
 
 # Binding end-to-end
 cd python && pytest tests/     # run maturin develop first
