@@ -691,7 +691,7 @@ assertions `tests/knowledge_pack.rs` makes about the bundled default pack. `sugg
 | `extends_differs_from_base` | warning | `extends` differs from the base pack's `id` (only with a base) | §2: `extends` names the base pack's `id` | `value`, `base` |
 
 HTML, images, external links and page references are checked only in the text fields SCHEMA §5 lists (each entry's
-`intro`, `summary`, `conditions`, and the values of both combination maps), and nothing inside inline code counts;
+`intro`, `summary`, `conditions`, and the values of both combination maps), and nothing inside inline code counts (per CommonMark: an escaped backtick opens no code span, and a span does not cross a blank line);
 the classical quotations in `quotes` are verbatim plain text and are not checked. The bundled default pack checks clean.
 
 ### The closest key

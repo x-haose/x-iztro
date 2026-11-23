@@ -218,8 +218,9 @@ class KnowledgeIssue:
     message: str                  # English description with the dotted path
 ```
 
-A `raw` that is not a dict (`None`, a list) comes back as a `not_object` issue. A `raw` holding values JSON cannot
-represent, or a `base` that is not a `KnowledgePack`, raises `TypeError`.
+A `raw` that is not a dict (`None`, a list) comes back as a `not_object` issue. A `raw` holding `nan` / `inf` raises
+`IztroError` (`invalid_argument`: JSON cannot represent them); other values JSON cannot represent, or a `base` that is
+not a `KnowledgePack`, raise `TypeError`.
 
 **Example**
 

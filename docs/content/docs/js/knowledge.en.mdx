@@ -58,7 +58,8 @@ interface KnowledgeIssue {
 ```
 
 A `raw` that is not an object (including `undefined`, `null` and arrays) comes back as a `not_object` issue; a `raw`
-holding a BigInt or a cycle, or a `base` not built by this library, throws `TypeError`. The `IztroError` that
+holding `NaN` / `±Infinity` throws `IztroError` (`invalid_argument`: JSON cannot represent them, and they are not
+silently turned into `null`); a `raw` holding a BigInt or a cycle, or a `base` not built by this library, throws `TypeError`. The `IztroError` that
 `fromObject` throws on rejection carries `issues`.
 
 ```js

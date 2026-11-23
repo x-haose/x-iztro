@@ -880,6 +880,62 @@
    "expect": []
   },
   {
+   "name": "§5: 转义的反引号不作行内代码开头",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "单独一个 \\` 号，<b>粗</b> 与 `x``"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "html_in_text",
+     "params": {
+      "snippet": "<b>"
+     }
+    }
+   ]
+  },
+  {
+   "name": "§5: 行内代码不跨空行",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "`起\n\n<b>粗</b>`"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "html_in_text",
+     "params": {
+      "snippet": "<b>"
+     }
+    }
+   ]
+  },
+  {
    "name": "§5: 行内代码之外照查",
    "pack": {
     "schema": 1,

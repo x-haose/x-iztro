@@ -55,7 +55,8 @@ interface KnowledgeIssue {
 }
 ```
 
-`raw` 不是对象（含 `undefined`、`null`、数组）作为 `not_object` 问题返回；`raw` 含 BigInt 或循环引用、
+`raw` 不是对象（含 `undefined`、`null`、数组）作为 `not_object` 问题返回；`raw` 含 `NaN` / `±Infinity` 抛
+`IztroError`（`invalid_argument`，JSON 表示不了，不悄悄当 `null`）；`raw` 含 BigInt 或循环引用、
 `base` 不是本库构造的 `KnowledgePack` 时抛 `TypeError`。`fromObject` 被拒绝时抛的 `IztroError` 带 `issues`。
 
 ```js

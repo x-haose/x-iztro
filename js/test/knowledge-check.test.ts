@@ -112,3 +112,10 @@ test('fromJSON 的非法 JSON 是一条 invalid_json 问题', () => {
     (e: unknown) => e instanceof IztroError && e.issues?.[0]?.code === KnowledgeIssueCode.INVALID_JSON,
   );
 });
+
+test('NaN / Infinity 报 invalid_argument，不悄悄当 null', () => {
+  const pack = { schema: 1, id: 't', version: '1', language: 'zh-CN', stars: { ziweiMaj: { intro: Number.NaN } } };
+  for (const call of [() => KnowledgePack.check(pack), () => KnowledgePack.fromObject(pack)]) {
+    assert.throws(call, (e: unknown) => e instanceof IztroError && e.code === 'invalid_argument');
+  }
+});

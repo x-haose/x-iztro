@@ -212,8 +212,8 @@ class KnowledgeIssue:
     message: str                  # 带点分路径的英文说明
 ```
 
-`raw` 不是 dict（如 `None`、列表）也作为 `not_object` 问题返回。`raw` 含 JSON 表示不了的值、`base` 不是
-`KnowledgePack` 时抛 `TypeError`。
+`raw` 不是 dict（如 `None`、列表）也作为 `not_object` 问题返回。`raw` 含 `nan` / `inf` 抛 `IztroError`
+（`invalid_argument`，JSON 表示不了）；含其他 JSON 表示不了的值、`base` 不是 `KnowledgePack` 时抛 `TypeError`。
 
 **示例**
 

@@ -654,7 +654,7 @@ error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 | `extends_differs_from_base` | warning | `extends` 与底包的 `id` 不同（给了底包才报） | §2：`extends` 声明底包的 `id` | `value`、`base` |
 
 HTML、图片、站外链接与页面引用只查 SCHEMA §5 列出的正文类字段（各条目的 `intro`、`summary`、`conditions` 与两个组合映射的值），
-行内代码里的内容不算；古籍引文 `quotes` 是逐字转录的纯文本，不查。内嵌默认包校验结果为空。
+行内代码（按 CommonMark：转义的反引号不作开头，不跨空行）里的内容不算；古籍引文 `quotes` 是逐字转录的纯文本，不查。内嵌默认包校验结果为空。
 
 ### 最接近的标识
 

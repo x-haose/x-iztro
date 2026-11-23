@@ -1071,15 +1071,31 @@ fn osa_distance(a: &str, b: &str) -> usize {
     d[n][m]
 }
 
-/// 把行内代码（CommonMark：一串反引号到下一串等长反引号之间）连同反引号换成空格；
-/// 找不到配对的反引号串按原文保留。
+/// 把行内代码（CommonMark：一串反引号到下一串等长反引号之间）连同反引号换成空格。
+/// 前面有未被转义的反斜杠的反引号（`\``）是字面的反引号，不作开头；行内代码不跨段落，
+/// 遇到空行（只含空白的行）仍未配对即按原文保留。
 fn mask_code_spans(s: &str) -> String {
     let chars: Vec<char> = s.chars().collect();
     let mut out = chars.clone();
     let run_len = |at: usize| chars[at..].iter().take_while(|c| **c == '`').count();
+    // `at` 处的字符前有奇数个反斜杠，即被转义
+    let escaped = |at: usize| chars[..at].iter().rev().take_while(|c| **c == '\\').count() % 2 == 1;
+    // `at` 处是换行，且下一行只含空白（段落在此结束）
+    let blank_line_at = |at: usize| {
+        chars[at] == '\n'
+            && chars[at + 1..]
+                .iter()
+                .take_while(|c| **c != '\n')
+                .all(|c| c.is_whitespace())
+            && chars[at + 1..].contains(&'\n')
+    };
     let mut i = 0;
     while i < chars.len() {
         if chars[i] != '`' {
+            i += 1;
+            continue;
+        }
+        if escaped(i) {
             i += 1;
             continue;
         }
@@ -1094,6 +1110,8 @@ fn mask_code_spans(s: &str) -> String {
                     break;
                 }
                 j += m;
+            } else if blank_line_at(j) {
+                break;
             } else {
                 j += 1;
             }
@@ -1195,6 +1213,14 @@ mod tests {
             format!("{}z", " ".repeat(10))
         );
         assert_eq!(mask_code_spans("未闭合 `<b>"), "未闭合 `<b>");
+        // 转义的反引号不作开头
+        let s = "单独一个 \\` 号，<b>粗</b> 与 `x``";
+        assert!(mask_code_spans(s).contains("<b>"));
+        assert_eq!(find_html(&mask_code_spans(s)).as_deref(), Some("<b>"));
+        assert_eq!(mask_code_spans("a\\`b` `c`"), "a\\`b   c`");
+        // 不跨空行配对
+        assert_eq!(mask_code_spans("`a\n\n<b>` x"), "`a\n\n<b>` x");
+        assert_eq!(mask_code_spans("`a\nb` x"), format!("{}x", " ".repeat(6)));
     }
 
     #[test]

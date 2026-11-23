@@ -11,7 +11,7 @@ import type { Language } from './enums.js';
 import { chartQuery, horoscopeQuery, packState, packStates } from './internal.js';
 import type { Astrolabe } from './astrolabe.js';
 import type { Horoscope } from './horoscope.js';
-import { query } from './runtime.js';
+import { finiteNumbers, query } from './runtime.js';
 import type { KnowledgeIssue, PatternConfig } from './types.js';
 
 
@@ -206,11 +206,12 @@ export class KnowledgePack {
    * 由包对象构造。先经 `check` 同一套规则校验，有 error 级问题即拒绝；构造出的包持有内核规范化后的副本
    * （规范外的字段已丢弃、映射里的 null 已略去），之后改动 `raw` 不影响它。
    *
-   * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上
+   * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上。
+   *   含 NaN / ±Infinity 也报 invalid_argument（JSON 表示不了）
    * @throws TypeError 包对象含 JSON 无法表示的值（如 BigInt、循环引用）
    */
   static fromObject(raw: object): KnowledgePack {
-    return new KnowledgePack(parsed(JSON.stringify(raw) ?? 'null'), undefined);
+    return new KnowledgePack(parsed(JSON.stringify(raw, finiteNumbers) ?? 'null'), undefined);
   }
 
   /**
@@ -225,10 +226,11 @@ export class KnowledgePack {
   /**
    * 逐条校验一份包，一次返回全部问题（不在第一处停）。输入不是对象等也作为 error 级问题返回。
    *
+   * @throws IztroError 包对象含 NaN / ±Infinity（invalid_argument：JSON 表示不了，不能悄悄当 null）
    * @throws TypeError 包对象含 JSON 无法表示的值，或 `options.base` 不是本库构造的 KnowledgePack
    */
   static check(raw: unknown, options: CheckOptions = {}): KnowledgeIssue[] {
-    const packJson = JSON.stringify(raw) ?? 'null';
+    const packJson = JSON.stringify(raw, finiteNumbers) ?? 'null';
     const basePack = options.base === undefined ? undefined : packState(options.base).raw;
     return query('checkKnowledgePack', { packJson, basePack }) as KnowledgeIssue[];
   }

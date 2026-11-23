@@ -35,7 +35,9 @@
   默认包口吻红线里指向页面上下文的那部分按 §5 对所有包生效（warning），其余是默认包自己的写法要求，不查。
   Rust `knowledge::check` / `check_json`，Python `KnowledgePack.check`，Go `CheckKnowledgePack`，JavaScript `KnowledgePack.check`，
   bridge kind `checkKnowledgePack`。HTML、图片、站外链接与页面引用只查 SCHEMA §5 列出的正文类字段（现明确为各条目的
-  `intro`、`summary`、`conditions` 与两个组合映射的值；古籍引文 `quotes` 是逐字转录的纯文本，不在其列），行内代码里的内容不算。
+  `intro`、`summary`、`conditions` 与两个组合映射的值；古籍引文 `quotes` 是逐字转录的纯文本，不在其列），行内代码里的内容不算
+  （按 CommonMark：转义的反引号不作开头，不跨空行）。Python、JavaScript 的包对象含 NaN / ±Infinity 时报 `invalid_argument`，
+  不悄悄写成 null。
   内嵌默认包校验结果为空。
 
 ### 修正

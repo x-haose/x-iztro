@@ -76,6 +76,17 @@ class KnowledgeIssue:
         )
 
 
+def _pack_json(raw: Any) -> str:
+    """
+    包对象的 JSON 文本。NaN / ±Infinity 在 JSON 里表示不了，抛 `IztroError`（invalid_argument），
+    与 JavaScript 一致；其余 JSON 表示不了的值由 `json.dumps` 抛 `TypeError`。
+    """
+    try:
+        return json.dumps(raw, ensure_ascii=False, allow_nan=False)
+    except ValueError as e:
+        raise invalid_argument(f"knowledge pack must not contain NaN or Infinity: {e}") from e
+
+
 def _parsed(pack_json: str) -> dict[str, Any]:
     """
     经内核解析：有 error 级问题时抛 `IztroError`（code 为 invalid_argument，全部问题挂在 `issues` 属性上），
@@ -385,7 +396,7 @@ class KnowledgePack:
             IztroError: 有 error 级问题（code 为 invalid_argument）；全部问题在异常的 `issues` 属性里
             TypeError: `d` 含 JSON 无法表示的值
         """
-        return cls(_parsed(json.dumps(d, ensure_ascii=False)))
+        return cls(_parsed(_pack_json(d)))
 
     @classmethod
     def from_json(cls, text: str) -> KnowledgePack:
@@ -408,13 +419,14 @@ class KnowledgePack:
                 与底包不符），摘要规则按合并后的条目判断
 
         Raises:
-            TypeError: `raw` 含 JSON 无法表示的值，或 `base` 不是 KnowledgePack
+            IztroError: `raw` 含 NaN / ±Infinity（invalid_argument，JSON 表示不了）
+            TypeError: `raw` 含其他 JSON 无法表示的值，或 `base` 不是 KnowledgePack
         """
         from x_iztro._bridge import query
 
         if base is not None and not isinstance(base, KnowledgePack):
             raise TypeError(f"base 须为 KnowledgePack，收到 {type(base).__name__}")
-        params: dict[str, Any] = {"pack_json": json.dumps(raw, ensure_ascii=False)}
+        params: dict[str, Any] = {"pack_json": _pack_json(raw)}
         if base is not None:
             params["base_pack"] = base._raw
         return [KnowledgeIssue._from_dict(i) for i in query("checkKnowledgePack", **params)]

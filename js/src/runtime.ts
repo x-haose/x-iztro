@@ -144,7 +144,7 @@ function exportsOf(instance: WebAssembly.Instance): KernelExports {
  * 入参转 JSON 时拒绝非有限数字：`JSON.stringify` 会把 NaN、±Infinity 写成 null，
  * 内核把 null 当作「未给」，按缺省值算出一个看似正常的结果。
  */
-function finiteNumbers(key: string, value: unknown): unknown {
+export function finiteNumbers(key: string, value: unknown): unknown {
   if (typeof value === 'number' && !Number.isFinite(value)) {
     throw invalidArgument(`${key || 'input'} must be a finite number, got ${value}`);
   }

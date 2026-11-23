@@ -106,3 +106,11 @@ def test_from_json_reports_invalid_json_as_an_issue() -> None:
     with pytest.raises(IztroError) as e:
         KnowledgePack.from_json("{bad")
     assert e.value.issues[0].code == KnowledgeIssueCode.INVALID_JSON
+
+
+def test_non_finite_numbers_are_rejected_like_javascript() -> None:
+    pack = {"schema": 1, "id": "t", "version": "1", "language": "zh-CN", "stars": {"ziweiMaj": {"intro": float("nan")}}}
+    for call in (lambda: KnowledgePack.check(pack), lambda: KnowledgePack.from_dict(pack)):
+        with pytest.raises(IztroError) as e:
+            call()
+        assert e.value.code == "invalid_argument"
