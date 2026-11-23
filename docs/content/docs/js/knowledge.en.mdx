@@ -12,9 +12,10 @@ happens in the core, with the same rules in every binding.
 | Member | Description |
 | --- | --- |
 | `KnowledgePack.builtin(language = 'zh-CN')` | The built-in pack (from iztro-docs, MIT); throws `IztroError` if that language has none |
-| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | Your own pack; a missing or too-new `schema` throws `IztroError`, bad JSON throws `SyntaxError` |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | Your own pack; checked by the `check` rules, any error-level issue (bad JSON included) throws `IztroError` (`issues` holds the full list); the pack holds the core's normalized copy (fields outside the spec dropped, `null` values in maps left out), so all four languages build the same pack from the same input |
+| `KnowledgePack.check(raw, { base? })` | Checks issue by issue and returns every issue at once, see below |
 | `toJSON()` | A deep copy of the pack object; `JSON.stringify(pack)` gives the pack's JSON |
-| `merged(...overlays)` | This pack with overlays (instances or plain objects) applied in order, as a new pack |
+| `merged(...overlays)` | This pack with overlays (instances, or plain objects checked through `fromObject`) applied in order, as a new pack |
 | `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | Chart-scoped subsets |
 | `schema` `id` `version` `language` `extends` `source` | Metadata |
 | `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | One entry, `undefined` when missing |
@@ -36,6 +37,42 @@ console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summar
 ```text
 iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
 紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
+```
+
+
+## check
+
+Checks a pack issue by issue and returns every issue at once. The rules, levels and all issue codes are in
+[Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack).
+
+```ts
+KnowledgePack.check(raw: unknown, options?: { base?: KnowledgePack }): KnowledgeIssue[];
+
+interface KnowledgeIssue {
+  level: 'error' | 'warning';
+  path: (string | number)[];      // object keys as strings, array indexes as numbers
+  code: KnowledgeIssueCode;       // e.g. KnowledgeIssueCode.UNKNOWN_KEY ('unknown_key')
+  params: Record<string, unknown>;
+  message: string;                // English description with the dotted path
+}
+```
+
+A `raw` that is not an object (including `undefined`, `null` and arrays) comes back as a `not_object` issue; a `raw`
+holding `NaN` / `±Infinity` throws `IztroError` (`invalid_argument`: JSON cannot represent them, and they are not
+silently turned into `null`); a `raw` holding a BigInt or a cycle, or a `base` not built by this library, throws `TypeError`. The `IztroError` that
+`fromObject` throws on rejection carries `issues`.
+
+```js
+const raw = JSON.parse(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`);
+for (const issue of KnowledgePack.check(raw, { base: KnowledgePack.builtin() })) {
+  console.log(issue.level, issue.message);
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 ```
 
 ## merged

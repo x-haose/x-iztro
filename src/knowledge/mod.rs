@@ -10,6 +10,12 @@
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
+mod check;
+
+pub use check::{
+    IssueCode, IssueLevel, KnowledgeIssue, PathSegment, SUMMARY_MAX_WIDTH, check, check_json,
+};
+
 use serde::{Deserialize, Serialize};
 use unicode_width::UnicodeWidthStr;
 
@@ -140,13 +146,13 @@ pub struct StarEntry {
     /// 与另一颗主星同宫的组合解读，键为对方星耀标识
     #[serde(
         skip_serializing_if = "BTreeMap::is_empty",
-        deserialize_with = "null_as_default"
+        deserialize_with = "text_map"
     )]
     pub combinations: BTreeMap<String, String>,
     /// 组合解读的摘要，与 `combinations` 同键成对
     #[serde(
         skip_serializing_if = "BTreeMap::is_empty",
-        deserialize_with = "null_as_default"
+        deserialize_with = "text_map"
     )]
     pub combination_summaries: BTreeMap<String, String>,
 }
@@ -304,6 +310,20 @@ where
     Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
 }
 
+/// 正文映射（`combinations` / `combinationSummaries`）：整个映射或其中某个值写成 `null` 都等同省略
+/// （SCHEMA §4），null 值的键不进结果。
+fn text_map<'de, D>(d: D) -> Result<BTreeMap<String, String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<BTreeMap<String, Option<String>>>::deserialize(d)?;
+    Ok(raw
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|(k, v)| v.map(|v| (k, v)))
+        .collect())
+}
+
 /// 内嵌默认包的原文（zh-CN，源自 iztro-docs）。
 static BUILTIN_ZH_CN: &str = include_str!("../data/knowledge/iztro_docs.zh-CN.json");
 
@@ -339,33 +359,39 @@ impl KnowledgePack {
         }
     }
 
-    /// 由 JSON 解析一份包；格式版本高于本库支持的返回错误。
+    /// 由 JSON 解析一份包。
+    ///
+    /// # Errors
+    /// JSON 非法，或 [`check`] 报出 [`IssueLevel::Error`] 级问题（缺 schema、字段类型不符、未知标识、
+    /// 正文含 HTML 等）时返回错误，信息逐条列出全部 error 级问题及其路径。
     pub fn from_json(json: &str) -> Result<KnowledgePack, String> {
-        let pack: KnowledgePack =
-            serde_json::from_str(json).map_err(|e| format!("invalid knowledge pack: {e}"))?;
-        Self::validated(pack)
+        let value: serde_json::Value = serde_json::from_str(json)
+            .map_err(|e| format!("invalid knowledge pack: invalid JSON: {e}"))?;
+        Self::from_value(&value)
     }
 
-    /// 由已解析的 JSON 值解析一份包（绑定层免字符串往返，也不复制值树）；
-    /// 校验同 [`Self::from_json`]。
+    /// 由已解析的 JSON 值解析一份包（绑定层免字符串往返，也不复制值树）；校验同 [`Self::from_json`]。
+    ///
+    /// # Errors
+    /// 同 [`Self::from_json`]。
     pub fn from_value(value: &serde_json::Value) -> Result<KnowledgePack, String> {
-        let pack = KnowledgePack::deserialize(value)
-            .map_err(|e| format!("invalid knowledge pack: {e}"))?;
-        Self::validated(pack)
+        let errors: Vec<String> = check(value, None)
+            .into_iter()
+            .filter(|i| i.level == IssueLevel::Error)
+            .map(|i| i.to_string())
+            .collect();
+        if !errors.is_empty() {
+            return Err(format!("invalid knowledge pack: {}", errors.join("; ")));
+        }
+        // check 覆盖了全部字段的类型；仍解析失败说明两者脱节，作为内部错误报出
+        KnowledgePack::deserialize(value).map_err(|e| {
+            format!("internal: knowledge pack passed the checks but failed to parse: {e}")
+        })
     }
 
-    /// 解析共用的格式版本校验：schema 必须声明且不高于本库支持的版本。
-    fn validated(pack: KnowledgePack) -> Result<KnowledgePack, String> {
-        if pack.schema == 0 {
-            return Err("knowledge pack must declare \"schema\" (currently 1)".to_string());
-        }
-        if pack.schema > SCHEMA_VERSION {
-            return Err(format!(
-                "knowledge pack schema {} is newer than supported {SCHEMA_VERSION}",
-                pack.schema
-            ));
-        }
-        Ok(pack)
+    /// 校验一份包的 JSON 值，一次返回全部问题；详见 [`check`]。
+    pub fn check(raw: &serde_json::Value, base: Option<&KnowledgePack>) -> Vec<KnowledgeIssue> {
+        check(raw, base)
     }
 
     /// 序列化为 JSON。
@@ -720,18 +746,23 @@ mod tests {
         assert_eq!(base.star_intro(StarKey::ZiweiMaj), Some("底"));
     }
 
-    /// SCHEMA.md §2/§3/§6 的实现行为承诺：未知顶层字段静默丢弃、未知条目键保留但查询不到、
+    /// SCHEMA.md §2/§3/§6 的实现行为承诺：未知顶层字段静默丢弃、未知条目键拒绝、
     /// 覆盖包可新增条目、空字符串视为有值参与覆盖。
     #[test]
     fn schema_documented_behaviors_hold() {
         let p = KnowledgePack::from_json(
             r#"{"schema":1,"id":"x","version":"1","language":"zh-CN","futureField":{"a":1},
-                "stars":{"notAStar":{"intro":"未知键"},"ziweiMaj":{"intro":"已知键"}}}"#,
+                "stars":{"ziweiMaj":{"intro":"已知键"}}}"#,
         )
         .unwrap();
         assert!(!p.to_json().contains("futureField"), "未知顶层字段应被丢弃");
-        assert!(p.stars.contains_key("notAStar"), "未知条目键应被保留");
         assert_eq!(p.star_intro(StarKey::ZiweiMaj), Some("已知键"));
+        let err = KnowledgePack::from_json(
+            r#"{"schema":1,"id":"x","version":"1","language":"zh-CN",
+                "stars":{"notAStar":{"intro":"未知键"}}}"#,
+        )
+        .unwrap_err();
+        assert!(err.contains("stars.notAStar: unknown key"), "{err}");
         let overlay = KnowledgePack::from_json(
             r#"{"schema":1,"id":"o","version":"1","language":"zh-CN",
                 "stars":{"tianjiMaj":{"intro":"新增条目"},"ziweiMaj":{"intro":""}}}"#,
@@ -748,7 +779,6 @@ mod tests {
             Some(""),
             "空串视为有值并覆盖"
         );
-        assert!(m.stars.contains_key("notAStar"), "未知键参与合并后仍保留");
     }
 
     /// 覆盖包换了正文没给摘要，旧摘要随之去掉；正文没变或同时给了摘要则保留覆盖后的值。

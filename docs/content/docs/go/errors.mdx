@@ -16,6 +16,7 @@ description: "*Error 的 Code 分类、四个哨兵、触发条件与处理模�
 type Error struct {
     Code    string // 机器可读的类别，Code* 常量之一
     Message string // 错误描述原文（英文）
+    Issues  []KnowledgeIssue // 知识包解析被拒绝时的全部校验问题，其余错误为 nil
 }
 
 func (e *Error) Error() string   // 返回 "iztro: " + Message

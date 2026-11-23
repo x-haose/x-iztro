@@ -6,16 +6,14 @@
  * 使用者可整包替换，或用覆盖包逐条合并；合并在内核完成，各语言绑定规则一致。
  */
 
-import { invalidArgument } from './errors.js';
+import { IztroError } from './errors.js';
 import type { Language } from './enums.js';
 import { chartQuery, horoscopeQuery, packState, packStates } from './internal.js';
 import type { Astrolabe } from './astrolabe.js';
 import type { Horoscope } from './horoscope.js';
-import { query } from './runtime.js';
-import type { PatternConfig } from './types.js';
+import { finiteNumbers, query } from './runtime.js';
+import type { KnowledgeIssue, PatternConfig } from './types.js';
 
-/** 支持的知识包格式版本，与内核 `knowledge::SCHEMA_VERSION` 一致 */
-const SCHEMA_VERSION = 1;
 
 /** 包的来源与许可信息 */
 export interface Source {
@@ -139,19 +137,25 @@ export interface TopicEntry {
 
 type Raw = Record<string, unknown>;
 
-/** 包对象的格式校验，与内核解析同语义：非对象、未声明 schema、schema 比支持版本新都拒绝 */
-function validateSchema(raw: unknown): Raw {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    throw invalidArgument('knowledge pack must be a JSON object');
+/**
+ * 经内核解析：有 error 级问题时抛 `IztroError`（code 为 invalid_argument，全部问题挂在 `issues` 上），
+ * 否则返回内核规范化后的包对象（规范外的字段已丢弃、映射里的 null 已略去），四种语言对同一输入得到同一份包。
+ */
+function parsed(packJson: string): Raw {
+  const result = query('parseKnowledgePack', { packJson }) as { pack: Raw | null; issues: KnowledgeIssue[] };
+  if (result.pack === null) {
+    const errors = result.issues.filter((i) => i.level === 'error');
+    throw new IztroError('invalid_argument', `invalid knowledge pack: ${errors.map((i) => i.message).join('; ')}`, {
+      issues: result.issues,
+    });
   }
-  const schema = (raw as Raw).schema ?? 0;
-  if (typeof schema !== 'number' || !Number.isInteger(schema) || schema <= 0) {
-    throw invalidArgument('knowledge pack must declare "schema" (currently 1)');
-  }
-  if (schema > SCHEMA_VERSION) {
-    throw invalidArgument(`knowledge pack schema ${schema} is newer than supported ${SCHEMA_VERSION}`);
-  }
-  return raw as Raw;
+  return result.pack;
+}
+
+/** `KnowledgePack.check` 的选项 */
+export interface CheckOptions {
+  /** 它要叠加的底包；给出时另报相对底包的提醒，摘要规则按合并后的条目判断 */
+  base?: KnowledgePack | undefined;
 }
 
 /** 取包里某一段（stars、patterns……）的对象；缺段时为空对象 */
@@ -199,22 +203,36 @@ export class KnowledgePack {
   }
 
   /**
-   * 由包对象构造（保留引用，不复制）。
+   * 由包对象构造。先经 `check` 同一套规则校验，有 error 级问题即拒绝；构造出的包持有内核规范化后的副本
+   * （规范外的字段已丢弃、映射里的 null 已略去），之后改动 `raw` 不影响它。
    *
-   * @throws IztroError 未声明 schema 或格式版本过新（与内核解析同语义）
+   * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上。
+   *   含 NaN / ±Infinity 也报 invalid_argument（JSON 表示不了）
+   * @throws TypeError 包对象含 JSON 无法表示的值（如 BigInt、循环引用）
    */
   static fromObject(raw: object): KnowledgePack {
-    return new KnowledgePack(validateSchema(raw), undefined);
+    return new KnowledgePack(parsed(JSON.stringify(raw, finiteNumbers) ?? 'null'), undefined);
   }
 
   /**
-   * 由 JSON 文本构造。
+   * 由 JSON 文本构造，校验与规范化同 `fromObject`；JSON 语法非法是一条 `invalid_json` 问题。
    *
-   * @throws IztroError 非对象、未声明 schema 或格式版本过新
-   * @throws SyntaxError JSON 语法非法
+   * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上
    */
   static fromJSON(text: string): KnowledgePack {
-    return new KnowledgePack(validateSchema(JSON.parse(text)), undefined);
+    return new KnowledgePack(parsed(text), undefined);
+  }
+
+  /**
+   * 逐条校验一份包，一次返回全部问题（不在第一处停）。输入不是对象等也作为 error 级问题返回。
+   *
+   * @throws IztroError 包对象含 NaN / ±Infinity（invalid_argument：JSON 表示不了，不能悄悄当 null）
+   * @throws TypeError 包对象含 JSON 无法表示的值，或 `options.base` 不是本库构造的 KnowledgePack
+   */
+  static check(raw: unknown, options: CheckOptions = {}): KnowledgeIssue[] {
+    const packJson = JSON.stringify(raw, finiteNumbers) ?? 'null';
+    const basePack = options.base === undefined ? undefined : packState(options.base).raw;
+    return query('checkKnowledgePack', { packJson, basePack }) as KnowledgeIssue[];
   }
 
   /**
@@ -251,10 +269,13 @@ export class KnowledgePack {
    * 规则见 knowledge/SCHEMA.md：覆盖包的非空字段覆盖同键条目的对应字段，attributes / combinations
    * 逐字段合并，数组字段整体替换；覆盖条目换了正文却没给对应摘要时，合并结果去掉描述旧正文的摘要。
    *
-   * @throws IztroError 某个包不符合格式或格式版本过新
+   * @throws IztroError 某个覆盖包对象有 error 级问题（同 `fromObject`）
    */
   merged(...overlays: (KnowledgePack | object)[]): KnowledgePack {
-    const packs = [packState(this).raw, ...overlays.map((o) => (o instanceof KnowledgePack ? packState(o).raw : o))];
+    const packs = [
+      packState(this).raw,
+      ...overlays.map((o) => packState(o instanceof KnowledgePack ? o : KnowledgePack.fromObject(o)).raw),
+    ];
     return new KnowledgePack(query('mergeKnowledgePacks', { knowledgePacks: packs }) as Raw, undefined);
   }
 

@@ -17,15 +17,12 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from x_iztro._bridge import invalid_argument
-from x_iztro.enums import LanguageType
+from x_iztro.enums import KnowledgeIssueCode, LanguageType
 
 if TYPE_CHECKING:
     from x_iztro.astrolabe import Astrolabe
     from x_iztro.horoscope import Horoscope
     from x_iztro.pattern import PatternConfig
-
-_SCHEMA_VERSION = 1
-"""支持的知识包格式版本，与 Rust 内核 `knowledge::SCHEMA_VERSION` 一致"""
 
 _BUILTIN = "builtin"
 """绑定层 `knowledge` 入参的字面量：让内核取盘语言的内嵌包，不搬整包"""
@@ -48,22 +45,63 @@ def _wire(knowledge: bool | KnowledgePack | None, language: str) -> str | dict[s
     raise TypeError(f"knowledge 须为 True 或 KnowledgePack，收到 {type(knowledge).__name__}")
 
 
-def _validate_schema(raw: object) -> dict[str, Any]:
-    """
-    校验包对象的格式版本，与 Rust 内核解析（`KnowledgePack::from_json`）同语义：
-    非对象、未声明 `schema`、`schema` 比支持版本新都拒绝。
+@dataclass(frozen=True, slots=True)
+class KnowledgeIssue:
+    """知识包校验的一条问题（`KnowledgePack.check`）"""
 
-    Raises:
-        IztroError: 不符合格式（code 为 invalid_argument）
+    level: str
+    """`"error"`：违反规范的「必须 / 不得」或内核用到该处时会失败，构造知识包时拒绝；
+    `"warning"`：「应 / 不应」、被丢弃的字段、启发式匹配与相对底包的提醒，只报告"""
+
+    path: tuple[str | int, ...]
+    """问题所在的 JSON 路径：对象键为 str、数组下标为 int；空元组指包本身"""
+
+    code: KnowledgeIssueCode
+    """问题种类，出处与 `params` 的键见文档站「知识包 · 校验」"""
+
+    params: dict[str, Any]
+    """补充数据，如 `{"key": "ziweiMjj", "suggestion": "ziweiMaj"}`"""
+
+    message: str
+    """带路径的英文说明，供日志；界面应按 `code` 与 `params` 组织文案"""
+
+    @classmethod
+    def _from_dict(cls, d: dict[str, Any]) -> KnowledgeIssue:
+        return cls(
+            level=d["level"],
+            path=tuple(d["path"]),
+            code=KnowledgeIssueCode(d["code"]),
+            params=d["params"],
+            message=d["message"],
+        )
+
+
+def _pack_json(raw: Any) -> str:
     """
-    if not isinstance(raw, dict):
-        raise invalid_argument("knowledge pack must be a JSON object")
-    schema = raw.get("schema", 0)
-    if not isinstance(schema, int) or isinstance(schema, bool) or schema <= 0:
-        raise invalid_argument('knowledge pack must declare "schema" (currently 1)')
-    if schema > _SCHEMA_VERSION:
-        raise invalid_argument(f"knowledge pack schema {schema} is newer than supported {_SCHEMA_VERSION}")
-    return raw
+    包对象的 JSON 文本。NaN / ±Infinity 在 JSON 里表示不了，抛 `IztroError`（invalid_argument），
+    与 JavaScript 一致；其余 JSON 表示不了的值由 `json.dumps` 抛 `TypeError`。
+    """
+    try:
+        return json.dumps(raw, ensure_ascii=False, allow_nan=False)
+    except ValueError as e:
+        raise invalid_argument(f"knowledge pack must not contain NaN or Infinity: {e}") from e
+
+
+def _parsed(pack_json: str) -> dict[str, Any]:
+    """
+    经内核解析：有 error 级问题时抛 `IztroError`（code 为 invalid_argument，全部问题挂在 `issues` 属性上），
+    否则返回内核规范化后的包对象（规范外的字段已丢弃、映射里的 null 已略去），四种语言对同一输入得到同一份包。
+    """
+    from x_iztro._bridge import query
+
+    result = query("parseKnowledgePack", pack_json=pack_json)
+    issues = [KnowledgeIssue._from_dict(i) for i in result["issues"]]
+    if result["pack"] is None:
+        errors = [i for i in issues if i.level == "error"]
+        err = invalid_argument("invalid knowledge pack: " + "; ".join(i.message for i in errors))
+        err.issues = issues
+        raise err
+    return result["pack"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,23 +389,47 @@ class KnowledgePack:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> KnowledgePack:
         """
-        由包对象构造（保留引用，不复制）。
+        由包对象构造。先经 `check` 同一套规则校验，有 error 级问题即拒绝；构造出的包持有内核规范化后的副本
+        （规范外的字段已丢弃、映射里的 null 已略去），之后改动 `d` 不影响它。
 
         Raises:
-            IztroError: 未声明 `schema` 或格式版本过新（与内核解析同语义）
+            IztroError: 有 error 级问题（code 为 invalid_argument）；全部问题在异常的 `issues` 属性里
+            TypeError: `d` 含 JSON 无法表示的值
         """
-        return cls(_validate_schema(d))
+        return cls(_parsed(_pack_json(d)))
 
     @classmethod
     def from_json(cls, text: str) -> KnowledgePack:
         """
-        由 JSON 文本构造。
+        由 JSON 文本构造，校验与规范化同 `from_dict`；JSON 语法非法是一条 `invalid_json` 问题。
 
         Raises:
-            IztroError: 非对象、未声明 `schema` 或格式版本过新（与内核解析同语义）
-            json.JSONDecodeError: JSON 语法非法
+            IztroError: 有 error 级问题（code 为 invalid_argument）；全部问题在异常的 `issues` 属性里
         """
-        return cls(_validate_schema(json.loads(text)))
+        return cls(_parsed(text))
+
+    @staticmethod
+    def check(raw: Any, *, base: KnowledgePack | None = None) -> list[KnowledgeIssue]:
+        """
+        逐条校验一份包，一次返回全部问题（不在第一处停）。输入不是对象等也作为 error 级问题返回。
+
+        Args:
+            raw: 待校验的包对象（通常是 `json.load` 的结果）
+            base: 它要叠加的底包；给出时另报相对底包的提醒（空串覆盖底包的值、语言或 `extends`
+                与底包不符），摘要规则按合并后的条目判断
+
+        Raises:
+            IztroError: `raw` 含 NaN / ±Infinity（invalid_argument，JSON 表示不了）
+            TypeError: `raw` 含其他 JSON 无法表示的值，或 `base` 不是 KnowledgePack
+        """
+        from x_iztro._bridge import query
+
+        if base is not None and not isinstance(base, KnowledgePack):
+            raise TypeError(f"base 须为 KnowledgePack，收到 {type(base).__name__}")
+        params: dict[str, Any] = {"pack_json": _pack_json(raw)}
+        if base is not None:
+            params["base_pack"] = base._raw
+        return [KnowledgeIssue._from_dict(i) for i in query("checkKnowledgePack", **params)]
 
     def to_dict(self) -> dict[str, Any]:
         """包对象的深拷贝"""
@@ -387,11 +449,13 @@ class KnowledgePack:
         对应摘要时，合并结果去掉描述旧正文的摘要。
 
         Raises:
-            IztroError: 某个包不符合格式或格式版本过新
+            IztroError: 某个覆盖包对象有 error 级问题（同 `from_dict`）
         """
         from x_iztro._bridge import query
 
-        packs = [self._raw] + [o._raw if isinstance(o, KnowledgePack) else o for o in overlays]
+        packs = [self._raw] + [
+            (o if isinstance(o, KnowledgePack) else KnowledgePack.from_dict(o))._raw for o in overlays
+        ]
         return KnowledgePack(query("mergeKnowledgePacks", knowledge_packs=packs))
 
     # ------ 元信息 ------

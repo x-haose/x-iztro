@@ -23,6 +23,8 @@ The message is the core's English text and may be reworded between versions; bra
 | `internal` | Core failed to load, the core stopped mid-call, or a defect in the library | `init()` cannot fetch or compile the wasm; a trap, stack overflow or corrupt result buffer during a call |
 
 The same values as Rust's `IztroError::code()`, Python's `IztroError.code` and Go's `iztro.Error.Code`.
+When a knowledge pack is rejected (`KnowledgePack.fromObject` and the like) the error also carries `issues`, the full
+list of check issues, see [Knowledge · check](/en/docs/js/knowledge#check); for every other error `issues` is `undefined`.
 
 ```ts
 for (const call of [

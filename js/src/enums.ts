@@ -819,6 +819,66 @@ export const KnowledgeDepth = {
 /** 语义化文本的释义深度（`toText({ knowledgeDepth })`，给了 `knowledge` 才有意义） */
 export type KnowledgeDepth = (typeof KnowledgeDepth)[keyof typeof KnowledgeDepth];
 
+/** 知识包校验问题的种类（`KnowledgeIssue.code`）；级别与出处见文档站「知识包 · 校验」 */
+export const KnowledgeIssueCode = {
+  /** 文本不是合法 JSON */
+  INVALID_JSON: 'invalid_json',
+  /** 包或条目不是 JSON 对象 */
+  NOT_OBJECT: 'not_object',
+  /** schema 缺失、为 null 或 0 */
+  SCHEMA_MISSING: 'schema_missing',
+  /** schema 比支持的版本新 */
+  SCHEMA_UNSUPPORTED: 'schema_unsupported',
+  /** 字段类型与规范不符 */
+  WRONG_TYPE: 'wrong_type',
+  /** id / version / language 缺失或为空串 */
+  REQUIRED_MISSING: 'required_missing',
+  /** language 不是 x-iztro 语言码 */
+  UNKNOWN_LANGUAGE: 'unknown_language',
+  /** 条目键不是内核认识的标识 */
+  UNKNOWN_KEY: 'unknown_key',
+  /** 双星组合的键不是主星 */
+  COMBINATION_KEY_NOT_MAJOR: 'combination_key_not_major',
+  /** category / yinYang / fiveElements / stem 取值不在规定集合内 */
+  INVALID_VALUE: 'invalid_value',
+  /** 术语或主题的 slug 含小写字母、数字、连字符以外的字符 */
+  INVALID_SLUG: 'invalid_slug',
+  /** 主题的宫位不认识 */
+  UNKNOWN_PALACE: 'unknown_palace',
+  /** 正文含 HTML 标签 */
+  HTML_IN_TEXT: 'html_in_text',
+  /** 正文含图片 */
+  IMAGE_IN_TEXT: 'image_in_text',
+  /** 正文含站外链接 */
+  EXTERNAL_LINK: 'external_link',
+  /** 规范之外的字段，解析时被丢弃 */
+  UNKNOWN_FIELD: 'unknown_field',
+  /** 字段为空字符串 */
+  EMPTY_STRING: 'empty_string',
+  /** 正文超过 240 宽却没有摘要 */
+  SUMMARY_MISSING: 'summary_missing',
+  /** 正文不超过 240 宽却另写了摘要 */
+  SUMMARY_NOT_NEEDED: 'summary_not_needed',
+  /** 摘要超过 100 宽 */
+  SUMMARY_TOO_WIDE: 'summary_too_wide',
+  /** 摘要不是单段 */
+  SUMMARY_MULTI_PARAGRAPH: 'summary_multi_paragraph',
+  /** 摘要没有对应的正文 */
+  SUMMARY_WITHOUT_BODY: 'summary_without_body',
+  /** 正文依赖页面上下文 */
+  PAGE_REFERENCE: 'page_reference',
+  /** 主题一个宫都不取 */
+  TOPIC_WITHOUT_PALACES: 'topic_without_palaces',
+  /** 以空串覆盖底包里有值的字段 */
+  OVERRIDES_WITH_EMPTY: 'overrides_with_empty',
+  /** 语言与底包不同 */
+  LANGUAGE_DIFFERS_FROM_BASE: 'language_differs_from_base',
+  /** extends 与底包的 id 不同 */
+  EXTENDS_DIFFERS_FROM_BASE: 'extends_differs_from_base',
+} as const;
+/** 知识包校验问题的种类（`KnowledgeIssue.code`） */
+export type KnowledgeIssueCode = (typeof KnowledgeIssueCode)[keyof typeof KnowledgeIssueCode];
+
 /** 五行局标识 → 局数 2-6，与数据表 `data.constants().fiveElementsClass` 同源 */
 export const FIVE_ELEMENTS_CLASS_NUMBER: Readonly<Record<FiveElementsClass, number>> = {
   water2nd: 2,

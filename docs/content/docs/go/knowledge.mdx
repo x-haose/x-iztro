@@ -142,9 +142,10 @@ iztro: no builtin knowledge pack for language 'en-US' true
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 ```
 
-**返回值**　`(*KnowledgePack, error)`。JSON 不合法、`schema` 缺失或为 0、
-`schema` 高于本库支持的版本，都返回 `ErrInvalidArgument` 类的错误——
-与 Rust 内核解析（`KnowledgePack::from_json`）同语义。
+**返回值**　`(*KnowledgePack, error)`。先经 [`CheckKnowledgePack`](#checkknowledgepack) 校验，
+有 error 级问题（JSON 非法、缺 `schema`、缺 `id` / `version` / `language`、字段类型不符、未知标识、正文含 HTML 等）
+即返回 `ErrInvalidArgument` 类的 `*Error`，信息逐条列出全部 error 级问题，`Issues` 字段是完整的问题列表（含 warning）。
+与 Rust 内核解析（`KnowledgePack::from_json`）同语义；结构体取自内核规范化后的包（规范外字段丢弃、映射里的 `null` 略去、键区分大小写），不直接用 `encoding/json` 解原文——后者不分大小写收键。另有 `ParseKnowledgePackContext`。
 
 序列化直接用 `encoding/json`：
 
@@ -166,17 +167,72 @@ fmt.Println(overlay.ID, overlay.Extends)
 
 _, err = iztro.ParseKnowledgePack([]byte("nope"))
 fmt.Println(err)
-_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99,"id":"x","version":"1","language":"zh-CN"}`))
 fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":1,"id":"x","version":"1","language":"zh-CN","stars":{"ziweiMjj":{}}}`))
+var e *iztro.Error
+if errors.As(err, &e) {
+    fmt.Println(e.Issues[0].Code, e.Issues[0].Path)
+}
 ```
 
 **输出**
 
 ```text
 my-school iztro-docs
-iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
-iztro: knowledge pack schema 99 is newer than supported 1
+iztro: invalid knowledge pack: (pack): invalid JSON: expected ident at line 1 column 2
+iztro: invalid knowledge pack: schema: knowledge pack schema 99 is newer than supported 1
+unknown_key [stars ziweiMjj]
 ```
+---
+
+## CheckKnowledgePack
+
+**用途**　逐条校验一份包的 JSON 文本，一次返回全部问题。规则、级别与全部问题种类见
+[知识包指南 · 校验一份包](/zh/docs/guide/guides/knowledge-pack#校验一份包)。
+
+**签名**
+
+```go
+func CheckKnowledgePack(data []byte, base *KnowledgePack) ([]KnowledgeIssue, error)
+func CheckKnowledgePackContext(ctx context.Context, data []byte, base *KnowledgePack) ([]KnowledgeIssue, error)
+
+type KnowledgeIssue struct {
+    Level   string         // "error" / "warning"
+    Path    IssuePath      // []any：对象键为 string、数组下标为 int
+    Code    string         // Issue* 常量之一，如 IssueUnknownKey
+    Params  map[string]any
+    Message string         // 带点分路径的英文说明
+}
+```
+
+文本非法、不是对象都作为问题返回；返回的 `error` 只表示调用失败（`base` 本身不合法、wasm 故障），不表示包有问题。
+`base` 非 nil 时另报相对底包的提醒，摘要规则按合并后的条目判断。
+
+**示例**
+
+```go
+base, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+issues, err := iztro.CheckKnowledgePack([]byte(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`), base)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+**输出**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
 
 ---
 

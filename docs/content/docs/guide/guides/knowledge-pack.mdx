@@ -508,6 +508,169 @@ console.log(pack.patternIntro(PatternKey.ZI_FU_TONG_GONG));
 所以各侧的合并结果逐字节一致，不会各写各的规则。
 </Callout>
 
+## 校验一份包
+
+导入别人写的包、或发布自己的包之前，用 `check` 逐条列出不合规范的地方：每条带级别、JSON 路径、
+代码与参数，一次返回全部问题，不在第一处停。输入不是对象、JSON 非法也作为问题返回，不抛异常；
+只有用法错误（如底包不是 `KnowledgePack`、对象里有 JSON 表示不了的值）才抛。
+
+<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tab value="Rust">
+
+```rust
+use x_iztro::{KnowledgePack, Language};
+
+let raw: serde_json::Value = serde_json::from_str(r#"{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}"#)?;
+let base = KnowledgePack::builtin(Language::ZhCN).unwrap();
+for issue in KnowledgePack::check(&raw, Some(base)) {
+    println!("{} {issue}", issue.level.as_key());
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="Python">
+
+```python
+import json
+from x_iztro import KnowledgePack
+
+raw = json.loads('''{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}''')
+for issue in KnowledgePack.check(raw, base=KnowledgePack.builtin()):
+    print(issue.level, issue.message)
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="Go">
+
+```go
+base, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+issues, err := iztro.CheckKnowledgePack([]byte(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`), base)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+<Tab value="JavaScript">
+
+```js
+import { KnowledgePack } from 'x-iztro';
+
+const raw = JSON.parse(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`);
+for (const issue of KnowledgePack.check(raw, { base: KnowledgePack.builtin() })) {
+  console.log(issue.level, issue.message);
+}
+```
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
+</Tab>
+</Tabs>
+
+每条问题的字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| `level` | `error` 或 `warning`，见下 |
+| `path` | JSON 路径：对象键为字符串、数组下标为数字；空路径指包本身 |
+| `code` | 问题种类，见下表 |
+| `params` | 补充数据，键随 `code` 而定；`suggestion` 是最接近的已知标识，见下文 |
+| `message` | 带点分路径的英文说明，供日志；界面请按 `code` 与 `params` 组织文案 |
+
+给了底包时，另报相对底包的提醒（空串覆盖底包的值、语言或 `extends` 与底包不符），
+摘要规则按「合并到底包之后」的条目判断——覆盖包换了长正文却没给摘要，底包的旧摘要会在合并时失效，
+因此同样报缺摘要。没给底包而包声明了 `extends` 时，只凭这一份判断不了正文与摘要是否成对、
+主题取哪些宫，这两类不报。
+
+### 级别与构造
+
+- **error**：违反规范的「必须 / 不得」，或内核用到该处时会失败。构造知识包的入口（Rust `from_json` /
+  `from_value`，Python `from_dict` / `from_json`，Go `ParseKnowledgePack`，JavaScript `fromObject` /
+  `fromJSON`，以及 `merged` 收到的覆盖包对象）遇到 error 级问题即拒绝，报 `invalid_argument`，
+  信息逐条列出全部 error 级问题；Python、JavaScript 的异常与 Go 的 `*Error` 另带 `issues`，即完整的问题列表。
+- **warning**：「应 / 不应」、解析时被丢弃的字段、按字面匹配的启发式规则，以及相对底包的提醒。只报告，不拒绝。
+
+### 问题种类
+
+出处一栏的 § 指仓库里的 `knowledge/SCHEMA.md`；「默认包测试」指 `tests/knowledge_pack.rs` 对内嵌默认包的断言。
+`suggestion?` 表示可能没有。
+
+| code | 级别 | 含义 | 出处 | params |
+| --- | --- | --- | --- | --- |
+| `invalid_json` | error | 文本不是合法 JSON（只有收文本的入口会报） | §7 | `message` |
+| `not_object` | error | 包或条目不是 JSON 对象 | §2 | — |
+| `schema_missing` | error | `schema` 缺失、为 null 或 0 | §2、§7「缺失或为 0 的包必须被拒绝」 | — |
+| `schema_unsupported` | error | `schema` 比本库支持的版本新 | §7 | `value`、`supported` |
+| `wrong_type` | error | 字段类型不符 | §2、§4 各表的类型 | `expected` |
+| `required_missing` | error | `id` / `version` / `language` 缺失或为空串 | §2「必须」 | — |
+| `unknown_language` | error | `language` 不是 x-iztro 语言码 | §2 | `value`、`suggestion`? |
+| `unknown_key` | error | 条目键（含双星组合的对方星）不是内核认识的标识 | §3；默认包测试逐段断言键合法 | `key`、`suggestion`? |
+| `combination_key_not_major` | error | 双星组合的对方是星耀标识但不是主星 | §4.1「键为对方主星」 | `key` |
+| `invalid_value` | error | `category`、`yinYang`、`fiveElements`、`stem` 取值不在规定集合内 | §4.1、§4.1.1 的取值 | `value`、`allowed`、`suggestion`? |
+| `invalid_slug` | error | 术语或主题的 slug 含小写字母、数字、连字符以外的字符 | §4.4、§4.5 | `key` |
+| `unknown_palace` | error | 主题的宫位不是宫位标识、`bodyPalace` 或 `originalPalace` | §4.5；生成主题文本即报错 | `value`、`suggestion`? |
+| `html_in_text` | error | 正文含 HTML 标签或注释 | §5「不得使用 HTML 标签」 | `snippet` |
+| `image_in_text` | error | 正文含 Markdown 图片 | §5「不得使用图片」 | `snippet` |
+| `external_link` | error | 正文含 `http(s)://` 网址或 `](//` 链接（裸网址渲染时也成链接） | §5「不得使用站外链接」 | `url` |
+| `unknown_field` | warning | 规范之外的字段，解析时被丢弃 | §2、§7 实现行为：静默丢弃 | `suggestion`? |
+| `empty_string` | warning | 字段为空字符串 | §4「不得用空字符串表达缺省」 | — |
+| `summary_missing` | warning | 正文宽度超过 240 却没有摘要（请求摘要层时内核报错） | §5.1「应」写摘要 | `width`、`limit` |
+| `summary_not_needed` | warning | 正文宽度不超过 240 却另写了摘要 | §5.1「不应」另写摘要 | `width`、`limit` |
+| `summary_too_wide` | warning | 摘要宽度超过 100 | §5.1「应」不超过 100 | `width`、`limit` |
+| `summary_multi_paragraph` | warning | 摘要不是单段 | §5.1「应为单段」 | — |
+| `summary_without_body` | warning | 摘要没有对应的正文 | §5.1 正文与摘要成对；默认包测试 | — |
+| `page_reference` | warning | 正文含「见上表」「详见」「点击」等页面引用 | §5「不得依赖页面上下文」（字面匹配） | `phrase` |
+| `topic_without_palaces` | warning | 主题一个宫都不取 | 默认包测试：每个主题至少取一宫 | — |
+| `overrides_with_empty` | warning | 以空串覆盖底包里有值的字段（给了底包才报） | §4、§6.1：空串视为有值并覆盖 | `base` |
+| `language_differs_from_base` | warning | 语言与底包不同（给了底包才报） | §6.2：合并取覆盖包的语言 | `value`、`base` |
+| `extends_differs_from_base` | warning | `extends` 与底包的 `id` 不同（给了底包才报） | §2：`extends` 声明底包的 `id` | `value`、`base` |
+
+HTML、图片、站外链接与页面引用只查 SCHEMA §5 列出的正文类字段（各条目的 `intro`、`summary`、`conditions` 与两个组合映射的值），
+行内代码（按 CommonMark：转义的反引号不作开头，不跨空行）里的内容不算；古籍引文 `quotes` 是逐字转录的纯文本，不查。内嵌默认包校验结果为空。
+
+### 最接近的标识
+
+`unknown_key`、`unknown_language`、`unknown_palace`、`invalid_value` 与 `unknown_field` 在找得到时给出
+`suggestion`：先找只差大小写的候选（语言码还接受下划线写法，`zh_cn` 提示 `zh-CN`）；否则取编辑距离最小者。
+距离按插入、删除、替换、相邻两字换位各计 1（换位是标识拼写最常见的手误，`ziwieMaj` 与 `ziweiMaj` 距离为 1），
+上限为写错的词长度的三分之一（不足 3 个字符按 3 算），与 rustc 提示「找不到名字」时的阈值相同；
+超过上限不给提示，免得把无关的词凑成建议。同距离取标识表里靠前的。
+
+### 口吻红线只取一部分
+
+默认包有一条口吻红线测试，禁止「读者」「大家肯定」「韭菜」「见上表」「点击」等写法。其中指向页面布局与站点功能的
+那部分（「见上表」「下表中」「前面提到」「详见」「参见」「本站」「点击」等）落在规范 §5「不得依赖页面上下文」上，
+对任何包都成立，`page_reference` 只查这部分，且是字面匹配，定为 warning。其余的口语与对话残留是默认包
+「第三人称释义口吻」（§8）的写法要求，规范没有要求用户包采用，不查。
+
 ## 合并规则
 
 以底包为底，逐段（`stars` / `patterns` / `palaces` / `mutagens` / `concepts`）按键合并：

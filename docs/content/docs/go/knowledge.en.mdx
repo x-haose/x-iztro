@@ -148,9 +148,11 @@ iztro: no builtin knowledge pack for language 'en-US' true
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 ```
 
-**Returns**　`(*KnowledgePack, error)`. Invalid JSON, a missing or zero `schema`, and a `schema`
-newer than this library supports all return an `ErrInvalidArgument`-class error — the same
-semantics as the Rust core's parser (`KnowledgePack::from_json`).
+**Returns**　`(*KnowledgePack, error)`. It runs [`CheckKnowledgePack`](#checkknowledgepack) first; any
+error-level issue (invalid JSON, missing `schema`, missing `id` / `version` / `language`, wrong field types, unknown
+keys, HTML in text and so on) returns an `ErrInvalidArgument`-class `*Error` listing every error-level issue, whose
+`Issues` field is the full list, warnings included. The same semantics as the Rust core's parser
+(`KnowledgePack::from_json`); the struct is decoded from the core's normalized pack (fields outside the spec dropped, `null` values in maps left out, keys case-sensitive) rather than from the original text with `encoding/json`, which matches keys case-insensitively. `ParseKnowledgePackContext` also exists.
 
 Serializing is plain `encoding/json`:
 
@@ -172,17 +174,73 @@ fmt.Println(overlay.ID, overlay.Extends)
 
 _, err = iztro.ParseKnowledgePack([]byte("nope"))
 fmt.Println(err)
-_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99}`))
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":99,"id":"x","version":"1","language":"zh-CN"}`))
 fmt.Println(err)
+_, err = iztro.ParseKnowledgePack([]byte(`{"schema":1,"id":"x","version":"1","language":"zh-CN","stars":{"ziweiMjj":{}}}`))
+var e *iztro.Error
+if errors.As(err, &e) {
+    fmt.Println(e.Issues[0].Code, e.Issues[0].Path)
+}
 ```
 
 **Output**
 
 ```text
 my-school iztro-docs
-iztro: invalid knowledge pack: invalid character 'o' in literal null (expecting 'u')
-iztro: knowledge pack schema 99 is newer than supported 1
+iztro: invalid knowledge pack: (pack): invalid JSON: expected ident at line 1 column 2
+iztro: invalid knowledge pack: schema: knowledge pack schema 99 is newer than supported 1
+unknown_key [stars ziweiMjj]
 ```
+---
+
+## CheckKnowledgePack
+
+**Purpose**　Check a pack's JSON text issue by issue, returning every issue at once. The rules, levels and all
+issue codes are in [Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack).
+
+**Signature**
+
+```go
+func CheckKnowledgePack(data []byte, base *KnowledgePack) ([]KnowledgeIssue, error)
+func CheckKnowledgePackContext(ctx context.Context, data []byte, base *KnowledgePack) ([]KnowledgeIssue, error)
+
+type KnowledgeIssue struct {
+    Level   string         // "error" / "warning"
+    Path    IssuePath      // []any: object keys as string, array indexes as int
+    Code    string         // one of the Issue* constants, e.g. IssueUnknownKey
+    Params  map[string]any
+    Message string         // English description with the dotted path
+}
+```
+
+Text that does not parse or is not an object comes back as an issue; the returned `error` only means the call
+failed (an invalid `base`, a wasm fault), never that the pack has problems. With a non-nil `base`, base-relative
+reminders are reported too and the summary rules judge the merged entry.
+
+**Example**
+
+```go
+base, err := iztro.BuiltinKnowledgePack(iztro.LanguageZhCN)
+if err != nil {
+    log.Fatal(err)
+}
+issues, err := iztro.CheckKnowledgePack([]byte(`{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}`), base)
+if err != nil {
+    log.Fatal(err)
+}
+for _, issue := range issues {
+    fmt.Println(issue.Level, issue.Message)
+}
+```
+
+**Output**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
+```
+
 
 ---
 

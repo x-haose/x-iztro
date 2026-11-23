@@ -22,6 +22,8 @@ import { IztroError } from 'x-iztro';
 | `internal` | 内核装载失败、内核执行中断或库内部缺陷 | `init()` 取不到或编不了 wasm；调用中 trap、栈溢出或结果缓冲损坏 |
 
 与 Rust 的 `IztroError::code()`、Python 的 `IztroError.code`、Go 的 `iztro.Error.Code` 是同一套取值。
+知识包构造（`KnowledgePack.fromObject` 等）被拒绝时，错误另带 `issues`，是完整的校验问题列表，见[知识包 · check](/zh/docs/js/knowledge#check)；
+其余错误的 `issues` 为 `undefined`。
 
 ```ts
 for (const call of [

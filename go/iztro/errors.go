@@ -44,6 +44,8 @@ type Error struct {
 	Code string
 	// Message 为错误描述原文，如 "invalid gender 'x': expected 'male' or 'female'"
 	Message string
+	// Issues 为知识包解析（ParseKnowledgePack）被拒绝时的全部校验问题，含 warning；其余错误为 nil
+	Issues []KnowledgeIssue
 }
 
 // Error 返回 "iztro: " 前缀加错误描述。

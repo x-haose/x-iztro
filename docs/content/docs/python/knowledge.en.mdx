@@ -44,7 +44,7 @@ Holds the raw pack object (a dict); the lookups return typed entries.
 | Method | Meaning |
 | --- | --- |
 | `KnowledgePack.builtin(language="zh-CN")` | The bundled default pack |
-| `KnowledgePack.from_dict(d)` | Build from a pack object (holds the reference, no copy) |
+| `KnowledgePack.from_dict(d)` | Build from a pack object (checked, then holds the core's normalized copy) |
 | `KnowledgePack.from_json(text)` | Build from JSON text |
 | `to_dict()` | A deep copy of the pack object |
 | `to_json(**kwargs)` | JSON text; `kwargs` are passed through to `json.dumps` |
@@ -171,15 +171,16 @@ def to_json(self, **kwargs: Any) -> str
 
 **Notes**
 
-- `from_dict` holds the dict you pass without copying: mutating that dict afterwards changes the
-  pack. To isolate them, `copy.deepcopy` first or go through `from_json`.
+- The pack holds the core's normalized copy: fields outside the spec dropped, `null` values in maps left out, so
+  later changes to the dict you passed do not affect it, and all four languages build the same pack from the same
+  input. A JSON syntax error in `from_json` is likewise an `invalid_json` issue and raises `IztroError`.
 - `to_dict` returns a deep copy, so changing it never touches the pack.
 - `to_json` defaults `ensure_ascii` to `False` (Chinese stays readable); the remaining `kwargs` go
   straight to `json.dumps`, e.g. `pack.to_json(indent=2)`.
-- Both constructors **validate the format version**, with the same semantics as the Rust core's
-  parser: a non-object, a missing or zero `schema`, or a `schema` newer than this library supports
-  raises `IztroError` (`invalid_argument`). The structure is not deep-checked: an unrecognised
-  field simply yields nothing.
+- Both constructors run [`check`](#check) first and raise `IztroError` (`invalid_argument`) on any error-level
+  issue (missing `schema`, missing `id` / `version` / `language`, wrong field types, unknown keys, HTML in text and
+  so on), listing every error-level issue in the message; the exception's `issues` attribute is the full list,
+  warnings included. Warning-level issues do not affect construction.
 
 **Example**　`my-school.json` is an overlay pack; a complete sample is in the
 [knowledge pack guide](/en/docs/guide/guides/knowledge-pack#writing-an-overlay-pack):
@@ -193,6 +194,51 @@ print(overlay.id, overlay.extends)
 raw = overlay.to_dict()
 raw["stars"]["ziweiMaj"]["intro"] = "changed again"
 print(overlay.star_intro("ziweiMaj"))  # to_dict is a deep copy; the pack is untouched
+```
+
+---
+
+## check
+
+**Purpose**　Check a pack issue by issue, returning every issue at once. The rules, levels and all issue codes are
+in [Knowledge packs · Checking a pack](/en/docs/guide/guides/knowledge-pack#checking-a-pack).
+
+**Signature**
+
+```python
+@staticmethod
+def check(raw: Any, *, base: KnowledgePack | None = None) -> list[KnowledgeIssue]
+
+@dataclass(frozen=True)
+class KnowledgeIssue:
+    level: str                    # "error" / "warning"
+    path: tuple[str | int, ...]   # object keys as str, array indexes as int
+    code: KnowledgeIssueCode      # StrEnum, e.g. KnowledgeIssueCode.UNKNOWN_KEY
+    params: dict[str, Any]
+    message: str                  # English description with the dotted path
+```
+
+A `raw` that is not a dict (`None`, a list) comes back as a `not_object` issue. A `raw` holding `nan` / `inf` raises
+`IztroError` (`invalid_argument`: JSON cannot represent them); other values JSON cannot represent, or a `base` that is
+not a `KnowledgePack`, raise `TypeError`.
+
+**Example**
+
+```python
+import json
+from x_iztro import KnowledgePack
+
+raw = json.loads('''{"schema": 1, "id": "my-school", "version": "1", "language": "zh-CN", "extends": "iztro-docs",
+ "stars": {"ziweiMjj": {"intro": "本门认为……"}, "tianjiMaj": {"intor": "……"}}}''')
+for issue in KnowledgePack.check(raw, base=KnowledgePack.builtin()):
+    print(issue.level, issue.message)
+```
+
+**Output**
+
+```text
+warning stars.tianjiMaj.intor: unknown field, dropped when parsed (did you mean 'intro'?)
+error stars.ziweiMjj: unknown key 'ziweiMjj' (did you mean 'ziweiMaj'?)
 ```
 
 ---
