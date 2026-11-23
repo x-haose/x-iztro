@@ -244,6 +244,11 @@ The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
 - **Custom mutagen and brightness tables**: replace the built-in data wholesale, by key. See
   [Config in depth](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables).
 - **`all_keys`**: fetch all 260 translatable keys at once.
+- **Calendar lookups**: the months of a lunar year, Gregorian ↔ lunar conversion and the stem-branch of a
+  lunar year, on the same calendar core as charting. iztro leaves these to its dependency lunar-lite
+  (`solar2lunar`, `lunar2solar` and so on) rather than its own API; x-iztro takes integer year, month and day,
+  and a lunar-to-Gregorian conversion with no such leap month is an error instead of falling back to the
+  regular month as `lunar2solar` does. See "Calendar" under each of Rust, Python, Go and JavaScript / TypeScript.
 
 ## Numeric consistency
 

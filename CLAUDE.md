@@ -29,6 +29,7 @@ cargo build --release                    # 构建（含 cdylib + rlib）
 cargo test                               # 常规测试（~1min，含除 Tier 3 外的全部金标）
 cargo test --release --test golden_tier3 -- --ignored   # Tier 3 全量（586,430 例，~20s）
 cargo test --release --lib calendar -- --ignored        # 历法全量（公历 1-9999 年逐日，~10s，CI 也跑）
+cargo test --release --test calendar_api -- --ignored   # 历法查询入口全量（农历 1-9999 年逐日，~2s，CI 也跑）
 cargo test --release --test full_domain -- --ignored    # 1-9999 年每天排盘不报错（~10s）
 
 # Python 绑定
@@ -290,6 +291,13 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   每个「节」当天 13 个排盘时刻的月日时柱；默认层抽样约 140 年覆盖每条算法分支与易错年份，
   全量 `--ignored` 进 CI release）+ `full_domain`（每天可排盘，守「农历日期所在月在农历年月表里
   查得到天数」这条跨表不变量）
+- 对外的历法查询在 `astro/calendar.rs`（`lunar_months`、`solar_to_lunar`、`lunar_to_solar`、
+  `lunar_year_pillar`，bridge kind 同名 camelCase），只做入参校验与类型转换，取值全部来自 `calendar`。
+  报错口径：给完整日期的换算报 invalid_date（同 by_solar/by_lunar），只给年份的报 invalid_argument
+  （同 horoscope_of_year）；`lunar_to_solar` 没有这个闰月即报错，不学 by_lunar/iztro 退回常规月。
+  守护：`tests/calendar_api.rs` 对照 `calendar_api.csv`（`generate_calendar_api.mjs`：农历 1-9999 年
+  逐年的月份表、年干支与逐日农历→公历，并逐日检查公历换回原农历日期；默认层抽样，全量 `--ignored`
+  进 make check-rust）；Python、Go、JS 各按同一规则重建抽样年份的哈希
 - 排盘时刻一律用 `builder::chart_moment`（时辰首个整点后 `CHART_MINUTE`=30 分），与 lunar-lite 的
   `Solar.fromYmdHms(…, 30, 0)` 同刻——按节气取月柱是**时刻级**比较，用 0 分会让节气落在
   `HH:00`~`HH:30` 的日子判到另一侧、`horoscope_divide=Exact` 下月柱静默差一个月
@@ -340,7 +348,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 
 ### 测试
 - 全部金标数据由 JS iztro v2.6.3（版本锁定）生成，在 `tests/golden/` 下，零容忍差异
-- 历法层另行全量：公历 1-9999 年逐日 3,652,061 天、农历年月表与节气时刻逐年 9,999 年（`calendar.csv`）
+- 历法层另行全量：公历 1-9999 年逐日 3,652,061 天、农历年月表与节气时刻逐年 9,999 年（`calendar.csv`）；
+  历法查询入口按农历年逐日 9,999 年（`calendar_api.csv`）
 - 排盘层覆盖矩阵（合计 747,572 例；另有 i18n 反查 1,573 与契约 13）：tier1 全字段 1,560（60 年 × 13 时辰 × 男女，含 rawDates）/
   tier2 紧凑 37,440 / tier3 全日期×性别×fix_leap 哈希 586,430 /
   边界年代哈希 78,156（1-1551 每 50 年、1582、1583-1983 与 2044-2094 每 10 年、2100，另加儒略历特例日，

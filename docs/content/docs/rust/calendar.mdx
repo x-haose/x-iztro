@@ -1,0 +1,227 @@
+---
+title: 历法查询
+description: 农历年的月份表、公历与农历互换、农历年的年干支，与排盘同一份历法内核。
+---
+
+不排盘直接查历法：某个农历年有哪些月、各月大小、闰哪个月，公历与农历互换，农历年的年干支。
+与排盘同一份历法内核（逐函数移植自 lunar-typescript），结果与星盘的 `raw_dates.lunar_date`、年柱逐日一致，
+由 lunar-typescript 生成的金标按农历 1–9999 年逐日对照。
+
+支持公历与农历 1–9999 年。1582-10-15 以前按儒略历，1582-10-05 至 10-14 不存在。
+
+<Callout title="报错">
+给出完整日期的换算（`solar_to_lunar`、`lunar_to_solar`）在日期不存在时报 `IztroError::InvalidDate`，与排盘入口相同；
+只给年份的查询（`lunar_months`、`lunar_year_pillar`）在年份越界时报 `IztroError::InvalidArgument`，与按农历年取运限相同。
+</Callout>
+
+```rust
+use x_iztro::{lunar_months, lunar_to_solar, lunar_year_pillar, solar_to_lunar};
+```
+
+---
+
+## lunar_months
+
+**用途**　取农历某年的全部月份：月份、是否闰月、天数（大小月）与初一的公历日期。
+
+**签名**
+
+```rust
+pub fn lunar_months(year: i64) -> Result<Vec<LunarMonthInfo>, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年，1–9999 |
+
+**返回值**　`Vec<LunarMonthInfo>`，按时间先后排列，闰月紧跟在所闰的月之后。每项：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `month` | `u32` | 月份 1–12；闰月取所闰的月份，闰四月为 4 |
+| `is_leap` | `bool` | 是否闰月 |
+| `day_count` | `u32` | 天数：29（小月）或 30（大月） |
+| `first_day` | `RawSolarDate` | 初一的公历日期：`solar_year`、`solar_month`、`solar_day` |
+
+**示例**　2023 年闰二月：
+
+```rust
+for m in lunar_months(2023)?.iter().take(4) {
+    let d = m.first_day;
+    println!("{} {} {} {}-{}-{}", m.month, m.is_leap, m.day_count, d.solar_year, d.solar_month, d.solar_day);
+}
+```
+
+**输出**
+
+```text
+1 false 29 2023-1-22
+2 false 30 2023-2-20
+2 true 29 2023-3-22
+3 false 29 2023-4-20
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="不一定是 12 或 13 个月">
+个别古代年份与 lunar-typescript 一致地少一个月：农历 237 年只有 11 个月、没有三月。
+按 1–12 循环取月份时以返回的列表为准。
+</Accordion>
+<Accordion title="农历 9999 年的尾月落在公历 10000 年">
+农历 9999 年最后一两个月的初一在公历 10000 年，`first_day.solar_year` 为 10000。
+这些日子不能再交给公历入参的函数（排盘、`solar_to_lunar`），那边只收 1–9999 年。
+</Accordion>
+</Accordions>
+
+---
+
+## solar_to_lunar
+
+**用途**　公历日期换农历日期。
+
+**签名**
+
+```rust
+pub fn solar_to_lunar(year: i64, month: u32, day: u32) -> Result<RawLunarDate, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 公历年，1–9999 |
+| `month` | `u32` | 是 | — | 公历月，1–12 |
+| `day` | `u32` | 是 | — | 公历日 |
+
+**返回值**　`RawLunarDate`：`lunar_year`、`lunar_month`（1–12）、`lunar_day`、`is_leap`，与星盘的 `raw_dates.lunar_date` 同一类型。
+
+**示例**　2023-3-22 是闰二月初一：
+
+```rust
+let l = solar_to_lunar(2023, 3, 22)?;
+println!("{} {} {} {}", l.lunar_year, l.lunar_month, l.lunar_day, l.is_leap);
+```
+
+**输出**
+
+```text
+2023 2 1 true
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="公历 1 年年初属农历 0 年">
+公历 1 年 1 月初的几十天还在农历 0 年的冬月、腊月，返回的 `lunar_year` 为 0；
+这个 0 不能再交给只收 1–9999 年的农历入参。
+</Accordion>
+<Accordion title="改历空缺">
+1582-10-05 至 10-14 不存在（儒略历 10 月 4 日的次日是格里历 10 月 15 日），传入即报 `IztroError::InvalidDate`。
+</Accordion>
+</Accordions>
+
+---
+
+## lunar_to_solar
+
+**用途**　农历日期换公历日期。
+
+**签名**
+
+```rust
+pub fn lunar_to_solar(
+    year: i64,
+    month: u32,
+    day: u32,
+    is_leap: bool,
+) -> Result<RawSolarDate, IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 农历年，1–9999 |
+| `month` | `u32` | 是 | — | 农历月，1–12；闰月写所闰的月份 |
+| `day` | `u32` | 是 | — | 农历日，不超过当月天数 |
+| `is_leap` | `bool` | 是 | — | 这一天在闰月里 |
+
+**返回值**　`RawSolarDate`：`solar_year`、`solar_month`、`solar_day`。
+
+**示例**
+
+```rust
+let s = lunar_to_solar(2023, 2, 1, true)?;
+println!("{}-{}-{}", s.solar_year, s.solar_month, s.solar_day);
+
+// 2024 年没有闰二月：报错，不退回常规的二月
+let err = lunar_to_solar(2024, 2, 1, true).unwrap_err();
+println!("{}", err.code());
+```
+
+**输出**
+
+```text
+2023-3-22
+invalid_date
+```
+
+**边界与陷阱**
+
+<Accordions>
+<Accordion title="没有这个闰月就报错">
+`is_leap` 为真而该年不闰这个月时报 `IztroError::InvalidDate`。排盘入口（`by_lunar` 的 `LeapMonth`，与 iztro 相同）
+在这种情况下忽略闰月标记、按常规月排盘；历法换算不这样做，因为退回常规月得到的日期差一个月，却看不出错。
+</Accordion>
+<Accordion title="没有 fix_leap">
+排盘的 `LeapMonth::LeapFixed`（闰月十五之后视作次月）管的是星曜按哪个月安，不改变这一天是公历哪天，
+所以这里只有「是否闰月」一个参数。
+</Accordion>
+</Accordions>
+
+---
+
+## lunar_year_pillar
+
+**用途**　农历某年的年干支，返回天干与地支的语言无关标识。
+
+**签名**
+
+```rust
+pub fn lunar_year_pillar(year: i64) -> Result<(HeavenlyStem, EarthlyBranch), IztroError>
+```
+
+**参数**
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| `year` | `i64` | 是 | — | 年号，1–9999 |
+
+**返回值**　`(HeavenlyStem, EarthlyBranch)`。公历 4 年为甲子，此后按年号循环。
+
+**示例**
+
+```rust
+let (stem, branch) = lunar_year_pillar(2024)?;
+println!("{} {}", stem.as_key(), branch.as_key());
+```
+
+**输出**
+
+```text
+jiaHeavenly chenEarthly
+```
+
+**分界口径**　年干支只由年号决定，与 `year_divide` 无关；分界口径决定的是这一柱从哪天起算。
+排盘的年柱（`raw_dates.chinese_date.yearly`）按下表取对应年号的这一柱：
+
+| 口径 | 年号 N 的年干支管哪些日子 |
+| --- | --- |
+| 正月初一分界（`YearDivide::Normal`，默认） | 农历 N 年正月初一至除夕 |
+| 立春分界（`YearDivide::Exact`） | 公历 N 年立春当日至次年立春前一日 |
+
+以 2024 年为例：立春在 2-4，正月初一在 2-10。2-4 至 2-9 这几天正月初一分界下属癸卯（农历 2023 年），
+立春分界下属甲辰（年号 2024）。按日期取年柱时，先按口径定出年号，再取这一柱。
