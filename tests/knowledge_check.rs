@@ -180,3 +180,149 @@ fn bridge_kind_returns_issues_and_rejects_bad_base() {
         "{err}"
     );
 }
+
+/// 性质：check 没有 error 级问题的包，解析一定成功——check 与解析对每种形态的判断一致。
+/// 逐个位置（顶层、source、各段、条目、attributes、映射与数组元素）代入各种 JSON 形态逐一核对。
+#[test]
+fn packs_without_errors_always_parse() {
+    let shapes = [
+        json!(null),
+        json!(""),
+        json!("x"),
+        json!(1),
+        json!(-1),
+        json!(0),
+        json!(2),
+        json!(1.5),
+        json!(true),
+        json!([]),
+        json!(["a"]),
+        json!([null]),
+        json!([1]),
+        json!({}),
+        json!({"k": null}),
+        json!({"k": "x"}),
+        json!({"pojunMaj": null}),
+        json!({"pojunMaj": "x"}),
+        json!({"pojunMaj": 1}),
+        json!({"pojunMaj": {}}),
+    ];
+    let header = json!({"schema": 1, "id": "t", "version": "1", "language": "zh-CN"});
+    let mut places: Vec<Vec<&str>> = Vec::new();
+    for f in [
+        "schema", "id", "version", "language", "extends", "source", "stars", "patterns", "palaces",
+        "mutagens", "concepts", "topics", "extra",
+    ] {
+        places.push(vec![f]);
+    }
+    for f in [
+        "name",
+        "url",
+        "commit",
+        "license",
+        "author",
+        "retrievedAt",
+        "adapted",
+        "x",
+    ] {
+        places.push(vec!["source", f]);
+    }
+    let entries: [(&str, &str, &[&str]); 6] = [
+        (
+            "stars",
+            "ziweiMaj",
+            &[
+                "name",
+                "category",
+                "group",
+                "attributes",
+                "intro",
+                "summary",
+                "combinations",
+                "combinationSummaries",
+                "intor",
+            ],
+        ),
+        (
+            "patterns",
+            "zi_fu_tong_gong",
+            &["name", "quotes", "conditions", "intro", "summary", "x"],
+        ),
+        ("palaces", "soulPalace", &["name", "intro", "summary", "x"]),
+        ("mutagens", "sihuaLu", &["name", "intro", "summary", "x"]),
+        ("concepts", "a", &["title", "intro", "x"]),
+        (
+            "topics",
+            "t",
+            &["title", "surround", "palaces", "intro", "summary", "x"],
+        ),
+    ];
+    for (section, key, fields) in entries {
+        places.push(vec![section, key]);
+        for f in fields {
+            places.push(vec![section, key, f]);
+        }
+    }
+    for f in [
+        "yinYang",
+        "fiveElements",
+        "stem",
+        "fiveElementsNote",
+        "dipper",
+        "chemistry",
+        "career",
+        "duty",
+        "aliases",
+        "elementColor",
+        "energyColor",
+        "x",
+    ] {
+        places.push(vec!["stars", "ziweiMaj", "attributes", f]);
+    }
+    for f in ["combinations", "combinationSummaries"] {
+        places.push(vec!["stars", "ziweiMaj", f, "pojunMaj"]);
+    }
+
+    let mut mismatches = Vec::new();
+    for place in &places {
+        for shape in &shapes {
+            let mut pack = header.clone();
+            let mut slot = &mut pack;
+            for (i, seg) in place.iter().enumerate() {
+                if i + 1 == place.len() {
+                    slot[*seg] = shape.clone();
+                } else {
+                    if !slot.get(*seg).is_some_and(Value::is_object) {
+                        slot[*seg] = json!({});
+                    }
+                    slot = &mut slot[*seg];
+                }
+            }
+            let checked_ok = check(&pack, None)
+                .iter()
+                .all(|i| i.level != IssueLevel::Error);
+            let parsed = KnowledgePack::from_value(&pack);
+            if checked_ok != parsed.is_ok() {
+                mismatches.push(format!("{} = {shape}: {parsed:?}", place.join(".")));
+            }
+        }
+    }
+    assert!(mismatches.is_empty(), "\n{}", mismatches.join("\n"));
+}
+
+/// 共用的 parseCases：由原文构造出的包，四侧应是同一份。
+#[test]
+fn shared_parse_cases_build_the_same_pack() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/knowledge_check_cases.json"
+    );
+    let doc: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    for case in doc["parseCases"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let pack = KnowledgePack::from_json(case["packJson"].as_str().unwrap()).unwrap();
+        let star = &pack.stars[case["star"].as_str().unwrap()];
+        assert_eq!(star.intro.as_deref(), case["intro"].as_str(), "{name}");
+        assert_eq!(json!(star.combinations), case["combinations"], "{name}");
+    }
+}

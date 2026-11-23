@@ -94,7 +94,16 @@ except IztroError as e:
         print(issue.path, issue.code)
 ```
 
-Go's `ParseKnowledgePack` was pure Go in 0.8; in 0.9 it calls into the wasm core to check, and
-`ParseKnowledgePackContext` also exists.
+The pack holds the core's normalized copy, so all four languages build the same pack from the same input. That brings
+three more visible differences:
+
+- Python `from_dict` and JavaScript `fromObject` held a reference to the object you passed in 0.8 and hold a copy in
+  0.9: later changes to that object do not affect the pack, and fields outside the spec no longer appear in
+  `to_dict()` / `toJSON()`;
+- a JSON syntax error in Python `from_json` or JavaScript `fromJSON` raised `JSONDecodeError` / `SyntaxError` in 0.8
+  and is an `invalid_json` issue raising `IztroError` in 0.9;
+- Go's `ParseKnowledgePack` decoded the original text with `encoding/json` in 0.8, matching keys case-insensitively
+  (`"Intro"` was accepted); in 0.9 it calls into the wasm core and decodes the core's normalized pack, so keys are
+  case-sensitive, and `ParseKnowledgePackContext` also exists.
 
 The full list of changes is in the [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md).

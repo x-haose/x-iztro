@@ -1,5 +1,5 @@
 {
- "comment": "知识包校验的四侧共用用例：每条给出包（pack 为 JSON 值，packJson 为原文）、可选的底包（builtin 为内嵌默认包）与期望的全部问题；params 给出时逐键比对。由 Rust tests/knowledge_check.rs、Python test_knowledge_check.py、Go knowledge_check_test.go、JS knowledge-check.test.ts 读取。",
+ "comment": "知识包校验的四侧共用用例。cases：每条给出包（pack 为 JSON 值，packJson 为原文）、可选的底包（builtin 为内嵌默认包）与期望的全部问题，params 给出时逐键比对。parseCases：由 JSON 原文构造包后，该星耀条目的 intro（null 为没有）与 combinations 应为给定值，四侧构造出同一份包。由 Rust tests/knowledge_check.rs、Python test_knowledge_check.py、Go knowledge_check_test.go、JS knowledge-check.test.ts 读取。",
  "cases": [
   {
    "name": "invalid_json: 非法 JSON",
@@ -194,6 +194,26 @@
      }
     }
    ]
+  },
+  {
+   "name": "wrong_type 反例: 组合映射里的 null 值等同省略",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "pojunMaj": null
+      },
+      "combinationSummaries": {
+       "pojunMaj": null
+      }
+     }
+    }
+   },
+   "expect": []
   },
   {
    "name": "wrong_type 反例: 段与字段为 null",
@@ -760,9 +780,7 @@
     "language": "zh-CN",
     "patterns": {
      "zi_fu_tong_gong": {
-      "quotes": [
-       "出处 https://e.com/a"
-      ]
+      "conditions": "出处 https://e.com/a"
      }
     }
    },
@@ -772,12 +790,119 @@
      "path": [
       "patterns",
       "zi_fu_tong_gong",
-      "quotes",
-      0
+      "conditions"
      ],
      "code": "external_link",
      "params": {
       "url": "https://e.com/a"
+     }
+    }
+   ]
+  },
+  {
+   "name": "external_link: 组合摘要",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "tianfuMaj": "x"
+      },
+      "combinationSummaries": {
+       "tianfuMaj": "见 http://e.com"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinationSummaries",
+      "tianfuMaj"
+     ],
+     "code": "external_link",
+     "params": {
+      "url": "http://e.com"
+     }
+    },
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinationSummaries",
+      "tianfuMaj"
+     ],
+     "code": "summary_not_needed",
+     "params": {
+      "width": 1,
+      "limit": 240
+     }
+    }
+   ]
+  },
+  {
+   "name": "§5 反例: 古籍引文不是正文类字段",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "patterns": {
+     "zi_fu_tong_gong": {
+      "quotes": [
+       "<b>引</b> https://e.com 详见"
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "§5 反例: 行内代码里的尖括号、网址与字样",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "写作 `Option<T>`，地址 `https://e.com`，字样 `详见`"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "§5: 行内代码之外照查",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "`a` <b>x</b>"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "html_in_text",
+     "params": {
+      "snippet": "<b>"
      }
     }
    ]
@@ -837,6 +962,34 @@
       "stars",
       "ziweiMaj",
       "intor"
+     ],
+     "code": "unknown_field",
+     "params": {
+      "suggestion": "intro"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_field: 键区分大小写",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "Intro": "x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "Intro"
      ],
      "code": "unknown_field",
      "params": {
@@ -1551,6 +1704,31 @@
      }
     }
    ]
+  }
+ ],
+ "parseCases": [
+  {
+   "name": "键区分大小写：Intro 不是 intro",
+   "packJson": "{\"schema\":1,\"id\":\"t\",\"version\":\"1\",\"language\":\"zh-CN\",\"stars\":{\"ziweiMaj\":{\"Intro\":\"x\"}}}",
+   "star": "ziweiMaj",
+   "intro": null,
+   "combinations": {}
+  },
+  {
+   "name": "同一条目里 intro 与 INTRO：取 intro",
+   "packJson": "{\"schema\":1,\"id\":\"t\",\"version\":\"1\",\"language\":\"zh-CN\",\"stars\":{\"ziweiMaj\":{\"intro\":\"a\",\"INTRO\":\"b\"}}}",
+   "star": "ziweiMaj",
+   "intro": "a",
+   "combinations": {}
+  },
+  {
+   "name": "组合映射里的 null 值等同省略",
+   "packJson": "{\"schema\":1,\"id\":\"t\",\"version\":\"1\",\"language\":\"zh-CN\",\"stars\":{\"ziweiMaj\":{\"intro\":\"a\",\"combinations\":{\"pojunMaj\":null,\"tianfuMaj\":\"x\"},\"combinationSummaries\":{\"pojunMaj\":null}}}}",
+   "star": "ziweiMaj",
+   "intro": "a",
+   "combinations": {
+    "tianfuMaj": "x"
+   }
   }
  ]
 }

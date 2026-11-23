@@ -145,7 +145,7 @@ func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 **返回值**　`(*KnowledgePack, error)`。先经 [`CheckKnowledgePack`](#checkknowledgepack) 校验，
 有 error 级问题（JSON 非法、缺 `schema`、缺 `id` / `version` / `language`、字段类型不符、未知标识、正文含 HTML 等）
 即返回 `ErrInvalidArgument` 类的 `*Error`，信息逐条列出全部 error 级问题，`Issues` 字段是完整的问题列表（含 warning）。
-与 Rust 内核解析（`KnowledgePack::from_json`）同语义；另有 `ParseKnowledgePackContext`。
+与 Rust 内核解析（`KnowledgePack::from_json`）同语义；结构体取自内核规范化后的包（规范外字段丢弃、映射里的 `null` 略去、键区分大小写），不直接用 `encoding/json` 解原文——后者不分大小写收键。另有 `ParseKnowledgePackContext`。
 
 序列化直接用 `encoding/json`：
 

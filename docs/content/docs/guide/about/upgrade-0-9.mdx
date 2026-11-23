@@ -87,6 +87,13 @@ except IztroError as e:
         print(issue.path, issue.code)
 ```
 
-Go 的 `ParseKnowledgePack` 在 0.8 是纯 Go 解析，0.9 要进 wasm 内核校验，另有 `ParseKnowledgePackContext`。
+构造出的包持有内核规范化后的副本，四种语言对同一输入得到同一份包。由此还有三处可见差别：
+
+- Python `from_dict`、JavaScript `fromObject` 在 0.8 持有传入对象的引用，0.9 持有副本：之后改动传入的对象不影响包，
+  规范外的字段在 `to_dict()` / `toJSON()` 里也不再出现；
+- Python `from_json`、JavaScript `fromJSON` 的 JSON 语法错误在 0.8 抛 `JSONDecodeError` / `SyntaxError`，0.9 是一条
+  `invalid_json` 问题，抛 `IztroError`；
+- Go 的 `ParseKnowledgePack` 在 0.8 用 `encoding/json` 直接解原文，键不分大小写（`"Intro"` 也被收下）；0.9 进 wasm 内核校验，
+  结构体取自内核规范化后的包，键区分大小写，另有 `ParseKnowledgePackContext`。
 
 完整变更见 [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md)。

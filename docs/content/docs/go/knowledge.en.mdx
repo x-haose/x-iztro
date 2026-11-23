@@ -152,7 +152,7 @@ func ParseKnowledgePack(data []byte) (*KnowledgePack, error)
 error-level issue (invalid JSON, missing `schema`, missing `id` / `version` / `language`, wrong field types, unknown
 keys, HTML in text and so on) returns an `ErrInvalidArgument`-class `*Error` listing every error-level issue, whose
 `Issues` field is the full list, warnings included. The same semantics as the Rust core's parser
-(`KnowledgePack::from_json`); `ParseKnowledgePackContext` also exists.
+(`KnowledgePack::from_json`); the struct is decoded from the core's normalized pack (fields outside the spec dropped, `null` values in maps left out, keys case-sensitive) rather than from the original text with `encoding/json`, which matches keys case-insensitively. `ParseKnowledgePackContext` also exists.
 
 Serializing is plain `encoding/json`:
 

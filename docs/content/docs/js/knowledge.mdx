@@ -11,7 +11,7 @@ description: KnowledgePack 的构造、查询、合并、按盘取材，以及�
 | 成员 | 说明 |
 | --- | --- |
 | `KnowledgePack.builtin(language = 'zh-CN')` | 内嵌默认包（源自 iztro-docs，MIT）；该语言没有包抛 `IztroError` |
-| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | 读自己的包；先经 `check` 校验，有 error 级问题抛 `IztroError`（`issues` 为完整问题列表），JSON 语法错抛 `SyntaxError` |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | 读自己的包；按 `check` 的规则校验，有 error 级问题（含 JSON 语法错）抛 `IztroError`（`issues` 为完整问题列表）；构造出的包持有内核规范化后的副本（规范外字段丢弃、映射里的 `null` 略去），四种语言对同一输入得到同一份包 |
 | `KnowledgePack.check(raw, { base? })` | 逐条校验，一次返回全部问题，见下 |
 | `toJSON()` | 包对象的深拷贝；`JSON.stringify(pack)` 即包的 JSON |
 | `merged(...overlays)` | 以本包为底依次叠加覆盖包（实例或普通对象；普通对象先经 `fromObject` 校验），返回新包 |

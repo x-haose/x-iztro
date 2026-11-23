@@ -12,7 +12,7 @@ happens in the core, with the same rules in every binding.
 | Member | Description |
 | --- | --- |
 | `KnowledgePack.builtin(language = 'zh-CN')` | The built-in pack (from iztro-docs, MIT); throws `IztroError` if that language has none |
-| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | Your own pack; it runs `check` first and throws `IztroError` on any error-level issue (`issues` holds the full list), bad JSON throws `SyntaxError` |
+| `KnowledgePack.fromObject(obj)` / `fromJSON(text)` | Your own pack; checked by the `check` rules, any error-level issue (bad JSON included) throws `IztroError` (`issues` holds the full list); the pack holds the core's normalized copy (fields outside the spec dropped, `null` values in maps left out), so all four languages build the same pack from the same input |
 | `KnowledgePack.check(raw, { base? })` | Checks issue by issue and returns every issue at once, see below |
 | `toJSON()` | A deep copy of the pack object; `JSON.stringify(pack)` gives the pack's JSON |
 | `merged(...overlays)` | This pack with overlays (instances, or plain objects checked through `fromObject`) applied in order, as a new pack |

@@ -14,6 +14,12 @@ import pytest
 
 from x_iztro import IztroError, KnowledgeIssue, KnowledgeIssueCode, KnowledgePack
 
+PARSE_CASES = json.loads(
+    (Path(__file__).resolve().parents[2] / "tests" / "data" / "knowledge_check_cases.json").read_text(
+        encoding="utf-8"
+    )
+)["parseCases"]
+
 # packJson 用例给的是 JSON 原文，适用于收文本的入口（Rust check_json、Go CheckKnowledgePack）；
 # Python 的 check 收对象，非法 JSON 在 json.loads 阶段就报 JSONDecodeError
 CASES = [
@@ -77,3 +83,26 @@ def test_usage_errors_raise() -> None:
         KnowledgePack.check({"schema": 1, "bad": object()})
     with pytest.raises(TypeError):
         KnowledgePack.check({}, base={"schema": 1})  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("case", PARSE_CASES, ids=[c["name"] for c in PARSE_CASES])
+def test_shared_parse_case(case: dict[str, Any]) -> None:
+    pack = KnowledgePack.from_json(case["packJson"])
+    star = pack.star(case["star"])
+    assert star.intro == case["intro"]
+    assert star.combinations == case["combinations"]
+
+
+def test_from_dict_holds_a_normalized_copy() -> None:
+    raw = {"schema": 1, "id": "t", "version": "1", "language": "zh-CN", "extra": 1,
+           "stars": {"ziweiMaj": {"intro": "a"}}}
+    pack = KnowledgePack.from_dict(raw)
+    raw["stars"]["ziweiMaj"]["intro"] = "b"
+    assert pack.star_intro("ziweiMaj") == "a"
+    assert "extra" not in pack.to_dict()
+
+
+def test_from_json_reports_invalid_json_as_an_issue() -> None:
+    with pytest.raises(IztroError) as e:
+        KnowledgePack.from_json("{bad")
+    assert e.value.issues[0].code == KnowledgeIssueCode.INVALID_JSON

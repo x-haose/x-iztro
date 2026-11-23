@@ -16,8 +16,13 @@
   现在 Rust `KnowledgePack::from_json` / `from_value`、Python `from_dict` / `from_json`、Go `ParseKnowledgePack`、
   JavaScript `fromObject` / `fromJSON`，以及 `merged` 收到的覆盖包对象，遇到 error 级问题即报 `invalid_argument`，
   信息逐条列出全部 error 级问题及其路径；Python、JavaScript 的异常与 Go 的 `*Error` 另带 `issues`。
-  规范外的字段、空字符串、摘要写法等 warning 级问题不影响构造。Go 的 `ParseKnowledgePack` 改为进 wasm 内核校验，
-  另有 `ParseKnowledgePackContext`。SCHEMA.md §3 的实现行为随之改为「未知标识即拒绝」。
+  规范外的字段、空字符串、摘要写法等 warning 级问题不影响构造。SCHEMA.md §3 的实现行为随之改为「未知标识即拒绝」。
+- **构造出的包是内核规范化后的同一份**：此前各语言各自解析，同一输入得到的包不同——Go 用 `encoding/json` 解原文，
+  键不分大小写（`"Intro"` 被收下，同时出现 `intro` 与 `INTRO` 取后者），Python、JavaScript 持有传入对象的引用、
+  保留规范外字段。现在构造入口一律持有内核解析再序列化的包（新增 bridge kind `parseKnowledgePack`）：键区分大小写、
+  规范外字段丢弃。Python `from_dict`、JavaScript `fromObject` 改为持有副本；Python `from_json`、JavaScript `fromJSON`
+  的 JSON 语法错误由 `JSONDecodeError` / `SyntaxError` 改为 `IztroError`（一条 `invalid_json` 问题）；Go 的
+  `ParseKnowledgePack` 改为进 wasm 内核，另有 `ParseKnowledgePackContext`。
 
 ### 新增
 
@@ -27,7 +32,14 @@
   给了底包时另报相对底包的提醒（空串覆盖底包的值、语言或 `extends` 与底包不符），摘要规则按合并后的条目判断。
   默认包口吻红线里指向页面上下文的那部分按 §5 对所有包生效（warning），其余是默认包自己的写法要求，不查。
   Rust `knowledge::check` / `check_json`，Python `KnowledgePack.check`，Go `CheckKnowledgePack`，JavaScript `KnowledgePack.check`，
-  bridge kind `checkKnowledgePack`。内嵌默认包校验结果为空。
+  bridge kind `checkKnowledgePack`。HTML、图片、站外链接与页面引用只查 SCHEMA §5 列出的正文类字段（现明确为各条目的
+  `intro`、`summary`、`conditions` 与两个组合映射的值；古籍引文 `quotes` 是逐字转录的纯文本，不在其列），行内代码里的内容不算。
+  内嵌默认包校验结果为空。
+
+### 修正
+
+- **组合映射里的 null 值**：`"combinations": {"pojunMaj": null}`（`combinationSummaries` 同理）按 SCHEMA §4「写 null 等同省略」
+  处理为没有这个键。此前 Rust 解析报错、Go 解成空串变成空文本、Python 与 JavaScript 构造成功但用到时才报错。
 
 ## [0.8.0] - 2026-11-23
 

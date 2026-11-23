@@ -83,3 +83,32 @@ test('用法错误抛 TypeError', () => {
   assert.throws(() => KnowledgePack.check({ schema: 1, n: 1n }), TypeError);
   assert.throws(() => KnowledgePack.check({}, { base: {} as KnowledgePack }), TypeError);
 });
+
+const PARSE_CASES = (
+  JSON.parse(readFileSync(new URL('../../tests/data/knowledge_check_cases.json', import.meta.url), 'utf8')) as {
+    parseCases: { name: string; packJson: string; star: string; intro: string | null; combinations: object }[];
+  }
+).parseCases;
+
+for (const c of PARSE_CASES) {
+  test(`构造: ${c.name}`, () => {
+    const star = KnowledgePack.fromJSON(c.packJson).star(c.star)!;
+    assert.equal(star.intro ?? null, c.intro);
+    assert.deepEqual(star.combinations, c.combinations);
+  });
+}
+
+test('fromObject 持有规范化后的副本', () => {
+  const raw = { schema: 1, id: 't', version: '1', language: 'zh-CN', extra: 1, stars: { ziweiMaj: { intro: 'a' } } };
+  const pack = KnowledgePack.fromObject(raw);
+  raw.stars.ziweiMaj.intro = 'b';
+  assert.equal(pack.starIntro('ziweiMaj'), 'a');
+  assert.equal('extra' in pack.toJSON(), false);
+});
+
+test('fromJSON 的非法 JSON 是一条 invalid_json 问题', () => {
+  assert.throws(
+    () => KnowledgePack.fromJSON('{bad'),
+    (e: unknown) => e instanceof IztroError && e.issues?.[0]?.code === KnowledgeIssueCode.INVALID_JSON,
+  );
+});

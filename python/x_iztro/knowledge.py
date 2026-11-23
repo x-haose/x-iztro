@@ -76,13 +76,21 @@ class KnowledgeIssue:
         )
 
 
-def _rejected(issues: list[KnowledgeIssue]) -> None:
-    """有 error 级问题时抛 `IztroError`（code 为 invalid_argument），全部问题挂在 `issues` 属性上"""
-    errors = [i for i in issues if i.level == "error"]
-    if errors:
+def _parsed(pack_json: str) -> dict[str, Any]:
+    """
+    经内核解析：有 error 级问题时抛 `IztroError`（code 为 invalid_argument，全部问题挂在 `issues` 属性上），
+    否则返回内核规范化后的包对象（规范外的字段已丢弃、映射里的 null 已略去），四种语言对同一输入得到同一份包。
+    """
+    from x_iztro._bridge import query
+
+    result = query("parseKnowledgePack", pack_json=pack_json)
+    issues = [KnowledgeIssue._from_dict(i) for i in result["issues"]]
+    if result["pack"] is None:
+        errors = [i for i in issues if i.level == "error"]
         err = invalid_argument("invalid knowledge pack: " + "; ".join(i.message for i in errors))
         err.issues = issues
         raise err
+    return result["pack"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -370,25 +378,24 @@ class KnowledgePack:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> KnowledgePack:
         """
-        由包对象构造（保留引用，不复制）。先经 `check` 校验，有 error 级问题即拒绝。
+        由包对象构造。先经 `check` 同一套规则校验，有 error 级问题即拒绝；构造出的包持有内核规范化后的副本
+        （规范外的字段已丢弃、映射里的 null 已略去），之后改动 `d` 不影响它。
 
         Raises:
             IztroError: 有 error 级问题（code 为 invalid_argument）；全部问题在异常的 `issues` 属性里
             TypeError: `d` 含 JSON 无法表示的值
         """
-        _rejected(cls.check(d))
-        return cls(d)
+        return cls(_parsed(json.dumps(d, ensure_ascii=False)))
 
     @classmethod
     def from_json(cls, text: str) -> KnowledgePack:
         """
-        由 JSON 文本构造，校验同 `from_dict`。
+        由 JSON 文本构造，校验与规范化同 `from_dict`；JSON 语法非法是一条 `invalid_json` 问题。
 
         Raises:
             IztroError: 有 error 级问题（code 为 invalid_argument）；全部问题在异常的 `issues` 属性里
-            json.JSONDecodeError: JSON 语法非法
         """
-        return cls.from_dict(json.loads(text))
+        return cls(_parsed(text))
 
     @staticmethod
     def check(raw: Any, *, base: KnowledgePack | None = None) -> list[KnowledgeIssue]:

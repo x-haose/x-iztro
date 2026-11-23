@@ -137,3 +137,42 @@ func TestParseKnowledgePackRejectsErrors(t *testing.T) {
 		}
 	}
 }
+
+// TestParseKnowledgePackSharedParseCases 由原文构造的包与其他语言是同一份：键区分大小写、
+// 映射里的 null 值等同省略（encoding/json 直接解原文会不分大小写收键、把 null 解成空串）。
+func TestParseKnowledgePackSharedParseCases(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "tests", "data", "knowledge_check_cases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		ParseCases []struct {
+			Name         string            `json:"name"`
+			PackJSON     string            `json:"packJson"`
+			Star         string            `json:"star"`
+			Intro        *string           `json:"intro"`
+			Combinations map[string]string `json:"combinations"`
+		} `json:"parseCases"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range doc.ParseCases {
+		pack, err := ParseKnowledgePack([]byte(c.PackJSON))
+		if err != nil {
+			t.Fatalf("%s: %v", c.Name, err)
+		}
+		star := pack.Star(c.Star)
+		want := ""
+		if c.Intro != nil {
+			want = *c.Intro
+		}
+		got := star.Combinations
+		if got == nil {
+			got = map[string]string{}
+		}
+		if star.Intro != want || !reflect.DeepEqual(got, c.Combinations) {
+			t.Errorf("%s: intro %q combinations %v", c.Name, star.Intro, star.Combinations)
+		}
+	}
+}

@@ -146,13 +146,13 @@ pub struct StarEntry {
     /// 与另一颗主星同宫的组合解读，键为对方星耀标识
     #[serde(
         skip_serializing_if = "BTreeMap::is_empty",
-        deserialize_with = "null_as_default"
+        deserialize_with = "text_map"
     )]
     pub combinations: BTreeMap<String, String>,
     /// 组合解读的摘要，与 `combinations` 同键成对
     #[serde(
         skip_serializing_if = "BTreeMap::is_empty",
-        deserialize_with = "null_as_default"
+        deserialize_with = "text_map"
     )]
     pub combination_summaries: BTreeMap<String, String>,
 }
@@ -308,6 +308,20 @@ where
     T: Deserialize<'de> + Default,
 {
     Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
+}
+
+/// 正文映射（`combinations` / `combinationSummaries`）：整个映射或其中某个值写成 `null` 都等同省略
+/// （SCHEMA §4），null 值的键不进结果。
+fn text_map<'de, D>(d: D) -> Result<BTreeMap<String, String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<BTreeMap<String, Option<String>>>::deserialize(d)?;
+    Ok(raw
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|(k, v)| v.map(|v| (k, v)))
+        .collect())
 }
 
 /// 内嵌默认包的原文（zh-CN，源自 iztro-docs）。

@@ -127,7 +127,7 @@ test('包对象的格式校验与内核同语义', () => {
   for (const bad of [[], 'x', {}, { schema: 0 }, { schema: true }, { schema: 2 }]) {
     assert.throws(() => KnowledgePack.fromObject(bad as object), (e: unknown) => e instanceof IztroError && e.code === 'invalid_argument');
   }
-  assert.throws(() => KnowledgePack.fromJSON('{'), SyntaxError);
+  assert.throws(() => KnowledgePack.fromJSON('{'), (e: unknown) => e instanceof IztroError && e.issues?.[0]?.code === 'invalid_json');
 });
 
 test('knowledge: true 的九类文本与 Rust 快照逐字节相同', () => {

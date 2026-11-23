@@ -428,34 +428,40 @@ func CheckKnowledgePackContext(ctx context.Context, data []byte, base *Knowledge
 	return out, nil
 }
 
-// ParseKnowledgePack 由 JSON 文本解析一份包。先经 CheckKnowledgePack 校验，有 error 级问题即返回
-// ErrInvalidArgument 类错误（*Error，全部问题在其 Issues 字段）。
+// ParseKnowledgePack 由 JSON 文本解析一份包。按 CheckKnowledgePack 的规则校验，有 error 级问题即返回
+// ErrInvalidArgument 类错误（*Error，全部问题在其 Issues 字段）；结构体取自内核规范化后的包
+// （规范外的字段丢弃、映射里的 null 略去、键区分大小写），与其他语言对同一输入得到同一份包。
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error) {
 	return ParseKnowledgePackContext(context.Background(), data)
 }
 
 // ParseKnowledgePackContext 为 ParseKnowledgePack 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func ParseKnowledgePackContext(ctx context.Context, data []byte) (*KnowledgePack, error) {
-	issues, err := CheckKnowledgePackContext(ctx, data, nil)
-	if err != nil {
+	// 内核解析并返回规范化的包（规范外的字段已丢弃、映射里的 null 已略去、键已是规范写法），
+	// 再由它落成结构体：直接用 encoding/json 解原文会按大小写不敏感收下 "Intro" 一类键，与其他语言不一致
+	var result struct {
+		Pack   json.RawMessage  `json:"pack"`
+		Issues []KnowledgeIssue `json:"issues"`
+	}
+	if err := utilQueryContext(ctx, map[string]any{"kind": "parseKnowledgePack", "packJson": string(data)}, &result); err != nil {
 		return nil, err
 	}
-	var messages []string
-	for _, issue := range issues {
-		if issue.Level == "error" {
-			messages = append(messages, issue.Message)
+	if string(result.Pack) == "null" {
+		var messages []string
+		for _, issue := range result.Issues {
+			if issue.Level == "error" {
+				messages = append(messages, issue.Message)
+			}
 		}
-	}
-	if len(messages) > 0 {
 		return nil, &Error{
 			Code:    CodeInvalidArgument,
 			Message: "invalid knowledge pack: " + strings.Join(messages, "; "),
-			Issues:  issues,
+			Issues:  result.Issues,
 		}
 	}
 	var out KnowledgePack
-	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, internalError("knowledge pack passed the checks but failed to decode: " + err.Error())
+	if err := json.Unmarshal(result.Pack, &out); err != nil {
+		return nil, internalError("decode normalized knowledge pack: " + err.Error())
 	}
 	return &out, nil
 }

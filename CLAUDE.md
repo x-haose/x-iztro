@@ -338,7 +338,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   与 `knowledge_pack` 测试对默认包的断言，每个 `IssueCode` 的文档写明出处；违反「必须 / 不得」或内核用到会失败的为 error，
   `from_value`（因而全部构造入口与收包的 bridge kind）遇 error 即拒绝；「应 / 不应」、被丢弃的字段、字面启发式与相对底包的
   提醒为 warning。SCHEMA 新增字段或取值集合时同步 `check.rs` 的字段表，否则新字段会被报成 `unknown_field`。
-  四侧共用用例 `tests/data/knowledge_check_cases.json`（每个代码正反例），默认包校验结果必须为空
+  四侧共用用例 `tests/data/knowledge_check_cases.json`（每个代码正反例），默认包校验结果必须为空；
+  `packs_without_errors_always_parse` 守「check 无 error ⇒ 解析成功」，改解析或校验任一侧都要过它。
+  各语言的构造入口经 bridge kind `parseKnowledgePack` 取内核解析再序列化的规范包，不各自解析原文
+  （Go 的 encoding/json 不分大小写收键，绑定层各自解析会让同一输入在四侧得到不同的包）
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的

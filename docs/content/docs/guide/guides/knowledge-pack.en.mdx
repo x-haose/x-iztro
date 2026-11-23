@@ -690,7 +690,9 @@ assertions `tests/knowledge_pack.rs` makes about the bundled default pack. `sugg
 | `language_differs_from_base` | warning | Language differs from the base pack (only with a base) | §6.2: the merge takes the overlay's language | `value`, `base` |
 | `extends_differs_from_base` | warning | `extends` differs from the base pack's `id` (only with a base) | §2: `extends` names the base pack's `id` | `value`, `base` |
 
-The bundled default pack checks clean.
+HTML, images, external links and page references are checked only in the text fields SCHEMA §5 lists (each entry's
+`intro`, `summary`, `conditions`, and the values of both combination maps), and nothing inside inline code counts;
+the classical quotations in `quotes` are verbatim plain text and are not checked. The bundled default pack checks clean.
 
 ### The closest key
 

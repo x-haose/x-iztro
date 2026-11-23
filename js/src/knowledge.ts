@@ -137,14 +137,19 @@ export interface TopicEntry {
 
 type Raw = Record<string, unknown>;
 
-/** 有 error 级问题时抛 `IztroError`（code 为 invalid_argument），全部问题挂在 `issues` 上 */
-function rejectInvalid(issues: KnowledgeIssue[]): void {
-  const errors = issues.filter((i) => i.level === 'error');
-  if (errors.length > 0) {
+/**
+ * 经内核解析：有 error 级问题时抛 `IztroError`（code 为 invalid_argument，全部问题挂在 `issues` 上），
+ * 否则返回内核规范化后的包对象（规范外的字段已丢弃、映射里的 null 已略去），四种语言对同一输入得到同一份包。
+ */
+function parsed(packJson: string): Raw {
+  const result = query('parseKnowledgePack', { packJson }) as { pack: Raw | null; issues: KnowledgeIssue[] };
+  if (result.pack === null) {
+    const errors = result.issues.filter((i) => i.level === 'error');
     throw new IztroError('invalid_argument', `invalid knowledge pack: ${errors.map((i) => i.message).join('; ')}`, {
-      issues,
+      issues: result.issues,
     });
   }
+  return result.pack;
 }
 
 /** `KnowledgePack.check` 的选项 */
@@ -198,24 +203,23 @@ export class KnowledgePack {
   }
 
   /**
-   * 由包对象构造（保留引用，不复制）。先经 `check` 校验，有 error 级问题即拒绝。
+   * 由包对象构造。先经 `check` 同一套规则校验，有 error 级问题即拒绝；构造出的包持有内核规范化后的副本
+   * （规范外的字段已丢弃、映射里的 null 已略去），之后改动 `raw` 不影响它。
    *
    * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上
    * @throws TypeError 包对象含 JSON 无法表示的值（如 BigInt、循环引用）
    */
   static fromObject(raw: object): KnowledgePack {
-    rejectInvalid(KnowledgePack.check(raw));
-    return new KnowledgePack(raw as Raw, undefined);
+    return new KnowledgePack(parsed(JSON.stringify(raw) ?? 'null'), undefined);
   }
 
   /**
-   * 由 JSON 文本构造，校验同 `fromObject`。
+   * 由 JSON 文本构造，校验与规范化同 `fromObject`；JSON 语法非法是一条 `invalid_json` 问题。
    *
    * @throws IztroError 有 error 级问题（code 为 invalid_argument）；全部问题在 `issues` 上
-   * @throws SyntaxError JSON 语法非法
    */
   static fromJSON(text: string): KnowledgePack {
-    return KnowledgePack.fromObject(JSON.parse(text) as object);
+    return new KnowledgePack(parsed(text), undefined);
   }
 
   /**

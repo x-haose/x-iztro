@@ -42,7 +42,7 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | 方法 | 说明 |
 | --- | --- |
 | `KnowledgePack.builtin(language="zh-CN")` | 内嵌默认包 |
-| `KnowledgePack.from_dict(d)` | 由包对象构造（保留引用，不复制） |
+| `KnowledgePack.from_dict(d)` | 由包对象构造（校验后持有内核规范化的副本） |
 | `KnowledgePack.from_json(text)` | 由 JSON 文本构造 |
 | `to_dict()` | 包对象的深拷贝 |
 | `to_json(**kwargs)` | JSON 文本，`kwargs` 透传给 `json.dumps` |
@@ -167,8 +167,8 @@ def to_json(self, **kwargs: Any) -> str
 
 **说明**
 
-- `from_dict` 直接持有传入的 dict，不复制：之后改动那个 dict 会影响这份包。
-  要隔离，先 `copy.deepcopy` 或走 `from_json`。
+- 构造出的包持有内核规范化后的副本：规范外的字段已丢弃、映射里的 `null` 已略去，之后改动传入的 dict 不影响它；
+  四种语言对同一输入得到同一份包。`from_json` 的 JSON 语法错误同样是一条 `invalid_json` 问题，抛 `IztroError`。
 - `to_dict` 返回深拷贝，怎么改都不影响原包。
 - `to_json` 的 `ensure_ascii` 默认为 `False`（中文原样输出），
   其余 `kwargs` 原样传给 `json.dumps`，例如 `pack.to_json(indent=2)`。

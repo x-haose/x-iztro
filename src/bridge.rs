@@ -219,7 +219,7 @@ pub struct QueryInput {
     // 知识包用
     /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
     pub knowledge_packs: Vec<Value>,
-    /// `checkKnowledgePack` 待校验的包，JSON 文本：文本非法、不是对象都作为校验问题返回
+    /// `checkKnowledgePack` / `parseKnowledgePack` 的包，JSON 文本：文本非法、不是对象都作为校验问题返回
     pub pack_json: Option<String>,
     /// `checkKnowledgePack` 的底包对象：给出时另报相对底包的提醒；它本身必须是合法的包
     pub base_pack: Option<Value>,
@@ -677,6 +677,7 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         }
         "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
         "checkKnowledgePack" => check_knowledge_pack(input),
+        "parseKnowledgePack" => parse_knowledge_pack(input),
 
         // ---- util 与 astro/palace ----
         "fixIndex"
@@ -1243,11 +1244,7 @@ fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
 /// 校验知识包：返回全部问题，每条 `{level, path, code, params, message}`；`path` 的元素是对象键
 /// （字符串）或数组下标（数字），`message` 为带点分路径的英文说明（同 `KnowledgeIssue` 的 Display）。
 fn check_knowledge_pack(input: &QueryInput) -> Result<Value, BridgeError> {
-    use crate::knowledge::{KnowledgePack, PathSegment, check_json};
-    let pack = input
-        .pack_json
-        .as_deref()
-        .ok_or_else(|| BridgeError::invalid_argument("packJson is required"))?;
+    use crate::knowledge::{KnowledgePack, check_json};
     let base = match &input.base_pack {
         Some(v) => Some(
             KnowledgePack::from_value(v)
@@ -1255,27 +1252,50 @@ fn check_knowledge_pack(input: &QueryInput) -> Result<Value, BridgeError> {
         ),
         None => None,
     };
-    let issues: Vec<Value> = check_json(pack, base.as_ref())
-        .into_iter()
-        .map(|i| {
-            let path: Vec<Value> = i
-                .path
-                .iter()
-                .map(|seg| match seg {
-                    PathSegment::Key(k) => json!(k),
-                    PathSegment::Index(n) => json!(n),
-                })
-                .collect();
-            json!({
-                "level": i.level.as_key(),
-                "path": path,
-                "code": i.code.as_key(),
-                "params": i.params,
-                "message": i.to_string(),
-            })
+    let issues = check_json(required_pack_json(input)?, base.as_ref());
+    Ok(Value::Array(issues.iter().map(issue_dto).collect()))
+}
+
+/// 解析知识包：返回 `{pack, issues}`。没有 error 级问题时 `pack` 是解析后再序列化的规范形态——
+/// 规范外的字段已丢弃、映射里的 null 已略去、键严格区分大小写——各语言的构造入口都持有这一份，
+/// 同一输入在四侧得到同一份包；有 error 级问题时 `pack` 为 null。
+fn parse_knowledge_pack(input: &QueryInput) -> Result<Value, BridgeError> {
+    use crate::knowledge::{IssueLevel, KnowledgePack, check_json};
+    let text = required_pack_json(input)?;
+    let issues = check_json(text, None);
+    let pack = if issues.iter().any(|i| i.level == IssueLevel::Error) {
+        Value::Null
+    } else {
+        let parsed = KnowledgePack::from_json(text).map_err(BridgeError::internal)?;
+        serde_json::to_value(parsed).map_err(serialize_failed)?
+    };
+    Ok(json!({ "pack": pack, "issues": issues.iter().map(issue_dto).collect::<Vec<_>>() }))
+}
+
+fn required_pack_json(input: &QueryInput) -> Result<&str, BridgeError> {
+    input
+        .pack_json
+        .as_deref()
+        .ok_or_else(|| BridgeError::invalid_argument("packJson is required"))
+}
+
+fn issue_dto(i: &crate::knowledge::KnowledgeIssue) -> Value {
+    use crate::knowledge::PathSegment;
+    let path: Vec<Value> = i
+        .path
+        .iter()
+        .map(|seg| match seg {
+            PathSegment::Key(k) => json!(k),
+            PathSegment::Index(n) => json!(n),
         })
         .collect();
-    Ok(json!(issues))
+    json!({
+        "level": i.level.as_key(),
+        "path": path,
+        "code": i.code.as_key(),
+        "params": i.params,
+        "message": i.to_string(),
+    })
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key

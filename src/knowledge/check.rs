@@ -388,14 +388,12 @@ const PAGE_REFERENCES: &[&str] = &[
 enum Field {
     /// 普通字符串（名称、标题、属性说明）
     Plain,
-    /// 正文类字符串，按 §5 检查
+    /// 正文类字符串，按 §5 检查：`intro`、`summary`、`conditions`（§5 列出的正文类字段）
     Text,
     /// 取值受限的字符串
     Enum(&'static [&'static str]),
-    /// 字符串数组（别号）
+    /// 字符串数组（别号、古籍引文；引文是逐字转录的纯文本，不在 §5 正文类字段之列）
     Strings,
-    /// 正文类字符串数组（古籍引文）
-    Texts,
     /// 门派属性对象（§4.1.1）
     Attributes,
     /// 键为对方主星、值为正文的映射（双星组合与其摘要）
@@ -429,7 +427,7 @@ const ATTRIBUTE_FIELDS: &[(&str, Field)] = &[
 ];
 const PATTERN_FIELDS: &[(&str, Field)] = &[
     ("name", Field::Plain),
-    ("quotes", Field::Texts),
+    ("quotes", Field::Strings),
     ("conditions", Field::Text),
     ("intro", Field::Text),
     ("summary", Field::Text),
@@ -747,7 +745,7 @@ impl Checker<'_> {
                     );
                 }
             }
-            Field::Strings | Field::Texts => {
+            Field::Strings => {
                 let Some(items) = v.as_array() else {
                     self.report(IssueCode::WrongType, json!({ "expected": "array" }));
                     return;
@@ -755,11 +753,7 @@ impl Checker<'_> {
                 for (i, item) in items.iter().enumerate() {
                     self.at(i, |c| match item {
                         Value::String(s) if s.is_empty() => c.empty_string(),
-                        Value::String(s) => {
-                            if matches!(kind, Field::Texts) {
-                                c.text(s);
-                            }
-                        }
+                        Value::String(_) => {}
                         _ => c.report(IssueCode::WrongType, json!({ "expected": "string" })),
                     });
                 }
@@ -850,6 +844,8 @@ impl Checker<'_> {
 
     /// §5 文本规则：HTML、图片、站外链接、页面上下文。每条规则在一个字段里只报第一处。
     fn text(&mut self, s: &str) {
+        // 行内代码原样显示、不被渲染，其中的 `<T>`、网址与字样都不算
+        let s = &mask_code_spans(s);
         if let Some(tag) = find_html(s) {
             self.report(IssueCode::HtmlInText, json!({ "snippet": tag }));
         }
@@ -1075,6 +1071,46 @@ fn osa_distance(a: &str, b: &str) -> usize {
     d[n][m]
 }
 
+/// 把行内代码（CommonMark：一串反引号到下一串等长反引号之间）连同反引号换成空格；
+/// 找不到配对的反引号串按原文保留。
+fn mask_code_spans(s: &str) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    let mut out = chars.clone();
+    let run_len = |at: usize| chars[at..].iter().take_while(|c| **c == '`').count();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] != '`' {
+            i += 1;
+            continue;
+        }
+        let n = run_len(i);
+        let mut j = i + n;
+        let mut close = None;
+        while j < chars.len() {
+            if chars[j] == '`' {
+                let m = run_len(j);
+                if m == n {
+                    close = Some(j);
+                    break;
+                }
+                j += m;
+            } else {
+                j += 1;
+            }
+        }
+        match close {
+            Some(j) => {
+                for c in &mut out[i..j + n] {
+                    *c = ' ';
+                }
+                i = j + n;
+            }
+            None => i += n,
+        }
+    }
+    out.into_iter().collect()
+}
+
 /// 截取片段供参数展示：最多 40 个字符。
 fn snippet(s: &str) -> String {
     s.chars().take(40).collect()
@@ -1149,6 +1185,16 @@ mod tests {
         assert_eq!(closest("xyz", &["intro", "summary"]), None);
         assert_eq!(osa_distance("ab", "ba"), 1);
         assert_eq!(osa_distance("kitten", "sitting"), 3);
+    }
+
+    #[test]
+    fn code_spans_are_masked() {
+        assert_eq!(mask_code_spans("a `<b>` c"), "a       c");
+        assert_eq!(
+            mask_code_spans("``x ` y`` z"),
+            format!("{}z", " ".repeat(10))
+        );
+        assert_eq!(mask_code_spans("未闭合 `<b>"), "未闭合 `<b>");
     }
 
     #[test]
