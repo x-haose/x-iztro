@@ -149,6 +149,64 @@ pub struct RawLunarDateDto {
     pub is_leap: bool,
 }
 
+/// 数字化公历日期 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawSolarDateDto {
+    /// 公历年
+    pub solar_year: i64,
+    /// 公历月（1-12）
+    pub solar_month: u32,
+    /// 公历日（1-31）
+    pub solar_day: u32,
+}
+
+impl From<crate::astro::calendar::RawSolarDate> for RawSolarDateDto {
+    fn from(d: crate::astro::calendar::RawSolarDate) -> Self {
+        RawSolarDateDto {
+            solar_year: d.solar_year,
+            solar_month: d.solar_month,
+            solar_day: d.solar_day,
+        }
+    }
+}
+
+impl From<crate::models::astrolabe::RawLunarDate> for RawLunarDateDto {
+    fn from(d: crate::models::astrolabe::RawLunarDate) -> Self {
+        RawLunarDateDto {
+            lunar_year: d.lunar_year,
+            lunar_month: d.lunar_month,
+            lunar_day: d.lunar_day,
+            is_leap: d.is_leap,
+        }
+    }
+}
+
+/// 农历年里一个月的 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LunarMonthDto {
+    /// 月份（1-12），闰月取所闰的月份
+    pub month: u32,
+    /// 是否闰月
+    pub is_leap: bool,
+    /// 天数（29 或 30）
+    pub day_count: u32,
+    /// 初一对应的公历日期
+    pub first_day: RawSolarDateDto,
+}
+
+impl From<crate::astro::calendar::LunarMonthInfo> for LunarMonthDto {
+    fn from(m: crate::astro::calendar::LunarMonthInfo) -> Self {
+        LunarMonthDto {
+            month: m.month,
+            is_leap: m.is_leap,
+            day_count: m.day_count,
+            first_day: m.first_day.into(),
+        }
+    }
+}
+
 /// 四柱干支 DTO（每柱为 [天干, 地支] 两元素数组）。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

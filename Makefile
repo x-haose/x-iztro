@@ -13,6 +13,7 @@ check-rust:
 	cargo build --release --locked
 	cargo test --locked
 	cargo test --release --lib calendar -- --ignored
+	cargo test --release --test calendar_api -- --ignored
 
 check-python:
 	VIRTUAL_ENV="$(VENV)" PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 "$(VENV)/bin/maturin" develop --features python --locked

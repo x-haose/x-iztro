@@ -7,7 +7,7 @@ use crate::models::surpalaces::SurroundedPalaces;
 use crate::utils::fix_index;
 
 /// 数字化农历日期
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RawLunarDate {
     /// 农历年
     pub lunar_year: i64,

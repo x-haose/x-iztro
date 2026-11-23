@@ -1,7 +1,8 @@
 /**
  * 两个入口（`node.ts`、`browser.ts`）共有的公开 API；入口只在此之上各自提供 `init`。
  *
- * 模块划分与 iztro 对应：`astro`（排盘与轻量查询）、`util`、`star`、`data`，另有 `i18n` 与知识包、格局、反推。
+ * 模块划分与 iztro 对应：`astro`（排盘与轻量查询）、`util`、`star`、`data`，另有 `i18n`、`calendar`（历法查询）
+ * 与知识包、格局、反推。
  */
 
 export * as astro from './astro.js';
@@ -9,6 +10,8 @@ export * as util from './util.js';
 export * as star from './star.js';
 export * as data from './data.js';
 export * as i18n from './i18n.js';
+export * as calendar from './calendar.js';
+export type { LunarToSolarOptions } from './calendar.js';
 
 export * from './enums.js';
 export { IztroError, type ErrorCode } from './errors.js';

@@ -44,6 +44,9 @@ pub mod wasm;
 
 // Re-export main public API
 pub use astro::builder::{by_lunar, by_solar};
+pub use astro::calendar::{
+    LunarMonthInfo, RawSolarDate, lunar_months, lunar_to_solar, lunar_year_pillar, solar_to_lunar,
+};
 pub use astro::horoscope::get_horoscope;
 pub use astro::horoscope::{flow_star_counterparts, natal_counterpart_of_flow_star};
 pub use astro::palace::{get_five_elements_class, get_palace_names, get_soul_and_body};

@@ -213,6 +213,28 @@ export interface RawLunarDate {
   isLeap: boolean;
 }
 
+/** 数字化公历日期；1582-10-15 以前为儒略历日期 */
+export interface RawSolarDate {
+  /** 公历年；农历 9999 年最后一两个月落在公历 10000 年 */
+  solarYear: number;
+  /** 公历月 1-12 */
+  solarMonth: number;
+  /** 公历日 1-31 */
+  solarDay: number;
+}
+
+/** 农历年里的一个月 */
+export interface LunarMonthInfo {
+  /** 月份 1-12；闰月取所闰的月份，如闰四月为 4 */
+  month: number;
+  /** 是否闰月 */
+  isLeap: boolean;
+  /** 天数：29（小月）或 30（大月） */
+  dayCount: number;
+  /** 初一对应的公历日期 */
+  firstDay: RawSolarDate;
+}
+
 /** 四柱干支的 DTO：每柱 [天干, 地支]，译文与标识两组。星盘上对应的对象是 `RawChineseDate` */
 export interface RawChineseDateData {
   /** 年柱（翻译文本） */
