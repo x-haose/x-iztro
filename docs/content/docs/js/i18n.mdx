@@ -16,7 +16,7 @@ i18n.allKeys(): string[];                                              // 顺序
 （en-US 的 `horse` 既是生肖马也是天马），用 `keyFilter` 限定标识名须含的子串：`'Maj'`、`'Min'`、
 `'Heavenly'`、`'Earthly'`、`'Palace'`、`'Hour'`。限定后无匹配为 `undefined`，不退回未限定的结果。
 
-```ts
+```js
 console.log(i18n.translate('ziweiMaj'), i18n.translate('ziweiMaj', 'ja-JP'), i18n.translate('soulPalace', 'en-US'), i18n.translate('nope'));
 console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'), i18n.allKeys().length);
 ```

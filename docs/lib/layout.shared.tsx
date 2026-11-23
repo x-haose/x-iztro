@@ -4,6 +4,7 @@ import { uiTranslations } from 'fumadocs-ui/i18n';
 import { zhCN } from '@fumadocs/language/zh-cn';
 import { Logo } from '@/components/logo';
 import { Boxes, Braces, Cog, FileCode } from 'lucide-react';
+import { ApiNavMenu } from '@/components/api-menu';
 
 /** 界面文案：中文界面用 fumadocs 官方简体词表，英文取内置默认。 */
 export const translations = i18n
@@ -38,7 +39,7 @@ const nav = {
     rust: { text: 'Rust', desc: '核心库，各语言绑定都调用它' },
     python: { text: 'Python', desc: 'dataclass 与 StrEnum 构成的类型化 API' },
     go: { text: 'Go', desc: '内嵌 wasm，无 cgo，交叉编译不受影响' },
-    js: { text: 'JavaScript', desc: 'WebAssembly 内核，浏览器与 Node.js 通用' },
+    js: { text: 'JavaScript / TypeScript', desc: 'WebAssembly 内核，自带完整类型声明，浏览器与 Node.js 通用' },
   },
   en: {
     guide: 'Guide',
@@ -48,7 +49,7 @@ const nav = {
     rust: { text: 'Rust', desc: 'The core library behind all bindings' },
     python: { text: 'Python', desc: 'Typed API of dataclasses and StrEnums' },
     go: { text: 'Go', desc: 'Embedded wasm, no cgo, cross-compiles cleanly' },
-    js: { text: 'JavaScript', desc: 'WebAssembly core for browsers and Node.js' },
+    js: { text: 'JavaScript / TypeScript', desc: 'WebAssembly core with complete type declarations, for browsers and Node.js' },
   },
 } as const;
 
@@ -57,7 +58,8 @@ const nav = {
  *
  * 各语言的 API 参考收在一个下拉里而非并列成顶级菜单：
  * 它们是同一件事的不同实现，与「指南」不属于同一层级；
- * 下拉项带描述，首次访问者能一眼看出各自的分工。
+ * 下拉项带描述，首次访问者能一眼看出各自的分工。桌面顶栏的下拉用 `ApiNavMenu`
+ * 让四种语言一行并排，移动端菜单用内置的 `menu`。
  * 文档内部的栏目切换由侧栏 tab 承担。
  */
 export function baseOptions(locale: string): BaseLayoutProps {
@@ -72,6 +74,12 @@ export function baseOptions(locale: string): BaseLayoutProps {
     url: `/${locale}/docs/${key}`,
     active: 'nested-url' as const,
   });
+  const apiItems = [
+    api('rust', <Cog />),
+    api('python', <Braces />),
+    api('go', <Boxes />),
+    api('js', <FileCode />),
+  ];
 
   return {
     nav: {
@@ -87,14 +95,15 @@ export function baseOptions(locale: string): BaseLayoutProps {
         active: 'nested-url',
       },
       {
+        type: 'custom',
+        on: 'nav',
+        children: <ApiNavMenu text={t.api} items={apiItems} />,
+      },
+      {
         type: 'menu',
+        on: 'menu',
         text: t.api,
-        items: [
-          api('rust', <Cog />),
-          api('python', <Braces />),
-          api('go', <Boxes />),
-          api('js', <FileCode />),
-        ],
+        items: apiItems,
       },
       {
         type: 'main',

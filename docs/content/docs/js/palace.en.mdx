@@ -95,7 +95,7 @@ mutagedPlaces(allPalaces?: readonly Palace[]): (Palace | undefined)[];          
 an empty mutagen list makes `fliesTo` `false` and `fliesOneOfTo` / `notFlyTo` `true`; when the target cannot
 be located all three are `false`.
 
-```ts
+```js
 console.log(soul.mutagenStars([Mutagen.LU, Mutagen.JI]));
 console.log(soul.fliesTo(PalaceName.CHILDREN, Mutagen.LU),
   soul.fliesOneOfTo(PalaceName.WEALTH, [Mutagen.LU, Mutagen.JI]), soul.notFlyTo(PalaceName.SOUL, Mutagen.JI));
@@ -135,7 +135,7 @@ toText(options?: TextOptions): string;
 
 The palace's semantic text; options as in [`Astrolabe.toText`](/en/docs/js/astrolabe#totext).
 
-```ts
+```js
 console.log(soul.toText({ detail: TextDetail.OVERVIEW }));
 ```
 

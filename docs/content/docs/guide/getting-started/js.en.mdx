@@ -1,5 +1,5 @@
 ---
-title: JavaScript
+title: JavaScript / TypeScript
 description: npm install, init loads the WebAssembly core, then synchronous calls — for browsers and Node.js alike.
 ---
 
@@ -11,8 +11,10 @@ description: npm install, init loads the WebAssembly core, then synchronous call
 npm install x-iztro@0.7
 ```
 
-The package is the same Rust core compiled to WebAssembly plus a TypeScript layer: ESM, with type declarations
-and zero runtime dependencies. Requires Node.js 22 or later, or a modern browser with WebAssembly. Vite,
+The package is the same Rust core compiled to WebAssembly plus a TypeScript layer: ESM, with zero runtime
+dependencies. It is written in TypeScript and ships complete `.d.ts` declarations, so TypeScript projects need no
+separate `@types/` package; TypeScript 5.0 or later with `ES2022` in `lib` is required.
+Requires Node.js 22 or later, or a modern browser with WebAssembly. Vite,
 webpack and Next.js Turbopack emit the `.wasm` as a static asset on their own; see
 [Using it with bundlers and frameworks](/en/docs/js/bundlers).
 
@@ -26,7 +28,7 @@ cd js && npm ci && npm run build
 
 ## Charting
 
-```ts
+```js
 import { init, astro } from 'x-iztro';
 
 await init(); // load the core, once; every call after this is synchronous
@@ -55,7 +57,7 @@ console.log(chart.fiveElementsClass);   // Five Elements class
 Lunar charts use `astro.byLunar`. The optional arguments after `gender` go in an object (`fixLeap`, `language`,
 `config`, plus `isLeapMonth` for lunar dates):
 
-```ts
+```js
 const lunar = astro.byLunar('2000-7-17', 2, 'female', { isLeapMonth: false });
 ```
 

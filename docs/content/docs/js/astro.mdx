@@ -3,7 +3,7 @@ title: 排盘入口
 description: init 装载内核，bySolar / byLunar 排盘，ChartConfig 排盘配置。
 ---
 
-```ts
+```js
 import { init, astro } from 'x-iztro';
 
 await init();
@@ -174,7 +174,7 @@ function byLunar(
 
 `options.isLeapMonth` 默认 `false`，该月没有闰月时不生效；其余同 `bySolar`。
 
-```ts
+```js
 const lunar = astro.byLunar('2000-7-17', 2, 'female');
 console.log(lunar.solarDate, lunar.lunarDate);
 ```

@@ -5,7 +5,7 @@ description: Astrolabe 的字段、宫位与星耀定位、三方四正与夹宫
 
 `Astrolabe` 是排盘的产物，也是一切查询的入口：十二宫，以及四柱、命主身主、五行局这些盘级信息。
 
-```ts
+```js
 const chart = astro.bySolar('2000-8-16', 2, 'female');
 ```
 
@@ -145,7 +145,7 @@ horoscopeOfMonth(year: number, month: number): Horoscope;
 - `horoscopeOfYear`：农历年，目标日期取该年六月初一。只问某一年时用它——公历年初到春节前仍属上一个农历年。查询精度为流年。
 - `horoscopeOfMonth`：农历年某月，目标日期取该月（非闰）初一。查询精度为流月。
 
-```ts
+```js
 const h = chart.horoscope('2024-10-1 13:20');
 console.log(h.solarDate, h.lunarDate, h.hourly.heavenlyStem + h.hourly.earthlyBranch, h.precision());
 const y = chart.horoscopeOfYear(2027);
@@ -197,7 +197,7 @@ toText(options?: {
 星盘的语义化文本：面向语言模型与人的 Markdown 子集，按排盘语言输出。`String(chart)` 等于 `chart.toText()`。
 文本形态见 [to_text 指南](/zh/docs/guide/guides/to-text)。
 
-```ts
+```js
 console.log(chart.toText({ detail: TextDetail.OVERVIEW }).split('\n').slice(0, 12).join('\n'));
 ```
 
@@ -228,7 +228,7 @@ topicToText(topic: string, options?: TextOptions): string;
 按知识包里该主题的定义选宫，每宫一段，文末附落在选中宫内的格局与四化释义。
 `knowledge` 默认取排盘语言的内嵌包（主题定义就在包里）。
 
-```ts
+```js
 const text = chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY });
 console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 ```
@@ -260,7 +260,7 @@ toJSON(): AstrolabeData;
 星盘的 DTO：camelCase 键、按语言翻译的值，与 iztro 的 `JSON.stringify(astrolabe)` 逐键逐值对应，
 外加语言无关标识。返回深拷贝；`JSON.stringify(chart)` 即序列化它。
 
-```ts
+```js
 const raw = chart.toJSON();
 console.log(raw.palaces.length, JSON.parse(JSON.stringify(chart)).solarDate);
 ```

@@ -1,6 +1,6 @@
 ---
 title: Documentation
-description: A Zi Wei Dou Shu chart engine, field-for-field identical to JS iztro, plus pattern judgement, knowledge packs and reverse birth-date lookup — with LLM-ready text output. A Rust core, callable from Rust, Python, Go and JavaScript.
+description: A Zi Wei Dou Shu chart engine, field-for-field identical to JS iztro, plus pattern judgement, knowledge packs and reverse birth-date lookup — with LLM-ready text output. A Rust core, callable from Rust, Python, Go and JavaScript / TypeScript.
 icon: Star
 ---
 
@@ -79,10 +79,25 @@ is an engineering standard, not a claim that any one school is the only correct 
     description="Installation, your first chart, Zi Wei concepts, configuration and data model. Applies to every binding."
   />
   <Card
+    title="Getting started"
+    href="/en/docs/guide/getting-started"
+    description="The inputs a chart needs, how to install for each programming language, and your first chart."
+  />
+  <Card
     title="Using it without writing code"
     href="/en/docs/guide/guides/for-non-developers"
     description="What it can do, where it fits, and what to hand your engineers."
   />
+  <Card
+    title="Semantic text (to_text)"
+    href="/en/docs/guide/guides/to-text"
+    description="How the text above is produced, its format, and how to wire it into a model."
+  />
+</Cards>
+
+API reference for each language:
+
+<LanguageCards>
   <Card
     title="Rust API"
     href="/en/docs/rust"
@@ -99,16 +114,11 @@ is an engineering standard, not a claim that any one school is the only correct 
     description="Embedded WebAssembly on a pure Go runtime, no cgo."
   />
   <Card
-    title="JavaScript API"
+    title="JavaScript / TypeScript API"
     href="/en/docs/js"
-    description="A WebAssembly core with TypeScript types, for browsers and Node.js."
+    description="A WebAssembly core with complete bundled type declarations, for browsers and Node.js."
   />
-  <Card
-    title="Semantic text (to_text)"
-    href="/en/docs/guide/guides/to-text"
-    description="How the text above is produced, its format, and how to wire it into a model."
-  />
-</Cards>
+</LanguageCards>
 
 ## Three things iztro doesn't have
 
@@ -145,7 +155,7 @@ Every binding calls the same Rust core, so charts come out identical field for f
 The predicate methods are built on language-independent keys, so one analysis rule — written in
 Rust, Python, Go or JavaScript — yields the same answer on a chart rendered in any output language.
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -180,7 +190,7 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { init, astro } from 'x-iztro';

@@ -26,7 +26,7 @@ nothing when imported, so importing it during server rendering or prerendering n
 
 Both styles work in a client component:
 
-```tsx
+```jsx
 'use client';
 import { useEffect, useState } from 'react';
 
@@ -131,7 +131,7 @@ When the page sets a CSP, instantiating WebAssembly needs `script-src 'wasm-unsa
 
 When `x-iztro/x_iztro.wasm` lives on a CDN or in an offline bundle, pass its address, a `Response` or the bytes to `init`:
 
-```ts
+```js
 await init('https://cdn.example.com/x_iztro.wasm');
 await init(await fetch('/assets/x_iztro.wasm'));
 await init(bytes); // Uint8Array / ArrayBuffer

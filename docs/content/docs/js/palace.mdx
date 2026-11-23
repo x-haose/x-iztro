@@ -92,7 +92,7 @@ mutagedPlaces(allPalaces?: readonly Palace[]): (Palace | undefined)[];          
 `PalaceTarget` 是宫位对象、索引、宫名标识或当前语言的宫名。复刻 iztro：四化列表为空时 `fliesTo` 为 `false`，
 `fliesOneOfTo` 与 `notFlyTo` 为 `true`；目标宫定位不到时三者都为 `false`。
 
-```ts
+```js
 console.log(soul.mutagenStars([Mutagen.LU, Mutagen.JI]));
 console.log(soul.fliesTo(PalaceName.CHILDREN, Mutagen.LU),
   soul.fliesOneOfTo(PalaceName.WEALTH, [Mutagen.LU, Mutagen.JI]), soul.notFlyTo(PalaceName.SOUL, Mutagen.JI));
@@ -131,7 +131,7 @@ toText(options?: TextOptions): string;
 
 单宫的语义化文本，选项同 [`Astrolabe.toText`](/zh/docs/js/astrolabe#totext)。
 
-```ts
+```js
 console.log(soul.toText({ detail: TextDetail.OVERVIEW }));
 ```
 

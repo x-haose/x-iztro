@@ -190,7 +190,7 @@ wholesale), or add topics of your own.
 
 ## Reading a pack
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -248,7 +248,7 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { KnowledgePack, MajorStar } from 'x-iztro';
@@ -275,7 +275,7 @@ A key that is not in the pack comes back empty everywhere: `None` in Rust and Py
 
 The `key` on a pattern hit is exactly the key used in the pack's `patterns` section:
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -328,7 +328,7 @@ for _, hit := range hits {
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 const pack = KnowledgePack.builtin();
@@ -423,7 +423,7 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 </Tab>
 <Tab value="JavaScript">
 
-```ts
+```js
 const pack = KnowledgePack.builtin();
 let sub = pack.forAstrolabe(chart);
 console.log(sub.stars().length, sub.patterns().length, sub.mutagen('sihuaLu') !== undefined, sub.palace('soulPalace'));
@@ -467,7 +467,7 @@ the reading for 紫府同宫, leaving everything else untouched:
 
 Merging produces a new pack:
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -514,7 +514,7 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { readFile } from 'node:fs/promises'; // in a browser, fetch the text instead

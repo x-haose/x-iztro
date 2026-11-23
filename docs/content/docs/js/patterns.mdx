@@ -43,7 +43,7 @@ chart.patterns(config?: PatternConfig): PatternHit[];
 
 本命盘的全部命中，按《格局》页条目顺序；重排盘按重排后的布局判定。
 
-```ts
+```js
 for (const hit of chart.patterns()) {
   console.log(hit.key, hit.name, hit.palaceName, hit.broken, hit.variant ?? '-', hit.stars.map((s) => s.name).join('+'));
 }
@@ -68,7 +68,7 @@ horoscope.patterns(scope: Scope, config?: PatternConfig, astrolabe?: Astrolabe):
 以该层命宫为命宫、合并该层流曜与四化后重跑全部规则，另加两条行运格（禄衰马困、风云际会）；
 `origin` 等同本命。`scope` 比查询精度细时抛 `IztroError`。
 
-```ts
+```js
 console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `${h.name}@${h.palaceName}`).join(' '));
 ```
 
@@ -78,7 +78,7 @@ console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `$
 
 ## toJSON
 
-```ts
+```js
 console.log(JSON.stringify(chart.patterns()[0]));
 ```
 
@@ -95,7 +95,7 @@ horoscope.patternsToText(scope: Scope, options?: { config?; knowledge?; knowledg
 
 给出 `knowledge` 时格局列表之后紧跟各格局的释义。
 
-```ts
+```js
 console.log(chart.patternsToText());
 ```
 

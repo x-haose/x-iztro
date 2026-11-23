@@ -70,7 +70,7 @@ wazero 的编译器后端只支持 amd64 与 arm64，其余架构走解释器，
 
 每次调用另有一次 JSON 编解码与 wasm 内存拷贝，热路径上单次排盘在 0.5ms 量级。
 
-### JavaScript：WebAssembly + TypeScript
+### JavaScript / TypeScript：WebAssembly 内核加 TypeScript 外壳
 
 同一份 `wasm.rs` 编为 `wasm32-unknown-unknown`（不导入任何宿主函数），TypeScript 外壳按与 Go 相同的
 alloc/free + JSON 协议调用，再把 DTO 包成带方法的对象。

@@ -93,7 +93,7 @@ invalid_date invalid solar date '2000-13-1': month must be within 1-12
 
 `IztroError`，带 `.code`；未初始化、参数类型不对这类用法错误抛的是标准 `Error` / `TypeError`：
 
-```ts
+```js
 import { init, astro, IztroError } from 'x-iztro';
 
 await init();
@@ -180,7 +180,7 @@ C FFI 与 wasm 出口把同一个错误落成 `{"error":"<message>","code":"<cod
 
 坏数据跳过、好数据继续，而不是整批失败：
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -220,7 +220,7 @@ for _, row := range rows {
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 const charts: Astrolabe[] = [];

@@ -73,7 +73,7 @@ sp = chart.SurroundedPalacesByIndex(soul.Index)          // 按索引
 </Tab>
 <Tab value="JavaScript">
 
-```ts
+```js
 let sp = chart.surroundedPalaces(PalaceName.SOUL);   // 按宫名
 sp = chart.surroundedPalaces(soul.index);            // 按索引
 ```
@@ -178,7 +178,7 @@ True False False
 判定看的是两宫合计的集合，不看它们分在哪一宫。
 </Callout>
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -231,7 +231,7 @@ true
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 const f = chart.flankingPalaces(PalaceName.SOUL)!;

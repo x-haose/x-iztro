@@ -17,7 +17,7 @@ order. When one name is shared across categories (en-US `horse` is both the zodi
 with `keyFilter`, a substring the key must contain: `'Maj'`, `'Min'`, `'Heavenly'`, `'Earthly'`, `'Palace'`,
 `'Hour'`. A filter with no match gives `undefined`; it never falls back to the unfiltered result.
 
-```ts
+```js
 console.log(i18n.translate('ziweiMaj'), i18n.translate('ziweiMaj', 'ja-JP'), i18n.translate('soulPalace', 'en-US'), i18n.translate('nope'));
 console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'), i18n.allKeys().length);
 ```

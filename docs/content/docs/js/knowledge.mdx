@@ -58,7 +58,7 @@ mine 我的紫微释义 undefined
 本命子包只含盘上出现的星（十二宫主辅杂与四组十二神；同宫主星的双星组合保留）、按口径命中的格局、四化四条，
 不含宫位与术语。运限子包再加各层流耀与各层视角的格局，只取到运限的查询精度。结果仍是标准包。
 
-```ts
+```js
 const sub = pack.forAstrolabe(chart);
 console.log(sub.stars().length, sub.patterns().map((e) => e.name).join(','));
 ```
@@ -73,7 +73,7 @@ console.log(sub.stars().length, sub.patterns().map((e) => e.name).join(','));
 或传一个 `KnowledgePack`（自定义或合并后的包）；`knowledgeDepth: 'summary'` 用摘要层，包里长正文缺摘要时报错并列出缺项。
 用户自己的包可以直接用于浏览器里的排盘文本，不经过任何服务器。
 
-```ts
+```js
 console.log(chart.toText({ knowledge: true, knowledgeDepth: KnowledgeDepth.SUMMARY }).length,
   chart.toText({ knowledge: mine }).includes('我的紫微释义'));
 ```

@@ -35,7 +35,7 @@ reverseChart(criteria: ReverseCriteria, config?: ChartConfig): ReverseResult;
 条件为空、含流耀、年份范围非法抛 `IztroError`。候选按枚举序（农历年升序，年内依 月→时辰→日）；
 达到 `limit` 时停止并置 `truncated`。
 
-```ts
+```js
 console.log(solarDatesByBazi(...chart.rawDates.chineseDate.pillarKeys()));
 const r = reverseChart({
   soulBranch: EarthlyBranch.WU,

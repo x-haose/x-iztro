@@ -57,12 +57,19 @@ description: 排盘要准备哪些输入、每个参数取什么值，以及各�
 
 ## 选择编程语言
 
-<Cards>
-  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="cargo add x-iztro@0.7" />
-  <Card title="Python" href="/zh/docs/guide/getting-started/python" description='pip install "x-iztro~=0.7.0"' />
-  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="go get .../go/iztro@v0.7.0" />
-  <Card title="JavaScript" href="/zh/docs/guide/getting-started/js" description="npm install x-iztro@0.7" />
-</Cards>
+<LanguageCards>
+  <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="原生 crate，零拷贝的强类型结构体" />
+  <Card title="Python" href="/zh/docs/guide/getting-started/python" description="PyO3 原生扩展，dataclass 类型化 API" />
+  <Card title="Go" href="/zh/docs/guide/getting-started/go" description="内嵌 WebAssembly，纯 Go 运行时，无 cgo" />
+  <Card title="JavaScript / TypeScript" href="/zh/docs/guide/getting-started/js" description="WebAssembly 内核，自带完整类型声明，浏览器与 Node.js 通用" />
+</LanguageCards>
+
+```bash
+cargo add x-iztro@0.7                               # Rust
+pip install "x-iztro~=0.7.0"                        # Python
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0   # Go
+npm install x-iztro@0.7                             # JS / TS，自带类型声明
+```
 
 ## 输入校验
 

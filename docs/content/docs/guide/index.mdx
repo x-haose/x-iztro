@@ -1,6 +1,6 @@
 ---
 title: 介绍
-description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go、JavaScript 调用，结果与 JS iztro 逐字段一致。
+description: 把出生时间算成一张完整的紫微斗数命盘，并一键转成大模型读得懂的文字。Rust 核心，供 Rust、Python、Go、JavaScript / TypeScript 调用，结果与 JS iztro 逐字段一致。
 icon: Star
 ---
 
@@ -51,12 +51,12 @@ icon: Star
 
 核心用 Rust 实现，通过各语言绑定暴露给上层编程语言：
 
-<Cards>
+<LanguageCards>
   <Card title="Rust" href="/zh/docs/guide/getting-started/rust" description="原生 crate，零拷贝的强类型结构体" />
   <Card title="Python" href="/zh/docs/guide/getting-started/python" description="PyO3 原生扩展，dataclass 类型化 API" />
   <Card title="Go" href="/zh/docs/guide/getting-started/go" description="内嵌 WebAssembly，纯 Go 运行时，无 cgo" />
-  <Card title="JavaScript" href="/zh/docs/guide/getting-started/js" description="WebAssembly 内核，浏览器与 Node.js 通用" />
-</Cards>
+  <Card title="JavaScript / TypeScript" href="/zh/docs/guide/getting-started/js" description="WebAssembly 内核，自带完整类型声明，浏览器与 Node.js 通用" />
+</LanguageCards>
 
 ## 它解决什么问题
 
@@ -148,6 +148,26 @@ print([s.name for s in soul.major_stars])
     description="不懂命理也能看懂：一张盘由什么构成，字段各自是什么意思"
   />
   <Card
+    title="使用指南"
+    href="/zh/docs/guide/guides"
+    description="AI 解盘、配置与流派、跨语言判断、多语言输出、错误处理与扩展"
+  />
+  <Card
+    title="数据结构字典"
+    href="/zh/docs/guide/data-model"
+    description="每个字段的类型与含义，各编程语言共用的契约"
+  />
+  <Card
+    title="准确性保证"
+    href="/zh/docs/guide/about/accuracy"
+    description="747,572 例金标测试如何保证与 iztro 零差异"
+  />
+</Cards>
+
+各语言的 API 参考：
+
+<LanguageCards>
+  <Card
     title="Rust API 参考"
     href="/zh/docs/rust"
     description="核心库的函数签名、类型与方法"
@@ -163,18 +183,8 @@ print([s.name for s in soul.major_stars])
     description="导出函数、类型与方法的完整条目"
   />
   <Card
-    title="JavaScript API 参考"
+    title="JavaScript / TypeScript API 参考"
     href="/zh/docs/js"
-    description="对象 API、打包器与框架里的用法"
+    description="对象 API 与完整类型声明，打包器与框架里的用法"
   />
-  <Card
-    title="数据结构字典"
-    href="/zh/docs/guide/data-model"
-    description="每个字段的类型与含义，各编程语言共用的契约"
-  />
-  <Card
-    title="准确性保证"
-    href="/zh/docs/guide/about/accuracy"
-    description="747,572 例金标测试如何保证与 iztro 零差异"
-  />
-</Cards>
+</LanguageCards>

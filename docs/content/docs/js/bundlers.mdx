@@ -25,7 +25,7 @@ description: 内核文件怎么被打包；React Router、Vite、Tauri、Next.js
 
 客户端组件里两种写法都可以：
 
-```tsx
+```jsx
 'use client';
 import { useEffect, useState } from 'react';
 
@@ -126,7 +126,7 @@ export default defineConfig({ worker: { format: 'es' } });
 
 把 `x-iztro/x_iztro.wasm` 放到 CDN 或离线包里时，把地址、`Response` 或字节交给 `init`：
 
-```ts
+```js
 await init('https://cdn.example.com/x_iztro.wasm');
 await init(await fetch('/assets/x_iztro.wasm'));
 await init(bytes); // Uint8Array / ArrayBuffer

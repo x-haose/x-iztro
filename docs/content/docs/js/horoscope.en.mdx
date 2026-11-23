@@ -7,7 +7,7 @@ A horoscope is started from a chart (`chart.horoscope`, `horoscopeOfYear`, `horo
 chart, so its query methods need no chart argument. For what each layer means see the
 [Python reference](/en/docs/python/horoscope) and [Horoscope concepts](/en/docs/guide/concepts/horoscope).
 
-```ts
+```js
 const h = chart.horoscope('2024-10-1', 0);
 ```
 
@@ -33,7 +33,7 @@ const h = chart.horoscope('2024-10-1', 0);
 | `stars` | Horoscope stars, one group per palace; `undefined` when the layer has none |
 | `palaceIndexByName(name)` | Palace index of a palace name in this layer |
 
-```ts
+```js
 for (const it of [h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly]) {
   console.log(it.nameKey, it.name, it.index, it.heavenlyStem + it.earthlyBranch, it.mutagen.join(''));
 }
@@ -173,7 +173,7 @@ The horoscope's semantic text; `String(h)` equals `h.toText()`. `through` sets t
 defaults to the query precision; when it stops at the decadal, the decadal section leaves out 风云际会. A
 `through` of `origin`, an unknown layer or one finer than the precision throws `IztroError`.
 
-```ts
+```js
 const text = h.toText({ through: Scope.YEARLY, detail: TextDetail.OVERVIEW });
 console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 ```

@@ -5,10 +5,12 @@ icon: FileCode
 ---
 
 The JS package is the same Rust core compiled to WebAssembly, wrapped in TypeScript: the computation
-happens in wasm, and the JS side offers an object API with type declarations. ESM, zero runtime
-dependencies, for browsers and Node.js alike.
+happens in wasm, and the JS side offers an object API. The package is written in TypeScript and ships complete
+`.d.ts` declarations, so JavaScript and TypeScript use it directly. ESM, zero runtime dependencies, for browsers
+and Node.js alike.
 
-This section is the complete JS API reference. Its semantics match the [Python reference](/en/docs/python)
+This section is the complete JavaScript / TypeScript API reference. Code samples that use TypeScript syntax
+(type annotations, non-null assertions and so on) are marked TypeScript; the rest are plain JavaScript. Its semantics match the [Python reference](/en/docs/python)
 one to one, and the same chart gives the same result on both sides; this section spells out the JS
 signatures, values and differences.
 

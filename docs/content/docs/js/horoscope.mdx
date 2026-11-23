@@ -6,7 +6,7 @@ description: Horoscope 的六个层级、宫位查询、流耀与运限四化判
 运限由星盘发起（`chart.horoscope`、`horoscopeOfYear`、`horoscopeOfMonth`），持有发起它的那张盘，
 查询方法可免传星盘。各层的斗数含义见 [Python 参考](/zh/docs/python/horoscope) 与[运限概念](/zh/docs/guide/concepts/horoscope)。
 
-```ts
+```js
 const h = chart.horoscope('2024-10-1', 0);
 ```
 
@@ -32,7 +32,7 @@ const h = chart.horoscope('2024-10-1', 0);
 | `stars` | 流耀，十二宫各一组；该层没有流耀时为 `undefined` |
 | `palaceIndexByName(name)` | 宫名在该层所在的宫位索引 |
 
-```ts
+```js
 for (const it of [h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly]) {
   console.log(it.nameKey, it.name, it.index, it.heavenlyStem + it.earthlyBranch, it.mutagen.join(''));
 }
@@ -168,7 +168,7 @@ toText(options?: TextOptions & { through?: 'decadal' | 'yearly' | 'monthly' | 'd
 运限的语义化文本，`String(h)` 等于 `h.toText()`。`through` 写到哪一层为止，省略写到查询精度；
 只写到大限时大限段不列风云际会。`through` 为 `origin`、不是层级或比查询精度细时抛 `IztroError`。
 
-```ts
+```js
 const text = h.toText({ through: Scope.YEARLY, detail: TextDetail.OVERVIEW });
 console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 ```

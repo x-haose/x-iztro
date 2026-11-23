@@ -78,7 +78,7 @@ interpreter — slower, same results.
 Each call additionally costs one JSON encode/decode and a wasm memory copy; on the hot path a single
 chart is on the order of 0.5ms.
 
-### JavaScript: WebAssembly + TypeScript
+### JavaScript / TypeScript: a WebAssembly core in a TypeScript shell
 
 The same `wasm.rs` compiled for `wasm32-unknown-unknown` (no host imports); a TypeScript layer calls it
 through the same alloc/free + JSON protocol as Go and wraps the DTOs in objects with methods.

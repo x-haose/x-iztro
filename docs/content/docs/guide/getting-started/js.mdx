@@ -1,5 +1,5 @@
 ---
-title: JavaScript
+title: JavaScript / TypeScript
 description: npm 安装，init 装载 WebAssembly 内核，之后同步调用；浏览器与 Node.js 通用。
 ---
 
@@ -11,7 +11,9 @@ description: npm 安装，init 装载 WebAssembly 内核，之后同步调用；
 npm install x-iztro@0.7
 ```
 
-包里是同一份 Rust 核心编成的 WebAssembly 加上 TypeScript 外壳，ESM，带类型声明，零运行期依赖。
+包里是同一份 Rust 核心编成的 WebAssembly 加上 TypeScript 外壳，ESM，零运行期依赖。
+包本身用 TypeScript 写成，自带完整的 `.d.ts` 类型声明：TypeScript 工程不需要另装 `@types/` 类型包，
+要求 TypeScript 5.0 及以上、`lib` 含 `ES2022`。
 要求 Node.js 22 及以上，或支持 WebAssembly 的现代浏览器。Vite、webpack、Next.js Turbopack
 会自动把 `.wasm` 作为静态资源产出，见[在打包器与框架里使用](/zh/docs/js/bundlers)。
 
@@ -25,7 +27,7 @@ cd js && npm ci && npm run build
 
 ## 排盘
 
-```ts
+```js
 import { init, astro } from 'x-iztro';
 
 await init(); // 装载内核，只需一次；之后的调用都是同步的
@@ -53,7 +55,7 @@ console.log(chart.fiveElementsClass);   // 五行局
 
 农历排盘用 `astro.byLunar`。性别之后的可选项收在对象里（`fixLeap`、`language`、`config`，农历另有 `isLeapMonth`）：
 
-```ts
+```js
 const lunar = astro.byLunar('2000-7-17', 2, 'female', { isLeapMonth: false });
 ```
 

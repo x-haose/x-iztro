@@ -33,7 +33,7 @@ iztro 的每个公开 API 在 Rust、Python、Go、JavaScript 四侧都有等价
 
 其余同理：JS 的 camelCase 在 Rust / Python 下是 snake_case，在 Go 下是 PascalCase，在 x-iztro 的 JS 包里保持 camelCase。
 
-### JavaScript：先 init，再同步调用
+### JavaScript / TypeScript：先 init，再同步调用
 
 x-iztro 的 JS 包把 Rust 核心编成 WebAssembly 运行，装载是异步的：程序里先 `await init()` 一次，
 之后的 API 与 iztro 一样是同步的。模块划分沿用 iztro 的 `astro` / `util` / `star` / `data`；

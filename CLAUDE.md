@@ -72,7 +72,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - `knowledge/` — 知识包格式规范 `SCHEMA.md`（默认包 JSON 在 `src/data/knowledge/`，是手工维护的源文件）
 - `docs/` — 文档站（Next.js + Fumadocs），部署在 <https://x-iztro.x-haose.com>，讲把库嵌进自己的程序。
   面向 AI 客户端使用者的站点在 [x-ziwei](https://github.com/x-haose/x-ziwei) 仓库的 `site/`
-  （<https://ziwei.x-haose.com>，基于本库的公开 MCP 服务）；两站互为入口，MCP 的安装与工具说明只写在那边
+  （<https://ziwei.x-haose.com>，基于本库的公开 MCP 服务）；两站互为入口，MCP 的安装与工具说明只写在那边。
+  文档站约定（中英文成对）：JS 绑定的名称在卡片、页面与小节标题、下拉菜单里写「JavaScript / TypeScript」，
+  只有文档顶栏的栏目切换写「JS / TS」；四种语言并列的卡片用 `<LanguageCards>`（宽屏一行四张），不混进其他卡片组；
+  代码块用了 TypeScript 语法（类型标注、非空断言、`import type` 等）标 `ts`、页签写 TypeScript，否则标 `js`、写 JavaScript
 
 ## 关键约定
 
