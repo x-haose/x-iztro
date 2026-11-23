@@ -7,6 +7,17 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-23
+
+### 修正
+
+- **npm 包补上说明与许可证**：0.7.0 的 npm 包里没有 README 与 LICENSE，npm 页面显示「This package does not have a README」，
+  MIT 要求随副本附带的许可证文本也缺失。现在包内附带两者，README 写安装、第一张盘、给模型读的文本与入口说明。
+- **Go 模块补上 README**：`go/iztro` 是独立模块，模块目录里没有 README，pkg.go.dev 上没有说明。
+- **npm 包的描述与关键词写明 TypeScript**：包本身用 TypeScript 写、自带完整类型声明，原来的描述与关键词里没有体现。
+
+内核与各语言 API 没有变化。
+
 ## [0.7.0] - 2026-11-23
 
 ### 变更（breaking）
@@ -484,7 +495,8 @@
 - AI Prompt 生成：`astrolabe_to_prompt` / `horoscope_to_prompt`。
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
-[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/x-haose/x-iztro/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/x-haose/x-iztro/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/x-haose/x-iztro/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/x-haose/x-iztro/compare/v0.5.0...v0.6.0
