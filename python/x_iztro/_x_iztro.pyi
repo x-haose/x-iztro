@@ -20,6 +20,9 @@ class IztroError(ValueError):
     code: str
     """机器可读的错误分类：invalid_date / invalid_time_index / invalid_argument / internal"""
 
+    issues: list[Any]
+    """知识包构造（`KnowledgePack.from_dict` 等）被拒绝时的全部校验问题（`KnowledgeIssue`）；只在这种错误上设置"""
+
 def by_solar(input: dict[str, Any]) -> dict[str, Any]:
     """阳历排盘，返回星盘 DTO。"""
 

@@ -7,6 +7,28 @@
 
 ## [Unreleased]
 
+### 变更（breaking）
+
+逐条的改法与各语言写法见[从 0.8 升级到 0.9](https://x-iztro.x-haose.com/zh/docs/guide/about/upgrade-0-9)。
+
+- **知识包构造按校验结果拒绝不合规范的包**：此前构造入口只查 `schema`，缺 `id`、未知语言、未知星耀标识（如 `ziweiMjj`）、
+  字段类型不符、正文含 HTML、主题里写错的宫位等都能通过，进了包只会让条目静默失效，或在合并、出文本时才报第一处错且没有路径。
+  现在 Rust `KnowledgePack::from_json` / `from_value`、Python `from_dict` / `from_json`、Go `ParseKnowledgePack`、
+  JavaScript `fromObject` / `fromJSON`，以及 `merged` 收到的覆盖包对象，遇到 error 级问题即报 `invalid_argument`，
+  信息逐条列出全部 error 级问题及其路径；Python、JavaScript 的异常与 Go 的 `*Error` 另带 `issues`。
+  规范外的字段、空字符串、摘要写法等 warning 级问题不影响构造。Go 的 `ParseKnowledgePack` 改为进 wasm 内核校验，
+  另有 `ParseKnowledgePackContext`。SCHEMA.md §3 的实现行为随之改为「未知标识即拒绝」。
+
+### 新增
+
+- **知识包校验**：`KnowledgePack.check(raw, base?)` 逐条返回包里不合 `knowledge/SCHEMA.md` 的地方，每条带级别（error / warning）、
+  JSON 路径、代码与参数，一次返回全部问题；输入不是对象、JSON 非法也作为问题返回，不抛异常。27 种代码各自注明出处
+  （SCHEMA.md 的条款或默认包测试的断言），未知标识、字段、语言与取值给出编辑距离最近的建议（相邻换位计 1，上限为词长的三分之一）。
+  给了底包时另报相对底包的提醒（空串覆盖底包的值、语言或 `extends` 与底包不符），摘要规则按合并后的条目判断。
+  默认包口吻红线里指向页面上下文的那部分按 §5 对所有包生效（warning），其余是默认包自己的写法要求，不查。
+  Rust `knowledge::check` / `check_json`，Python `KnowledgePack.check`，Go `CheckKnowledgePack`，JavaScript `KnowledgePack.check`，
+  bridge kind `checkKnowledgePack`。内嵌默认包校验结果为空。
+
 ## [0.8.0] - 2026-11-23
 
 ### 新增

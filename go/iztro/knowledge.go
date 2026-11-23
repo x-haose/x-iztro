@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
-
-// knowledgeSchemaVersion 为支持的知识包格式版本，与 Rust 内核 knowledge::SCHEMA_VERSION 一致。
-const knowledgeSchemaVersion = 1
 
 // 知识包：语言无关标识 → 解读文本与门派属性。
 // 内核只负责事实判定，星耀怎么解读、格局意味着什么、宫位与四化的含义属于门派观点，
@@ -310,19 +308,154 @@ func (p *KnowledgePack) ForHoroscopeContext(ctx context.Context, horoscope *Horo
 	return KnowledgeFrom(p).ForHoroscopeContext(ctx, horoscope, config)
 }
 
-// ParseKnowledgePack 由 JSON 文本解析一份包，并校验格式版本
-// （与 Rust 内核解析同语义：未声明 schema 或版本比支持的新都拒绝）。
+// 知识包校验问题的种类（KnowledgeIssue.Code）；级别与出处见文档站「知识包 · 校验」。
+const (
+	// IssueInvalidJSON 为文本不是合法 JSON
+	IssueInvalidJSON = "invalid_json"
+	// IssueNotObject 为包或条目不是 JSON 对象
+	IssueNotObject = "not_object"
+	// IssueSchemaMissing 为schema 缺失、为 null 或 0
+	IssueSchemaMissing = "schema_missing"
+	// IssueSchemaUnsupported 为schema 比支持的版本新
+	IssueSchemaUnsupported = "schema_unsupported"
+	// IssueWrongType 为字段类型与规范不符
+	IssueWrongType = "wrong_type"
+	// IssueRequiredMissing 为id / version / language 缺失或为空串
+	IssueRequiredMissing = "required_missing"
+	// IssueUnknownLanguage 为language 不是 x-iztro 语言码
+	IssueUnknownLanguage = "unknown_language"
+	// IssueUnknownKey 为条目键不是内核认识的标识
+	IssueUnknownKey = "unknown_key"
+	// IssueCombinationKeyNotMajor 为双星组合的键不是主星
+	IssueCombinationKeyNotMajor = "combination_key_not_major"
+	// IssueInvalidValue 为category / yinYang / fiveElements / stem 取值不在规定集合内
+	IssueInvalidValue = "invalid_value"
+	// IssueInvalidSlug 为术语或主题的 slug 含小写字母、数字、连字符以外的字符
+	IssueInvalidSlug = "invalid_slug"
+	// IssueUnknownPalace 为主题的宫位不认识
+	IssueUnknownPalace = "unknown_palace"
+	// IssueHTMLInText 为正文含 HTML 标签
+	IssueHTMLInText = "html_in_text"
+	// IssueImageInText 为正文含图片
+	IssueImageInText = "image_in_text"
+	// IssueExternalLink 为正文含站外链接
+	IssueExternalLink = "external_link"
+	// IssueUnknownField 为规范之外的字段，解析时被丢弃
+	IssueUnknownField = "unknown_field"
+	// IssueEmptyString 为字段为空字符串
+	IssueEmptyString = "empty_string"
+	// IssueSummaryMissing 为正文超过 240 宽却没有摘要
+	IssueSummaryMissing = "summary_missing"
+	// IssueSummaryNotNeeded 为正文不超过 240 宽却另写了摘要
+	IssueSummaryNotNeeded = "summary_not_needed"
+	// IssueSummaryTooWide 为摘要超过 100 宽
+	IssueSummaryTooWide = "summary_too_wide"
+	// IssueSummaryMultiParagraph 为摘要不是单段
+	IssueSummaryMultiParagraph = "summary_multi_paragraph"
+	// IssueSummaryWithoutBody 为摘要没有对应的正文
+	IssueSummaryWithoutBody = "summary_without_body"
+	// IssuePageReference 为正文依赖页面上下文
+	IssuePageReference = "page_reference"
+	// IssueTopicWithoutPalaces 为主题一个宫都不取
+	IssueTopicWithoutPalaces = "topic_without_palaces"
+	// IssueOverridesWithEmpty 为以空串覆盖底包里有值的字段
+	IssueOverridesWithEmpty = "overrides_with_empty"
+	// IssueLanguageDiffersFromBase 为语言与底包不同
+	IssueLanguageDiffersFromBase = "language_differs_from_base"
+	// IssueExtendsDiffersFromBase 为extends 与底包的 id 不同
+	IssueExtendsDiffersFromBase = "extends_differs_from_base"
+)
+
+// KnowledgeIssue 为知识包校验的一条问题（CheckKnowledgePack）。
+type KnowledgeIssue struct {
+	// Level 为 "error"（违反规范的「必须 / 不得」或内核用到该处时会失败，构造知识包时拒绝）
+	// 或 "warning"（「应 / 不应」、被丢弃的字段、启发式匹配与相对底包的提醒，只报告）
+	Level string `json:"level"`
+	// Path 为问题所在的 JSON 路径：对象键为 string、数组下标为 int；空切片指包本身
+	Path IssuePath `json:"path"`
+	// Code 为问题种类（Issue* 常量之一）
+	Code string `json:"code"`
+	// Params 为补充数据，如 {"key": "ziweiMjj", "suggestion": "ziweiMaj"}
+	Params map[string]any `json:"params"`
+	// Message 为带路径的英文说明，供日志；界面应按 Code 与 Params 组织文案
+	Message string `json:"message"`
+}
+
+// IssuePath 为 JSON 路径，元素是 string（对象键）或 int（数组下标）。
+type IssuePath []any
+
+// UnmarshalJSON 把数组下标解成 int（encoding/json 默认解成 float64）。
+func (p *IssuePath) UnmarshalJSON(data []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	out := make(IssuePath, 0, len(raw))
+	for _, seg := range raw {
+		var key string
+		if err := json.Unmarshal(seg, &key); err == nil {
+			out = append(out, key)
+			continue
+		}
+		var index int
+		if err := json.Unmarshal(seg, &index); err != nil {
+			return fmt.Errorf("issue path segment %s is neither a key nor an index", seg)
+		}
+		out = append(out, index)
+	}
+	*p = out
+	return nil
+}
+
+// CheckKnowledgePack 逐条校验一份包的 JSON 文本，一次返回全部问题（不在第一处停）；
+// 文本不是合法 JSON、不是对象等也作为 error 级问题返回。base 非 nil 时另报相对底包的提醒
+// （空串覆盖底包的值、语言或 extends 与底包不符），摘要规则按合并后的条目判断。
+// 返回的 error 只表示调用失败（base 本身不合法、wasm 故障），不表示包有问题。
+func CheckKnowledgePack(data []byte, base *KnowledgePack) ([]KnowledgeIssue, error) {
+	return CheckKnowledgePackContext(context.Background(), data, base)
+}
+
+// CheckKnowledgePackContext 为 CheckKnowledgePack 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func CheckKnowledgePackContext(ctx context.Context, data []byte, base *KnowledgePack) ([]KnowledgeIssue, error) {
+	payload := map[string]any{"kind": "checkKnowledgePack", "packJson": string(data)}
+	if base != nil {
+		payload["basePack"] = base
+	}
+	var out []KnowledgeIssue
+	if err := utilQueryContext(ctx, payload, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ParseKnowledgePack 由 JSON 文本解析一份包。先经 CheckKnowledgePack 校验，有 error 级问题即返回
+// ErrInvalidArgument 类错误（*Error，全部问题在其 Issues 字段）。
 func ParseKnowledgePack(data []byte) (*KnowledgePack, error) {
+	return ParseKnowledgePackContext(context.Background(), data)
+}
+
+// ParseKnowledgePackContext 为 ParseKnowledgePack 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func ParseKnowledgePackContext(ctx context.Context, data []byte) (*KnowledgePack, error) {
+	issues, err := CheckKnowledgePackContext(ctx, data, nil)
+	if err != nil {
+		return nil, err
+	}
+	var messages []string
+	for _, issue := range issues {
+		if issue.Level == "error" {
+			messages = append(messages, issue.Message)
+		}
+	}
+	if len(messages) > 0 {
+		return nil, &Error{
+			Code:    CodeInvalidArgument,
+			Message: "invalid knowledge pack: " + strings.Join(messages, "; "),
+			Issues:  issues,
+		}
+	}
 	var out KnowledgePack
 	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, invalidArgument("invalid knowledge pack: " + err.Error())
-	}
-	if out.Schema <= 0 {
-		return nil, invalidArgument(`knowledge pack must declare "schema" (currently 1)`)
-	}
-	if out.Schema > knowledgeSchemaVersion {
-		return nil, invalidArgument(fmt.Sprintf(
-			"knowledge pack schema %d is newer than supported %d", out.Schema, knowledgeSchemaVersion))
+		return nil, internalError("knowledge pack passed the checks but failed to decode: " + err.Error())
 	}
 	return &out, nil
 }

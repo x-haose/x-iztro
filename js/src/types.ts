@@ -17,6 +17,7 @@ import type {
   Gender,
   HeavenlyStem,
   HoroscopeDivide,
+  KnowledgeIssueCode,
   KnowledgeDepth,
   Language,
   MonthPart,
@@ -467,4 +468,21 @@ export interface PatternHitData {
   broken: boolean;
   /** 参与成格的星与落宫 */
   stars: PatternStarData[];
+}
+
+/** 知识包校验的一条问题（`KnowledgePack.check`） */
+export interface KnowledgeIssue {
+  /**
+   * `error`：违反规范的「必须 / 不得」或内核用到该处时会失败，构造知识包时拒绝；
+   * `warning`：「应 / 不应」、被丢弃的字段、启发式匹配与相对底包的提醒，只报告
+   */
+  level: 'error' | 'warning';
+  /** 问题所在的 JSON 路径：对象键为字符串、数组下标为数字；空数组指包本身 */
+  path: (string | number)[];
+  /** 问题种类，出处与 `params` 的键见文档站「知识包 · 校验」 */
+  code: KnowledgeIssueCode;
+  /** 补充数据，如 `{ key: 'ziweiMjj', suggestion: 'ziweiMaj' }` */
+  params: Record<string, unknown>;
+  /** 带路径的英文说明，供日志；界面应按 `code` 与 `params` 组织文案 */
+  message: string;
 }

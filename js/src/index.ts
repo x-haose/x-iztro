@@ -14,7 +14,7 @@ export * as calendar from './calendar.js';
 export type { LunarToSolarOptions } from './calendar.js';
 
 export * from './enums.js';
-export { IztroError, type ErrorCode } from './errors.js';
+export { IztroError, type ErrorCode, type IztroErrorOptions } from './errors.js';
 export type { WasmSource } from './runtime.js';
 export { isInitialized } from './runtime.js';
 
@@ -43,6 +43,7 @@ export {
   type TextEntry,
   type ConceptEntry,
   type TopicEntry,
+  type CheckOptions,
 } from './knowledge.js';
 export {
   solarDatesByBazi,

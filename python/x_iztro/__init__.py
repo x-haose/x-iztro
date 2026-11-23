@@ -103,11 +103,12 @@ from x_iztro.enums import (
     BrightnessSource,
     TextDetail,
     KnowledgeDepth,
+    KnowledgeIssueCode,
 )
 
 # 主类
 from x_iztro import calendar, data, i18n, knowledge, plugin, query, reverse, star, utils
-from x_iztro.knowledge import KnowledgePack
+from x_iztro.knowledge import KnowledgeIssue, KnowledgePack
 from x_iztro.reverse import (
     BirthCandidate,
     ReverseCriteria,
@@ -182,6 +183,7 @@ __all__ = [
     "PatternHit",
     "PatternStar",
     "KnowledgePack",
+    "KnowledgeIssue",
     "BirthCandidate",
     "ReverseCriteria",
     "ReverseResult",
@@ -218,6 +220,7 @@ __all__ = [
     "BrightnessSource",
     "TextDetail",
     "KnowledgeDepth",
+    "KnowledgeIssueCode",
     # 子模块：安星、数据表、翻译
     "star",
     "data",

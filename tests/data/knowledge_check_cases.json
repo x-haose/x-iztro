@@ -1,0 +1,1556 @@
+{
+ "comment": "知识包校验的四侧共用用例：每条给出包（pack 为 JSON 值，packJson 为原文）、可选的底包（builtin 为内嵌默认包）与期望的全部问题；params 给出时逐键比对。由 Rust tests/knowledge_check.rs、Python test_knowledge_check.py、Go knowledge_check_test.go、JS knowledge-check.test.ts 读取。",
+ "cases": [
+  {
+   "name": "invalid_json: 非法 JSON",
+   "packJson": "{bad",
+   "expect": [
+    {
+     "level": "error",
+     "path": [],
+     "code": "invalid_json"
+    }
+   ]
+  },
+  {
+   "name": "invalid_json 反例: 合法 JSON",
+   "packJson": "{\"schema\": 1, \"id\": \"t\", \"version\": \"1\", \"language\": \"zh-CN\"}",
+   "expect": []
+  },
+  {
+   "name": "not_object: 数组",
+   "pack": [],
+   "expect": [
+    {
+     "level": "error",
+     "path": [],
+     "code": "not_object",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "not_object: null",
+   "pack": null,
+   "expect": [
+    {
+     "level": "error",
+     "path": [],
+     "code": "not_object",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "not_object 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": []
+  },
+  {
+   "name": "schema_missing: 缺失",
+   "pack": {
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "schema"
+     ],
+     "code": "schema_missing",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "schema_missing: 为 0",
+   "pack": {
+    "schema": 0,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "schema"
+     ],
+     "code": "schema_missing",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "schema_unsupported",
+   "pack": {
+    "schema": 2,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "schema"
+     ],
+     "code": "schema_unsupported",
+     "params": {
+      "value": 2,
+      "supported": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "schema 反例: 1",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": []
+  },
+  {
+   "name": "wrong_type: id 为数字",
+   "pack": {
+    "schema": 1,
+    "id": 5,
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "id"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "string"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type: stars 为数组",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": []
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "object"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type: quotes 元素",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "patterns": {
+     "zi_fu_tong_gong": {
+      "quotes": [
+       "a",
+       2
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "patterns",
+      "zi_fu_tong_gong",
+      "quotes",
+      1
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "string"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type 反例: 段与字段为 null",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": null,
+      "attributes": null
+     }
+    },
+    "patterns": null,
+    "source": null,
+    "extends": null
+   },
+   "expect": []
+  },
+  {
+   "name": "required_missing: id 空串",
+   "pack": {
+    "schema": 1,
+    "id": "",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "id"
+     ],
+     "code": "required_missing",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "required_missing: 缺 version 与 language",
+   "pack": {
+    "schema": 1,
+    "id": "t"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "version"
+     ],
+     "code": "required_missing",
+     "params": {}
+    },
+    {
+     "level": "error",
+     "path": [
+      "language"
+     ],
+     "code": "required_missing",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "required_missing 反例",
+   "pack": {
+    "schema": 1,
+    "id": "x",
+    "version": "1",
+    "language": "zh-CN"
+   },
+   "expect": []
+  },
+  {
+   "name": "unknown_language: 下划线写法",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh_cn"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "language"
+     ],
+     "code": "unknown_language",
+     "params": {
+      "value": "zh_cn",
+      "suggestion": "zh-CN"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_language: 无相近",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "xx-YY"
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "language"
+     ],
+     "code": "unknown_language",
+     "params": {
+      "value": "xx-YY"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_language 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-TW"
+   },
+   "expect": []
+  },
+  {
+   "name": "unknown_key: 星耀拼错",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMjj": {}
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMjj"
+     ],
+     "code": "unknown_key",
+     "params": {
+      "key": "ziweiMjj",
+      "suggestion": "ziweiMaj"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_key: 格局无相近",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "patterns": {
+     "foo": {}
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "patterns",
+      "foo"
+     ],
+     "code": "unknown_key",
+     "params": {
+      "key": "foo"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_key: 组合对方拼错",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "tianfMaj": "x"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinations",
+      "tianfMaj"
+     ],
+     "code": "unknown_key",
+     "params": {
+      "key": "tianfMaj",
+      "suggestion": "tianfuMaj"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_key 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {}
+    },
+    "palaces": {
+     "soulPalace": {}
+    },
+    "mutagens": {
+     "sihuaLu": {}
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "combination_key_not_major",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "wenchangMin": "x"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinations",
+      "wenchangMin"
+     ],
+     "code": "combination_key_not_major",
+     "params": {
+      "key": "wenchangMin"
+     }
+    }
+   ]
+  },
+  {
+   "name": "combination_key_not_major 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "tianfuMaj": "x"
+      }
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "invalid_value: category",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "category": "majr"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "category"
+     ],
+     "code": "invalid_value",
+     "params": {
+      "value": "majr",
+      "allowed": [
+       "major",
+       "minor",
+       "adjective",
+       "dec",
+       "flow"
+      ],
+      "suggestion": "major"
+     }
+    }
+   ]
+  },
+  {
+   "name": "invalid_value: stem 无相近",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "attributes": {
+       "stem": "zz"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "attributes",
+      "stem"
+     ],
+     "code": "invalid_value",
+     "params": {
+      "value": "zz",
+      "allowed": [
+       "jia",
+       "yi",
+       "bing",
+       "ding",
+       "wu",
+       "ji",
+       "geng",
+       "xin",
+       "ren",
+       "gui"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "invalid_value 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "category": "major",
+      "attributes": {
+       "yinYang": "yin",
+       "fiveElements": "earth",
+       "stem": "ji"
+      }
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "invalid_slug",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "concepts": {
+     "San_Fang": {
+      "title": "三方"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "concepts",
+      "San_Fang"
+     ],
+     "code": "invalid_slug",
+     "params": {
+      "key": "San_Fang"
+     }
+    }
+   ]
+  },
+  {
+   "name": "invalid_slug 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "concepts": {
+     "san-fang-4": {
+      "title": "三方"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "unknown_palace",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "love": {
+      "surround": [
+       "spousePalce"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "topics",
+      "love",
+      "surround",
+      0
+     ],
+     "code": "unknown_palace",
+     "params": {
+      "value": "spousePalce",
+      "suggestion": "spousePalace"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_palace 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "love": {
+      "surround": [
+       "spousePalace",
+       "bodyPalace"
+      ],
+      "palaces": [
+       "originalPalace"
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "html_in_text",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "紫微<b>帝座</b>"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "html_in_text",
+     "params": {
+      "snippet": "<b>"
+     }
+    }
+   ]
+  },
+  {
+   "name": "html_in_text 反例: 比较号",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "1 < 2 且 3 > 2"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "image_in_text",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "如图 ![图](a.png)"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "image_in_text",
+     "params": {
+      "snippet": "![图](a.png)"
+     }
+    }
+   ]
+  },
+  {
+   "name": "image_in_text 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "![只有方括号]"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "external_link",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "patterns": {
+     "zi_fu_tong_gong": {
+      "quotes": [
+       "出处 https://e.com/a"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "patterns",
+      "zi_fu_tong_gong",
+      "quotes",
+      0
+     ],
+     "code": "external_link",
+     "params": {
+      "url": "https://e.com/a"
+     }
+    }
+   ]
+  },
+  {
+   "name": "external_link 反例: 无协议",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "e.com"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "unknown_field: 顶层",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extra": 1
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "extra"
+     ],
+     "code": "unknown_field",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "unknown_field: 条目字段拼错",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intor": "x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intor"
+     ],
+     "code": "unknown_field",
+     "params": {
+      "suggestion": "intro"
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_field 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "x"
+     }
+    },
+    "source": {
+     "author": "某",
+     "retrievedAt": "2026"
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "empty_string",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "name": ""
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "name"
+     ],
+     "code": "empty_string",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "empty_string 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "name": "紫微"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "summary_missing",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj"
+     ],
+     "code": "summary_missing",
+     "params": {
+      "width": 242,
+      "limit": 240
+     }
+    }
+   ]
+  },
+  {
+   "name": "summary_missing: 组合解读",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinations": {
+       "tianfuMaj": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinations",
+      "tianfuMaj"
+     ],
+     "code": "summary_missing",
+     "params": {
+      "width": 242,
+      "limit": 240
+     }
+    }
+   ]
+  },
+  {
+   "name": "summary_missing 反例: 恰到上限",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "summary_not_needed",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "短",
+      "summary": "短"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "summary"
+     ],
+     "code": "summary_not_needed",
+     "params": {
+      "width": 2,
+      "limit": 240
+     }
+    }
+   ]
+  },
+  {
+   "name": "summary_not_needed 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+      "summary": "摘要"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "summary_too_wide",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+      "summary": "摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "summary"
+     ],
+     "code": "summary_too_wide",
+     "params": {
+      "width": 102,
+      "limit": 100
+     }
+    }
+   ]
+  },
+  {
+   "name": "summary_too_wide 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+      "summary": "摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘摘"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "summary_multi_paragraph",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+      "summary": "甲\n\n乙"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "summary"
+     ],
+     "code": "summary_multi_paragraph",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "summary_multi_paragraph 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+      "summary": "甲乙"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "summary_without_body: 无正文",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "summary": "摘要"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "summary"
+     ],
+     "code": "summary_without_body",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "summary_without_body: 组合摘要无组合",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "combinationSummaries": {
+       "pojunMaj": "摘要"
+      }
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "combinationSummaries",
+      "pojunMaj"
+     ],
+     "code": "summary_without_body",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "summary_without_body 反例: 声明 extends 而未给底包",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs",
+    "stars": {
+     "ziweiMaj": {
+      "summary": "摘要"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "page_reference",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "详见下文"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "intro"
+     ],
+     "code": "page_reference",
+     "params": {
+      "phrase": "详见"
+     }
+    }
+   ]
+  },
+  {
+   "name": "page_reference 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "详细说来"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "topic_without_palaces",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "title": "空"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "topics",
+      "t"
+     ],
+     "code": "topic_without_palaces",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "topic_without_palaces 反例: 有宫位",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "topic_without_palaces 反例: 覆盖包未给底包",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs",
+    "topics": {
+     "t": {
+      "title": "改名"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "overrides_with_empty",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "name": ""
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj",
+      "name"
+     ],
+     "code": "overrides_with_empty",
+     "params": {
+      "base": "紫微"
+     }
+    }
+   ]
+  },
+  {
+   "name": "overrides_with_empty 反例: 底包无此值",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "concepts": {
+     "my": {
+      "title": ""
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "concepts",
+      "my",
+      "title"
+     ],
+     "code": "empty_string",
+     "params": {}
+    }
+   ]
+  },
+  {
+   "name": "language_differs_from_base",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "en-US"
+   },
+   "base": "builtin",
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "language"
+     ],
+     "code": "language_differs_from_base",
+     "params": {
+      "value": "en-US",
+      "base": "zh-CN"
+     }
+    }
+   ]
+  },
+  {
+   "name": "language_differs_from_base 反例: 未给底包",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "en-US"
+   },
+   "expect": []
+  },
+  {
+   "name": "extends_differs_from_base",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "other"
+   },
+   "base": "builtin",
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "extends"
+     ],
+     "code": "extends_differs_from_base",
+     "params": {
+      "value": "other",
+      "base": "iztro-docs"
+     }
+    }
+   ]
+  },
+  {
+   "name": "extends_differs_from_base 反例",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs"
+   },
+   "base": "builtin",
+   "expect": []
+  },
+  {
+   "name": "底包: 换了长正文不给摘要，旧摘要失效",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "stars": {
+     "ziweiMaj": {
+      "intro": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": [
+    {
+     "level": "warning",
+     "path": [
+      "stars",
+      "ziweiMaj"
+     ],
+     "code": "summary_missing",
+     "params": {
+      "width": 242,
+      "limit": 240
+     }
+    }
+   ]
+  },
+  {
+   "name": "底包: 主题只改标题，宫位取底包",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs",
+    "topics": {
+     "romance": {
+      "title": "改名"
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": []
+  },
+  {
+   "name": "底包: 只给摘要，正文取底包",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs",
+    "stars": {
+     "ziweiMaj": {
+      "summary": "新摘要"
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": []
+  },
+  {
+   "name": "底包: null 等同缺省，保留底包的正文与摘要",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "extends": "iztro-docs",
+    "stars": {
+     "ziweiMaj": {
+      "intro": null,
+      "summary": "新摘要"
+     }
+    }
+   },
+   "base": "builtin",
+   "expect": []
+  },
+  {
+   "name": "一次返回全部问题",
+   "pack": {
+    "schema": 1,
+    "id": "",
+    "version": "1",
+    "language": "zh_cn",
+    "stars": {
+     "ziweiMjj": {
+      "intro": "<i>x</i>"
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "id"
+     ],
+     "code": "required_missing",
+     "params": {}
+    },
+    {
+     "level": "error",
+     "path": [
+      "language"
+     ],
+     "code": "unknown_language",
+     "params": {
+      "value": "zh_cn",
+      "suggestion": "zh-CN"
+     }
+    },
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMjj"
+     ],
+     "code": "unknown_key",
+     "params": {
+      "key": "ziweiMjj",
+      "suggestion": "ziweiMaj"
+     }
+    },
+    {
+     "level": "error",
+     "path": [
+      "stars",
+      "ziweiMjj",
+      "intro"
+     ],
+     "code": "html_in_text",
+     "params": {
+      "snippet": "<i>"
+     }
+    }
+   ]
+  }
+ ]
+}

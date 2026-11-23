@@ -334,6 +334,11 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   不截断不回退全文）。合并时覆盖条目换了正文没给摘要，`drop_stale_summaries` 按成对表
   `SUMMARY_OF` / `SUMMARY_MAP_OF` 清掉旧摘要——新增配摘要的正文字段要加进这两张表。默认包摘要单段、
   宽度不超过 100、只压缩原意，由 `builtin_summaries_follow_authoring_rules` 守
+- 校验：`src/knowledge/check.rs` 是唯一实现（各语言经 bridge kind `checkKnowledgePack` 复用），规则只取 SCHEMA.md
+  与 `knowledge_pack` 测试对默认包的断言，每个 `IssueCode` 的文档写明出处；违反「必须 / 不得」或内核用到会失败的为 error，
+  `from_value`（因而全部构造入口与收包的 bridge kind）遇 error 即拒绝；「应 / 不应」、被丢弃的字段、字面启发式与相对底包的
+  提醒为 warning。SCHEMA 新增字段或取值集合时同步 `check.rs` 的字段表，否则新字段会被报成 `unknown_field`。
+  四侧共用用例 `tests/data/knowledge_check_cases.json`（每个代码正反例），默认包校验结果必须为空
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的

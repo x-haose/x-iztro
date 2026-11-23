@@ -219,6 +219,10 @@ pub struct QueryInput {
     // 知识包用
     /// 待合并的知识包对象列表：第一个为底包，其余依次作为覆盖包
     pub knowledge_packs: Vec<Value>,
+    /// `checkKnowledgePack` 待校验的包，JSON 文本：文本非法、不是对象都作为校验问题返回
+    pub pack_json: Option<String>,
+    /// `checkKnowledgePack` 的底包对象：给出时另报相对底包的提醒；它本身必须是合法的包
+    pub base_pack: Option<Value>,
     /// to_text 家族的释义材料来源：字符串 `"builtin"` 取盘语言的内嵌包，
     /// 或直接给一个知识包对象（自定义/合并后的包）；省略则只输出盘面事实
     pub knowledge: Option<Value>,
@@ -672,6 +676,7 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
                 })
         }
         "mergeKnowledgePacks" => merge_knowledge_packs(&input.knowledge_packs),
+        "checkKnowledgePack" => check_knowledge_pack(input),
 
         // ---- util 与 astro/palace ----
         "fixIndex"
@@ -1219,8 +1224,9 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
 
 /// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。
 fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
-    let mut parsed = packs.iter().map(|v| {
-        crate::knowledge::KnowledgePack::from_value(v).map_err(BridgeError::invalid_argument)
+    let mut parsed = packs.iter().enumerate().map(|(i, v)| {
+        crate::knowledge::KnowledgePack::from_value(v)
+            .map_err(|e| BridgeError::invalid_argument(format!("knowledgePacks[{i}]: {e}")))
     });
     let Some(base) = parsed.next() else {
         return Err(BridgeError::invalid_argument(
@@ -1232,6 +1238,44 @@ fn merge_knowledge_packs(packs: &[Value]) -> Result<Value, BridgeError> {
         base.merge(&overlay?);
     }
     serde_json::to_value(base).map_err(serialize_failed)
+}
+
+/// 校验知识包：返回全部问题，每条 `{level, path, code, params, message}`；`path` 的元素是对象键
+/// （字符串）或数组下标（数字），`message` 为带点分路径的英文说明（同 `KnowledgeIssue` 的 Display）。
+fn check_knowledge_pack(input: &QueryInput) -> Result<Value, BridgeError> {
+    use crate::knowledge::{KnowledgePack, PathSegment, check_json};
+    let pack = input
+        .pack_json
+        .as_deref()
+        .ok_or_else(|| BridgeError::invalid_argument("packJson is required"))?;
+    let base = match &input.base_pack {
+        Some(v) => Some(
+            KnowledgePack::from_value(v)
+                .map_err(|e| BridgeError::invalid_argument(format!("basePack: {e}")))?,
+        ),
+        None => None,
+    };
+    let issues: Vec<Value> = check_json(pack, base.as_ref())
+        .into_iter()
+        .map(|i| {
+            let path: Vec<Value> = i
+                .path
+                .iter()
+                .map(|seg| match seg {
+                    PathSegment::Key(k) => json!(k),
+                    PathSegment::Index(n) => json!(n),
+                })
+                .collect();
+            json!({
+                "level": i.level.as_key(),
+                "path": path,
+                "code": i.code.as_key(),
+                "params": i.params,
+                "message": i.to_string(),
+            })
+        })
+        .collect();
+    Ok(json!(issues))
 }
 
 /// 纯计算的工具函数：收发都用语言无关 key
