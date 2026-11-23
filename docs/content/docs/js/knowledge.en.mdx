@@ -63,7 +63,7 @@ twelve-spirit cycles; same-palace major-star pairings are kept), the patterns th
 and the four mutagens — no palaces or glossary. The horoscope subset adds each layer's horoscope stars and
 patterns, down to the horoscope's query precision. Both are ordinary packs.
 
-```ts
+```js
 const sub = pack.forAstrolabe(chart);
 console.log(sub.stars().length, sub.patterns().map((e) => e.name).join(','));
 ```
@@ -79,7 +79,7 @@ language, or pass a `KnowledgePack` (your own or a merged one); `knowledgeDepth:
 layer and fails, listing what is missing, when a long text has no summary. A user's own pack works straight in
 the browser's chart text, without going through any server.
 
-```ts
+```js
 console.log(chart.toText({ knowledge: true, knowledgeDepth: KnowledgeDepth.SUMMARY }).length,
   chart.toText({ knowledge: mine }).includes('我的紫微释义'));
 ```

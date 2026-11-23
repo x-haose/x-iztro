@@ -19,7 +19,7 @@ astro.getMajorStarKeysByLunarDate(lunarDate: string, timeIndex: TimeIndex, optio
 - 命宫主星多颗以逗号分隔；命宫为空宫时借对宫主星，与 iztro 一致。`*Keys*` 是同一结果的标识投影，与语言无关。
 - 日期或时辰索引非法抛 `IztroError`。
 
-```ts
+```js
 console.log(astro.getZodiacBySolarDate('2000-8-16'), astro.getZodiacBySolarDate('2000-8-16', 'en-US'));
 console.log(astro.getSignBySolarDate('2000-8-16'), astro.getSignByLunarDate('2000-7-17'));
 console.log(astro.getMajorStarBySolarDate('2000-8-16', 2), astro.getMajorStarByLunarDate('2000-7-17', 2, { language: 'en-US' }));

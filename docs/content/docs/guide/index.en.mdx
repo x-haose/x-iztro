@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python, Go and JavaScript, matching JS iztro field for field.
+description: Turn a birth date and hour into a complete Zi Wei Dou Shu chart, and into text a language model can read. A Rust core, callable from Rust, Python, Go and JavaScript / TypeScript, matching JS iztro field for field.
 icon: Star
 ---
 
@@ -51,12 +51,12 @@ Whether a chart is *correct* has one hard standard here: **zero field-level dive
 
 The core is written in Rust and exposed to higher-level languages through bindings:
 
-<Cards>
+<LanguageCards>
   <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="A native crate with strongly typed, zero-copy structs" />
   <Card title="Python" href="/en/docs/guide/getting-started/python" description="A native PyO3 extension with a typed dataclass API" />
   <Card title="Go" href="/en/docs/guide/getting-started/go" description="Embedded WebAssembly on a pure Go runtime, no cgo" />
-  <Card title="JavaScript" href="/en/docs/guide/getting-started/js" description="A WebAssembly core for browsers and Node.js" />
-</Cards>
+  <Card title="JavaScript / TypeScript" href="/en/docs/guide/getting-started/js" description="A WebAssembly core with complete bundled type declarations, for browsers and Node.js" />
+</LanguageCards>
 
 ## The problem it solves
 
@@ -160,6 +160,26 @@ Full installation and examples for every programming language are on
     description="Readable without any background in the art: what a chart is made of and what each field means"
   />
   <Card
+    title="Guides"
+    href="/en/docs/guide/guides"
+    description="AI readings, configuration and schools, cross-language predicates, multilingual output, errors and extension"
+  />
+  <Card
+    title="Data model"
+    href="/en/docs/guide/data-model"
+    description="The type and meaning of every field — the contract shared by every programming language"
+  />
+  <Card
+    title="Accuracy"
+    href="/en/docs/guide/about/accuracy"
+    description="How 747,572 golden cases keep the output identical to iztro"
+  />
+</Cards>
+
+API reference for each language:
+
+<LanguageCards>
+  <Card
     title="Rust API"
     href="/en/docs/rust"
     description="Function signatures, types and methods of the core library"
@@ -175,18 +195,8 @@ Full installation and examples for every programming language are on
     description="Every exported function, type and method"
   />
   <Card
-    title="JavaScript API"
+    title="JavaScript / TypeScript API"
     href="/en/docs/js"
-    description="The object API, plus use in bundlers and frameworks"
+    description="The object API with complete type declarations, plus use in bundlers and frameworks"
   />
-  <Card
-    title="Data model"
-    href="/en/docs/guide/data-model"
-    description="The type and meaning of every field — the contract shared by every programming language"
-  />
-  <Card
-    title="Accuracy"
-    href="/en/docs/guide/about/accuracy"
-    description="How 747,572 golden cases keep the output identical to iztro"
-  />
-</Cards>
+</LanguageCards>

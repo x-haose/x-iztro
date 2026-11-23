@@ -3,7 +3,7 @@ title: Charting
 description: init loads the core, bySolar / byLunar cast the chart, ChartConfig configures it.
 ---
 
-```ts
+```js
 import { init, astro } from 'x-iztro';
 
 await init();
@@ -179,7 +179,7 @@ function byLunar(
 
 `options.isLeapMonth` defaults to `false` and has no effect when the month has no leap month; the rest is as in `bySolar`.
 
-```ts
+```js
 const lunar = astro.byLunar('2000-7-17', 2, 'female');
 console.log(lunar.solarDate, lunar.lunarDate);
 ```

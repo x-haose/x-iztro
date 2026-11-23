@@ -5,9 +5,11 @@ icon: FileCode
 ---
 
 JS 包是同一份 Rust 核心编成的 WebAssembly 加上 TypeScript 外壳：计算在 wasm 里完成，
-JS 侧提供带类型声明的对象 API。ESM，零运行期依赖，浏览器与 Node.js 通用。
+JS 侧提供对象 API。包本身用 TypeScript 写成，自带完整的 `.d.ts` 类型声明，JavaScript 与 TypeScript 都直接用。
+ESM，零运行期依赖，浏览器与 Node.js 通用。
 
-这一栏是 JS 侧的完整 API 参考。语义与 [Python 参考](/zh/docs/python) 一一对应，
+这一栏是 JavaScript / TypeScript 的完整 API 参考。代码示例里用到类型标注、非空断言等 TypeScript 语法的标为
+TypeScript，其余是纯 JavaScript。语义与 [Python 参考](/zh/docs/python) 一一对应，
 同一张盘在两侧得到同一份结果；本栏写明 JS 的签名、取值与差别。
 
 ## 安装

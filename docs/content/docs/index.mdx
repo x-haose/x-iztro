@@ -1,6 +1,6 @@
 ---
 title: 文档
-description: 紫微斗数排盘引擎：与 JS iztro 逐字段零差异，附格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go / JavaScript 直接调用。
+description: 紫微斗数排盘引擎：与 JS iztro 逐字段零差异，附格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go / JavaScript / TypeScript 直接调用。
 icon: Star
 ---
 
@@ -67,10 +67,25 @@ v2.6.3 逐字段零差异**——这是复现口径，不是流派裁决——�
     description="安装、第一张盘、紫微斗数概念、配置与数据结构。不分编程语言的通用内容。"
   />
   <Card
+    title="快速开始"
+    href="/zh/docs/guide/getting-started"
+    description="排盘要准备哪些输入，各编程语言怎么安装，跑出第一张盘。"
+  />
+  <Card
     title="不写代码怎么用它"
     href="/zh/docs/guide/guides/for-non-developers"
     description="能做什么、典型场景、要跟工程师交代哪几件事。"
   />
+  <Card
+    title="语义化文本（to_text）"
+    href="/zh/docs/guide/guides/to-text"
+    description="上面那段文字怎么生成、格式约定、怎么接进大模型。"
+  />
+</Cards>
+
+各语言的 API 参考：
+
+<LanguageCards>
   <Card
     title="Rust API 参考"
     href="/zh/docs/rust"
@@ -87,16 +102,11 @@ v2.6.3 逐字段零差异**——这是复现口径，不是流派裁决——�
     description="内嵌 WebAssembly，纯 Go 运行时，无 cgo。"
   />
   <Card
-    title="JavaScript API 参考"
+    title="JavaScript / TypeScript API 参考"
     href="/zh/docs/js"
-    description="WebAssembly 内核加 TypeScript 类型，浏览器与 Node.js 通用。"
+    description="WebAssembly 内核，自带完整类型声明，浏览器与 Node.js 通用。"
   />
-  <Card
-    title="语义化文本（to_text）"
-    href="/zh/docs/guide/guides/to-text"
-    description="上面那段文字怎么生成、格式约定、怎么接进大模型。"
-  />
-</Cards>
+</LanguageCards>
 
 ## iztro 没有的三件事
 
@@ -131,7 +141,7 @@ v2.6.3 逐字段零差异**——这是复现口径，不是流派裁决——�
 各语言绑定调用同一份 Rust 核心，因此排盘结果逐字段相同。
 判断方法基于语言无关标识，同一条分析规则用哪种编程语言写出来，结果都一致。
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -166,7 +176,7 @@ fmt.Println(soul.Has(iztro.StarZiweiMaj))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { init, astro } from 'x-iztro';

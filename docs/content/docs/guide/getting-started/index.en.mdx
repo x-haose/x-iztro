@@ -70,12 +70,19 @@ Only people born in a leap month are affected; otherwise the parameter does noth
 
 ## Pick a programming language
 
-<Cards>
-  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="cargo add x-iztro@0.7" />
-  <Card title="Python" href="/en/docs/guide/getting-started/python" description='pip install "x-iztro~=0.7.0"' />
-  <Card title="Go" href="/en/docs/guide/getting-started/go" description="go get .../go/iztro@v0.7.0" />
-  <Card title="JavaScript" href="/en/docs/guide/getting-started/js" description="npm install x-iztro@0.7" />
-</Cards>
+<LanguageCards>
+  <Card title="Rust" href="/en/docs/guide/getting-started/rust" description="A native crate with strongly typed, zero-copy structs" />
+  <Card title="Python" href="/en/docs/guide/getting-started/python" description="A native PyO3 extension with a typed dataclass API" />
+  <Card title="Go" href="/en/docs/guide/getting-started/go" description="Embedded WebAssembly on a pure Go runtime, no cgo" />
+  <Card title="JavaScript / TypeScript" href="/en/docs/guide/getting-started/js" description="A WebAssembly core with complete bundled type declarations, for browsers and Node.js" />
+</LanguageCards>
+
+```bash
+cargo add x-iztro@0.7                               # Rust
+pip install "x-iztro~=0.7.0"                        # Python
+go get github.com/x-haose/x-iztro/go/iztro@v0.7.0   # Go
+npm install x-iztro@0.7                             # JS / TS, types included
+```
 
 ## Input validation
 

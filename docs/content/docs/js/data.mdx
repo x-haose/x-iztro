@@ -13,7 +13,7 @@ data.constants(): Constants;                             // 语言、干支、�
 data.flowStarCounterparts(): Record<string, string>;     // 流耀 → 本命辅星，50 条
 ```
 
-```ts
+```js
 console.log(data.starsInfo().ziweiMaj, data.heavenlyStems().gengHeavenly, data.earthlyBranches().wuEarthly);
 const c = data.constants();
 console.log(c.languages, c.fiveElementsClass, Object.keys(data.flowStarCounterparts()).length, data.flowStarCounterparts().liulu);

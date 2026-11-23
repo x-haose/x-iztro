@@ -96,7 +96,7 @@ invalid_date invalid solar date '2000-13-1': month must be within 1-12
 
 `IztroError`, with a `.code`; misuse such as calling before `init()` or a wrong argument type throws a standard `Error` / `TypeError` instead:
 
-```ts
+```js
 import { init, astro, IztroError } from 'x-iztro';
 
 await init();
@@ -187,7 +187,7 @@ bug — not something callers are expected to defend against.
 
 Skip the bad records, keep going with the good ones, rather than failing the whole batch:
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -227,7 +227,7 @@ for _, row := range rows {
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 const charts: Astrolabe[] = [];

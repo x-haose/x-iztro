@@ -34,7 +34,7 @@ use each API, see that language's API reference.
 The rest follow the same pattern: JS camelCase becomes snake_case in Rust and Python, PascalCase in
 Go, and stays camelCase in the x-iztro JS package.
 
-### JavaScript: init first, then synchronous calls
+### JavaScript / TypeScript: init first, then synchronous calls
 
 The x-iztro JS package runs the Rust core as WebAssembly, so loading is asynchronous: `await init()`
 once, and from then on the API is synchronous like iztro's. The module layout follows iztro's

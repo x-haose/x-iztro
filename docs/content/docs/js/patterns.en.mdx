@@ -46,7 +46,7 @@ chart.patterns(config?: PatternConfig): PatternHit[];
 Every hit on the natal chart, in the order of the patterns page; a rearranged chart is judged on its
 rearranged layout.
 
-```ts
+```js
 for (const hit of chart.patterns()) {
   console.log(hit.key, hit.name, hit.palaceName, hit.broken, hit.variant ?? '-', hit.stars.map((s) => s.name).join('+'));
 }
@@ -73,7 +73,7 @@ Reruns every rule with that layer's Soul palace as the Soul palace and that laye
 transformations merged in, plus the two horoscope-only patterns (禄衰马困, 风云际会); `origin` is the natal
 chart. A `scope` finer than the query precision throws `IztroError`.
 
-```ts
+```js
 console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `${h.name}@${h.palaceName}`).join(' '));
 ```
 
@@ -83,7 +83,7 @@ console.log(chart.horoscope('2024-10-1', 0).patterns(Scope.YEARLY).map((h) => `$
 
 ## toJSON
 
-```ts
+```js
 console.log(JSON.stringify(chart.patterns()[0]));
 ```
 
@@ -100,7 +100,7 @@ horoscope.patternsToText(scope: Scope, options?: { config?; knowledge?; knowledg
 
 With `knowledge`, each pattern's reading follows the list.
 
-```ts
+```js
 console.log(chart.patternsToText());
 ```
 

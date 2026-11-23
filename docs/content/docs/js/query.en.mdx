@@ -21,7 +21,7 @@ astro.getMajorStarKeysByLunarDate(lunarDate: string, timeIndex: TimeIndex, optio
   iztro. The `*Keys*` variants are the key projection of the same result and do not depend on language.
 - An invalid date or hour index throws `IztroError`.
 
-```ts
+```js
 console.log(astro.getZodiacBySolarDate('2000-8-16'), astro.getZodiacBySolarDate('2000-8-16', 'en-US'));
 console.log(astro.getSignBySolarDate('2000-8-16'), astro.getSignByLunarDate('2000-7-17'));
 console.log(astro.getMajorStarBySolarDate('2000-8-16', 2), astro.getMajorStarByLunarDate('2000-7-17', 2, { language: 'en-US' }));

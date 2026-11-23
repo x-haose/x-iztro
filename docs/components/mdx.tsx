@@ -5,6 +5,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 import { Endpoint } from '@/components/endpoint';
+import { LanguageCards } from '@/components/language-cards';
 import type { MDXComponents } from 'mdx/types';
 
 /**
@@ -17,6 +18,7 @@ import type { MDXComponents } from 'mdx/types';
  * - 页签：同一件事的多种写法并排
  * - 类型表：参数与字段的结构化呈现
  * - 端点地址：按当前域名渲染站内端点的完整 URL
+ * - 语言卡片组：四种语言等宽并排
  */
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -32,6 +34,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Tabs,
     TypeTable,
     Endpoint,
+    LanguageCards,
     ...components,
   } satisfies MDXComponents;
 }

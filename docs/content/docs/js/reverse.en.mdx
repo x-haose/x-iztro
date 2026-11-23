@@ -36,7 +36,7 @@ reverseChart(criteria: ReverseCriteria, config?: ChartConfig): ReverseResult;
 Empty criteria, horoscope stars or an invalid range throw `IztroError`. Candidates come in enumeration order
 (lunar year ascending, then month → hour → day within a year); reaching `limit` stops the search and sets `truncated`.
 
-```ts
+```js
 console.log(solarDatesByBazi(...chart.rawDates.chineseDate.pillarKeys()));
 const r = reverseChart({
   soulBranch: EarthlyBranch.WU,

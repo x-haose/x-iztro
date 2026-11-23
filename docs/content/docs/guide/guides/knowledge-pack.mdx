@@ -168,7 +168,7 @@ Python、Go、JavaScript 报 `invalid_argument`。要别的语言，自己写一
 
 ## 读一份包
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -226,7 +226,7 @@ fmt.Println(string([]rune(pack.StarIntro(iztro.StarZiweiMaj))[:12]))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { KnowledgePack, MajorStar } from 'x-iztro';
@@ -252,7 +252,7 @@ console.log(pack.starIntro(MajorStar.ZIWEI)!.slice(0, 12));
 
 格局命中的 `key` 就是知识包 `patterns` 段的键，一一对上：
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -305,7 +305,7 @@ for _, hit := range hits {
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 const pack = KnowledgePack.builtin();
@@ -394,7 +394,7 @@ fmt.Println(len(sub.Stars), len(sub.Patterns))
 </Tab>
 <Tab value="JavaScript">
 
-```ts
+```js
 const pack = KnowledgePack.builtin();
 let sub = pack.forAstrolabe(chart);
 console.log(sub.stars().length, sub.patterns().length, sub.mutagen('sihuaLu') !== undefined, sub.palace('soulPalace'));
@@ -436,7 +436,7 @@ console.log(sub.stars().length, sub.patterns().length);
 
 合并出一份新包：
 
-<Tabs items={['Rust', 'Python', 'Go', 'JavaScript']}>
+<Tabs items={['Rust', 'Python', 'Go', 'TypeScript']}>
 <Tab value="Rust">
 
 ```rust
@@ -483,7 +483,7 @@ fmt.Println(pack.PatternIntro(iztro.PatternZiFuTongGong))
 ```
 
 </Tab>
-<Tab value="JavaScript">
+<Tab value="TypeScript">
 
 ```ts
 import { readFile } from 'node:fs/promises'; // 浏览器里改用 fetch 取文本

@@ -6,13 +6,13 @@ import { SITE_URL, languageAlternates } from '@/lib/site';
 
 const COPY = {
   zh: {
-    metaTitle: 'x-iztro — 紫微斗数排盘引擎 · Rust / Python / Go / JavaScript',
+    metaTitle: 'x-iztro — 紫微斗数排盘引擎 · Rust / Python / Go / JavaScript / TypeScript',
     metaDescription:
-      '紫微斗数排盘引擎：与 JS iztro 逐字段零差异（747,572 例金标），附 64 条格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go / JavaScript 直接调用。',
+      '紫微斗数排盘引擎：与 JS iztro 逐字段零差异（747,572 例金标），附 64 条格局判定、知识包与生辰反推，一次调用转成大模型可读文本。Rust 核心，Rust / Python / Go / JavaScript / TypeScript 直接调用。',
     ogImage: '/og.png',
     tagline: '排盘归它算 · 解读归 AI',
     headline: '紫微斗数排盘引擎',
-    lede: '输入公历生日和出生时辰，输出一张完整的紫微斗数命盘——十二宫、上百颗星、各层运限；再调用一次，就变成大模型读得懂的文字。Rust 核心，Rust / Python / Go / JavaScript 直接调用，排盘结果与 JS iztro 逐字段一致，747,572 例金标守着这条线。',
+    lede: '输入公历生日和出生时辰，输出一张完整的紫微斗数命盘——十二宫、上百颗星、各层运限；再调用一次，就变成大模型读得懂的文字。Rust 核心，Rust / Python / Go / JavaScript / TypeScript 直接调用，排盘结果与 JS iztro 逐字段一致，747,572 例金标守着这条线。',
     start: '快速开始',
     concepts: '先看懂命盘',
     nonDev: '不写代码？从这页开始 →',
@@ -69,7 +69,7 @@ const COPY = {
       { name: 'Rust', install: 'cargo add x-iztro@0.7', href: 'rust' },
       { name: 'Python', install: 'pip install "x-iztro~=0.7.0"', href: 'python' },
       { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro@v0.7.0', href: 'go' },
-      { name: 'JavaScript', install: 'npm install x-iztro@0.7', href: 'js' },
+      { name: 'JavaScript / TypeScript', install: 'npm install x-iztro@0.7', href: 'js' },
     ],
     sample: `from x_iztro import Astro
 
@@ -102,13 +102,13 @@ chart.to_text()           # 整盘 → 文本`,
     prodStrip: ['无全局状态', '非法输入不 panic', 'Python abi3 零依赖', 'Go 无 cgo', 'MIT 开源'],
   },
   en: {
-    metaTitle: 'x-iztro — Zi Wei Dou Shu (Purple Star Astrology) chart engine for Rust, Python, Go & JavaScript',
+    metaTitle: 'x-iztro — Zi Wei Dou Shu (Purple Star Astrology) chart engine for Rust, Python, Go & JavaScript / TypeScript',
     metaDescription:
-      'A Chinese astrology (Zi Wei Dou Shu / Purple Star) chart engine, field-for-field identical to JS iztro — 747,572 golden cases — plus 64 pattern rules, knowledge packs, reverse birth-date lookup and LLM-ready output. Rust core with Python, Go and JavaScript bindings.',
+      'A Chinese astrology (Zi Wei Dou Shu / Purple Star) chart engine, field-for-field identical to JS iztro — 747,572 golden cases — plus 64 pattern rules, knowledge packs, reverse birth-date lookup and LLM-ready output. Rust core with Python, Go and JavaScript / TypeScript bindings.',
     ogImage: '/og-en.png',
     tagline: 'Code does the chart. AI does the reading.',
     headline: 'Chinese astrology (Zi Wei Dou Shu) chart engine',
-    lede: 'Zi Wei Dou Shu — Chinese "Purple Star" astrology — charts a life from a birth date and hour. A Rust core casts it, with bindings for Rust, Python, Go and JavaScript; every field carries a translated name plus a stable key, and one call turns the whole chart into text an LLM can read. Charts match JS iztro field for field — 747,572 golden cases hold that line.',
+    lede: 'Zi Wei Dou Shu — Chinese "Purple Star" astrology — charts a life from a birth date and hour. A Rust core casts it, with bindings for Rust, Python, Go and JavaScript / TypeScript; every field carries a translated name plus a stable key, and one call turns the whole chart into text an LLM can read. Charts match JS iztro field for field — 747,572 golden cases hold that line.',
     start: 'Get started',
     concepts: 'Learn the chart',
     nonDev: 'Not writing code? Start here →',
@@ -165,7 +165,7 @@ chart.to_text()           # 整盘 → 文本`,
       { name: 'Rust', install: 'cargo add x-iztro@0.7', href: 'rust' },
       { name: 'Python', install: 'pip install "x-iztro~=0.7.0"', href: 'python' },
       { name: 'Go', install: 'go get github.com/x-haose/x-iztro/go/iztro@v0.7.0', href: 'go' },
-      { name: 'JavaScript', install: 'npm install x-iztro@0.7', href: 'js' },
+      { name: 'JavaScript / TypeScript', install: 'npm install x-iztro@0.7', href: 'js' },
     ],
     sample: `from x_iztro import Astro
 

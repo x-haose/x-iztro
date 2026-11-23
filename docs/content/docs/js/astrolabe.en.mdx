@@ -6,7 +6,7 @@ description: Astrolabe fields, locating palaces and stars, surrounded and flanki
 `Astrolabe` is what charting produces and where every query starts: the twelve palaces plus chart-level
 facts such as the four pillars, Soul and Body stars and the Five Elements class.
 
-```ts
+```js
 const chart = astro.bySolar('2000-8-16', 2, 'female');
 ```
 
@@ -149,7 +149,7 @@ horoscopeOfMonth(year: number, month: number): Horoscope;
   year — the start of a solar year up to the lunar new year still belongs to the previous lunar year. Precision: yearly.
 - `horoscopeOfMonth`: a month of a lunar year, targeting the first day of that (non-leap) month. Precision: monthly.
 
-```ts
+```js
 const h = chart.horoscope('2024-10-1 13:20');
 console.log(h.solarDate, h.lunarDate, h.hourly.heavenlyStem + h.hourly.earthlyBranch, h.precision());
 const y = chart.horoscopeOfYear(2027);
@@ -203,7 +203,7 @@ toText(options?: {
 The chart's semantic text: a Markdown subset for language models and people, in the chart language.
 `String(chart)` equals `chart.toText()`. The format is described in [to_text](/en/docs/guide/guides/to-text).
 
-```ts
+```js
 console.log(chart.toText({ detail: TextDetail.OVERVIEW }).split('\n').slice(0, 12).join('\n'));
 ```
 
@@ -236,7 +236,7 @@ Selects palaces by the topic's definition in the knowledge pack, one section per
 mutagen readings that fall in the selection at the end. `knowledge` defaults to the built-in pack of the chart
 language (the topic definitions live in the pack).
 
-```ts
+```js
 const text = chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY });
 console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 ```
@@ -268,7 +268,7 @@ toJSON(): AstrolabeData;
 The chart's DTO: camelCase keys and translated values matching iztro's `JSON.stringify(astrolabe)` key for key,
 plus the language-independent keys. Returns a deep copy; `JSON.stringify(chart)` serializes it.
 
-```ts
+```js
 const raw = chart.toJSON();
 console.log(raw.palaces.length, JSON.parse(JSON.stringify(chart)).solarDate);
 ```
