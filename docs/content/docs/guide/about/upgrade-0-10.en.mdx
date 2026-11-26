@@ -1,0 +1,79 @@
+---
+title: Upgrading from 0.9 to 0.10
+description: In 0.10 topic lists come back in display order and topic entries gain an order field — the code it affects, with before-and-after code per language.
+---
+
+*For: developers who list knowledge-pack topics or build topic entries in code*
+
+0.10 gives knowledge-pack topics a display order (`order`) and adds reading a topic at one horoscope layer. The new
+calls are additions; only the two changes below are incompatible, and code that neither lists topics nor builds topic
+entries with struct literals is unaffected.
+
+```toml
+x-iztro = "0.10"
+```
+
+```bash
+pip install "x-iztro~=0.10.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.10.0
+npm install x-iztro@0.10
+```
+
+## Topic lists come back in display order
+
+**Affected**: `KnowledgePack.topics()` in Python and JavaScript. 0.9 returned slug order; 0.10 returns display order:
+ascending `order`, topics without one last, ties and topics without one by slug. A custom pack with no `order` gives the
+same result as 0.9; the default pack now lists overall, personality, career, wealth, romance, health, parents,
+children, siblings, friends, property, travel, spirit.
+
+Rust and Go keep their existing calls as they were: Rust's `pack.topics` is still a slug-ordered `BTreeMap` and Go's
+`Topics` is still a map; for display order use the new `topics_in_order()` and `TopicSlugs()`.
+
+**What to change**: drop any topic order table you kept yourself and use `topics()` (Rust `topics_in_order()`, Go
+`TopicSlugs()`). Code that relied on alphabetical order, such as picking a topic by position, should look it up by slug
+with `topic(slug)`.
+
+```ts title="JavaScript 0.9"
+const ORDER = ['overall', 'personality', 'career' /* … */];
+const topics = pack.topics().sort((a, b) => ORDER.indexOf(a.slug) - ORDER.indexOf(b.slug));
+```
+
+```ts title="JavaScript 0.10"
+const topics = pack.topics();
+```
+
+To set the order in your own pack, give topics an `order`. The default pack numbers in steps of 10, so an overlay with
+`"order": 35` lands between career and wealth; see [Knowledge packs · Topics](/en/docs/guide/guides/knowledge-pack#topics).
+
+## Topic entries have one more field
+
+**Affected**: Rust and Go code that builds topic entries with struct literals.
+
+| Language | Field in 0.10 | What to change |
+| --- | --- | --- |
+| Rust | `TopicEntry.order: Option<u32>` | Add `order` to the literal, or use `..Default::default()` |
+| Go | `TopicEntry.Order *uint32` | Turn unkeyed literals into keyed ones |
+| Python | `TopicEntry.order: int \| None`, the last field | Nothing |
+| JavaScript / TypeScript | `TopicEntry.order?: number` | Nothing |
+
+```rust title="Rust 0.10"
+let topic = TopicEntry {
+    title: Some("学业".into()),
+    order: Some(35),
+    surround: Some(vec!["careerPalace".into()]),
+    ..TopicEntry::default()
+};
+```
+
+An `order` that is not an integer from 0 to 4294967295 is a `wrong_type` error, and the pack is rejected.
+
+## Output that changes
+
+- The default pack's romance and spirit topics now say "the Soul palace reads the person, the Body palace where later
+  effort goes"; the description under a topic text's title changes accordingly.
+- The default pack gains the glossary entry 亮度 (brightness, `concepts.liang-du`): 51 glossary entries instead of 50.
+
+The new layer-level topic reading (`topic_palaces`, the horoscope's `topic_to_text`) is described in
+[Text · A topic at one horoscope layer](/en/docs/guide/guides/to-text#a-topic-at-one-horoscope-layer).
+
+The full list is in the [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md).
