@@ -30,6 +30,8 @@ export class Palace {
   readonly isBodyPalace: boolean;
   /** 是否来因宫 */
   readonly isOriginalPalace: boolean;
+  /** 辅来因宫（辛年丑宫、壬年子宫）为 true，其余宫为 undefined；只在 `ChartConfig.originalPalace` 为 withSecondary 时出现 */
+  readonly isSecondaryOriginalPalace: true | undefined;
   /** 宫干（翻译文本） */
   readonly heavenlyStem: string;
   /** 宫干标识 */
@@ -52,13 +54,13 @@ export class Palace {
   readonly boshi12: string;
   /** 博士十二神标识（`Boshi12` 取值） */
   readonly boshi12Key: string;
-  /** 将前十二神（翻译文本） */
+  /** 将前十二神（翻译文本）；本命不安（`ChartConfig.yearly12Placement` 为 yearlyOnly）时为空串 */
   readonly jiangqian12: string;
-  /** 将前十二神标识（`Jiangqian12` 取值） */
+  /** 将前十二神标识（`Jiangqian12` 取值）；本命不安时为空串 */
   readonly jiangqian12Key: string;
-  /** 岁前十二神（翻译文本） */
+  /** 岁前十二神（翻译文本）；本命不安时为空串 */
   readonly suiqian12: string;
-  /** 岁前十二神标识（`Suiqian12` 取值） */
+  /** 岁前十二神标识（`Suiqian12` 取值）；本命不安时为空串 */
   readonly suiqian12Key: string;
   /** 大限 */
   readonly decadal: Decadal;
@@ -82,6 +84,7 @@ export class Palace {
     this.nameKey = data.nameKey;
     this.isBodyPalace = data.isBodyPalace;
     this.isOriginalPalace = data.isOriginalPalace;
+    this.isSecondaryOriginalPalace = data.isSecondaryOriginalPalace;
     this.heavenlyStem = data.heavenlyStem;
     this.heavenlyStemKey = data.heavenlyStemKey;
     this.earthlyBranch = data.earthlyBranch;

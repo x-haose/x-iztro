@@ -25,6 +25,9 @@ type PatternConfig struct {
 	Borrow *bool `json:"borrow,omitempty"`
 	// FlowStars 为运限视角下流曜（运禄/流禄等）是否等同对应本命辅星参与判定；nil 取内核默认 true
 	FlowStars *bool `json:"flowStars,omitempty"`
+	// PangKong 为空曜是否连截空、旬空的傍空一并算；nil 取内核默认 false。
+	// 傍空只在 Config.VoidPlacement 为 VoidPlacementZhengPang 的盘上安放
+	PangKong *bool `json:"pangKong,omitempty"`
 }
 
 // Bool 返回 v 的指针，给 PatternConfig、ReverseCriteria 的 *bool 可选字段赋值用。
@@ -32,12 +35,13 @@ func Bool(v bool) *bool {
 	return &v
 }
 
-// DefaultPatternConfig 返回默认口径：亮度按 iztro 表、借宫、流曜参与。
+// DefaultPatternConfig 返回默认口径：亮度按 iztro 表、借宫、流曜参与、空曜只算正空。
 func DefaultPatternConfig() *PatternConfig {
 	return &PatternConfig{
 		BrightnessSource: BrightnessSourceTable,
 		Borrow:           Bool(true),
 		FlowStars:        Bool(true),
+		PangKong:         Bool(false),
 	}
 }
 

@@ -51,11 +51,23 @@ pub const KONG_WANG: [StarKey; 6] = [
 ];
 
 /// 空曜：天空、地空、截空、旬空（页面禄衰马困一节原话）；截空、旬空只取正空。
+///
+/// 规则经 [`ChartView::kong_yao`] 取用，`PatternConfig::pang_kong` 打开时另含 [`KONG_YAO_PANG`]。
 pub const KONG_YAO: [StarKey; 4] = [
     StarKey::Tiankong,
     StarKey::DikongMin,
     StarKey::Jiekong,
     StarKey::Xunkong,
+];
+
+/// 空曜连同截空、旬空的傍空：[`KONG_YAO`] 加傍截空、傍旬空（傍空只在 `voidPlacement=zhengPang` 的盘上安放）。
+pub const KONG_YAO_PANG: [StarKey; 6] = [
+    StarKey::Tiankong,
+    StarKey::DikongMin,
+    StarKey::Jiekong,
+    StarKey::Xunkong,
+    StarKey::PangJiekong,
+    StarKey::PangXunkong,
 ];
 
 /// 杀破狼。
@@ -226,6 +238,15 @@ impl<'a> ChartView<'a> {
     /// 口径开关。
     pub fn config(&self) -> &PatternConfig {
         &self.config
+    }
+
+    /// 该口径下的空曜：[`KONG_YAO`]，`pang_kong` 打开时为 [`KONG_YAO_PANG`]。
+    pub fn kong_yao(&self) -> &'static [StarKey] {
+        if self.config.pang_kong {
+            &KONG_YAO_PANG
+        } else {
+            &KONG_YAO
+        }
     }
 
     /// 命宫索引。

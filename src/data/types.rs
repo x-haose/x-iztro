@@ -572,16 +572,164 @@ keyed_enum!(AgeDivide, "ageDivide" {
 
 /// 晚子时（23:00-00:00）归属
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DayDivide {
-    /// 晚子时归次日
+    /// 与 iztro 一致：日柱、起紫微的日数与日系杂耀按次日算（月末的次日回卷到初一），
+    /// 生月与年干支仍按当天
     Forward,
     /// 晚子时归当天（按当日早子时排盘）
     Current,
+    /// 晚子时整个日期归次日（按次日早子时排盘）：月底的晚子进下月、除夕的晚子进下一年，
+    /// 农历生日、生月、年干支与生肖都随之改变；运限目标的晚子时同样按次日早子时算
+    ForwardCarry,
 }
 
 keyed_enum!(DayDivide, "dayDivide" {
     Forward => "forward",
     Current => "current",
+    ForwardCarry => "forwardCarry",
+});
+
+/// 闰月出生时安星用哪个月。
+///
+/// 只管本命盘与斗君的生月；流月的闰月一律十五日分界，与此无关。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum LeapDivide {
+    /// 按排盘入参 `fix_leap`：打开时闰月十五日及以前按本月、十六日起按下月，关闭时整月按本月
+    #[default]
+    Default,
+    /// 闰月整月按下月，排盘入参 `fix_leap` 不起作用
+    NextMonth,
+}
+
+keyed_enum!(LeapDivide, "leapDivide" {
+    Default => "default",
+    NextMonth => "nextMonth",
+});
+
+/// 天马的安法。
+///
+/// 年马按生年地支（寅午戌申、申子辰寅、巳酉丑亥、亥卯未巳）；月马按生月
+/// （正五九申、二六十巳、三七十一寅、四八十二亥），生月与左辅右弼所用的月相同（已按闰月口径修正）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum TianmaPlacement {
+    /// 天马安年马
+    #[default]
+    Yearly,
+    /// 天马安月马
+    Monthly,
+    /// 天马安年马，另在月马之位安杂耀月马 `yuema`
+    Both,
+}
+
+keyed_enum!(TianmaPlacement, "tianmaPlacement" {
+    Yearly => "yearly",
+    Monthly => "monthly",
+    Both => "both",
+});
+
+/// 长生十二神的排列方向（起长生的宫位都按五行局）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum ChangshengDirection {
+    /// 阳男阴女顺行、阴男阳女逆行
+    #[default]
+    YinYang,
+    /// 男命顺行、女命逆行，不看生年阴阳
+    Gender,
+    /// 一律顺行
+    Clockwise,
+}
+
+keyed_enum!(ChangshengDirection, "changshengDirection" {
+    YinYang => "yinYang",
+    Gender => "gender",
+    Clockwise => "clockwise",
+});
+
+/// 天伤、天使的安法（两星分居迁移宫前后的仆役位与疾厄位）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum TianshangTianshi {
+    /// 与 iztro 一致：天伤在仆役、天使在疾厄；中州派阴男阳女两者对调
+    #[default]
+    Default,
+    /// 天使在仆役、天伤在疾厄，不分男女与派别
+    TianshiFriends,
+}
+
+keyed_enum!(TianshangTianshi, "tianshangTianshi" {
+    Default => "default",
+    TianshiFriends => "tianshiFriends",
+});
+
+/// 天巫的安法：按生月（已按闰月口径修正）每四个月一轮。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum TianwuPlacement {
+    /// 正五九巳、二六十申、三七十一寅、四八十二亥
+    #[default]
+    SiShenYinHai,
+    /// 正五九巳、二六十申、三七十一亥、四八十二寅
+    SiShenHaiYin,
+}
+
+keyed_enum!(TianwuPlacement, "tianwuPlacement" {
+    SiShenYinHai => "siShenYinHai",
+    SiShenHaiYin => "siShenHaiYin",
+});
+
+/// 岁前、将前十二神安在哪些盘上。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum Yearly12Placement {
+    /// 本命盘按生年地支安，流年按流年地支另安
+    #[default]
+    NatalAndYearly,
+    /// 只在流年安，本命盘各宫不安
+    YearlyOnly,
+}
+
+keyed_enum!(Yearly12Placement, "yearly12Placement" {
+    NatalAndYearly => "natalAndYearly",
+    YearlyOnly => "yearlyOnly",
+});
+
+/// 来因宫的标法。
+///
+/// 来因宫是宫干等于生年天干的宫。五虎遁排到子丑两宫与寅卯两宫同干，辛年（卯、丑）、
+/// 壬年（寅、子）因此各有两宫合格；其余八干只有一宫。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum OriginalPalaceMarking {
+    /// 只标寅至亥十宫里合格的那一宫，子丑不标
+    #[default]
+    Primary,
+    /// 另把辛年丑宫、壬年子宫标为辅来因宫
+    WithSecondary,
+}
+
+keyed_enum!(OriginalPalaceMarking, "originalPalace" {
+    Primary => "primary",
+    WithSecondary => "withSecondary",
+});
+
+/// 推斗君（流月起点）时生月的取法。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum DouJunMonth {
+    /// 与 iztro 一致：按闰月口径取生月，`fix_leap` 打开时闰月十六日起作下月，晚子时也算
+    #[default]
+    Default,
+    /// 与本命盘同一规则取生月：`fix_leap` 下晚子时（`day_divide=forward`）不把闰月十六日起作下月
+    Natal,
+}
+
+keyed_enum!(DouJunMonth, "douJunMonth" {
+    Default => "default",
+    Natal => "natal",
 });
 
 /// 截空与旬空的安法。
@@ -770,7 +918,7 @@ fn primary_mutagens(overrides: Option<&TableOverrides>, stem: HeavenlyStem) -> [
         .unwrap_or_else(|| crate::data::heavenly_stems::get_heavenly_stem_info(stem).mutagen)
 }
 
-/// 排盘配置：控制分界点、算法派别、空曜安法与自定义表的全部开关
+/// 排盘配置：控制分界点、算法派别、各项流派口径与自定义表的全部开关
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     /// 年分界点
@@ -787,6 +935,22 @@ pub struct Config {
     pub astro_type: AstroType,
     /// 截空与旬空的安法
     pub void_placement: VoidPlacement,
+    /// 闰月出生时安星用哪个月
+    pub leap_divide: LeapDivide,
+    /// 天马的安法
+    pub tianma_placement: TianmaPlacement,
+    /// 长生十二神的排列方向
+    pub changsheng_direction: ChangshengDirection,
+    /// 天伤、天使的安法
+    pub tianshang_tianshi: TianshangTianshi,
+    /// 天巫的安法
+    pub tianwu_placement: TianwuPlacement,
+    /// 岁前、将前十二神安在哪些盘上
+    pub yearly12_placement: Yearly12Placement,
+    /// 来因宫的标法
+    pub original_palace: OriginalPalaceMarking,
+    /// 推斗君时生月的取法
+    pub dou_jun_month: DouJunMonth,
     /// 自定义四化与亮度表；`None` 表示全部使用默认表。
     ///
     /// 属于排盘输入：随 `Config` 的 serde（即绑定线协议）往返；星盘 DTO 的 `config` 只记开关。
@@ -805,6 +969,14 @@ impl Default for Config {
             algorithm: Algorithm::Default,
             astro_type: AstroType::Heaven,
             void_placement: VoidPlacement::Default,
+            leap_divide: LeapDivide::Default,
+            tianma_placement: TianmaPlacement::Yearly,
+            changsheng_direction: ChangshengDirection::YinYang,
+            tianshang_tianshi: TianshangTianshi::Default,
+            tianwu_placement: TianwuPlacement::SiShenYinHai,
+            yearly12_placement: Yearly12Placement::NatalAndYearly,
+            original_palace: OriginalPalaceMarking::Primary,
+            dou_jun_month: DouJunMonth::Default,
             overrides: None,
         }
     }
@@ -908,7 +1080,7 @@ impl Config {
 
 /// `Config` 线协议的部分键补丁：缺省键取默认值，未知键报错（拼错的键不会被静默忽略）。
 ///
-/// 七个开关取语言无关标识；`mutagens` 为天干标识 → 四化星标识（禄、权、科、忌四项），
+/// 开关取语言无关标识；`mutagens` 为天干标识 → 四化星标识（禄、权、科、忌四项），
 /// `extraMutagens` 为天干标识 → 四化标识 → 附加星标识列表，
 /// `brightness` 为星耀标识 → 十二宫亮度标识（按宫位索引、寅宫为 0，空串表示该宫无亮度）。
 #[derive(Default, serde::Deserialize)]
@@ -921,6 +1093,14 @@ struct ConfigPatch {
     algorithm: Option<Algorithm>,
     astro_type: Option<AstroType>,
     void_placement: Option<VoidPlacement>,
+    leap_divide: Option<LeapDivide>,
+    tianma_placement: Option<TianmaPlacement>,
+    changsheng_direction: Option<ChangshengDirection>,
+    tianshang_tianshi: Option<TianshangTianshi>,
+    tianwu_placement: Option<TianwuPlacement>,
+    yearly12_placement: Option<Yearly12Placement>,
+    original_palace: Option<OriginalPalaceMarking>,
+    dou_jun_month: Option<DouJunMonth>,
     mutagens: Option<BTreeMap<String, Vec<String>>>,
     extra_mutagens: Option<BTreeMap<String, BTreeMap<String, Vec<String>>>>,
     brightness: Option<BTreeMap<String, Vec<String>>>,
@@ -938,6 +1118,18 @@ impl ConfigPatch {
             algorithm: self.algorithm.unwrap_or(defaults.algorithm),
             astro_type: self.astro_type.unwrap_or(defaults.astro_type),
             void_placement: self.void_placement.unwrap_or(defaults.void_placement),
+            leap_divide: self.leap_divide.unwrap_or(defaults.leap_divide),
+            tianma_placement: self.tianma_placement.unwrap_or(defaults.tianma_placement),
+            changsheng_direction: self
+                .changsheng_direction
+                .unwrap_or(defaults.changsheng_direction),
+            tianshang_tianshi: self.tianshang_tianshi.unwrap_or(defaults.tianshang_tianshi),
+            tianwu_placement: self.tianwu_placement.unwrap_or(defaults.tianwu_placement),
+            yearly12_placement: self
+                .yearly12_placement
+                .unwrap_or(defaults.yearly12_placement),
+            original_palace: self.original_palace.unwrap_or(defaults.original_palace),
+            dou_jun_month: self.dou_jun_month.unwrap_or(defaults.dou_jun_month),
             overrides: None,
         };
         let parse_stem = |table: &str, stem_key: &str| {
@@ -1018,7 +1210,7 @@ impl<'de> serde::Deserialize<'de> for Config {
     }
 }
 
-/// 序列化写出七个开关与已覆盖的自定义表（键按标识排序），可被反序列化原样还原。
+/// 序列化写出全部开关与已覆盖的自定义表（键按标识排序），可被反序列化原样还原。
 impl serde::Serialize for Config {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeMap;
@@ -1030,6 +1222,14 @@ impl serde::Serialize for Config {
         map.serialize_entry("algorithm", &self.algorithm)?;
         map.serialize_entry("astroType", &self.astro_type)?;
         map.serialize_entry("voidPlacement", &self.void_placement)?;
+        map.serialize_entry("leapDivide", &self.leap_divide)?;
+        map.serialize_entry("tianmaPlacement", &self.tianma_placement)?;
+        map.serialize_entry("changshengDirection", &self.changsheng_direction)?;
+        map.serialize_entry("tianshangTianshi", &self.tianshang_tianshi)?;
+        map.serialize_entry("tianwuPlacement", &self.tianwu_placement)?;
+        map.serialize_entry("yearly12Placement", &self.yearly12_placement)?;
+        map.serialize_entry("originalPalace", &self.original_palace)?;
+        map.serialize_entry("douJunMonth", &self.dou_jun_month)?;
         if let Some(tables) = self.overrides.as_deref() {
             if !tables.mutagens.is_empty() {
                 let mutagens: BTreeMap<&str, &[StarKey; 4]> = tables

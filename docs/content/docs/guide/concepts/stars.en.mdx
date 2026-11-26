@@ -102,7 +102,7 @@ The three groups above together cover every type exactly once:
 | `soft` | Minor stars | The six auspicious |
 | `tough` | Minor stars | The six malefics |
 | `lucun` | Minor stars | Lucun, a class of its own |
-| `tianma` | Minor stars | Tianma, a class of its own |
+| `tianma` | Minor stars | Tianma, a class of its own; with `tianma_placement = both` the extra month Tianma `yuemaAdj` sits among the adjective stars, also of type `tianma` |
 | `flower` | Adjective stars | Peach-blossom stars |
 | `helper` | Adjective stars | Helper stars |
 | `adjective` | Adjective stars | Everything else |
@@ -151,7 +151,9 @@ The Python enums and Go constants for these four are listed on the
 ### The twelve Changsheng gods
 
 Placed from the **Five Elements class together with gender and year-branch polarity**. They describe
-the twelve stages of a thing coming into being, declining and starting over.
+the twelve stages of a thing coming into being, declining and starting over. By default they run
+clockwise for yang men and yin women; `changsheng_direction` switches to clockwise for men or always
+clockwise, see [Config in depth](/en/docs/guide/guides/config#changsheng-direction-changsheng_direction).
 
 | Key | Chinese | en-US |
 | --- | --- | --- |
@@ -249,7 +251,9 @@ spelling. Treat `name` as display text only and never parse it.
 <Callout>
 Horoscope levels carry their own Sui-qian and Jiang-qian gods, placed afresh from that level's year
 branch. They are a different thing from the four groups on the natal chart. See
-[Horoscopes](/en/docs/guide/concepts/horoscope).
+[Horoscopes](/en/docs/guide/concepts/horoscope). With `yearly12_placement = yearlyOnly` the natal chart
+carries no Sui-qian or Jiang-qian gods and those two palace fields are empty strings; the yearly layer is
+unchanged.
 </Callout>
 
 ## In code

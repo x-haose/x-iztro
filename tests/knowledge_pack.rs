@@ -392,7 +392,8 @@ fn for_astrolabe_selects_exactly_the_chart_material() {
         on_chart.extend(p.major_stars.iter().map(|s| s.key));
         on_chart.extend(p.minor_stars.iter().map(|s| s.key));
         on_chart.extend(p.adjective_stars.iter().map(|s| s.key));
-        on_chart.extend([p.changsheng12, p.boshi12, p.suiqian12, p.jiangqian12]);
+        on_chart.extend([p.changsheng12, p.boshi12]);
+        on_chart.extend(p.suiqian12.into_iter().chain(p.jiangqian12));
     }
     for key in sub.stars.keys() {
         let star = StarKey::from_key(key).unwrap();

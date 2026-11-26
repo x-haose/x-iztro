@@ -160,16 +160,24 @@ The charting configuration. Every field may be omitted, and omitting it takes th
 
 ```go
 type Config struct {
-    YearDivide      string
-    HoroscopeDivide string
-    AgeDivide       string
-    DayDivide       string
-    Algorithm       string
-    AstroType       string
-    VoidPlacement   string
-    Mutagens        map[string][]string
-    ExtraMutagens   map[string]map[string][]string
-    Brightness      map[string][]string
+    YearDivide          string
+    HoroscopeDivide     string
+    AgeDivide           string
+    DayDivide           string
+    Algorithm           string
+    AstroType           string
+    VoidPlacement       string
+    LeapDivide          string
+    TianmaPlacement     string
+    ChangshengDirection string
+    TianshangTianshi    string
+    TianwuPlacement     string
+    Yearly12Placement   string
+    OriginalPalace      string
+    DouJunMonth         string
+    Mutagens            map[string][]string
+    ExtraMutagens       map[string]map[string][]string
+    Brightness          map[string][]string
 }
 ```
 
@@ -178,10 +186,18 @@ type Config struct {
 | `YearDivide` | `"normal"` / `"exact"` | `"normal"` | Whether the year pillar turns over at lunar New Year or the Beginning of Spring |
 | `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | Which boundary the yearly spirits take their year branch from |
 | `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | Whether the nominal age increments with the lunar year or with the birthday |
-| `DayDivide` | `"forward"` / `"current"` | `"forward"` | Whether the late Zi hour belongs to the next day or the current one |
+| `DayDivide` | `"forward"` / `"current"` / `"forwardCarry"` | `"forward"` | Whether the late Zi hour belongs to the next day, the current one, or carries its whole date to the next day (month end into the next month, New Year's Eve into the next year) |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | The algorithm school |
 | `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | The charting perspective |
 | `VoidPlacement` | `"default"` / `"zhengPang"` | `"default"` | Whether Jiekong and Xunkong take one palace (as iztro) or a main and a side void palace each |
+| `LeapDivide` | `"default"` / `"nextMonth"` | `"default"` | Whether a leap-month birth follows fix_leap or counts the whole month as the next |
+| `TianmaPlacement` | `"yearly"` / `"monthly"` / `"both"` | `"yearly"` | Tianma by the birth-year branch, by the birth month, or the year horse plus month Tianma |
+| `ChangshengDirection` | `"yinYang"` / `"gender"` / `"clockwise"` | `"yinYang"` | Changsheng gods clockwise for yang men and yin women, for men, or always |
+| `TianshangTianshi` | `"default"` / `"tianshiFriends"` | `"default"` | Tianshang and Tianshi as iztro, or Tianshi in Friends and Tianshang in Health |
+| `TianwuPlacement` | `"siShenYinHai"` / `"siShenHaiYin"` | `"siShenYinHai"` | Tianwu rotating Si-Shen-Yin-Hai or Si-Shen-Hai-Yin by month |
+| `Yearly12Placement` | `"natalAndYearly"` / `"yearlyOnly"` | `"natalAndYearly"` | Sui-qian and Jiang-qian gods on the natal chart too, or yearly only |
+| `OriginalPalace` | `"primary"` / `"withSecondary"` | `"primary"` | One Original palace, or also the secondary one (Chou in xin years, Zi in ren years) |
+| `DouJunMonth` | `"default"` / `"natal"` | `"default"` | Dou Jun's birth month as iztro, or by the natal chart's late-Zi rule |
 | `Mutagens` | Stem key → four star keys | — | A custom mutagen table, replacing the whole table for a stem |
 | `ExtraMutagens` | Stem key → mutagen key → list of star keys | — | Extra mutagen stars, added on top of the stem's four slots |
 | `Brightness` | Star key → twelve brightness keys | — | A custom brightness table, replacing the whole table for a star |
@@ -206,9 +222,15 @@ wood 3rd
 
 Every value set has matching constants, so you need not write the strings by hand:
 `YearDivideNormal` / `YearDivideExact`, `HoroscopeDivideNormal` / `HoroscopeDivideExact`,
-`AgeDivideNormal` / `AgeDivideBirthday`, `DayDivideForward` / `DayDivideCurrent`,
+`AgeDivideNormal` / `AgeDivideBirthday`, `DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry`,
 `AlgorithmDefault` / `AlgorithmZhongzhou`, `AstroHeaven` / `AstroEarth` / `AstroHuman`,
-`VoidPlacementDefault` / `VoidPlacementZhengPang`.
+`VoidPlacementDefault` / `VoidPlacementZhengPang`, `LeapDivideDefault` / `LeapDivideNextMonth`, 
+`TianmaPlacementYearly` / `TianmaPlacementMonthly` / `TianmaPlacementBoth`, 
+`ChangshengDirectionYinYang` / `ChangshengDirectionGender` / `ChangshengDirectionClockwise`, 
+`TianshangTianshiDefault` / `TianshangTianshiTianshiFriends`, 
+`TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin`, 
+`Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly`, 
+`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`, `DouJunMonthDefault` / `DouJunMonthNatal`.
 
 **Edge cases and pitfalls**
 

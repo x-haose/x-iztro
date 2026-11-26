@@ -24,6 +24,9 @@ pub struct PalaceData {
     pub is_body_palace: bool,
     /// 是否来因宫（宫干与年干相同且不在子丑二宫）
     pub is_original_palace: bool,
+    /// 是否辅来因宫：宫干与年干相同的子丑宫（辛年丑宫、壬年子宫），
+    /// 只在 `Config::original_palace` 为 `WithSecondary` 时标出
+    pub is_secondary_original_palace: bool,
     /// 宫位天干
     pub heavenly_stem: HeavenlyStem,
     /// 宫位地支
@@ -38,10 +41,10 @@ pub struct PalaceData {
     pub changsheng12: StarKey,
     /// 博士十二神
     pub boshi12: StarKey,
-    /// 将前十二神
-    pub jiangqian12: StarKey,
-    /// 岁前十二神
-    pub suiqian12: StarKey,
+    /// 将前十二神；本命不安（`Config::yearly12_placement` 为 `YearlyOnly`）时为 `None`
+    pub jiangqian12: Option<StarKey>,
+    /// 岁前十二神；本命不安时为 `None`，同 `jiangqian12`
+    pub suiqian12: Option<StarKey>,
     /// 大限信息
     pub decadal: Decadal,
     /// 小限经过的虚岁列表

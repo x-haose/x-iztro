@@ -90,10 +90,90 @@ class AgeDivide(StrEnum):
 
 
 class DayDivide(StrEnum):
-    """晚子时归属（`ChartConfig.day_divide`）：归次日或归当天"""
+    """晚子时归属（`ChartConfig.day_divide`）"""
 
     FORWARD = "forward"
+    """与 iztro 一致：日柱、起紫微的日数与日系杂耀按次日算，生月与年干支仍按当天"""
     CURRENT = "current"
+    """晚子时归当天，按当日早子时排盘"""
+    FORWARD_CARRY = "forwardCarry"
+    """晚子时整个日期归次日，按次日早子时排盘：月底的晚子进下月、除夕的晚子进下一年"""
+
+
+class LeapDivide(StrEnum):
+    """闰月出生时安星用哪个月（`ChartConfig.leap_divide`）"""
+
+    DEFAULT = "default"
+    """按排盘入参 fix_leap：打开时闰月十五日及以前按本月、十六日起按下月，关闭时整月按本月"""
+    NEXT_MONTH = "nextMonth"
+    """闰月整月按下月，fix_leap 不起作用"""
+
+
+class TianmaPlacement(StrEnum):
+    """天马的安法（`ChartConfig.tianma_placement`）"""
+
+    YEARLY = "yearly"
+    """天马安年马（按生年地支）"""
+    MONTHLY = "monthly"
+    """天马安月马（按生月：正五九申、二六十巳、三七十一寅、四八十二亥）"""
+    BOTH = "both"
+    """天马安年马，另在月马之位安杂耀月天马（`AdjectiveStar.YUEMA_ADJ`）"""
+
+
+class ChangshengDirection(StrEnum):
+    """长生十二神的排列方向（`ChartConfig.changsheng_direction`）"""
+
+    YIN_YANG = "yinYang"
+    """阳男阴女顺行、阴男阳女逆行"""
+    GENDER = "gender"
+    """男命顺行、女命逆行"""
+    CLOCKWISE = "clockwise"
+    """一律顺行"""
+
+
+class TianshangTianshi(StrEnum):
+    """天伤、天使的安法（`ChartConfig.tianshang_tianshi`）"""
+
+    DEFAULT = "default"
+    """与 iztro 一致：天伤在仆役、天使在疾厄；中州派阴男阳女两者对调"""
+    TIANSHI_FRIENDS = "tianshiFriends"
+    """天使在仆役、天伤在疾厄，不分男女与派别"""
+
+
+class TianwuPlacement(StrEnum):
+    """天巫的安法（`ChartConfig.tianwu_placement`），按生月每四个月一轮"""
+
+    SI_SHEN_YIN_HAI = "siShenYinHai"
+    """正五九巳、二六十申、三七十一寅、四八十二亥"""
+    SI_SHEN_HAI_YIN = "siShenHaiYin"
+    """正五九巳、二六十申、三七十一亥、四八十二寅"""
+
+
+class Yearly12Placement(StrEnum):
+    """岁前、将前十二神安在哪些盘上（`ChartConfig.yearly12_placement`）"""
+
+    NATAL_AND_YEARLY = "natalAndYearly"
+    """本命盘与流年都安"""
+    YEARLY_ONLY = "yearlyOnly"
+    """只在流年安；本命各宫的 suiqian12、jiangqian12 及其标识为空串"""
+
+
+class OriginalPalaceMarking(StrEnum):
+    """来因宫的标法（`ChartConfig.original_palace`）"""
+
+    PRIMARY = "primary"
+    """只标寅至亥十宫里宫干等于年干的那一宫"""
+    WITH_SECONDARY = "withSecondary"
+    """另把辛年丑宫、壬年子宫标为辅来因宫（`Palace.is_secondary_original_palace`）"""
+
+
+class DouJunMonth(StrEnum):
+    """推斗君时生月的取法（`ChartConfig.dou_jun_month`）"""
+
+    DEFAULT = "default"
+    """与 iztro 一致：fix_leap 打开时闰月十六日起作下月，晚子时也算"""
+    NATAL = "natal"
+    """与本命盘同一规则：晚子时（dayDivide=forward）不把闰月十六日起作下月"""
 
 
 class VoidPlacement(StrEnum):
@@ -423,6 +503,8 @@ class AdjectiveStar(StrEnum):
     """傍截空：截空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`）"""
     PANG_XUNKONG = "pangXunkong"
     """傍旬空：旬空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`）"""
+    YUEMA_ADJ = "yuemaAdj"
+    """月天马：按生月安的天马（书中称月马），只在 `TianmaPlacement.BOTH` 时安放"""
     YUEDE = "yuede"
     """月德"""
     TIANSHANG = "tianshang"

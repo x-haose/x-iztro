@@ -456,35 +456,35 @@ pub fn get_nianjie_index(branch: EarthlyBranch) -> usize {
     eb2pi(lookup[branch.index()])
 }
 
-/// 16. 获取年系星耀的宫位索引
-///
-/// soul_index: 命宫宫位索引
-/// body_index: 身宫宫位索引
-/// yearly_stem: 年干
-/// yearly_branch: 年支
 /// 天伤、天使的宫位索引（返回 `(天伤, 天使)`）。
 ///
-/// 二者夹迁移宫：通行派天伤居仆役位、天使居疾厄位；中州派在阴男阳女
-/// （生年地支阴阳与性别阴阳不同）时二者对调。重排星盘时命宫改变，需要重算。
+/// 二者夹迁移宫，分居仆役位与疾厄位，按 `config.tianshang_tianshi` 定谁在哪一位：
+/// 默认天伤居仆役、天使居疾厄，中州派（`config.algorithm`）在阴男阳女（生年地支阴阳与
+/// 性别阴阳不同）时二者对调；`TianshiFriends` 一律天使居仆役、天伤居疾厄。
+/// 重排星盘时命宫改变，需要重算。
 pub fn get_tianshang_tianshi_index(
     gender: Gender,
     yearly_branch: EarthlyBranch,
     soul_index: usize,
-    algorithm: Algorithm,
+    config: &Config,
 ) -> (usize, usize) {
-    // 天伤 = PALACES[Friends] + soul_index = 5 + soul_index
-    let mut tianshang = fix_index(5 + soul_index as i32, 12);
-    // 天使 = PALACES[Health] + soul_index = 7 + soul_index
-    let mut tianshi = fix_index(7 + soul_index as i32, 12);
+    // 仆役位 = PALACES[Friends] + soul_index = 5 + soul_index
+    let friends = fix_index(5 + soul_index as i32, 12);
+    // 疾厄位 = PALACES[Health] + soul_index = 7 + soul_index
+    let health = fix_index(7 + soul_index as i32, 12);
 
-    if algorithm == Algorithm::Zhongzhou {
-        let branch_is_yang = yearly_branch.index().is_multiple_of(2);
-        let gender_is_yang = gender == Gender::Male;
-        if gender_is_yang != branch_is_yang {
-            std::mem::swap(&mut tianshang, &mut tianshi);
+    let swapped = match config.tianshang_tianshi {
+        TianshangTianshi::TianshiFriends => true,
+        TianshangTianshi::Default => {
+            config.algorithm == Algorithm::Zhongzhou
+                && (gender == Gender::Male) != yearly_branch.index().is_multiple_of(2)
         }
+    };
+    if swapped {
+        (health, friends)
+    } else {
+        (friends, health)
     }
-    (tianshang, tianshi)
 }
 
 /// 天才的宫位索引：自命宫起顺数至生年地支。重排星盘时命宫改变，需要重算。
@@ -492,15 +492,21 @@ pub fn get_tiancai_index(yearly_branch: EarthlyBranch, soul_index: usize) -> usi
     fix_index(soul_index as i32 + yearly_branch.index() as i32, 12)
 }
 
+/// 16. 获取年系星耀的宫位索引
+///
+/// soul_index: 命宫宫位索引
+/// body_index: 身宫宫位索引
+/// yearly_stem: 年干
+/// yearly_branch: 年支
 /// gender: 性别
-/// algorithm: 算法
+/// config: 排盘配置（天伤天使的安法与派别）
 pub fn get_yearly_star_index(
     soul_index: usize,
     body_index: usize,
     yearly_stem: HeavenlyStem,
     yearly_branch: EarthlyBranch,
     gender: Gender,
-    algorithm: Algorithm,
+    config: &Config,
 ) -> YearlyStars {
     use EarthlyBranch::*;
 
@@ -578,7 +584,7 @@ pub fn get_yearly_star_index(
     };
 
     let (tianshang, tianshi) =
-        get_tianshang_tianshi_index(gender, yearly_branch, soul_index, algorithm);
+        get_tianshang_tianshi_index(gender, yearly_branch, soul_index, config);
 
     // 华盖、咸池
     let hx = get_huagai_xianchi_index(yearly_branch);
@@ -631,7 +637,8 @@ pub fn get_yearly_star_index(
 /// 17. 获取月系星耀的宫位索引
 ///
 /// month_index: 月份索引（0-based，即正月=0）
-pub fn get_monthly_star_index(month_index: usize) -> MonthlyStar {
+/// tianwu: 天巫的安法
+pub fn get_monthly_star_index(month_index: usize, tianwu: TianwuPlacement) -> MonthlyStar {
     use EarthlyBranch::*;
 
     // 解神：按 month_index / 2 查表 [Shen, Xu, Zi, Yin, Chen, Wu]
@@ -653,8 +660,11 @@ pub fn get_monthly_star_index(month_index: usize) -> MonthlyStar {
         [Xu, Si, Chen, Yin, Wei, Mao, Hai, Wei, Yin, Wu, Xu, Yin];
     let tianyue = eb2pi(tianyue_table[month_index]);
 
-    // 天巫：按 month_index % 4 查表 [Si, Shen, Yin, Hai]
-    let tianwu_table: [EarthlyBranch; 4] = [Si, Shen, Yin, Hai];
+    // 天巫：按 month_index % 4 查表
+    let tianwu_table: [EarthlyBranch; 4] = match tianwu {
+        TianwuPlacement::SiShenYinHai => [Si, Shen, Yin, Hai],
+        TianwuPlacement::SiShenHaiYin => [Si, Shen, Hai, Yin],
+    };
     let tianwu = eb2pi(tianwu_table[month_index % 4]);
 
     MonthlyStar {
@@ -665,6 +675,32 @@ pub fn get_monthly_star_index(month_index: usize) -> MonthlyStar {
         tianyue,
         tianwu,
     }
+}
+
+/// 本命天马与月马的宫位索引，返回 `(天马, 月马)`：按 `placement` 取年马或月马作天马，
+/// 月马只在 [`TianmaPlacement::Both`] 时另外给出。
+///
+/// yearly_ma: 年马的宫位索引（[`get_lu_yang_tuo_ma_index`] 的 `ma`）
+/// month_index: 月份索引（0-based，已按闰月口径修正）
+pub fn get_tianma_index(
+    yearly_ma: usize,
+    month_index: usize,
+    placement: TianmaPlacement,
+) -> (usize, Option<usize>) {
+    match placement {
+        TianmaPlacement::Yearly => (yearly_ma, None),
+        TianmaPlacement::Monthly => (get_yuema_index(month_index), None),
+        TianmaPlacement::Both => (yearly_ma, Some(get_yuema_index(month_index))),
+    }
+}
+
+/// 月马的宫位索引：正五九申、二六十巳、三七十一寅、四八十二亥。
+///
+/// month_index: 月份索引（0-based，即正月=0，已按闰月口径修正）
+pub fn get_yuema_index(month_index: usize) -> usize {
+    use EarthlyBranch::*;
+    let table: [EarthlyBranch; 4] = [Shen, Si, Yin, Hai];
+    eb2pi(table[month_index % 4])
 }
 
 /// 18. 获取文昌、文曲的宫位索引（按天干）

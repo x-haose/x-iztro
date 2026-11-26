@@ -29,6 +29,33 @@
   格局判定的日月明暗不把它算作「暗」。Python `Brightness.XIAN2`，Go `BrightnessXian2`，JavaScript `Brightness.XIAN2`。
 - **杂耀可带亮度**：自定义亮度表对杂耀同样生效（含重排时随命宫挪位的天伤、天使、天才）。默认亮度表不给杂耀亮度，
   因此默认输出不变；杂耀有亮度时 DTO 才带 `brightness` / `brightnessKey`，文本随之写出亮度。
+- **更多流派口径开关**：`Config` 新增八个开关，`dayDivide` 新增一个取值；默认值都等于原行为，星盘 DTO 的 `config`
+  只在取非默认值时带这些键。Python `ChartConfig`、Go `Config`、JavaScript `ChartConfig` 同名字段（Python 为 snake_case），
+  取值枚举 Python `enums.py`、Go `keys.go`、JavaScript `enums.ts` 同步。
+  - `dayDivide: "forwardCarry"`：晚子时整个日期归次日，按次日早子时排盘，月底的晚子进下月、除夕的晚子进下一年
+    （李铁笔《紫微斗数命运学》p105–106）；农历生日、生月、年干支、生肖与四柱都按次日，`solarDate`、时辰与星座按入参；
+    运限目标的晚子时同样按次日早子时。
+  - `leapDivide`（`default` / `nextMonth`）：`nextMonth` 时闰月整月按下月安星，`fix_leap` 不起作用
+    （《紫微斗数讲义》p33–34、《紫微斗数精成》p11）；斗君的生月随之。
+  - `tianmaPlacement`（`yearly` / `monthly` / `both`）：天马按年支、按生月（正五九申、二六十巳、三七十一寅、四八十二亥，
+    李铁笔《紫微斗数命运学》p20），或年马之外另在月马之位安新杂耀「月天马」（`yuemaAdj`，《紫微斗数一本通》p80、p84、p91）。
+  - `changshengDirection`（`yinYang` / `gender` / `clockwise`）：长生十二神男顺女逆（《紫微斗数精成》p22、李 p29）或一律顺行
+    （《紫微斗数讲义》p64）。
+  - `tianshangTianshi`（`default` / `tianshiFriends`）：天使在仆役、天伤在疾厄，不分男女（李 p105、p135）。
+  - `tianwuPlacement`（`siShenYinHai` / `siShenHaiYin`）：天巫三七十一亥、四八十二寅（《紫微斗数精成》p20、p26）。
+  - `yearly12Placement`（`natalAndYearly` / `yearlyOnly`）：岁前、将前十二神只作流年星，本命不安（《紫微斗数一本通》p44、
+    李 p115）。本命不安时宫位 DTO 的 `suiqian12`、`jiangqian12` 及其标识为空串，字段与类型不变；文本的十二神行只写长生、博士。
+  - `originalPalace`（`primary` / `withSecondary`）：辛年丑宫、壬年子宫另标辅来因宫（许铨仁《紫微斗数命理学正解（二）》p12
+    以寅卯为主、子丑为辅）。宫位新增 `isSecondaryOriginalPalace`（只在为真时出现），文本标「辅来因宫」；
+    宫位寻址的 `originalPalace` 仍指寅卯那一宫。
+  - `douJunMonth`（`default` / `natal`）：`natal` 时推斗君的生月与本命盘同一规则，即 `dayDivide=forward` 的晚子时不把闰月
+    十六日起作下月。
+- **格局口径 `pangKong`**：`PatternConfig` 新增 `pangKong`（Rust `pang_kong`，默认 `false`），打开时空曜（禄衰马困、
+  两重华盖的宽口径）连傍截空、傍旬空一并算（王亭之《安星法及推断实例》p56–57 正空、傍空两宫都算）。取默认值时序列化不写出该键。
+  Python `PatternConfig.pang_kong`（`to_dict()` 恒写出 `pangKong`），Go `PatternConfig.PangKong`，JavaScript `PatternConfig.pangKong`。
+- 新星曜「月天马」六种语言都有译名（书中称月马；iztro 的流月天马已叫「月马」，本命这颗译作「月天马」以免同名），
+  默认知识包补一条只述安放事实的对照性条目（`source.adapted` 已注明）；星耀标识由 164 个增至 165 个、可翻译标识由 263 个增至 264 个。
+- 四侧共用用例 `tests/data/school_option_cases.json`：每个新开关一张盘、格局口径一组，Python、Go、JavaScript 经各自的类型化配置比对。
 
 ### 变更
 
@@ -36,6 +63,13 @@
   `pang_jiekong` / `pang_xunkong`：用结构体字面量构造的代码需补上。`Brightness` 新增变体 `Xian2` 并标为 `#[non_exhaustive]`，
   crate 外的 `match` 需加兜底分支。`TopicPalace::flying` 由 `[Flight; 4]` 改为 `Vec<Flight>`（有附加四化星时多于四条）。
   `star::adjective::get_adjective_stars` 的末两个参数由 `algorithm, lang` 改为 `lang, config`。
+- Rust 的 `Config` 多八个公有字段，`PalaceData` 多 `is_secondary_original_palace`，`suiqian12` / `jiangqian12` 由 `StarKey`
+  改为 `Option<StarKey>`（本命不安时为 `None`），`PatternConfig` 多 `pang_kong`：用结构体字面量构造的代码需补上。
+  `DayDivide` 新增变体 `ForwardCarry` 并标为 `#[non_exhaustive]`，八个新枚举同样 `#[non_exhaustive]`。
+  安星构件的签名随开关改变：`get_changsheng12` 多一个方向参数，`get_monthly_star_index` 多天巫安法参数，
+  `get_tianshang_tianshi_index` 与 `get_yearly_star_index` 的末参数由 `Algorithm` 改为 `&Config`，`get_adjective_stars` 多月天马位置参数。
+- 运限取出生的农历日期改读星盘的 `raw_dates`（排盘入口产出的盘与按 `solar_date` 重算的结果相同），
+  不再解析 `solar_date`；`get_horoscope` 因此不再因星盘的 `solar_date` 被改成非法值而报错。
 - DTO 里非四化候选星（十四主星与左辅右弼文昌文曲之外）在自定义四化表让它化出四化时，`mutagen` 译文键随 `mutagenKey` 一起出现，
   此前只有标识没有译文。默认四化表只化四化候选星，默认输出不变。
 

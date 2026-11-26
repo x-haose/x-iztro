@@ -94,7 +94,7 @@ description: 三组星耀各自装什么，星耀分八类，亮度与四化标�
 | `soft` | 辅星 | 六吉 |
 | `tough` | 辅星 | 六煞 |
 | `lucun` | 辅星 | 禄存，单独成类 |
-| `tianma` | 辅星 | 天马，单独成类 |
+| `tianma` | 辅星 | 天马，单独成类；`tianma_placement = both` 时另安的月天马 `yuemaAdj` 在杂耀里，类型同为 `tianma` |
 | `flower` | 杂耀 | 桃花星 |
 | `helper` | 杂耀 | 解神 |
 | `adjective` | 杂耀 | 其余杂耀 |
@@ -133,6 +133,8 @@ description: 三组星耀各自装什么，星耀分八类，亮度与四化标�
 ### 长生十二神
 
 依据**五行局与阴阳男女**起。描述一件事从萌生到消亡再重来的十二个阶段。
+方向默认阳男阴女顺行，可由 `changsheng_direction` 改为男顺女逆或一律顺行，见
+[Config 详解](/zh/docs/guide/guides/config#长生十二神方向-changsheng_direction)。
 
 长生 `changsheng` / 沐浴 `muyu` / 冠带 `guandai` / 临官 `linguan` /
 帝旺 `diwang` / 衰 `shuai` / 病 `bing` / 死 `si` / 墓 `mu` / 绝 `jue` /
@@ -176,6 +178,7 @@ description: 三组星耀各自装什么，星耀分八类，亮度与四化标�
 <Callout>
 运限层级还会带自己的岁前十二神与将前十二神，它们按运限年支重新起算，
 与本命盘上的这四组是两回事。见[运限](/zh/docs/guide/concepts/horoscope)。
+`yearly12_placement = yearlyOnly` 时本命盘不安岁前、将前，宫位上这两个字段为空串，流年照常。
 </Callout>
 
 ## 在代码里怎么取

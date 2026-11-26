@@ -36,7 +36,8 @@ type Config struct {
 	// AgeDivide 为小限虚岁的进位时点："normal" 农历生日（默认）、"birthday" 阳历生日。
 	AgeDivide string `json:"ageDivide,omitempty"`
 
-	// DayDivide 为晚子时的归日方式："forward" 归次日（默认）、"current" 归当日。
+	// DayDivide 为晚子时的归日方式："forward" 日数归次日（默认）、"current" 归当日、
+	// "forwardCarry" 整个日期归次日（月底进下月、除夕进下一年），取值见 DayDivide* 常量。
 	DayDivide string `json:"dayDivide,omitempty"`
 
 	// Algorithm 为算法派别："default" 通行派（默认）、"zhongzhou" 中州派。
@@ -49,6 +50,38 @@ type Config struct {
 	// VoidPlacement 为截空与旬空的安法："default" 同 iztro（默认）、"zhengPang" 各安正空与傍空两宫，
 	// 取值见 VoidPlacement* 常量。
 	VoidPlacement string `json:"voidPlacement,omitempty"`
+
+	// LeapDivide 为闰月出生时安星用哪个月："default" 按 fixLeap（默认）、"nextMonth" 整月按下月，
+	// 取值见 LeapDivide* 常量。
+	LeapDivide string `json:"leapDivide,omitempty"`
+
+	// TianmaPlacement 为天马的安法："yearly" 年马（默认）、"monthly" 月马、"both" 年马另安月天马，
+	// 取值见 TianmaPlacement* 常量。
+	TianmaPlacement string `json:"tianmaPlacement,omitempty"`
+
+	// ChangshengDirection 为长生十二神方向："yinYang" 阳男阴女顺（默认）、"gender" 男顺女逆、
+	// "clockwise" 一律顺行，取值见 ChangshengDirection* 常量。
+	ChangshengDirection string `json:"changshengDirection,omitempty"`
+
+	// TianshangTianshi 为天伤、天使的安法："default" 同 iztro（默认）、"tianshiFriends" 天使仆役、天伤疾厄，
+	// 取值见 TianshangTianshi* 常量。
+	TianshangTianshi string `json:"tianshangTianshi,omitempty"`
+
+	// TianwuPlacement 为天巫的安法："siShenYinHai" 巳申寅亥（默认）、"siShenHaiYin" 巳申亥寅，
+	// 取值见 TianwuPlacement* 常量。
+	TianwuPlacement string `json:"tianwuPlacement,omitempty"`
+
+	// Yearly12Placement 为岁前、将前十二神安在哪些盘上："natalAndYearly" 本命与流年都安（默认）、
+	// "yearlyOnly" 只在流年安，取值见 Yearly12Placement* 常量。
+	Yearly12Placement string `json:"yearly12Placement,omitempty"`
+
+	// OriginalPalace 为来因宫的标法："primary" 只标一宫（默认）、"withSecondary" 另标辛年丑宫、
+	// 壬年子宫为辅来因宫，取值见 OriginalPalace* 常量。
+	OriginalPalace string `json:"originalPalace,omitempty"`
+
+	// DouJunMonth 为推斗君时生月的取法："default" 同 iztro（默认）、"natal" 与本命盘同一规则，
+	// 取值见 DouJunMonth* 常量。
+	DouJunMonth string `json:"douJunMonth,omitempty"`
 
 	// Mutagens 为自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
 	// 按天干整表替换默认值，未列出的天干仍用默认表。

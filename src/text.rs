@@ -301,6 +301,7 @@ labels_table! {
     soul_palace: ["命宫", "命宮", "Soul Palace", "命宮", "명궁", "Cung Mệnh"],
     body_palace: ["身宫", "身宮", "Body Palace", "身宮", "신궁", "Cung Thân"],
     original_palace: ["来因宫", "來因宮", "Original Palace", "来因宮", "래인궁", "Cung Lai Nhân"],
+    secondary_original_palace: ["辅来因宫", "輔來因宮", "Secondary Original Palace", "副来因宮", "보조 래인궁", "Cung Lai Nhân phụ"],
 
     // ---- 宫位 ----
     col_palace: ["宫位", "宮位", "Palace", "宮位", "궁위", "Cung"],
@@ -451,7 +452,7 @@ fn by_key(key: &str, lang: Language) -> String {
         .unwrap_or_else(|| key.to_string())
 }
 
-/// 宫位名后的标记：身宫、来因宫各占一个方括号
+/// 宫位名后的标记：身宫、来因宫、辅来因宫各占一个方括号
 fn palace_marks(p: &PalaceData, l: &Labels) -> String {
     let mut out = String::new();
     if p.is_body_palace {
@@ -459,6 +460,9 @@ fn palace_marks(p: &PalaceData, l: &Labels) -> String {
     }
     if p.is_original_palace {
         out.push_str(&format!(" [{}]", l.original_palace));
+    }
+    if p.is_secondary_original_palace {
+        out.push_str(&format!(" [{}]", l.secondary_original_palace));
     }
     out
 }
@@ -655,11 +659,11 @@ fn layer_lines(p: &PalaceData, frame: &Frame, l: &Labels, lang: Language) -> Str
     out
 }
 
-/// 某宫的十二神行：四组各一位，标组名
+/// 某宫的十二神行：四组各一位，标组名；本命不安的岁前、将前不写
 fn gods_line(p: &PalaceData, l: &Labels, lang: Language) -> String {
     let pairs = [
-        (l.changsheng, p.changsheng12),
-        (l.boshi, p.boshi12),
+        (l.changsheng, Some(p.changsheng12)),
+        (l.boshi, Some(p.boshi12)),
         (l.suiqian, p.suiqian12),
         (l.jiangqian, p.jiangqian12),
     ];
@@ -668,7 +672,7 @@ fn gods_line(p: &PalaceData, l: &Labels, lang: Language) -> String {
         l.twelve_gods,
         pairs
             .iter()
-            .map(|(group, star)| format!("{group}·{}", translate_star(*star, lang)))
+            .filter_map(|(group, star)| star.map(|s| format!("{group}·{}", translate_star(s, lang))))
             .collect::<Vec<_>>()
             .join(LIST_SEP)
     )
@@ -1002,13 +1006,26 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
     if let Some(b) = astrolabe.palaces.iter().find(|p| p.is_body_palace) {
         positions.push_str(&format!(" ({})", translate_palace(b.name, lang)));
     }
-    if let Some(o) = astrolabe.palaces.iter().find(|p| p.is_original_palace) {
-        positions.push_str(&format!(
-            "{FIELD_SEP}{}: {} ({})",
+    for (label, marked) in [
+        (
             l.original_palace,
-            translate_earthly_branch(o.earthly_branch, lang),
-            translate_palace(o.name, lang)
-        ));
+            astrolabe.palaces.iter().find(|p| p.is_original_palace),
+        ),
+        (
+            l.secondary_original_palace,
+            astrolabe
+                .palaces
+                .iter()
+                .find(|p| p.is_secondary_original_palace),
+        ),
+    ] {
+        if let Some(o) = marked {
+            positions.push_str(&format!(
+                "{FIELD_SEP}{label}: {} ({})",
+                translate_earthly_branch(o.earthly_branch, lang),
+                translate_palace(o.name, lang)
+            ));
+        }
     }
     out.push_str(&positions);
     out.push('\n');

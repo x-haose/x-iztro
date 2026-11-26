@@ -39,6 +39,7 @@ time through `translate_*`.
 | `name` | `Palace` | Palace name |
 | `is_body_palace` | `bool` | Whether this is the body palace |
 | `is_original_palace` | `bool` | Whether this is the original palace (stem equal to the year stem, and not the Zi or Chou palace) |
+| `is_secondary_original_palace` | `bool` | Whether this is the secondary Original palace (Chou in xin years, Zi in ren years); can only be true with `original_palace = withSecondary` |
 | `heavenly_stem` | `HeavenlyStem` | Palace stem, which determines the mutagens this palace flies out |
 | `earthly_branch` | `EarthlyBranch` | Palace branch, fixed by the index: 0 is yin, 11 is chou |
 | `major_stars` | `Vec<Star>` | Whichever of the fourteen major stars fall here, in placement order |
@@ -46,8 +47,8 @@ time through `translate_*`.
 | `adjective_stars` | `Vec<Star>` | Adjective stars |
 | `changsheng12` | `StarKey` | The Changsheng god of this palace, exactly one per palace |
 | `boshi12` | `StarKey` | The Boshi god |
-| `jiangqian12` | `StarKey` | The Jiang-qian god |
-| `suiqian12` | `StarKey` | The Sui-qian god |
+| `jiangqian12` | `Option<StarKey>` | The Jiang-qian god; `None` when the natal chart carries none |
+| `suiqian12` | `Option<StarKey>` | The Sui-qian god; `None` when the natal chart carries none |
 | `decadal` | `Decadal` | The decade: age range plus stem and branch |
 | `ages` | `Vec<u32>` | Nominal ages at which the age scope passes through this palace |
 | `overrides` | `Option<Arc<TableOverrides>>` | The custom mutagen and brightness tables in effect when charting; `None` when nothing was customized |
@@ -57,6 +58,7 @@ Major, minor and adjective stars are **lists** — a palace can hold zero or man
 The Changsheng, Boshi, Jiang-qian and Sui-qian gods are marks of which each palace has **exactly
 one**, filling one full cycle across the twelve palaces, so they are single-valued fields rather than
 lists.
+The Sui-qian and Jiang-qian gods are absent from the natal chart with `yearly12_placement = yearlyOnly`; those two fields are then empty strings (`None` in Rust).
 </Callout>
 
 <Callout type="info" title="overrides is input, not result">

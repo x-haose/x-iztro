@@ -55,13 +55,14 @@ Three methods:
 
 The reading switches. Anything that is merely a second *form* of the same pattern goes through
 `PatternHit.Variant`; only data readings that change the **finding of fact itself** live here, which
-is why there are just three fields.
+is why there are just four fields.
 
 ```go
 type PatternConfig struct {
     BrightnessSource string // BrightnessSourceTable (default) or BrightnessSourcePositional
     Borrow           *bool  // whether an empty palace borrows the opposite palace's majors; nil takes the core default true
     FlowStars        *bool  // whether flowing stars count as their natal counterparts; nil takes the core default true
+    PangKong         *bool  // whether void stars include the side voids of Jiekong and Xunkong; nil takes the core default false
 }
 
 func Bool(v bool) *bool                    // convenience: a bool literal's address
@@ -78,7 +79,7 @@ bright Yin–Wu, dim You–Chou; Moon bright You–Chou, dim Mao–Wei). The tra
 [concept page](/en/docs/guide/concepts/patterns#which-table-decides-sun-and-moon-brightness).
 
 <Callout type="info" title="The zero value is the default reading">
-All three fields of `&iztro.PatternConfig{}` are zero values (empty string and `nil`), which means
+Every field of `&iztro.PatternConfig{}` is a zero value (empty string and `nil`), which means
 exactly what passing `nil` means. To change one thing, write a literal — whatever you leave out
 keeps the core default:
 

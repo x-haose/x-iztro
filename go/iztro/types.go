@@ -109,6 +109,9 @@ type Palace struct {
 	IsBodyPalace bool `json:"isBodyPalace"`
 	// IsOriginalPalace 表示是否来因宫
 	IsOriginalPalace bool `json:"isOriginalPalace"`
+	// IsSecondaryOriginalPalace 表示是否辅来因宫（辛年丑宫、壬年子宫）；
+	// 只在 Config.OriginalPalace 为 OriginalPalaceWithSecondary 时可能为 true
+	IsSecondaryOriginalPalace bool `json:"isSecondaryOriginalPalace,omitempty"`
 	// HeavenlyStem 为宫位天干（翻译文本）
 	HeavenlyStem string `json:"heavenlyStem"`
 	// HeavenlyStemKey 为宫位天干标识
@@ -131,13 +134,13 @@ type Palace struct {
 	Boshi12 string `json:"boshi12"`
 	// Boshi12Key 为博士十二神标识
 	Boshi12Key string `json:"boshi12Key"`
-	// Jiangqian12 为将前十二神（翻译文本）
+	// Jiangqian12 为将前十二神（翻译文本）；本命不安（Config.Yearly12Placement 为 Yearly12PlacementYearlyOnly）时为空串
 	Jiangqian12 string `json:"jiangqian12"`
-	// Jiangqian12Key 为将前十二神标识
+	// Jiangqian12Key 为将前十二神标识；本命不安时为空串
 	Jiangqian12Key string `json:"jiangqian12Key"`
-	// Suiqian12 为岁前十二神（翻译文本）
+	// Suiqian12 为岁前十二神（翻译文本）；本命不安时为空串
 	Suiqian12 string `json:"suiqian12"`
-	// Suiqian12Key 为岁前十二神标识
+	// Suiqian12Key 为岁前十二神标识；本命不安时为空串
 	Suiqian12Key string `json:"suiqian12Key"`
 	// Decadal 为大限信息
 	Decadal Decadal `json:"decadal"`

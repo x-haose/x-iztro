@@ -265,10 +265,18 @@ map[female:阴 male:阳]
 | `YearDivide*` | `YearDivideNormal` / `YearDivideExact` |
 | `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` |
 | `AgeDivide*` | `AgeDivideNormal` / `AgeDivideBirthday` |
-| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
+| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry` |
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
 | `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
 | `VoidPlacement*` | `VoidPlacementDefault` / `VoidPlacementZhengPang` |
+| `LeapDivide*` | `LeapDivideDefault` / `LeapDivideNextMonth` |
+| `TianmaPlacement*` | `TianmaPlacementYearly` / `TianmaPlacementMonthly` / `TianmaPlacementBoth` |
+| `ChangshengDirection*` | `ChangshengDirectionYinYang` / `ChangshengDirectionGender` / `ChangshengDirectionClockwise` |
+| `TianshangTianshi*` | `TianshangTianshiDefault` / `TianshangTianshiTianshiFriends` |
+| `TianwuPlacement*` | `TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin` |
+| `Yearly12Placement*` | `Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly` |
+| `OriginalPalace*` | `OriginalPalacePrimary` / `OriginalPalaceWithSecondary` |
+| `DouJunMonth*` | `DouJunMonthDefault` / `DouJunMonthNatal` |
 
 <Callout type="warn" title="五行局常量的前缀是 Class 不是 FiveElements">
 写 `iztro.ClassWood3rd`，不是 `iztro.FiveElementsWood3rd`——

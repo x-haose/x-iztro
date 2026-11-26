@@ -3,7 +3,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::{Mutagen, Palace, Scope};
 use crate::models::star::Star;
-use crate::pattern::view::{KONG_WANG, KONG_YAO};
+use crate::pattern::view::KONG_WANG;
 use crate::pattern::{ChartView, PatternHit, PatternKey, Rule, StarAt};
 
 /// 本组规则，按《格局》页顺序。
@@ -91,9 +91,14 @@ pub fn lu_shuai_ma_kun(v: &ChartView) -> Vec<PatternHit> {
     vec![hit]
 }
 
-/// 禄存所在宫的「衰」：同宫的空曜或耗曜，作为证据返回。
+/// 禄存所在宫的「衰」：同宫的空曜（[`ChartView::kong_yao`]）或耗曜，作为证据返回。
 fn decayed(v: &ChartView, i: usize) -> Option<StarAt> {
-    if let Some(s) = KONG_YAO.iter().chain(&HAO_YAO).find_map(|k| v.find(i, *k)) {
+    if let Some(s) = v
+        .kong_yao()
+        .iter()
+        .chain(&HAO_YAO)
+        .find_map(|k| v.find(i, *k))
+    {
         return Some(v.star_at(i, s));
     }
     let boshi = v.boshi12(i);
@@ -234,7 +239,7 @@ pub fn lu_ma_pei_yin(v: &ChartView) -> Vec<PatternHit> {
 ///
 /// - `variant = None`：空曜取地空、地劫——原文即「空劫」，为主口径；
 /// - `variant = "kong_yao"`：空曜取天空、截空、旬空——公开资料「只要是空曜都算」的宽口径
-///   （[`KONG_YAO`] 四曜去掉主口径已收的地空）。
+///   （[`ChartView::kong_yao`] 去掉主口径已收的地空）。
 ///
 /// 两口径证据各记各的空曜，命宫两类空曜俱见时并报。
 ///
@@ -256,7 +261,8 @@ pub fn liang_chong_hua_gai(v: &ChartView) -> Vec<PatternHit> {
             vec![(s, cun), (s, hua), (s, kong)],
         ));
     }
-    if let Some(kong) = KONG_YAO
+    if let Some(kong) = v
+        .kong_yao()
         .iter()
         .filter(|k| **k != StarKey::DikongMin)
         .find_map(|k| v.find(s, *k))
@@ -629,6 +635,39 @@ mod tests {
         assert!(matches!(
             hits[0].stars[2].star,
             StarKey::Tiankong | StarKey::Jiekong | StarKey::Xunkong
+        ));
+    }
+
+    /// 空曜计入傍空（王亭之《安星法及推断实例》p56–57 正空、傍空两宫都算）：截空、旬空分正傍的盘上，
+    /// 双禄坐命、命宫不见地空地劫与正空诸曜而只见傍空时，`pang_kong` 打开才报 `kong_yao` 口径。
+    #[test]
+    fn liang_chong_hua_gai_counts_pang_kong_only_when_enabled() {
+        use crate::data::types::{Config, VoidPlacement};
+        use crate::pattern::testutil::find_chart_with;
+        let config = Config {
+            void_placement: VoidPlacement::ZhengPang,
+            ..Config::default()
+        };
+        let a = find_chart_with(&config, |a| {
+            let v = natal(a);
+            let s = v.soul();
+            v.has(s, StarKey::LucunMin)
+                && v.has_mutagen(s, Mutagen::Lu)
+                && !v.has_any(s, &[StarKey::DijieMin])
+                && !v.has_any(s, &crate::pattern::view::KONG_YAO)
+                && v.has_any(s, &[StarKey::PangJiekong, StarKey::PangXunkong])
+        });
+        assert!(liang_chong_hua_gai(&natal(&a)).is_empty());
+        let pang = PatternConfig {
+            pang_kong: true,
+            ..PatternConfig::default()
+        };
+        let hits = liang_chong_hua_gai(&ChartView::natal(&a, &pang));
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].variant, Some("kong_yao"));
+        assert!(matches!(
+            hits[0].stars[2].star,
+            StarKey::PangJiekong | StarKey::PangXunkong
         ));
     }
 

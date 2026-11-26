@@ -16,9 +16,10 @@ const soul = chart.palace(PalaceName.SOUL)!;
 | `index` | `number` | 宫位索引 0–11，0 为寅宫 |
 | `name` / `nameKey` | `string` / `PalaceName` | 宫名 / 标识 |
 | `isBodyPalace` / `isOriginalPalace` | `boolean` | 是否身宫 / 来因宫 |
+| `isSecondaryOriginalPalace` | `true \| undefined` | 辅来因宫（辛年丑宫、壬年子宫）为 `true`，其余宫为 `undefined`；只在 `ChartConfig.originalPalace` 为 `withSecondary` 时出现 |
 | `heavenlyStem(Key)` / `earthlyBranch(Key)` | `string` | 宫干、宫支 / 标识 |
 | `majorStars` / `minorStars` / `adjectiveStars` | `readonly Star[]` | 主星 / 辅星 / 杂耀 |
-| `changsheng12(Key)`、`boshi12(Key)`、`jiangqian12(Key)`、`suiqian12(Key)` | `string` | 四组十二神 / 标识 |
+| `changsheng12(Key)`、`boshi12(Key)`、`jiangqian12(Key)`、`suiqian12(Key)` | `string` | 四组十二神 / 标识；`yearly12Placement` 为 `yearlyOnly` 时将前、岁前为空串 |
 | `decadal` | `Decadal` | 大限：`range`（起止虚岁）、干支与标识 |
 | `ages` | `readonly number[]` | 小限经过的虚岁 |
 | `mutagenStarKeys` | `readonly [string, string, string, string]` | 本宫天干化出的四颗星（禄、权、科、忌），随自定义四化表变化 |

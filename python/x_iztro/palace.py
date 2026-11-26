@@ -115,16 +115,16 @@ class Palace:
     """博士十二神标识（`Boshi12` 枚举值域）"""
 
     jiangqian12: str
-    """将前十二神（翻译文本）"""
+    """将前十二神（翻译文本）；本命不安（`ChartConfig.yearly12_placement` 为 yearlyOnly）时为空串"""
 
     jiangqian12_key: str
-    """将前十二神标识（`Jiangqian12` 枚举值域）"""
+    """将前十二神标识（`Jiangqian12` 枚举值域）；本命不安时为空串"""
 
     suiqian12: str
-    """岁前十二神（翻译文本）"""
+    """岁前十二神（翻译文本）；本命不安时为空串"""
 
     suiqian12_key: str
-    """岁前十二神标识（`Suiqian12` 枚举值域）"""
+    """岁前十二神标识（`Suiqian12` 枚举值域）；本命不安时为空串"""
 
     decadal: Decadal
     """大限信息"""
@@ -142,6 +142,9 @@ class Palace:
     extra_mutagen_star_keys: dict[str, list[str]] = field(default_factory=dict)
     """本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extra_mutagens`）；
     没有附加星时为空。飞星判断把附加星与同类的四槽之星一并计入。"""
+
+    is_secondary_original_palace: bool = False
+    """是否辅来因宫（辛年丑宫、壬年子宫）；只在 `ChartConfig.original_palace` 为 withSecondary 时可能为真"""
 
     _astrolabe: Astrolabe | None = field(default=None, compare=False, repr=False)
     """宫位所属星盘，由星盘构造时回填"""
@@ -398,6 +401,7 @@ class Palace:
             name_key=d["nameKey"],
             is_body_palace=d["isBodyPalace"],
             is_original_palace=d["isOriginalPalace"],
+            is_secondary_original_palace=d.get("isSecondaryOriginalPalace", False),
             heavenly_stem=d["heavenlyStem"],
             heavenly_stem_key=d["heavenlyStemKey"],
             earthly_branch=d["earthlyBranch"],

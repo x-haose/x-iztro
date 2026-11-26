@@ -11,7 +11,9 @@ import type {
   AstroType,
   Brightness,
   BrightnessSource,
+  ChangshengDirection,
   DayDivide,
+  DouJunMonth,
   VoidPlacement,
   EarthlyBranch,
   FiveElementsClass,
@@ -21,19 +23,25 @@ import type {
   KnowledgeIssueCode,
   KnowledgeDepth,
   Language,
+  LeapDivide,
   MonthPart,
   Mutagen,
+  OriginalPalaceMarking,
   PalaceName,
   Scope,
   StarType,
   TextDetail,
+  TianmaPlacement,
+  TianshangTianshi,
+  TianwuPlacement,
   TimeIndex,
   YearDivide,
+  Yearly12Placement,
 } from './enums.js';
 import type { KnowledgePack } from './knowledge.js';
 
 /**
- * 排盘配置。七个开关决定算法分界、盘型与空曜安法，覆盖表替换或补充内置的四化与亮度数据；
+ * 排盘配置。开关决定算法分界、盘型与各项流派口径，覆盖表替换或补充内置的四化与亮度数据；
  * 每一项都可省略，省略取与 iztro 一致的默认值。
  */
 export interface ChartConfig {
@@ -43,7 +51,7 @@ export interface ChartConfig {
   horoscopeDivide?: HoroscopeDivide | undefined;
   /** 虚岁分界点：normal=跨年即加（默认）/ birthday=过生日才加 */
   ageDivide?: AgeDivide | undefined;
-  /** 晚子时归属：forward=归次日（默认）/ current=归当天 */
+  /** 晚子时归属：forward=日数归次日（默认）/ current=归当天 / forwardCarry=整个日期归次日（月底进下月、除夕进下一年） */
   dayDivide?: DayDivide | undefined;
   /** 算法派别：default（默认）/ zhongzhou */
   algorithm?: Algorithm | undefined;
@@ -51,6 +59,22 @@ export interface ChartConfig {
   astroType?: AstroType | undefined;
   /** 截空与旬空的安法：default=同 iztro（默认）/ zhengPang=各安正空、傍空两宫 */
   voidPlacement?: VoidPlacement | undefined;
+  /** 闰月出生时安星用哪个月：default=按 fixLeap（默认）/ nextMonth=整月按下月 */
+  leapDivide?: LeapDivide | undefined;
+  /** 天马的安法：yearly=年马（默认）/ monthly=月马 / both=年马另安月天马 */
+  tianmaPlacement?: TianmaPlacement | undefined;
+  /** 长生十二神方向：yinYang=阳男阴女顺（默认）/ gender=男顺女逆 / clockwise=一律顺行 */
+  changshengDirection?: ChangshengDirection | undefined;
+  /** 天伤、天使的安法：default=同 iztro（默认）/ tianshiFriends=天使仆役、天伤疾厄 */
+  tianshangTianshi?: TianshangTianshi | undefined;
+  /** 天巫的安法：siShenYinHai=巳申寅亥（默认）/ siShenHaiYin=巳申亥寅 */
+  tianwuPlacement?: TianwuPlacement | undefined;
+  /** 岁前、将前十二神：natalAndYearly=本命与流年都安（默认）/ yearlyOnly=只在流年安 */
+  yearly12Placement?: Yearly12Placement | undefined;
+  /** 来因宫的标法：primary=只标一宫（默认）/ withSecondary=另标辛年丑宫、壬年子宫为辅来因宫 */
+  originalPalace?: OriginalPalaceMarking | undefined;
+  /** 推斗君时生月的取法：default=同 iztro（默认）/ natal=与本命盘同一规则 */
+  douJunMonth?: DouJunMonth | undefined;
   /**
    * 自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
    * 按天干整表替换默认值，未列出的天干仍用默认表。
@@ -83,8 +107,24 @@ export interface ChartConfigData {
   algorithm: Algorithm;
   /** 排盘视角 */
   astroType: AstroType;
-  /** 截空与旬空的安法；取默认值 default 时省略 */
+  /** 截空与旬空的安法；取默认值时省略，以下各项同 */
   voidPlacement?: VoidPlacement;
+  /** 闰月出生时安星用哪个月 */
+  leapDivide?: LeapDivide;
+  /** 天马的安法 */
+  tianmaPlacement?: TianmaPlacement;
+  /** 长生十二神的排列方向 */
+  changshengDirection?: ChangshengDirection;
+  /** 天伤、天使的安法 */
+  tianshangTianshi?: TianshangTianshi;
+  /** 天巫的安法 */
+  tianwuPlacement?: TianwuPlacement;
+  /** 岁前、将前十二神安在哪些盘上 */
+  yearly12Placement?: Yearly12Placement;
+  /** 来因宫的标法 */
+  originalPalace?: OriginalPalaceMarking;
+  /** 推斗君时生月的取法 */
+  douJunMonth?: DouJunMonth;
 }
 
 /** 格局判定口径。多口径格局一律以 `PatternHit.variant` 报出，这里只放会改变事实判定的开关 */
@@ -95,6 +135,8 @@ export interface PatternConfig {
   borrow?: boolean | undefined;
   /** 运限视角下流曜（运禄/流禄等）是否等同对应本命辅星参与判定，默认 true */
   flowStars?: boolean | undefined;
+  /** 空曜是否连截空、旬空的傍空一并算，默认 false；傍空只在 `voidPlacement: 'zhengPang'` 的盘上安放 */
+  pangKong?: boolean | undefined;
 }
 
 /**
@@ -181,6 +223,8 @@ export interface PalaceData {
   isBodyPalace: boolean;
   /** 是否来因宫 */
   isOriginalPalace: boolean;
+  /** 是否辅来因宫（辛年丑宫、壬年子宫）：只在 `ChartConfig.originalPalace` 为 withSecondary 时出现，出现即为 true */
+  isSecondaryOriginalPalace?: true;
   /** 宫干（翻译文本） */
   heavenlyStem: string;
   /** 宫干标识 */
@@ -203,13 +247,13 @@ export interface PalaceData {
   boshi12: string;
   /** 博士十二神标识 */
   boshi12Key: string;
-  /** 将前十二神（翻译文本） */
+  /** 将前十二神（翻译文本）；本命不安（`ChartConfig.yearly12Placement` 为 yearlyOnly）时为空串 */
   jiangqian12: string;
-  /** 将前十二神标识 */
+  /** 将前十二神标识；本命不安时为空串 */
   jiangqian12Key: string;
-  /** 岁前十二神（翻译文本） */
+  /** 岁前十二神（翻译文本）；本命不安时为空串 */
   suiqian12: string;
-  /** 岁前十二神标识 */
+  /** 岁前十二神标识；本命不安时为空串 */
   suiqian12Key: string;
   /** 大限 */
   decadal: DecadalData;

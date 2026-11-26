@@ -67,6 +67,7 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Jielu => "intercepted",
         StarKey::PangJiekong => "side-interrupted",
         StarKey::PangXunkong => "side-fancied",
+        StarKey::YuemaAdj => "month-horse",
         StarKey::Yuede => "peaceful",
         StarKey::Tianshang => "wounded",
         StarKey::Tianshi => "heaven",

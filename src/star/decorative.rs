@@ -50,16 +50,22 @@ pub fn get_jiangqian12_start_index(yearly_branch: EarthlyBranch) -> usize {
 
 /// 长生12神
 ///
-/// 根据五行局确定起始宫位，根据性别阴阳与年支阴阳决定顺逆。
+/// 根据五行局确定起始宫位，按 `direction` 决定顺逆：默认性别阴阳与年支阴阳相同（阳男阴女）顺行、
+/// 不同逆行；`Gender` 男顺女逆；`Clockwise` 一律顺行。
 pub fn get_changsheng12(
     five_elements_class: FiveElementsClass,
     gender: Gender,
     yearly_branch: EarthlyBranch,
+    direction: ChangshengDirection,
 ) -> [StarKey; 12] {
     let start = get_changsheng12_start_index(five_elements_class);
 
-    // 顺逆：同阴阳则顺时针（+i），异阴阳则逆时针（-i）
-    let clockwise = same_yinyang(gender, yearly_branch);
+    // 顺行即宫位索引递增（+i），逆行递减（-i）
+    let clockwise = match direction {
+        ChangshengDirection::YinYang => same_yinyang(gender, yearly_branch),
+        ChangshengDirection::Gender => gender == Gender::Male,
+        ChangshengDirection::Clockwise => true,
+    };
 
     let stars = [
         StarKey::Changsheng,
@@ -205,7 +211,12 @@ mod tests {
 
     #[test]
     fn test_changsheng12_all_unique() {
-        let result = get_changsheng12(FiveElementsClass::Water2nd, Gender::Male, EarthlyBranch::Zi);
+        let result = get_changsheng12(
+            FiveElementsClass::Water2nd,
+            Gender::Male,
+            EarthlyBranch::Zi,
+            ChangshengDirection::YinYang,
+        );
         // All 12 should be distinct
         let mut seen = std::collections::HashSet::new();
         for key in &result {

@@ -59,6 +59,7 @@ The return value of a charting entry point.
 | `nameKey` | string | Palace name key, e.g. `soulPalace` |
 | `isBodyPalace` | bool | Is it the Body palace |
 | `isOriginalPalace` | bool | Is it the Original palace |
+| `isSecondaryOriginalPalace` | bool | Is it the secondary Original palace (Chou in xin years, Zi in ren years); present only when true, requires `originalPalace: withSecondary` |
 | `heavenlyStem` | string | Palace stem |
 | `heavenlyStemKey` | string | Palace stem key |
 | `earthlyBranch` | string | Palace branch |
@@ -68,8 +69,8 @@ The return value of a charting entry point.
 | `adjectiveStars` | [Star](#star)[] | Adjective stars |
 | `changsheng12` / `changsheng12Key` | string | The twelve Changsheng gods |
 | `boshi12` / `boshi12Key` | string | The twelve Boshi gods |
-| `jiangqian12` / `jiangqian12Key` | string | The twelve Jiang-qian gods |
-| `suiqian12` / `suiqian12Key` | string | The twelve Sui-qian gods |
+| `jiangqian12` / `jiangqian12Key` | string | The twelve Jiang-qian gods; empty strings with `yearly12Placement: yearlyOnly` |
+| `suiqian12` / `suiqian12Key` | string | The twelve Sui-qian gods; likewise |
 | `mutagenStarKeys` | string[4] | Keys of the four stars this palace's stem mutates, in the order Lu, Quan, Ke, Ji; follows a [custom mutagen table](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables) |
 | `extraMutagenStarKeys` | `{mutagen key: string[]}?` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this palace's stem transforms beyond the four slots; absent when there are none |
 | `decadal` | [Decadal](#decadal) | The decadal this palace governs |
@@ -134,10 +135,20 @@ character identical to the top-level `chineseDate` field.
 | `yearDivide` | `normal` / `exact` | `normal` |
 | `horoscopeDivide` | `normal` / `exact` | `normal` |
 | `ageDivide` | `normal` / `birthday` | `normal` |
-| `dayDivide` | `forward` / `current` | `forward` |
+| `dayDivide` | `forward` / `current` / `forwardCarry` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
 | `astroType` | `heaven` / `earth` / `human` | `heaven` |
-| `voidPlacement` | `default` / `zhengPang` | `default`; at the default the `config` echoed on the astrolabe leaves the key out |
+| `voidPlacement` | `default` / `zhengPang` | `default` |
+| `leapDivide` | `default` / `nextMonth` | `default` |
+| `tianmaPlacement` | `yearly` / `monthly` / `both` | `yearly` |
+| `changshengDirection` | `yinYang` / `gender` / `clockwise` | `yinYang` |
+| `tianshangTianshi` | `default` / `tianshiFriends` | `default` |
+| `tianwuPlacement` | `siShenYinHai` / `siShenHaiYin` | `siShenYinHai` |
+| `yearly12Placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` |
+| `originalPalace` | `primary` / `withSecondary` | `primary` |
+| `douJunMonth` | `default` / `natal` | `default` |
+
+`voidPlacement` and the keys below it are x-iztro extensions; at their defaults the `config` echoed on the astrolabe leaves them out. `forwardCarry` for `dayDivide` is an extension value too. See [Config in depth](/en/docs/guide/guides/config) for each key.
 
 There are three further **input-only** keys, used to replace or extend built-in data tables:
 

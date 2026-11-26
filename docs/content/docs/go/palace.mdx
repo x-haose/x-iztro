@@ -24,6 +24,7 @@ soul := chart.Palace(iztro.PalaceSoul)
 | `Name` / `NameKey` | `string` | 宫名译名 / 标识 |
 | `IsBodyPalace` | `bool` | 是否身宫 |
 | `IsOriginalPalace` | `bool` | 是否来因宫（宫干与年干相同且不在子丑二宫） |
+| `IsSecondaryOriginalPalace` | `bool` | 是否辅来因宫（辛年丑宫、壬年子宫）；只在 `Config.OriginalPalace` 为 `OriginalPalaceWithSecondary` 时可能为真 |
 | `HeavenlyStem` / `HeavenlyStemKey` | `string` | 宫干，决定本宫飞出的四化 |
 | `EarthlyBranch` / `EarthlyBranchKey` | `string` | 宫支，由索引固定：0 为寅、11 为丑 |
 | `MajorStars` | `[]Star` | 十四主星中落在本宫的，按安放顺序 |
@@ -42,6 +43,7 @@ soul := chart.Palace(iztro.PalaceSoul)
 主星、辅星、杂耀是**切片**，一宫可以有零到多颗。
 长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
 因此是单值字段而不是切片。
+岁前、将前十二神在 `Config.Yearly12Placement` 为 `Yearly12PlacementYearlyOnly` 时本命不安，这两个字段为空串。
 </Callout>
 
 <Callout type="info" title="MutagenStarKeys 是宫干四化，不是生年四化">

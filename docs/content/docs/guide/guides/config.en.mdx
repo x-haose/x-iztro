@@ -1,11 +1,11 @@
 ---
 title: Config in depth
-description: What each of the seven switches changes, how to pass custom mutagen tables, extra mutagen stars and brightness tables, and when you would actually notice a difference.
+description: What each switch changes, how to pass custom mutagen tables, extra mutagen stars and brightness tables, and when you would actually notice a difference.
 ---
 
 *For: developers · Zi Wei enthusiasts (the school differences in the first half need no code)*
 
-Everything charting genuinely disagrees about is gathered into `Config`: seven switches, plus override
+Everything charting genuinely disagrees about is gathered into `Config`: a set of switches, plus override
 tables that replace or extend the built-in data. The defaults match JS iztro exactly, so **passing no config
 at all gives you the same chart iztro gives**.
 
@@ -14,10 +14,21 @@ at all gives you the same chart iztro gives**.
 | `year_divide` | `normal` / `exact` | `normal` | Which day the charting year's stem and branch turn over |
 | `horoscope_divide` | `normal` / `exact` | `normal` | Which day horoscope stems/branches and the month pillar divide on |
 | `age_divide` | `normal` / `birthday` | `normal` | When nominal age increments |
-| `day_divide` | `forward` / `current` | `forward` | Whether the late Zi hour counts as today or tomorrow |
+| `day_divide` | `forward` / `current` / `forwardCarry` | `forward` | Whether the late Zi hour counts as today or tomorrow |
 | `algorithm` | `default` / `zhongzhou` | `default` | Algorithm school |
 | `astro_type` | `heaven` / `earth` / `human` | `heaven` | Charting perspective (heaven / earth / human plate) |
 | `void_placement` | `default` / `zhengPang` | `default` | Whether Jiekong and Xunkong take one palace or a main and a side palace (an x-iztro extension) |
+| `leap_divide` | `default` / `nextMonth` | `default` | Which month a birth in a leap month is charted as (an x-iztro extension) |
+| `tianma_placement` | `yearly` / `monthly` / `both` | `yearly` | Whether Tianma follows the birth year, the birth month, or both (an x-iztro extension) |
+| `changsheng_direction` | `yinYang` / `gender` / `clockwise` | `yinYang` | Direction of the twelve Changsheng gods (an x-iztro extension) |
+| `tianshang_tianshi` | `default` / `tianshiFriends` | `default` | Which of Tianshang and Tianshi sits in the Friends palace (an x-iztro extension) |
+| `tianwu_placement` | `siShenYinHai` / `siShenHaiYin` | `siShenYinHai` | The four palaces Tianwu rotates through by month (an x-iztro extension) |
+| `yearly12_placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` | Whether the natal chart carries the Sui-qian and Jiang-qian gods (an x-iztro extension) |
+| `original_palace` | `primary` / `withSecondary` | `primary` | Whether xin and ren years also mark a secondary Original palace (an x-iztro extension) |
+| `dou_jun_month` | `default` / `natal` | `default` | Whether the birth month behind Dou Jun follows the natal chart's late-Zi rule (an x-iztro extension) |
+
+iztro has none of the x-iztro extension switches; at their defaults they behave as iztro does, and the
+`config` echoed on the astrolabe leaves those keys out.
 
 There are three override tables besides: `mutagens` (a custom mutagen table), `extra_mutagens` (extra
 mutagen stars) and `brightness` (a custom brightness table) — see
@@ -157,10 +168,22 @@ Decides which day the day pillar is taken from for someone born between 23:00 an
 
 | Value | Behaviour |
 | --- | --- |
-| `forward` (default) | The late Zi hour belongs to the **following** day, and charting uses that day's day pillar |
+| `forward` (default) | The late Zi hour belongs to the **following** day, and charting uses that day's day pillar; the birth month and year stem and branch stay with the current day |
 | `current` | The late Zi hour belongs to the **current** day, charted as the early Zi hour of that day |
+| `forwardCarry` | The **whole date** of a late Zi birth moves to the following day, charted as that day's early Zi hour: at a month's end it moves into the next month, on lunar New Year's Eve into the next year (an x-iztro extension) |
 
 **When you would notice**: only on charts with hour index `12`; every other hour is unaffected.
+`forward` and `forwardCarry` only part ways for a late Zi birth at a month's end or on New Year's Eve
+(and on the 15th of a leap month, see below).
+
+`forwardCarry` follows Li Tiebi, *紫微斗数命运学*, pp. 105–106: the day turns at 23:00, month ends
+carry into the next month and New Year's Eve into the next year. The lunar birthday, birth month, year
+stem and branch and zodiac animal all come from the following day, and the chart's lunar date,
+`raw_dates` and four pillars are written accordingly; `solar_date`, the hour index and the sign stay as
+passed in. A horoscope's target hour is treated the same way. Take 2024-2-9 (New Year's Eve of a gui-mao
+year) in the late Zi hour: `forward` gives the year pillar gui mao, `forwardCarry` gives jia chen and
+the Dragon, and the chart is the one for 2024-2-10 in the early Zi hour. A late Zi birth on the 15th of a
+leap month moves to the 16th, and with `fix_leap` on it is then charted as the next month.
 
 <Callout type="warn" title="Under forward the lunar day advances too, but the display string does not">
 `forward` pushes both the day pillar **and the lunar day used for placing Ziwei** to the following
@@ -239,8 +262,132 @@ by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS,
 <Callout type="warn" title="How pattern rules read the side voids">
 The pattern engine's "Kongwang stars" set (the breaking condition of patterns such as Ri Yue Jia
 Ming) counts both Jiekong palaces, side Jiekong and side Xunkong included; its "void stars" set (Lu
-Shuai Ma Kun and the like) takes only the main voids of Jiekong and Xunkong.
+Shuai Ma Kun, the broad reading of Liang Chong Hua Gai) takes only the main voids of Jiekong and
+Xunkong by default, and adds the side voids when `pang_kong` is on in the pattern settings
+`PatternConfig`. Wang Tingzhi (*安星法及推断实例*, pp. 56–57) counts both palaces, the main void
+weighing more; *紫微斗数精成* usually counts the main void only.
 </Callout>
+
+## Birth in a leap month: `leap_divide`
+
+| Value | Which month a leap-month birth is charted as |
+| --- | --- |
+| `default` (default) | Per the charting argument `fix_leap`: on, the 1st–15th count as the current month and the 16th onwards as the next; off, the whole month counts as the current month |
+| `nextMonth` | The whole month counts as the next month; `fix_leap` has no effect |
+
+`nextMonth` follows *紫微斗数讲义* (Lu Binzhao's text), pp. 33–34, and *紫微斗数精成*, p. 11. The
+Soul and Body palaces, Zuofu and Youbi, the month-based adjective stars, the month horse and the birth
+month behind Dou Jun all move with it; leap months in the monthly horoscope always divide at the 15th
+and are unaffected.
+
+<Callout title="How it relates to fix_leap">
+`fix_leap` is iztro's charting argument and can only pick between "divide at the 15th" and "whole month
+as the current month". With `leap_divide` at its default, `fix_leap` decides; with `nextMonth`,
+`leap_divide` decides, and `fix_leap` is still echoed on the astrolabe but takes no part. The month-split
+switch of `monthly_list` (`monthFixLeap`) only governs how the monthly list is split and is independent of
+both.
+</Callout>
+
+For example 2020-5-25 (the 3rd of leap month 4): by default it counts as month 4 with Zuofu in Wei;
+under `nextMonth` it counts as month 5 with Zuofu in Shen.
+
+## Tianma: `tianma_placement`
+
+| Value | Tianma |
+| --- | --- |
+| `yearly` (default) | Year horse, by the birth-year branch: Yin/Wu/Xu → Shen, Shen/Zi/Chen → Yin, Si/You/Chou → Hai, Hai/Mao/Wei → Si |
+| `monthly` | Month horse, by the birth month: months 1/5/9 → Shen, 2/6/10 → Si, 3/7/11 → Yin, 4/8/12 → Hai |
+| `both` | Tianma takes the year horse, and the adjective star month Tianma `yuemaAdj` is placed at the month horse |
+
+The month horse uses the same birth month as Zuofu and Youbi (already adjusted for leap months).
+Sources: month horse only — Li Tiebi, *紫微斗数命运学*, p. 20; Xu Quanren, *紫微斗数命理学正解（一）*,
+book pp. 39–40. Both horses — *紫微斗数一本通*, pp. 80, 84, 91; Cai Minghong, *秘仪*, p. 128. The books
+call it 月马; iztro already uses 月马 for Tianma on the monthly horoscope layer, so the natal one is named
+月天马 (en-US `month-horse`) to keep the names apart.
+
+Under `monthly`, the Tianma that pattern rules see is the month-based one; under `both`, month Tianma is
+an adjective star and takes no part in pattern rules.
+
+## Changsheng direction: `changsheng_direction`
+
+Changsheng always starts from the Five Elements class (water and earth Shen, wood Hai, metal Si, fire
+Yin); only the direction differs:
+
+| Value | Direction | Source |
+| --- | --- | --- |
+| `yinYang` (default) | Clockwise for yang men and yin women, counter-clockwise for yin men and yang women | Same as iztro |
+| `gender` | Clockwise for men, counter-clockwise for women | *紫微斗数精成*, p. 22; Li Tiebi, *紫微斗数命运学*, p. 29 |
+| `clockwise` | Always clockwise | *紫微斗数讲义*, p. 64 |
+
+The direction of the twelve Boshi gods does not follow this switch.
+
+## Tianshang and Tianshi: `tianshang_tianshi`
+
+| Value | Placement |
+| --- | --- |
+| `default` (default) | Same as iztro: Tianshang in Friends, Tianshi in Health; with `algorithm = zhongzhou` the two swap for yin men and yang women |
+| `tianshiFriends` | Tianshi in Friends, Tianshang in Health, whatever the gender and school (Li Tiebi, *紫微斗数命运学*, pp. 105, 135) |
+
+## Tianwu: `tianwu_placement`
+
+Tianwu rotates through four palaces by birth month:
+
+| Value | Months 1/5/9 | 2/6/10 | 3/7/11 | 4/8/12 |
+| --- | --- | --- | --- | --- |
+| `siShenYinHai` (default) | Si | Shen | Yin | Hai |
+| `siShenHaiYin` | Si | Shen | Hai | Yin |
+
+`siShenHaiYin` is the placement in *紫微斗数精成*, pp. 20, 26.
+
+## Sui-qian and Jiang-qian gods: `yearly12_placement`
+
+| Value | Behaviour |
+| --- | --- |
+| `natalAndYearly` (default) | The natal chart places them by the birth-year branch, and the yearly horoscope again by the year's branch |
+| `yearlyOnly` | Yearly stars only: the natal palaces carry none, the yearly horoscope's are unchanged |
+
+`yearlyOnly` follows *紫微斗数一本通*, p. 44, Li Tiebi, *紫微斗数命运学*, p. 115, and Lin Gengfan,
+*图解道教天文历算学·紫微斗数*, vol. 1, p. 195. When the natal chart carries none, a palace's `suiqian12`,
+`jiangqian12` and their keys are **empty strings**: the fields are still there with the same type, in the
+same way major and minor stars carry an empty string when they have no brightness; in the Rust model
+they are `None`. The text's twelve-gods line lists only the Changsheng and Boshi groups. Adjective stars
+sharing a name (Xianchi, Huagai, Tiande, and Longde and Dahao under Zhongzhou) are separate stars and are
+placed as usual.
+
+## Original palace: `original_palace`
+
+The Original palace is the palace whose stem equals the birth-year stem. The five-tiger rule gives the
+Zi and Chou palaces the same stems as Yin and Mao, so xin years (Mao, Chou) and ren years (Yin, Zi) have
+two qualifying palaces, and the other eight stems one each.
+
+| Value | Behaviour |
+| --- | --- |
+| `primary` (default) | Same as iztro: only the qualifying palace among Yin to Hai is marked |
+| `withSecondary` | The Chou palace in xin years and the Zi palace in ren years are also marked as the secondary Original palace |
+
+Xu Quanren (*紫微斗数命理学正解（二）*, p. 12) takes Yin and Mao as primary and Zi and Chou as secondary.
+The secondary palace is marked `is_secondary_original_palace` on the palace (`isSecondaryOriginalPalace`
+in the DTO, present only when true) and labelled "Secondary Original Palace" in the text. Palace
+addressing with `originalPalace` still points at the Yin/Mao palace; the secondary palace has no
+addressing key of its own — it exists only in xin and ren years with the switch on, so a knowledge-pack
+topic naming it could not select it on any other chart.
+
+## Birth month behind Dou Jun: `dou_jun_month`
+
+Dou Jun (where the monthly horoscope starts) counts the birth month backwards from the yearly palace and
+then the birth hour forwards. iztro takes that birth month with the 16th onwards of a leap month as the
+next month, late Zi hour included, while the natal chart keeps a late Zi birth in the leap month itself.
+The two disagree on exactly one kind of chart: born on or after the 16th of a leap month, `fix_leap` on,
+`day_divide = forward`, in the late Zi hour.
+
+| Value | Birth month behind Dou Jun |
+| --- | --- |
+| `default` (default) | Same as iztro |
+| `natal` | The natal chart's rule |
+
+For example 2020-6-7 (the 16th of leap month 4) in the late Zi hour: the natal chart counts month 4;
+Dou Jun counts month 5 under `default` and month 4 under `natal`, moving the monthly Soul palace one
+palace on.
 
 ## Charting perspective: `astro_type`
 
@@ -417,8 +564,8 @@ cfg = ChartConfig(brightness={
    one too many or too few is an error. Across the slots and the extra mutagen stars, a star may not
    appear twice within one stem.
 3. **They are not echoed in the output**: the override tables are charting *input*, not part of the
-   chart, so the `config` echoed on the astrolabe holds only the switches (`void_placement` is left out
-   at its default too) and all three tables read back empty. If you need a record of them, keep your
+   chart, so the `config` echoed on the astrolabe holds only the switches (the x-iztro extension switches
+   are left out at their defaults too) and all three tables read back empty. If you need a record of them, keep your
    own copy of the config you passed.
 </Callout>
 

@@ -147,6 +147,7 @@ def test_pattern_config_changes_judgement():
         "brightnessSource": "table",
         "borrow": True,
         "flowStars": True,
+        "pangKong": False,
     }
 
 

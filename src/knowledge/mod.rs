@@ -26,7 +26,7 @@ use crate::models::horoscope::HoroscopeRef;
 use crate::models::palace::PalaceData;
 use crate::pattern::{PatternConfig, PatternKey, patterns_at};
 
-/// 一宫之内出现的全部星耀标识：主星、辅星、杂耀与四组十二神各一位。
+/// 一宫之内出现的全部星耀标识：主星、辅星、杂耀与四组十二神各一位（本命不安的岁前、将前不算）。
 pub(crate) fn palace_star_keys(palace: &PalaceData) -> impl Iterator<Item = StarKey> + '_ {
     palace
         .major_stars
@@ -34,12 +34,9 @@ pub(crate) fn palace_star_keys(palace: &PalaceData) -> impl Iterator<Item = Star
         .chain(&palace.minor_stars)
         .chain(&palace.adjective_stars)
         .map(|s| s.key)
-        .chain([
-            palace.changsheng12,
-            palace.boshi12,
-            palace.suiqian12,
-            palace.jiangqian12,
-        ])
+        .chain([palace.changsheng12, palace.boshi12])
+        .chain(palace.suiqian12)
+        .chain(palace.jiangqian12)
 }
 
 /// 当前支持的知识包格式版本。

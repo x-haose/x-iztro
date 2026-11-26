@@ -36,6 +36,7 @@ soul.opposite_palace();     // 视图独有
 | `name` | `Palace` | 宫名 |
 | `is_body_palace` | `bool` | 是否身宫 |
 | `is_original_palace` | `bool` | 是否来因宫（宫干与年干相同且不在子丑二宫） |
+| `is_secondary_original_palace` | `bool` | 是否辅来因宫（辛年丑宫、壬年子宫）；只在排盘配置 `original_palace = withSecondary` 时可能为真 |
 | `heavenly_stem` | `HeavenlyStem` | 宫干，决定本宫飞出的四化 |
 | `earthly_branch` | `EarthlyBranch` | 宫支，由索引固定：0 为寅、11 为丑 |
 | `major_stars` | `Vec<Star>` | 十四主星中落在本宫的，按安放顺序 |
@@ -43,8 +44,8 @@ soul.opposite_palace();     // 视图独有
 | `adjective_stars` | `Vec<Star>` | 杂耀 |
 | `changsheng12` | `StarKey` | 长生十二神，每宫恰好一个 |
 | `boshi12` | `StarKey` | 博士十二神 |
-| `jiangqian12` | `StarKey` | 将前十二神 |
-| `suiqian12` | `StarKey` | 岁前十二神 |
+| `jiangqian12` | `Option<StarKey>` | 将前十二神；本命不安时为 `None` |
+| `suiqian12` | `Option<StarKey>` | 岁前十二神；本命不安时为 `None` |
 | `decadal` | `Decadal` | 大限：岁数区间与宫干支 |
 | `ages` | `Vec<u32>` | 小限经过本宫的虚岁列表 |
 | `overrides` | `Option<Arc<TableOverrides>>` | 排盘时生效的自定义四化与亮度表；未自定义时为 `None` |
@@ -53,6 +54,7 @@ soul.opposite_palace();     // 视图独有
 主星、辅星、杂耀是**列表**，一宫可以有零到多颗。
 长生、博士、将前、岁前十二神是**每宫恰好一个**的标记，十二宫刚好排满一轮，
 因此是单值字段而不是列表。
+岁前、将前十二神在排盘配置 `yearly12_placement = yearlyOnly` 时本命不安，这两个字段为空串（Rust 为 `None`）。
 </Callout>
 
 <Callout type="info" title="overrides 是输入不是结果">

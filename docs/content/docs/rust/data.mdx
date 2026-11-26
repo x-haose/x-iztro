@@ -39,10 +39,18 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
-| `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
+| `DayDivide` | 3 | `as_key()` | `from_key(&str)` | `forward` / `current` / `forwardCarry` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
 | `VoidPlacement` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhengPang` |
+| `LeapDivide` | 2 | `as_key()` | `from_key(&str)` | `default` / `nextMonth` |
+| `TianmaPlacement` | 3 | `as_key()` | `from_key(&str)` | `yearly` / `monthly` / `both` |
+| `ChangshengDirection` | 3 | `as_key()` | `from_key(&str)` | `yinYang` / `gender` / `clockwise` |
+| `TianshangTianshi` | 2 | `as_key()` | `from_key(&str)` | `default` / `tianshiFriends` |
+| `TianwuPlacement` | 2 | `as_key()` | `from_key(&str)` | `siShenYinHai` / `siShenHaiYin` |
+| `Yearly12Placement` | 2 | `as_key()` | `from_key(&str)` | `natalAndYearly` / `yearlyOnly` |
+| `OriginalPalaceMarking` | 2 | `as_key()` | `from_key(&str)` | `primary` / `withSecondary` |
+| `DouJunMonth` | 2 | `as_key()` | `from_key(&str)` | `default` / `natal` |
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
@@ -122,8 +130,8 @@ ja-JP Some(ZhCN)
 | `Palace` | 按 `index()` 序：`Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 
-<Callout type="warn" title="七个枚举是 #[non_exhaustive] 的">
-`IztroError`、`Brightness`、`StarType`、`Scope`、`Algorithm`、`AstroType`、`VoidPlacement` 标了 `#[non_exhaustive]`，
+<Callout type="warn" title="这些枚举是 #[non_exhaustive] 的">
+`IztroError`、`Brightness`、`StarType`、`Scope`、`Algorithm`、`AstroType`、`DayDivide`、`VoidPlacement`，以及 `LeapDivide` 至 `DouJunMonth` 八个流派口径枚举标了 `#[non_exhaustive]`，
 crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破坏性变更。
 </Callout>
 
@@ -136,17 +144,25 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 
 ## Config
 
-排盘配置：七个开关加可选的自定义表。`Config::default()` 与 JS iztro 的默认配置一致。
+排盘配置：一组开关加可选的自定义表。`Config::default()` 与 JS iztro 的默认配置一致。
 
 | 字段 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `year_divide` | `YearDivide` | `Normal` | 年干支按正月初一还是立春换年 |
 | `horoscope_divide` | `HoroscopeDivide` | `Normal` | 运限干支与月柱按初一还是节气推 |
 | `age_divide` | `AgeDivide` | `Normal` | 虚岁按自然农历年还是生日进位 |
-| `day_divide` | `DayDivide` | `Forward` | 晚子时归次日还是归当天 |
+| `day_divide` | `DayDivide` | `Forward` | 晚子时归次日、归当天，还是整个日期归次日（月底进下月、除夕进下一年） |
 | `algorithm` | `Algorithm` | `Default` | 派别：默认或中州派 |
 | `astro_type` | `AstroType` | `Heaven` | 排盘视角：天盘 / 地盘 / 人盘 |
 | `void_placement` | `VoidPlacement` | `Default` | 截空、旬空安一宫（同 iztro）还是各分正空、傍空两宫 |
+| `leap_divide` | `LeapDivide` | `Default` | 闰月出生按 `fix_leap` 取月，还是整月按下月 |
+| `tianma_placement` | `TianmaPlacement` | `Yearly` | 天马按年支、按生月，还是年马之外另安月天马 |
+| `changsheng_direction` | `ChangshengDirection` | `YinYang` | 长生十二神阳男阴女顺、男顺女逆，还是一律顺行 |
+| `tianshang_tianshi` | `TianshangTianshi` | `Default` | 天伤天使同 iztro，还是天使仆役、天伤疾厄 |
+| `tianwu_placement` | `TianwuPlacement` | `SiShenYinHai` | 天巫按月轮转巳申寅亥还是巳申亥寅 |
+| `yearly12_placement` | `Yearly12Placement` | `NatalAndYearly` | 岁前、将前十二神本命也安，还是只在流年安（本命不安时宫位上为 `None`） |
+| `original_palace` | `OriginalPalaceMarking` | `Primary` | 来因宫只标一宫，还是另标辛年丑宫、壬年子宫为辅来因宫 |
+| `dou_jun_month` | `DouJunMonth` | `Default` | 推斗君的生月同 iztro，还是随本命盘的晚子时规则 |
 | `overrides` | `Option<Arc<TableOverrides>>` | `None` | 自定义四化表、附加四化星与亮度表 |
 
 各开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
@@ -160,9 +176,9 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
   `"extraMutagens": {"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}`
   与 `"brightness": {"ziweiMaj": ["miao", "", …]}`（十二项按宫位索引、寅宫为 0，空串表示无亮度）；
 - 同一天干里一颗星在四槽与附加星合计出现两次即报错（见下文 `check`）；
-- 序列化写出七个开关与已覆盖的表，能被原样反序列化回来，自定义表往返不丢。
+- 序列化写出全部开关与已覆盖的表，能被原样反序列化回来，自定义表往返不丢。
 
-星盘 DTO 里的 `config` 只记开关（`voidPlacement` 取默认值时也省略），不回显自定义表——自定义表是排盘的输入，不是结果。
+星盘 DTO 里的 `config` 只记开关（x-iztro 扩展的开关取默认值时也省略），不回显自定义表——自定义表是排盘的输入，不是结果。
 
 ### 构造方法
 

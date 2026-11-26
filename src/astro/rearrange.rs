@@ -83,7 +83,12 @@ impl Astrolabe {
             self.language,
             &self.config,
         );
-        let changsheng12 = get_changsheng12(five_elements_class, self.gender, yearly_branch);
+        let changsheng12 = get_changsheng12(
+            five_elements_class,
+            self.gender,
+            yearly_branch,
+            self.config.changsheng_direction,
+        );
         let (decadals, ages) = get_decadals_and_ages(
             soul_index,
             five_elements_class,
@@ -93,12 +98,8 @@ impl Astrolabe {
         );
 
         // 天伤天使夹迁移宫、天才随命宫，三者都跟着命宫走，需要在原有杂耀里挪位
-        let (tianshang_index, tianshi_index) = get_tianshang_tianshi_index(
-            self.gender,
-            yearly_branch,
-            soul_index,
-            self.config.algorithm,
-        );
+        let (tianshang_index, tianshi_index) =
+            get_tianshang_tianshi_index(self.gender, yearly_branch, soul_index, &self.config);
         let tiancai_index = get_tiancai_index(yearly_branch, soul_index);
 
         for (i, palace) in chart.palaces.iter_mut().enumerate() {

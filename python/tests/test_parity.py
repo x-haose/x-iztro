@@ -679,8 +679,8 @@ def test_all_keys_covers_every_category():
     from x_iztro.i18n import all_keys, translate
 
     keys = all_keys()
-    assert len(keys) == 263
-    assert len(set(keys)) == 263
+    assert len(keys) == 264
+    assert len(set(keys)) == 264
     # 次序即反查次序：common.json 打头、性别收尾
     assert keys[:2] == ["decadal", "childhood"]
     assert keys[-2:] == ["male", "female"]

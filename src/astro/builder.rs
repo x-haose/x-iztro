@@ -20,7 +20,8 @@ use crate::star::decorative::{get_boshi12, get_changsheng12, get_yearly12};
 use crate::star::location::{
     get_chang_qu_index, get_daily_star_index, get_huo_ling_index, get_kong_jie_index,
     get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index, get_monthly_star_index,
-    get_start_index, get_timely_star_index, get_yearly_star_index, get_zuo_you_index,
+    get_start_index, get_tianma_index, get_timely_star_index, get_yearly_star_index,
+    get_zuo_you_index,
 };
 use crate::star::major::get_major_stars;
 use crate::star::minor::get_minor_stars;
@@ -157,8 +158,35 @@ pub fn fix_lunar_month_index(
     time_index: u8,
     fix_leap: bool,
 ) -> usize {
-    let need_to_add = is_leap && fix_leap && lunar_day > 15 && time_index != 12;
-    fix_index(lunar_month as i32 - 1 + if need_to_add { 1 } else { 0 }, 12)
+    birth_month_index(
+        lunar_month,
+        lunar_day,
+        is_leap,
+        fix_leap,
+        LeapDivide::Default,
+        time_index == 12,
+    )
+}
+
+/// 安星用的生月索引（0-based，正月=0），本命盘与推斗君共用。
+///
+/// 闰月出生时：`LeapDivide::NextMonth` 整月按下月；`LeapDivide::Default` 在 `fix_leap` 打开且日数
+/// 过十五时按下月，`keep_leap_month` 为真时例外、仍按本月（本命盘的晚子时即此例外）。
+/// 非闰月原样返回。
+pub(crate) fn birth_month_index(
+    lunar_month: u32,
+    lunar_day: u32,
+    is_leap: bool,
+    fix_leap: bool,
+    leap_divide: LeapDivide,
+    keep_leap_month: bool,
+) -> usize {
+    let next_month = is_leap
+        && match leap_divide {
+            LeapDivide::Default => fix_leap && lunar_day > 15 && !keep_leap_month,
+            LeapDivide::NextMonth => true,
+        };
+    fix_index(lunar_month as i32 - 1 + i32::from(next_month), 12)
 }
 
 /// 计算修正后的农历日索引
@@ -176,15 +204,43 @@ pub fn fix_lunar_day_index(lunar_day: u32, time_index: u8) -> u32 {
     }
 }
 
-/// 参与推算的时辰索引：`day_divide=Current` 时晚子（>=12）归零按当日早子算，其余原样。
+/// 参与推算的时辰索引：`day_divide` 为 `Current` 或 `ForwardCarry` 时晚子（>=12）归零按早子算
+/// （`ForwardCarry` 另把日期换成次日，见 [`effective_solar_date`]），其余原样。
 /// 入参与展示仍用原始时辰。排盘上下文、运限、重排、反推剪枝四处共用此一份，不另抄副本——
 /// 手抄的第二份一旦与这里漂移，晚子时的盘会静默按另一天排。
 pub(crate) fn effective_time_index(day_divide: DayDivide, time_index: u8) -> u8 {
-    if day_divide == DayDivide::Current && time_index >= 12 {
-        0
-    } else {
-        time_index
+    match day_divide {
+        DayDivide::Current | DayDivide::ForwardCarry if time_index >= 12 => 0,
+        _ => time_index,
     }
+}
+
+/// 晚子时是否整个日期归次日：`day_divide=ForwardCarry` 且为晚子时（>=12）。
+pub(crate) fn late_zi_carries(day_divide: DayDivide, time_index: u8) -> bool {
+    day_divide == DayDivide::ForwardCarry && time_index >= 12
+}
+
+/// 参与推算的公历日期：晚子时整个日期归次日（[`late_zi_carries`]）时取次日，其余原样。
+///
+/// 与 [`effective_time_index`] 配对使用：两者合起来即「晚子时按次日早子时排」。
+pub(crate) fn effective_solar_date(
+    day_divide: DayDivide,
+    date: (i64, i64, i64),
+    time_index: u8,
+) -> (i64, i64, i64) {
+    if late_zi_carries(day_divide, time_index) {
+        shift_solar_date(date, 1)
+    } else {
+        date
+    }
+}
+
+/// 公历日期前后挪 `days` 天：按儒略日推，跨月、跨年与 1582 年改历空缺都随之处理；
+/// 9999-12-31 的次日是 10000-1-1（农历仍在 9999 年内）。
+pub(crate) fn shift_solar_date((year, month, day): (i64, i64, i64), days: i64) -> (i64, i64, i64) {
+    let noon = SolarTime::new(year, month, day, 12, 0);
+    let shifted = SolarTime::from_julian_day(noon.julian_day() + days as f64);
+    (shifted.year, shifted.month, shifted.day)
 }
 
 /// 排盘时刻的分钟数。
@@ -231,10 +287,8 @@ struct PlacedStars {
     changsheng12: [StarKey; 12],
     /// 各宫博士十二神
     boshi12: [StarKey; 12],
-    /// 各宫岁前十二神
-    suiqian12: [StarKey; 12],
-    /// 各宫将前十二神
-    jiangqian12: [StarKey; 12],
+    /// 各宫岁前十二神与将前十二神；本命不安（`Yearly12Placement::YearlyOnly`）时为 `None`
+    yearly12: Option<([StarKey; 12], [StarKey; 12])>,
 }
 
 /// 四柱中随日期与配置推算的三柱；年柱直接取 [`AstroContext`] 的安星年干支
@@ -290,9 +344,11 @@ fn place_stars(
         ctx.flow_yearly_stem,
         ctx.flow_yearly_branch,
         gender,
-        config.algorithm,
+        config,
     );
-    let monthly_stars = get_monthly_star_index(ctx.month_index);
+    let monthly_stars = get_monthly_star_index(ctx.month_index, config.tianwu_placement);
+    let (tianma, yuema) =
+        get_tianma_index(lu_yang_tuo_ma.ma, ctx.month_index, config.tianma_placement);
 
     let major = get_major_stars(
         start_idx.ziwei,
@@ -312,7 +368,7 @@ fn place_stars(
         lu_yang_tuo_ma.lu,
         lu_yang_tuo_ma.yang,
         lu_yang_tuo_ma.tuo,
-        lu_yang_tuo_ma.ma,
+        tianma,
         kong_jie.kong,
         kong_jie.jie,
         huo_ling.huo,
@@ -322,7 +378,12 @@ fn place_stars(
         config,
     );
 
-    let changsheng12 = get_changsheng12(ctx.five_elements_class, gender, ctx.yearly_branch);
+    let changsheng12 = get_changsheng12(
+        ctx.five_elements_class,
+        gender,
+        ctx.yearly_branch,
+        config.changsheng_direction,
+    );
     let boshi12 = get_boshi12(lu_yang_tuo_ma.lu, gender, ctx.yearly_branch);
     let (suiqian12, jiangqian12) = get_yearly12(ctx.flow_yearly_branch, config.algorithm);
 
@@ -338,18 +399,22 @@ fn place_stars(
         luan_xi.tianxi,
         yearly_stars.xianchi,
         &suiqian12,
+        yuema,
         language,
         config,
     );
 
+    let natal_yearly12 = match config.yearly12_placement {
+        Yearly12Placement::NatalAndYearly => Some((suiqian12, jiangqian12)),
+        Yearly12Placement::YearlyOnly => None,
+    };
     PlacedStars {
         major,
         minor,
         adjective,
         changsheng12,
         boshi12,
-        suiqian12,
-        jiangqian12,
+        yearly12: natal_yearly12,
     }
 }
 
@@ -357,7 +422,8 @@ fn place_stars(
 ///
 /// 宫支自寅宫起顺行固定，宫干由年干经五虎遁起排；宫名自命宫起逆行排布。
 /// 身宫落在 [`AstroContext`] 给出的宫位索引上；来因宫是宫干与年干相同的那一宫，
-/// 子丑二宫无宫干可对（五虎遁排到子丑会与寅卯重干），故排除。
+/// 子丑二宫（五虎遁排到子丑与寅卯重干）不标来因宫，`original_palace=WithSecondary` 时
+/// 标为辅来因宫（只有辛年丑宫、壬年子宫）。
 fn build_palaces(
     ctx: &AstroContext,
     stars: &PlacedStars,
@@ -378,14 +444,17 @@ fn build_palaces(
         let palace_stem =
             HeavenlyStem::from_index(fix_index(start_stem.index() as i32 + i as i32, 10));
         let palace_branch = EarthlyBranch::from_index(fix_index(2 + i as i32, 12));
+        let stem_matches = palace_stem == ctx.yearly_stem;
+        let zi_chou = matches!(palace_branch, EarthlyBranch::Zi | EarthlyBranch::Chou);
 
         PalaceData {
             index: i,
             name: palace_names[i],
             is_body_palace: ctx.soul_body.body_index == i,
-            is_original_palace: palace_branch != EarthlyBranch::Zi
-                && palace_branch != EarthlyBranch::Chou
-                && palace_stem == ctx.yearly_stem,
+            is_original_palace: stem_matches && !zi_chou,
+            is_secondary_original_palace: stem_matches
+                && zi_chou
+                && config.original_palace == OriginalPalaceMarking::WithSecondary,
             heavenly_stem: palace_stem,
             earthly_branch: palace_branch,
             major_stars: stars.major[i].clone(),
@@ -393,8 +462,8 @@ fn build_palaces(
             adjective_stars: stars.adjective[i].clone(),
             changsheng12: stars.changsheng12[i],
             boshi12: stars.boshi12[i],
-            jiangqian12: stars.jiangqian12[i],
-            suiqian12: stars.suiqian12[i],
+            jiangqian12: stars.yearly12.map(|(_, jiang)| jiang[i]),
+            suiqian12: stars.yearly12.map(|(sui, _)| sui[i]),
             decadal: decadals[i].clone(),
             ages: ages[i].clone(),
             overrides: config.overrides.clone(),
@@ -509,7 +578,7 @@ pub fn by_solar(
     );
 
     // 5. 展示字段：星座、生肖、时辰、农历日期串（按排盘语言）
-    let sign_index = calendar::sign_index(ctx.moment.month, ctx.moment.day);
+    let sign_index = calendar::sign_index(ctx.solar_date.1, ctx.solar_date.2);
     let raw_lunar_date = RawLunarDate {
         lunar_year: ctx.lunar_year,
         lunar_month: ctx.lunar_month,

@@ -224,7 +224,10 @@ JavaScript 的 `solarDatesByBazi` / `reverseChart`。
   见 [Config 详解](/zh/docs/guide/guides/config#自定义四化表与亮度表)
 - **截空、旬空分正傍**：`void_placement = zhengPang` 时两者各安正空、傍空两宫，
   见 [Config 详解](/zh/docs/guide/guides/config#截空与旬空-void_placement)
-- **`all_keys`**：一次取全部 263 个可翻译标识
+- **更多流派口径**：晚子时月底跨月与除夕跨年、闰月整月作下月、天马按月或年月兼安、长生十二神方向、
+  天使仆役天伤疾厄、天巫巳申亥寅、岁前将前只在流年安、辛壬年辅来因宫、斗君生月随本命，
+  格局口径另可把截空旬空的傍空算作空曜，见 [Config 详解](/zh/docs/guide/guides/config)
+- **`all_keys`**：一次取全部 264 个可翻译标识
 - **历法查询**：农历年的月份表、公历与农历互换、农历年的年干支，与排盘同一份历法内核。
   iztro 把这些交给依赖 lunar-lite（`solar2lunar`、`lunar2solar` 等），不在自己的 API 里；
   x-iztro 的入参是整数年月日，农历换公历时没有这个闰月即报错，而不是像 `lunar2solar` 那样退回常规月。

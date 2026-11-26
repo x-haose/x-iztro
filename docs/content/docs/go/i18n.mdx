@@ -27,11 +27,11 @@ func Translate(key string, language Language) (string, error)
 | `key` | `string` | 是 | — | 语言无关标识 |
 | `language` | `Language` | 是 | — | 目标语言 |
 
-覆盖十二类共 263 个标识：
+覆盖十二类共 264 个标识：
 
 | 类目 | 数量 | 例 |
 | --- | --- | --- |
-| 星耀 | 164 | `ziweiMaj`、`changsheng`、`yunlu` |
+| 星耀 | 165 | `ziweiMaj`、`changsheng`、`yunlu` |
 | 宫位（含身宫、来因宫） | 14 | `soulPalace`、`wealthPalace`、`bodyPalace`、`originalPalace` |
 | 天干 | 10 | `jiaHeavenly` |
 | 地支 | 12 | `ziEarthly` |
@@ -132,7 +132,7 @@ e, _ := iztro.KeyOfIn("horse", "Palace")   // ""
 `Palace` 宫位、`Hour` 时辰。限定后无匹配返回空串，不退回未限定的结果。
 </Accordion>
 <Accordion title="全表扫描">
-`KeyOf` 会遍历 263 个标识 × 6 种语言，且经一次 wasm 往返。
+`KeyOf` 会遍历 264 个标识 × 6 种语言，且经一次 wasm 往返。
 不要放在每宫每星的内层循环里——那种场合直接用数据自带的 `*Key` 字段。
 </Accordion>
 </Accordions>
@@ -141,7 +141,7 @@ e, _ := iztro.KeyOfIn("horse", "Palace")   // ""
 
 ## AllKeys
 
-**用途**　取全部 263 个可翻译标识。
+**用途**　取全部 264 个可翻译标识。
 
 **签名**
 
@@ -165,7 +165,7 @@ fmt.Println(len(keys), keys[:4], first)
 **输出**
 
 ```text
-263 [decadal childhood yearly monthly] 大限
+264 [decadal childhood yearly monthly] 大限
 ```
 
 要遍历某一类目自己的标识时，用 `keys.go` 的常量或 `GetConstants()` 更省事。

@@ -159,7 +159,7 @@ pub fn all_keys() -> Vec<&'static str> {
 static ALL_KEYS: LazyLock<Vec<&'static str>> = LazyLock::new(build_all_keys);
 
 fn build_all_keys() -> Vec<&'static str> {
-    let mut keys: Vec<&'static str> = Vec::with_capacity(263);
+    let mut keys: Vec<&'static str> = Vec::with_capacity(264);
 
     // common.json：运限层级、生肖、时辰、星座
     keys.extend(HOROSCOPE_NAMES.iter().map(|(k, _)| *k));

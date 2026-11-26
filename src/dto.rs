@@ -12,13 +12,15 @@
 //! - 语言无关标识（星/宫/干支/四化/亮度的 `*key`/`*Key(s)` 字段，取值为
 //!   iztro i18n key），供强类型绑定做跨语言的身份判断与枚举映射；宫位另带
 //!   `mutagenStarKeys`（本宫天干化出的禄权科忌四星）与 `extraMutagenStarKeys`
-//!   （四槽之外的附加四化星，只在自定义四化表给了附加星时出现），绑定层据此做飞星判断。
+//!   （四槽之外的附加四化星，只在自定义四化表给了附加星时出现），绑定层据此做飞星判断，
+//!   以及辅来因宫标记 `isSecondaryOriginalPalace`（只在为真时出现）。
 //!
 //! 出错时三条绑定出口（FFI/wasm/PyO3）返回同一形状的错误 JSON
 //! `{"error": "<描述>", "code": "<分类>"}`，分类取值见 [`crate::error::BridgeError`]。
 
 use serde::{Deserialize, Serialize};
 
+use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::BridgeError;
 use crate::i18n::{
@@ -96,6 +98,10 @@ pub struct PalaceDto {
     pub is_body_palace: bool,
     /// 是否来因宫
     pub is_original_palace: bool,
+    /// x-iztro 扩展：是否辅来因宫（辛年丑宫、壬年子宫）；只在 `Config` 的 `originalPalace` 为
+    /// `withSecondary` 时可能为真，为假时省略该键
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_secondary_original_palace: bool,
     /// 天干（按排盘语言翻译）
     pub heavenly_stem: String,
     /// 语言无关天干标识
@@ -118,13 +124,13 @@ pub struct PalaceDto {
     pub boshi12: String,
     /// 博士十二神的语言无关标识
     pub boshi12_key: String,
-    /// 将前十二神（按排盘语言翻译）
+    /// 将前十二神（按排盘语言翻译）；本命不安（`Config` 的 `yearly12Placement` 为 `yearlyOnly`）时为空串
     pub jiangqian12: String,
-    /// 将前十二神的语言无关标识
+    /// 将前十二神的语言无关标识；本命不安时为空串
     pub jiangqian12_key: String,
-    /// 岁前十二神（按排盘语言翻译）
+    /// 岁前十二神（按排盘语言翻译）；本命不安时为空串
     pub suiqian12: String,
-    /// 岁前十二神的语言无关标识
+    /// 岁前十二神的语言无关标识；本命不安时为空串
     pub suiqian12_key: String,
     /// 大限信息
     pub decadal: DecadalDto,
@@ -278,8 +284,8 @@ pub struct RawDatesDto {
     pub chinese_date: RawChineseDateDto,
 }
 
-/// 排盘配置 DTO：开关取值为语言无关标识。前六个与 JS iztro 的 config() 取值一致；
-/// `voidPlacement` 是 x-iztro 扩展，取默认值时省略该键。
+/// 排盘配置 DTO：开关取值为语言无关标识。前六个与 JS iztro 的 config() 取值一致
+/// （`dayDivide` 另有 x-iztro 扩展取值 `forwardCarry`）；其余是 x-iztro 扩展，取默认值时省略该键。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigDto {
@@ -296,13 +302,37 @@ pub struct ConfigDto {
     /// 排盘视角
     pub astro_type: AstroType,
     /// 截空与旬空的安法；默认值时省略
-    #[serde(default, skip_serializing_if = "is_default_void_placement")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub void_placement: VoidPlacement,
+    /// 闰月出生时安星用哪个月；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub leap_divide: LeapDivide,
+    /// 天马的安法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub tianma_placement: TianmaPlacement,
+    /// 长生十二神的排列方向；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub changsheng_direction: ChangshengDirection,
+    /// 天伤、天使的安法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub tianshang_tianshi: TianshangTianshi,
+    /// 天巫的安法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub tianwu_placement: TianwuPlacement,
+    /// 岁前、将前十二神安在哪些盘上；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub yearly12_placement: Yearly12Placement,
+    /// 来因宫的标法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub original_palace: OriginalPalaceMarking,
+    /// 推斗君时生月的取法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub dou_jun_month: DouJunMonth,
 }
 
-/// `ConfigDto::void_placement` 是否取默认值（取默认值时不写出）
-fn is_default_void_placement(v: &VoidPlacement) -> bool {
-    *v == VoidPlacement::default()
+/// 扩展开关是否取默认值（取默认值时不写出）
+fn is_default<T: Default + PartialEq>(v: &T) -> bool {
+    *v == T::default()
 }
 
 /// 星盘 DTO。
@@ -588,6 +618,14 @@ impl From<Config> for ConfigDto {
             algorithm: c.algorithm,
             astro_type: c.astro_type,
             void_placement: c.void_placement,
+            leap_divide: c.leap_divide,
+            tianma_placement: c.tianma_placement,
+            changsheng_direction: c.changsheng_direction,
+            tianshang_tianshi: c.tianshang_tianshi,
+            tianwu_placement: c.tianwu_placement,
+            yearly12_placement: c.yearly12_placement,
+            original_palace: c.original_palace,
+            dou_jun_month: c.dou_jun_month,
         }
     }
 }
@@ -678,6 +716,16 @@ fn pillar_keys(p: (HeavenlyStem, EarthlyBranch)) -> [String; 2] {
     [p.0.as_key().to_string(), p.1.as_key().to_string()]
 }
 
+/// 可能不安的十二神的译名：不安时为空串（与主星辅星无亮度时的空串同一写法，字段类型不变）。
+fn optional_star_name(star: Option<StarKey>, lang: Language) -> String {
+    star.map_or_else(String::new, |s| translate_star(s, lang).to_string())
+}
+
+/// 可能不安的十二神的标识：不安时为空串，同 [`optional_star_name`]。
+fn optional_star_key(star: Option<StarKey>) -> String {
+    star.map_or_else(String::new, |s| s.as_key().to_string())
+}
+
 fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
     PalaceDto {
         index: p.index,
@@ -685,6 +733,7 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
         name_key: p.name.as_key().to_string(),
         is_body_palace: p.is_body_palace,
         is_original_palace: p.is_original_palace,
+        is_secondary_original_palace: p.is_secondary_original_palace,
         heavenly_stem: translate_heavenly_stem(p.heavenly_stem, lang).to_string(),
         heavenly_stem_key: p.heavenly_stem.as_key().to_string(),
         earthly_branch: translate_earthly_branch(p.earthly_branch, lang).to_string(),
@@ -708,10 +757,10 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
         changsheng12_key: p.changsheng12.as_key().to_string(),
         boshi12: translate_star(p.boshi12, lang).to_string(),
         boshi12_key: p.boshi12.as_key().to_string(),
-        jiangqian12: translate_star(p.jiangqian12, lang).to_string(),
-        jiangqian12_key: p.jiangqian12.as_key().to_string(),
-        suiqian12: translate_star(p.suiqian12, lang).to_string(),
-        suiqian12_key: p.suiqian12.as_key().to_string(),
+        jiangqian12: optional_star_name(p.jiangqian12, lang),
+        jiangqian12_key: optional_star_key(p.jiangqian12),
+        suiqian12: optional_star_name(p.suiqian12, lang),
+        suiqian12_key: optional_star_key(p.suiqian12),
         decadal: DecadalDto {
             range: [p.decadal.range.0, p.decadal.range.1],
             heavenly_stem: translate_heavenly_stem(p.decadal.heavenly_stem, lang).to_string(),

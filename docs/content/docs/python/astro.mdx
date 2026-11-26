@@ -24,7 +24,7 @@ astro = Astro()
 
 ## ChartConfig
 
-排盘配置：七个开关加三张可选的自定义表。冻结的 dataclass，全部字段都有默认值，
+排盘配置：一组开关加三张可选的自定义表。冻结的 dataclass，全部字段都有默认值，
 默认值与 JS iztro 一致——`ChartConfig()` 与不传 `config` 等价。
 
 | 字段 | 类型 | 默认 | 取值（对应枚举） |
@@ -32,10 +32,18 @@ astro = Astro()
 | `year_divide` | `str` | `"normal"` | `normal` 正月初一 / `exact` 立春（`YearDivide`） |
 | `horoscope_divide` | `str` | `"normal"` | `normal` 初一 / `exact` 节气（`HoroscopeDivide`） |
 | `age_divide` | `str` | `"normal"` | `normal` 跨年即加 / `birthday` 过生日才加（`AgeDivide`） |
-| `day_divide` | `str` | `"forward"` | `forward` 晚子时归次日 / `current` 归当天（`DayDivide`） |
+| `day_divide` | `str` | `"forward"` | `forward` 晚子时归次日 / `current` 归当天 / `forwardCarry` 整个日期归次日（月底进下月、除夕进下一年）（`DayDivide`） |
 | `algorithm` | `str` | `"default"` | `default` / `zhongzhou`（`Algorithm`） |
 | `astro_type` | `str` | `"heaven"` | `heaven` 天盘 / `earth` 地盘 / `human` 人盘（`AstroType`） |
 | `void_placement` | `str` | `"default"` | `default` 同 iztro / `zhengPang` 截空、旬空各安正空与傍空两宫（`VoidPlacement`） |
+| `leap_divide` | `str` | `"default"` | `default` 按 fix_leap / `nextMonth` 闰月整月按下月（`LeapDivide`） |
+| `tianma_placement` | `str` | `"yearly"` | `yearly` 年马 / `monthly` 月马 / `both` 年马另安月天马（`TianmaPlacement`） |
+| `changsheng_direction` | `str` | `"yinYang"` | `yinYang` 阳男阴女顺 / `gender` 男顺女逆 / `clockwise` 一律顺行（`ChangshengDirection`） |
+| `tianshang_tianshi` | `str` | `"default"` | `default` 同 iztro / `tianshiFriends` 天使仆役、天伤疾厄（`TianshangTianshi`） |
+| `tianwu_placement` | `str` | `"siShenYinHai"` | `siShenYinHai` 巳申寅亥 / `siShenHaiYin` 巳申亥寅（`TianwuPlacement`） |
+| `yearly12_placement` | `str` | `"natalAndYearly"` | `natalAndYearly` 本命与流年都安 / `yearlyOnly` 只在流年安（`Yearly12Placement`） |
+| `original_palace` | `str` | `"primary"` | `primary` 只标一宫 / `withSecondary` 另标辛年丑宫、壬年子宫为辅来因宫（`OriginalPalaceMarking`） |
+| `dou_jun_month` | `str` | `"default"` | `default` 同 iztro / `natal` 与本命盘同一规则（`DouJunMonth`） |
 | `mutagens` | `dict[str, list[str]] \| None` | `None` | 天干标识 → 四颗星标识（禄、权、科、忌） |
 | `extra_mutagens` | `dict[str, dict[str, list[str]]] \| None` | `None` | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `dict[str, list[str]] \| None` | `None` | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
@@ -69,7 +77,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 **输出**
 
 ```text
-{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'leapDivide': 'default', 'tianmaPlacement': 'yearly', 'changshengDirection': 'yinYang', 'tianshangTianshi': 'default', 'tianwuPlacement': 'siShenYinHai', 'yearly12Placement': 'natalAndYearly', 'originalPalace': 'primary', 'douJunMonth': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
 土五局 earth
 ['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
 ```

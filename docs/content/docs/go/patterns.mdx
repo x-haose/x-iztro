@@ -52,17 +52,18 @@ hits, err := chart.Patterns(nil)
 ### PatternConfig
 
 判定口径。凡是「同一格局的多种成立形式」都走 `PatternHit.Variant`，这里只放会改变
-**事实判定本身**的数据口径，因此只有三个字段。
+**事实判定本身**的数据口径，因此只有四个字段。
 
 ```go
 type PatternConfig struct {
     BrightnessSource string // BrightnessSourceTable（默认）或 BrightnessSourcePositional
     Borrow           *bool  // 空宫是否借对宫主星参与判定；nil 取内核默认 true
     FlowStars        *bool  // 运限视角下流曜是否等同对应本命辅星；nil 取内核默认 true
+    PangKong         *bool  // 空曜是否连截空、旬空的傍空一并算；nil 取内核默认 false
 }
 
 func Bool(v bool) *bool                    // 布尔字面量取地址的便捷构造
-func DefaultPatternConfig() *PatternConfig // 三项全显式的默认口径
+func DefaultPatternConfig() *PatternConfig // 各项全显式的默认口径
 ```
 
 布尔两项是 `*bool`：`nil` 表示「没说」，由内核取默认值 `true`，
@@ -74,7 +75,7 @@ func DefaultPatternConfig() *PatternConfig // 三项全显式的默认口径
 两者的取舍见[概念页的说明](/zh/docs/guide/concepts/patterns#日月的明暗按哪张表)。
 
 <Callout type="info" title="零值即默认口径">
-`&iztro.PatternConfig{}` 的三个字段都是零值（空串与 `nil`），语义与传 `nil` 完全一致。
+`&iztro.PatternConfig{}` 的各字段都是零值（空串与 `nil`），语义与传 `nil` 完全一致。
 只改一项直接写字面量，没写的仍取内核默认：
 
 ```go

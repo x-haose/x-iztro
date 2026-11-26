@@ -59,6 +59,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `nameKey` | string | 宫名 key，如 `soulPalace` |
 | `isBodyPalace` | bool | 是否身宫 |
 | `isOriginalPalace` | bool | 是否来因宫 |
+| `isSecondaryOriginalPalace` | bool | 是否辅来因宫（辛年丑宫、壬年子宫）；只在为真时出现，需 `originalPalace: withSecondary` |
 | `heavenlyStem` | string | 宫干 |
 | `heavenlyStemKey` | string | 宫干 key |
 | `earthlyBranch` | string | 宫支 |
@@ -68,8 +69,8 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `adjectiveStars` | [Star](#star-星耀)[] | 杂耀 |
 | `changsheng12` / `changsheng12Key` | string | 长生十二神 |
 | `boshi12` / `boshi12Key` | string | 博士十二神 |
-| `jiangqian12` / `jiangqian12Key` | string | 将前十二神 |
-| `suiqian12` / `suiqian12Key` | string | 岁前十二神 |
+| `jiangqian12` / `jiangqian12Key` | string | 将前十二神；`yearly12Placement: yearlyOnly` 时为空串 |
+| `suiqian12` / `suiqian12Key` | string | 岁前十二神；同上 |
 | `mutagenStarKeys` | string[4] | 本宫宫干化出的四颗星标识，顺序为禄、权、科、忌；受[自定义四化表](/zh/docs/guide/guides/config#自定义四化表与亮度表)影响 |
 | `extraMutagenStarKeys` | `{四化标识: string[]}?` | 本宫宫干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)；没有附加星时缺省 |
 | `decadal` | [Decadal](#decadal-大限) | 该宫掌管的大限 |
@@ -133,10 +134,20 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `yearDivide` | `normal` / `exact` | `normal` |
 | `horoscopeDivide` | `normal` / `exact` | `normal` |
 | `ageDivide` | `normal` / `birthday` | `normal` |
-| `dayDivide` | `forward` / `current` | `forward` |
+| `dayDivide` | `forward` / `current` / `forwardCarry` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
 | `astroType` | `heaven` / `earth` / `human` | `heaven` |
-| `voidPlacement` | `default` / `zhengPang` | `default`；取默认值时星盘回显的 `config` 不带这个键 |
+| `voidPlacement` | `default` / `zhengPang` | `default` |
+| `leapDivide` | `default` / `nextMonth` | `default` |
+| `tianmaPlacement` | `yearly` / `monthly` / `both` | `yearly` |
+| `changshengDirection` | `yinYang` / `gender` / `clockwise` | `yinYang` |
+| `tianshangTianshi` | `default` / `tianshiFriends` | `default` |
+| `tianwuPlacement` | `siShenYinHai` / `siShenHaiYin` | `siShenYinHai` |
+| `yearly12Placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` |
+| `originalPalace` | `primary` / `withSecondary` | `primary` |
+| `douJunMonth` | `default` / `natal` | `default` |
+
+`voidPlacement` 及以下各键是 x-iztro 扩展，取默认值时星盘回显的 `config` 不带这个键；`dayDivide` 的 `forwardCarry` 同样是扩展取值。各键含义见 [Config 详解](/zh/docs/guide/guides/config)。
 
 另有三个**只进不出**的输入键，用于替换或补充内置数据表：
 

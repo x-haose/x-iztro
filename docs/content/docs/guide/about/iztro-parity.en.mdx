@@ -248,7 +248,13 @@ The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
 - **Main and side voids for Jiekong and Xunkong**: with `void_placement = zhengPang` each takes a main
   and a side void palace. See
   [Config in depth](/en/docs/guide/guides/config#jiekong-and-xunkong-void_placement).
-- **`all_keys`**: fetch all 263 translatable keys at once.
+- **More school settings**: the late Zi hour carrying into the next month or year, a leap month as the
+  next month, month or year-and-month horses, the Changsheng direction, Tianshi in Friends and Tianshang
+  in Health, Tianwu as Si-Shen-Hai-Yin, Sui-qian and Jiang-qian gods on the yearly layer only, the
+  secondary Original palace of xin and ren years and Dou Jun's birth month following the natal chart;
+  the pattern settings can also count the side voids of Jiekong and Xunkong as void stars. See
+  [Config in depth](/en/docs/guide/guides/config).
+- **`all_keys`**: fetch all 264 translatable keys at once.
 - **Calendar lookups**: the months of a lunar year, Gregorian ↔ lunar conversion and the stem-branch of a
   lunar year, on the same calendar core as charting. iztro leaves these to its dependency lunar-lite
   (`solar2lunar`, `lunar2solar` and so on) rather than its own API; x-iztro takes integer year, month and day,

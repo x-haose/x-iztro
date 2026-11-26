@@ -41,10 +41,18 @@ string in any language and the predicates agree.
 | `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
 | `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
-| `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
+| `DayDivide` | 3 | `as_key()` | `from_key(&str)` | `forward` / `current` / `forwardCarry` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
 | `VoidPlacement` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhengPang` |
+| `LeapDivide` | 2 | `as_key()` | `from_key(&str)` | `default` / `nextMonth` |
+| `TianmaPlacement` | 3 | `as_key()` | `from_key(&str)` | `yearly` / `monthly` / `both` |
+| `ChangshengDirection` | 3 | `as_key()` | `from_key(&str)` | `yinYang` / `gender` / `clockwise` |
+| `TianshangTianshi` | 2 | `as_key()` | `from_key(&str)` | `default` / `tianshiFriends` |
+| `TianwuPlacement` | 2 | `as_key()` | `from_key(&str)` | `siShenYinHai` / `siShenHaiYin` |
+| `Yearly12Placement` | 2 | `as_key()` | `from_key(&str)` | `natalAndYearly` / `yearlyOnly` |
+| `OriginalPalaceMarking` | 2 | `as_key()` | `from_key(&str)` | `primary` / `withSecondary` |
+| `DouJunMonth` | 2 | `as_key()` | `from_key(&str)` | `default` / `natal` |
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` always returns an `Option`, giving `None` for an unknown key — which is how the bindings
@@ -127,8 +135,8 @@ stars correspond one-to-one with their keys.
 | `Palace` | In `index()` order: `Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 
-<Callout type="warn" title="Seven of the enums are #[non_exhaustive]">
-`IztroError`, `Brightness`, `StarType`, `Scope`, `Algorithm`, `AstroType` and `VoidPlacement` are marked `#[non_exhaustive]`, so a
+<Callout type="warn" title="These enums are #[non_exhaustive]">
+`IztroError`, `Brightness`, `StarType`, `Scope`, `Algorithm`, `AstroType`, `DayDivide`, `VoidPlacement` and the eight school-setting enums `LeapDivide` through `DouJunMonth` are marked `#[non_exhaustive]`, so a
 `match` outside the crate must carry a catch-all arm. Adding variants later is therefore not a
 breaking change.
 </Callout>
@@ -143,7 +151,7 @@ layer of its own, only a display name for the decadal scope — before the decad
 
 ## Config
 
-The charting configuration: seven switches plus optional custom tables. `Config::default()` matches
+The charting configuration: a set of switches plus optional custom tables. `Config::default()` matches
 the JS iztro defaults.
 
 | Field | Type | Default | Description |
@@ -151,10 +159,18 @@ the JS iztro defaults.
 | `year_divide` | `YearDivide` | `Normal` | Whether the year pillar turns over at lunar New Year or at the Beginning of Spring |
 | `horoscope_divide` | `HoroscopeDivide` | `Normal` | Whether horoscope pillars and the month pillar follow the lunar first day or the solar terms |
 | `age_divide` | `AgeDivide` | `Normal` | Whether the nominal age advances with the lunar year or with the birthday |
-| `day_divide` | `DayDivide` | `Forward` | Whether the late Zi hour belongs to the next day or the current one |
+| `day_divide` | `DayDivide` | `Forward` | Whether the late Zi hour belongs to the next day, the current one, or carries its whole date to the next day (month end into the next month, New Year's Eve into the next year) |
 | `algorithm` | `Algorithm` | `Default` | The school: default or Zhongzhou |
 | `astro_type` | `AstroType` | `Heaven` | The charting perspective: heaven / earth / human chart |
 | `void_placement` | `VoidPlacement` | `Default` | Whether Jiekong and Xunkong take one palace (as iztro) or a main and a side void palace each |
+| `leap_divide` | `LeapDivide` | `Default` | Whether a leap-month birth follows `fix_leap` or counts the whole month as the next |
+| `tianma_placement` | `TianmaPlacement` | `Yearly` | Tianma by the birth-year branch, by the birth month, or the year horse plus month Tianma |
+| `changsheng_direction` | `ChangshengDirection` | `YinYang` | Changsheng gods clockwise for yang men and yin women, for men, or always |
+| `tianshang_tianshi` | `TianshangTianshi` | `Default` | Tianshang and Tianshi as iztro, or Tianshi in Friends and Tianshang in Health |
+| `tianwu_placement` | `TianwuPlacement` | `SiShenYinHai` | Tianwu rotating Si-Shen-Yin-Hai or Si-Shen-Hai-Yin by month |
+| `yearly12_placement` | `Yearly12Placement` | `NatalAndYearly` | Sui-qian and Jiang-qian gods on the natal chart too, or yearly only (`None` on the palaces then) |
+| `original_palace` | `OriginalPalaceMarking` | `Primary` | One Original palace, or also the secondary one (Chou in xin years, Zi in ren years) |
+| `dou_jun_month` | `DouJunMonth` | `Default` | Dou Jun's birth month as iztro, or by the natal chart's late-Zi rule |
 | `overrides` | `Option<Arc<TableOverrides>>` | `None` | Custom mutagen tables, extra mutagen stars and brightness tables |
 
 The meaning of the switches and the schools behind them are on
@@ -172,10 +188,10 @@ The serde form of `Config` is the binding layer's config JSON:
   `"brightness": {"ziweiMaj": ["miao", "", …]}` (twelve entries by palace index with Yin = 0; an empty string
   means no brightness);
 - a star appearing twice within one stem across the slots and the extra stars is an error (see `check` below);
-- serialization writes the seven switches and every overridden table, and deserializes back unchanged — the
+- serialization writes every switch and every overridden table, and deserializes back unchanged — the
   custom tables survive the round trip.
 
-The `config` inside the chart DTO records only the switches (`voidPlacement` is left out at its default) and
+The `config` inside the chart DTO records only the switches (the x-iztro extension switches are left out at their defaults) and
 does not echo the custom tables: they are an input to charting, not part of the result.
 
 ### Construction methods

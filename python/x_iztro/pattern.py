@@ -39,12 +39,16 @@ class PatternConfig:
     flow_stars: bool = True
     """运限视角下流曜（运禄/流禄等）是否等同对应本命辅星参与判定"""
 
+    pang_kong: bool = False
+    """空曜是否连截空、旬空的傍空一并算；傍空只在 `ChartConfig.void_placement` 为 zhengPang 的盘上安放"""
+
     def to_dict(self) -> dict[str, Any]:
         """绑定层入参（camelCase 键）"""
         return {
             "brightnessSource": str(self.brightness_source),
             "borrow": self.borrow,
             "flowStars": self.flow_stars,
+            "pangKong": self.pang_kong,
         }
 
 

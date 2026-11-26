@@ -3,8 +3,8 @@
 //! 根据出生星盘和目标日期，计算大限、小限、流年、流月、流日、流时。
 
 use crate::astro::builder::{
-    SUPPORTED_YEARS, chart_moment, effective_time_index, parse_solar_date, parse_solar_input,
-    validate_time_index,
+    SUPPORTED_YEARS, birth_month_index, chart_moment, effective_solar_date, effective_time_index,
+    parse_solar_input, validate_time_index,
 };
 use crate::astro::palace::get_palace_names;
 use crate::calendar;
@@ -190,8 +190,7 @@ pub fn get_horoscope_stars(
 /// - `language`: 语言
 ///
 /// # Errors
-/// 目标日期非法、目标时辰越界，或 `astrolabe.solar_date` 字段被改为
-/// 非法值时返回 [`IztroError`]。
+/// 目标日期非法或目标时辰越界时返回 [`IztroError`]。
 pub fn get_horoscope(
     astrolabe: &Astrolabe,
     solar_date: &str,
@@ -207,25 +206,26 @@ pub fn get_horoscope(
         None => time_to_index(target.hour.map_or(0, |h| h as u8)),
     };
 
-    // ---- 1. 解析出生日期的农历信息 ----
-    let (birth_year, birth_month, birth_day) = parse_solar_date(&astrolabe.solar_date)?;
-
-    let birth_ymd = calendar::lunar_date_of(birth_year, birth_month, birth_day);
-    let birthday_lunar_year = birth_ymd.year;
-    let birthday_lunar_month = birth_ymd.month.unsigned_abs() as i32;
-    let birthday_lunar_day = birth_ymd.day as u32;
-    let birthday_is_leap = birth_ymd.month < 0;
+    // ---- 1. 出生的农历日期：取星盘的 raw_dates（晚子时整个日期归次日时已是次日的农历日期） ----
+    let birth = astrolabe.raw_dates.lunar_date;
+    let birthday_lunar_year = birth.lunar_year;
+    let birthday_lunar_month = birth.lunar_month as i32;
+    let birthday_lunar_day = birth.lunar_day;
 
     // ---- 2. 解析目标日期的农历信息 ----
-    let (target_year, target_month, target_day) = (target.year, target.month, target.day);
-
     // 目标时辰按 day_divide 归一：晚子归当天时，日柱与时柱算在当天而非次日
-    // （农历年月日与时辰无关，23:00 仍属同一公历日）
+    // （农历年月日与时辰无关，23:00 仍属同一公历日）；晚子整个日期归次日时按次日早子时算
+    let day_divide = astrolabe.config.day_divide;
+    let (target_year, target_month, target_day) = effective_solar_date(
+        day_divide,
+        (target.year, target.month, target.day),
+        time_index,
+    );
     let target_moment = chart_moment(
         target_year,
         target_month,
         target_day,
-        effective_time_index(astrolabe.config.day_divide, time_index),
+        effective_time_index(day_divide, time_index),
     );
     let target_lunar = calendar::lunar_of(&target_moment);
 
@@ -375,13 +375,20 @@ pub fn get_horoscope(
     };
 
     // ---- 8. 流月 ----
-    //     斗君 = 流年宫逆数生月、顺数生时；生月按星盘的 `fix_leap` 取：打开时闰月十六起作下月，
-    //     关闭时闰月整月按本月
-    let leap_addition = if birthday_is_leap && astrolabe.fix_leap && birthday_lunar_day > 15 {
-        1
-    } else {
-        0
+    //     斗君 = 流年宫逆数生月、顺数生时；生月按星盘的闰月口径（`fix_leap`、`leap_divide`）取，
+    //     `dou_jun_month=Natal` 时连本命盘晚子时不进闰月下半月的例外也一并照用
+    let keep_leap_month = match astrolabe.config.dou_jun_month {
+        DouJunMonth::Default => false,
+        DouJunMonth::Natal => effective_time_index(day_divide, astrolabe.time_index) == 12,
     };
+    let birth_month_index = birth_month_index(
+        birth.lunar_month,
+        birthday_lunar_day,
+        birth.is_leap,
+        astrolabe.fix_leap,
+        astrolabe.config.leap_divide,
+        keep_leap_month,
+    ) as i32;
     let date_leap_addition = if target_is_leap && target_lunar_day > 15 {
         1
     } else {
@@ -391,7 +398,7 @@ pub fn get_horoscope(
     let birth_time_branch_raw_index = fix_index(astrolabe.time_index as i32, 12) as i32;
 
     let monthly_index = fix_index(
-        yearly_index as i32 - (birthday_lunar_month + leap_addition)
+        yearly_index as i32 - (birth_month_index + 1)
             + birth_time_branch_raw_index
             + (target_lunar_month + date_leap_addition),
         12,
@@ -475,7 +482,7 @@ pub fn get_horoscope(
     );
 
     Ok(HoroscopeData {
-        solar_date: format!("{target_year}-{target_month}-{target_day}"),
+        solar_date: format!("{}-{}-{}", target.year, target.month, target.day),
         lunar_date: lunar_date_str,
         decadal,
         age,

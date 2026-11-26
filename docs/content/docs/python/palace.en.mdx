@@ -24,6 +24,7 @@ translations.
 | `name` / `name_key` | `str` | Translated palace name / its key |
 | `is_body_palace` | `bool` | Whether this is the body palace |
 | `is_original_palace` | `bool` | Whether this is the palace of origin (stem equal to the year stem, and not the Zi or Chou palace) |
+| `is_secondary_original_palace` | `bool` | Whether this is the secondary Original palace (Chou in xin years, Zi in ren years); can only be true with `original_palace = withSecondary` |
 | `heavenly_stem` / `heavenly_stem_key` | `str` | Palace stem, which determines the mutagens this palace flies out |
 | `earthly_branch` / `earthly_branch_key` | `str` | Palace branch, fixed by the index: 0 is yin, 11 is chou |
 | `major_stars` | `list[Star]` | Whichever of the fourteen major stars fall here, in placement order |
@@ -43,6 +44,7 @@ Major, minor and adjective stars are **lists** — a palace can hold zero or man
 The Changsheng, Boshi, Jiang-qian and Sui-qian gods are marks of which each palace has **exactly
 one**, filling one full cycle across the twelve palaces, so they are single-valued fields rather than
 lists.
+The Sui-qian and Jiang-qian gods are absent from the natal chart with `yearly12_placement = yearlyOnly`; those two fields are then empty strings.
 </Callout>
 
 <Callout type="info" title="mutagen_star_keys is the palace-stem mutagen, not the birth-year mutagen">

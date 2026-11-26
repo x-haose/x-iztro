@@ -299,8 +299,16 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
 | `YearDivide` / `HoroscopeDivide` | 2 each | `NORMAL` `EXACT` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
-| `DayDivide` | 2 | `FORWARD` `CURRENT` |
+| `DayDivide` | 3 | `FORWARD` `CURRENT` `FORWARD_CARRY` |
 | `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
+| `LeapDivide` | 2 | `DEFAULT` `NEXT_MONTH` |
+| `TianmaPlacement` | 3 | `YEARLY` `MONTHLY` `BOTH` |
+| `ChangshengDirection` | 3 | `YIN_YANG` `GENDER` `CLOCKWISE` |
+| `TianshangTianshi` | 2 | `DEFAULT` `TIANSHI_FRIENDS` |
+| `TianwuPlacement` | 2 | `SI_SHEN_YIN_HAI` `SI_SHEN_HAI_YIN` |
+| `Yearly12Placement` | 2 | `NATAL_AND_YEARLY` `YEARLY_ONLY` |
+| `OriginalPalaceMarking` | 2 | `PRIMARY` `WITH_SECONDARY` |
+| `DouJunMonth` | 2 | `DEFAULT` `NATAL` |
 
 A member's name does not always match its value letter for letter — the value of `Boshi12.FEILIAN` is
 `faylian`, that of `Jiangqian12.XISHEN` is `xiishen`, and that of `Suiqian12.GWANFU` is `gwanfu`.

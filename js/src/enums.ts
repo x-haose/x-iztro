@@ -71,13 +71,101 @@ export const AgeDivide = {
 /** 虚岁分界点（`ChartConfig.ageDivide`）：跨农历年即加一岁或过生日才加 */
 export type AgeDivide = (typeof AgeDivide)[keyof typeof AgeDivide];
 
-/** 晚子时归属（`ChartConfig.dayDivide`）：归次日或归当天 */
+/** 晚子时归属（`ChartConfig.dayDivide`） */
 export const DayDivide = {
+  /** 与 iztro 一致：日柱、起紫微的日数与日系杂耀按次日算，生月与年干支仍按当天 */
   FORWARD: 'forward',
+  /** 晚子时归当天，按当日早子时排盘 */
   CURRENT: 'current',
+  /** 晚子时整个日期归次日，按次日早子时排盘：月底的晚子进下月、除夕的晚子进下一年 */
+  FORWARD_CARRY: 'forwardCarry',
 } as const;
-/** 晚子时归属（`ChartConfig.dayDivide`）：归次日或归当天 */
+/** 晚子时归属（`ChartConfig.dayDivide`） */
 export type DayDivide = (typeof DayDivide)[keyof typeof DayDivide];
+
+/** 闰月出生时安星用哪个月（`ChartConfig.leapDivide`） */
+export const LeapDivide = {
+  /** 按排盘入参 fixLeap：打开时闰月十五日及以前按本月、十六日起按下月，关闭时整月按本月 */
+  DEFAULT: 'default',
+  /** 闰月整月按下月，fixLeap 不起作用 */
+  NEXT_MONTH: 'nextMonth',
+} as const;
+/** 闰月出生时安星用哪个月（`ChartConfig.leapDivide`） */
+export type LeapDivide = (typeof LeapDivide)[keyof typeof LeapDivide];
+
+/** 天马的安法（`ChartConfig.tianmaPlacement`） */
+export const TianmaPlacement = {
+  /** 天马安年马（按生年地支） */
+  YEARLY: 'yearly',
+  /** 天马安月马（按生月：正五九申、二六十巳、三七十一寅、四八十二亥） */
+  MONTHLY: 'monthly',
+  /** 天马安年马，另在月马之位安杂耀月天马（`AdjectiveStar.YUEMA_ADJ`） */
+  BOTH: 'both',
+} as const;
+/** 天马的安法（`ChartConfig.tianmaPlacement`） */
+export type TianmaPlacement = (typeof TianmaPlacement)[keyof typeof TianmaPlacement];
+
+/** 长生十二神的排列方向（`ChartConfig.changshengDirection`） */
+export const ChangshengDirection = {
+  /** 阳男阴女顺行、阴男阳女逆行 */
+  YIN_YANG: 'yinYang',
+  /** 男命顺行、女命逆行 */
+  GENDER: 'gender',
+  /** 一律顺行 */
+  CLOCKWISE: 'clockwise',
+} as const;
+/** 长生十二神的排列方向（`ChartConfig.changshengDirection`） */
+export type ChangshengDirection = (typeof ChangshengDirection)[keyof typeof ChangshengDirection];
+
+/** 天伤、天使的安法（`ChartConfig.tianshangTianshi`） */
+export const TianshangTianshi = {
+  /** 与 iztro 一致：天伤在仆役、天使在疾厄；中州派阴男阳女两者对调 */
+  DEFAULT: 'default',
+  /** 天使在仆役、天伤在疾厄，不分男女与派别 */
+  TIANSHI_FRIENDS: 'tianshiFriends',
+} as const;
+/** 天伤、天使的安法（`ChartConfig.tianshangTianshi`） */
+export type TianshangTianshi = (typeof TianshangTianshi)[keyof typeof TianshangTianshi];
+
+/** 天巫的安法（`ChartConfig.tianwuPlacement`），按生月每四个月一轮 */
+export const TianwuPlacement = {
+  /** 正五九巳、二六十申、三七十一寅、四八十二亥 */
+  SI_SHEN_YIN_HAI: 'siShenYinHai',
+  /** 正五九巳、二六十申、三七十一亥、四八十二寅 */
+  SI_SHEN_HAI_YIN: 'siShenHaiYin',
+} as const;
+/** 天巫的安法（`ChartConfig.tianwuPlacement`） */
+export type TianwuPlacement = (typeof TianwuPlacement)[keyof typeof TianwuPlacement];
+
+/** 岁前、将前十二神安在哪些盘上（`ChartConfig.yearly12Placement`） */
+export const Yearly12Placement = {
+  /** 本命盘与流年都安 */
+  NATAL_AND_YEARLY: 'natalAndYearly',
+  /** 只在流年安；本命各宫的 suiqian12、jiangqian12 及其标识为空串 */
+  YEARLY_ONLY: 'yearlyOnly',
+} as const;
+/** 岁前、将前十二神安在哪些盘上（`ChartConfig.yearly12Placement`） */
+export type Yearly12Placement = (typeof Yearly12Placement)[keyof typeof Yearly12Placement];
+
+/** 来因宫的标法（`ChartConfig.originalPalace`） */
+export const OriginalPalaceMarking = {
+  /** 只标寅至亥十宫里宫干等于年干的那一宫 */
+  PRIMARY: 'primary',
+  /** 另把辛年丑宫、壬年子宫标为辅来因宫（`Palace.isSecondaryOriginalPalace`） */
+  WITH_SECONDARY: 'withSecondary',
+} as const;
+/** 来因宫的标法（`ChartConfig.originalPalace`） */
+export type OriginalPalaceMarking = (typeof OriginalPalaceMarking)[keyof typeof OriginalPalaceMarking];
+
+/** 推斗君时生月的取法（`ChartConfig.douJunMonth`） */
+export const DouJunMonth = {
+  /** 与 iztro 一致：fixLeap 打开时闰月十六日起作下月，晚子时也算 */
+  DEFAULT: 'default',
+  /** 与本命盘同一规则：晚子时（dayDivide=forward）不把闰月十六日起作下月 */
+  NATAL: 'natal',
+} as const;
+/** 推斗君时生月的取法（`ChartConfig.douJunMonth`） */
+export type DouJunMonth = (typeof DouJunMonth)[keyof typeof DouJunMonth];
 
 /** 截空与旬空的安法（`ChartConfig.voidPlacement`） */
 export const VoidPlacement = {
@@ -405,6 +493,8 @@ export const AdjectiveStar = {
   PANG_JIEKONG: 'pangJiekong',
   /** 傍旬空：旬空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`） */
   PANG_XUNKONG: 'pangXunkong',
+  /** 月天马：按生月安的天马（书中称月马），只在 `TianmaPlacement.BOTH` 时安放 */
+  YUEMA_ADJ: 'yuemaAdj',
   /** 月德 */
   YUEDE: 'yuede',
   /** 天伤 */

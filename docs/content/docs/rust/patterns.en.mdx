@@ -52,13 +52,14 @@ One evidencing star.
 
 The reading switches. Anything that is merely a second *form* of the same pattern goes through
 `PatternHit::variant`; only data readings that change the **finding of fact itself** live here,
-which is why there are just three fields.
+which is why there are just four fields.
 
 ```rust
 pub struct PatternConfig {
     pub brightness_source: BrightnessSource,  // default Table
     pub borrow: bool,                         // default true
     pub flow_stars: bool,                     // default true
+    pub pang_kong: bool,                      // default false
 }
 ```
 
@@ -67,6 +68,7 @@ pub struct PatternConfig {
 | `brightness_source` | `BrightnessSource::Table` | Basis for Sun and Moon brightness |
 | `borrow` | `true` | Whether an empty palace borrows the opposite palace's majors |
 | `flow_stars` | `true` | Whether flowing stars count as their natal counterparts in horoscope views |
+| `pang_kong` | `false` | Whether void stars include the side voids of Jiekong and Xunkong (placed only on charts with `void_placement = zhengPang`) |
 
 `BrightnessSource` has two variants: `Table` follows the chart's brightness table (Miao and Wang
 bright, Xian and Bu dim — matching iztro value for value), `Positional` follows the traditional

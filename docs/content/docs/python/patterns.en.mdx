@@ -63,7 +63,7 @@ of the chart's language.
 
 The reading switches. Anything that is merely a second *form* of the same pattern goes through
 `PatternHit.variant`; only data readings that change the **finding of fact itself** live here, which
-is why there are just three fields.
+is why there are just four fields.
 
 ```python
 from x_iztro import PatternConfig, BrightnessSource
@@ -72,6 +72,7 @@ PatternConfig(
     brightness_source=BrightnessSource.TABLE,  # default
     borrow=True,                               # default
     flow_stars=True,                           # default
+    pang_kong=False,                           # default
 )
 ```
 
@@ -80,6 +81,7 @@ PatternConfig(
 | `brightness_source` | `BrightnessSource.TABLE` | Basis for Sun and Moon brightness |
 | `borrow` | `True` | Whether an empty palace borrows the opposite palace's majors |
 | `flow_stars` | `True` | Whether flowing stars count as their natal counterparts in horoscope views |
+| `pang_kong` | `False` | Whether void stars include the side voids of Jiekong and Xunkong (placed only on charts with `void_placement = zhengPang`) |
 
 `BrightnessSource` has two members: `TABLE` follows the chart's brightness table (Miao and Wang
 bright, Xian and Bu dim — matching iztro value for value), `POSITIONAL` follows the traditional
@@ -88,7 +90,7 @@ explained on the [concept page](/en/docs/guide/concepts/patterns#which-table-dec
 
 <Callout type="info">
 `PatternConfig` is a frozen dataclass; change one field with `dataclasses.replace`, or just build a
-new one — all three fields have defaults, so name only the one you are changing.
+new one — every field has a default, so name only the one you are changing.
 </Callout>
 
 ### PatternKey

@@ -347,11 +347,12 @@ mod tests {
     use crate::pattern::testutil::find_chart;
     use crate::pattern::{BrightnessSource, PatternConfig};
 
-    /// 测试统一用默认口径（iztro 亮度表、借宫开、流曜开）。
+    /// 测试统一用默认口径（iztro 亮度表、借宫开、流曜开、空曜只算正空）。
     const CFG: PatternConfig = PatternConfig {
         brightness_source: BrightnessSource::Table,
         borrow: true,
         flow_stars: true,
+        pang_kong: false,
     };
 
     fn view(a: &Astrolabe) -> ChartView<'_> {

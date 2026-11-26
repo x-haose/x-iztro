@@ -287,8 +287,16 @@ print(c.five_elements_class)
 | `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
 | `YearDivide` / `HoroscopeDivide` | 各 2 | `NORMAL` `EXACT` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
-| `DayDivide` | 2 | `FORWARD` `CURRENT` |
+| `DayDivide` | 3 | `FORWARD` `CURRENT` `FORWARD_CARRY` |
 | `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
+| `LeapDivide` | 2 | `DEFAULT` `NEXT_MONTH` |
+| `TianmaPlacement` | 3 | `YEARLY` `MONTHLY` `BOTH` |
+| `ChangshengDirection` | 3 | `YIN_YANG` `GENDER` `CLOCKWISE` |
+| `TianshangTianshi` | 2 | `DEFAULT` `TIANSHI_FRIENDS` |
+| `TianwuPlacement` | 2 | `SI_SHEN_YIN_HAI` `SI_SHEN_HAI_YIN` |
+| `Yearly12Placement` | 2 | `NATAL_AND_YEARLY` `YEARLY_ONLY` |
+| `OriginalPalaceMarking` | 2 | `PRIMARY` `WITH_SECONDARY` |
+| `DouJunMonth` | 2 | `DEFAULT` `NATAL` |
 
 成员名与它的取值不总是拼音对应——`Boshi12.FEILIAN` 的值是 `faylian`，
 `Jiangqian12.XISHEN` 的值是 `xiishen`，`Suiqian12.GWANFU` 的值是 `gwanfu`。

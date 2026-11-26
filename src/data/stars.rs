@@ -134,6 +134,10 @@ pub enum StarKey {
     PangJiekong,
     /// 傍旬空：旬空两宫中的傍空一宫，见 [`crate::data::types::VoidPlacement::ZhengPang`]
     PangXunkong,
+    /// 月天马：按生月安的天马（书中称月马），天马兼安年马、月马时作杂耀安放
+    /// （[`crate::data::types::TianmaPlacement::Both`]）。中文译名避开流月天马 [`StarKey::Yuema`] 的「月马」，
+    /// 按译名反查标识时两者各回各的。
+    YuemaAdj,
     /// 月德
     Yuede,
     /// 天伤
@@ -417,6 +421,7 @@ crate::data::keyed::keyed_enum!(StarKey, "star" {
     Jielu => "jielu",
     PangJiekong => "pangJiekong",
     PangXunkong => "pangXunkong",
+    YuemaAdj => "yuemaAdj",
     Yuede => "yuede",
     Tianshang => "tianshang",
     Tianshi => "tianshi",
@@ -528,7 +533,7 @@ pub const MUTAGEN: [Mutagen; 4] = [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Muta
 /// 全部星耀标识，顺序与枚举声明一致
 ///
 /// 供译名反查标识（遍历各类目找出属于星耀的那一个）与数据表导出使用。
-pub const ALL_STARS: [StarKey; 164] = [
+pub const ALL_STARS: [StarKey; 165] = [
     StarKey::ZiweiMaj,
     StarKey::TianjiMaj,
     StarKey::TaiyangMaj,
@@ -592,6 +597,7 @@ pub const ALL_STARS: [StarKey; 164] = [
     StarKey::Jielu,
     StarKey::PangJiekong,
     StarKey::PangXunkong,
+    StarKey::YuemaAdj,
     StarKey::Yuede,
     StarKey::Tianshang,
     StarKey::Tianshi,

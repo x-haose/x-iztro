@@ -11,7 +11,10 @@
 
 use serde::Serialize;
 
-use crate::astro::builder::{SUPPORTED_YEARS, by_solar, effective_time_index, four_pillars};
+use crate::astro::builder::{
+    SUPPORTED_YEARS, by_solar, effective_time_index, four_pillars, late_zi_carries,
+    shift_solar_date,
+};
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
 use crate::calendar::{self, year_pillar};
 use crate::data::stars::{MUTAGEN, StarKey};
@@ -20,7 +23,8 @@ use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
 use crate::star::location::{
     get_chang_qu_index, get_huo_ling_index, get_kong_jie_index, get_kui_yue_index,
-    get_lu_yang_tuo_ma_index, get_luan_xi_index, get_start_index, get_zuo_you_index,
+    get_lu_yang_tuo_ma_index, get_luan_xi_index, get_start_index, get_yuema_index,
+    get_zuo_you_index,
 };
 use crate::utils::fix_index;
 
@@ -91,7 +95,7 @@ pub fn solar_dates_by_bazi(
                     continue;
                 }
                 // 日柱粗筛（纯算术 60 周期）。子时的日柱归属随 `day_divide`：
-                // 晚子归次日（Forward）时 t=12 的日柱取次日干支；晚子归当天（Current）时
+                // 晚子归次日（Forward、ForwardCarry）时 t=12 的日柱取次日干支；晚子归当天（Current）时
                 // 正排把 t>=12 归一为早子，(D,0) 与 (D,12) 四柱完全相同，日柱匹配当日即
                 // 同时给出两个时辰。非子时只匹配当日。
                 let day60 = calendar::day_cycle(year, month, day) as usize;
@@ -104,7 +108,7 @@ pub fn solar_dates_by_bazi(
                                 candidates = [Some(0), Some(12)];
                             }
                         }
-                        DayDivide::Forward => {
+                        DayDivide::Forward | DayDivide::ForwardCarry => {
                             if day60 == target_day60 {
                                 candidates[0] = Some(0);
                             }
@@ -302,8 +306,13 @@ pub fn reverse_chart(
                         [fix_index(month as i32 - 1, 12), fix_index(month as i32, 12)];
                     // 非天盘时为空且不被日层读取（几何剪枝整体跳过）
                     let fecs = if geometric {
-                        let fecs =
-                            month_time_prefilter(criteria, &stems, &month_indices, time_index);
+                        let fecs = month_time_prefilter(
+                            criteria,
+                            &stems,
+                            &month_indices,
+                            time_index,
+                            config.tianma_placement,
+                        );
                         if fecs.is_empty() {
                             continue;
                         }
@@ -313,6 +322,9 @@ pub fn reverse_chart(
                     };
                     // 紫微起宫与日系杂耀区分早晚子，日层剪枝须收与正排一致的生效时辰
                     let eff_t = effective_time_index(config.day_divide, time_index);
+                    // 晚子时整个日期归次日时，正排的农历日期是出生次日的；
+                    // 枚举到的农历日期即正排所用的那一天，候选生辰取它的前一个公历日
+                    let carried = late_zi_carries(config.day_divide, time_index);
                     for day in 1..=month_day_count {
                         if geometric
                             && (!day_prefilter(&domains, day, eff_t, month_day_count, &fecs)
@@ -320,9 +332,14 @@ pub fn reverse_chart(
                         {
                             continue;
                         }
-                        let (solar_year, solar_month, solar_day) =
+                        let chart_date =
                             calendar::solar_date_of(year, signed_month, i64::from(day))
                                 .expect("日在 1..=month_day_count 内，该农历月存在");
+                        let (solar_year, solar_month, solar_day) = if carried {
+                            shift_solar_date(chart_date, -1)
+                        } else {
+                            chart_date
+                        };
                         if solar_year < start_year || solar_year > end_year {
                             continue;
                         }
@@ -413,7 +430,8 @@ fn year_stem_candidates(year: i64, config: &Config) -> Vec<(HeavenlyStem, Earthl
     }
 }
 
-/// 年层剪枝：生年四化与年系星（禄存羊陀天马魁钺、红鸾天喜）在任一候选年干支下可满足才保留。
+/// 年层剪枝：生年四化与年系星（禄存羊陀天马魁钺、红鸾天喜）在任一候选年干支下可满足才保留；
+/// 天马安月马时不在此层判。
 fn year_prefilter(
     criteria: &ReverseCriteria,
     stems: &[(HeavenlyStem, EarthlyBranch)],
@@ -427,7 +445,10 @@ fn year_prefilter(
                     StarKey::LucunMin => get_lu_yang_tuo_ma_index(*stem, *branch).lu == want,
                     StarKey::QingyangMin => get_lu_yang_tuo_ma_index(*stem, *branch).yang == want,
                     StarKey::TuoluoMin => get_lu_yang_tuo_ma_index(*stem, *branch).tuo == want,
-                    StarKey::TianmaMin => get_lu_yang_tuo_ma_index(*stem, *branch).ma == want,
+                    StarKey::TianmaMin => {
+                        config.tianma_placement == TianmaPlacement::Monthly
+                            || get_lu_yang_tuo_ma_index(*stem, *branch).ma == want
+                    }
                     StarKey::TiankuiMin => get_kui_yue_index(*stem).kui == want,
                     StarKey::TianyueMin => get_kui_yue_index(*stem).yue == want,
                     StarKey::Hongluan => get_luan_xi_index(*branch).hongluan == want,
@@ -438,13 +459,15 @@ fn year_prefilter(
     })
 }
 
-/// 月×时层剪枝：命宫身宫地支、五行局与月系（左辅右弼）、时系（文昌文曲地空地劫）、
-/// 支+时系（火星铃星）条件。返回可行组合对应的五行局取值集合（供日层用），空集即整枝剪掉。
+/// 月×时层剪枝：命宫身宫地支、五行局与月系（左辅右弼、按生月安的天马与月马）、
+/// 时系（文昌文曲地空地劫）、支+时系（火星铃星）条件。返回可行组合对应的五行局取值集合
+/// （供日层用），空集即整枝剪掉。
 fn month_time_prefilter(
     criteria: &ReverseCriteria,
     stems: &[(HeavenlyStem, EarthlyBranch)],
     month_indices: &[usize; 2],
     time_index: u8,
+    tianma: TianmaPlacement,
 ) -> Vec<u32> {
     let mut fecs: Vec<u32> = Vec::new();
     for (stem, branch) in stems {
@@ -471,6 +494,10 @@ fn month_time_prefilter(
                 match p.star {
                     StarKey::ZuofuMin => get_zuo_you_index(mi as u32 + 1).zuo == want,
                     StarKey::YoubiMin => get_zuo_you_index(mi as u32 + 1).you == want,
+                    StarKey::TianmaMin if tianma == TianmaPlacement::Monthly => {
+                        get_yuema_index(mi) == want
+                    }
+                    StarKey::YuemaAdj => get_yuema_index(mi) == want,
                     StarKey::WenchangMin => get_chang_qu_index(time_index).chang == want,
                     StarKey::WenquMin => get_chang_qu_index(time_index).qu == want,
                     StarKey::DikongMin => get_kong_jie_index(time_index).kong == want,

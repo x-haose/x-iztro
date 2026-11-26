@@ -59,7 +59,7 @@ hits = chart.patterns()
 ### PatternConfig
 
 判定口径。凡是「同一格局的多种成立形式」都走 `PatternHit.variant`，这里只放会改变
-**事实判定本身**的数据口径，因此只有三个字段。
+**事实判定本身**的数据口径，因此只有四个字段。
 
 ```python
 from x_iztro import PatternConfig, BrightnessSource
@@ -68,6 +68,7 @@ PatternConfig(
     brightness_source=BrightnessSource.TABLE,  # 默认
     borrow=True,                               # 默认
     flow_stars=True,                           # 默认
+    pang_kong=False,                           # 默认
 )
 ```
 
@@ -76,6 +77,7 @@ PatternConfig(
 | `brightness_source` | `BrightnessSource.TABLE` | 日月明暗的依据 |
 | `borrow` | `True` | 空宫是否借对宫主星参与判定 |
 | `flow_stars` | `True` | 运限视角下流曜（运禄/流禄、运昌/流昌…）是否等同对应本命辅星 |
+| `pang_kong` | `False` | 空曜是否连截空、旬空的傍空一并算（傍空只在 `void_placement = zhengPang` 的盘上安放） |
 
 `BrightnessSource` 两个成员：`TABLE` 按星盘亮度表（庙旺为明，陷与「不」为暗，与 iztro 逐值一致），
 `POSITIONAL` 按传统位置（太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗）。
@@ -83,7 +85,7 @@ PatternConfig(
 
 <Callout type="info">
 `PatternConfig` 是 frozen dataclass，改一项用 `dataclasses.replace`，
-或直接构造一个新的——三个字段都有默认值，只写要改的那个即可。
+或直接构造一个新的——各字段都有默认值，只写要改的那个即可。
 </Callout>
 
 ### PatternKey

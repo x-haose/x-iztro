@@ -256,12 +256,16 @@ fn golden_variants_languages() {
                 ),
                 (
                     "jq",
-                    translate_star(ap.jiangqian12, lang).to_string(),
+                    ap.jiangqian12
+                        .map_or("", |k| translate_star(k, lang))
+                        .to_string(),
                     exp_p["jq"].as_str().unwrap(),
                 ),
                 (
                     "sq",
-                    translate_star(ap.suiqian12, lang).to_string(),
+                    ap.suiqian12
+                        .map_or("", |k| translate_star(k, lang))
+                        .to_string(),
                     exp_p["sq"].as_str().unwrap(),
                 ),
             ];

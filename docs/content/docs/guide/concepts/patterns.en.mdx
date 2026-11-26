@@ -311,7 +311,7 @@ print([h.name for h in chart.patterns(
 
 ## The three switches
 
-`PatternConfig` has exactly three fields. Anything that is merely a second *reading* of a pattern
+`PatternConfig` has exactly four fields. Anything that is merely a second *reading* of a pattern
 goes through `variant` instead; only data readings that change the **finding of fact itself** live
 here.
 
@@ -320,10 +320,14 @@ here.
 | `brightness_source` | `table` | Basis for Sun and Moon brightness, see above |
 | `borrow` | `true` | Whether an empty palace borrows the opposite palace's majors |
 | `flow_stars` | `true` | Whether flowing stars count as their natal counterparts in horoscope views |
+| `pang_kong` | `false` | Whether void stars (Lu Shuai Ma Kun, the broad reading of Liang Chong Hua Gai) include the side voids of Jiekong and Xunkong |
 
 Turn `borrow` off and an empty palace stays empty, so patterns that relied on borrowing stop being
-reported. Turn `flow_stars` off and horoscope views recognise natal auxiliaries only. Neither
-affects chart casting.
+reported. Turn `flow_stars` off and horoscope views recognise natal auxiliaries only. Turn
+`pang_kong` on and side Jiekong and side Xunkong count as void stars too: Wang Tingzhi
+(*安星法及推断实例*, pp. 56–57) counts both palaces, the main void weighing more, while *紫微斗数精成*
+usually counts the main void only; the side voids are placed only on charts with
+`void_placement = zhengPang`. None of these affects chart casting.
 
 ## All 64 patterns
 

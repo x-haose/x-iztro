@@ -369,6 +369,93 @@ fn reverse_chart_roundtrip_current_late_zi() {
     }
 }
 
+/// 晚子时整个日期归次日：除夕（2024-2-9）、月底与普通日子的晚子时盘，正排用的是次日的农历日期，
+/// 八字与特征反查都必须含原生辰（枚举到的农历日期要换回前一个公历日）。
+#[test]
+fn reverse_roundtrip_forward_carry_late_zi() {
+    let cfg = Config {
+        day_divide: DayDivide::ForwardCarry,
+        ..Config::default()
+    };
+    let month_end = (1..=12)
+        .flat_map(|m| (1..=28).map(move |d| format!("2024-{m}-{d}")))
+        .find(|date| {
+            let a = chart(date, 0, &Config::default()).raw_dates.lunar_date;
+            let b = chart(date, 12, &cfg).raw_dates.lunar_date;
+            b.lunar_day == 1 && b.lunar_month != a.lunar_month
+        })
+        .expect("2024 年有月底在公历月内的农历月");
+    for date in ["2024-2-9", month_end.as_str(), "2000-8-16"] {
+        let a = chart(date, 12, &cfg);
+        let p = a.raw_dates.chinese_date;
+        let got = solar_dates_by_bazi(p.yearly, p.monthly, p.daily, p.hourly, (2000, 2025), &cfg)
+            .unwrap();
+        assert!(
+            got.iter()
+                .any(|c| c.solar_date == date && c.time_index == 12),
+            "{date}: {got:?}"
+        );
+        let crit = criteria_of(&a, &cfg, (2000, 2024));
+        let r = reverse_chart(&crit, &cfg).unwrap();
+        assert!(
+            r.candidates
+                .iter()
+                .any(|c| c.solar_date == date && c.time_index == 12),
+            "{date}: {:?}",
+            r.candidates
+        );
+        for c in &r.candidates {
+            let b = chart(&c.solar_date, c.time_index, &cfg);
+            for p in &crit.stars {
+                assert_eq!(b.star(p.star).unwrap().palace().earthly_branch, p.branch);
+            }
+        }
+    }
+}
+
+/// 按生月安的天马与月天马、闰月整月作下月：剪枝跟着口径走，原生辰不被错杀。
+#[test]
+fn reverse_roundtrip_month_based_options() {
+    let variants = [
+        Config {
+            tianma_placement: TianmaPlacement::Monthly,
+            ..Config::default()
+        },
+        Config {
+            tianma_placement: TianmaPlacement::Both,
+            ..Config::default()
+        },
+        Config {
+            leap_divide: LeapDivide::NextMonth,
+            ..Config::default()
+        },
+    ];
+    // 2020-5-25 为闰四月初三
+    for cfg in &variants {
+        for (date, t) in [("2020-5-25", 3), ("2001-9-20", 7)] {
+            let a = chart(date, t, cfg);
+            let mut crit = criteria_of(&a, cfg, (2020, 2020));
+            crit.year_range = (2000, 2021);
+            for star in [StarKey::TianmaMin, StarKey::YuemaAdj] {
+                if let Some(s) = a.star(star) {
+                    crit.stars.push(StarPosition {
+                        star,
+                        branch: s.palace().earthly_branch,
+                    });
+                }
+            }
+            let r = reverse_chart(&crit, cfg).unwrap();
+            assert!(
+                r.candidates
+                    .iter()
+                    .any(|c| c.solar_date == date && c.time_index == t),
+                "{cfg:?} {date}: {:?}",
+                r.candidates
+            );
+        }
+    }
+}
+
 #[test]
 fn reverse_chart_exact_year_divide_covers_lichun_to_new_year_gap() {
     // 立春分界：春节晚于立春的年份，农历上年腊月里立春之后的日子已用下一年干支

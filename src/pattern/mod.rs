@@ -54,6 +54,11 @@ pub struct PatternConfig {
     pub borrow: bool,
     /// 运限视角下流曜（运禄/流禄、运马/流马、运昌/流昌…）是否等同于对应本命辅星参与判定。
     pub flow_stars: bool,
+    /// 空曜是否连截空、旬空的傍空（傍截空、傍旬空）一并算。默认只算正空；
+    /// 傍空只在排盘配置 `voidPlacement=zhengPang` 的盘上安放，其余盘上这个开关不起作用。
+    /// 取默认值时序列化省略该键。
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub pang_kong: bool,
 }
 
 impl Default for PatternConfig {
@@ -62,6 +67,7 @@ impl Default for PatternConfig {
             brightness_source: BrightnessSource::Table,
             borrow: true,
             flow_stars: true,
+            pang_kong: false,
         }
     }
 }
@@ -185,8 +191,22 @@ pub(crate) mod testutil {
         find_charts(1, pred).pop().unwrap()
     }
 
+    /// 同 [`find_chart`]，排盘用指定配置。
+    pub(crate) fn find_chart_with(config: &Config, pred: impl Fn(&Astrolabe) -> bool) -> Astrolabe {
+        find_charts_with(config, 1, pred).pop().unwrap()
+    }
+
     /// 同 [`find_chart`]，最多收集 `n` 张（用于分布类断言）。
     pub(crate) fn find_charts(n: usize, pred: impl Fn(&Astrolabe) -> bool) -> Vec<Astrolabe> {
+        find_charts_with(&Config::default(), n, pred)
+    }
+
+    /// 同 [`find_charts`]，排盘用指定配置。
+    pub(crate) fn find_charts_with(
+        config: &Config,
+        n: usize,
+        pred: impl Fn(&Astrolabe) -> bool,
+    ) -> Vec<Astrolabe> {
         let mut out = Vec::new();
         for y in 1950..2021 {
             for m in 1..=12 {
@@ -199,7 +219,7 @@ pub(crate) mod testutil {
                                 g,
                                 true,
                                 Language::ZhCN,
-                                Config::default(),
+                                config.clone(),
                             )
                             .unwrap();
                             if pred(&a) {

@@ -186,12 +186,16 @@ fn golden_astrotype_full_fields() {
             check(
                 format!("{ptag} jiangqian12"),
                 ep["jiangqian12"].as_str().unwrap(),
-                translate_star(rp.jiangqian12, lang).to_string(),
+                rp.jiangqian12
+                    .map_or("", |k| translate_star(k, lang))
+                    .to_string(),
             );
             check(
                 format!("{ptag} suiqian12"),
                 ep["suiqian12"].as_str().unwrap(),
-                translate_star(rp.suiqian12, lang).to_string(),
+                rp.suiqian12
+                    .map_or("", |k| translate_star(k, lang))
+                    .to_string(),
             );
             check(
                 format!("{ptag} decadal_range"),

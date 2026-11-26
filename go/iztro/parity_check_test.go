@@ -890,7 +890,7 @@ func TestI18nParity(t *testing.T) {
 
 	// 标识表的规模、次序与逐条可译性
 	keys, err := AllKeys()
-	if err != nil || len(keys) != 263 {
+	if err != nil || len(keys) != 264 {
 		t.Fatalf("AllKeys 共 %d 条, %v", len(keys), err)
 	}
 	seen := make(map[string]bool, len(keys))

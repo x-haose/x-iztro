@@ -1,0 +1,2464 @@
+{
+  "cases": [
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2024-2-9",
+        "timeIndex": 12
+      },
+      "config": {
+        "dayDivide": "forwardCarry"
+      },
+      "expect": {
+        "lunarDate": [
+          2024,
+          1,
+          1,
+          false
+        ],
+        "monthlyIndex": 7,
+        "palaces": [
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "lucunMin",
+              "tianmaMin",
+              "huoxingMin",
+              "fenggao",
+              "xunkong",
+              "yinsha",
+              "tianku"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "qingyangMin",
+              "tiangui"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "tiantongMaj",
+              "zuofuMin",
+              "wenquMin",
+              "santai",
+              "huagai"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "wuquMaj",
+              "pojunMaj",
+              "tianxi",
+              "tianwu",
+              "tianchu",
+              "tiankong",
+              "guchen"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "taiyangMaj",
+              "fengge",
+              "tiancai",
+              "tianshou",
+              "taifu",
+              "feilian",
+              "nianjie"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "tianfuMaj",
+              "tianyueMin",
+              "tianguan",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianjiMaj",
+              "taiyinMaj",
+              "jieshen",
+              "longchi",
+              "jielu"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "ziweiMaj",
+              "tanlangMaj",
+              "xianchi",
+              "engguang",
+              "tianfu",
+              "yuede",
+              "kongwang",
+              "tianxing",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "jumenMaj",
+              "youbiMin",
+              "wenchangMin",
+              "lingxingMin",
+              "bazuo",
+              "tianyue",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "tianxiangMaj",
+              "dikongMin",
+              "dijieMin",
+              "hongluan"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "tianliangMaj"
+            ],
+            "suiqian12Key": "baihu"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "lianzhenMaj",
+              "qishaMaj",
+              "tiankuiMin",
+              "tuoluoMin",
+              "tianyao",
+              "tiande",
+              "guasu",
+              "posui"
+            ],
+            "suiqian12Key": "tiande"
+          }
+        ],
+        "yearlyKeys": [
+          "jiaHeavenly",
+          "chenEarthly"
+        ]
+      },
+      "name": "除夕晚子时进下一年"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2020-5-25",
+        "timeIndex": 3
+      },
+      "config": {
+        "leapDivide": "nextMonth"
+      },
+      "expect": {
+        "lunarDate": [
+          2020,
+          4,
+          3,
+          true
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tanlangMaj",
+              "tianmaMin",
+              "dijieMin",
+              "tianchu",
+              "guchen"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "hongluan",
+              "tiancai"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "bazuo",
+              "longchi",
+              "huagai",
+              "xunkong"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "tianyao",
+              "fenggao",
+              "tianwu",
+              "yuede",
+              "posui"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "qishaMaj",
+              "youbiMin",
+              "tianfu",
+              "jielu",
+              "yinsha",
+              "tianku",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "wenchangMin",
+              "wenquMin",
+              "tianyueMin",
+              "tuoluoMin",
+              "tianyue",
+              "kongwang"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "lianzhenMaj",
+              "zuofuMin",
+              "lucunMin",
+              "dikongMin",
+              "engguang",
+              "tiangui",
+              "feilian",
+              "tianshang"
+            ],
+            "suiqian12Key": "baihu"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qingyangMin",
+              "tianxi",
+              "xianchi",
+              "tianshou",
+              "taifu",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "pojunMaj",
+              "santai",
+              "fengge",
+              "guasu",
+              "tianshi",
+              "nianjie"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "tiantongMaj",
+              "tianguan"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "jieshen"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "tiankuiMin",
+              "lingxingMin",
+              "tiankong",
+              "tianxing"
+            ],
+            "suiqian12Key": "huiqi"
+          }
+        ],
+        "yearlyKeys": [
+          "gengHeavenly",
+          "ziEarthly"
+        ]
+      },
+      "name": "闰月整月作下月"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2001-10-20",
+        "timeIndex": 7
+      },
+      "config": {
+        "tianmaPlacement": "monthly"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          9,
+          4,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "taiyangMaj",
+              "jumenMaj",
+              "youbiMin",
+              "tianyueMin",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianxiangMaj",
+              "wenchangMin",
+              "santai"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "dikongMin",
+              "tianxi",
+              "jieshen",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "ziweiMaj",
+              "qishaMaj",
+              "lingxingMin",
+              "engguang",
+              "fengge",
+              "tianwu",
+              "tianfu",
+              "kongwang",
+              "tianxing",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "tiankuiMin",
+              "dijieMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "tianmaMin",
+              "tuoluoMin",
+              "tiancai",
+              "guchen",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "lucunMin",
+              "tianyao",
+              "longchi",
+              "fenggao",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "huoxingMin",
+              "qingyangMin",
+              "hongluan",
+              "tianshou",
+              "yuede",
+              "yinsha",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tianfuMaj",
+              "wenquMin",
+              "bazuo",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "tiantongMaj",
+              "taiyinMaj",
+              "zuofuMin"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tiangui",
+              "taifu",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "天马安月马"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2001-10-20",
+        "timeIndex": 7
+      },
+      "config": {
+        "tianmaPlacement": "both"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          9,
+          4,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "taiyangMaj",
+              "jumenMaj",
+              "youbiMin",
+              "tianyueMin",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianxiangMaj",
+              "wenchangMin",
+              "santai"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "dikongMin",
+              "tianxi",
+              "jieshen",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "ziweiMaj",
+              "qishaMaj",
+              "lingxingMin",
+              "engguang",
+              "fengge",
+              "tianwu",
+              "tianfu",
+              "kongwang",
+              "tianxing",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "tiankuiMin",
+              "dijieMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "tuoluoMin",
+              "tiancai",
+              "guchen",
+              "tianshang",
+              "yuemaAdj"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "lucunMin",
+              "tianyao",
+              "longchi",
+              "fenggao",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "huoxingMin",
+              "qingyangMin",
+              "hongluan",
+              "tianshou",
+              "yuede",
+              "yinsha",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tianfuMaj",
+              "wenquMin",
+              "tianmaMin",
+              "bazuo",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "tiantongMaj",
+              "taiyinMaj",
+              "zuofuMin"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tiangui",
+              "taifu",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "天马兼安年马月马"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2001-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "changshengDirection": "gender"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          4,
+          9,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tanlangMaj",
+              "tianyueMin",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "santai",
+              "engguang"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "tianxi",
+              "tianyao",
+              "fenggao",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "fengge",
+              "tianfu",
+              "kongwang",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qishaMaj",
+              "wenquMin",
+              "tiankuiMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "zuofuMin",
+              "youbiMin",
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "lianzhenMaj",
+              "wenchangMin",
+              "tuoluoMin",
+              "tiancai",
+              "taifu",
+              "guchen",
+              "yinsha",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lucunMin",
+              "dikongMin",
+              "longchi",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "pojunMaj",
+              "qingyangMin",
+              "hongluan",
+              "jieshen",
+              "yuede",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tiantongMaj",
+              "tianmaMin",
+              "bazuo",
+              "tianwu",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "lingxingMin",
+              "tianshou",
+              "tianxing"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "dijieMin",
+              "tiangui",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "长生男顺女逆"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2001-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "changshengDirection": "clockwise"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          4,
+          9,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tanlangMaj",
+              "tianyueMin",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "santai",
+              "engguang"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "tianxi",
+              "tianyao",
+              "fenggao",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "fengge",
+              "tianfu",
+              "kongwang",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qishaMaj",
+              "wenquMin",
+              "tiankuiMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "zuofuMin",
+              "youbiMin",
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "lianzhenMaj",
+              "wenchangMin",
+              "tuoluoMin",
+              "tiancai",
+              "taifu",
+              "guchen",
+              "yinsha",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lucunMin",
+              "dikongMin",
+              "longchi",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "pojunMaj",
+              "qingyangMin",
+              "hongluan",
+              "jieshen",
+              "yuede",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tiantongMaj",
+              "tianmaMin",
+              "bazuo",
+              "tianwu",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "lingxingMin",
+              "tianshou",
+              "tianxing"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "dijieMin",
+              "tiangui",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "长生一律顺行"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2001-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "algorithm": "zhongzhou",
+        "tianshangTianshi": "tianshiFriends"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          4,
+          9,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tanlangMaj",
+              "tianyueMin",
+              "tianyue",
+              "tiande",
+              "jieshaAdj"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "santai",
+              "engguang"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "tianxi",
+              "tianyao",
+              "fenggao",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "fengge",
+              "tianfu",
+              "jiekong",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qishaMaj",
+              "wenquMin",
+              "tiankuiMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "zuofuMin",
+              "youbiMin",
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "lianzhenMaj",
+              "wenchangMin",
+              "tuoluoMin",
+              "tiancai",
+              "taifu",
+              "guchen",
+              "yinsha",
+              "tianshi"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lucunMin",
+              "dikongMin",
+              "longchi",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "pojunMaj",
+              "qingyangMin",
+              "hongluan",
+              "jieshen",
+              "yuede",
+              "dahao",
+              "tianshang"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tiantongMaj",
+              "tianmaMin",
+              "bazuo",
+              "tianwu",
+              "tianxu"
+            ],
+            "suiqian12Key": "suipo"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "lingxingMin",
+              "tianshou",
+              "longde",
+              "tianxing"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "dijieMin",
+              "tiangui",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "天使仆役天伤疾厄"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2001-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "tianwuPlacement": "siShenHaiYin"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          4,
+          9,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tanlangMaj",
+              "tianyueMin",
+              "tianwu",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "santai",
+              "engguang"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "tianxi",
+              "tianyao",
+              "fenggao",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "fengge",
+              "tianfu",
+              "kongwang",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qishaMaj",
+              "wenquMin",
+              "tiankuiMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "zuofuMin",
+              "youbiMin",
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "lianzhenMaj",
+              "wenchangMin",
+              "tuoluoMin",
+              "tiancai",
+              "taifu",
+              "guchen",
+              "yinsha",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lucunMin",
+              "dikongMin",
+              "longchi",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "pojunMaj",
+              "qingyangMin",
+              "hongluan",
+              "jieshen",
+              "yuede",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tiantongMaj",
+              "tianmaMin",
+              "bazuo",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "lingxingMin",
+              "tianshou",
+              "tianxing"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "dijieMin",
+              "tiangui",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "天巫巳申亥寅"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "config": {
+        "yearly12Placement": "yearlyOnly"
+      },
+      "expect": {
+        "lunarDate": [
+          2000,
+          7,
+          17,
+          false
+        ],
+        "monthlyIndex": 3,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "wuquMaj",
+              "tianxiangMaj",
+              "tianmaMin",
+              "jieshen",
+              "santai",
+              "tianshou",
+              "tianwu",
+              "tianchu",
+              "yinsha",
+              "tianku"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "taiyangMaj",
+              "tianliangMaj",
+              "tianxing"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "qishaMaj",
+              "youbiMin",
+              "huoxingMin",
+              "fenggao",
+              "huagai"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "tianjiMaj",
+              "tianxi",
+              "tiankong",
+              "guchen"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "ziweiMaj",
+              "wenquMin",
+              "fengge",
+              "tianfu",
+              "jielu",
+              "feilian",
+              "nianjie"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "tianyueMin",
+              "tuoluoMin",
+              "tianyao",
+              "kongwang"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "pojunMaj",
+              "wenchangMin",
+              "lucunMin",
+              "longchi",
+              "taifu",
+              "xunkong"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "dikongMin",
+              "qingyangMin",
+              "xianchi",
+              "tiangui",
+              "yuede"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "lianzhenMaj",
+              "tianfuMaj",
+              "zuofuMin",
+              "tiancai",
+              "tianxu"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "taiyinMaj",
+              "hongluan",
+              "engguang",
+              "tianguan",
+              "tianyue",
+              "tianshang"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "tanlangMaj",
+              "lingxingMin",
+              "bazuo"
+            ],
+            "suiqian12Key": ""
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "",
+            "stars": [
+              "tiantongMaj",
+              "jumenMaj",
+              "tiankuiMin",
+              "dijieMin",
+              "tiande",
+              "guasu",
+              "posui",
+              "tianshi"
+            ],
+            "suiqian12Key": ""
+          }
+        ],
+        "yearlyKeys": [
+          "gengHeavenly",
+          "chenEarthly"
+        ]
+      },
+      "name": "岁前将前只在流年安"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2001-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "originalPalace": "withSecondary"
+      },
+      "expect": {
+        "lunarDate": [
+          2001,
+          4,
+          9,
+          false
+        ],
+        "monthlyIndex": 6,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tanlangMaj",
+              "tianyueMin",
+              "tianyue",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianjiMaj",
+              "jumenMaj",
+              "santai",
+              "engguang"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "ziweiMaj",
+              "tianxiangMaj",
+              "tianxi",
+              "tianyao",
+              "fenggao",
+              "jielu",
+              "guasu"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "tianliangMaj",
+              "huoxingMin",
+              "fengge",
+              "tianfu",
+              "kongwang",
+              "nianjie"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qishaMaj",
+              "wenquMin",
+              "tiankuiMin",
+              "xianchi",
+              "tianchu",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "zuofuMin",
+              "youbiMin",
+              "feilian"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "lianzhenMaj",
+              "wenchangMin",
+              "tuoluoMin",
+              "tiancai",
+              "taifu",
+              "guchen",
+              "yinsha",
+              "tianshang"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "lucunMin",
+              "dikongMin",
+              "longchi",
+              "tianguan",
+              "xunkong",
+              "posui"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "pojunMaj",
+              "qingyangMin",
+              "hongluan",
+              "jieshen",
+              "yuede",
+              "tianshi"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tiantongMaj",
+              "tianmaMin",
+              "bazuo",
+              "tianwu",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "wuquMaj",
+              "tianfuMaj",
+              "lingxingMin",
+              "tianshou",
+              "tianxing"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": true,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "taiyangMaj",
+              "taiyinMaj",
+              "dijieMin",
+              "tiangui",
+              "huagai",
+              "tianku"
+            ],
+            "suiqian12Key": "baihu"
+          }
+        ],
+        "yearlyKeys": [
+          "xinHeavenly",
+          "siEarthly"
+        ]
+      },
+      "name": "辛年辅来因宫"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2002-5-1",
+        "timeIndex": 2
+      },
+      "config": {
+        "originalPalace": "withSecondary"
+      },
+      "expect": {
+        "lunarDate": [
+          2002,
+          3,
+          19,
+          false
+        ],
+        "monthlyIndex": 7,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "taiyangMaj",
+              "jumenMaj",
+              "bazuo",
+              "tianwu",
+              "jielu",
+              "feilian"
+            ],
+            "suiqian12Key": "baihu"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "tianxiangMaj",
+              "tiankuiMin",
+              "huoxingMin",
+              "tianxi",
+              "tianyao",
+              "xianchi",
+              "tiande",
+              "kongwang"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "fengge",
+              "fenggao",
+              "tianyue",
+              "guasu",
+              "nianjie"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "ziweiMaj",
+              "qishaMaj",
+              "tianyueMin",
+              "lingxingMin",
+              "posui"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "zuofuMin",
+              "wenquMin",
+              "tianfu"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "tiankong",
+              "tianshang"
+            ],
+            "suiqian12Key": "huiqi"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "youbiMin",
+              "wenchangMin",
+              "tianmaMin",
+              "tiancai",
+              "taifu",
+              "xunkong",
+              "guchen"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "dikongMin",
+              "hongluan",
+              "tianchu",
+              "tianshi"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "tuoluoMin",
+              "jieshen",
+              "longchi",
+              "huagai",
+              "tianguan",
+              "yinsha"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tianfuMaj",
+              "lucunMin",
+              "tiangui",
+              "yuede",
+              "tianxing"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": true,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tiantongMaj",
+              "taiyinMaj",
+              "qingyangMin",
+              "santai",
+              "tianshou",
+              "tianku",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "wuquMaj",
+              "tanlangMaj",
+              "dijieMin",
+              "engguang"
+            ],
+            "suiqian12Key": "longde"
+          }
+        ],
+        "yearlyKeys": [
+          "renHeavenly",
+          "wuEarthly"
+        ]
+      },
+      "name": "壬年辅来因宫"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2020-6-7",
+        "timeIndex": 12
+      },
+      "config": {
+        "douJunMonth": "natal"
+      },
+      "expect": {
+        "lunarDate": [
+          2020,
+          4,
+          16,
+          true
+        ],
+        "monthlyIndex": 4,
+        "palaces": [
+          {
+            "changsheng12Key": "jue",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "suiyi",
+            "stars": [
+              "tianjiMaj",
+              "taiyinMaj",
+              "tianmaMin",
+              "huoxingMin",
+              "fenggao",
+              "tianchu",
+              "tianyue",
+              "guchen"
+            ],
+            "suiqian12Key": "sangmen"
+          },
+          {
+            "changsheng12Key": "tai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xiishen",
+            "stars": [
+              "ziweiMaj",
+              "tanlangMaj",
+              "hongluan",
+              "bazuo"
+            ],
+            "suiqian12Key": "guansuo"
+          },
+          {
+            "changsheng12Key": "yang",
+            "isOriginalPalace": true,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "huagai",
+            "stars": [
+              "jumenMaj",
+              "wenquMin",
+              "tianyao",
+              "longchi",
+              "huagai",
+              "xunkong"
+            ],
+            "suiqian12Key": "gwanfu"
+          },
+          {
+            "changsheng12Key": "changsheng",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiesha",
+            "stars": [
+              "tianxiangMaj",
+              "tiancai",
+              "tianshou",
+              "yuede",
+              "posui"
+            ],
+            "suiqian12Key": "xiaohao"
+          },
+          {
+            "changsheng12Key": "muyu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhaisha",
+            "stars": [
+              "tianliangMaj",
+              "taifu",
+              "tianfu",
+              "jielu",
+              "tianku",
+              "tianxu"
+            ],
+            "suiqian12Key": "dahao"
+          },
+          {
+            "changsheng12Key": "guandai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "tiansha",
+            "stars": [
+              "lianzhenMaj",
+              "qishaMaj",
+              "zuofuMin",
+              "youbiMin",
+              "tianyueMin",
+              "tuoluoMin",
+              "tiangui",
+              "kongwang"
+            ],
+            "suiqian12Key": "longde"
+          },
+          {
+            "changsheng12Key": "linguan",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "zhibei",
+            "stars": [
+              "lucunMin",
+              "feilian",
+              "yinsha"
+            ],
+            "suiqian12Key": "baihu"
+          },
+          {
+            "changsheng12Key": "diwang",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "xianchi",
+            "stars": [
+              "qingyangMin",
+              "tianxi",
+              "xianchi",
+              "tiande"
+            ],
+            "suiqian12Key": "tiande"
+          },
+          {
+            "changsheng12Key": "shuai",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "yuesha",
+            "stars": [
+              "tiantongMaj",
+              "wenchangMin",
+              "lingxingMin",
+              "jieshen",
+              "fengge",
+              "guasu",
+              "tianshang",
+              "nianjie"
+            ],
+            "suiqian12Key": "diaoke"
+          },
+          {
+            "changsheng12Key": "bing",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "wangshen",
+            "stars": [
+              "wuquMaj",
+              "pojunMaj",
+              "dikongMin",
+              "dijieMin",
+              "santai",
+              "tianwu",
+              "tianguan"
+            ],
+            "suiqian12Key": "bingfu"
+          },
+          {
+            "changsheng12Key": "si",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "jiangxing",
+            "stars": [
+              "taiyangMaj",
+              "tianxing",
+              "tianshi"
+            ],
+            "suiqian12Key": "suijian"
+          },
+          {
+            "changsheng12Key": "mu",
+            "isOriginalPalace": false,
+            "isSecondaryOriginalPalace": false,
+            "jiangqian12Key": "panan",
+            "stars": [
+              "tianfuMaj",
+              "tiankuiMin",
+              "engguang",
+              "tiankong"
+            ],
+            "suiqian12Key": "huiqi"
+          }
+        ],
+        "yearlyKeys": [
+          "gengHeavenly",
+          "ziEarthly"
+        ]
+      },
+      "name": "斗君生月随本命"
+    }
+  ],
+  "patternCases": [
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1950-1-9",
+        "timeIndex": 6
+      },
+      "config": {
+        "voidPlacement": "zhengPang"
+      },
+      "expect": [
+        [
+          "lu_he_yuan_yang",
+          null
+        ],
+        [
+          "yang_tuo_jia_ming",
+          null
+        ]
+      ],
+      "name": "傍空不计入空曜",
+      "patternConfig": {}
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1950-1-9",
+        "timeIndex": 6
+      },
+      "config": {
+        "voidPlacement": "zhengPang"
+      },
+      "expect": [
+        [
+          "lu_he_yuan_yang",
+          null
+        ],
+        [
+          "liang_chong_hua_gai",
+          "kong_yao"
+        ],
+        [
+          "yang_tuo_jia_ming",
+          null
+        ]
+      ],
+      "name": "傍空计入空曜",
+      "patternConfig": {
+        "pangKong": true
+      }
+    }
+  ],
+  "target": [
+    "2024-8-1",
+    3
+  ]
+}

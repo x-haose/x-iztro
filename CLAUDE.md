@@ -84,7 +84,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - Edition 2024，unsafe 用 `#[unsafe(no_mangle)]` 语法
 - `by_lunar` 收三态 `LeapMonth`（NotLeap/Leap/LeapFixed）而非 iztro 的 `isLeapMonth`+`fixLeap` 两个相邻布尔（写反不报错）；
   绑定层 JSON 线协议仍是两个布尔键，Go 用 `LeapMonth` 具名常量、Python 用关键字参数；Go 的 `gender`/`language` 也是具名类型
-- 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm/astro_type/void_placement 与自定义表），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
+- 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm/astro_type/void_placement、八个流派口径开关 leap_divide/tianma_placement/changsheng_direction/tianshang_tianshi/tianwu_placement/yearly12_placement/original_palace/dou_jun_month 与自定义表），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
 - 入口返回 `Result<_, IztroError>`：全部外部输入前置校验（日期格式与存在性、1-9999 年且 1582-10-15 前按儒略历、改历空缺 10-05…14 非法、时辰 0-12），非法输入不 panic——wasm 下 panic 即 trap 且累积损耗实例栈空间，绑定层 catch_unwind 仅兜底库内部缺陷
 - 带语言无关标识的枚举一律用 `data::keyed::keyed_enum!` 写一张「变体 => 标识」表，由它生成
   `KEYS`/`as_key`/`from_key`、按标识的 serde 与 `schemars` feature 下的 JsonSchema，不手写对照表；
@@ -310,7 +310,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### 反推（x-iztro 扩展）
 - 两个入口都是「剪枝枚举 + 正排终验」：终验用与正排完全相同的函数（`four_pillars` / `by_solar`），
   与正向排盘零分歧；剪枝保守（宁多留不错杀），错杀是 bug、漏杀只是慢——
-  日层剪枝对时辰敏感，`day_divide=Current` 时须以归一时辰（晚子归 0）参与，八字入口
+  日层剪枝对时辰敏感，`day_divide=Current`/`ForwardCarry` 时须以归一时辰（晚子归 0）参与，`ForwardCarry` 的晚子候选
+  枚举的是正排用的次日农历日期、生辰取其前一个公历日（`builder::late_zi_carries` 一处判定），八字入口
   晚子同日给 t=0/t=12 双候选；年干候选 Exact 口径含 `year+1`（春节晚于立春年份的立春后段）
 - 剪枝几何不许手抄副本：主星落宫反解的偏移取安星表（`star::major` 的
   `ZIWEI_GROUP`/`TIANFU_GROUP`），年层候选按 `year_prefilter` 逐组过滤——手抄第二份
@@ -352,9 +353,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的
   `builtin_texts_keep_reference_tone` 断言守护（禁「读者/大家/本站/上表/详见/参见」等残留）
-- 星耀条目覆盖全部 164 个 `StarKey`（`knowledge_pack` 有反向断言兜底）：iztro-docs 有释义的
-  107 条 + x-iztro 自撰的对照性条目 57 条——流耀 50 条（category `flow`，指向对应本命辅星，
-  机器可读对照走 `flowStarCounterparts`）与截路/旬中/年解/劫煞/岁破/傍截空/傍旬空 7 条（只述安放事实与组别，
+- 星耀条目覆盖全部 165 个 `StarKey`（`knowledge_pack` 有反向断言兜底）：iztro-docs 有释义的
+  107 条 + x-iztro 自撰的对照性条目 58 条——流耀 50 条（category `flow`，指向对应本命辅星，
+  机器可读对照走 `flowStarCounterparts`）与截路/旬中/年解/劫煞/岁破/傍截空/傍旬空/月天马 8 条（只述安放事实与组别，
   不新增解读；劫煞、岁破沿用同名神煞原释义），出处均已写进 `source.adapted`
 - 同步上游：人工 diff iztro-docs 新旧 commit 的 learn 页差异，把变化条目改写后写回 JSON 并更新
   `source.commit`；一次性提取脚手架存于 docs/plan/knowledge-scaffold（gitignore，不进仓库）

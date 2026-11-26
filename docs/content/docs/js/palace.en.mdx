@@ -17,9 +17,10 @@ accept a palace object, an index, a palace key or a palace name in the chart lan
 | `index` | `number` | Palace index 0–11, 0 is Yin |
 | `name` / `nameKey` | `string` / `PalaceName` | Palace name / key |
 | `isBodyPalace` / `isOriginalPalace` | `boolean` | Body palace / Origin palace |
+| `isSecondaryOriginalPalace` | `true \| undefined` | `true` on the secondary Original palace (Chou in xin years, Zi in ren years), `undefined` elsewhere; present only with `ChartConfig.originalPalace` set to `withSecondary` |
 | `heavenlyStem(Key)` / `earthlyBranch(Key)` | `string` | Palace stem and branch / keys |
 | `majorStars` / `minorStars` / `adjectiveStars` | `readonly Star[]` | Major / minor / adjective stars |
-| `changsheng12(Key)`, `boshi12(Key)`, `jiangqian12(Key)`, `suiqian12(Key)` | `string` | The four twelve-spirit cycles / keys |
+| `changsheng12(Key)`, `boshi12(Key)`, `jiangqian12(Key)`, `suiqian12(Key)` | `string` | The four twelve-spirit cycles / keys; Jiang-qian and Sui-qian are empty strings with `yearly12Placement` set to `yearlyOnly` |
 | `decadal` | `Decadal` | Decadal: `range` (ages) plus stem and branch with keys |
 | `ages` | `readonly number[]` | Nominal ages of the age fortune passing through |
 | `mutagenStarKeys` | `readonly [string, string, string, string]` | The four stars transformed by this palace's stem (lu, quan, ke, ji); follows custom mutagen tables |

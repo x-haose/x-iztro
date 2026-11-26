@@ -1,11 +1,11 @@
 ---
 title: Config 详解
-description: 七个开关分别改变什么、自定义四化表、附加四化星与亮度表怎么传、什么时候会看出差别。
+description: 各个开关分别改变什么、自定义四化表、附加四化星与亮度表怎么传、什么时候会看出差别。
 ---
 
 *适合：开发者 · 命理爱好者（前半页的流派差异不需要会写代码）*
 
-排盘中真正有分歧的地方都收在 `Config` 里：七个开关，外加可替换或补充内置数据的覆盖表。
+排盘中真正有分歧的地方都收在 `Config` 里：一组开关，外加可替换或补充内置数据的覆盖表。
 默认值与 JS iztro 完全一致，所以**不传配置就能得到与 iztro 相同的盘**。
 
 | 开关 | 取值 | 默认 | 管什么 |
@@ -13,10 +13,20 @@ description: 七个开关分别改变什么、自定义四化表、附加四化�
 | `year_divide` | `normal` / `exact` | `normal` | 排盘年干支按哪天换年 |
 | `horoscope_divide` | `normal` / `exact` | `normal` | 运限干支与月柱按哪天分界 |
 | `age_divide` | `normal` / `birthday` | `normal` | 虚岁什么时候加一 |
-| `day_divide` | `forward` / `current` | `forward` | 晚子时算今天还是明天 |
+| `day_divide` | `forward` / `current` / `forwardCarry` | `forward` | 晚子时算今天还是明天 |
 | `algorithm` | `default` / `zhongzhou` | `default` | 算法派别 |
 | `astro_type` | `heaven` / `earth` / `human` | `heaven` | 排盘视角（天盘/地盘/人盘） |
 | `void_placement` | `default` / `zhengPang` | `default` | 截空、旬空安一宫还是分正傍两宫（x-iztro 扩展） |
+| `leap_divide` | `default` / `nextMonth` | `default` | 闰月出生按哪个月安星（x-iztro 扩展） |
+| `tianma_placement` | `yearly` / `monthly` / `both` | `yearly` | 天马按年支、按生月，还是两者都安（x-iztro 扩展） |
+| `changsheng_direction` | `yinYang` / `gender` / `clockwise` | `yinYang` | 长生十二神顺逆（x-iztro 扩展） |
+| `tianshang_tianshi` | `default` / `tianshiFriends` | `default` | 天伤、天使谁在仆役（x-iztro 扩展） |
+| `tianwu_placement` | `siShenYinHai` / `siShenHaiYin` | `siShenYinHai` | 天巫按月轮转的四宫（x-iztro 扩展） |
+| `yearly12_placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` | 本命盘安不安岁前、将前十二神（x-iztro 扩展） |
+| `original_palace` | `primary` / `withSecondary` | `primary` | 辛壬年另标辅来因宫（x-iztro 扩展） |
+| `dou_jun_month` | `default` / `natal` | `default` | 推斗君用的生月是否随本命盘的晚子时规则（x-iztro 扩展） |
+
+x-iztro 扩展的开关 iztro 没有，取默认值时与 iztro 行为相同，星盘回显的 `config` 也不带这些键。
 
 另有三张覆盖表：`mutagens`（自定义四化表）、`extra_mutagens`（附加四化星）与 `brightness`（自定义亮度表），
 见[自定义四化表与亮度表](#自定义四化表与亮度表)。
@@ -138,10 +148,18 @@ x-iztro 复刻了 iztro 内部的一处细节：依赖年支的东西并非全�
 
 | 取值 | 行为 |
 | --- | --- |
-| `forward`（默认） | 晚子时归**次日**，按次日的日柱排盘 |
+| `forward`（默认） | 晚子时归**次日**，按次日的日柱排盘；生月与年干支仍按当天 |
 | `current` | 晚子时归**当天**，按当日早子时排盘 |
+| `forwardCarry` | 晚子时**整个日期**归次日，按次日早子时排盘：月底的晚子进下月，除夕的晚子进下一年（x-iztro 扩展） |
 
 **什么时候会看出差别**：只影响时辰索引为 `12` 的盘，其余时辰完全无差异。
+`forward` 与 `forwardCarry` 只在月底与除夕的晚子时（以及闰月十五的晚子时，见下）分歧。
+
+`forwardCarry` 是李铁笔《紫微斗数命运学》p105–106 的口径：23 点换日，月底跨月、除夕跨年。
+农历生日、生月、年干支与生肖都按次日，星盘上的农历日期、`raw_dates` 与四柱随之改写；
+`solar_date`、时辰索引与星座仍按入参。运限的目标时辰同样按次日早子时算。
+例如 2024-2-9（癸卯年除夕）晚子时：`forward` 下年柱癸卯，`forwardCarry` 下年柱甲辰、生肖龙，
+星盘与 2024-2-10 早子时相同。闰月十五的晚子时进到十六，`fix_leap` 打开时随之按下月安星。
 
 <Callout type="warn" title="forward 下农历日也一并进位，但展示串不变">
 `forward` 会把日柱与**起紫微用的农历日**一起推到次日，
@@ -212,8 +230,112 @@ by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN,
 
 <Callout type="warn" title="格局判定怎么看傍空">
 格局引擎的「空亡星」集合（日月夹命等格的破格条件）把截空两宫都算上，傍截空、傍旬空在其中；
-「空曜」集合（禄衰马困一类）只取截空、旬空的正空。
+「空曜」集合（禄衰马困、两重华盖的宽口径）默认只取截空、旬空的正空，格局口径 `PatternConfig` 的
+`pang_kong` 打开时连傍空一并算。王亭之《安星法及推断实例》p56–57 正空、傍空两宫都算（正空重、傍空轻），
+《紫微斗数精成》一般只论正空。
 </Callout>
+
+## 闰月出生 `leap_divide`
+
+| 取值 | 闰月出生按哪个月安星 |
+| --- | --- |
+| `default`（默认） | 按排盘入参 `fix_leap`：打开时十五日及以前按本月、十六日起按下月；关闭时整月按本月 |
+| `nextMonth` | 整月按下月，`fix_leap` 不起作用 |
+
+`nextMonth` 是《紫微斗数讲义》p33–34（陆斌兆本文）与《紫微斗数精成》p11 的口径。
+命宫、身宫、左辅右弼、月系杂耀、月马与斗君的生月都随之改变；流月的闰月一律十五日分界，不受影响。
+
+<Callout title="与 fix_leap 的关系">
+`fix_leap` 是 iztro 的排盘入参，只能在「十五日分界」与「整月本月」之间二选一。
+`leap_divide` 取默认值时完全按 `fix_leap`；取 `nextMonth` 时由它决定，`fix_leap` 照样回显在星盘上但不参与计算。
+`monthly_list` 的拆月开关（`monthFixLeap`）只管流月列表怎么拆，与两者都无关。
+</Callout>
+
+例如 2020-5-25（闰四月初三）：默认按四月，左辅在未；`nextMonth` 按五月，左辅在申。
+
+## 天马 `tianma_placement`
+
+| 取值 | 天马 |
+| --- | --- |
+| `yearly`（默认） | 年马：按生年地支，寅午戌申、申子辰寅、巳酉丑亥、亥卯未巳 |
+| `monthly` | 月马：按生月，正五九申、二六十巳、三七十一寅、四八十二亥 |
+| `both` | 天马安年马，另在月马之位安杂耀月天马 `yuemaAdj` |
+
+月马的生月与左辅右弼所用的月相同（已按闰月口径修正）。出处：只用月马见李铁笔《紫微斗数命运学》p20、
+许铨仁《紫微斗数命理学正解（一）》书 p39–40；年马、月马都安见《紫微斗数一本通》p80、p84、p91，
+蔡明宏《秘仪》p128。书中称「月马」；iztro 已把流月层的天马叫「月马」，本命这一颗译作「月天马」以免同名。
+
+`monthly` 下格局判定里的天马就是按月安的那一颗；`both` 下的月天马是杂耀，不参与格局判定。
+
+## 长生十二神方向 `changsheng_direction`
+
+长生都按五行局起（水土申、木亥、金巳、火寅），只是排列方向不同：
+
+| 取值 | 方向 | 出处 |
+| --- | --- | --- |
+| `yinYang`（默认） | 阳男阴女顺行、阴男阳女逆行 | 与 iztro 一致 |
+| `gender` | 男命顺行、女命逆行 | 《紫微斗数精成》p22；李铁笔《紫微斗数命运学》p29 |
+| `clockwise` | 一律顺行 | 《紫微斗数讲义》p64 |
+
+博士十二神的方向不随这个开关改变。
+
+## 天伤、天使 `tianshang_tianshi`
+
+| 取值 | 位置 |
+| --- | --- |
+| `default`（默认） | 与 iztro 一致：天伤在仆役、天使在疾厄；`algorithm = zhongzhou` 时阴男阳女两者对调 |
+| `tianshiFriends` | 天使在仆役、天伤在疾厄，不分男女与派别（李铁笔《紫微斗数命运学》p105、p135） |
+
+## 天巫 `tianwu_placement`
+
+天巫按生月每四个月一轮：
+
+| 取值 | 正五九 | 二六十 | 三七十一 | 四八十二 |
+| --- | --- | --- | --- | --- |
+| `siShenYinHai`（默认） | 巳 | 申 | 寅 | 亥 |
+| `siShenHaiYin` | 巳 | 申 | 亥 | 寅 |
+
+`siShenHaiYin` 是《紫微斗数精成》p20、p26 的安法。
+
+## 岁前、将前十二神 `yearly12_placement`
+
+| 取值 | 行为 |
+| --- | --- |
+| `natalAndYearly`（默认） | 本命盘按生年地支安，流年另按流年地支安 |
+| `yearlyOnly` | 只作流年星：本命各宫不安，流年的岁前、将前照常 |
+
+`yearlyOnly` 是《紫微斗数一本通》p44、李铁笔《紫微斗数命运学》p115 与林庚凡《图解道教天文历算学·紫微斗数》上册 p195 的做法。
+本命不安时，宫位上的 `suiqian12`、`jiangqian12` 与它们的标识都是**空串**：字段照旧存在、类型不变，
+写法与主星辅星无亮度时的空串相同；Rust 模型里是 `None`。文本的十二神行只写长生、博士两组。
+同名的宫内杂耀（咸池、华盖、天德，中州派的龙德、大耗）是另一组星，照常安放。
+
+## 来因宫 `original_palace`
+
+来因宫是宫干等于生年天干的宫。五虎遁排到子丑两宫与寅卯两宫同干，所以辛年（卯、丑）、壬年（寅、子）
+各有两宫合格，其余八干只有一宫。
+
+| 取值 | 行为 |
+| --- | --- |
+| `primary`（默认） | 与 iztro 一致：只标寅至亥十宫里合格的那一宫 |
+| `withSecondary` | 另把辛年丑宫、壬年子宫标为辅来因宫 |
+
+许铨仁《紫微斗数命理学正解（二）》p12 以寅卯为主、子丑为辅。辅来因宫在宫位上记为
+`is_secondary_original_palace`（DTO 的 `isSecondaryOriginalPalace`，只在为真时出现），文本里标「辅来因宫」。
+宫位寻址的 `originalPalace` 仍然指寅卯那一宫；辅来因宫没有单独的寻址标识——它只在辛壬年、开了这个开关时存在，
+知识包主题若写它，其余年份的盘就选不出这一宫。
+
+## 斗君生月 `dou_jun_month`
+
+斗君（流月起点）是流年宫逆数生月、再顺数生时。iztro 取这个生月时，闰月十六日起作下月，晚子时也不例外；
+本命盘却规定晚子时不把闰月下半月作下月。两处口径在「闰月十六日以后、`fix_leap` 打开、`day_divide = forward`
+的晚子时」这一种盘上不一致。
+
+| 取值 | 斗君的生月 |
+| --- | --- |
+| `default`（默认） | 与 iztro 一致 |
+| `natal` | 与本命盘同一规则 |
+
+例如 2020-6-7（闰四月十六）晚子时：本命按四月；`default` 下斗君按五月，`natal` 下按四月，流月命宫顺移一宫。
 
 ## 排盘视角 `astro_type`
 
@@ -374,7 +496,7 @@ cfg = ChartConfig(brightness={
 2. **长度严格校验**：四化表必须 4 项、亮度表必须 12 项，多一项少一项都会报错；
    附加四化星与四槽合起来，同一天干里一颗星不能出现两次。
 3. **不回显在输出里**：覆盖表是排盘的输入，不属于排盘结果，
-   星盘上回显的 `config` 只有开关（`void_placement` 取默认值时也不回显），三张表读回来是空的。
+   星盘上回显的 `config` 只有开关（x-iztro 扩展的开关取默认值时也不回显），三张表读回来是空的。
    自己要留档就自己存那份配置。
 </Callout>
 

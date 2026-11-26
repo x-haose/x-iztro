@@ -288,7 +288,7 @@ print([h.name for h in chart.patterns(
 
 ## 三个口径开关
 
-`PatternConfig` 只有三个字段。凡是「多口径」的格局一律走 `variant`，
+`PatternConfig` 只有四个字段。凡是「多口径」的格局一律走 `variant`，
 不在这里加开关；这里只放会改变**事实判定本身**的数据口径。
 
 | 字段 | 默认 | 作用 |
@@ -296,10 +296,13 @@ print([h.name for h in chart.patterns(
 | `brightness_source` | `table` | 日月明暗的依据，见上一节 |
 | `borrow` | `true` | 空宫是否借对宫主星参与判定 |
 | `flow_stars` | `true` | 运限视角下流曜是否等同对应本命辅星 |
+| `pang_kong` | `false` | 空曜（禄衰马困、两重华盖的宽口径）是否连截空、旬空的傍空一并算 |
 
 关掉 `borrow`，空宫就是空宫，靠借宫成立的格局不再报；
 关掉 `flow_stars`，运限视角只认本命辅星，流禄流马不参与。
-两者都只影响格局判定，不影响排盘结果。
+打开 `pang_kong`，傍截空、傍旬空也算空曜：王亭之《安星法及推断实例》p56–57 正空、傍空两宫都算（正空重、傍空轻），
+《紫微斗数精成》一般只论正空；傍空只在排盘配置 `void_placement = zhengPang` 的盘上安放。
+这几项都只影响格局判定，不影响排盘结果。
 
 ## 64 条格局总表
 

@@ -191,6 +191,8 @@ const (
 	StarPangJiekong = "pangJiekong"
 	// StarPangXunkong 为傍旬空：旬空两宫中的傍空一宫（VoidPlacementZhengPang）
 	StarPangXunkong = "pangXunkong"
+	// StarYuemaAdj 为月天马：按生月安的天马（书中称月马），只在 TianmaPlacementBoth 时安放
+	StarYuemaAdj = "yuemaAdj"
 	// StarYuede 为月德
 	StarYuede = "yuede"
 	// StarTianshang 为天伤
@@ -599,10 +601,80 @@ const (
 
 // 晚子时归属（Config.DayDivide）：23:00-24:00 出生算哪一天。
 const (
-	// DayDivideForward 晚子时归次日
+	// DayDivideForward 与 iztro 一致：日柱、起紫微的日数与日系杂耀按次日算，生月与年干支仍按当日
 	DayDivideForward = "forward"
-	// DayDivideCurrent 晚子时归当日
+	// DayDivideCurrent 晚子时归当日，按当日早子时排盘
 	DayDivideCurrent = "current"
+	// DayDivideForwardCarry 晚子时整个日期归次日，按次日早子时排盘：月底的晚子进下月、除夕的晚子进下一年
+	DayDivideForwardCarry = "forwardCarry"
+)
+
+// 闰月出生时安星用哪个月（Config.LeapDivide）。
+const (
+	// LeapDivideDefault 按排盘入参 fixLeap：打开时闰月十五日及以前按本月、十六日起按下月，关闭时整月按本月
+	LeapDivideDefault = "default"
+	// LeapDivideNextMonth 闰月整月按下月，fixLeap 不起作用
+	LeapDivideNextMonth = "nextMonth"
+)
+
+// 天马的安法（Config.TianmaPlacement）。
+const (
+	// TianmaPlacementYearly 天马安年马（按生年地支）
+	TianmaPlacementYearly = "yearly"
+	// TianmaPlacementMonthly 天马安月马（按生月：正五九申、二六十巳、三七十一寅、四八十二亥）
+	TianmaPlacementMonthly = "monthly"
+	// TianmaPlacementBoth 天马安年马，另在月马之位安杂耀月天马（StarYuemaAdj）
+	TianmaPlacementBoth = "both"
+)
+
+// 长生十二神的排列方向（Config.ChangshengDirection）。
+const (
+	// ChangshengDirectionYinYang 阳男阴女顺行、阴男阳女逆行
+	ChangshengDirectionYinYang = "yinYang"
+	// ChangshengDirectionGender 男命顺行、女命逆行
+	ChangshengDirectionGender = "gender"
+	// ChangshengDirectionClockwise 一律顺行
+	ChangshengDirectionClockwise = "clockwise"
+)
+
+// 天伤、天使的安法（Config.TianshangTianshi）。
+const (
+	// TianshangTianshiDefault 与 iztro 一致：天伤在仆役、天使在疾厄；中州派阴男阳女两者对调
+	TianshangTianshiDefault = "default"
+	// TianshangTianshiTianshiFriends 天使在仆役、天伤在疾厄，不分男女与派别
+	TianshangTianshiTianshiFriends = "tianshiFriends"
+)
+
+// 天巫的安法（Config.TianwuPlacement），按生月每四个月一轮。
+const (
+	// TianwuPlacementSiShenYinHai 正五九巳、二六十申、三七十一寅、四八十二亥
+	TianwuPlacementSiShenYinHai = "siShenYinHai"
+	// TianwuPlacementSiShenHaiYin 正五九巳、二六十申、三七十一亥、四八十二寅
+	TianwuPlacementSiShenHaiYin = "siShenHaiYin"
+)
+
+// 岁前、将前十二神安在哪些盘上（Config.Yearly12Placement）。
+const (
+	// Yearly12PlacementNatalAndYearly 本命盘与流年都安
+	Yearly12PlacementNatalAndYearly = "natalAndYearly"
+	// Yearly12PlacementYearlyOnly 只在流年安；本命各宫的 Suiqian12、Jiangqian12 及其标识为空串
+	Yearly12PlacementYearlyOnly = "yearlyOnly"
+)
+
+// 来因宫的标法（Config.OriginalPalace）。
+const (
+	// OriginalPalacePrimary 只标寅至亥十宫里宫干等于年干的那一宫
+	OriginalPalacePrimary = "primary"
+	// OriginalPalaceWithSecondary 另把辛年丑宫、壬年子宫标为辅来因宫（Palace.IsSecondaryOriginalPalace）
+	OriginalPalaceWithSecondary = "withSecondary"
+)
+
+// 推斗君时生月的取法（Config.DouJunMonth）。
+const (
+	// DouJunMonthDefault 与 iztro 一致：fixLeap 打开时闰月十六日起作下月，晚子时也算
+	DouJunMonthDefault = "default"
+	// DouJunMonthNatal 与本命盘同一规则：晚子时（DayDivideForward）不把闰月十六日起作下月
+	DouJunMonthNatal = "natal"
 )
 
 // 截空与旬空的安法（Config.VoidPlacement）。

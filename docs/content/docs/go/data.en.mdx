@@ -275,10 +275,18 @@ The configuration values add seven more groups:
 | `YearDivide*` | `YearDivideNormal` / `YearDivideExact` |
 | `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` |
 | `AgeDivide*` | `AgeDivideNormal` / `AgeDivideBirthday` |
-| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
+| `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry` |
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
 | `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
 | `VoidPlacement*` | `VoidPlacementDefault` / `VoidPlacementZhengPang` |
+| `LeapDivide*` | `LeapDivideDefault` / `LeapDivideNextMonth` |
+| `TianmaPlacement*` | `TianmaPlacementYearly` / `TianmaPlacementMonthly` / `TianmaPlacementBoth` |
+| `ChangshengDirection*` | `ChangshengDirectionYinYang` / `ChangshengDirectionGender` / `ChangshengDirectionClockwise` |
+| `TianshangTianshi*` | `TianshangTianshiDefault` / `TianshangTianshiTianshiFriends` |
+| `TianwuPlacement*` | `TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin` |
+| `Yearly12Placement*` | `Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly` |
+| `OriginalPalace*` | `OriginalPalacePrimary` / `OriginalPalaceWithSecondary` |
+| `DouJunMonth*` | `DouJunMonthDefault` / `DouJunMonthNatal` |
 
 <Callout type="warn" title="The five elements class constants are prefixed Class, not FiveElements">
 Write `iztro.ClassWood3rd`, not `iztro.FiveElementsWood3rd` — the latter does not exist and will not

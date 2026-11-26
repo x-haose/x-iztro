@@ -149,16 +149,24 @@ fmt.Println(a.SolarDate, a.SolarDate == b.SolarDate)
 
 ```go
 type Config struct {
-    YearDivide      string
-    HoroscopeDivide string
-    AgeDivide       string
-    DayDivide       string
-    Algorithm       string
-    AstroType       string
-    VoidPlacement   string
-    Mutagens        map[string][]string
-    ExtraMutagens   map[string]map[string][]string
-    Brightness      map[string][]string
+    YearDivide          string
+    HoroscopeDivide     string
+    AgeDivide           string
+    DayDivide           string
+    Algorithm           string
+    AstroType           string
+    VoidPlacement       string
+    LeapDivide          string
+    TianmaPlacement     string
+    ChangshengDirection string
+    TianshangTianshi    string
+    TianwuPlacement     string
+    Yearly12Placement   string
+    OriginalPalace      string
+    DouJunMonth         string
+    Mutagens            map[string][]string
+    ExtraMutagens       map[string]map[string][]string
+    Brightness          map[string][]string
 }
 ```
 
@@ -167,10 +175,18 @@ type Config struct {
 | `YearDivide` | `"normal"` / `"exact"` | `"normal"` | 年干支按正月初一还是立春换年 |
 | `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | 流年神煞按哪个分界取年支 |
 | `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | 虚岁按农历年还是生日增长 |
-| `DayDivide` | `"forward"` / `"current"` | `"forward"` | 晚子时归次日还是当日 |
+| `DayDivide` | `"forward"` / `"current"` / `"forwardCarry"` | `"forward"` | 晚子时归次日、当日，还是整个日期归次日（月底进下月、除夕进下一年） |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | 算法派别 |
 | `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | 排盘视角 |
 | `VoidPlacement` | `"default"` / `"zhengPang"` | `"default"` | 截空、旬空安一宫（同 iztro）还是各分正空、傍空两宫 |
+| `LeapDivide` | `"default"` / `"nextMonth"` | `"default"` | 闰月出生按 fix_leap 取月，还是整月按下月 |
+| `TianmaPlacement` | `"yearly"` / `"monthly"` / `"both"` | `"yearly"` | 天马按年支、按生月，还是年马之外另安月天马 |
+| `ChangshengDirection` | `"yinYang"` / `"gender"` / `"clockwise"` | `"yinYang"` | 长生十二神阳男阴女顺、男顺女逆，还是一律顺行 |
+| `TianshangTianshi` | `"default"` / `"tianshiFriends"` | `"default"` | 天伤天使同 iztro，还是天使仆役、天伤疾厄 |
+| `TianwuPlacement` | `"siShenYinHai"` / `"siShenHaiYin"` | `"siShenYinHai"` | 天巫按月轮转巳申寅亥还是巳申亥寅 |
+| `Yearly12Placement` | `"natalAndYearly"` / `"yearlyOnly"` | `"natalAndYearly"` | 岁前、将前十二神本命也安，还是只在流年安 |
+| `OriginalPalace` | `"primary"` / `"withSecondary"` | `"primary"` | 来因宫只标一宫，还是另标辛年丑宫、壬年子宫为辅来因宫 |
+| `DouJunMonth` | `"default"` / `"natal"` | `"default"` | 推斗君的生月同 iztro，还是随本命盘的晚子时规则 |
 | `Mutagens` | 天干标识 → 四星标识 | — | 自定义四化表，按天干整表替换 |
 | `ExtraMutagens` | 天干标识 → 四化标识 → 星耀标识列表 | — | 附加四化星，加在该干四槽之外 |
 | `Brightness` | 星耀标识 → 十二项亮度标识 | — | 自定义亮度表，按星耀整表替换 |
@@ -195,9 +211,15 @@ fmt.Println(chart.FiveElementsClass)
 
 每组取值都有对应的常量，不必手写字符串：
 `YearDivideNormal` / `YearDivideExact`、`HoroscopeDivideNormal` / `HoroscopeDivideExact`、
-`AgeDivideNormal` / `AgeDivideBirthday`、`DayDivideForward` / `DayDivideCurrent`、
+`AgeDivideNormal` / `AgeDivideBirthday`、`DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry`、
 `AlgorithmDefault` / `AlgorithmZhongzhou`、`AstroHeaven` / `AstroEarth` / `AstroHuman`、
-`VoidPlacementDefault` / `VoidPlacementZhengPang`。
+`VoidPlacementDefault` / `VoidPlacementZhengPang`、`LeapDivideDefault` / `LeapDivideNextMonth`、
+`TianmaPlacementYearly` / `TianmaPlacementMonthly` / `TianmaPlacementBoth`、
+`ChangshengDirectionYinYang` / `ChangshengDirectionGender` / `ChangshengDirectionClockwise`、
+`TianshangTianshiDefault` / `TianshangTianshiTianshiFriends`、
+`TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin`、
+`Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly`、
+`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`、`DouJunMonthDefault` / `DouJunMonthNatal`。
 
 **边界与陷阱**
 

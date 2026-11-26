@@ -51,7 +51,7 @@ type WasmSource =
 
 ## ChartConfig
 
-Chart configuration: seven switches plus three optional override tables. Every field is optional and defaults
+Chart configuration: a set of switches plus three optional override tables. Every field is optional and defaults
 to iztro's value, so `{}` is the same as passing nothing.
 
 | Field | Type | Default | Values |
@@ -59,10 +59,18 @@ to iztro's value, so `{}` is the same as passing nothing.
 | `yearDivide` | `YearDivide` | `'normal'` | `normal` lunar new year / `exact` Lichun |
 | `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` first of the month / `exact` solar term |
 | `ageDivide` | `AgeDivide` | `'normal'` | `normal` at new year / `birthday` on the birthday |
-| `dayDivide` | `DayDivide` | `'forward'` | `forward` late Rat hour belongs to the next day / `current` to the same day |
+| `dayDivide` | `DayDivide` | `'forward'` | `forward` late Rat hour belongs to the next day / `current` to the same day / `forwardCarry` its whole date moves to the next day (month end into the next month, New Year's Eve into the next year) |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
 | `astroType` | `AstroType` | `'heaven'` | `heaven` / `earth` / `human` chart |
 | `voidPlacement` | `VoidPlacement` | `'default'` | `default` as iztro / `zhengPang` Jiekong and Xunkong each take a main and a side void palace |
+| `leapDivide` | `LeapDivide` | `'default'` | `default` per fix_leap / `nextMonth` the whole leap month as the next month |
+| `tianmaPlacement` | `TianmaPlacement` | `'yearly'` | `yearly` year horse / `monthly` month horse / `both` year horse plus month Tianma |
+| `changshengDirection` | `ChangshengDirection` | `'yinYang'` | `yinYang` clockwise for yang men and yin women / `gender` clockwise for men / `clockwise` always |
+| `tianshangTianshi` | `TianshangTianshi` | `'default'` | `default` as iztro / `tianshiFriends` Tianshi in Friends, Tianshang in Health |
+| `tianwuPlacement` | `TianwuPlacement` | `'siShenYinHai'` | `siShenYinHai` Si-Shen-Yin-Hai / `siShenHaiYin` Si-Shen-Hai-Yin |
+| `yearly12Placement` | `Yearly12Placement` | `'natalAndYearly'` | `natalAndYearly` natal and yearly / `yearlyOnly` yearly only |
+| `originalPalace` | `OriginalPalaceMarking` | `'primary'` | `primary` one palace / `withSecondary` also the secondary Original palace (Chou in xin years, Zi in ren years) |
+| `douJunMonth` | `DouJunMonth` | `'default'` | `default` as iztro / `natal` by the natal chart's rule |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | stem key → four star keys (lu, quan, ke, ji), replacing that stem's row |
 | `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | stem key → mutagen key → list of extra star keys, added on top of that stem's four slots |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | star key → twelve brightness keys, index 0 is Yin, empty string for none |
@@ -96,7 +104,7 @@ must have exactly four entries and brightness rows exactly twelve, and a star ma
 across the slots and the extra stars; anything else throws `IztroError`.
 </Accordion>
 <Accordion title="The override tables are not echoed in chart.config">
-`chart.config` holds the switches only (`voidPlacement` is left out at its default) — the tables are chart input and stay out of the DTO (as in iztro's
+`chart.config` holds the switches only (the x-iztro extension switches are left out at their defaults) — the tables are chart input and stay out of the DTO (as in iztro's
 field contract). The chart keeps your original object internally, so `rearranged`, `horoscope` and `toText`
 still use it.
 </Accordion>

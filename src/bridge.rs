@@ -1575,7 +1575,7 @@ fn star(input: &QueryInput) -> Result<Value, BridgeError> {
                 parse_gender(&input.gender)?,
                 parse_branch_key(&input.branch_key)?,
                 input.soul_index,
-                config.algorithm,
+                &config,
             );
             return Ok(json!({ "tianshangIndex": shang, "tianshiIndex": shi }));
         }

@@ -49,7 +49,7 @@ type WasmSource =
 
 ## ChartConfig
 
-排盘配置：七个开关加三张可选的自定义表。每一项都可省略，省略取与 iztro 一致的默认值，
+排盘配置：一组开关加三张可选的自定义表。每一项都可省略，省略取与 iztro 一致的默认值，
 `{}` 与不传等价。
 
 | 字段 | 类型 | 默认 | 取值 |
@@ -57,10 +57,18 @@ type WasmSource =
 | `yearDivide` | `YearDivide` | `'normal'` | `normal` 正月初一 / `exact` 立春 |
 | `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` 初一 / `exact` 节气 |
 | `ageDivide` | `AgeDivide` | `'normal'` | `normal` 跨年即加 / `birthday` 过生日才加 |
-| `dayDivide` | `DayDivide` | `'forward'` | `forward` 晚子时归次日 / `current` 归当天 |
+| `dayDivide` | `DayDivide` | `'forward'` | `forward` 晚子时归次日 / `current` 归当天 / `forwardCarry` 整个日期归次日（月底进下月、除夕进下一年） |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
 | `astroType` | `AstroType` | `'heaven'` | `heaven` 天盘 / `earth` 地盘 / `human` 人盘 |
 | `voidPlacement` | `VoidPlacement` | `'default'` | `default` 同 iztro / `zhengPang` 截空、旬空各安正空与傍空两宫 |
+| `leapDivide` | `LeapDivide` | `'default'` | `default` 按 fix_leap / `nextMonth` 闰月整月按下月 |
+| `tianmaPlacement` | `TianmaPlacement` | `'yearly'` | `yearly` 年马 / `monthly` 月马 / `both` 年马另安月天马 |
+| `changshengDirection` | `ChangshengDirection` | `'yinYang'` | `yinYang` 阳男阴女顺 / `gender` 男顺女逆 / `clockwise` 一律顺行 |
+| `tianshangTianshi` | `TianshangTianshi` | `'default'` | `default` 同 iztro / `tianshiFriends` 天使仆役、天伤疾厄 |
+| `tianwuPlacement` | `TianwuPlacement` | `'siShenYinHai'` | `siShenYinHai` 巳申寅亥 / `siShenHaiYin` 巳申亥寅 |
+| `yearly12Placement` | `Yearly12Placement` | `'natalAndYearly'` | `natalAndYearly` 本命与流年都安 / `yearlyOnly` 只在流年安 |
+| `originalPalace` | `OriginalPalaceMarking` | `'primary'` | `primary` 只标一宫 / `withSecondary` 另标辛年丑宫、壬年子宫为辅来因宫 |
+| `douJunMonth` | `DouJunMonth` | `'default'` | `default` 同 iztro / `natal` 与本命盘同一规则 |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | 天干标识 → 四颗星标识（禄、权、科、忌），按天干整表替换 |
 | `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
@@ -93,7 +101,7 @@ console.log(earth.palace('soulPalace')!.mutagenStarKeys);
 亮度必须正好十二项，同一天干里一颗星在四槽与附加星合计出现两次，都抛 `IztroError`。
 </Accordion>
 <Accordion title="自定义表不回显在 chart.config 上">
-`chart.config` 只含开关（`voidPlacement` 取默认值时也省略）——三张表是排盘输入，不进 DTO（与 iztro 的字段契约一致）。
+`chart.config` 只含开关（x-iztro 扩展的开关取默认值时也省略）——三张表是排盘输入，不进 DTO（与 iztro 的字段契约一致）。
 星盘内部保留了你传入的原件，`rearranged`、`horoscope`、`toText` 这些再发起的计算仍然用它。
 </Accordion>
 </Accordions>

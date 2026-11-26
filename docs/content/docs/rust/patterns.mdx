@@ -49,13 +49,14 @@ let hits = chart.patterns();
 ### PatternConfig
 
 判定口径。凡是「同一格局的多种成立形式」都走 `PatternHit::variant`，这里只放会改变
-**事实判定本身**的数据口径，因此只有三个字段。
+**事实判定本身**的数据口径，因此只有四个字段。
 
 ```rust
 pub struct PatternConfig {
     pub brightness_source: BrightnessSource,  // 默认 Table
     pub borrow: bool,                         // 默认 true
     pub flow_stars: bool,                     // 默认 true
+    pub pang_kong: bool,                      // 默认 false
 }
 ```
 
@@ -64,6 +65,7 @@ pub struct PatternConfig {
 | `brightness_source` | `BrightnessSource::Table` | 日月明暗的依据 |
 | `borrow` | `true` | 空宫是否借对宫主星参与判定 |
 | `flow_stars` | `true` | 运限视角下流曜（运禄/流禄、运昌/流昌…）是否等同对应本命辅星 |
+| `pang_kong` | `false` | 空曜是否连截空、旬空的傍空一并算（傍空只在 `void_placement = zhengPang` 的盘上安放） |
 
 `BrightnessSource` 两个变体：`Table` 按星盘亮度表（庙旺为明，陷与「不」为暗，与 iztro 逐值一致），
 `Positional` 按传统位置（太阳寅至午明、酉至丑暗；太阴酉至丑明、卯至未暗）。

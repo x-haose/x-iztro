@@ -5,7 +5,7 @@
 //! 排盘主流程与 `star` 模块的各安星入口都从这一步出发，因此单独成型。
 
 use crate::astro::builder::{
-    chart_moment, effective_time_index, fix_lunar_month_index, parse_solar_date,
+    birth_month_index, chart_moment, effective_solar_date, effective_time_index, parse_solar_date,
     validate_time_index,
 };
 use crate::astro::palace::{SoulAndBody, get_five_elements_class, get_soul_and_body};
@@ -15,8 +15,12 @@ use crate::error::IztroError;
 
 /// 由出生数据推出的、安星各步骤共用的中间量
 pub struct AstroContext {
-    /// 参与推算的时辰索引；`day_divide=current` 且为晚子时（>=12）时归零，展示仍用原始时辰
+    /// 参与推算的时辰索引；`day_divide` 为 `current` 或 `forwardCarry` 且为晚子时（>=12）时归零，
+    /// 展示仍用原始时辰
     pub effective_time_index: u8,
+    /// 排盘入参的公历日期 (年, 月, 日)：星座按它取；`day_divide=forwardCarry` 的晚子时，
+    /// 农历日期与各柱改按次日推算，这里仍是入参当天
+    pub solar_date: (i64, i64, i64),
     /// 农历年（正月初一换年）
     pub lunar_year: i64,
     /// 农历日
@@ -35,13 +39,13 @@ pub struct AstroContext {
     pub flow_yearly_stem: HeavenlyStem,
     /// 流年年支：同上
     pub flow_yearly_branch: EarthlyBranch,
-    /// 月索引（0-based，已按 `fix_leap` 修正闰月）
+    /// 月索引（0-based，已按 `fix_leap` 与 `leap_divide` 修正闰月）
     pub month_index: usize,
     /// 命宫与身宫
     pub soul_body: SoulAndBody,
     /// 五行局
     pub five_elements_class: FiveElementsClass,
-    /// 排盘时刻：出生日期加生效时辰的代表时刻
+    /// 排盘时刻：参与推算的日期（见 [`effective_solar_date`]）加生效时辰的代表时刻
     pub(crate) moment: SolarTime,
     /// 排盘时刻的农历日期与各柱
     pub(crate) lunar: Lunar,
@@ -67,9 +71,10 @@ pub fn derive(
 ) -> Result<AstroContext, IztroError> {
     validate_time_index(time_index)?;
     check_config(config)?;
-    let (year, month, day) = parse_solar_date(solar_date)?;
+    let input_date = parse_solar_date(solar_date)?;
 
     let effective_time_index = effective_time_index(config.day_divide, time_index);
+    let (year, month, day) = effective_solar_date(config.day_divide, input_date, time_index);
     let moment = chart_moment(year, month, day, effective_time_index);
     let lunar = calendar::lunar_of(&moment);
     let lunar_date = lunar.date;
@@ -86,12 +91,13 @@ pub fn derive(
         HoroscopeDivide::Exact => calendar::year_by_li_chun(&moment, lunar_date.year),
     };
 
-    let month_index = fix_lunar_month_index(
+    let month_index = birth_month_index(
         lunar_month,
         lunar_day,
         is_leap,
-        effective_time_index,
         fix_leap,
+        config.leap_divide,
+        effective_time_index == 12,
     );
 
     let soul_body = get_soul_and_body(month_index, effective_time_index, yearly_stem);
@@ -112,6 +118,7 @@ pub fn derive(
 
     Ok(AstroContext {
         effective_time_index,
+        solar_date: input_date,
         lunar_year: lunar_date.year,
         lunar_day,
         lunar_month,

@@ -468,7 +468,10 @@ fn location_indices_match_js() {
             gender,
             branch_of(case),
             soul_index,
-            algorithm,
+            &Config {
+                algorithm,
+                ..Config::default()
+            },
         );
         if shang != idx(case, "tianshangIndex") || shi != idx(case, "tianshiIndex") {
             failures.push(format!(

@@ -125,16 +125,19 @@ pub fn get_daily_star_index(param: &StarParam) -> Result<DailyStar, IztroError> 
     ))
 }
 
-/// 月系星索引：解神、天姚、天刑、阴煞、天月、天巫
+/// 月系星索引：解神、天姚、天刑、阴煞、天月、天巫（天巫按 `config.tianwu_placement`）
 pub fn get_monthly_star_index(param: &StarParam) -> Result<MonthlyStar, IztroError> {
     let ctx = param.derive()?;
 
-    Ok(location::get_monthly_star_index(ctx.month_index))
+    Ok(location::get_monthly_star_index(
+        ctx.month_index,
+        param.config.tianwu_placement,
+    ))
 }
 
 /// 年系星索引（一整组年支、年干起的杂耀）
 ///
-/// 年支取 `horoscope_divide` 分界，与排盘主流程一致。
+/// 年支取 `horoscope_divide` 分界，与排盘主流程一致；天伤天使按 `config` 的派别与安法。
 pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroError> {
     let ctx = param.derive()?;
 
@@ -144,7 +147,7 @@ pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroErro
         ctx.flow_yearly_stem,
         ctx.flow_yearly_branch,
         param.gender,
-        param.config.algorithm,
+        param.config,
     ))
 }
 
@@ -162,7 +165,7 @@ pub fn get_major_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
     ))
 }
 
-/// 十四辅星在十二宫的分布
+/// 十四辅星在十二宫的分布（天马按 `config.tianma_placement`）
 pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError> {
     let ctx = param.derive()?;
     let zuo_you = location::get_zuo_you_index(ctx.month_index as u32 + 1);
@@ -171,6 +174,11 @@ pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
     let lu_yang_tuo_ma = location::get_lu_yang_tuo_ma_index(ctx.yearly_stem, ctx.yearly_branch);
     let kong_jie = location::get_kong_jie_index(ctx.effective_time_index);
     let huo_ling = location::get_huo_ling_index(ctx.yearly_branch, ctx.effective_time_index);
+    let (tianma, _) = location::get_tianma_index(
+        lu_yang_tuo_ma.ma,
+        ctx.month_index,
+        param.config.tianma_placement,
+    );
 
     Ok(crate::star::minor::get_minor_stars(
         zuo_you.zuo,
@@ -182,7 +190,7 @@ pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
         lu_yang_tuo_ma.lu,
         lu_yang_tuo_ma.yang,
         lu_yang_tuo_ma.tuo,
-        lu_yang_tuo_ma.ma,
+        tianma,
         kong_jie.kong,
         kong_jie.jie,
         huo_ling.huo,
@@ -193,11 +201,17 @@ pub fn get_minor_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError>
     ))
 }
 
-/// 杂耀在十二宫的分布
+/// 杂耀在十二宫的分布（天马兼安年马、月马时含月马）
 pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroError> {
     let ctx = param.derive()?;
     let yearly_stars = get_yearly_star_index(param)?;
-    let monthly_stars = location::get_monthly_star_index(ctx.month_index);
+    let monthly_stars =
+        location::get_monthly_star_index(ctx.month_index, param.config.tianwu_placement);
+    let (_, yuema) = location::get_tianma_index(
+        location::get_lu_yang_tuo_ma_index(ctx.yearly_stem, ctx.yearly_branch).ma,
+        ctx.month_index,
+        param.config.tianma_placement,
+    );
     let daily_stars = get_daily_star_index(param)?;
     let timely_stars = location::get_timely_star_index(ctx.effective_time_index);
     // 红鸾天喜按安星年支，其余年系星按流年年支——与排盘主流程同规
@@ -214,12 +228,13 @@ pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroEr
         luan_xi.tianxi,
         yearly_stars.xianchi,
         &suiqian12,
+        yuema,
         param.language,
         param.config,
     ))
 }
 
-/// 长生12神从寅宫起的排列
+/// 长生12神从寅宫起的排列（方向按 `config.changsheng_direction`）
 pub fn get_changsheng12(param: &StarParam) -> Result<[StarKey; 12], IztroError> {
     let ctx = param.derive()?;
 
@@ -227,6 +242,7 @@ pub fn get_changsheng12(param: &StarParam) -> Result<[StarKey; 12], IztroError> 
         param.five_elements_class(&ctx),
         param.gender,
         ctx.yearly_branch,
+        param.config.changsheng_direction,
     ))
 }
 

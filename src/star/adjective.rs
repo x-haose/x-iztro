@@ -29,6 +29,8 @@ pub(crate) fn make_adj_star(
 }
 
 /// 获取杂耀的安放结果
+///
+/// `yuema` 为月马的宫位索引，只在天马兼安年马、月马（[`TianmaPlacement::Both`]）时给出。
 #[allow(clippy::too_many_arguments)]
 pub fn get_adjective_stars(
     yearly_stars: &YearlyStars,
@@ -40,6 +42,7 @@ pub fn get_adjective_stars(
     tianxi_index: usize,
     xianchi_index: usize,
     suiqian12: &[StarKey; 12],
+    yuema: Option<usize>,
     lang: Language,
     config: &Config,
 ) -> [Vec<Star>; 12] {
@@ -50,7 +53,7 @@ pub fn get_adjective_stars(
     let zheng_pang = config.void_placement == VoidPlacement::ZhengPang;
 
     // 安放顺序决定宫内星耀排列：
-    // 桃花四星 → 解神 → 日/年/时/月系杂耀（旬空分正傍时傍旬空紧随旬空）→ 派别专属星 → 孤寡等 → 年解收尾
+    // 桃花四星 → 解神 → 日/年/时/月系杂耀（旬空分正傍时傍旬空紧随旬空）→ 派别专属星 → 孤寡等 → 年解 → 月马收尾
     let head: [(usize, StarKey, StarType); 25] = [
         (hongluan_index, StarKey::Hongluan, StarType::Flower),
         (tianxi_index, StarKey::Tianxi, StarType::Flower),
@@ -159,6 +162,9 @@ pub fn get_adjective_stars(
     ];
     for (idx, key, star_type) in tail {
         place(idx, key, star_type);
+    }
+    if let Some(idx) = yuema {
+        place(idx, StarKey::YuemaAdj, StarType::Tianma);
     }
 
     result
@@ -271,9 +277,9 @@ mod tests {
             HeavenlyStem::Jia,
             EarthlyBranch::Zi,
             Gender::Male,
-            Algorithm::Default,
+            &Config::default(),
         );
-        let monthly = location::get_monthly_star_index(0);
+        let monthly = location::get_monthly_star_index(0, TianwuPlacement::SiShenYinHai);
         let zuo_you = location::get_zuo_you_index(1);
         let chang_qu = location::get_chang_qu_index(0);
         let daily = location::get_daily_star_index(
@@ -298,6 +304,7 @@ mod tests {
             luan_xi.tianxi,
             yearly.xianchi,
             &suiqian12,
+            None,
             Language::ZhCN,
             &Config::default(),
         );

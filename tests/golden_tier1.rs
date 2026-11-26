@@ -362,12 +362,14 @@ fn check_case(case: &Value, case_idx: usize, failures: &mut Vec<String>) {
             (
                 "jiangqian12",
                 exp_palace["jiangqian12"].as_str().unwrap(),
-                translate_star(act_palace.jiangqian12, LANG),
+                act_palace
+                    .jiangqian12
+                    .map_or("", |k| translate_star(k, LANG)),
             ),
             (
                 "suiqian12",
                 exp_palace["suiqian12"].as_str().unwrap(),
-                translate_star(act_palace.suiqian12, LANG),
+                act_palace.suiqian12.map_or("", |k| translate_star(k, LANG)),
             ),
         ];
         for (field, expected, actual) in &twelve_checks {

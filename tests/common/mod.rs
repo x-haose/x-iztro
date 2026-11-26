@@ -86,8 +86,12 @@ pub fn canonical_astrolabe(a: &Astrolabe) -> String {
                 adjs.join(";"),
                 translate_star(p.changsheng12, LANG).to_string(),
                 translate_star(p.boshi12, LANG).to_string(),
-                translate_star(p.jiangqian12, LANG).to_string(),
-                translate_star(p.suiqian12, LANG).to_string(),
+                p.jiangqian12
+                    .map_or("", |k| translate_star(k, LANG))
+                    .to_string(),
+                p.suiqian12
+                    .map_or("", |k| translate_star(k, LANG))
+                    .to_string(),
                 format!("{}-{}", p.decadal.range.0, p.decadal.range.1),
                 ages.join(","),
             ]
