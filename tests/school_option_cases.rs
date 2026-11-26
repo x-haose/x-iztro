@@ -1,5 +1,6 @@
 //! 流派口径开关的四侧共用用例 `tests/data/school_option_cases.json`：每个非默认取值一张盘，核对农历生日、
-//! 年柱、各宫星耀与十二神、来因宫标记与一个流月命宫；另有格局口径用例核对命中。Python、Go、JS 经各自的
+//! 年柱、各宫星耀与十二神、来因宫标记与一个流月命宫；运限口径用例另取一个目标，核对各层的落宫、干、
+//! 四化所用天干与四化星，以及各宫的大限干；另有格局口径用例核对命中。Python、Go、JS 经各自的
 //! 类型化配置排同一张盘逐项比对，配置字段漏接即失败。期望缺失或与当前输出不同都是失败；
 //! 有意改动后用 `UPDATE_SCHOOL_OPTION_CASES=1` 重跑写入。规则本身由 `school_options.rs` 按出处核对。
 
@@ -77,6 +78,54 @@ fn projection(chart: &x_iztro::Astrolabe) -> Value {
     })
 }
 
+/// 运限口径开关的线协议键与非默认取值（基线即去掉这些键）
+const HOROSCOPE_OPTION_KEYS: [&str; 10] = [
+    "horoscopeDivide",
+    "decadalStem",
+    "childhoodPalace",
+    "ageMutagens",
+    "yearlyPalace",
+    "scopeMutagenStem",
+    "monthlyPalace",
+    "dailyPalace",
+    "leapDaily",
+    "hourlyPalace",
+];
+
+/// 运限口径用例的比对投影：各宫的大限干，六层的落宫、层名、干、四化所用天干（与层干相同时为 null）与四化星。
+fn horoscope_projection(case: &Value) -> Value {
+    let chart = chart_of(case);
+    let target = &case["target"];
+    let h = chart
+        .horoscope(
+            target[0].as_str().unwrap(),
+            target[1].as_u64().unwrap() as u8,
+        )
+        .unwrap();
+    let dto = serde_json::to_value(h.to_dto(Language::ZhCN)).unwrap();
+    let layers: Vec<Value> = ["decadal", "age", "yearly", "monthly", "daily", "hourly"]
+        .iter()
+        .map(|k| {
+            let l = &dto[*k];
+            json!({
+                "index": l["index"],
+                "nameKey": l["nameKey"],
+                "heavenlyStemKey": l["heavenlyStemKey"],
+                "mutagenStemKey": l.get("mutagenStemKey").cloned().unwrap_or(Value::Null),
+                "mutagenStarKeys": l["mutagenStarKeys"],
+            })
+        })
+        .collect();
+    let chart_dto = serde_json::to_value(chart.to_dto()).unwrap();
+    let decadal_stems: Vec<&Value> = chart_dto["palaces"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| &p["decadal"]["heavenlyStemKey"])
+        .collect();
+    json!({"decadalStemKeys": decadal_stems, "layers": layers})
+}
+
 #[test]
 fn shared_school_option_cases() {
     let mut doc: Value = serde_json::from_str(&std::fs::read_to_string(CASES).unwrap()).unwrap();
@@ -96,6 +145,19 @@ fn shared_school_option_cases() {
                 .remove("dayDivide");
         }
         assert_ne!(got, projection(&chart_of(&baseline)), "{}", case["name"]);
+        if update {
+            case["expect"] = got;
+        } else {
+            assert_eq!(got, case["expect"], "{}", case["name"]);
+        }
+    }
+    for case in doc["horoscopeCases"].as_array_mut().unwrap() {
+        let got = horoscope_projection(case);
+        let mut baseline = case.clone();
+        for key in HOROSCOPE_OPTION_KEYS {
+            baseline["config"].as_object_mut().unwrap().remove(key);
+        }
+        assert_ne!(got, horoscope_projection(&baseline), "{}", case["name"]);
         if update {
             case["expect"] = got;
         } else {

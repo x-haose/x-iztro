@@ -60,7 +60,36 @@
   Python `PatternConfig.pang_kong`（`to_dict()` 恒写出 `pangKong`），Go `PatternConfig.PangKong`，JavaScript `PatternConfig.pangKong`。
 - 新星曜「月天马」六种语言都有译名（书中称月马；iztro 的流月天马已叫「月马」，本命这颗译作「月天马」以免同名），
   默认知识包补一条只述安放事实的对照性条目（`source.adapted` 已注明）；星耀标识由 164 个增至 165 个、可翻译标识由 263 个增至 264 个。
-- 四侧共用用例 `tests/data/school_option_cases.json`：每个新开关一张盘、格局口径一组，Python、Go、JavaScript 经各自的类型化配置比对。
+- 四侧共用用例 `tests/data/school_option_cases.json`：每个新开关一张盘、格局口径一组，运限口径另有 `horoscopeCases`（各层落宫、干、四化所用天干与四化星），Python、Go、JavaScript 经各自的类型化配置比对。
+- **运限流派口径开关**：`Config` 新增九个开关，`horoscopeDivide` 新增一个取值；默认值都等于原行为，星盘 DTO 的 `config`
+  只在取非默认值时带这些键。各层的落宫、宫名、四化、文本、主题选宫与运限格局都按所选口径算。Python `ChartConfig`、
+  Go `Config`、JavaScript `ChartConfig` 同名字段，取值枚举 Python `enums.py`、Go `keys.go`、JavaScript `enums.ts` 同步。
+  - `horoscopeDivide: "exactMonth"`：流月干与月柱按节气换月，流年仍按正月初一换年（令东来《紫微斗数命理学》p160–161；
+    依婷《如何看大限流年》p215）。iztro 的 `exact` 把两者绑在一起；流月命宫三种取值都按农历月。
+  - `decadalStem`（`palace` / `continuous`）：大限天干以命宫宫干起，按天干次序随大限方向连续排（《紫微斗数精成》p398）；
+    宫位上的大限干、大限四化与运曜随之。
+  - `childhoodPalace`（`sequence` / `spouse`）：起运前的童限一律落夫妻宫，以夫妻宫为命宫推排宫名、取夫妻宫干起四化
+    （依婷系统班 02 讲 p14–17）。
+  - `ageMutagens`（`palaceStem` / `none`）：小限不起四化（《紫微斗数精成》p433）。
+  - `yearlyPalace`（`taisui` / `age`）：流年命宫取小限宫（《天纪紫微斗数笔记》p13，书中 p35、p59 命例核对得上）；
+    流年干支、流耀、岁前将前与斗君仍按流年年支与太岁宫。
+  - `scopeMutagenStem`（`scope` / `scopeSoulPalace`）：运限各层四化取该层命宫的本命宫干（周星飞《梁若瑜飞星派紫微斗数课程》p21，
+    方外人《河洛紫微斗数》p28，蔡明宏《华山钦天四化紫微斗数飞星秘仪》p50 甲法）。
+  - `monthlyPalace`（`douJun` / `monthBranch`）：流月正月固定在寅宫（蔡明宏《秘仪》p51–52 乙法）。
+  - `dailyPalace`（`fromMonthly` / `afterMonthly`）：流日初一落在流月命宫的下一宫（《梁若瑜飞星派紫微斗数课程》p264）。
+  - `leapDaily`（`default` / `continuous`）：闰月前半月的流日接同号本月的日数连续数（王亭之《安星法及推断实例》p85）；
+    原文对闰月后半月读不出确定算法，十六日起仍按默认。
+  - `hourlyPalace`（`fromDaily` / `branch`）：流时按时支落宫，子时在子宫（许铨仁《学习紫微斗数的第一本书》p52–53，
+    《紫微斗数讲义》p79）。
+- **运限层标出四化所用的天干**：运限各层新增 `mutagenStem` / `mutagenStemKey`（Rust `HoroscopeItem::mutagen_stem`），
+  只在与该层天干不同（`scopeMutagenStem=scopeSoulPalace`）或不起四化（小限 `ageMutagens=none`，为空串）时出现，默认输出不带。
+  文本的四化行此时注明所用天干（`- 四化 (辛干): …`），不起四化时不写四化行。主题选宫的 `scopeMutagenStemSource` 随配置取
+  `scope` 或新值 `scopeSoulPalace`，逐条的 `stemKey` 即实际所用的天干。Go 新增 `StemSource*` 常量。
+- **亮度「地」**：亮度新增一级 `di`（地），照录王亭之《安星法及推断实例》p101–102 庙陷总表（贪狼卯、天梁酉、化禄巳三格）。
+  该书 p107 的术语只释入庙、坐旺、落陷、平闲，没有给「地」下定义，所以不把它并入得或别的哪一级；默认亮度表不出现，
+  只能经自定义亮度表使用。格局判定的明暗只分庙旺（明）与陷不（暗），得、利、平、闲、地都在两者之间，「地」按「得」
+  还是按「平、闲」处理结果相同，所以没有另设格局口径。六种语言都有译名（英文、韩文记作 `[di]`、`[지]`），
+  可翻译标识由 264 个增至 265 个。Python `Brightness.DI`，Go `BrightnessDi`，JavaScript `Brightness.DI`。
 
 ### 变更
 
@@ -79,6 +108,9 @@
   `DayDivide` 新增变体 `ForwardCarry` 并标为 `#[non_exhaustive]`，八个新枚举同样 `#[non_exhaustive]`。
   安星构件的签名随开关改变：`get_changsheng12` 多一个方向参数，`get_monthly_star_index` 多天巫安法参数，
   `get_tianshang_tianshi_index` 与 `get_yearly_star_index` 的末参数由 `Algorithm` 改为 `&Config`，`get_adjective_stars` 多月天马位置参数。
+- Rust 的 `Config` 多九个运限口径公有字段，`HoroscopeItem` 多 `mutagen_stem`：用结构体字面量构造的代码需补上。
+  `HoroscopeDivide` 新增变体 `ExactMonth` 并标为 `#[non_exhaustive]`，`Brightness` 新增变体 `Di`，九个新枚举同样
+  `#[non_exhaustive]`，`StemSource` 新增 `ScopeSoulPalace`。`astro::palace::get_decadals_and_ages` 多一个 `DecadalStem` 参数。
 - 运限取出生的农历日期改读星盘的 `raw_dates`（排盘入口产出的盘与按 `solar_date` 重算的结果相同），
   不再解析 `solar_date`；`get_horoscope` 因此不再因星盘的 `solar_date` 被改成非法值而报错。
 - DTO 里非四化候选星（十四主星与左辅右弼文昌文曲之外）在自定义四化表让它化出四化时，`mutagen` 译文键随 `mutagenKey` 一起出现，

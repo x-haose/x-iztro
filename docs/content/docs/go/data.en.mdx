@@ -255,7 +255,7 @@ directly against the `*Key` fields on the data objects.
 | `Stem*` | 10 | `StemJia`, `StemGeng` |
 | `Branch*` | 12 | `BranchZi`, `BranchWu` |
 | `Mutagen*` | 4 | `MutagenLu`, `MutagenJi` |
-| `Brightness*` | 8 | `BrightnessMiao`, `BrightnessWang` |
+| `Brightness*` | 9 | `BrightnessMiao`, `BrightnessWang` |
 | `Class*` | 5 | `ClassWater2nd`, `ClassWood3rd`, `ClassMetal4th`, `ClassEarth5th`, `ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`, `ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`, `StarTypeTough` |
@@ -273,7 +273,7 @@ The configuration values add seven more groups:
 | Prefix | Values |
 | --- | --- |
 | `YearDivide*` | `YearDivideNormal` / `YearDivideExact` |
-| `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` |
+| `HoroscopeDivide*` | `HoroscopeDivideNormal` / `HoroscopeDivideExact` / `HoroscopeDivideExactMonth` |
 | `AgeDivide*` | `AgeDivideNormal` / `AgeDivideBirthday` |
 | `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry` |
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
@@ -287,6 +287,16 @@ The configuration values add seven more groups:
 | `Yearly12Placement*` | `Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly` |
 | `OriginalPalace*` | `OriginalPalacePrimary` / `OriginalPalaceWithSecondary` |
 | `DouJunMonth*` | `DouJunMonthDefault` / `DouJunMonthNatal` |
+| `DecadalStem*` | `DecadalStemPalace` / `DecadalStemContinuous` |
+| `ChildhoodPalace*` | `ChildhoodPalaceSequence` / `ChildhoodPalaceSpouse` |
+| `AgeMutagens*` | `AgeMutagensPalaceStem` / `AgeMutagensNone` |
+| `YearlyPalace*` | `YearlyPalaceTaisui` / `YearlyPalaceAge` |
+| `ScopeMutagenStem*` | `ScopeMutagenStemScope` / `ScopeMutagenStemScopeSoulPalace` |
+| `MonthlyPalace*` | `MonthlyPalaceDouJun` / `MonthlyPalaceMonthBranch` |
+| `DailyPalace*` | `DailyPalaceFromMonthly` / `DailyPalaceAfterMonthly` |
+| `LeapDaily*` | `LeapDailyDefault` / `LeapDailyContinuous` |
+| `HourlyPalace*` | `HourlyPalaceFromDaily` / `HourlyPalaceBranch` |
+| `StemSource*` | `StemSourceNatalPalace` / `StemSourceScope` / `StemSourceScopeSoulPalace` |
 
 <Callout type="warn" title="The five elements class constants are prefixed Class, not FiveElements">
 Write `iztro.ClassWood3rd`, not `iztro.FiveElementsWood3rd` — the latter does not exist and will not

@@ -21,7 +21,21 @@ type schoolCase struct {
 	} `json:"chart"`
 	Config        Config          `json:"config"`
 	PatternConfig PatternConfig   `json:"patternConfig"`
+	Target        [2]any          `json:"target"`
 	Expect        json.RawMessage `json:"expect"`
+}
+
+type schoolLayer struct {
+	Index           int      `json:"index"`
+	NameKey         string   `json:"nameKey"`
+	HeavenlyStemKey string   `json:"heavenlyStemKey"`
+	MutagenStemKey  *string  `json:"mutagenStemKey"`
+	MutagenStarKeys []string `json:"mutagenStarKeys"`
+}
+
+type schoolHoroscopeProjection struct {
+	DecadalStemKeys []string      `json:"decadalStemKeys"`
+	Layers          []schoolLayer `json:"layers"`
 }
 
 type schoolPalace struct {
@@ -46,9 +60,10 @@ func TestSchoolOptionSharedCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	var doc struct {
-		Target       [2]any       `json:"target"`
-		Cases        []schoolCase `json:"cases"`
-		PatternCases []schoolCase `json:"patternCases"`
+		Target         [2]any       `json:"target"`
+		Cases          []schoolCase `json:"cases"`
+		HoroscopeCases []schoolCase `json:"horoscopeCases"`
+		PatternCases   []schoolCase `json:"patternCases"`
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
 		t.Fatal(err)
@@ -92,6 +107,33 @@ func TestSchoolOptionSharedCases(t *testing.T) {
 			})
 		}
 		var want schoolProjection
+		if err := json.Unmarshal(c.Expect, &want); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s:\n got %+v\nwant %+v", c.Name, got, want)
+		}
+	}
+	for _, c := range doc.HoroscopeCases {
+		chart := chartOf(c)
+		h, err := chart.Horoscope(c.Target[0].(string), uint8(c.Target[1].(float64)))
+		if err != nil {
+			t.Fatalf("%s: %v", c.Name, err)
+		}
+		var got schoolHoroscopeProjection
+		for _, p := range chart.Palaces {
+			got.DecadalStemKeys = append(got.DecadalStemKeys, p.Decadal.HeavenlyStemKey)
+		}
+		for _, item := range []*HoroscopeScope{&h.Decadal, &h.Age, &h.Yearly, &h.Monthly, &h.Daily, &h.Hourly} {
+			got.Layers = append(got.Layers, schoolLayer{
+				Index:           item.Index,
+				NameKey:         item.NameKey,
+				HeavenlyStemKey: item.HeavenlyStemKey,
+				MutagenStemKey:  item.MutagenStemKey,
+				MutagenStarKeys: item.MutagenStarKeys,
+			})
+		}
+		var want schoolHoroscopeProjection
 		if err := json.Unmarshal(c.Expect, &want); err != nil {
 			t.Fatal(err)
 		}

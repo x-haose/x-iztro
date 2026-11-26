@@ -76,10 +76,14 @@ class YearDivide(StrEnum):
 
 
 class HoroscopeDivide(StrEnum):
-    """运限分界点（`ChartConfig.horoscope_divide`）：运限干支按初一或节气推算"""
+    """运限分界点（`ChartConfig.horoscope_divide`）：流年按正月初一或立春换年，流月干与月柱按初一或节气换月"""
 
     NORMAL = "normal"
+    """年按正月初一，月按初一（五虎遁）"""
     EXACT = "exact"
+    """年按立春，月按节气"""
+    EXACT_MONTH = "exactMonth"
+    """年按正月初一，月按节气：流月四化交节换干，流月命宫仍按农历月"""
 
 
 class AgeDivide(StrEnum):
@@ -174,6 +178,87 @@ class DouJunMonth(StrEnum):
     """与 iztro 一致：fix_leap 打开时闰月十六日起作下月，晚子时也算"""
     NATAL = "natal"
     """与本命盘同一规则：晚子时（dayDivide=forward）不把闰月十六日起作下月"""
+
+
+class DecadalStem(StrEnum):
+    """大限天干的取法（`ChartConfig.decadal_stem`）"""
+
+    PALACE = "palace"
+    """与 iztro 一致：所在宫的宫干"""
+    CONTINUOUS = "continuous"
+    """命宫宫干起，按天干次序随大限方向连续排（顺行加一干、逆行减一干）"""
+
+
+class ChildhoodPalace(StrEnum):
+    """童限落在哪一宫（`ChartConfig.childhood_palace`）"""
+
+    SEQUENCE = "sequence"
+    """与 iztro 一致：依次落命宫、财帛、疾厄、夫妻、福德、官禄"""
+    SPOUSE = "spouse"
+    """一律落夫妻宫，四化取夫妻宫干"""
+
+
+class AgeMutagens(StrEnum):
+    """小限是否起四化（`ChartConfig.age_mutagens`）"""
+
+    PALACE_STEM = "palaceStem"
+    """与 iztro 一致：取小限宫干起四化"""
+    NONE = "none"
+    """不起四化"""
+
+
+class YearlyPalace(StrEnum):
+    """流年命宫取哪一宫（`ChartConfig.yearly_palace`）"""
+
+    TAISUI = "taisui"
+    """与 iztro 一致：太岁宫（流年年支所在宫）"""
+    AGE = "age"
+    """小限宫；流年干支、流耀、岁前将前与斗君仍按流年年支与太岁宫"""
+
+
+class ScopeMutagenStem(StrEnum):
+    """运限各层四化取哪个干（`ChartConfig.scope_mutagen_stem`）"""
+
+    SCOPE = "scope"
+    """与 iztro 一致：该层自身的干"""
+    SCOPE_SOUL_PALACE = "scopeSoulPalace"
+    """该层命宫的本命宫干"""
+
+
+class MonthlyPalace(StrEnum):
+    """流月命宫的起法（`ChartConfig.monthly_palace`）"""
+
+    DOU_JUN = "douJun"
+    """与 iztro 一致：斗君为正月"""
+    MONTH_BRANCH = "monthBranch"
+    """正月固定在寅宫，每月落在月建所在宫"""
+
+
+class DailyPalace(StrEnum):
+    """流日命宫的起法（`ChartConfig.daily_palace`）"""
+
+    FROM_MONTHLY = "fromMonthly"
+    """与 iztro 一致：初一在流月命宫"""
+    AFTER_MONTHLY = "afterMonthly"
+    """初一在流月命宫的下一宫"""
+
+
+class LeapDaily(StrEnum):
+    """闰月里流日的数法（`ChartConfig.leap_daily`）"""
+
+    DEFAULT = "default"
+    """与 iztro 一致：闰月前半月从流月命宫重新起初一"""
+    CONTINUOUS = "continuous"
+    """闰月前半月接着同号本月的日数连续顺数；十六日起同默认"""
+
+
+class HourlyPalace(StrEnum):
+    """流时命宫的起法（`ChartConfig.hourly_palace`）"""
+
+    FROM_DAILY = "fromDaily"
+    """与 iztro 一致：子时在流日命宫"""
+    BRANCH = "branch"
+    """按时支落宫：子时在子宫、丑时在丑宫"""
 
 
 class VoidPlacement(StrEnum):
@@ -313,6 +398,8 @@ class Brightness(StrEnum):
     """陷"""
     XIAN2 = "xian2"
     """闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里"""
+    DI = "di"
+    """地：照录王亭之《安星法及推断实例》庙陷总表，原书未定义；iztro 无此级，只出现在自定义亮度表里"""
 
 
 class StarType(StrEnum):

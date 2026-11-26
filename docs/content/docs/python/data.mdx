@@ -272,7 +272,7 @@ print(c.five_elements_class)
 | `PalaceName` | **14** | 十二宫 `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`，外加两个定位标记 `BODY`（身宫）`ORIGINAL`（来因宫） |
 | `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
 | `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
-| `Brightness` | 8 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`，外加 iztro 没有的 `XIAN2`（闲），只出现在自定义亮度表里 |
+| `Brightness` | 9 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`，外加 iztro 没有的 `XIAN2`（闲）与 `DI`（地），只出现在自定义亮度表里 |
 | `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
 | `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
 | `MajorStar` | 14 | 十四主星，`ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
@@ -285,7 +285,8 @@ print(c.five_elements_class)
 | `Jiangqian12` | 12 | `JIANGXING` `PANAN` `SUIYI` `XISHEN` `HUAGAI` `JIESHA` `ZHAISHA` `TIANSHA` `ZHIBEI` `XIANCHI` `YUESHA` `WANGSHEN` |
 | `Algorithm` | 2 | `DEFAULT` `ZHONGZHOU` |
 | `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
-| `YearDivide` / `HoroscopeDivide` | 各 2 | `NORMAL` `EXACT` |
+| `YearDivide` | 2 | `NORMAL` `EXACT` |
+| `HoroscopeDivide` | 3 | `NORMAL` `EXACT` `EXACT_MONTH` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
 | `DayDivide` | 3 | `FORWARD` `CURRENT` `FORWARD_CARRY` |
 | `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
@@ -297,6 +298,15 @@ print(c.five_elements_class)
 | `Yearly12Placement` | 2 | `NATAL_AND_YEARLY` `YEARLY_ONLY` |
 | `OriginalPalaceMarking` | 2 | `PRIMARY` `WITH_SECONDARY` |
 | `DouJunMonth` | 2 | `DEFAULT` `NATAL` |
+| `DecadalStem` | 2 | `PALACE` `CONTINUOUS` |
+| `ChildhoodPalace` | 2 | `SEQUENCE` `SPOUSE` |
+| `AgeMutagens` | 2 | `PALACE_STEM` `NONE` |
+| `YearlyPalace` | 2 | `TAISUI` `AGE` |
+| `ScopeMutagenStem` | 2 | `SCOPE` `SCOPE_SOUL_PALACE` |
+| `MonthlyPalace` | 2 | `DOU_JUN` `MONTH_BRANCH` |
+| `DailyPalace` | 2 | `FROM_MONTHLY` `AFTER_MONTHLY` |
+| `LeapDaily` | 2 | `DEFAULT` `CONTINUOUS` |
+| `HourlyPalace` | 2 | `FROM_DAILY` `BRANCH` |
 
 成员名与它的取值不总是拼音对应——`Boshi12.FEILIAN` 的值是 `faylian`，
 `Jiangqian12.XISHEN` 的值是 `xiishen`，`Suiqian12.GWANFU` 的值是 `gwanfu`。

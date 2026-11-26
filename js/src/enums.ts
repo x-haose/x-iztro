@@ -55,12 +55,16 @@ export const YearDivide = {
 /** 年分界点（`ChartConfig.yearDivide`）：安星年干支按正月初一或立春换年 */
 export type YearDivide = (typeof YearDivide)[keyof typeof YearDivide];
 
-/** 运限分界点（`ChartConfig.horoscopeDivide`）：运限干支按初一或节气推算 */
+/** 运限分界点（`ChartConfig.horoscopeDivide`）：流年按正月初一或立春换年，流月干与月柱按初一或节气换月 */
 export const HoroscopeDivide = {
+  /** 年按正月初一，月按初一（五虎遁） */
   NORMAL: 'normal',
+  /** 年按立春，月按节气 */
   EXACT: 'exact',
+  /** 年按正月初一，月按节气：流月四化交节换干，流月命宫仍按农历月 */
+  EXACT_MONTH: 'exactMonth',
 } as const;
-/** 运限分界点（`ChartConfig.horoscopeDivide`）：运限干支按初一或节气推算 */
+/** 运限分界点（`ChartConfig.horoscopeDivide`）：流年按正月初一或立春换年，流月干与月柱按初一或节气换月 */
 export type HoroscopeDivide = (typeof HoroscopeDivide)[keyof typeof HoroscopeDivide];
 
 /** 虚岁分界点（`ChartConfig.ageDivide`）：跨农历年即加一岁或过生日才加 */
@@ -166,6 +170,96 @@ export const DouJunMonth = {
 } as const;
 /** 推斗君时生月的取法（`ChartConfig.douJunMonth`） */
 export type DouJunMonth = (typeof DouJunMonth)[keyof typeof DouJunMonth];
+
+/** 大限天干的取法（`ChartConfig.decadalStem`） */
+export const DecadalStem = {
+  /** 与 iztro 一致：所在宫的宫干 */
+  PALACE: 'palace',
+  /** 命宫宫干起，按天干次序随大限方向连续排（顺行加一干、逆行减一干） */
+  CONTINUOUS: 'continuous',
+} as const;
+/** 大限天干的取法（`ChartConfig.decadalStem`） */
+export type DecadalStem = (typeof DecadalStem)[keyof typeof DecadalStem];
+
+/** 童限落在哪一宫（`ChartConfig.childhoodPalace`） */
+export const ChildhoodPalace = {
+  /** 与 iztro 一致：依次落命宫、财帛、疾厄、夫妻、福德、官禄 */
+  SEQUENCE: 'sequence',
+  /** 一律落夫妻宫，四化取夫妻宫干 */
+  SPOUSE: 'spouse',
+} as const;
+/** 童限落在哪一宫（`ChartConfig.childhoodPalace`） */
+export type ChildhoodPalace = (typeof ChildhoodPalace)[keyof typeof ChildhoodPalace];
+
+/** 小限是否起四化（`ChartConfig.ageMutagens`） */
+export const AgeMutagens = {
+  /** 与 iztro 一致：取小限宫干起四化 */
+  PALACE_STEM: 'palaceStem',
+  /** 不起四化 */
+  NONE: 'none',
+} as const;
+/** 小限是否起四化（`ChartConfig.ageMutagens`） */
+export type AgeMutagens = (typeof AgeMutagens)[keyof typeof AgeMutagens];
+
+/** 流年命宫取哪一宫（`ChartConfig.yearlyPalace`） */
+export const YearlyPalace = {
+  /** 与 iztro 一致：太岁宫（流年年支所在宫） */
+  TAISUI: 'taisui',
+  /** 小限宫；流年干支、流耀、岁前将前与斗君仍按流年年支与太岁宫 */
+  AGE: 'age',
+} as const;
+/** 流年命宫取哪一宫（`ChartConfig.yearlyPalace`） */
+export type YearlyPalace = (typeof YearlyPalace)[keyof typeof YearlyPalace];
+
+/** 运限各层四化取哪个干（`ChartConfig.scopeMutagenStem`） */
+export const ScopeMutagenStem = {
+  /** 与 iztro 一致：该层自身的干 */
+  SCOPE: 'scope',
+  /** 该层命宫的本命宫干 */
+  SCOPE_SOUL_PALACE: 'scopeSoulPalace',
+} as const;
+/** 运限各层四化取哪个干（`ChartConfig.scopeMutagenStem`） */
+export type ScopeMutagenStem = (typeof ScopeMutagenStem)[keyof typeof ScopeMutagenStem];
+
+/** 流月命宫的起法（`ChartConfig.monthlyPalace`） */
+export const MonthlyPalace = {
+  /** 与 iztro 一致：斗君为正月 */
+  DOU_JUN: 'douJun',
+  /** 正月固定在寅宫，每月落在月建所在宫 */
+  MONTH_BRANCH: 'monthBranch',
+} as const;
+/** 流月命宫的起法（`ChartConfig.monthlyPalace`） */
+export type MonthlyPalace = (typeof MonthlyPalace)[keyof typeof MonthlyPalace];
+
+/** 流日命宫的起法（`ChartConfig.dailyPalace`） */
+export const DailyPalace = {
+  /** 与 iztro 一致：初一在流月命宫 */
+  FROM_MONTHLY: 'fromMonthly',
+  /** 初一在流月命宫的下一宫 */
+  AFTER_MONTHLY: 'afterMonthly',
+} as const;
+/** 流日命宫的起法（`ChartConfig.dailyPalace`） */
+export type DailyPalace = (typeof DailyPalace)[keyof typeof DailyPalace];
+
+/** 闰月里流日的数法（`ChartConfig.leapDaily`） */
+export const LeapDaily = {
+  /** 与 iztro 一致：闰月前半月从流月命宫重新起初一 */
+  DEFAULT: 'default',
+  /** 闰月前半月接着同号本月的日数连续顺数；十六日起同默认 */
+  CONTINUOUS: 'continuous',
+} as const;
+/** 闰月里流日的数法（`ChartConfig.leapDaily`） */
+export type LeapDaily = (typeof LeapDaily)[keyof typeof LeapDaily];
+
+/** 流时命宫的起法（`ChartConfig.hourlyPalace`） */
+export const HourlyPalace = {
+  /** 与 iztro 一致：子时在流日命宫 */
+  FROM_DAILY: 'fromDaily',
+  /** 按时支落宫：子时在子宫、丑时在丑宫 */
+  BRANCH: 'branch',
+} as const;
+/** 流时命宫的起法（`ChartConfig.hourlyPalace`） */
+export type HourlyPalace = (typeof HourlyPalace)[keyof typeof HourlyPalace];
 
 /** 截空与旬空的安法（`ChartConfig.voidPlacement`） */
 export const VoidPlacement = {
@@ -297,6 +391,8 @@ export const Brightness = {
   XIAN: 'xian',
   /** 闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里 */
   XIAN2: 'xian2',
+  /** 地：照录王亭之《安星法及推断实例》庙陷总表，原书未定义；iztro 无此级，只出现在自定义亮度表里 */
+  DI: 'di',
 } as const;
 /** 星耀亮度（对应 `Star.brightnessKey`） */
 export type Brightness = (typeof Brightness)[keyof typeof Brightness];

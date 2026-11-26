@@ -89,13 +89,18 @@ pub fn get_palace_names(soul_index: usize) -> [Palace; 12] {
     names
 }
 
-/// 计算大限和小限
+/// 计算大限和小限。
+///
+/// 大限自命宫起，阳男阴女顺行、阴男阳女逆行，地支取所在宫的地支，天干按 `decadal_stem`：
+/// 取所在宫的宫干，或以命宫宫干为第一大限的干按天干次序随大限方向连续排。
+/// 小限按生年支三合起，男顺女逆。
 pub fn get_decadals_and_ages(
     soul_index: usize,
     five_elements_class: FiveElementsClass,
     gender: Gender,
     yearly_stem: HeavenlyStem,
     yearly_branch: EarthlyBranch,
+    decadal_stem: DecadalStem,
 ) -> ([Decadal; 12], [Vec<u32>; 12]) {
     // 判断顺逆行
     let gender_yinyang = match gender {
@@ -134,7 +139,13 @@ pub fn get_decadals_and_ages(
         let start_age = five_elements_class.value() + 10 * i;
         let end_age = start_age + 9;
 
-        let stem_index = fix_index(start_stem.index() as i32 + idx as i32, 10);
+        let stem_index = match decadal_stem {
+            DecadalStem::Palace => fix_index(start_stem.index() as i32 + idx as i32, 10),
+            DecadalStem::Continuous => {
+                let step = if forward { i as i32 } else { -(i as i32) };
+                fix_index(start_stem.index() as i32 + soul_index as i32 + step, 10)
+            }
+        };
         let branch_index = fix_index(2 + idx as i32, 12);
 
         final_decadals[idx] = Some(Decadal {
@@ -212,6 +223,7 @@ mod tests {
             Gender::Male,
             HeavenlyStem::Jia,
             EarthlyBranch::Zi, // Yang branch
+            DecadalStem::Palace,
         );
         // Male + Yang branch → forward
         // First decadal at soul_index=0, start_age=4

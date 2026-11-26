@@ -30,7 +30,8 @@ type Config struct {
 	// YearDivide 为年干支的换年时点："normal" 正月初一（默认）、"exact" 立春。
 	YearDivide string `json:"yearDivide,omitempty"`
 
-	// HoroscopeDivide 为流年神煞取年支的换年时点："normal" 正月初一（默认）、"exact" 立春。
+	// HoroscopeDivide 为运限分界点："normal" 年与月都按初一（默认）、"exact" 年按立春且月按节气、
+	// "exactMonth" 年按正月初一而月按节气，取值见 HoroscopeDivide* 常量。
 	HoroscopeDivide string `json:"horoscopeDivide,omitempty"`
 
 	// AgeDivide 为小限虚岁的进位时点："normal" 农历生日（默认）、"birthday" 阳历生日。
@@ -82,6 +83,42 @@ type Config struct {
 	// DouJunMonth 为推斗君时生月的取法："default" 同 iztro（默认）、"natal" 与本命盘同一规则，
 	// 取值见 DouJunMonth* 常量。
 	DouJunMonth string `json:"douJunMonth,omitempty"`
+
+	// DecadalStem 为大限天干的取法："palace" 宫干（默认）、"continuous" 命宫干起随大限方向连续排，
+	// 取值见 DecadalStem* 常量。
+	DecadalStem string `json:"decadalStem,omitempty"`
+
+	// ChildhoodPalace 为童限落在哪一宫："sequence" 命财疾夫福官依次（默认）、"spouse" 一律夫妻宫，
+	// 取值见 ChildhoodPalace* 常量。
+	ChildhoodPalace string `json:"childhoodPalace,omitempty"`
+
+	// AgeMutagens 为小限是否起四化："palaceStem" 取小限宫干（默认）、"none" 不起四化，
+	// 取值见 AgeMutagens* 常量。
+	AgeMutagens string `json:"ageMutagens,omitempty"`
+
+	// YearlyPalace 为流年命宫："taisui" 太岁宫（默认）、"age" 小限宫，
+	// 取值见 YearlyPalace* 常量。
+	YearlyPalace string `json:"yearlyPalace,omitempty"`
+
+	// ScopeMutagenStem 为运限各层四化取哪个干："scope" 该层的干（默认）、"scopeSoulPalace" 该层命宫的本命宫干，
+	// 取值见 ScopeMutagenStem* 常量。
+	ScopeMutagenStem string `json:"scopeMutagenStem,omitempty"`
+
+	// MonthlyPalace 为流月命宫的起法："douJun" 斗君为正月（默认）、"monthBranch" 正月在寅宫，
+	// 取值见 MonthlyPalace* 常量。
+	MonthlyPalace string `json:"monthlyPalace,omitempty"`
+
+	// DailyPalace 为流日命宫的起法："fromMonthly" 初一在流月命宫（默认）、"afterMonthly" 初一在其下一宫，
+	// 取值见 DailyPalace* 常量。
+	DailyPalace string `json:"dailyPalace,omitempty"`
+
+	// LeapDaily 为闰月里流日的数法："default" 闰月初一重新起数（默认）、"continuous" 闰月前半月接本月连续数，
+	// 取值见 LeapDaily* 常量。
+	LeapDaily string `json:"leapDaily,omitempty"`
+
+	// HourlyPalace 为流时命宫的起法："fromDaily" 子时在流日命宫（默认）、"branch" 按时支落宫，
+	// 取值见 HourlyPalace* 常量。
+	HourlyPalace string `json:"hourlyPalace,omitempty"`
 
 	// Mutagens 为自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
 	// 按天干整表替换默认值，未列出的天干仍用默认表。

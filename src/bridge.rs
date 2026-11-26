@@ -1432,12 +1432,14 @@ fn util(input: &QueryInput) -> Result<Value, BridgeError> {
                 .collect::<Vec<_>>()
         ),
         "getHoroscope" => {
+            // iztro 的 getHoroscope 工具函数不收排盘配置，大限干恒取宫干
             let (decadals, ages) = crate::astro::palace::get_decadals_and_ages(
                 input.soul_index,
                 parse_five_elements_class(&input.five_elements_class)?,
                 parse_gender(&input.gender)?,
                 parse_stem_key(&input.stem_key)?,
                 parse_branch_key(&input.branch_key)?,
+                crate::data::types::DecadalStem::Palace,
             );
             // 字段形状与星盘上的大限一致：译名与标识并列，
             // 免得同名字段在两处装不同的东西。

@@ -61,6 +61,8 @@ const (
 	BrightnessXian = "xian"
 	// BrightnessXian2 为闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里
 	BrightnessXian2 = "xian2"
+	// BrightnessDi 为地：照录王亭之《安星法及推断实例》庙陷总表，原书未定义；iztro 无此级，只出现在自定义亮度表里
+	BrightnessDi = "di"
 )
 
 // 星耀标识（Star.Key，含主星、辅星、杂耀、四组十二神与运限流耀）。
@@ -583,12 +585,14 @@ const (
 	YearDivideExact = "exact"
 )
 
-// 运限分界点（Config.HoroscopeDivide）：流年神煞取年支时按哪一天换年。
+// 运限分界点（Config.HoroscopeDivide）：流年干支按哪一天换年，流月干支与月柱按初一还是节气换月。
 const (
-	// HoroscopeDivideNormal 以正月初一换年
+	// HoroscopeDivideNormal 年以正月初一换年，月按初一（五虎遁）
 	HoroscopeDivideNormal = "normal"
-	// HoroscopeDivideExact 以立春换年
+	// HoroscopeDivideExact 年以立春换年，月按节气
 	HoroscopeDivideExact = "exact"
+	// HoroscopeDivideExactMonth 年以正月初一换年，月按节气：流月四化交节换干，流月命宫仍按农历月
+	HoroscopeDivideExactMonth = "exactMonth"
 )
 
 // 虚岁分界点（Config.AgeDivide）：虚岁在哪一天增长。
@@ -675,6 +679,88 @@ const (
 	DouJunMonthDefault = "default"
 	// DouJunMonthNatal 与本命盘同一规则：晚子时（DayDivideForward）不把闰月十六日起作下月
 	DouJunMonthNatal = "natal"
+)
+
+// 大限天干的取法（Config.DecadalStem）。
+const (
+	// DecadalStemPalace 与 iztro 一致：所在宫的宫干
+	DecadalStemPalace = "palace"
+	// DecadalStemContinuous 命宫宫干起，按天干次序随大限方向连续排（顺行加一干、逆行减一干）
+	DecadalStemContinuous = "continuous"
+)
+
+// 童限落在哪一宫（Config.ChildhoodPalace）。
+const (
+	// ChildhoodPalaceSequence 与 iztro 一致：依次落命宫、财帛、疾厄、夫妻、福德、官禄
+	ChildhoodPalaceSequence = "sequence"
+	// ChildhoodPalaceSpouse 一律落夫妻宫，四化取夫妻宫干
+	ChildhoodPalaceSpouse = "spouse"
+)
+
+// 小限是否起四化（Config.AgeMutagens）。
+const (
+	// AgeMutagensPalaceStem 与 iztro 一致：取小限宫干起四化
+	AgeMutagensPalaceStem = "palaceStem"
+	// AgeMutagensNone 不起四化
+	AgeMutagensNone = "none"
+)
+
+// 流年命宫取哪一宫（Config.YearlyPalace）。
+const (
+	// YearlyPalaceTaisui 与 iztro 一致：太岁宫（流年年支所在宫）
+	YearlyPalaceTaisui = "taisui"
+	// YearlyPalaceAge 小限宫；流年干支、流耀、岁前将前与斗君仍按流年年支与太岁宫
+	YearlyPalaceAge = "age"
+)
+
+// 运限各层四化取哪个干（Config.ScopeMutagenStem）。
+const (
+	// ScopeMutagenStemScope 与 iztro 一致：该层自身的干
+	ScopeMutagenStemScope = "scope"
+	// ScopeMutagenStemScopeSoulPalace 该层命宫的本命宫干
+	ScopeMutagenStemScopeSoulPalace = "scopeSoulPalace"
+)
+
+// 流月命宫的起法（Config.MonthlyPalace）。
+const (
+	// MonthlyPalaceDouJun 与 iztro 一致：斗君为正月
+	MonthlyPalaceDouJun = "douJun"
+	// MonthlyPalaceMonthBranch 正月固定在寅宫，每月落在月建所在宫
+	MonthlyPalaceMonthBranch = "monthBranch"
+)
+
+// 流日命宫的起法（Config.DailyPalace）。
+const (
+	// DailyPalaceFromMonthly 与 iztro 一致：初一在流月命宫
+	DailyPalaceFromMonthly = "fromMonthly"
+	// DailyPalaceAfterMonthly 初一在流月命宫的下一宫
+	DailyPalaceAfterMonthly = "afterMonthly"
+)
+
+// 闰月里流日的数法（Config.LeapDaily）。
+const (
+	// LeapDailyDefault 与 iztro 一致：闰月前半月从流月命宫重新起初一
+	LeapDailyDefault = "default"
+	// LeapDailyContinuous 闰月前半月接着同号本月的日数连续顺数；十六日起同默认
+	LeapDailyContinuous = "continuous"
+)
+
+// 流时命宫的起法（Config.HourlyPalace）。
+const (
+	// HourlyPalaceFromDaily 与 iztro 一致：子时在流日命宫
+	HourlyPalaceFromDaily = "fromDaily"
+	// HourlyPalaceBranch 按时支落宫：子时在子宫、丑时在丑宫
+	HourlyPalaceBranch = "branch"
+)
+
+// 主题选宫结果里四化所用天干的取法（TopicSelection.PalaceStemSource、TopicSelection.ScopeMutagenStemSource）。
+const (
+	// StemSourceNatalPalace 本命各宫宫干，运限各层沿用
+	StemSourceNatalPalace = "natalPalace"
+	// StemSourceScope 该运限层自身的干
+	StemSourceScope = "scope"
+	// StemSourceScopeSoulPalace 该运限层命宫的本命宫干
+	StemSourceScopeSoulPalace = "scopeSoulPalace"
 )
 
 // 截空与旬空的安法（Config.VoidPlacement）。

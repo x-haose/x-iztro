@@ -284,7 +284,7 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `PalaceName` | **14** | The twelve palaces `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`, plus the two locator marks `BODY` (body palace) and `ORIGINAL` (palace of origin) |
 | `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
 | `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
-| `Brightness` | 8 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`, plus `XIAN2` (闲), which iztro lacks and which only appears in custom brightness tables |
+| `Brightness` | 9 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`, plus `XIAN2` (闲) and `DI` (地), which iztro lacks and which only appear in custom brightness tables |
 | `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
 | `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
 | `MajorStar` | 14 | The fourteen major stars: `ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
@@ -297,7 +297,8 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `Jiangqian12` | 12 | `JIANGXING` `PANAN` `SUIYI` `XISHEN` `HUAGAI` `JIESHA` `ZHAISHA` `TIANSHA` `ZHIBEI` `XIANCHI` `YUESHA` `WANGSHEN` |
 | `Algorithm` | 2 | `DEFAULT` `ZHONGZHOU` |
 | `AstroType` | 3 | `HEAVEN` `EARTH` `HUMAN` |
-| `YearDivide` / `HoroscopeDivide` | 2 each | `NORMAL` `EXACT` |
+| `YearDivide` | 2 | `NORMAL` `EXACT` |
+| `HoroscopeDivide` | 3 | `NORMAL` `EXACT` `EXACT_MONTH` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
 | `DayDivide` | 3 | `FORWARD` `CURRENT` `FORWARD_CARRY` |
 | `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
@@ -309,6 +310,15 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `Yearly12Placement` | 2 | `NATAL_AND_YEARLY` `YEARLY_ONLY` |
 | `OriginalPalaceMarking` | 2 | `PRIMARY` `WITH_SECONDARY` |
 | `DouJunMonth` | 2 | `DEFAULT` `NATAL` |
+| `DecadalStem` | 2 | `PALACE` `CONTINUOUS` |
+| `ChildhoodPalace` | 2 | `SEQUENCE` `SPOUSE` |
+| `AgeMutagens` | 2 | `PALACE_STEM` `NONE` |
+| `YearlyPalace` | 2 | `TAISUI` `AGE` |
+| `ScopeMutagenStem` | 2 | `SCOPE` `SCOPE_SOUL_PALACE` |
+| `MonthlyPalace` | 2 | `DOU_JUN` `MONTH_BRANCH` |
+| `DailyPalace` | 2 | `FROM_MONTHLY` `AFTER_MONTHLY` |
+| `LeapDaily` | 2 | `DEFAULT` `CONTINUOUS` |
+| `HourlyPalace` | 2 | `FROM_DAILY` `BRANCH` |
 
 A member's name does not always match its value letter for letter — the value of `Boshi12.FEILIAN` is
 `faylian`, that of `Jiangqian12.XISHEN` is `xiishen`, and that of `Suiqian12.GWANFU` is `gwanfu`.

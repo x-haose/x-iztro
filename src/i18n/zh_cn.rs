@@ -235,6 +235,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
         Brightness::Bu => "不",
         Brightness::Xian => "陷",
         Brightness::Xian2 => "闲",
+        Brightness::Di => "地",
     }
 }
 

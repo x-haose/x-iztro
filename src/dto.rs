@@ -285,7 +285,8 @@ pub struct RawDatesDto {
 }
 
 /// 排盘配置 DTO：开关取值为语言无关标识。前六个与 JS iztro 的 config() 取值一致
-/// （`dayDivide` 另有 x-iztro 扩展取值 `forwardCarry`）；其余是 x-iztro 扩展，取默认值时省略该键。
+/// （`horoscopeDivide` 另有 x-iztro 扩展取值 `exactMonth`，`dayDivide` 另有 `forwardCarry`）；
+/// 其余是 x-iztro 扩展，取默认值时省略该键。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigDto {
@@ -328,6 +329,33 @@ pub struct ConfigDto {
     /// 推斗君时生月的取法；默认值时省略
     #[serde(default, skip_serializing_if = "is_default")]
     pub dou_jun_month: DouJunMonth,
+    /// 大限天干的取法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub decadal_stem: DecadalStem,
+    /// 童限落在哪一宫；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub childhood_palace: ChildhoodPalace,
+    /// 小限是否起四化；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub age_mutagens: AgeMutagens,
+    /// 流年命宫取哪一宫；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub yearly_palace: YearlyPalace,
+    /// 运限各层四化取哪个干；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub scope_mutagen_stem: ScopeMutagenStem,
+    /// 流月命宫的起法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub monthly_palace: MonthlyPalace,
+    /// 流日命宫的起法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub daily_palace: DailyPalace,
+    /// 闰月里流日的数法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub leap_daily: LeapDaily,
+    /// 流时命宫的起法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub hourly_palace: HourlyPalace,
 }
 
 /// 扩展开关是否取默认值（取默认值时不写出）
@@ -418,14 +446,21 @@ pub struct HoroscopeScopeDto {
     pub palace_names: Vec<String>,
     /// 十二宫名的语言无关标识
     pub palace_name_keys: Vec<String>,
-    /// 四化星名（禄、权、科、忌，翻译文本）
+    /// 四化星名（禄、权、科、忌，翻译文本），由 `mutagenStem`（缺省即 `heavenlyStem`）化出；不起四化时为空
     pub mutagen: Vec<String>,
     /// 四化星（禄、权、科、忌）的语言无关标识（StarKey，与 `PalaceDto` 的
     /// mutagenStarKeys 同名同义；单数 mutagenKey 才是四化类型 Mutagen 的标识）
     pub mutagen_star_keys: Vec<String>,
-    /// 该层天干在四槽之外化出的附加星；没有附加星时省略该键
+    /// 该层四化天干在四槽之外化出的附加星；没有附加星时省略该键
     #[serde(default, skip_serializing_if = "ExtraMutagenStarKeysDto::is_empty")]
     pub extra_mutagen_star_keys: ExtraMutagenStarKeysDto,
+    /// 化出本层四化的天干（按排盘语言翻译）：与 `heavenlyStem` 相同时省略该键（默认配置下恒省略），
+    /// 本层不起四化（小限 `ageMutagens=none`）时为空串
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mutagen_stem: Option<String>,
+    /// `mutagenStem` 的语言无关标识，出现与否同 `mutagenStem`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mutagen_stem_key: Option<String>,
     /// 流耀在十二宫的分布；无流耀的层级省略该键
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stars: Option<Vec<Vec<StarDto>>>,
@@ -626,6 +661,15 @@ impl From<Config> for ConfigDto {
             yearly12_placement: c.yearly12_placement,
             original_palace: c.original_palace,
             dou_jun_month: c.dou_jun_month,
+            decadal_stem: c.decadal_stem,
+            childhood_palace: c.childhood_palace,
+            age_mutagens: c.age_mutagens,
+            yearly_palace: c.yearly_palace,
+            scope_mutagen_stem: c.scope_mutagen_stem,
+            monthly_palace: c.monthly_palace,
+            daily_palace: c.daily_palace,
+            leap_daily: c.leap_daily,
+            hourly_palace: c.hourly_palace,
         }
     }
 }
@@ -923,6 +967,16 @@ fn scope_dto(item: &HoroscopeItem, lang: Language) -> HoroscopeScopeDto {
             .map(|k| k.as_key().to_string())
             .collect(),
         extra_mutagen_star_keys: ExtraMutagenStarKeysDto::from_groups(&item.extra_mutagen),
+        mutagen_stem: (item.mutagen_stem != Some(item.heavenly_stem)).then(|| {
+            item.mutagen_stem
+                .map_or("", |stem| translate_heavenly_stem(stem, lang))
+                .to_string()
+        }),
+        mutagen_stem_key: (item.mutagen_stem != Some(item.heavenly_stem)).then(|| {
+            item.mutagen_stem
+                .map_or("", |stem| stem.as_key())
+                .to_string()
+        }),
         stars: item.stars.as_ref().map(|groups| {
             groups
                 .iter()

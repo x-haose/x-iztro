@@ -29,7 +29,7 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `HeavenlyStem` | 10 | `as_key()` | `from_key(&str)` | `jiaHeavenly` |
 | `EarthlyBranch` | 12 | `as_key()` | `from_key(&str)` | `ziEarthly` |
 | `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
-| `Brightness` | 8 | `as_key()` | `from_key(&str)` | `miao`、`xian2`（闲） |
+| `Brightness` | 9 | `as_key()` | `from_key(&str)` | `miao`、`xian2`（闲）、`di`（地） |
 | `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
 | `StarType` | 8 | `as_key()` | `from_key(&str)` | `major`、`lucun` |
 | `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`、`decadal` |
@@ -37,7 +37,7 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `Gender` | 2 | `as_key()` | `from_key(&str)` | `male` / `female` |
 | `Language` | 6 | `as_key()` | `from_key(&str)` | `zh-CN`、`en-US` |
 | `YearDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
-| `HoroscopeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `exact` |
+| `HoroscopeDivide` | 3 | `as_key()` | `from_key(&str)` | `normal` / `exact` / `exactMonth` |
 | `AgeDivide` | 2 | `as_key()` | `from_key(&str)` | `normal` / `birthday` |
 | `DayDivide` | 3 | `as_key()` | `from_key(&str)` | `forward` / `current` / `forwardCarry` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
@@ -51,6 +51,15 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `Yearly12Placement` | 2 | `as_key()` | `from_key(&str)` | `natalAndYearly` / `yearlyOnly` |
 | `OriginalPalaceMarking` | 2 | `as_key()` | `from_key(&str)` | `primary` / `withSecondary` |
 | `DouJunMonth` | 2 | `as_key()` | `from_key(&str)` | `default` / `natal` |
+| `DecadalStem` | 2 | `as_key()` | `from_key(&str)` | `palace` / `continuous` |
+| `ChildhoodPalace` | 2 | `as_key()` | `from_key(&str)` | `sequence` / `spouse` |
+| `AgeMutagens` | 2 | `as_key()` | `from_key(&str)` | `palaceStem` / `none` |
+| `YearlyPalace` | 2 | `as_key()` | `from_key(&str)` | `taisui` / `age` |
+| `ScopeMutagenStem` | 2 | `as_key()` | `from_key(&str)` | `scope` / `scopeSoulPalace` |
+| `MonthlyPalace` | 2 | `as_key()` | `from_key(&str)` | `douJun` / `monthBranch` |
+| `DailyPalace` | 2 | `as_key()` | `from_key(&str)` | `fromMonthly` / `afterMonthly` |
+| `LeapDaily` | 2 | `as_key()` | `from_key(&str)` | `default` / `continuous` |
+| `HourlyPalace` | 2 | `as_key()` | `from_key(&str)` | `fromDaily` / `branch` |
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
@@ -120,7 +129,7 @@ ja-JP Some(ZhCN)
 | `FiveElements` | `Wood` `Metal` `Water` `Fire` `Earth` |
 | `FiveElementsClass` | `Water2nd` `Wood3rd` `Metal4th` `Earth5th` `Fire6th` |
 | `Mutagen` | `Lu` `Quan` `Ke` `Ji` |
-| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` `Xian2`——`Xian2` 是闲（标识 `xian2`），iztro 没有这一级，只出现在自定义亮度表里 |
+| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` `Xian2` `Di`——`Xian2` 是闲（标识 `xian2`），`Di` 是地（标识 `di`，照录王亭之庙陷表、原书未定义），iztro 没有这两级，只出现在自定义亮度表里 |
 | `StarType` | `Major` `Soft` `Tough` `Adjective` `Flower` `Helper` `Lucun` `Tianma` |
 | `Scope` | `Origin` `Decadal` `Yearly` `Monthly` `Daily` `Hourly` |
 | `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
@@ -131,7 +140,7 @@ ja-JP Some(ZhCN)
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 
 <Callout type="warn" title="这些枚举是 #[non_exhaustive] 的">
-`IztroError`、`Brightness`、`StarType`、`Scope`、`Algorithm`、`AstroType`、`DayDivide`、`VoidPlacement`，以及 `LeapDivide` 至 `DouJunMonth` 八个流派口径枚举标了 `#[non_exhaustive]`，
+`IztroError`、`Brightness`、`StarType`、`Scope`、`Algorithm`、`AstroType`、`DayDivide`、`VoidPlacement`、`HoroscopeDivide`，以及 `LeapDivide` 至 `HourlyPalace` 十七个流派口径枚举标了 `#[non_exhaustive]`，
 crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破坏性变更。
 </Callout>
 
@@ -149,7 +158,7 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 | 字段 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `year_divide` | `YearDivide` | `Normal` | 年干支按正月初一还是立春换年 |
-| `horoscope_divide` | `HoroscopeDivide` | `Normal` | 运限干支与月柱按初一还是节气推 |
+| `horoscope_divide` | `HoroscopeDivide` | `Normal` | 运限干支与月柱按初一还是节气推（`ExactMonth`：年按初一、月按节气） |
 | `age_divide` | `AgeDivide` | `Normal` | 虚岁按自然农历年还是生日进位 |
 | `day_divide` | `DayDivide` | `Forward` | 晚子时归次日、归当天，还是整个日期归次日（月底进下月、除夕进下一年） |
 | `algorithm` | `Algorithm` | `Default` | 派别：默认或中州派 |
@@ -163,6 +172,15 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 | `yearly12_placement` | `Yearly12Placement` | `NatalAndYearly` | 岁前、将前十二神本命也安，还是只在流年安（本命不安时宫位上为 `None`） |
 | `original_palace` | `OriginalPalaceMarking` | `Primary` | 来因宫只标一宫，还是另标辛年丑宫、壬年子宫为辅来因宫 |
 | `dou_jun_month` | `DouJunMonth` | `Default` | 推斗君的生月同 iztro，还是随本命盘的晚子时规则 |
+| `decadal_stem` | `DecadalStem` | `Palace` | 大限天干取宫干，还是从命宫干起随大限方向连续排 |
+| `childhood_palace` | `ChildhoodPalace` | `Sequence` | 童限依次落命财疾夫福官，还是一律落夫妻宫 |
+| `age_mutagens` | `AgeMutagens` | `PalaceStem` | 小限取宫干起四化，还是不起四化 |
+| `yearly_palace` | `YearlyPalace` | `Taisui` | 流年命宫取太岁宫还是小限宫 |
+| `scope_mutagen_stem` | `ScopeMutagenStem` | `Scope` | 运限各层四化取该层的干，还是该层命宫的本命宫干 |
+| `monthly_palace` | `MonthlyPalace` | `DouJun` | 流月正月在斗君，还是固定在寅宫 |
+| `daily_palace` | `DailyPalace` | `FromMonthly` | 流日初一在流月命宫，还是它的下一宫 |
+| `leap_daily` | `LeapDaily` | `Default` | 闰月前半月的流日重新起数，还是接本月连续数 |
+| `hourly_palace` | `HourlyPalace` | `FromDaily` | 流时从流日命宫数，还是按时支落宫 |
 | `overrides` | `Option<Arc<TableOverrides>>` | `None` | 自定义四化表、附加四化星与亮度表 |
 
 各开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。

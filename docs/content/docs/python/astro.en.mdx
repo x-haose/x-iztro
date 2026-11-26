@@ -34,7 +34,7 @@ passing no `config` at all.
 | Field | Type | Default | Values (matching enum) |
 | --- | --- | --- | --- |
 | `year_divide` | `str` | `"normal"` | `normal` lunar New Year's Day / `exact` Beginning of Spring (`YearDivide`) |
-| `horoscope_divide` | `str` | `"normal"` | `normal` first of the month / `exact` solar term (`HoroscopeDivide`) |
+| `horoscope_divide` | `str` | `"normal"` | `normal` first of the month / `exact` solar term / `exactMonth` year at lunar New Year, months at the solar terms (`HoroscopeDivide`) |
 | `age_divide` | `str` | `"normal"` | `normal` increments at the turn of the year / `birthday` increments on the birthday (`AgeDivide`) |
 | `day_divide` | `str` | `"forward"` | `forward` the late Zi hour belongs to the next day / `current` to the current day / `forwardCarry` its whole date moves to the next day (month end into the next month, New Year's Eve into the next year) (`DayDivide`) |
 | `algorithm` | `str` | `"default"` | `default` / `zhongzhou` (`Algorithm`) |
@@ -48,6 +48,15 @@ passing no `config` at all.
 | `yearly12_placement` | `str` | `"natalAndYearly"` | `natalAndYearly` natal and yearly / `yearlyOnly` yearly only (`Yearly12Placement`) |
 | `original_palace` | `str` | `"primary"` | `primary` one palace / `withSecondary` also the secondary Original palace (Chou in xin years, Zi in ren years) (`OriginalPalaceMarking`) |
 | `dou_jun_month` | `str` | `"default"` | `default` as iztro / `natal` by the natal chart's rule (`DouJunMonth`) |
+| `decadal_stem` | `str` | `"palace"` | `palace` palace stem / `continuous` from the Soul palace stem, running on along the decades (`DecadalStem`) |
+| `childhood_palace` | `str` | `"sequence"` | `sequence` Soul, Wealth, Health, Spouse, Spirit, Career in turn / `spouse` always the Spouse palace (`ChildhoodPalace`) |
+| `age_mutagens` | `str` | `"palaceStem"` | `palaceStem` minor-limit palace stem / `none` no mutagens (`AgeMutagens`) |
+| `yearly_palace` | `str` | `"taisui"` | `taisui` Taisui palace / `age` minor-limit palace (`YearlyPalace`) |
+| `scope_mutagen_stem` | `str` | `"scope"` | `scope` the layer's own stem / `scopeSoulPalace` the natal stem of the layer's Soul palace (`ScopeMutagenStem`) |
+| `monthly_palace` | `str` | `"douJun"` | `douJun` month 1 at Dou Jun / `monthBranch` month 1 in the Yin palace (`MonthlyPalace`) |
+| `daily_palace` | `str` | `"fromMonthly"` | `fromMonthly` day 1 in the monthly Soul palace / `afterMonthly` day 1 in the palace after it (`DailyPalace`) |
+| `leap_daily` | `str` | `"default"` | `default` restart at the leap month's 1st / `continuous` first half of a leap month counts on from the regular month (`LeapDaily`) |
+| `hourly_palace` | `str` | `"fromDaily"` | `fromDaily` Zi hour in the daily Soul palace / `branch` by the hour's branch (`HourlyPalace`) |
 | `mutagens` | `dict[str, list[str]] \| None` | `None` | Stem key → four star keys (Lu, Quan, Ke, Ji) |
 | `extra_mutagens` | `dict[str, dict[str, list[str]]] \| None` | `None` | Stem key → mutagen key → list of extra star keys, added on top of that stem's four slots |
 | `brightness` | `dict[str, list[str]] \| None` | `None` | Star key → twelve brightness keys; index 0 is the Yin palace, an empty string means no brightness in that palace |
@@ -82,7 +91,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 **Output**
 
 ```text
-{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'leapDivide': 'default', 'tianmaPlacement': 'yearly', 'changshengDirection': 'yinYang', 'tianshangTianshi': 'default', 'tianwuPlacement': 'siShenYinHai', 'yearly12Placement': 'natalAndYearly', 'originalPalace': 'primary', 'douJunMonth': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'leapDivide': 'default', 'tianmaPlacement': 'yearly', 'changshengDirection': 'yinYang', 'tianshangTianshi': 'default', 'tianwuPlacement': 'siShenYinHai', 'yearly12Placement': 'natalAndYearly', 'originalPalace': 'primary', 'douJunMonth': 'default', 'decadalStem': 'palace', 'childhoodPalace': 'sequence', 'ageMutagens': 'palaceStem', 'yearlyPalace': 'taisui', 'scopeMutagenStem': 'scope', 'monthlyPalace': 'douJun', 'dailyPalace': 'fromMonthly', 'leapDaily': 'default', 'hourlyPalace': 'fromDaily', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
 earth 5th earth
 ['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
 ```

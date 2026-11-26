@@ -132,7 +132,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | 字段 | 取值 | 默认 |
 | --- | --- | --- |
 | `yearDivide` | `normal` / `exact` | `normal` |
-| `horoscopeDivide` | `normal` / `exact` | `normal` |
+| `horoscopeDivide` | `normal` / `exact` / `exactMonth` | `normal` |
 | `ageDivide` | `normal` / `birthday` | `normal` |
 | `dayDivide` | `forward` / `current` / `forwardCarry` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
@@ -146,8 +146,17 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `yearly12Placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` |
 | `originalPalace` | `primary` / `withSecondary` | `primary` |
 | `douJunMonth` | `default` / `natal` | `default` |
+| `decadalStem` | `palace` / `continuous` | `palace` |
+| `childhoodPalace` | `sequence` / `spouse` | `sequence` |
+| `ageMutagens` | `palaceStem` / `none` | `palaceStem` |
+| `yearlyPalace` | `taisui` / `age` | `taisui` |
+| `scopeMutagenStem` | `scope` / `scopeSoulPalace` | `scope` |
+| `monthlyPalace` | `douJun` / `monthBranch` | `douJun` |
+| `dailyPalace` | `fromMonthly` / `afterMonthly` | `fromMonthly` |
+| `leapDaily` | `default` / `continuous` | `default` |
+| `hourlyPalace` | `fromDaily` / `branch` | `fromDaily` |
 
-`voidPlacement` 及以下各键是 x-iztro 扩展，取默认值时星盘回显的 `config` 不带这个键；`dayDivide` 的 `forwardCarry` 同样是扩展取值。各键含义见 [Config 详解](/zh/docs/guide/guides/config)。
+`voidPlacement` 及以下各键是 x-iztro 扩展，取默认值时星盘回显的 `config` 不带这个键；`horoscopeDivide` 的 `exactMonth`、`dayDivide` 的 `forwardCarry` 同样是扩展取值。各键含义见 [Config 详解](/zh/docs/guide/guides/config)。
 
 另有三个**只进不出**的输入键，用于替换或补充内置数据表：
 
@@ -189,9 +198,10 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `earthlyBranch` / `earthlyBranchKey` | string | 该运限地支 |
 | `palaceNames` | string[12] | 以该运限位置为命宫重排的宫名，按盘上位置排列 |
 | `palaceNameKeys` | string[12] | 同上的 key 形式 |
-| `mutagen` | string[4] | 四化星名，顺序为禄、权、科、忌 |
+| `mutagen` | string[4] | 四化星名，顺序为禄、权、科、忌；由 `mutagenStem`（缺省即 `heavenlyStem`）化出，小限不起四化时为空 |
 | `mutagenStarKeys` | string[4] | 同上的 key 形式，与宫位的同名字段同义——被化的四颗星的星耀标识；单数 `mutagenKey` 才是四化类型（`sihuaLu` 等） |
 | `extraMutagenStarKeys` | `{四化标识: string[]}?` | 该层天干在四槽之外化出的附加四化星，与宫位的同名字段同义；没有附加星时缺省 |
+| `mutagenStem` / `mutagenStemKey` | string? | 化出本层四化的天干（[运限四化取干](/zh/docs/guide/guides/config#运限四化取干-scope_mutagen_stem)），与 `heavenlyStem` 相同时缺省（默认配置下恒缺省）；小限不起四化时为空串 |
 | `stars` | [Star](#star-星耀)[][12]? | 流耀在十二宫的分布（外层十二项对应宫位，内层是该宫的流耀列表），无流耀的层级缺省 |
 | `nominalAge` | int? | 虚岁，仅小限有 |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar-流年十二神)? | 仅流年有 |

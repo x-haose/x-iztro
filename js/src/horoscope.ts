@@ -70,15 +70,22 @@ export class HoroscopeItem {
   readonly palaceNames: readonly string[];
   /** 该层十二宫名标识 */
   readonly palaceNameKeys: readonly PalaceName[];
-  /** 四化星名 [禄, 权, 科, 忌]（翻译文本） */
+  /** 四化星名 [禄, 权, 科, 忌]（翻译文本），由 `mutagenStem`（undefined 即 `heavenlyStem`）化出；不起四化时为空 */
   readonly mutagen: readonly string[];
   /**
    * 被化的四颗星标识 [禄, 权, 科, 忌]，与 `Palace.mutagenStarKeys` 同义；
    * 单数的 `mutagenKey` 才是四化类型 `Mutagen` 的标识。
    */
   readonly mutagenStarKeys: readonly string[];
-  /** 该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时为 undefined */
+  /** 该层四化天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时为 undefined */
   readonly extraMutagenStarKeys: Readonly<Partial<Record<Mutagen, readonly string[]>>> | undefined;
+  /**
+   * 化出本层四化的天干（翻译文本）：与 `heavenlyStem` 相同时为 undefined（默认配置下恒为 undefined），
+   * 本层不起四化（小限 `ageMutagens: 'none'`）时为空串
+   */
+  readonly mutagenStem: string | undefined;
+  /** `mutagenStem` 的天干标识，取值规则同 `mutagenStem` */
+  readonly mutagenStemKey: HeavenlyStem | '' | undefined;
   /** 流耀：十二宫各一组；该层没有流耀时为 undefined */
   readonly stars: readonly (readonly Star[])[] | undefined;
 
@@ -95,6 +102,8 @@ export class HoroscopeItem {
     this.mutagen = [...data.mutagen];
     this.mutagenStarKeys = [...data.mutagenStarKeys];
     this.extraMutagenStarKeys = copyExtraMutagens(data.extraMutagenStarKeys);
+    this.mutagenStem = data.mutagenStem;
+    this.mutagenStemKey = data.mutagenStemKey;
     this.stars = data.stars?.map((group) => group.map((s) => new Star(s)));
   }
 

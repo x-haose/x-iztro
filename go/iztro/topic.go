@@ -119,9 +119,10 @@ type TopicSelection struct {
 	Groups []TopicGroup `json:"groups"`
 	// Palaces 为选中的宫，每宫一次，即主题文本的成段顺序
 	Palaces []TopicPalace `json:"palaces"`
-	// PalaceStemSource 为宫干飞化所用天干的取法："natalPalace"（本命各宫宫干，运限各层沿用）
+	// PalaceStemSource 为宫干飞化所用天干的取法：StemSourceNatalPalace（本命各宫宫干，运限各层沿用）
 	PalaceStemSource string `json:"palaceStemSource"`
-	// ScopeMutagenStemSource 为运限四化所用天干的取法："scope"（该层自身的干：大限宫干、流年年干、流月月干……）
+	// ScopeMutagenStemSource 为运限四化所用天干的取法，随 Config.ScopeMutagenStem：StemSourceScope
+	// （该层自身的干：大限干、流年年干、流月月干……）或 StemSourceScopeSoulPalace（该层命宫的本命宫干）
 	ScopeMutagenStemSource string `json:"scopeMutagenStemSource"`
 	// BirthMutagens 为生年四化落在选中宫的，按禄、权、科、忌
 	BirthMutagens []MutagenLanding `json:"birthMutagens"`

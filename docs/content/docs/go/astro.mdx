@@ -164,6 +164,15 @@ type Config struct {
     Yearly12Placement   string
     OriginalPalace      string
     DouJunMonth         string
+    DecadalStem         string
+    ChildhoodPalace     string
+    AgeMutagens         string
+    YearlyPalace        string
+    ScopeMutagenStem    string
+    MonthlyPalace       string
+    DailyPalace         string
+    LeapDaily           string
+    HourlyPalace        string
     Mutagens            map[string][]string
     ExtraMutagens       map[string]map[string][]string
     Brightness          map[string][]string
@@ -173,7 +182,7 @@ type Config struct {
 | 字段 | 取值 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | `YearDivide` | `"normal"` / `"exact"` | `"normal"` | 年干支按正月初一还是立春换年 |
-| `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | 流年神煞按哪个分界取年支 |
+| `HoroscopeDivide` | `"normal"` / `"exact"` / `"exactMonth"` | `"normal"` | 运限干支与月柱的年、月分界：都按初一，按立春与节气，还是年按初一、月按节气 |
 | `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | 虚岁按农历年还是生日增长 |
 | `DayDivide` | `"forward"` / `"current"` / `"forwardCarry"` | `"forward"` | 晚子时归次日、当日，还是整个日期归次日（月底进下月、除夕进下一年） |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | 算法派别 |
@@ -187,6 +196,15 @@ type Config struct {
 | `Yearly12Placement` | `"natalAndYearly"` / `"yearlyOnly"` | `"natalAndYearly"` | 岁前、将前十二神本命也安，还是只在流年安 |
 | `OriginalPalace` | `"primary"` / `"withSecondary"` | `"primary"` | 来因宫只标一宫，还是另标辛年丑宫、壬年子宫为辅来因宫 |
 | `DouJunMonth` | `"default"` / `"natal"` | `"default"` | 推斗君的生月同 iztro，还是随本命盘的晚子时规则 |
+| `DecadalStem` | `"palace"` / `"continuous"` | `"palace"` | 大限天干取宫干，还是从命宫干起随大限方向连续排 |
+| `ChildhoodPalace` | `"sequence"` / `"spouse"` | `"sequence"` | 童限依次落命财疾夫福官，还是一律落夫妻宫 |
+| `AgeMutagens` | `"palaceStem"` / `"none"` | `"palaceStem"` | 小限取宫干起四化，还是不起四化 |
+| `YearlyPalace` | `"taisui"` / `"age"` | `"taisui"` | 流年命宫取太岁宫还是小限宫 |
+| `ScopeMutagenStem` | `"scope"` / `"scopeSoulPalace"` | `"scope"` | 运限各层四化取该层的干，还是该层命宫的本命宫干 |
+| `MonthlyPalace` | `"douJun"` / `"monthBranch"` | `"douJun"` | 流月正月在斗君，还是固定在寅宫 |
+| `DailyPalace` | `"fromMonthly"` / `"afterMonthly"` | `"fromMonthly"` | 流日初一在流月命宫，还是它的下一宫 |
+| `LeapDaily` | `"default"` / `"continuous"` | `"default"` | 闰月前半月的流日重新起数，还是接本月连续数 |
+| `HourlyPalace` | `"fromDaily"` / `"branch"` | `"fromDaily"` | 流时从流日命宫数，还是按时支落宫 |
 | `Mutagens` | 天干标识 → 四星标识 | — | 自定义四化表，按天干整表替换 |
 | `ExtraMutagens` | 天干标识 → 四化标识 → 星耀标识列表 | — | 附加四化星，加在该干四槽之外 |
 | `Brightness` | 星耀标识 → 十二项亮度标识 | — | 自定义亮度表，按星耀整表替换 |
@@ -210,7 +228,7 @@ fmt.Println(chart.FiveElementsClass)
 ```
 
 每组取值都有对应的常量，不必手写字符串：
-`YearDivideNormal` / `YearDivideExact`、`HoroscopeDivideNormal` / `HoroscopeDivideExact`、
+`YearDivideNormal` / `YearDivideExact`、`HoroscopeDivideNormal` / `HoroscopeDivideExact` / `HoroscopeDivideExactMonth`、
 `AgeDivideNormal` / `AgeDivideBirthday`、`DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry`、
 `AlgorithmDefault` / `AlgorithmZhongzhou`、`AstroHeaven` / `AstroEarth` / `AstroHuman`、
 `VoidPlacementDefault` / `VoidPlacementZhengPang`、`LeapDivideDefault` / `LeapDivideNextMonth`、
@@ -219,7 +237,8 @@ fmt.Println(chart.FiveElementsClass)
 `TianshangTianshiDefault` / `TianshangTianshiTianshiFriends`、
 `TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin`、
 `Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly`、
-`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`、`DouJunMonthDefault` / `DouJunMonthNatal`。
+`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`、`DouJunMonthDefault` / `DouJunMonthNatal`、
+`DecadalStemPalace` / `DecadalStemContinuous`、`ChildhoodPalaceSequence` / `ChildhoodPalaceSpouse`、`AgeMutagensPalaceStem` / `AgeMutagensNone`、`YearlyPalaceTaisui` / `YearlyPalaceAge`、`ScopeMutagenStemScope` / `ScopeMutagenStemScopeSoulPalace`、`MonthlyPalaceDouJun` / `MonthlyPalaceMonthBranch`、`DailyPalaceFromMonthly` / `DailyPalaceAfterMonthly`、`LeapDailyDefault` / `LeapDailyContinuous`、`HourlyPalaceFromDaily` / `HourlyPalaceBranch`。
 
 **边界与陷阱**
 

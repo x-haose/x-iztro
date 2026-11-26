@@ -744,14 +744,19 @@ type HoroscopeScope struct {
 	PalaceNames []string `json:"palaceNames"`
 	// PalaceNameKeys 为该运限的十二宫标识
 	PalaceNameKeys []string `json:"palaceNameKeys"`
-	// Mutagen 为四化星名 [禄, 权, 科, 忌]（翻译文本）
+	// Mutagen 为四化星名 [禄, 权, 科, 忌]（翻译文本），由 MutagenStem（nil 即 HeavenlyStem）化出；不起四化时为空
 	Mutagen []string `json:"mutagen"`
 	// MutagenStarKeys 为被四化的四颗星的语言无关星耀标识 [禄, 权, 科, 忌]，
 	// 与 Palace.MutagenStarKeys 同名同义；四化类型标识见单数的 Star.MutagenKey
 	MutagenStarKeys []string `json:"mutagenStarKeys"`
-	// ExtraMutagenStarKeys 为该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表
+	// ExtraMutagenStarKeys 为该层四化天干在四槽之外化出的附加星：四化标识 → 星耀标识列表
 	// （Config.ExtraMutagens）；没有附加星时为 nil
 	ExtraMutagenStarKeys map[string][]string `json:"extraMutagenStarKeys,omitempty"`
+	// MutagenStem 为化出本层四化的天干（翻译文本）：与 HeavenlyStem 相同时为 nil（默认配置下恒为 nil），
+	// 本层不起四化（小限 Config.AgeMutagens 为 AgeMutagensNone）时指向空串
+	MutagenStem *string `json:"mutagenStem,omitempty"`
+	// MutagenStemKey 为 MutagenStem 的天干标识，取值规则同 MutagenStem
+	MutagenStemKey *string `json:"mutagenStemKey,omitempty"`
 	// Stars 为流耀在十二宫的分布（无流耀的层级为 nil）
 	Stars [][]Star `json:"stars,omitempty"`
 	// NominalAge 为虚岁（仅小限层级有值）

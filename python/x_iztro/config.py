@@ -18,7 +18,7 @@ class ChartConfig:
     """年分界点（`YearDivide`）：normal=正月初一 / exact=立春"""
 
     horoscope_divide: str = "normal"
-    """运限分界点（`HoroscopeDivide`）：normal=初一 / exact=节气"""
+    """运限分界点（`HoroscopeDivide`）：normal=年月都按初一 / exact=年按立春、月按节气 / exactMonth=年按初一、月按节气"""
 
     age_divide: str = "normal"
     """虚岁分界点（`AgeDivide`）：normal=跨年即加 / birthday=过生日才加"""
@@ -59,6 +59,33 @@ class ChartConfig:
     dou_jun_month: str = "default"
     """推斗君时生月的取法（`DouJunMonth`）：default=同 iztro / natal=与本命盘同一规则"""
 
+    decadal_stem: str = "palace"
+    """大限天干的取法（`DecadalStem`）：palace=宫干 / continuous=命宫干起随大限方向连续排"""
+
+    childhood_palace: str = "sequence"
+    """童限落在哪一宫（`ChildhoodPalace`）：sequence=命财疾夫福官依次 / spouse=一律夫妻宫"""
+
+    age_mutagens: str = "palaceStem"
+    """小限是否起四化（`AgeMutagens`）：palaceStem=取小限宫干 / none=不起四化"""
+
+    yearly_palace: str = "taisui"
+    """流年命宫（`YearlyPalace`）：taisui=太岁宫 / age=小限宫"""
+
+    scope_mutagen_stem: str = "scope"
+    """运限各层四化取哪个干（`ScopeMutagenStem`）：scope=该层的干 / scopeSoulPalace=该层命宫的本命宫干"""
+
+    monthly_palace: str = "douJun"
+    """流月命宫的起法（`MonthlyPalace`）：douJun=斗君为正月 / monthBranch=正月在寅宫"""
+
+    daily_palace: str = "fromMonthly"
+    """流日命宫的起法（`DailyPalace`）：fromMonthly=初一在流月命宫 / afterMonthly=初一在其下一宫"""
+
+    leap_daily: str = "default"
+    """闰月里流日的数法（`LeapDaily`）：default=闰月初一重新起数 / continuous=闰月前半月接本月连续数"""
+
+    hourly_palace: str = "fromDaily"
+    """流时命宫的起法（`HourlyPalace`）：fromDaily=子时在流日命宫 / branch=按时支落宫"""
+
     mutagens: dict[str, list[str]] | None = None
     """自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
 
@@ -97,6 +124,15 @@ class ChartConfig:
             "yearly12Placement": str(self.yearly12_placement),
             "originalPalace": str(self.original_palace),
             "douJunMonth": str(self.dou_jun_month),
+            "decadalStem": str(self.decadal_stem),
+            "childhoodPalace": str(self.childhood_palace),
+            "ageMutagens": str(self.age_mutagens),
+            "yearlyPalace": str(self.yearly_palace),
+            "scopeMutagenStem": str(self.scope_mutagen_stem),
+            "monthlyPalace": str(self.monthly_palace),
+            "dailyPalace": str(self.daily_palace),
+            "leapDaily": str(self.leap_daily),
+            "hourlyPalace": str(self.hourly_palace),
         }
         if self.mutagens:
             payload["mutagens"] = {
@@ -131,4 +167,13 @@ class ChartConfig:
             yearly12_placement=d.get("yearly12Placement", "natalAndYearly"),
             original_palace=d.get("originalPalace", "primary"),
             dou_jun_month=d.get("douJunMonth", "default"),
+            decadal_stem=d.get("decadalStem", "palace"),
+            childhood_palace=d.get("childhoodPalace", "sequence"),
+            age_mutagens=d.get("ageMutagens", "palaceStem"),
+            yearly_palace=d.get("yearlyPalace", "taisui"),
+            scope_mutagen_stem=d.get("scopeMutagenStem", "scope"),
+            monthly_palace=d.get("monthlyPalace", "douJun"),
+            daily_palace=d.get("dailyPalace", "fromMonthly"),
+            leap_daily=d.get("leapDaily", "default"),
+            hourly_palace=d.get("hourlyPalace", "fromDaily"),
         )

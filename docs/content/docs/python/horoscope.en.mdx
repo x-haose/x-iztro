@@ -67,6 +67,7 @@ together.
 | `palace_names` / `palace_name_keys` | `list[str]` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
 | `mutagen` / `mutagen_star_keys` | `list[str]` | The stars this scope's stem transforms, in the order lu, quan, ke, ji; `mutagen_star_keys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
 | `extra_mutagen_star_keys` | `dict[str, list[str]]` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this scope's stem transforms beyond the four slots: mutagen key → list of star keys; empty when there are none, and `has_horoscope_mutagen` counts them |
+| `mutagen_stem` / `mutagen_stem_key` | `str \| None` | The stem this layer's mutagens come from ([stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem)): `None` when it equals `heavenly_stem` (always under the default config); an empty string when the minor limit has no mutagens |
 | `stars` | `list[list[Star]] \| None` | The scope stars of this layer; `None` for layers that have none |
 
 `AgeItem` and `HoroscopeYearly` both inherit `HoroscopeItem` and each add one field:

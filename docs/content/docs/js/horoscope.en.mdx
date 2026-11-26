@@ -31,6 +31,7 @@ const h = chart.horoscope('2024-10-1', 0);
 | `palaceNames` / `palaceNameKeys` | The twelve palace names counted from this layer's Soul palace, by palace index |
 | `mutagen` / `mutagenStarKeys` | This layer's transformed stars [lu, quan, ke, ji] |
 | `extraMutagenStarKeys` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this layer's stem transforms beyond the four slots: mutagen key → list of star keys; `undefined` when there are none, and `hasHoroscopeMutagen` counts them |
+| `mutagenStem` / `mutagenStemKey` | The stem this layer's mutagens come from ([stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem)): `undefined` when it equals `heavenlyStem` (always under the default config); an empty string when the minor limit has no mutagens |
 | `stars` | Horoscope stars, one group per palace; `undefined` when the layer has none |
 | `palaceIndexByName(name)` | Palace index of a palace name in this layer |
 

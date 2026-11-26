@@ -87,7 +87,7 @@ const LOOKUP_PALACE_KEYS: [&str; 14] = [
 ];
 
 /// 亮度标识
-const BRIGHTNESSES: [Brightness; 8] = [
+const BRIGHTNESSES: [Brightness; 9] = [
     Brightness::Miao,
     Brightness::Wang,
     Brightness::De,
@@ -96,6 +96,7 @@ const BRIGHTNESSES: [Brightness; 8] = [
     Brightness::Bu,
     Brightness::Xian,
     Brightness::Xian2,
+    Brightness::Di,
 ];
 
 /// 标识译成指定语言的文本

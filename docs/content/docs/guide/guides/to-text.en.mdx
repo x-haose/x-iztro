@@ -777,7 +777,7 @@ language-independent key or a palace index (0-11, Yin palace is 0):
 | `scopeMutagens` | Transformations of each layer from decadal down to the chosen one landing in the selected palaces, each with `scope`, `nameKey` (`childhood` for a decadal layer before the first decade) and `stemKey` (the stem that produced it); empty at `origin` |
 | `patterns` | The hits listed one by one in the topic text's patterns section: seen from the chosen layer, with the forming palace among the selected ones; each has `key`, `scope`, `palaceIndex`, `palaceNameKey` (the layer's name), `variant`, `broken`, `stars` (`key`, `palaceIndex`, `brightnessKey`, `mutagenKey`). The pattern criteria take the same parameter as the text (Rust `topic_palaces_with`, Go `TopicPalacesWith`, the `config` option in Python and JavaScript) |
 | `palaceStemSource` | Where the stems for stem flying come from; currently `natalPalace`: the natal palace stems, kept at every layer |
-| `scopeMutagenStemSource` | Where the stems for layer transformations come from; currently `scope`: the layer's own stem (decadal palace stem, year stem, month stem …) |
+| `scopeMutagenStemSource` | Where the stems for layer transformations come from, following the chart's [stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem): `scope` for the layer's own stem (decadal stem, year stem, month stem …), `scopeSoulPalace` for the natal stem of the layer's Soul palace |
 
 Schools differ on which stems a horoscope layer uses (some re-derive every palace stem for the year, some
 take a layer's transformations from the stem of that layer's Soul palace); the two source fields and each

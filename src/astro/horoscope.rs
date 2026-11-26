@@ -26,7 +26,6 @@ use crate::star::location::{
     get_chang_qu_index_by_stem, get_kui_yue_index, get_lu_yang_tuo_ma_index, get_luan_xi_index,
     get_nianjie_index,
 };
-use crate::utils::get_mutagens_by_heavenly_stem;
 use crate::utils::{earthly_branch_to_palace_index, fix_index, time_to_index};
 
 // ============================================================
@@ -254,41 +253,42 @@ pub fn get_horoscope(
     let nominal_age = nominal_age.max(1) as u32;
 
     // ---- 4. 目标日期干支四柱（年月分界点由配置决定） ----
-    //     初一分界：年按正月初一换年，月按初一以五虎遁推算（闰月下半月归下月）；
-    //     节气分界：年按立春换年，月按节气精确时刻推算。
+    //     年按正月初一或立春换年；月按初一以五虎遁推算（闰月下半月归下月）或按节气精确时刻推算。
     //     日柱晚子时归次日；时柱天干随日柱推算
-    let (target_year_stem, target_year_branch) = match astrolabe.config.horoscope_divide {
-        HoroscopeDivide::Normal => target_lunar.year,
-        HoroscopeDivide::Exact => calendar::year_by_li_chun(&target_moment, target_lunar_year),
+    let config = &astrolabe.config;
+    let (target_year_stem, target_year_branch) = if config.horoscope_divide.year_by_li_chun() {
+        calendar::year_by_li_chun(&target_moment, target_lunar_year)
+    } else {
+        target_lunar.year
     };
 
-    let (target_month_stem, target_month_branch) = match astrolabe.config.horoscope_divide {
-        HoroscopeDivide::Normal => {
-            let target_month_fix: i32 = if target_is_leap && target_lunar_day > 15 {
-                1
-            } else {
-                0
-            };
-            (
-                HeavenlyStem::from_index(fix_index(
-                    TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
-                        + target_month_fix,
-                    10,
-                )),
-                EarthlyBranch::from_index(fix_index(
-                    2 + target_lunar_month - 1 + target_month_fix,
-                    12,
-                )),
-            )
-        }
-        HoroscopeDivide::Exact => calendar::month_exact(&target_moment, target_lunar_year),
+    // 闰月十六日起归下月：月干（初一分界）、流月命宫同此口径
+    let date_leap_addition: i32 = if target_is_leap && target_lunar_day > 15 {
+        1
+    } else {
+        0
+    };
+    let (target_month_stem, target_month_branch) = if config.horoscope_divide.month_by_jie() {
+        calendar::month_exact(&target_moment, target_lunar_year)
+    } else {
+        (
+            HeavenlyStem::from_index(fix_index(
+                TIGER_RULE[target_year_stem.index()].index() as i32 + target_lunar_month - 1
+                    + date_leap_addition,
+                10,
+            )),
+            EarthlyBranch::from_index(fix_index(
+                2 + target_lunar_month - 1 + date_leap_addition,
+                12,
+            )),
+        )
     };
     let (target_day_stem, target_day_branch) = target_lunar.day_exact;
     let (target_time_stem, target_time_branch) = target_lunar.time;
 
     // ---- 5. 大限 ----
-    //     虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
-    //     按虚岁依次落在 命宫/财帛/疾厄/夫妻/福德/官禄，取本命宫位干支
+    //     虚岁落在某宫大限区间内取该宫，干支取该宫的大限干支（`decadal_stem` 决定天干）；
+    //     尚未起运时为童限，落宫由 `childhood_palace` 决定，干支取该宫的本命宫干支
     let (decadal_palace_idx, is_childhood) = find_decadal_palace(astrolabe, nominal_age);
     let (decadal_stem, decadal_branch) = if is_childhood {
         let p = &astrolabe.palaces[decadal_palace_idx];
@@ -297,77 +297,76 @@ pub fn get_horoscope(
         let d = &astrolabe.palaces[decadal_palace_idx].decadal;
         (d.heavenly_stem, d.earthly_branch)
     };
-    let decadal_mutagen = astrolabe.config.mutagens_of(decadal_stem).to_vec();
-    let decadal_extra_mutagen = astrolabe.config.extra_mutagens_of(decadal_stem).clone();
-    let decadal_palace_names = get_palace_names(decadal_palace_idx).to_vec();
     let decadal_stars = get_horoscope_stars(decadal_stem, decadal_branch, Scope::Decadal, language);
-
     let decadal_name = if is_childhood {
         HoroscopeName::Childhood
     } else {
         HoroscopeName::Decadal
     };
-    let decadal = HoroscopeItem {
-        index: decadal_palace_idx,
-        name: translate_horoscope_name(decadal_name, language).to_string(),
-        name_key: decadal_name,
-        heavenly_stem: decadal_stem,
-        earthly_branch: decadal_branch,
-        palace_names: decadal_palace_names,
-        mutagen: decadal_mutagen,
-        extra_mutagen: decadal_extra_mutagen,
-        stars: Some(decadal_stars.to_vec()),
-    };
+    let decadal = scope_item(
+        astrolabe,
+        decadal_palace_idx,
+        decadal_name,
+        (decadal_stem, decadal_branch),
+        Some(scope_mutagen_stem(
+            astrolabe,
+            decadal_stem,
+            decadal_palace_idx,
+        )),
+        Some(decadal_stars.to_vec()),
+        language,
+    );
 
     // ---- 6. 小限 ----
+    //     宫干四化取小限宫的宫干，`age_mutagens=None` 时不起四化
     let age_palace_idx = find_age_palace(astrolabe, nominal_age);
-    let age_stem = astrolabe.palaces[age_palace_idx].heavenly_stem;
-    let age_branch = astrolabe.palaces[age_palace_idx].earthly_branch;
-    let age_mutagen = astrolabe.config.mutagens_of(age_stem).to_vec();
-    let age_extra_mutagen = astrolabe.config.extra_mutagens_of(age_stem).clone();
-    let age_palace_names = get_palace_names(age_palace_idx).to_vec();
-
+    let age_palace = &astrolabe.palaces[age_palace_idx];
+    let age_mutagen_stem = match config.age_mutagens {
+        AgeMutagens::PalaceStem => Some(age_palace.heavenly_stem),
+        AgeMutagens::None => None,
+    };
     let age = AgeItem {
-        base: HoroscopeItem {
-            index: age_palace_idx,
-            name: translate_horoscope_name(HoroscopeName::Age, language).to_string(),
-            name_key: HoroscopeName::Age,
-            heavenly_stem: age_stem,
-            earthly_branch: age_branch,
-            palace_names: age_palace_names,
-            mutagen: age_mutagen,
-            extra_mutagen: age_extra_mutagen,
-            stars: None,
-        },
+        base: scope_item(
+            astrolabe,
+            age_palace_idx,
+            HoroscopeName::Age,
+            (age_palace.heavenly_stem, age_palace.earthly_branch),
+            age_mutagen_stem,
+            None,
+            language,
+        ),
         nominal_age,
     };
 
     // ---- 7. 流年（含按目标年支起的岁前/将前十二神） ----
-    let yearly_index = earthly_branch_to_palace_index(target_year_branch);
-    let yearly_mutagen = astrolabe.config.mutagens_of(target_year_stem).to_vec();
-    let yearly_extra_mutagen = astrolabe.config.extra_mutagens_of(target_year_stem).clone();
-    let yearly_palace_names = get_palace_names(yearly_index).to_vec();
+    //     太岁宫是流年年支所在宫；流年命宫取太岁宫或小限宫（`yearly_palace`），流年干支、
+    //     流耀与岁前/将前十二神都按流年干支安，不随命宫换
+    let taisui_index = earthly_branch_to_palace_index(target_year_branch);
+    let yearly_index = match config.yearly_palace {
+        YearlyPalace::Taisui => taisui_index,
+        YearlyPalace::Age => age_palace_idx,
+    };
     let yearly_stars = get_horoscope_stars(
         target_year_stem,
         target_year_branch,
         Scope::Yearly,
         language,
     );
-    let (yearly_suiqian12, yearly_jiangqian12) =
-        get_yearly12(target_year_branch, astrolabe.config.algorithm);
-
+    let (yearly_suiqian12, yearly_jiangqian12) = get_yearly12(target_year_branch, config.algorithm);
     let yearly = YearlyItem {
-        base: HoroscopeItem {
-            index: yearly_index,
-            name: translate_horoscope_name(HoroscopeName::Yearly, language).to_string(),
-            name_key: HoroscopeName::Yearly,
-            heavenly_stem: target_year_stem,
-            earthly_branch: target_year_branch,
-            palace_names: yearly_palace_names,
-            mutagen: yearly_mutagen,
-            extra_mutagen: yearly_extra_mutagen,
-            stars: Some(yearly_stars.to_vec()),
-        },
+        base: scope_item(
+            astrolabe,
+            yearly_index,
+            HoroscopeName::Yearly,
+            (target_year_stem, target_year_branch),
+            Some(scope_mutagen_stem(
+                astrolabe,
+                target_year_stem,
+                yearly_index,
+            )),
+            Some(yearly_stars.to_vec()),
+            language,
+        ),
         yearly_dec_star: YearlyDecStar {
             jiangqian12: yearly_jiangqian12.to_vec(),
             suiqian12: yearly_suiqian12.to_vec(),
@@ -375,103 +374,109 @@ pub fn get_horoscope(
     };
 
     // ---- 8. 流月 ----
-    //     斗君 = 流年宫逆数生月、顺数生时；生月按星盘的闰月口径（`fix_leap`、`leap_divide`）取，
-    //     `dou_jun_month=Natal` 时连本命盘晚子时不进闰月下半月的例外也一并照用
-    let keep_leap_month = match astrolabe.config.dou_jun_month {
-        DouJunMonth::Default => false,
-        DouJunMonth::Natal => effective_time_index(day_divide, astrolabe.time_index) == 12,
+    //     斗君：太岁宫逆数生月、顺数生时得正月，每月顺行一宫；生月按星盘的闰月口径
+    //     （`fix_leap`、`leap_divide`）取，`dou_jun_month=Natal` 时连本命盘晚子时不进闰月下半月的例外也一并照用。
+    //     寅起：正月固定在寅宫，每月顺行一宫。两者都是闰月前半月随本月、后半月随下月
+    let monthly_index = match config.monthly_palace {
+        MonthlyPalace::DouJun => {
+            let keep_leap_month = match config.dou_jun_month {
+                DouJunMonth::Default => false,
+                DouJunMonth::Natal => effective_time_index(day_divide, astrolabe.time_index) == 12,
+            };
+            let birth_month_index = birth_month_index(
+                birth.lunar_month,
+                birthday_lunar_day,
+                birth.is_leap,
+                astrolabe.fix_leap,
+                config.leap_divide,
+                keep_leap_month,
+            ) as i32;
+            // 出生时辰的地支原始索引 (0=子, 1=丑, ...)
+            let birth_time_branch_raw_index = fix_index(astrolabe.time_index as i32, 12) as i32;
+            fix_index(
+                taisui_index as i32 - (birth_month_index + 1)
+                    + birth_time_branch_raw_index
+                    + (target_lunar_month + date_leap_addition),
+                12,
+            )
+        }
+        MonthlyPalace::MonthBranch => fix_index(target_lunar_month - 1 + date_leap_addition, 12),
     };
-    let birth_month_index = birth_month_index(
-        birth.lunar_month,
-        birthday_lunar_day,
-        birth.is_leap,
-        astrolabe.fix_leap,
-        astrolabe.config.leap_divide,
-        keep_leap_month,
-    ) as i32;
-    let date_leap_addition = if target_is_leap && target_lunar_day > 15 {
-        1
-    } else {
-        0
-    };
-    // 出生时辰的地支原始索引 (0=子, 1=丑, ...)
-    let birth_time_branch_raw_index = fix_index(astrolabe.time_index as i32, 12) as i32;
-
-    let monthly_index = fix_index(
-        yearly_index as i32 - (birth_month_index + 1)
-            + birth_time_branch_raw_index
-            + (target_lunar_month + date_leap_addition),
-        12,
-    );
-    let monthly_mutagen = astrolabe.config.mutagens_of(target_month_stem).to_vec();
-    let monthly_extra_mutagen = astrolabe
-        .config
-        .extra_mutagens_of(target_month_stem)
-        .clone();
-    let monthly_palace_names = get_palace_names(monthly_index).to_vec();
     let monthly_stars = get_horoscope_stars(
         target_month_stem,
         target_month_branch,
         Scope::Monthly,
         language,
     );
-
-    let monthly = HoroscopeItem {
-        index: monthly_index,
-        name: translate_horoscope_name(HoroscopeName::Monthly, language).to_string(),
-        name_key: HoroscopeName::Monthly,
-        heavenly_stem: target_month_stem,
-        earthly_branch: target_month_branch,
-        palace_names: monthly_palace_names,
-        mutagen: monthly_mutagen,
-        extra_mutagen: monthly_extra_mutagen,
-        stars: Some(monthly_stars.to_vec()),
-    };
+    let monthly = scope_item(
+        astrolabe,
+        monthly_index,
+        HoroscopeName::Monthly,
+        (target_month_stem, target_month_branch),
+        Some(scope_mutagen_stem(
+            astrolabe,
+            target_month_stem,
+            monthly_index,
+        )),
+        Some(monthly_stars.to_vec()),
+        language,
+    );
 
     // ---- 9. 流日 ----
-    let daily_index = fix_index(monthly_index as i32 + target_lunar_day as i32 - 1, 12);
-    let daily_mutagen = astrolabe.config.mutagens_of(target_day_stem).to_vec();
-    let daily_extra_mutagen = astrolabe.config.extra_mutagens_of(target_day_stem).clone();
-    let daily_palace_names = get_palace_names(daily_index).to_vec();
+    //     初一落在流月命宫（`daily_palace=AfterMonthly` 时落在其下一宫），每日顺行一宫；
+    //     `leap_daily=Continuous` 时闰月前半月接着同号本月的日数连续顺数
+    let mut daily_offset = target_lunar_day as i32 - 1;
+    if config.daily_palace == DailyPalace::AfterMonthly {
+        daily_offset += 1;
+    }
+    if config.leap_daily == LeapDaily::Continuous && target_is_leap && date_leap_addition == 0 {
+        let regular_days = calendar::month_day_count(target_lunar_year, target_lunar_month as i64)
+            .expect("有闰月的农历年必有同号的本月");
+        daily_offset += regular_days as i32;
+    }
+    let daily_index = fix_index(monthly_index as i32 + daily_offset, 12);
     let daily_stars =
         get_horoscope_stars(target_day_stem, target_day_branch, Scope::Daily, language);
-
-    let daily = HoroscopeItem {
-        index: daily_index,
-        name: translate_horoscope_name(HoroscopeName::Daily, language).to_string(),
-        name_key: HoroscopeName::Daily,
-        heavenly_stem: target_day_stem,
-        earthly_branch: target_day_branch,
-        palace_names: daily_palace_names,
-        mutagen: daily_mutagen,
-        extra_mutagen: daily_extra_mutagen,
-        stars: Some(daily_stars.to_vec()),
-    };
+    let daily = scope_item(
+        astrolabe,
+        daily_index,
+        HoroscopeName::Daily,
+        (target_day_stem, target_day_branch),
+        Some(scope_mutagen_stem(astrolabe, target_day_stem, daily_index)),
+        Some(daily_stars.to_vec()),
+        language,
+    );
 
     // ---- 10. 流时 ----
-    let target_hour_branch_index = fix_index(time_index as i32, 12) as i32;
-    let hourly_index = fix_index(daily_index as i32 + target_hour_branch_index, 12);
-    let hourly_mutagen = astrolabe.config.mutagens_of(target_time_stem).to_vec();
-    let hourly_extra_mutagen = astrolabe.config.extra_mutagens_of(target_time_stem).clone();
-    let hourly_palace_names = get_palace_names(hourly_index).to_vec();
+    //     从流日命宫起子时顺数，或按时支直接落宫（子时在子宫，`hourly_palace=Branch`）
+    let target_hour_branch_index = fix_index(time_index as i32, 12);
+    let hourly_index = match config.hourly_palace {
+        HourlyPalace::FromDaily => {
+            fix_index(daily_index as i32 + target_hour_branch_index as i32, 12)
+        }
+        HourlyPalace::Branch => {
+            earthly_branch_to_palace_index(EarthlyBranch::from_index(target_hour_branch_index))
+        }
+    };
     let hourly_stars = get_horoscope_stars(
         target_time_stem,
         target_time_branch,
         Scope::Hourly,
         language,
     );
-
-    let hourly = HoroscopeItem {
-        index: hourly_index,
-        name: translate_horoscope_name(HoroscopeName::Hourly, language).to_string(),
-        name_key: HoroscopeName::Hourly,
-        heavenly_stem: target_time_stem,
-        earthly_branch: target_time_branch,
-        palace_names: hourly_palace_names,
-        mutagen: hourly_mutagen,
-        extra_mutagen: hourly_extra_mutagen,
-        stars: Some(hourly_stars.to_vec()),
-    };
+    let hourly = scope_item(
+        astrolabe,
+        hourly_index,
+        HoroscopeName::Hourly,
+        (target_time_stem, target_time_branch),
+        Some(scope_mutagen_stem(
+            astrolabe,
+            target_time_stem,
+            hourly_index,
+        )),
+        Some(hourly_stars.to_vec()),
+        language,
+    );
 
     // ---- 11. 农历日期字符串（恒为中文写法，闰月带「闰」前缀） ----
     let lunar_date_str = calendar::chinese_lunar_date(
@@ -499,8 +504,8 @@ pub fn get_horoscope(
 
 /// 查找大限宫位索引，返回 (宫位索引, 是否童限)。
 ///
-/// 虚岁落在某宫大限区间内取该宫；尚未起运时为童限，
-/// 按虚岁依次映射到 [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]。
+/// 虚岁落在某宫大限区间内取该宫；尚未起运时为童限：`childhood_palace=Sequence` 按虚岁依次映射到
+/// [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]，`Spouse` 一律取夫妻宫。
 fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool) {
     for p in &astrolabe.palaces {
         let (start, end) = p.decadal.range;
@@ -509,8 +514,12 @@ fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool)
         }
     }
 
-    let childhood_idx = ((nominal_age as usize).saturating_sub(1)) % CHILDHOOD_PALACES.len();
-    let target_palace = CHILDHOOD_PALACES[childhood_idx];
+    let target_palace = match astrolabe.config.childhood_palace {
+        ChildhoodPalace::Sequence => {
+            CHILDHOOD_PALACES[((nominal_age as usize).saturating_sub(1)) % CHILDHOOD_PALACES.len()]
+        }
+        ChildhoodPalace::Spouse => Palace::Spouse,
+    };
 
     let idx = astrolabe
         .palaces
@@ -531,6 +540,50 @@ fn find_age_palace(astrolabe: &Astrolabe, nominal_age: u32) -> usize {
         }
     }
     0
+}
+
+/// 运限某层四化所用的天干：`scope_mutagen_stem=Scope` 取该层自身的干，
+/// `ScopeSoulPalace` 取该层命宫（盘上第 `soul_index` 宫）的本命宫干。
+fn scope_mutagen_stem(
+    astrolabe: &Astrolabe,
+    layer_stem: HeavenlyStem,
+    soul_index: usize,
+) -> HeavenlyStem {
+    match astrolabe.config.scope_mutagen_stem {
+        ScopeMutagenStem::Scope => layer_stem,
+        ScopeMutagenStem::ScopeSoulPalace => astrolabe.palaces[soul_index].heavenly_stem,
+    }
+}
+
+/// 组装一个运限层：宫名以 `index` 为命宫推排，四化取 `mutagen_stem` 化出的星（`None` 即不起四化）。
+fn scope_item(
+    astrolabe: &Astrolabe,
+    index: usize,
+    name_key: HoroscopeName,
+    (heavenly_stem, earthly_branch): (HeavenlyStem, EarthlyBranch),
+    mutagen_stem: Option<HeavenlyStem>,
+    stars: Option<Vec<Vec<Star>>>,
+    language: Language,
+) -> HoroscopeItem {
+    let (mutagen, extra_mutagen) = match mutagen_stem {
+        Some(stem) => (
+            astrolabe.config.mutagens_of(stem).to_vec(),
+            astrolabe.config.extra_mutagens_of(stem).clone(),
+        ),
+        None => (Vec::new(), Default::default()),
+    };
+    HoroscopeItem {
+        index,
+        name: translate_horoscope_name(name_key, language).to_string(),
+        name_key,
+        heavenly_stem,
+        earthly_branch,
+        palace_names: get_palace_names(index).to_vec(),
+        mutagen_stem,
+        mutagen,
+        extra_mutagen,
+        stars,
+    }
 }
 
 // ============================================================
@@ -740,21 +793,18 @@ impl Astrolabe {
                 let (stem, branch) = (p.decadal.heavenly_stem, p.decadal.earthly_branch);
                 let (start, end) = p.decadal.range;
                 DecadalHoroscope {
-                    base: HoroscopeItem {
-                        index: p.index,
-                        name: translate_horoscope_name(HoroscopeName::Decadal, self.language)
-                            .to_string(),
-                        name_key: HoroscopeName::Decadal,
-                        heavenly_stem: stem,
-                        earthly_branch: branch,
-                        palace_names: get_palace_names(p.index).to_vec(),
-                        mutagen: get_mutagens_by_heavenly_stem(stem, &self.config).to_vec(),
-                        extra_mutagen: self.config.extra_mutagens_of(stem).clone(),
-                        stars: Some(
+                    base: scope_item(
+                        self,
+                        p.index,
+                        HoroscopeName::Decadal,
+                        (stem, branch),
+                        Some(scope_mutagen_stem(self, stem, p.index)),
+                        Some(
                             get_horoscope_stars(stem, branch, Scope::Decadal, self.language)
                                 .to_vec(),
                         ),
-                    },
+                        self.language,
+                    ),
                     palace_name: p.name,
                     age_range: (start, end),
                     year_range: (birth_year + start as i64 - 1, birth_year + end as i64 - 1),
@@ -854,10 +904,11 @@ impl Astrolabe {
     /// 指定农历年某月的运限，时辰按时柱地支取（同逐层列表）。只问某个月时用它，不必替提问的人挑一天。
     ///
     /// `month` 是月序 1-12，目标日期随 `horoscope_divide`：
-    /// - 初一分界（默认）：该农历月（非闰）初一，与 [`Self::monthly_list`] 整月一段的约定相同。
-    ///   闰月前半月的流月随本月、后半月随下月，所以流月只按月号取，闰月的起止见 [`Self::monthly_list`]。
-    /// - 节气分界：第 `month` 个节令月（寅月为 1）交节次日，流年与 [`Self::horoscope_of_year`] 同属立春起算的
-    ///   `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
+    /// - 年按正月初一分界（`normal` 与 `exactMonth`）：该农历月（非闰）初一，与 [`Self::monthly_list`]
+    ///   整月一段的约定相同。闰月前半月的流月随本月、后半月随下月，所以流月只按月号取，闰月的起止见
+    ///   [`Self::monthly_list`]。`exactMonth` 的流月干是初一那天所在节令月的干，交节后换干，流月命宫不变。
+    /// - 年按立春分界（`exact`）：第 `month` 个节令月（寅月为 1）交节次日，流年与 [`Self::horoscope_of_year`]
+    ///   同属立春起算的 `year` 年。农历月初一常落在上一个节令月里，所以不取初一。
     ///
     /// 查询精度（[`HoroscopeRef::precision`]）为流月：流日与流时也在数据里，是那一天的，
     /// 文本默认只写到流月，宫位查询、格局与文本的层级参数比流月细时报错。
@@ -882,13 +933,12 @@ impl Astrolabe {
                 "invalid lunar month {month}: expected 1-12"
             )));
         }
-        let (sy, sm, sd) = match self.config.horoscope_divide {
-            HoroscopeDivide::Normal => {
-                calendar::solar_date_of(year, month as i64, 1).ok_or_else(|| {
-                    IztroError::InvalidArgument(format!("lunar year {year} has no month {month}"))
-                })?
-            }
-            HoroscopeDivide::Exact => calendar::day_after_jie(year, month),
+        let (sy, sm, sd) = if self.config.horoscope_divide.year_by_li_chun() {
+            calendar::day_after_jie(year, month)
+        } else {
+            calendar::solar_date_of(year, month as i64, 1).ok_or_else(|| {
+                IztroError::InvalidArgument(format!("lunar year {year} has no month {month}"))
+            })?
         };
         Ok(HoroscopeRef {
             data: get_horoscope(

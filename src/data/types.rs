@@ -241,7 +241,7 @@ impl Mutagen {
 
 /// 星曜亮度
 ///
-/// 前七级是 iztro 亮度表的取值；闲是 iztro 没有的一级，只出现在自定义亮度表里。
+/// 前七级是 iztro 亮度表的取值；闲与地是 iztro 没有的两级，只出现在自定义亮度表里。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Brightness {
@@ -263,6 +263,9 @@ pub enum Brightness {
     /// （庙旺地利平闲陷）里都排在平之下、陷之上。标识 `xian2` 是带声调数字的拼音（xián），
     /// 与陷（xiàn）的 `xian` 区分
     Xian2,
+    /// 地：照录王亭之《安星法及推断实例》p101–102 的庙陷总表（贪狼卯、天梁酉、化禄巳三格），
+    /// 该书 p107 的术语只释入庙、坐旺、落陷、平闲，没有给「地」下定义，所以不把它并入任何一级
+    Di,
 }
 
 keyed_enum!(Brightness, "brightness" {
@@ -274,6 +277,7 @@ keyed_enum!(Brightness, "brightness" {
     Bu => "bu",
     Xian => "xian",
     Xian2 => "xian2",
+    Di => "di",
 });
 
 /// 星曜类型
@@ -542,19 +546,38 @@ keyed_enum!(YearDivide, "yearDivide" {
     Exact => "exact",
 });
 
-/// 运限分界点：运限干支与干支纪日的月柱按初一还是节气推算
+/// 运限分界点：运限干支与干支纪日的月柱按初一还是节气推算。
+///
+/// 年的一半决定流年干支（及按它安的年系杂耀、岁前/将前十二神），月的一半决定流月干支与
+/// 干支纪日的月柱；流月命宫始终按农历月排，不随月柱换。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum HoroscopeDivide {
-    /// 年按正月初一分界，月按初一以五虎遁推算
+    /// 年按正月初一分界，月按初一以五虎遁推算（闰月十六日起归下月）
     Normal,
     /// 年按立春分界，月按节气分界
     Exact,
+    /// 年按正月初一分界，月按节气分界：流月四化在交节时换干，流年仍在正月初一换
+    ExactMonth,
 }
 
 keyed_enum!(HoroscopeDivide, "horoscopeDivide" {
     Normal => "normal",
     Exact => "exact",
+    ExactMonth => "exactMonth",
 });
+
+impl HoroscopeDivide {
+    /// 流年干支是否按立春换年
+    pub fn year_by_li_chun(self) -> bool {
+        matches!(self, HoroscopeDivide::Exact)
+    }
+
+    /// 月柱（流月干支、干支纪日的月柱）是否按节气换月
+    pub fn month_by_jie(self) -> bool {
+        matches!(self, HoroscopeDivide::Exact | HoroscopeDivide::ExactMonth)
+    }
+}
 
 /// 虚岁分界点
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -730,6 +753,150 @@ pub enum DouJunMonth {
 keyed_enum!(DouJunMonth, "douJunMonth" {
     Default => "default",
     Natal => "natal",
+});
+
+/// 大限天干的取法（大限地支恒为所在宫的地支）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum DecadalStem {
+    /// 与 iztro 一致：取所在宫的本命宫干
+    #[default]
+    Palace,
+    /// 以命宫宫干为第一大限的干，按天干次序随大限方向连续排：顺行的大限逐限加一干，逆行的逐限减一干
+    Continuous,
+}
+
+keyed_enum!(DecadalStem, "decadalStem" {
+    Palace => "palace",
+    Continuous => "continuous",
+});
+
+/// 童限（起运之前）落在哪一宫。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum ChildhoodPalace {
+    /// 与 iztro 一致：虚岁一岁起依次落命宫、财帛、疾厄、夫妻、福德、官禄
+    #[default]
+    Sequence,
+    /// 一律落夫妻宫：童限以夫妻宫为命宫推排宫名，四化取夫妻宫干
+    Spouse,
+}
+
+keyed_enum!(ChildhoodPalace, "childhoodPalace" {
+    Sequence => "sequence",
+    Spouse => "spouse",
+});
+
+/// 小限是否起四化。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum AgeMutagens {
+    /// 与 iztro 一致：取小限宫的宫干起四化
+    #[default]
+    PalaceStem,
+    /// 小限不起四化：小限层的四化星为空
+    None,
+}
+
+keyed_enum!(AgeMutagens, "ageMutagens" {
+    PalaceStem => "palaceStem",
+    None => "none",
+});
+
+/// 流年命宫取哪一宫。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum YearlyPalace {
+    /// 与 iztro 一致：太岁宫，即流年年支所在宫
+    #[default]
+    Taisui,
+    /// 当年的小限宫；流年干支、流耀、岁前/将前十二神与斗君仍按流年年支与太岁宫
+    Age,
+}
+
+keyed_enum!(YearlyPalace, "yearlyPalace" {
+    Taisui => "taisui",
+    Age => "age",
+});
+
+/// 运限各层（大限、童限、流年、流月、流日、流时）四化取哪个干；小限恒取小限宫干。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum ScopeMutagenStem {
+    /// 与 iztro 一致：该层自身的干，即大限干、童限宫干、流年年干与流月、流日、流时的干
+    #[default]
+    Scope,
+    /// 该层命宫的本命宫干
+    ScopeSoulPalace,
+}
+
+keyed_enum!(ScopeMutagenStem, "scopeMutagenStem" {
+    Scope => "scope",
+    ScopeSoulPalace => "scopeSoulPalace",
+});
+
+/// 流月命宫的起法；两种都是每月顺行一宫，闰月前半月随本月、后半月随下月。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum MonthlyPalace {
+    /// 与 iztro 一致：斗君为正月，即太岁宫逆数生月、顺数生时所到之宫
+    #[default]
+    DouJun,
+    /// 正月固定在寅宫，即每月落在该月月建（正月寅、二月卯……）所在宫
+    MonthBranch,
+}
+
+keyed_enum!(MonthlyPalace, "monthlyPalace" {
+    DouJun => "douJun",
+    MonthBranch => "monthBranch",
+});
+
+/// 流日命宫的起法：初一落在哪一宫，之后每日顺行一宫。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum DailyPalace {
+    /// 与 iztro 一致：初一在流月命宫
+    #[default]
+    FromMonthly,
+    /// 初一在流月命宫的下一宫（顺行方向）
+    AfterMonthly,
+}
+
+keyed_enum!(DailyPalace, "dailyPalace" {
+    FromMonthly => "fromMonthly",
+    AfterMonthly => "afterMonthly",
+});
+
+/// 闰月里流日的数法。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum LeapDaily {
+    /// 与 iztro 一致：闰月前半月从流月命宫重新起初一，十六日起按下月的流月命宫加（日数 − 1）
+    #[default]
+    Default,
+    /// 闰月前半月接着同号本月的日数连续顺数（本月三十日则闰月初一落在第三十一位）；十六日起同默认
+    Continuous,
+}
+
+keyed_enum!(LeapDaily, "leapDaily" {
+    Default => "default",
+    Continuous => "continuous",
+});
+
+/// 流时命宫的起法。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum HourlyPalace {
+    /// 与 iztro 一致：子时在流日命宫，每时辰顺行一宫
+    #[default]
+    FromDaily,
+    /// 按时支落宫：子时在子宫、丑时在丑宫，与流日命宫无关
+    Branch,
+}
+
+keyed_enum!(HourlyPalace, "hourlyPalace" {
+    FromDaily => "fromDaily",
+    Branch => "branch",
 });
 
 /// 截空与旬空的安法。
@@ -951,6 +1118,24 @@ pub struct Config {
     pub original_palace: OriginalPalaceMarking,
     /// 推斗君时生月的取法
     pub dou_jun_month: DouJunMonth,
+    /// 大限天干的取法
+    pub decadal_stem: DecadalStem,
+    /// 童限落在哪一宫
+    pub childhood_palace: ChildhoodPalace,
+    /// 小限是否起四化
+    pub age_mutagens: AgeMutagens,
+    /// 流年命宫取哪一宫
+    pub yearly_palace: YearlyPalace,
+    /// 运限各层四化取哪个干
+    pub scope_mutagen_stem: ScopeMutagenStem,
+    /// 流月命宫的起法
+    pub monthly_palace: MonthlyPalace,
+    /// 流日命宫的起法
+    pub daily_palace: DailyPalace,
+    /// 闰月里流日的数法
+    pub leap_daily: LeapDaily,
+    /// 流时命宫的起法
+    pub hourly_palace: HourlyPalace,
     /// 自定义四化与亮度表；`None` 表示全部使用默认表。
     ///
     /// 属于排盘输入：随 `Config` 的 serde（即绑定线协议）往返；星盘 DTO 的 `config` 只记开关。
@@ -977,6 +1162,15 @@ impl Default for Config {
             yearly12_placement: Yearly12Placement::NatalAndYearly,
             original_palace: OriginalPalaceMarking::Primary,
             dou_jun_month: DouJunMonth::Default,
+            decadal_stem: DecadalStem::Palace,
+            childhood_palace: ChildhoodPalace::Sequence,
+            age_mutagens: AgeMutagens::PalaceStem,
+            yearly_palace: YearlyPalace::Taisui,
+            scope_mutagen_stem: ScopeMutagenStem::Scope,
+            monthly_palace: MonthlyPalace::DouJun,
+            daily_palace: DailyPalace::FromMonthly,
+            leap_daily: LeapDaily::Default,
+            hourly_palace: HourlyPalace::FromDaily,
             overrides: None,
         }
     }
@@ -1101,6 +1295,15 @@ struct ConfigPatch {
     yearly12_placement: Option<Yearly12Placement>,
     original_palace: Option<OriginalPalaceMarking>,
     dou_jun_month: Option<DouJunMonth>,
+    decadal_stem: Option<DecadalStem>,
+    childhood_palace: Option<ChildhoodPalace>,
+    age_mutagens: Option<AgeMutagens>,
+    yearly_palace: Option<YearlyPalace>,
+    scope_mutagen_stem: Option<ScopeMutagenStem>,
+    monthly_palace: Option<MonthlyPalace>,
+    daily_palace: Option<DailyPalace>,
+    leap_daily: Option<LeapDaily>,
+    hourly_palace: Option<HourlyPalace>,
     mutagens: Option<BTreeMap<String, Vec<String>>>,
     extra_mutagens: Option<BTreeMap<String, BTreeMap<String, Vec<String>>>>,
     brightness: Option<BTreeMap<String, Vec<String>>>,
@@ -1130,6 +1333,17 @@ impl ConfigPatch {
                 .unwrap_or(defaults.yearly12_placement),
             original_palace: self.original_palace.unwrap_or(defaults.original_palace),
             dou_jun_month: self.dou_jun_month.unwrap_or(defaults.dou_jun_month),
+            decadal_stem: self.decadal_stem.unwrap_or(defaults.decadal_stem),
+            childhood_palace: self.childhood_palace.unwrap_or(defaults.childhood_palace),
+            age_mutagens: self.age_mutagens.unwrap_or(defaults.age_mutagens),
+            yearly_palace: self.yearly_palace.unwrap_or(defaults.yearly_palace),
+            scope_mutagen_stem: self
+                .scope_mutagen_stem
+                .unwrap_or(defaults.scope_mutagen_stem),
+            monthly_palace: self.monthly_palace.unwrap_or(defaults.monthly_palace),
+            daily_palace: self.daily_palace.unwrap_or(defaults.daily_palace),
+            leap_daily: self.leap_daily.unwrap_or(defaults.leap_daily),
+            hourly_palace: self.hourly_palace.unwrap_or(defaults.hourly_palace),
             overrides: None,
         };
         let parse_stem = |table: &str, stem_key: &str| {
@@ -1230,6 +1444,15 @@ impl serde::Serialize for Config {
         map.serialize_entry("yearly12Placement", &self.yearly12_placement)?;
         map.serialize_entry("originalPalace", &self.original_palace)?;
         map.serialize_entry("douJunMonth", &self.dou_jun_month)?;
+        map.serialize_entry("decadalStem", &self.decadal_stem)?;
+        map.serialize_entry("childhoodPalace", &self.childhood_palace)?;
+        map.serialize_entry("ageMutagens", &self.age_mutagens)?;
+        map.serialize_entry("yearlyPalace", &self.yearly_palace)?;
+        map.serialize_entry("scopeMutagenStem", &self.scope_mutagen_stem)?;
+        map.serialize_entry("monthlyPalace", &self.monthly_palace)?;
+        map.serialize_entry("dailyPalace", &self.daily_palace)?;
+        map.serialize_entry("leapDaily", &self.leap_daily)?;
+        map.serialize_entry("hourlyPalace", &self.hourly_palace)?;
         if let Some(tables) = self.overrides.as_deref() {
             if !tables.mutagens.is_empty() {
                 let mutagens: BTreeMap<&str, &[StarKey; 4]> = tables

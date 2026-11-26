@@ -7,6 +7,16 @@
 
 import type {
   AgeDivide,
+  DecadalStem,
+  ChildhoodPalace,
+  AgeMutagens,
+  YearlyPalace,
+  ScopeMutagenStem,
+  MonthlyPalace,
+  DailyPalace,
+  LeapDaily,
+  HourlyPalace,
+
   Algorithm,
   AstroType,
   Brightness,
@@ -47,7 +57,7 @@ import type { KnowledgePack } from './knowledge.js';
 export interface ChartConfig {
   /** 年分界点：normal=正月初一（默认）/ exact=立春 */
   yearDivide?: YearDivide | undefined;
-  /** 运限分界点：normal=初一（默认）/ exact=节气 */
+  /** 运限分界点：normal=年月都按初一（默认）/ exact=年按立春、月按节气 / exactMonth=年按初一、月按节气 */
   horoscopeDivide?: HoroscopeDivide | undefined;
   /** 虚岁分界点：normal=跨年即加（默认）/ birthday=过生日才加 */
   ageDivide?: AgeDivide | undefined;
@@ -75,6 +85,24 @@ export interface ChartConfig {
   originalPalace?: OriginalPalaceMarking | undefined;
   /** 推斗君时生月的取法：default=同 iztro（默认）/ natal=与本命盘同一规则 */
   douJunMonth?: DouJunMonth | undefined;
+  /** 大限天干的取法：palace=宫干（默认）/ continuous=命宫干起随大限方向连续排 */
+  decadalStem?: DecadalStem | undefined;
+  /** 童限落在哪一宫：sequence=命财疾夫福官依次（默认）/ spouse=一律夫妻宫 */
+  childhoodPalace?: ChildhoodPalace | undefined;
+  /** 小限是否起四化：palaceStem=取小限宫干（默认）/ none=不起四化 */
+  ageMutagens?: AgeMutagens | undefined;
+  /** 流年命宫取哪一宫：taisui=太岁宫（默认）/ age=小限宫 */
+  yearlyPalace?: YearlyPalace | undefined;
+  /** 运限各层四化取哪个干：scope=该层的干（默认）/ scopeSoulPalace=该层命宫的本命宫干 */
+  scopeMutagenStem?: ScopeMutagenStem | undefined;
+  /** 流月命宫的起法：douJun=斗君为正月（默认）/ monthBranch=正月在寅宫 */
+  monthlyPalace?: MonthlyPalace | undefined;
+  /** 流日命宫的起法：fromMonthly=初一在流月命宫（默认）/ afterMonthly=初一在其下一宫 */
+  dailyPalace?: DailyPalace | undefined;
+  /** 闰月里流日的数法：default=闰月初一重新起数（默认）/ continuous=闰月前半月接本月连续数 */
+  leapDaily?: LeapDaily | undefined;
+  /** 流时命宫的起法：fromDaily=子时在流日命宫（默认）/ branch=按时支落宫 */
+  hourlyPalace?: HourlyPalace | undefined;
   /**
    * 自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
    * 按天干整表替换默认值，未列出的天干仍用默认表。
@@ -125,6 +153,24 @@ export interface ChartConfigData {
   originalPalace?: OriginalPalaceMarking;
   /** 推斗君时生月的取法 */
   douJunMonth?: DouJunMonth;
+  /** 大限天干的取法 */
+  decadalStem?: DecadalStem;
+  /** 童限落在哪一宫 */
+  childhoodPalace?: ChildhoodPalace;
+  /** 小限是否起四化 */
+  ageMutagens?: AgeMutagens;
+  /** 流年命宫取哪一宫 */
+  yearlyPalace?: YearlyPalace;
+  /** 运限各层四化取哪个干 */
+  scopeMutagenStem?: ScopeMutagenStem;
+  /** 流月命宫的起法 */
+  monthlyPalace?: MonthlyPalace;
+  /** 流日命宫的起法 */
+  dailyPalace?: DailyPalace;
+  /** 闰月里流日的数法 */
+  leapDaily?: LeapDaily;
+  /** 流时命宫的起法 */
+  hourlyPalace?: HourlyPalace;
 }
 
 /** 格局判定口径。多口径格局一律以 `PatternHit.variant` 报出，这里只放会改变事实判定的开关 */
@@ -407,12 +453,19 @@ export interface HoroscopeItemData {
   palaceNames: string[];
   /** 该层十二宫名标识 */
   palaceNameKeys: PalaceName[];
-  /** 四化星名 [禄, 权, 科, 忌]（翻译文本） */
+  /** 四化星名 [禄, 权, 科, 忌]（翻译文本），由 `mutagenStem`（缺省即 `heavenlyStem`）化出；不起四化时为空 */
   mutagen: string[];
   /** 被化的四颗星标识 [禄, 权, 科, 忌] */
   mutagenStarKeys: string[];
-  /** 该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时没有该键 */
+  /** 该层四化天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时没有该键 */
   extraMutagenStarKeys?: Partial<Record<Mutagen, string[]>>;
+  /**
+   * 化出本层四化的天干（翻译文本）：与 `heavenlyStem` 相同时没有该键（默认配置下恒没有），
+   * 本层不起四化（小限 `ageMutagens: 'none'`）时为空串
+   */
+  mutagenStem?: string;
+  /** `mutagenStem` 的天干标识，出现与否同 `mutagenStem`；不起四化时为空串 */
+  mutagenStemKey?: HeavenlyStem | '';
   /** 流耀：十二宫各一组；该层没有流耀时不出现 */
   stars?: StarData[][];
 }
@@ -555,7 +608,7 @@ export interface KnowledgeIssue {
 }
 
 /** 四化所用天干的取法 */
-export type StemSource = 'natalPalace' | 'scope';
+export type StemSource = 'natalPalace' | 'scope' | 'scopeSoulPalace';
 
 /** 主题定义里的一组宫落到盘上的位置 */
 export type TopicGroup =
@@ -681,7 +734,10 @@ export interface TopicSelection {
   palaces: TopicPalace[];
   /** 宫干飞化所用天干的取法：`natalPalace` 为本命各宫宫干，运限各层沿用 */
   palaceStemSource: StemSource;
-  /** 运限四化所用天干的取法：`scope` 为该层自身的干（大限宫干、流年年干、流月月干……） */
+  /**
+   * 运限四化所用天干的取法，随 `ChartConfig.scopeMutagenStem`：`scope` 为该层自身的干（大限干、流年年干、
+   * 流月月干……），`scopeSoulPalace` 为该层命宫的本命宫干
+   */
   scopeMutagenStemSource: StemSource;
   /** 生年四化落在选中宫的，按禄、权、科、忌 */
   birthMutagens: MutagenLanding[];

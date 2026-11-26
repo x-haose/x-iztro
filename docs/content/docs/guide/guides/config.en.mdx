@@ -12,7 +12,7 @@ at all gives you the same chart iztro gives**.
 | Switch | Accepts | Default | Governs |
 | --- | --- | --- | --- |
 | `year_divide` | `normal` / `exact` | `normal` | Which day the charting year's stem and branch turn over |
-| `horoscope_divide` | `normal` / `exact` | `normal` | Which day horoscope stems/branches and the month pillar divide on |
+| `horoscope_divide` | `normal` / `exact` / `exactMonth` | `normal` | Which day horoscope stems/branches and the month pillar divide on (`exactMonth` is an x-iztro extension) |
 | `age_divide` | `normal` / `birthday` | `normal` | When nominal age increments |
 | `day_divide` | `forward` / `current` / `forwardCarry` | `forward` | Whether the late Zi hour counts as today or tomorrow |
 | `algorithm` | `default` / `zhongzhou` | `default` | Algorithm school |
@@ -26,9 +26,18 @@ at all gives you the same chart iztro gives**.
 | `yearly12_placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` | Whether the natal chart carries the Sui-qian and Jiang-qian gods (an x-iztro extension) |
 | `original_palace` | `primary` / `withSecondary` | `primary` | Whether xin and ren years also mark a secondary Original palace (an x-iztro extension) |
 | `dou_jun_month` | `default` / `natal` | `default` | Whether the birth month behind Dou Jun follows the natal chart's late-Zi rule (an x-iztro extension) |
+| `decadal_stem` | `palace` / `continuous` | `palace` | Whether a decade's stem is its palace stem or runs on from the Soul palace stem (an x-iztro extension) |
+| `childhood_palace` | `sequence` / `spouse` | `sequence` | Whether the childhood period walks through palaces or stays in the Spouse palace (an x-iztro extension) |
+| `age_mutagens` | `palaceStem` / `none` | `palaceStem` | Whether the minor limit (小限) has mutagens (an x-iztro extension) |
+| `yearly_palace` | `taisui` / `age` | `taisui` | Whether the yearly Soul palace is the Taisui palace or the minor-limit palace (an x-iztro extension) |
+| `scope_mutagen_stem` | `scope` / `scopeSoulPalace` | `scope` | Whether each horoscope layer's mutagens come from the layer's own stem or its Soul palace's stem (an x-iztro extension) |
+| `monthly_palace` | `douJun` / `monthBranch` | `douJun` | Whether the first month sits at Dou Jun or in the Yin palace (an x-iztro extension) |
+| `daily_palace` | `fromMonthly` / `afterMonthly` | `fromMonthly` | Whether the first day sits in the monthly Soul palace or the palace after it (an x-iztro extension) |
+| `leap_daily` | `default` / `continuous` | `default` | Whether the days of the first half of a leap month keep counting on from the regular month (an x-iztro extension) |
+| `hourly_palace` | `fromDaily` / `branch` | `fromDaily` | Whether the hourly palace counts from the daily Soul palace or follows the hour's branch (an x-iztro extension) |
 
 iztro has none of the x-iztro extension switches; at their defaults they behave as iztro does, and the
-`config` echoed on the astrolabe leaves those keys out.
+`config` echoed on the astrolabe leaves those keys out (`horoscope_divide` is an iztro key and is always echoed).
 
 There are three override tables besides: `mutagens` (a custom mutagen table), `extra_mutagens` (extra
 mutagen stars) and `brightness` (a custom brightness table) — see
@@ -136,10 +145,21 @@ numbering divide on.
 | --- | --- | --- |
 | `normal` (default) | Lunar New Year | The first of the lunar month, month stem by the Five Tigers rule |
 | `exact` | The Beginning of Spring | Solar terms |
+| `exactMonth` | Lunar New Year | Solar terms |
 
 **When you would notice**: when the query date lands early in the year (between lunar New Year and
 the Beginning of Spring) or around any solar-term changeover, the yearly and monthly stem-branch
 pairs shift by one step, which in turn changes the horoscope mutagens.
+
+`exactMonth` is an x-iztro extension that separates the two things iztro ties together: the monthly
+mutagens change stem at the solar term while the year still turns at lunar New Year. Ling Donglai's
+example (*紫微斗数命理学*, pp. 160–161): 2015-4-5, Qingming, is the 17th of lunar month 2; the monthly
+Soul palace stays in month 2 while the mutagens already use the geng stem (the geng chen month). Yiting's
+charting software likewise has "change month at the solar term" ticked (*如何看大限流年*, p. 215). Under all
+three values the monthly Soul palace follows the lunar month; only the stem follows the solar terms. For
+example 2025-1-31 (the 3rd of lunar month 1 of yi si, before the Beginning of Spring): `normal` gives
+yearly yi si and monthly wu yin; `exact` gives yearly jia chen and monthly ding chou; `exactMonth` gives
+yearly yi si and monthly ding chou. The natal month pillar follows the month boundary, as under `exact`.
 
 <Callout>
 This switch also changes **the natal chart's month pillar**, not just horoscopes. Take 2000-8-5 in
@@ -398,6 +418,153 @@ This is a consistency switch of the library itself, not any school's practice: t
 how iztro's natal chart and its Dou Jun take the birth month for a late Zi birth, and no source discusses
 it. The school presets leave it alone.
 
+## Horoscope conventions
+
+The nine switches below change horoscopes only; the natal chart stays the same (`decadal_stem` also
+changes the decadal stems on the palaces). Every layer's palace, palace names, mutagens and patterns follow
+the chosen convention, and so do the text, [topic palace selection](/en/docs/guide/guides/to-text) and
+[horoscope patterns](/en/docs/guide/concepts/patterns).
+
+### Decadal stem: `decadal_stem`
+
+| Value | Stem of a decade |
+| --- | --- |
+| `palace` (default) | The stem of its palace |
+| `continuous` | The first decade takes the Soul palace stem; each later decade moves one stem on in stem order along the decades' direction: one stem forward when the decades run clockwise, one back when they run counter-clockwise |
+
+`continuous` is the "decadal stem" rule of *紫微斗数精成*, p. 398: start from the natal Soul palace stem,
+laid out forwards for yang men and yin women and backwards for yin men and yang women; the same page notes
+that many schools keep the natal palace stems instead. The difference falls on the Zi, Chou, Yin and Mao
+palaces. The book's example is Chiang Kai-shek's chart (a ding hai yin man, Soul palace jia chen, decades
+running backwards): Mao gui and Yin ren match the palace stems, then Chou is xin (palace stem gui) and Zi is
+geng (palace stem ren). The decadal branch does not change; decadal mutagens and decadal flow stars follow
+the new stem.
+
+### Childhood period: `childhood_palace`
+
+| Value | Childhood period before the first decade |
+| --- | --- |
+| `sequence` (default) | From nominal age 1: Soul, Wealth, Health, Spouse, Spirit, Career in turn, each with its own palace stem |
+| `spouse` | Always the Spouse palace: the childhood layer's palace names count from the Spouse palace as its Soul palace, and its mutagens use the Spouse palace stem |
+
+`spouse` follows Yiting's course, lecture 02, pp. 14–17 (the Spouse palace is the parents' Children
+palace; health questions read the childhood layer's Health palace). The Flying Star school's "read the
+Spouse palace for the young" (Liang Ruoyu, *飞星斗数入门*, p. 44) agrees before the first decade; it also
+reads the first decade through the Spouse palace, but that first span is still printed on the Soul palace and
+the source does not say whether the decadal layer itself moves, so this switch leaves the first decade alone.
+
+### Minor-limit mutagens: `age_mutagens`
+
+| Value | Minor limit (小限) |
+| --- | --- |
+| `palaceStem` (default) | Mutagens from the minor-limit palace stem |
+| `none` | No mutagens: the layer's mutagen stars are empty, `mutagenStemKey` on the horoscope DTO's minor-limit layer is an empty string, and the text writes no mutagen line for it |
+
+`none` is *紫微斗数精成*, p. 433: "the minor-limit palace stem does not fly mutagens". The minor-limit
+layer has no flow stars either way.
+
+### Yearly Soul palace: `yearly_palace`
+
+| Value | Yearly Soul palace |
+| --- | --- |
+| `taisui` (default) | The Taisui palace, where the year's branch sits |
+| `age` | The year's minor-limit palace |
+
+`age` is how *天纪紫微斗数笔记* uses the minor limit as the year ("small yearly", p. 13), and its examples bear
+it out: a woman born in the 41st year of the Republic (ren chen) with her Soul palace in Shen, whose
+"both limits meet Health" at 56 (p. 59), has her minor limit in Mao, which is her Health palace. Only the
+yearly Soul palace changes: the yearly palace names count from the minor-limit palace, and yearly patterns
+and topics follow them; the yearly stem and branch, flow stars, Nianjie and the Sui-qian and Jiang-qian gods
+still follow the year's branch, the yearly mutagens still use the year's stem (the minor-limit palace stem
+when combined with `scope_mutagen_stem`), and Dou Jun still starts from the Taisui palace. The minor-limit
+layer itself is unchanged.
+
+### Stem of the horoscope mutagens: `scope_mutagen_stem`
+
+| Value | Mutagens of the decadal, childhood, yearly, monthly, daily and hourly layers |
+| --- | --- |
+| `scope` (default) | The layer's own stem: the decadal stem, the childhood palace stem, the year, month, day and hour stems |
+| `scopeSoulPalace` | The natal stem of the layer's Soul palace |
+
+Sources for `scopeSoulPalace`: the Flying Star school takes the yearly mutagens from the yearly Soul palace
+stem (Zhou Xingfei, *梁若瑜飞星派紫微斗数课程*, p. 21: in 2009, a ji chou year, the yearly Soul palace is
+Chou, whose palace stem is xin, so the year flies with xin, not ji); the Heluo school keeps the natal stems
+for every layer (Fangwairen, *河洛紫微斗数*, p. 28); Cai Minghong's first method uses the Taisui palace's natal
+stem for the year (*华山钦天四化紫微斗数飞星秘仪*, p. 50). Heluo's "always the natal stems" means each layer's
+palaces keep their natal stems and no layer stem is raised, which for each layer's mutagens comes to the
+natal stem of its Soul palace — the same value as the Flying Star school.
+
+Under the default config the decadal mutagens already come from the decadal palace stem, so on the decadal
+layer this switch only shows a difference together with `decadal_stem = continuous`. The minor limit always
+uses its palace stem.
+
+The stem used is written on each horoscope layer: `mutagenStem` / `mutagenStemKey` on the DTO (Rust
+`HoroscopeItem::mutagen_stem`, Python `mutagen_stem_key`, Go `MutagenStemKey`), present only when it differs
+from the layer's stem; the text's mutagen line notes it ("Mutagen (Stem xin)"); topic selection reports
+`scopeMutagenStemSource` as `scopeSoulPalace`, and each entry's `stemKey` is that layer's Soul palace stem.
+
+### Monthly palace: `monthly_palace`
+
+| Value | Monthly Soul palace |
+| --- | --- |
+| `douJun` (default) | Month 1 at Dou Jun: count the birth month backwards from the Taisui palace and the birth hour forwards, then one palace on per month |
+| `monthBranch` | Month 1 is always the Yin palace; each month sits in the palace of its month branch (month 2 Mao, month 3 Chen …) |
+
+`monthBranch` is the monthly layer of Cai Minghong's second method (*秘仪*, pp. 51–52: when the year uses
+the year stem's mutagens, the months skip Dou Jun and start month 1 at Yin with the Five Tigers rule; in a
+yi chou year month 1 is wu yin and month 2 ji mao). Cai pairs his first method (the year on natal palace
+stems) with Dou Jun and the second (the year on the year stem) with Yin, and says the two must not be mixed;
+x-iztro does not enforce the pairing: the second method is the default `scope_mutagen_stem` plus
+`monthBranch`, the first is `scopeSoulPalace` plus `douJun`. The first half of a leap month goes with that
+month and the second half with the next, as with Dou Jun.
+
+### Daily palace: `daily_palace`
+
+| Value | Day 1 of the month |
+| --- | --- |
+| `fromMonthly` (default) | In the monthly Soul palace, then one palace on per day |
+| `afterMonthly` | In the palace after the monthly Soul palace, then one palace on per day |
+
+`afterMonthly` is from *梁若瑜飞星派紫微斗数课程*, p. 264: in the example chart (born in a wu wu year, lunar
+month 10, Xu hour, Soul palace in Chou), the monthly palace of month 8 of 2010 is Xu (Children); the 4th
+falls on Yin (Parents) and the 5th on Mao (Spirit), so day n is the n-th palace counted on from the monthly
+palace.
+
+### Days in a leap month: `leap_daily`
+
+| Value | Daily palace in a leap month |
+| --- | --- |
+| `default` (default) | The first half of the leap month starts again from day 1 at the monthly Soul palace; from the 16th, the next month's monthly palace plus (day − 1) |
+| `continuous` | The first half of the leap month keeps counting on from the days of the regular month of the same number; from the 16th, as the default |
+
+`continuous` is Wang Tingzhi, *安星法及推断实例*, p. 85: when month 3 has a leap month, count the 30 days of
+month 3 and then the first 15 days of the leap month, 45 days in all. When the regular month has 29 days,
+the leap month's 1st is the 30th position. On how the second half of the leap month joins the next month the
+text has only "month 4 also starts again from its 1st and counts 45 days", which yields no definite rule, so
+from the 16th the default applies.
+
+### Hourly palace: `hourly_palace`
+
+| Value | Hourly Soul palace |
+| --- | --- |
+| `fromDaily` (default) | The Zi hour in the daily Soul palace, then one palace on per hour |
+| `branch` | By the hour's branch: the Zi hour in the Zi palace, the Chou hour in the Chou palace, regardless of the day |
+
+`branch` is the hourly layer of Xu Quanren, *学习紫微斗数的第一本书*, pp. 52–53, and of Wang Tingzhi's
+teacher's line (*紫微斗数讲义*, p. 79).
+
+### Not made into switches
+
+Conventions the sources mention but give no definite rule for are not supported yet: starting the first
+decade from the Parents or Siblings palace (Ling Donglai, *紫微斗数命理学*, p. 167, only reports that
+*紫微斗数全书* does so, without saying when Parents and when Siblings, or what becomes of the Soul palace
+decade); separate flow stars on the minor-limit layer (*紫微斗数精成*, p. 433, reads the minor limit against
+the yearly flow stars only, and no other source gives a placement); yearly palace stems raised again from the
+year stem with the Five Tigers rule (Cai Minghong's second method raises the Five Tigers only for the months,
+and calls its yearly mutagens fixed images that do not transform further, with no yearly stem flying); the
+Flying Star school's first decade read through the Spouse palace (see the childhood period above); how the days
+of the second half of a leap month join the next month (see the leap-month days above).
+
 ## Charting perspective: `astro_type`
 
 The Zhongzhou school reads one set of birth data as three charts, differing only in **which palace's
@@ -559,6 +726,12 @@ Besides iztro's seven levels (`miao`, `wang`, `de`, `li`, `ping`, `bu`, `xian`) 
 *紫微斗数一本通*, 闲 ranks below 平 and above 陷. The key is the pinyin with its tone number (xián),
 kept apart from 陷 (xiàn), whose key is `xian`. The default table never uses it, and the pattern rules'
 sun and moon brightness does not count it as dark.
+
+A further key `di` stands for 地, copied as is from the brightness table of Wang Tingzhi's
+*安星法及推断实例*, pp. 101–102 (Tanlang in Mao, Tianliang in You and the 禄 mutagen in Si are 地). The book's
+glossary on p. 107 explains only 入庙, 坐旺, 落陷 and 平闲 and never defines 地, so x-iztro does not fold it
+into 得 or any other level. The default table never uses it. The pattern rules only tell bright (庙, 旺)
+from dark (陷, 不); 得, 利, 平, 闲 and 地 all sit between and count as neither.
 
 ```python
 cfg = ChartConfig(brightness={

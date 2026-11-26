@@ -210,7 +210,8 @@ class TopicSelection:
     palace_stem_source: str
     """宫干飞化所用天干的取法：`"natalPalace"`（本命各宫宫干，运限各层沿用）"""
     scope_mutagen_stem_source: str
-    """运限四化所用天干的取法：`"scope"`（该层自身的干：大限宫干、流年年干、流月月干……）"""
+    """运限四化所用天干的取法，随 `ChartConfig.scope_mutagen_stem`：`"scope"`（该层自身的干：大限干、
+    流年年干、流月月干……）或 `"scopeSoulPalace"`（该层命宫的本命宫干）"""
     birth_mutagens: list[MutagenLanding]
     """生年四化落在选中宫的，按禄、权、科、忌"""
     scope_mutagens: list[ScopeMutagenLanding]

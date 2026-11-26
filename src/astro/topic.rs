@@ -9,7 +9,9 @@
 
 use crate::data::keyed::keyed_enum;
 use crate::data::stars::{MUTAGEN, StarKey};
-use crate::data::types::{HOROSCOPE_SCOPES, HeavenlyStem, HoroscopeName, Mutagen, Palace, Scope};
+use crate::data::types::{
+    HOROSCOPE_SCOPES, HeavenlyStem, HoroscopeName, Mutagen, Palace, Scope, ScopeMutagenStem,
+};
 use crate::error::IztroError;
 use crate::knowledge::{KnowledgePack, TopicEntry};
 use crate::models::astrolabe::{Astrolabe, PalaceTarget};
@@ -22,13 +24,16 @@ use crate::pattern::{PatternConfig, PatternHit, patterns_through};
 pub enum StemSource {
     /// 本命盘各宫的宫干，运限各层沿用
     NatalPalace,
-    /// 该运限层自身的干：大限为大限所在宫的宫干，流年为流年年干，流月、流日、流时为该层的月、日、时干
+    /// 该运限层自身的干：大限为大限干，童限为童限宫干，流年为流年年干，流月、流日、流时为该层的月、日、时干
     Scope,
+    /// 该运限层命宫的本命宫干（排盘配置 `scope_mutagen_stem=ScopeSoulPalace`）
+    ScopeSoulPalace,
 }
 
 keyed_enum!(StemSource, "stem source" {
     NatalPalace => "natalPalace",
     Scope => "scope",
+    ScopeSoulPalace => "scopeSoulPalace",
 });
 
 /// 主题里的一组宫。
@@ -153,7 +158,8 @@ pub struct TopicSelection {
     pub palaces: Vec<TopicPalace>,
     /// 宫干飞化（[`TopicPalace::flying`]）所用天干的取法；恒为 [`StemSource::NatalPalace`]
     pub palace_stem_source: StemSource,
-    /// 运限四化（[`Self::scope_mutagens`]）所用天干的取法；恒为 [`StemSource::Scope`]
+    /// 运限四化（[`Self::scope_mutagens`]）所用天干的取法：随排盘配置 `scope_mutagen_stem`，
+    /// 为 [`StemSource::Scope`] 或 [`StemSource::ScopeSoulPalace`]
     pub scope_mutagen_stem_source: StemSource,
     /// 生年四化落在选中宫的，按禄、权、科、忌
     pub birth_mutagens: Vec<MutagenLanding>,
@@ -329,6 +335,8 @@ pub(crate) fn select(
     // 落宫与宫干飞化（`PalaceData::mutaged_places`）同一判定：星在该宫的主星、辅星或杂耀里
     let mut scope_mutagens = Vec::new();
     for (scope, item) in layers {
+        // 大限至流时各层恒起四化，只有小限可能不起，而小限不在这些层里
+        let stem = item.mutagen_stem.expect("大限至流时各层恒起四化");
         for (star, mutagen) in item.mutagens() {
             if let Some(palace) = astrolabe.palaces.iter().position(|p| p.has(&[star]))
                 && selected(palace)
@@ -336,7 +344,7 @@ pub(crate) fn select(
                 scope_mutagens.push(ScopeMutagenLanding {
                     scope: *scope,
                     name: item.name_key,
-                    stem: item.heavenly_stem,
+                    stem,
                     landing: MutagenLanding {
                         mutagen,
                         star,
@@ -365,7 +373,10 @@ pub(crate) fn select(
         groups,
         palaces,
         palace_stem_source: StemSource::NatalPalace,
-        scope_mutagen_stem_source: StemSource::Scope,
+        scope_mutagen_stem_source: match astrolabe.config.scope_mutagen_stem {
+            ScopeMutagenStem::Scope => StemSource::Scope,
+            ScopeMutagenStem::ScopeSoulPalace => StemSource::ScopeSoulPalace,
+        },
         birth_mutagens,
         scope_mutagens,
         patterns,

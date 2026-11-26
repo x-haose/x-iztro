@@ -84,7 +84,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - Edition 2024，unsafe 用 `#[unsafe(no_mangle)]` 语法
 - `by_lunar` 收三态 `LeapMonth`（NotLeap/Leap/LeapFixed）而非 iztro 的 `isLeapMonth`+`fixLeap` 两个相邻布尔（写反不报错）；
   绑定层 JSON 线协议仍是两个布尔键，Go 用 `LeapMonth` 具名常量、Python 用关键字参数；Go 的 `gender`/`language` 也是具名类型
-- 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm/astro_type/void_placement、八个流派口径开关 leap_divide/tianma_placement/changsheng_direction/tianshang_tianshi/tianwu_placement/yearly12_placement/original_palace/dou_jun_month 与自定义表），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
+- 排盘入口收 `Config`（year_divide/horoscope_divide/age_divide/day_divide/algorithm/astro_type/void_placement、八个本命流派口径开关 leap_divide/tianma_placement/changsheng_direction/tianshang_tianshi/tianwu_placement/yearly12_placement/original_palace/dou_jun_month、九个运限口径开关 decadal_stem/childhood_palace/age_mutagens/yearly_palace/scope_mutagen_stem/monthly_palace/daily_palace/leap_daily/hourly_palace 与自定义表），`Config::default()` 与 JS iztro 默认一致；年系杂耀与岁前/将前12按 horoscope_divide 年支、红鸾天喜按 year_divide 年支（复刻 iztro 内部分界矩阵）
 - 入口返回 `Result<_, IztroError>`：全部外部输入前置校验（日期格式与存在性、1-9999 年且 1582-10-15 前按儒略历、改历空缺 10-05…14 非法、时辰 0-12），非法输入不 panic——wasm 下 panic 即 trap 且累积损耗实例栈空间，绑定层 catch_unwind 仅兜底库内部缺陷
 - 带语言无关标识的枚举一律用 `data::keyed::keyed_enum!` 写一张「变体 => 标识」表，由它生成
   `KEYS`/`as_key`/`from_key`、按标识的 serde 与 `schemars` feature 下的 JsonSchema，不手写对照表；

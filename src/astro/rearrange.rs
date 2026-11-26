@@ -95,6 +95,7 @@ impl Astrolabe {
             self.gender,
             yearly_stem,
             yearly_branch,
+            self.config.decadal_stem,
         );
 
         // 天伤天使夹迁移宫、天才随命宫，三者都跟着命宫走，需要在原有杂耀里挪位

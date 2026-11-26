@@ -74,6 +74,7 @@ together.
 | `palace_names` | `Vec<Palace>` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
 | `mutagen` | `Vec<StarKey>` | The stars this scope's stem transforms, in the order lu, quan, ke, ji (the table's four slots) |
 | `extra_mutagen` | `[Vec<StarKey>; 4]` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this scope's stem transforms beyond the four slots, grouped lu, quan, ke, ji; all four empty under the default table. `mutagens()` merges both into a (star, mutagen) sequence |
+| `mutagen_stem` | `Option<HeavenlyStem>` | The stem this layer's mutagens come from: `heavenly_stem` by default, the natal stem of the layer's Soul palace under [`ScopeSoulPalace`](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem); `None` when the minor limit has no mutagens, `mutagen` then being empty |
 | `stars` | `Option<Vec<Vec<Star>>>` | The scope stars of this layer; `None` for layers that have none |
 
 `age` and `yearly` are not `HoroscopeItem`s themselves but wrappers carrying one extra datum each:

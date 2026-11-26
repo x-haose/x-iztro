@@ -2405,6 +2405,1053 @@
       "name": "斗君生月随本命"
     }
   ],
+  "horoscopeCases": [
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1990-5-12",
+        "timeIndex": 6
+      },
+      "config": {
+        "horoscopeDivide": "exactMonth"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "jiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tianliangMaj",
+              "wenquMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 6,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "gengHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "taiyangMaj",
+              "wuquMaj",
+              "taiyinMaj",
+              "tiantongMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "renHeavenly",
+            "index": 2,
+            "mutagenStarKeys": [
+              "tianliangMaj",
+              "ziweiMaj",
+              "zuofuMin",
+              "wuquMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "流月按节气换干、流年仍按初一",
+      "target": [
+        "2025-1-31",
+        6
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1887-10-31",
+        "timeIndex": 6
+      },
+      "config": {
+        "decadalStem": "continuous"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 11,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "renHeavenly",
+            "index": 10,
+            "mutagenStarKeys": [
+              "tianliangMaj",
+              "ziweiMaj",
+              "zuofuMin",
+              "wuquMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "renHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "tianliangMaj",
+              "ziweiMaj",
+              "zuofuMin",
+              "wuquMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "bingHeavenly",
+            "index": 10,
+            "mutagenStarKeys": [
+              "tiantongMaj",
+              "tianjiMaj",
+              "wenchangMin",
+              "lianzhenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "gengHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "taiyangMaj",
+              "wuquMaj",
+              "taiyinMaj",
+              "tiantongMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "bingHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "tiantongMaj",
+              "tianjiMaj",
+              "wenchangMin",
+              "lianzhenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "大限天干从命宫干连续排",
+      "target": [
+        "1922-6-1",
+        0
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1990-5-12",
+        "timeIndex": 6
+      },
+      "config": {
+        "childhoodPalace": "spouse"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 7,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "childhood"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 5,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "童限落夫妻宫",
+      "target": [
+        "1991-8-1",
+        3
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1990-5-12",
+        "timeIndex": 6
+      },
+      "config": {
+        "ageMutagens": "none"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [],
+            "mutagenStemKey": "",
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "jiaHeavenly",
+            "index": 2,
+            "mutagenStarKeys": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "wuquMaj",
+              "taiyangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 10,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "小限不起四化",
+      "target": [
+        "2024-8-1",
+        3
+      ]
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "1952-8-29",
+        "timeIndex": 0
+      },
+      "config": {
+        "yearlyPalace": "age"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 2,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 5,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "流年命宫取小限",
+      "target": [
+        "2007-8-1",
+        3
+      ]
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "1986-3-20",
+        "timeIndex": 4
+      },
+      "config": {
+        "scopeMutagenStem": "scopeSoulPalace"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 7,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "jiHeavenly",
+            "index": 11,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": "xinHeavenly",
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 7,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": "dingHeavenly",
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 5,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": "yiHeavenly",
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": "wuHeavenly",
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "运限四化取该层命宫的宫干",
+      "target": [
+        "2009-8-1",
+        3
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1960-2-10",
+        "timeIndex": 8
+      },
+      "config": {
+        "monthlyPalace": "monthBranch"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "jiaHeavenly",
+            "index": 6,
+            "mutagenStarKeys": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "wuquMaj",
+              "taiyangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 11,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "jiHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tianliangMaj",
+              "wenquMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "流月正月在寅宫",
+      "target": [
+        "1985-3-1",
+        3
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1978-11-6",
+        "timeIndex": 10
+      },
+      "config": {
+        "dailyPalace": "afterMonthly"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "jiaHeavenly",
+            "index": 10,
+            "mutagenStarKeys": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "wuquMaj",
+              "taiyangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "gengHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "taiyangMaj",
+              "wuquMaj",
+              "taiyinMaj",
+              "tiantongMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "yiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "tianjiMaj",
+              "tianliangMaj",
+              "ziweiMaj",
+              "taiyinMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "bingHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "tiantongMaj",
+              "tianjiMaj",
+              "wenchangMin",
+              "lianzhenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "流日初一在流月宫的下一宫",
+      "target": [
+        "2010-9-12",
+        0
+      ]
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "1970-6-6",
+        "timeIndex": 4
+      },
+      "config": {
+        "leapDaily": "continuous"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "jiHeavenly",
+            "index": 11,
+            "mutagenStarKeys": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tianliangMaj",
+              "wenquMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 7,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "bingHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "tiantongMaj",
+              "tianjiMaj",
+              "wenchangMin",
+              "lianzhenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "renHeavenly",
+            "index": 3,
+            "mutagenStarKeys": [
+              "tianliangMaj",
+              "ziweiMaj",
+              "zuofuMin",
+              "wuquMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "闰月流日接本月连续数",
+      "target": [
+        "1993-4-22",
+        0
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1990-5-12",
+        "timeIndex": 6
+      },
+      "config": {
+        "hourlyPalace": "branch"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "jiaHeavenly",
+            "index": 2,
+            "mutagenStarKeys": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "wuquMaj",
+              "taiyangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 10,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "dingHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "taiyinMaj",
+              "tiantongMaj",
+              "tianjiMaj",
+              "jumenMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "guiHeavenly",
+            "index": 1,
+            "mutagenStarKeys": [
+              "pojunMaj",
+              "jumenMaj",
+              "taiyinMaj",
+              "tanlangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "流时按时支落宫",
+      "target": [
+        "2024-8-1",
+        3
+      ]
+    }
+  ],
   "patternCases": [
     {
       "chart": {

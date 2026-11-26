@@ -57,7 +57,7 @@ to iztro's value, so `{}` is the same as passing nothing.
 | Field | Type | Default | Values |
 | --- | --- | --- | --- |
 | `yearDivide` | `YearDivide` | `'normal'` | `normal` lunar new year / `exact` Lichun |
-| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` first of the month / `exact` solar term |
+| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` first of the month / `exact` solar term / `exactMonth` year at lunar New Year, months at the solar terms |
 | `ageDivide` | `AgeDivide` | `'normal'` | `normal` at new year / `birthday` on the birthday |
 | `dayDivide` | `DayDivide` | `'forward'` | `forward` late Rat hour belongs to the next day / `current` to the same day / `forwardCarry` its whole date moves to the next day (month end into the next month, New Year's Eve into the next year) |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
@@ -71,6 +71,15 @@ to iztro's value, so `{}` is the same as passing nothing.
 | `yearly12Placement` | `Yearly12Placement` | `'natalAndYearly'` | `natalAndYearly` natal and yearly / `yearlyOnly` yearly only |
 | `originalPalace` | `OriginalPalaceMarking` | `'primary'` | `primary` one palace / `withSecondary` also the secondary Original palace (Chou in xin years, Zi in ren years) |
 | `douJunMonth` | `DouJunMonth` | `'default'` | `default` as iztro / `natal` by the natal chart's rule |
+| `decadalStem` | `DecadalStem` | `'palace'` | `palace` palace stem / `continuous` from the Soul palace stem, running on along the decades |
+| `childhoodPalace` | `ChildhoodPalace` | `'sequence'` | `sequence` Soul, Wealth, Health, Spouse, Spirit, Career in turn / `spouse` always the Spouse palace |
+| `ageMutagens` | `AgeMutagens` | `'palaceStem'` | `palaceStem` minor-limit palace stem / `none` no mutagens |
+| `yearlyPalace` | `YearlyPalace` | `'taisui'` | `taisui` Taisui palace / `age` minor-limit palace |
+| `scopeMutagenStem` | `ScopeMutagenStem` | `'scope'` | `scope` the layer's own stem / `scopeSoulPalace` the natal stem of the layer's Soul palace |
+| `monthlyPalace` | `MonthlyPalace` | `'douJun'` | `douJun` month 1 at Dou Jun / `monthBranch` month 1 in the Yin palace |
+| `dailyPalace` | `DailyPalace` | `'fromMonthly'` | `fromMonthly` day 1 in the monthly Soul palace / `afterMonthly` day 1 in the palace after it |
+| `leapDaily` | `LeapDaily` | `'default'` | `default` restart at the leap month's 1st / `continuous` first half of a leap month counts on from the regular month |
+| `hourlyPalace` | `HourlyPalace` | `'fromDaily'` | `fromDaily` Zi hour in the daily Soul palace / `branch` by the hour's branch |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | stem key → four star keys (lu, quan, ke, ji), replacing that stem's row |
 | `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | stem key → mutagen key → list of extra star keys, added on top of that stem's four slots |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | star key → twelve brightness keys, index 0 is Yin, empty string for none |

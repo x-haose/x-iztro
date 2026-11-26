@@ -531,8 +531,8 @@ test('i18n 反查的限定子串消歧', () => {
 
 test('标识表的规模、次序与逐条可译性', () => {
   const keys = i18n.allKeys();
-  assert.equal(keys.length, 264);
-  assert.equal(new Set(keys).size, 264);
+  assert.equal(keys.length, 265);
+  assert.equal(new Set(keys).size, 265);
   assert.deepEqual(keys.slice(0, 2), ['decadal', 'childhood']);
   assert.deepEqual(keys.slice(-2), ['male', 'female']);
   assert.ok(keys.every((k) => i18n.translate(k) !== undefined));

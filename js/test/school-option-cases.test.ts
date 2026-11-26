@@ -23,12 +23,18 @@ interface Case {
   chart: { solarDate: string; timeIndex: TimeIndex; gender: Gender };
   config: ChartConfig;
   patternConfig?: PatternConfig;
+  target?: [string, TimeIndex];
   expect: unknown;
 }
 
 const DOC = JSON.parse(
   readFileSync(new URL('../../tests/data/school_option_cases.json', import.meta.url), 'utf8'),
-) as { target: [string, TimeIndex]; cases: Case[]; patternCases: Case[] };
+) as {
+  target: [string, TimeIndex];
+  cases: Case[];
+  horoscopeCases: Case[];
+  patternCases: Case[];
+};
 const [TARGET_DATE, TARGET_TIME_INDEX] = DOC.target;
 
 const chartOf = (c: Case): Astrolabe =>
@@ -50,6 +56,25 @@ for (const c of DOC.cases) {
         isSecondaryOriginalPalace: p.isSecondaryOriginalPalace === true,
       })),
       monthlyIndex: chart.horoscope(TARGET_DATE, TARGET_TIME_INDEX).monthly.index,
+    };
+    assert.deepEqual(got, c.expect);
+  });
+}
+
+for (const c of DOC.horoscopeCases) {
+  test(`运限口径: ${c.name}`, () => {
+    const chart = chartOf(c);
+    const [date, timeIndex] = c.target!;
+    const h = chart.horoscope(date, timeIndex);
+    const got = {
+      decadalStemKeys: chart.palaces.map((p) => p.decadal.heavenlyStemKey),
+      layers: [h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly].map((item) => ({
+        index: item.index,
+        nameKey: item.nameKey,
+        heavenlyStemKey: item.heavenlyStemKey,
+        mutagenStemKey: item.mutagenStemKey ?? null,
+        mutagenStarKeys: [...item.mutagenStarKeys],
+      })),
     };
     assert.deepEqual(got, c.expect);
   });

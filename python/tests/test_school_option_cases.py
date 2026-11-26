@@ -60,6 +60,31 @@ def test_shared_case(case: dict[str, Any]) -> None:
     assert _projection(_chart(case)) == case["expect"]
 
 
+def _horoscope_projection(case: dict[str, Any]) -> dict[str, Any]:
+    chart = _chart(case)
+    h = chart.horoscope(case["target"][0], case["target"][1])
+    return {
+        "decadalStemKeys": [p.decadal.heavenly_stem_key for p in chart.palaces],
+        "layers": [
+            {
+                "index": item.index,
+                "nameKey": item.name_key,
+                "heavenlyStemKey": item.heavenly_stem_key,
+                "mutagenStemKey": item.mutagen_stem_key,
+                "mutagenStarKeys": list(item.mutagen_star_keys),
+            }
+            for item in (h.decadal, h.age, h.yearly, h.monthly, h.daily, h.hourly)
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "case", DOC["horoscopeCases"], ids=[c["name"] for c in DOC["horoscopeCases"]]
+)
+def test_shared_horoscope_case(case: dict[str, Any]) -> None:
+    assert _horoscope_projection(case) == case["expect"]
+
+
 @pytest.mark.parametrize(
     "case", DOC["patternCases"], ids=[c["name"] for c in DOC["patternCases"]]
 )

@@ -30,7 +30,7 @@ astro = Astro()
 | 字段 | 类型 | 默认 | 取值（对应枚举） |
 | --- | --- | --- | --- |
 | `year_divide` | `str` | `"normal"` | `normal` 正月初一 / `exact` 立春（`YearDivide`） |
-| `horoscope_divide` | `str` | `"normal"` | `normal` 初一 / `exact` 节气（`HoroscopeDivide`） |
+| `horoscope_divide` | `str` | `"normal"` | `normal` 初一 / `exact` 节气 / `exactMonth` 年按初一、月按节气（`HoroscopeDivide`） |
 | `age_divide` | `str` | `"normal"` | `normal` 跨年即加 / `birthday` 过生日才加（`AgeDivide`） |
 | `day_divide` | `str` | `"forward"` | `forward` 晚子时归次日 / `current` 归当天 / `forwardCarry` 整个日期归次日（月底进下月、除夕进下一年）（`DayDivide`） |
 | `algorithm` | `str` | `"default"` | `default` / `zhongzhou`（`Algorithm`） |
@@ -44,6 +44,15 @@ astro = Astro()
 | `yearly12_placement` | `str` | `"natalAndYearly"` | `natalAndYearly` 本命与流年都安 / `yearlyOnly` 只在流年安（`Yearly12Placement`） |
 | `original_palace` | `str` | `"primary"` | `primary` 只标一宫 / `withSecondary` 另标辛年丑宫、壬年子宫为辅来因宫（`OriginalPalaceMarking`） |
 | `dou_jun_month` | `str` | `"default"` | `default` 同 iztro / `natal` 与本命盘同一规则（`DouJunMonth`） |
+| `decadal_stem` | `str` | `"palace"` | `palace` 宫干 / `continuous` 命宫干起随大限方向连续排（`DecadalStem`） |
+| `childhood_palace` | `str` | `"sequence"` | `sequence` 命财疾夫福官依次 / `spouse` 一律夫妻宫（`ChildhoodPalace`） |
+| `age_mutagens` | `str` | `"palaceStem"` | `palaceStem` 取小限宫干 / `none` 不起四化（`AgeMutagens`） |
+| `yearly_palace` | `str` | `"taisui"` | `taisui` 太岁宫 / `age` 小限宫（`YearlyPalace`） |
+| `scope_mutagen_stem` | `str` | `"scope"` | `scope` 该层的干 / `scopeSoulPalace` 该层命宫的本命宫干（`ScopeMutagenStem`） |
+| `monthly_palace` | `str` | `"douJun"` | `douJun` 斗君为正月 / `monthBranch` 正月在寅宫（`MonthlyPalace`） |
+| `daily_palace` | `str` | `"fromMonthly"` | `fromMonthly` 初一在流月命宫 / `afterMonthly` 初一在其下一宫（`DailyPalace`） |
+| `leap_daily` | `str` | `"default"` | `default` 闰月初一重新起数 / `continuous` 闰月前半月接本月连续数（`LeapDaily`） |
+| `hourly_palace` | `str` | `"fromDaily"` | `fromDaily` 子时在流日命宫 / `branch` 按时支落宫（`HourlyPalace`） |
 | `mutagens` | `dict[str, list[str]] \| None` | `None` | 天干标识 → 四颗星标识（禄、权、科、忌） |
 | `extra_mutagens` | `dict[str, dict[str, list[str]]] \| None` | `None` | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `dict[str, list[str]] \| None` | `None` | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
@@ -77,7 +86,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 **输出**
 
 ```text
-{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'leapDivide': 'default', 'tianmaPlacement': 'yearly', 'changshengDirection': 'yinYang', 'tianshangTianshi': 'default', 'tianwuPlacement': 'siShenYinHai', 'yearly12Placement': 'natalAndYearly', 'originalPalace': 'primary', 'douJunMonth': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'leapDivide': 'default', 'tianmaPlacement': 'yearly', 'changshengDirection': 'yinYang', 'tianshangTianshi': 'default', 'tianwuPlacement': 'siShenYinHai', 'yearly12Placement': 'natalAndYearly', 'originalPalace': 'primary', 'douJunMonth': 'default', 'decadalStem': 'palace', 'childhoodPalace': 'sequence', 'ageMutagens': 'palaceStem', 'yearlyPalace': 'taisui', 'scopeMutagenStem': 'scope', 'monthlyPalace': 'douJun', 'dailyPalace': 'fromMonthly', 'leapDaily': 'default', 'hourlyPalace': 'fromDaily', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
 土五局 earth
 ['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
 ```

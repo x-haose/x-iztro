@@ -72,7 +72,7 @@ class HoroscopeItem:
     """该运限的十二宫标识列表（`PalaceName` 枚举值域）"""
 
     mutagen: list[str]
-    """四化星名列表 [禄, 权, 科, 忌]（翻译文本）"""
+    """四化星名列表 [禄, 权, 科, 忌]（翻译文本），由 `mutagen_stem`（None 即 `heavenly_stem`）化出；不起四化时为空"""
 
     mutagen_star_keys: list[str]
     """被化的四颗星标识列表 [禄, 权, 科, 忌]（星耀 key，与 `Palace.mutagen_star_keys`
@@ -82,8 +82,15 @@ class HoroscopeItem:
     """流耀，12 个宫位各一组星耀列表，或 None"""
 
     extra_mutagen_star_keys: dict[str, list[str]] = field(default_factory=dict)
-    """该运限天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extra_mutagens`）；
+    """该层四化天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extra_mutagens`）；
     没有附加星时为空"""
+
+    mutagen_stem: str | None = None
+    """化出本层四化的天干（翻译文本）：与 `heavenly_stem` 相同时为 None（默认配置下恒为 None），
+    本层不起四化（小限 `ChartConfig.age_mutagens="none"`）时为空串"""
+
+    mutagen_stem_key: str | None = None
+    """`mutagen_stem` 的标识（`HeavenlyStem` 枚举值域），取值规则同 `mutagen_stem`"""
 
     def palace_index_by_name(self, name: PalaceName | str) -> int | None:
         """通过宫位标识（或当前语言宫名）查找在该运限中的宫位索引"""
@@ -113,6 +120,8 @@ class HoroscopeItem:
             extra_mutagen_star_keys={
                 k: list(v) for k, v in d.get("extraMutagenStarKeys", {}).items()
             },
+            mutagen_stem=d.get("mutagenStem"),
+            mutagen_stem_key=d.get("mutagenStemKey"),
         )
 
 

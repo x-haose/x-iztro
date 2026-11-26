@@ -436,6 +436,7 @@ fn build_palaces(
         gender,
         ctx.yearly_stem,
         ctx.yearly_branch,
+        config.decadal_stem,
     );
     let palace_names = get_palace_names(ctx.soul_body.soul_index);
     let start_stem = TIGER_RULE[ctx.yearly_stem.index()];
@@ -473,29 +474,25 @@ fn build_palaces(
 
 /// 推算八字四柱中的月、日、时三柱
 ///
-/// 月柱按 `horoscope_divide` 分界：初一分界时由年干经五虎遁推，闰月下半月归下月；
+/// 月柱按 `horoscope_divide` 的月分界：初一分界时由年干经五虎遁推，闰月下半月归下月；
 /// 节气分界时取交节时刻换月的月柱。日柱晚子时归次日，时柱天干随日柱推算。
 fn build_pillars(ctx: &AstroContext, config: &Config) -> Pillars {
-    let monthly = match config.horoscope_divide {
-        HoroscopeDivide::Normal => {
-            let month_fix: i32 = if ctx.is_leap && ctx.lunar_day > 15 {
-                1
-            } else {
-                0
-            };
-            (
-                HeavenlyStem::from_index(fix_index(
-                    TIGER_RULE[ctx.yearly_stem.index()].index() as i32 + ctx.lunar_month as i32 - 1
-                        + month_fix,
-                    10,
-                )),
-                EarthlyBranch::from_index(fix_index(
-                    2 + ctx.lunar_month as i32 - 1 + month_fix,
-                    12,
-                )),
-            )
-        }
-        HoroscopeDivide::Exact => calendar::month_exact(&ctx.moment, ctx.lunar_year),
+    let monthly = if config.horoscope_divide.month_by_jie() {
+        calendar::month_exact(&ctx.moment, ctx.lunar_year)
+    } else {
+        let month_fix: i32 = if ctx.is_leap && ctx.lunar_day > 15 {
+            1
+        } else {
+            0
+        };
+        (
+            HeavenlyStem::from_index(fix_index(
+                TIGER_RULE[ctx.yearly_stem.index()].index() as i32 + ctx.lunar_month as i32 - 1
+                    + month_fix,
+                10,
+            )),
+            EarthlyBranch::from_index(fix_index(2 + ctx.lunar_month as i32 - 1 + month_fix, 12)),
+        )
     };
 
     Pillars {

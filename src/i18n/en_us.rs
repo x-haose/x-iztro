@@ -235,6 +235,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
         Brightness::Bu => "[-2]",
         Brightness::Xian => "[-3]",
         Brightness::Xian2 => "[idle]",
+        Brightness::Di => "[di]",
     }
 }
 

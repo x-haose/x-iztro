@@ -365,6 +365,8 @@ labels_table! {
     age_fortune: ["小限", "小限", "Age Fortune", "小限", "소한", "Tiểu hạn"],
     nominal_age: ["虚岁", "虛歲", "Nominal Age", "数え年", "세는나이", "Tuổi âm"],
     mutagen_fly: ["四化", "四化", "Mutagen", "四化", "사화", "Tứ hóa"],
+    // 四化行注明所用天干的模板，`{}` 处填天干
+    mutagen_stem: ["{}干", "{}干", "Stem {}", "{}干", "{}간", "Can {}"],
     scope_stars: ["流耀", "流曜", "Scope Stars", "流曜", "유요", "Lưu diệu"],
     natal: ["本命", "本命", "Natal", "本命", "본명", "Bản mệnh"],
     palace_names: ["宫名", "宮名", "Palace Names", "宮名", "궁명", "Tên cung"],
@@ -1395,16 +1397,30 @@ fn scope_heading(
 }
 
 /// 层级的四化行：四化星带本命落宫，落宫标明「本命」参照系
-/// （同一段落里流耀行与十二宫表用的是该层重排宫名）
+/// （同一段落里流耀行与十二宫表用的是该层重排宫名）。四化不是由该层干支的天干化出时
+/// （`scope_mutagen_stem=scopeSoulPalace`），标签后注明所用的天干（`- 四化 (辛干): …`）；
+/// 不起四化（小限 `age_mutagens=none`）时返回空串
 fn scope_mutagen_line(
     astrolabe: &Astrolabe,
     item: &HoroscopeItem,
     l: &Labels,
     lang: Language,
 ) -> String {
+    let Some(stem) = item.mutagen_stem else {
+        return String::new();
+    };
+    let label = if stem == item.heavenly_stem {
+        l.mutagen_fly.to_string()
+    } else {
+        format!(
+            "{} ({})",
+            l.mutagen_fly,
+            l.mutagen_stem
+                .replace("{}", translate_heavenly_stem(stem, lang))
+        )
+    };
     format!(
-        "- {}: {}\n",
-        l.mutagen_fly,
+        "- {label}: {}\n",
         mutagen_stars_with_places(astrolabe, item.mutagens(), true, l, lang)
     )
 }

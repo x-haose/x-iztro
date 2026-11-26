@@ -175,6 +175,15 @@ type Config struct {
     Yearly12Placement   string
     OriginalPalace      string
     DouJunMonth         string
+    DecadalStem         string
+    ChildhoodPalace     string
+    AgeMutagens         string
+    YearlyPalace        string
+    ScopeMutagenStem    string
+    MonthlyPalace       string
+    DailyPalace         string
+    LeapDaily           string
+    HourlyPalace        string
     Mutagens            map[string][]string
     ExtraMutagens       map[string]map[string][]string
     Brightness          map[string][]string
@@ -184,7 +193,7 @@ type Config struct {
 | Field | Values | Default | Description |
 | --- | --- | --- | --- |
 | `YearDivide` | `"normal"` / `"exact"` | `"normal"` | Whether the year pillar turns over at lunar New Year or the Beginning of Spring |
-| `HoroscopeDivide` | `"normal"` / `"exact"` | `"normal"` | Which boundary the yearly spirits take their year branch from |
+| `HoroscopeDivide` | `"normal"` / `"exact"` / `"exactMonth"` | `"normal"` | Year and month boundary of horoscopes and the month pillar: both at the first of the month, the Beginning of Spring and solar terms, or the year at lunar New Year and months at the solar terms |
 | `AgeDivide` | `"normal"` / `"birthday"` | `"normal"` | Whether the nominal age increments with the lunar year or with the birthday |
 | `DayDivide` | `"forward"` / `"current"` / `"forwardCarry"` | `"forward"` | Whether the late Zi hour belongs to the next day, the current one, or carries its whole date to the next day (month end into the next month, New Year's Eve into the next year) |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | The algorithm school |
@@ -198,6 +207,15 @@ type Config struct {
 | `Yearly12Placement` | `"natalAndYearly"` / `"yearlyOnly"` | `"natalAndYearly"` | Sui-qian and Jiang-qian gods on the natal chart too, or yearly only |
 | `OriginalPalace` | `"primary"` / `"withSecondary"` | `"primary"` | One Original palace, or also the secondary one (Chou in xin years, Zi in ren years) |
 | `DouJunMonth` | `"default"` / `"natal"` | `"default"` | Dou Jun's birth month as iztro, or by the natal chart's late-Zi rule |
+| `DecadalStem` | `"palace"` / `"continuous"` | `"palace"` | Decadal stem: the palace stem, or running on from the Soul palace stem along the decades |
+| `ChildhoodPalace` | `"sequence"` / `"spouse"` | `"sequence"` | Childhood period: through the palaces in turn, or always in the Spouse palace |
+| `AgeMutagens` | `"palaceStem"` / `"none"` | `"palaceStem"` | Minor limit: mutagens from its palace stem, or none |
+| `YearlyPalace` | `"taisui"` / `"age"` | `"taisui"` | Yearly Soul palace: the Taisui palace or the minor-limit palace |
+| `ScopeMutagenStem` | `"scope"` / `"scopeSoulPalace"` | `"scope"` | Horoscope mutagens: from the layer's own stem, or the natal stem of its Soul palace |
+| `MonthlyPalace` | `"douJun"` / `"monthBranch"` | `"douJun"` | Monthly palace: month 1 at Dou Jun, or always in the Yin palace |
+| `DailyPalace` | `"fromMonthly"` / `"afterMonthly"` | `"fromMonthly"` | Daily palace: day 1 in the monthly Soul palace, or the palace after it |
+| `LeapDaily` | `"default"` / `"continuous"` | `"default"` | Leap-month days: restart at the leap month, or count on from the regular month |
+| `HourlyPalace` | `"fromDaily"` / `"branch"` | `"fromDaily"` | Hourly palace: counted from the daily Soul palace, or by the hour's branch |
 | `Mutagens` | Stem key → four star keys | — | A custom mutagen table, replacing the whole table for a stem |
 | `ExtraMutagens` | Stem key → mutagen key → list of star keys | — | Extra mutagen stars, added on top of the stem's four slots |
 | `Brightness` | Star key → twelve brightness keys | — | A custom brightness table, replacing the whole table for a star |
@@ -221,7 +239,7 @@ wood 3rd
 ```
 
 Every value set has matching constants, so you need not write the strings by hand:
-`YearDivideNormal` / `YearDivideExact`, `HoroscopeDivideNormal` / `HoroscopeDivideExact`,
+`YearDivideNormal` / `YearDivideExact`, `HoroscopeDivideNormal` / `HoroscopeDivideExact` / `HoroscopeDivideExactMonth`,
 `AgeDivideNormal` / `AgeDivideBirthday`, `DayDivideForward` / `DayDivideCurrent` / `DayDivideForwardCarry`,
 `AlgorithmDefault` / `AlgorithmZhongzhou`, `AstroHeaven` / `AstroEarth` / `AstroHuman`,
 `VoidPlacementDefault` / `VoidPlacementZhengPang`, `LeapDivideDefault` / `LeapDivideNextMonth`, 
@@ -230,7 +248,8 @@ Every value set has matching constants, so you need not write the strings by han
 `TianshangTianshiDefault` / `TianshangTianshiTianshiFriends`, 
 `TianwuPlacementSiShenYinHai` / `TianwuPlacementSiShenHaiYin`, 
 `Yearly12PlacementNatalAndYearly` / `Yearly12PlacementYearlyOnly`, 
-`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`, `DouJunMonthDefault` / `DouJunMonthNatal`.
+`OriginalPalacePrimary` / `OriginalPalaceWithSecondary`, `DouJunMonthDefault` / `DouJunMonthNatal`,
+`DecadalStemPalace` / `DecadalStemContinuous`, `ChildhoodPalaceSequence` / `ChildhoodPalaceSpouse`, `AgeMutagensPalaceStem` / `AgeMutagensNone`, `YearlyPalaceTaisui` / `YearlyPalaceAge`, `ScopeMutagenStemScope` / `ScopeMutagenStemScopeSoulPalace`, `MonthlyPalaceDouJun` / `MonthlyPalaceMonthBranch`, `DailyPalaceFromMonthly` / `DailyPalaceAfterMonthly`, `LeapDailyDefault` / `LeapDailyContinuous`, `HourlyPalaceFromDaily` / `HourlyPalaceBranch`.
 
 **Edge cases and pitfalls**
 

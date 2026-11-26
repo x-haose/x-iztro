@@ -55,7 +55,7 @@ type WasmSource =
 | 字段 | 类型 | 默认 | 取值 |
 | --- | --- | --- | --- |
 | `yearDivide` | `YearDivide` | `'normal'` | `normal` 正月初一 / `exact` 立春 |
-| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` 初一 / `exact` 节气 |
+| `horoscopeDivide` | `HoroscopeDivide` | `'normal'` | `normal` 初一 / `exact` 节气 / `exactMonth` 年按初一、月按节气 |
 | `ageDivide` | `AgeDivide` | `'normal'` | `normal` 跨年即加 / `birthday` 过生日才加 |
 | `dayDivide` | `DayDivide` | `'forward'` | `forward` 晚子时归次日 / `current` 归当天 / `forwardCarry` 整个日期归次日（月底进下月、除夕进下一年） |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
@@ -69,6 +69,15 @@ type WasmSource =
 | `yearly12Placement` | `Yearly12Placement` | `'natalAndYearly'` | `natalAndYearly` 本命与流年都安 / `yearlyOnly` 只在流年安 |
 | `originalPalace` | `OriginalPalaceMarking` | `'primary'` | `primary` 只标一宫 / `withSecondary` 另标辛年丑宫、壬年子宫为辅来因宫 |
 | `douJunMonth` | `DouJunMonth` | `'default'` | `default` 同 iztro / `natal` 与本命盘同一规则 |
+| `decadalStem` | `DecadalStem` | `'palace'` | `palace` 宫干 / `continuous` 命宫干起随大限方向连续排 |
+| `childhoodPalace` | `ChildhoodPalace` | `'sequence'` | `sequence` 命财疾夫福官依次 / `spouse` 一律夫妻宫 |
+| `ageMutagens` | `AgeMutagens` | `'palaceStem'` | `palaceStem` 取小限宫干 / `none` 不起四化 |
+| `yearlyPalace` | `YearlyPalace` | `'taisui'` | `taisui` 太岁宫 / `age` 小限宫 |
+| `scopeMutagenStem` | `ScopeMutagenStem` | `'scope'` | `scope` 该层的干 / `scopeSoulPalace` 该层命宫的本命宫干 |
+| `monthlyPalace` | `MonthlyPalace` | `'douJun'` | `douJun` 斗君为正月 / `monthBranch` 正月在寅宫 |
+| `dailyPalace` | `DailyPalace` | `'fromMonthly'` | `fromMonthly` 初一在流月命宫 / `afterMonthly` 初一在其下一宫 |
+| `leapDaily` | `LeapDaily` | `'default'` | `default` 闰月初一重新起数 / `continuous` 闰月前半月接本月连续数 |
+| `hourlyPalace` | `HourlyPalace` | `'fromDaily'` | `fromDaily` 子时在流日命宫 / `branch` 按时支落宫 |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | 天干标识 → 四颗星标识（禄、权、科、忌），按天干整表替换 |
 | `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |

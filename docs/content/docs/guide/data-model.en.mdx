@@ -133,7 +133,7 @@ character identical to the top-level `chineseDate` field.
 | Field | Accepts | Default |
 | --- | --- | --- |
 | `yearDivide` | `normal` / `exact` | `normal` |
-| `horoscopeDivide` | `normal` / `exact` | `normal` |
+| `horoscopeDivide` | `normal` / `exact` / `exactMonth` | `normal` |
 | `ageDivide` | `normal` / `birthday` | `normal` |
 | `dayDivide` | `forward` / `current` / `forwardCarry` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
@@ -147,8 +147,17 @@ character identical to the top-level `chineseDate` field.
 | `yearly12Placement` | `natalAndYearly` / `yearlyOnly` | `natalAndYearly` |
 | `originalPalace` | `primary` / `withSecondary` | `primary` |
 | `douJunMonth` | `default` / `natal` | `default` |
+| `decadalStem` | `palace` / `continuous` | `palace` |
+| `childhoodPalace` | `sequence` / `spouse` | `sequence` |
+| `ageMutagens` | `palaceStem` / `none` | `palaceStem` |
+| `yearlyPalace` | `taisui` / `age` | `taisui` |
+| `scopeMutagenStem` | `scope` / `scopeSoulPalace` | `scope` |
+| `monthlyPalace` | `douJun` / `monthBranch` | `douJun` |
+| `dailyPalace` | `fromMonthly` / `afterMonthly` | `fromMonthly` |
+| `leapDaily` | `default` / `continuous` | `default` |
+| `hourlyPalace` | `fromDaily` / `branch` | `fromDaily` |
 
-`voidPlacement` and the keys below it are x-iztro extensions; at their defaults the `config` echoed on the astrolabe leaves them out. `forwardCarry` for `dayDivide` is an extension value too. See [Config in depth](/en/docs/guide/guides/config) for each key.
+`voidPlacement` and the keys below it are x-iztro extensions; at their defaults the `config` echoed on the astrolabe leaves them out. `exactMonth` for `horoscopeDivide` and `forwardCarry` for `dayDivide` are extension values too. See [Config in depth](/en/docs/guide/guides/config) for each key.
 
 There are three further **input-only** keys, used to replace or extend built-in data tables:
 
@@ -190,9 +199,10 @@ For what they mean, see [Config in depth](/en/docs/guide/guides/config).
 | `earthlyBranch` / `earthlyBranchKey` | string | This scope's earthly branch |
 | `palaceNames` | string[12] | The palace names re-laid-out with this scope's slot as the Soul palace, in slot order |
 | `palaceNameKeys` | string[12] | The same as keys |
-| `mutagen` | string[4] | Mutagen star names, in the order Lu, Quan, Ke, Ji |
+| `mutagen` | string[4] | Mutagen star names, in the order Lu, Quan, Ke, Ji; transformed by `mutagenStem` (`heavenlyStem` when absent), empty when the minor limit has no mutagens |
 | `mutagenStarKeys` | string[4] | The same as keys — star keys of the four mutated stars, synonymous with the palace field of the same name; the singular `mutagenKey` is the mutagen type (`sihuaLu` etc.) |
 | `extraMutagenStarKeys` | `{mutagen key: string[]}?` | Extra mutagen stars this scope's stem transforms beyond the four slots, synonymous with the palace field of the same name; absent when there are none |
+| `mutagenStem` / `mutagenStemKey` | string? | The stem this layer's mutagens come from ([stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem)); absent when it equals `heavenlyStem` (always absent under the default config); an empty string when the minor limit has no mutagens |
 | `stars` | [Star](#star)[][12]? | Flowing stars across the twelve palaces (the outer twelve entries are palaces, each inner list that palace's flowing stars); absent on scopes with no flowing stars |
 | `nominalAge` | int? | Nominal age (虚岁); age fortune only |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar)? | Yearly scope only |

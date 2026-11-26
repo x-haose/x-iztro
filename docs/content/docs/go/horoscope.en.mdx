@@ -55,6 +55,7 @@ together.
 | `PalaceNames` / `PalaceNameKeys` | `[]string` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
 | `Mutagen` / `MutagenStarKeys` | `[]string` | The stars this scope's stem transforms, in the order lu, quan, ke, ji; `MutagenStarKeys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
 | `ExtraMutagenStarKeys` | `map[string][]string` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this scope's stem transforms beyond the four slots: mutagen key → list of star keys; nil when there are none, and `HasHoroscopeMutagen` counts them |
+| `MutagenStem` / `MutagenStemKey` | `*string` | The stem this layer's mutagens come from ([stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem)): nil when it equals `HeavenlyStem` (always under the default config); points to an empty string when the minor limit has no mutagens |
 | `Stars` | `[][]Star` | The scope stars of this layer; `nil` for layers that have none |
 | `NominalAge` | `int` | Age scope only: the nominal age. `0` on every other layer |
 | `YearlyDecStar` | `*YearlyDecStar` | Yearly scope only: the Sui-qian and Jiang-qian gods. **`nil`** on every other layer |

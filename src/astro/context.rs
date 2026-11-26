@@ -86,9 +86,10 @@ pub fn derive(
         YearDivide::Normal => lunar.year,
         YearDivide::Exact => calendar::year_by_li_chun(&moment, lunar_date.year),
     };
-    let (flow_yearly_stem, flow_yearly_branch) = match config.horoscope_divide {
-        HoroscopeDivide::Normal => lunar.year,
-        HoroscopeDivide::Exact => calendar::year_by_li_chun(&moment, lunar_date.year),
+    let (flow_yearly_stem, flow_yearly_branch) = if config.horoscope_divide.year_by_li_chun() {
+        calendar::year_by_li_chun(&moment, lunar_date.year)
+    } else {
+        lunar.year
     };
 
     let month_index = birth_month_index(

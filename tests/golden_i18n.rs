@@ -19,9 +19,9 @@ const KOT_GOLDEN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/i18n
 /// iztro 表缺条目，iztro 哪天补上会立刻暴露。
 const IZTRO_MISSING_EN: &str = "childhood";
 
-/// x-iztro 扩展的可翻译标识，iztro 表里没有：亮度「闲」，截空、旬空分正傍时的傍截空、傍旬空，
+/// x-iztro 扩展的可翻译标识，iztro 表里没有：亮度「闲」「地」，截空、旬空分正傍时的傍截空、傍旬空，
 /// 天马兼安年马、月马时的月马。
-const X_IZTRO_EXTENSION_KEYS: [&str; 4] = ["xian2", "pangJiekong", "pangXunkong", "yuemaAdj"];
+const X_IZTRO_EXTENSION_KEYS: [&str; 5] = ["xian2", "di", "pangJiekong", "pangXunkong", "yuemaAdj"];
 
 fn load() -> Value {
     let raw =
@@ -58,7 +58,7 @@ fn key_set_matches_js() {
         missing.is_empty() && extra.is_empty(),
         "标识集合不一致\n  Rust 缺: {missing:?}\n  Rust 多: {extra:?}"
     );
-    assert_eq!(got.len(), 264, "标识总数应为 iztro 的 260 加扩展 4");
+    assert_eq!(got.len(), 265, "标识总数应为 iztro 的 260 加扩展 5");
 }
 
 /// 扩展标识六种语言都有译文，且译文反查回原标识（不与 iztro 标识的译文同形）。
