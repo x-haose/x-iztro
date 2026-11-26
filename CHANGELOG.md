@@ -74,8 +74,8 @@
   - `yearlyPalace`（`taisui` / `age`）：流年命宫取小限宫（《天纪紫微斗数笔记》p13，书中 p35、p59 命例核对得上）；
     流年干支、流耀、岁前将前与斗君仍按流年年支与太岁宫。
   - `scopeMutagenStem`（`scope` / `scopeSoulPalace`）：运限各层四化取该层命宫的本命宫干（周星飞《梁若瑜飞星派紫微斗数课程》p21，
-    方外人《河洛紫微斗数》p28，蔡明宏《华山钦天四化紫微斗数飞星秘仪》p50 甲法）。
-  - `monthlyPalace`（`douJun` / `monthBranch`）：流月正月固定在寅宫（蔡明宏《秘仪》p51–52 乙法）。
+    方外人《河洛紫微斗数》p28，蔡明宏《华山钦天四化紫微斗数飞星秘仪》书页 50、PDF p37 甲法）。
+  - `monthlyPalace`（`douJun` / `monthBranch`）：流月正月固定在寅宫（蔡明宏《秘仪》书页 51–52、PDF p37–38 乙法）。
   - `dailyPalace`（`fromMonthly` / `afterMonthly`）：流日初一落在流月命宫的下一宫（《梁若瑜飞星派紫微斗数课程》p264）。
   - `leapDaily`（`default` / `continuous`）：闰月前半月的流日接同号本月的日数连续数（王亭之《安星法及推断实例》p85）；
     原文对闰月后半月读不出确定算法，十六日起仍按默认。

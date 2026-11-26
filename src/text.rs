@@ -1233,7 +1233,7 @@ pub fn decadal_list_to_text_with(
             d.year_range.0,
             d.year_range.1,
             stem_branch(d.heavenly_stem, d.earthly_branch, &l, lang),
-            mutagen_stars_with_places(astrolabe, d.mutagens(), true, &l, lang),
+            mutagen_cell(astrolabe, &d.base, &l, lang),
         ));
     }
 
@@ -1332,7 +1332,7 @@ pub fn monthly_list_to_text_with(
             solar(m.day_range.1),
             translate_palace(astrolabe.palaces[m.index].name, lang),
             stem_branch(m.heavenly_stem, m.earthly_branch, &l, lang),
-            mutagen_stars_with_places(astrolabe, m.mutagens(), true, &l, lang),
+            mutagen_cell(astrolabe, &m.base, &l, lang),
         ));
     }
 
@@ -1423,6 +1423,24 @@ fn scope_mutagen_line(
         "- {label}: {}\n",
         mutagen_stars_with_places(astrolabe, item.mutagens(), true, l, lang)
     )
+}
+
+/// 一览表里一层的四化格：四化星带本命落宫；四化所用的干不是该层自身的干时，前面注明所用的干
+/// （`(辛干) 巨门化禄→本命子女, …`）；该层不起四化写「—」
+fn mutagen_cell(astrolabe: &Astrolabe, item: &HoroscopeItem, l: &Labels, lang: Language) -> String {
+    let Some(stem) = item.mutagen_stem else {
+        return NONE_MARK.to_string();
+    };
+    let stars = mutagen_stars_with_places(astrolabe, item.mutagens(), true, l, lang);
+    if stem == item.heavenly_stem {
+        stars
+    } else {
+        format!(
+            "({}) {stars}",
+            l.mutagen_stem
+                .replace("{}", translate_heavenly_stem(stem, lang))
+        )
+    }
 }
 
 /// 层级的格局行：命中格局带该层宫名，同名同宫去重；无命中返回空串
@@ -1850,7 +1868,7 @@ pub fn yearly_overview_to_text_with(
             h.age.nominal_age,
             palace(h.age.index),
             palace(h.yearly.index),
-            mutagen_stars_with_places(astrolabe, h.yearly.mutagens(), true, &l, lang),
+            mutagen_cell(astrolabe, &h.yearly.base, &l, lang),
         ));
     }
 

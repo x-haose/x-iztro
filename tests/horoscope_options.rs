@@ -1,11 +1,11 @@
 //! 运限流派口径开关的行为测试：每个开关在真实盘上按出处给出的规则或命例核对，默认值的输出由各层金标守。
 //!
-//! 规则出处（页码为 PDF 页号）：流月按节气换干、年仍按初一——令东来《紫微斗数命理学》p160–161；
+//! 规则出处（页码为 PDF 页号；蔡明宏《秘仪》两页并排扫描，标书页并注 PDF 页）：流月按节气换干、年仍按初一——令东来《紫微斗数命理学》p160–161；
 //! 大限天干从命宫干连续排——《紫微斗数精成》p398（蒋介石命例）；童限以夫妻宫为太极——依婷系统班 02 讲 p14–17；
 //! 小限不起四化——精成 p433；流年命宫取小限——《天纪紫微斗数笔记》p13、p35、p59；
 //! 运限四化取该层命宫的宫干——周星飞《梁若瑜飞星派紫微斗数课程》p21（2009 己丑年用丑宫辛干）、
-//! 方外人《河洛紫微斗数》p28、蔡明宏《华山钦天四化紫微斗数飞星秘仪》p50（甲法）；
-//! 流月正月固定在寅宫——蔡明宏 p51–52（乙法）；流日初一落在流月命宫的下一宫——《课程》p264；
+//! 方外人《河洛紫微斗数》p28、蔡明宏《华山钦天四化紫微斗数飞星秘仪》书页 50（PDF p37，甲法）；
+//! 流月正月固定在寅宫——蔡明宏书页 51–52（PDF p37–38，乙法）；流日初一落在流月命宫的下一宫——《课程》p264；
 //! 闰月流日接本月连续数——王亭之《安星法及推断实例》p85；流时按时支落宫——许铨仁《学习紫微斗数的第一本书》p52–53。
 
 use x_iztro::data::stars::StarKey;
@@ -515,5 +515,40 @@ fn di_brightness_in_custom_table() {
     assert_eq!(
         x_iztro::translate_brightness(Brightness::Di, Language::ZhCN),
         "地"
+    );
+}
+
+/// 三张一览表的四化格在所用天干不是该层自身的干时注明所用的干：运限四化取该层命宫宫干、大限干连续排。
+#[test]
+fn overview_tables_name_the_mutagen_stem() {
+    let config = Config {
+        scope_mutagen_stem: ScopeMutagenStem::ScopeSoulPalace,
+        decadal_stem: DecadalStem::Continuous,
+        ..Config::default()
+    };
+    let chart = solar("1986-3-20", 4, Gender::Female, config);
+    let row = |text: &str, prefix: &str| -> String {
+        text.lines()
+            .find(|l| l.starts_with(prefix))
+            .unwrap_or_else(|| panic!("没有以 {prefix} 起头的行：\n{text}"))
+            .to_string()
+    };
+    let yearly = chart.yearly_overview_to_text(2009, 2009).unwrap();
+    assert!(row(&yearly, "| 2009 |").contains("| (辛干) "), "{yearly}");
+    let decadals = chart.decadal_list_to_text();
+    assert!(row(&decadals, "| 11 |").contains("| (辛干) "), "{decadals}");
+    assert!(row(&decadals, "| 12 |").contains("| (庚干) "), "{decadals}");
+    let monthlies = chart.monthly_list_to_text(2009).unwrap();
+    assert!(
+        row(&monthlies, "| 1 |").contains("| (壬干) "),
+        "{monthlies}"
+    );
+    // 默认口径下四化即该层的干，不注明
+    let plain = solar("1986-3-20", 4, Gender::Female, Config::default());
+    assert!(
+        !plain
+            .yearly_overview_to_text(2009, 2009)
+            .unwrap()
+            .contains("干) ")
     );
 }

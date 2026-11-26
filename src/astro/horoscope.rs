@@ -635,7 +635,7 @@ impl HoroscopeData {
 
     /// 检查指定运限的四化星是否在指定宫位中
     ///
-    /// 检查该运限天干化出该类四化的星（四槽之星与附加星）是否有一颗出现在目标宫位的主星或辅星中。
+    /// 检查该运限化出该类四化的星（四槽之星与附加星，化出它们的干见 [`HoroscopeItem::mutagen_stem`]）是否有一颗出现在目标宫位的主星或辅星中。
     pub fn has_horoscope_mutagen(
         &self,
         name: Palace,
@@ -1058,7 +1058,7 @@ impl<'a> HoroscopeRef<'a> {
         Ok(self.data.surround_palaces(name, scope, self.astrolabe))
     }
 
-    /// 该运限天干的指定四化星是否落在目标宫位（本命盘范围恒为 false）
+    /// 该运限的指定四化星（化出它们的干见 [`HoroscopeItem::mutagen_stem`]）是否落在目标宫位（本命盘范围恒为 false）
     ///
     /// # Errors
     /// 同 [`Self::palace`]。

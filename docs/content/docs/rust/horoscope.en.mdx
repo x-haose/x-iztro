@@ -72,7 +72,7 @@ together.
 | `heavenly_stem` | `HeavenlyStem` | Stem of the scope, which determines the mutagens it flies |
 | `earthly_branch` | `EarthlyBranch` | Branch of the scope |
 | `palace_names` | `Vec<Palace>` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
-| `mutagen` | `Vec<StarKey>` | The stars this scope's stem transforms, in the order lu, quan, ke, ji (the table's four slots) |
+| `mutagen` | `Vec<StarKey>` | The scope's mutagen stars, in the order lu, quan, ke, ji (the table's four slots), transformed by `mutagen_stem`; with the default settings that is the scope's own stem, and empty when the scope has no mutagens |
 | `extra_mutagen` | `[Vec<StarKey>; 4]` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this scope's stem transforms beyond the four slots, grouped lu, quan, ke, ji; all four empty under the default table. `mutagens()` merges both into a (star, mutagen) sequence |
 | `mutagen_stem` | `Option<HeavenlyStem>` | The stem this layer's mutagens come from: `heavenly_stem` by default, the natal stem of the layer's Soul palace under [`ScopeSoulPalace`](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem); `None` when the minor limit has no mutagens, `mutagen` then being empty |
 | `stars` | `Option<Vec<Vec<Star>>>` | The scope stars of this layer; `None` for layers that have none |
@@ -683,7 +683,7 @@ cell.
 
 ## has_horoscope_mutagen
 
-**Purpose** Test whether a palace under a given scope carries a mutagen flown by that scope's stem.
+**Purpose** Test whether a palace under a given scope carries one of that scope's mutagens (the stem behind them is `HoroscopeItem::mutagen_stem`).
 
 **Zi Wei meaning** Every horoscope layer has a stem of its own, and it transforms four stars just as
 the birth-year stem does. A question like "does the decadal lu land in the decadal Wealth palace?" is
@@ -703,7 +703,7 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `scope` | `Scope` | Yes | — | The horoscope scope |
 | `mutagen` | `Mutagen` | Yes | — | One of the four mutagens |
 
-**Return value** `bool`. It checks whether the star transformed by that layer's stem sits among the
+**Return value** `bool`. It checks whether the star that layer transforms sits among the
 target palace's major or minor stars (adjective stars are not considered). Errors as for `palace`.
 
 **Example**

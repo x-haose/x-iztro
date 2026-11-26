@@ -50,7 +50,7 @@ Apart from age fortune and the yearly scope, every level has the same structure:
 | `name` | The scope name, translated into the chart language (`decadal`, `yearly`, …) |
 | `heavenly_stem` / `earthly_branch` | This scope's stem and branch |
 | `palace_names` | The twelve palace names re-laid-out with this scope's slot as the Soul palace |
-| `mutagen` | The mutagen stars raised by this scope's stem, in the order Lu, Quan, Ke, Ji |
+| `mutagen` | The scope's mutagen stars, in the order Lu, Quan, Ke, Ji; by default raised by the scope's own stem, by the chosen stem (`mutagen_stem`) when [the stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem) is changed, and empty when [the minor limit raises none](/en/docs/guide/guides/config#minor-limit-mutagens-age_mutagens) |
 | `stars` | Flowing stars distributed across the twelve palaces; empty for scopes that have none |
 
 Age fortune additionally carries the **nominal age** (`nominal_age`).
@@ -76,6 +76,9 @@ The table stops at nominal age 5: the latest start is fire 6th, whose first deca
 age 6 onwards is never the childhood scope — the mnemonic's "sixth Career" never applies, and there
 is no cycling.
 
+That is the default; [`childhood_palace`](/en/docs/guide/guides/config#childhood-period-childhood_palace) can instead take the Spouse palace as the
+Soul palace for every year before the decadals begin.
+
 When the target date falls before the decadals begin, the decadal field returns the childhood scope
 instead, with the scope name shown as `childhood`. The field structure is unchanged, so callers need
 no special handling; check the scope name only when you need to tell them apart.
@@ -92,7 +95,9 @@ are `decadal`, yearly ones are `yearly`.
 
 ## Boundaries change the results
 
-A horoscope's stems, branches and nominal ages are affected by two configuration switches:
+A horoscope's stems, branches and nominal ages are affected by these two configuration switches (where the
+layers land, their mutagens and how the monthly, daily and hourly palaces are counted have their own
+switches, see [Horoscope conventions](/en/docs/guide/guides/config#horoscope-conventions)):
 
 - `horoscope_divide` decides whether the horoscope year turns over at lunar New Year or at the
   Beginning of Spring (立春, the solar term around 4 February), and whether the monthly scope divides

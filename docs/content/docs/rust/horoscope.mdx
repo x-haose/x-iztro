@@ -67,7 +67,7 @@ let h = chart.horoscope("2025-6-1", 0)?;
 | `heavenly_stem` | `HeavenlyStem` | 该层级的天干，决定它飞出的四化 |
 | `earthly_branch` | `EarthlyBranch` | 该层级的地支 |
 | `palace_names` | `Vec<Palace>` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
-| `mutagen` | `Vec<StarKey>` | 该层级天干引发的四化星，顺序为禄权科忌（四化表四槽） |
+| `mutagen` | `Vec<StarKey>` | 该层级的四化星，顺序为禄权科忌（四化表四槽），由 `mutagen_stem` 化出；默认口径下即该层天干，不起四化时为空 |
 | `extra_mutagen` | `[Vec<StarKey>; 4]` | 该层级天干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)，按禄权科忌分组；默认四化表下四组皆空。`mutagens()` 把两者合成（星, 四化）序列 |
 | `mutagen_stem` | `Option<HeavenlyStem>` | 化出本层四化的天干：默认即 `heavenly_stem`，[运限四化取干](/zh/docs/guide/guides/config#运限四化取干-scope_mutagen_stem)取 `ScopeSoulPalace` 时为该层命宫的本命宫干；小限不起四化时为 `None`，`mutagen` 随之为空 |
 | `stars` | `Option<Vec<Vec<Star>>>` | 该层级的流耀分布；无流耀的层级为 `None` |
@@ -649,7 +649,7 @@ true
 
 ## has_horoscope_mutagen
 
-**用途**　判断某层级某宫里有没有该层级天干引发的四化。
+**用途**　判断某层级某宫里有没有该层级的四化（化出它的干见 `HoroscopeItem::mutagen_stem`）。
 
 **斗数含义**　每个运限层级有自己的天干，会像生年干一样化出四颗星。
 「大限化禄落在大限财帛」这类判断问的就是这个。
@@ -668,7 +668,7 @@ pub fn has_horoscope_mutagen(&self, name: Palace, scope: Scope, mutagen: Mutagen
 | `scope` | `Scope` | 是 | — | 运限层级 |
 | `mutagen` | `Mutagen` | 是 | — | 四化之一 |
 
-**返回值**　`bool`。检查该层级天干化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。错误同 `palace`。
+**返回值**　`bool`。检查该层级化出的那颗星是否落在目标宫的主星或辅星里（不看杂耀）。错误同 `palace`。
 
 **示例**
 

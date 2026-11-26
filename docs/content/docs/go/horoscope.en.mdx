@@ -53,7 +53,7 @@ together.
 | `HeavenlyStem` / `HeavenlyStemKey` | `string` | Stem of the scope, which determines the mutagens it flies |
 | `EarthlyBranch` / `EarthlyBranchKey` | `string` | Branch of the scope |
 | `PalaceNames` / `PalaceNameKeys` | `[]string` | The twelve palace names re-derived with this scope's palace as the Soul palace, indexed by palace index |
-| `Mutagen` / `MutagenStarKeys` | `[]string` | The stars this scope's stem transforms, in the order lu, quan, ke, ji; `MutagenStarKeys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
+| `Mutagen` / `MutagenStarKeys` | `[]string` | The scope's mutagen stars, in the order lu, quan, ke, ji, transformed by `MutagenStem` (nil means the scope's own stem), empty when the scope has no mutagens; `MutagenStarKeys` holds the mutated stars' star keys, synonymous with the palace field of the same name |
 | `ExtraMutagenStarKeys` | `map[string][]string` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this scope's stem transforms beyond the four slots: mutagen key → list of star keys; nil when there are none, and `HasHoroscopeMutagen` counts them |
 | `MutagenStem` / `MutagenStemKey` | `*string` | The stem this layer's mutagens come from ([stem of the horoscope mutagens](/en/docs/guide/guides/config#stem-of-the-horoscope-mutagens-scope_mutagen_stem)): nil when it equals `HeavenlyStem` (always under the default config); points to an empty string when the minor limit has no mutagens |
 | `Stars` | `[][]Star` | The scope stars of this layer; `nil` for layers that have none |
@@ -698,7 +698,7 @@ under any `scope` — only the palace they land in differs. The per-layer key ta
 
 ## HasHoroscopeMutagen
 
-**Purpose** Test whether a palace under a given scope carries a mutagen flown by that scope's stem.
+**Purpose** Test whether a palace under a given scope carries one of that scope's mutagens (the stem behind them is `MutagenStem`).
 
 **Zi Wei meaning** Every horoscope layer has a stem of its own, and it transforms four stars just as
 the birth-year stem does. A question like "does the decadal Lu land in the decadal Wealth palace?" is
@@ -718,7 +718,7 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 | `scope` | `string` | Yes | — | The horoscope scope |
 | `mutagenKey` | `string` | Yes | — | A mutagen key |
 
-**Return value** `bool`. It checks whether the star transformed by that layer's stem is among the
+**Return value** `bool`. It checks whether the star that layer transforms is among the
 major or minor stars of the target palace (adjective stars are not scanned). Errors as for `Palace`.
 
 **Example**
