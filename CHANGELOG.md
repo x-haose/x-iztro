@@ -54,7 +54,7 @@
     以寅卯为主、子丑为辅）。宫位新增 `isSecondaryOriginalPalace`（只在为真时出现），文本标「辅来因宫」；
     宫位寻址的 `originalPalace` 仍指寅卯那一宫。
   - `douJunMonth`（`default` / `natal`）：`natal` 时推斗君的生月与本命盘同一规则，即 `dayDivide=forward` 的晚子时不把闰月
-    十六日起作下月。
+    十六日起作下月。这是内核自身的一致性开关（iztro 本命与斗君对晚子时取生月的做法不同），不是哪一家的口径，流派预设不设它。
 - **格局口径 `pangKong`**：`PatternConfig` 新增 `pangKong`（Rust `pang_kong`，默认 `false`），打开时空曜（禄衰马困、
   两重华盖的宽口径）连傍截空、傍旬空一并算（王亭之《安星法及推断实例》p56–57 正空、傍空两宫都算）。取默认值时序列化不写出该键。
   Python `PatternConfig.pang_kong`（`to_dict()` 恒写出 `pangKong`），Go `PatternConfig.PangKong`，JavaScript `PatternConfig.pangKong`。

@@ -173,8 +173,12 @@ Decides which day the day pillar is taken from for someone born between 23:00 an
 | `forwardCarry` | The **whole date** of a late Zi birth moves to the following day, charted as that day's early Zi hour: at a month's end it moves into the next month, on lunar New Year's Eve into the next year (an x-iztro extension) |
 
 **When you would notice**: only on charts with hour index `12`; every other hour is unaffected.
-`forward` and `forwardCarry` only part ways for a late Zi birth at a month's end or on New Year's Eve
-(and on the 15th of a leap month, see below).
+`forward` and `forwardCarry` part ways for these late Zi births: at a month's end (moving into the next
+month) and on New Year's Eve (moving into the next year); with `fix_leap` on, also from the 15th of a leap
+month to its end — `forward` keeps iztro's natal late-Zi exception and stays in the leap month for its second
+half, while `forwardCarry` moves to the next day and then counts the next month under the half-month rule.
+For example 2020-6-11 (the 20th of leap month 4), a male late Zi birth: `forward` puts the Soul palace in Si
+and Zuofu in Wei, `forwardCarry` the Soul palace in Wu and Zuofu in Shen.
 
 `forwardCarry` follows Li Tiebi, *紫微斗数命运学*, pp. 105–106: the day turns at 23:00, month ends
 carry into the next month and New Year's Eve into the next year. The lunar birthday, birth month, year
@@ -346,8 +350,9 @@ Tianwu rotates through four palaces by birth month:
 | `natalAndYearly` (default) | The natal chart places them by the birth-year branch, and the yearly horoscope again by the year's branch |
 | `yearlyOnly` | Yearly stars only: the natal palaces carry none, the yearly horoscope's are unchanged |
 
-`yearlyOnly` follows *紫微斗数一本通*, p. 44, Li Tiebi, *紫微斗数命运学*, p. 115, and Lin Gengfan,
-*图解道教天文历算学·紫微斗数*, vol. 1, p. 195. When the natal chart carries none, a palace's `suiqian12`,
+`yearlyOnly` follows *紫微斗数一本通*, p. 44, and Li Tiebi, *紫微斗数命运学*, p. 115. Lin Gengfan,
+*图解道教天文历算学·紫微斗数*, vol. 1, also places the two groups only as yearly stars but adds a natal
+"Taisui" star (pp. 184, 195); that star is not supported yet. When the natal chart carries none, a palace's `suiqian12`,
 `jiangqian12` and their keys are **empty strings**: the fields are still there with the same type, in the
 same way major and minor stars carry an empty string when they have no brightness; in the Rust model
 they are `None`. The text's twelve-gods line lists only the Changsheng and Boshi groups. Adjective stars
@@ -388,6 +393,10 @@ The two disagree on exactly one kind of chart: born on or after the 16th of a le
 For example 2020-6-7 (the 16th of leap month 4) in the late Zi hour: the natal chart counts month 4;
 Dou Jun counts month 5 under `default` and month 4 under `natal`, moving the monthly Soul palace one
 palace on.
+
+This is a consistency switch of the library itself, not any school's practice: the difference comes from
+how iztro's natal chart and its Dou Jun take the birth month for a late Zi birth, and no source discusses
+it. The school presets leave it alone.
 
 ## Charting perspective: `astro_type`
 
