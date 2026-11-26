@@ -164,6 +164,8 @@ def test_topic_text_matches_rust_snapshots(chart, pack):
     assert chart.topic_to_text("romance") == _snapshot("topic_knowledge_zh-CN")
     summary = chart.topic_to_text("romance", knowledge_depth=KnowledgeDepth.SUMMARY)
     assert summary == _snapshot("topic_summary_zh-CN")
+    monthly = chart.horoscope("2025-1-1", 0).topic_to_text("romance", "monthly")
+    assert monthly == _snapshot("topic_monthly_knowledge_zh-CN")
     romance = pack.topic("romance")
     assert romance.title == "婚恋" and romance.surround == [PalaceName.SPOUSE]
     assert {t.slug for t in pack.topics()} >= {"overall", "romance", "wealth", "career"}

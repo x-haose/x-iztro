@@ -23,6 +23,7 @@ from x_iztro.enums import (
     TextDetail,
 )
 from x_iztro.star_object import Star, _star_identifiers
+from x_iztro.topic import TopicSelection
 
 if TYPE_CHECKING:
     from x_iztro.astrolabe import Astrolabe
@@ -678,6 +679,80 @@ class Horoscope:
             pattern_config=_pattern_config(config),
             knowledge=knowledge,
             knowledge_depth=str(knowledge_depth),
+        )
+
+    def topic_palaces(
+        self,
+        topic: str,
+        scope: Scope | ScopeLiteral,
+        *,
+        knowledge: bool | KnowledgePack = True,
+    ) -> TopicSelection:
+        """
+        主题在 `scope` 层选中的宫：宫名按该层定位、三方四正以该层的本宫起算（`bodyPalace` /
+        `originalPalace` 落在本命那一宫），每宫的角色与宫干飞化，落在这些宫里的生年四化，以及大限至
+        该层各层落在这些宫里的四化。`Scope.ORIGIN` 等同 `Astrolabe.topic_palaces`。
+
+        Args:
+            topic: 主题 slug
+            scope: 运限层级
+            knowledge: 主题定义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+
+        Raises:
+            ValueError: 本运限不是由星盘发起
+            IztroError: `scope` 比查询精度（`precision()`）细，或同 `Astrolabe.topic_palaces`
+        """
+        from x_iztro.pattern import _scope_key
+
+        return TopicSelection._from_dict(
+            self._context_query(
+                "horoscopeTopicPalaces",
+                None,
+                topic=topic,
+                scope=_scope_key(scope),
+                knowledge=knowledge,
+            )
+        )
+
+    def topic_to_text(
+        self,
+        topic: str,
+        scope: Scope | ScopeLiteral,
+        *,
+        knowledge: bool | KnowledgePack = True,
+        detail: TextDetail = TextDetail.FULL,
+        knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+        config: PatternConfig | None = None,
+    ) -> str:
+        """
+        主题在 `scope` 层的语义化文本：选宫同 `topic_palaces`。标题写运限时间与命盘，标题下逐层写大限至
+        该层的命宫位置与四化；每宫段落写该层宫名并补本命宫名，宫内星曜照本命，另写各层落在本宫的四化与流耀；
+        格局取该层视角在选中宫内的命中。`Scope.ORIGIN` 与 `Astrolabe.topic_to_text` 逐字相同。
+
+        Args:
+            topic: 主题 slug
+            scope: 运限层级
+            knowledge: 主题定义与释义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+            detail: 事实详略：`TextDetail.OVERVIEW` 每宫只写星曜与各层四化、流耀，默认 `FULL`
+            knowledge_depth: 释义深度：`KnowledgeDepth.SUMMARY` 用摘要层，默认 `FULL` 用全文
+            config: 格局判定口径；None 取默认口径
+
+        Raises:
+            ValueError: 本运限不是由星盘发起
+            IztroError: `scope` 比查询精度细、包里没有该主题、主题里有不认识的宫位标识、
+                `knowledge=True` 而排盘语言没有内嵌包，或 `SUMMARY` 而所给的包缺摘要
+        """
+        from x_iztro.pattern import _pattern_config, _scope_key
+
+        return self._context_query(
+            "horoscopeTopicToText",
+            None,
+            topic=topic,
+            scope=_scope_key(scope),
+            knowledge=knowledge,
+            detail=str(detail),
+            knowledge_depth=str(knowledge_depth),
+            pattern_config=_pattern_config(config),
         )
 
     def _collect_horoscope_star_identifiers(self, palace_idx: int) -> set[str]:

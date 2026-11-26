@@ -26,6 +26,8 @@ import type {
   PatternConfig,
   PatternHitData,
   TextOptions,
+  TopicPalacesOptions,
+  TopicSelection,
   YearlyListItemData,
 } from './types.js';
 
@@ -173,6 +175,20 @@ export class Astrolabe {
       knowledgeDepth: options.knowledgeDepth,
       patternConfig: options.config,
     }) as string;
+  }
+
+  /**
+   * 主题在本命盘上选中的宫：各组位置、每宫的角色与宫干飞化，以及落在这些宫里的生年四化。
+   * 与 `topicToText` 同一套选宫，`palaces` 的顺序即文本的成段顺序。
+   *
+   * @param topic 主题 slug
+   * @throws IztroError 包里没有该主题、主题里有不认识的宫位标识、knowledge 为 false 或排盘语言没有内嵌包
+   */
+  topicPalaces(topic: string, options: TopicPalacesOptions = {}): TopicSelection {
+    return chartQuery(this, 'topicPalaces', {
+      topic,
+      knowledge: options.knowledge === undefined ? true : options.knowledge,
+    }) as TopicSelection;
   }
 
   // ------ 宫位查询 ------

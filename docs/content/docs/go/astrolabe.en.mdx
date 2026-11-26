@@ -770,6 +770,22 @@ fmt.Println(strings.Join(heads, " "))
 
 ---
 
+## TopicPalaces
+
+```go
+func (a *Astrolabe) TopicPalaces(topic string, knowledge Knowledge) (*TopicSelection, error)
+func (a *Astrolabe) TopicPalacesContext(ctx context.Context, topic string, knowledge Knowledge) (*TopicSelection, error)
+```
+
+The palaces a topic selects on the natal chart with their transformations: `Groups`, `Palaces` (with stem
+flying in `Flying`) and `BirthMutagens`; `ScopeMutagens` is empty. Same selection as `TopicToText`, and the
+order of `Palaces` is the text's section order. Shape: [Selected palaces and three kinds of
+transformations](/en/docs/guide/guides/to-text#selected-palaces-and-three-kinds-of-transformations); indexes that can be absent (`TopicGroup.Opposite` and friends, `Flight.PalaceIndex`)
+are `*int`, since 0 (the Yin palace) is a valid index. A zero `Knowledge`, an unknown topic or an unknown
+palace key in the topic returns `ErrInvalidArgument`.
+
+---
+
 ## How it relates to JSON
 
 `Astrolabe` and every type beneath it carry `json` tags whose names match the field contract of JS

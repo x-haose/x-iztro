@@ -9,7 +9,7 @@
 //!
 //! 命名：`{类}_{语言}` 为完整事实；`{类}_overview_{语言}` 为总览层；`{类}_knowledge_zh-CN`
 //! 与 `{类}_summary_zh-CN` 为完整事实配内嵌包的全文与摘要层释义。主题文本（`topic`，取婚恋主题）
-//! 必须带知识包，只有后两种。
+//! 必须带知识包，只有后两种；`topic_monthly_knowledge_zh-CN` 是同一主题在运限流月层的全文释义。
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -87,7 +87,8 @@ const KINDS: [&str; 9] = [
 const DETAIL_KINDS: [&str; 5] = ["astrolabe", "horoscope", "palace", "surrounded", "flanking"];
 
 /// 快照目录的文件集必须恰为：九类输出 × 两种语言、五类总览输出 × 两种语言、
-/// 九类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），孤儿文件同样报错。
+/// 九类输出加主题文本的全文释义与摘要层释义 × zh-CN（内嵌知识包只有 zh-CN），另加流月层主题文本的全文释义，
+/// 孤儿文件同样报错。
 #[test]
 fn snapshot_dir_matches_expected_set() {
     let expected: std::collections::BTreeSet<String> = ["zh-CN", "en-US"]
@@ -107,6 +108,7 @@ fn snapshot_dir_matches_expected_set() {
                 .iter()
                 .map(move |depth| format!("{kind}_{depth}_zh-CN.txt"))
         }))
+        .chain(["topic_monthly_knowledge_zh-CN.txt".to_string()])
         .collect();
     let actual: std::collections::BTreeSet<String> = fs::read_dir(SNAPSHOT_DIR)
         .expect("快照目录存在")
@@ -280,6 +282,14 @@ fn text_with_knowledge_matches_snapshot() {
     assert_snapshot(
         "topic_knowledge_zh-CN",
         &astrolabe.topic_to_text(TOPIC, &opts).unwrap(),
+    );
+    assert_snapshot(
+        "topic_monthly_knowledge_zh-CN",
+        &astrolabe
+            .horoscope(TARGET_DATE, TARGET_TIME_INDEX)
+            .unwrap()
+            .topic_to_text(TOPIC, Scope::Monthly, &opts)
+            .unwrap(),
     );
     assert_snapshot(
         "decadals_knowledge_zh-CN",

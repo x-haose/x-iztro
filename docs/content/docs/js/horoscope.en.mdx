@@ -189,6 +189,19 @@ console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 
 See [Patterns](/en/docs/js/patterns#horoscopepatterns).
 
+## topicPalaces / topicToText
+
+```ts
+topicPalaces(topic: string, scope: Scope, options?: { knowledge?: Knowledge }): TopicSelection;
+topicToText(topic: string, scope: Scope, options?: TextOptions): string;
+```
+
+A topic's palaces and text at the `scope` layer: palace names are placed by that layer, the trine & opposite
+are counted from the layer's target palace, and `bodyPalace` / `originalPalace` stay on the natal palace;
+`scopeMutagens` lists each layer's transformations, decadal down to `scope`, landing in the selected
+palaces. Rules and a text sample: [A topic at one horoscope layer](/en/docs/guide/guides/to-text#a-topic-at-one-horoscope-layer). `'origin'` equals the chart's
+method of the same name; a `scope` finer than the query precision (`precision()`) throws `IztroError`.
+
 ## toJSON
 
 ```ts

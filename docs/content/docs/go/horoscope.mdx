@@ -924,3 +924,16 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 `BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`。
+
+---
+
+## TopicPalaces / TopicToText
+
+```go
+func (h *Horoscope) TopicPalaces(topic, scope string, knowledge Knowledge) (*TopicSelection, error)
+func (h *Horoscope) TopicToText(topic, scope string, opts TextOptions) (string, error)
+```
+
+另有 `Context` 变体。主题在 `scope` 层的选宫与文本：宫名按该层定位、三方四正以该层的本宫起算，`PalaceBody` / `PalaceOriginal`
+落在本命那一宫；`ScopeMutagens` 给大限至该层各层落在选中宫的四化。规则与文本样例见[在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)。
+`ScopeOrigin` 等同星盘的同名方法；`scope` 比查询精度（`Precision`）细返回 `ErrInvalidArgument`；`opts.Through` 不起作用。

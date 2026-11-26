@@ -127,9 +127,9 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 - to_text 输出是**可直接阅读的 Markdown 子集**（`#` 标题、`- 标签: 值`、`**粗体**`、一张总览窄表；
   记号只在 `text.rs` 代码里拼，六语言标签表只放词，有测试守着），只此一种格式、不设 plain/markdown
   开关；本命文本从命宫起顺排十二宫，每宫带三方四正与宫干飞化事实行，四化写全称「化禄」。
-  覆盖十一个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
+  覆盖十二个 kind：`astrolabeToText`/`horoscopeToText`/`palaceToText`/`surroundedPalacesToText`
   /`flankingPalacesToText`/`decadalListToText`/`yearlyOverviewToText`/`monthlyListToText`/`patternsToText`
-  /`horoscopePatternsToText`/`topicToText`；`yearlyOverviewToText` 的农历年区间收 `fromYear`/`toYear`
+  /`horoscopePatternsToText`/`topicToText`/`horoscopeTopicToText`；`yearlyOverviewToText` 的农历年区间收 `fromYear`/`toYear`
   （两端都含，缺任一端报 invalid_argument，区间颠倒由内核报）；`monthlyListToText` 的农历年份收 `year`
   （与 `monthlyList` 同一入参）；
   宫位寻址收 `palaceKey`（宫名 key 或 bodyPalace/originalPalace，解析只在 `PalaceTarget::from_key` 一处，
@@ -166,7 +166,10 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   立春次日，可能还在上一个农历年），按年、按月取的运限即所问的年份
 - 按主题取材：主题是论法，定义在知识包 `topics` 段（`surround` 连三方四正、`palaces` 只取本宫），内核
   `topic_to_text` 通用执行——主题定义与释义都取自 `TextOptions` 的包，无包、无此主题、宫位标识不认识一律
-  `InvalidArgument`（略过会静默少一宫）。只按本命宫位取材，运限问题走运限文本。
+  `InvalidArgument`（略过会静默少一宫）。运限某一层的主题（`horoscope_topic_to_text`，bridge `horoscopeTopicToText`）
+  按该层宫名选宫、身宫与来因宫留在本命那一宫；选宫只在 `astro/topic.rs` 的 `select` 一处，文本与结构化结果
+  （`topic_palaces`，bridge `topicPalaces` / `horoscopeTopicPalaces`，网页高亮与飞化连线用）同源，
+  `origin` 层与本命主题文本逐字相同。守护：`topic_palaces`（四侧共用用例 `topic_palaces_cases.json`，期望按各层宫名另行推得）
   结构化「按盘取材」在 `knowledge/mod.rs` 的 `for_astrolabe`/`for_horoscope`（bridge kind
   `knowledgeForChart`）：取盘上出现的星（含四组十二神，同宫主星的双星组合只留同宫对方）、
   命中格局、四化四条，不取宫位与术语；释义给全文，裁剪归应用层。文本的内联释义在
@@ -388,7 +391,7 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
     bridge 入参结构体的每个字段都要被各侧发送：Go 带引号的 camelCase 键、Python 的 snake_case 关键字、
     JS 的 camelCase 对象键。Go 就地计算 `fixIndex` / `timeToIndex`，不发 `max` / `hour`，单列豁免）
   - 语义化文本 → `text_snapshot`（Markdown 形态的九类输出 × zh-CN/en-US、受详略影响的五类总览输出 × zh-CN/en-US，
-    外加九类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN 的固定盘完整快照 `tests/golden/text_snapshots/`；Python
+    外加九类输出与主题文本（婚恋）的全文释义、摘要层释义 × zh-CN、流月层婚恋主题的全文释义的固定盘完整快照 `tests/golden/text_snapshots/`；Python
     `test_parity.py` / Go `parity_check_test.go` 读事实快照，Python `test_knowledge.py` /
     Go `knowledge_test.go` 读带释义快照，均逐字节比对；缺失即失败，
     有意改动后用 `UPDATE_TEXT_SNAPSHOTS=1` 重跑该测试重建基线）

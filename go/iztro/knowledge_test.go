@@ -95,6 +95,17 @@ func TestTextWithKnowledgeParity(t *testing.T) {
 			t.Errorf("%s 主题文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", name, got, want)
 		}
 	}
+	h, err := chart.Horoscope("2025-1-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	monthly, err := h.TopicToText("romance", ScopeMonthly, TextOptions{Knowledge: BuiltinKnowledge()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := textSnapshot(t, "topic_monthly_knowledge_zh-CN"); monthly != want {
+		t.Errorf("流月主题文本与快照不一致:\n--- got ---\n%s\n--- want ---\n%s", monthly, want)
+	}
 	if romance := pack.Topic("romance"); romance == nil || romance.Title != "婚恋" || len(romance.Surround) != 1 {
 		t.Fatalf("romance topic entry: %+v", romance)
 	}

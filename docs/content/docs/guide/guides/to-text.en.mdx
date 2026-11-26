@@ -689,6 +689,108 @@ the romance topic is 3,758 characters with full facts and summaries, 2,851 as an
 summaries, 11,390 with full facts and full readings. An unknown topic, an unknown palace key in the
 topic, or no pack at all is `invalid_argument`.
 
+### A topic at one horoscope layer
+
+Asking about "this year's wealth" or "how things go with siblings this month" means reading that layer's
+wealth or siblings palace — the one marked yearly-wealth or monthly-siblings on the board — with its trine &
+opposite in that layer, overlaid with the layer's transformations and flowing stars. A horoscope's topic text
+selects palaces by the chosen layer:
+
+```python
+h = chart.horoscope_of_month(2026, 10)
+h.topic_to_text("siblings", "monthly")            # the monthly siblings palace with its monthly trine & opposite
+h.topic_palaces("siblings", "monthly")            # only the selected palaces and transformations, see below
+```
+
+```rust
+let h = chart.horoscope_of_month(2026, 10)?;
+h.topic_to_text("siblings", Scope::Monthly, &TextOptions::new().knowledge(pack))?;
+h.topic_palaces(pack, "siblings", Scope::Monthly)?;
+```
+
+```go
+h, _ := chart.HoroscopeOfMonth(2026, 10)
+h.TopicToText("siblings", iztro.ScopeMonthly, iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+h.TopicPalaces("siblings", iztro.ScopeMonthly, iztro.BuiltinKnowledge())
+```
+
+```ts
+const h = chart.horoscopeOfMonth(2026, 10);
+h.topicToText('siblings', 'monthly');
+h.topicPalaces('siblings', 'monthly');
+```
+
+The rules are the same for all five horoscope layers (decadal, yearly, monthly, daily, hourly); the layer
+cannot be finer than the horoscope's query precision:
+
+- Palace name keys in the topic (`siblingsPalace`, `wealthPalace` …) are placed by that layer's palace
+  names: the monthly siblings palace is the siblings palace counted from the monthly Soul palace, and the
+  trine & opposite are counted from it.
+- `bodyPalace` and `originalPalace` stay on the natal palace at every layer. The Body palace follows the
+  birth hour and the Original palace the birth-year stem; both are marks computed on the natal chart. A
+  horoscope layer only rotates and renames the twelve palaces, it does not recompute these marks, and there
+  is no yearly Body palace to take. A topic lists them to read the person, and the natal palace is the
+  person.
+- The `origin` layer is identical, byte for byte, to the natal topic text.
+
+The text has the natal topic text's structure plus: the title gives the horoscope time; under it each layer
+from decadal down to the chosen one gets its Soul-palace position and transformations; each palace heading
+gives the layer's palace name with the natal name in parentheses; stars in a palace are the natal ones, with
+each layer's transformations and flowing stars in that palace added; the trine & opposite line uses the
+layer's names and stem-flying landings are marked as natal; patterns are the hits seen from that layer that
+fall in the selected palaces.
+
+```text
+# 兄弟 · 运限 2026 (丙午) · 流月 (己亥) · 命盘 1997-3-4 丑时 男
+…
+## 流月 · 命宫: 本命田宅 (己亥)
+- 四化: 武曲化禄→本命官禄, 贪狼化权→本命财帛, 天梁化科→本命兄弟, 文曲化忌→本命官禄
+
+## 流月兄弟 三方四正
+
+### 本宫 · 流月兄弟 (本命福德 · 癸卯) · 大限 103-112 [身宫]
+- 主星: 空宫
+- 杂耀: 封诰, 空亡
+- 流年流耀: 流喜
+- 三方四正: 对宫 仆役 · 三合 疾厄, 田宅
+- 宫干癸飞化: 破军化禄→本命官禄, 巨门化权→本命子女, 太阴化科→本命疾厄, 贪狼化忌→本命财帛
+…
+```
+
+### Selected palaces and three kinds of transformations
+
+`topic_palaces` (Go `TopicPalaces`, JS `topicPalaces`) writes no text: it returns the selected palaces and
+the three kinds of transformations a topic reading needs, for highlighting, step-by-step reading and drawing
+flying-star lines. It uses the same selection as the topic text, and the order of `palaces` is the order of
+the text's sections. It exists on the natal chart too (`chart.topic_palaces("siblings")`). Every field is a
+language-independent key or a palace index (0-11, Yin palace is 0):
+
+| Field | Contents |
+| --- | --- |
+| `groups` | The topic's groups: `kind` (`surround` / `only`), `key` (the palace key in the topic), `target`; `surround` groups also have `opposite`, `wealth`, `career` (null for `only`); an Original palace not on the chart forms no group |
+| `palaces` | Each selected palace once: `index`, `role` (`target` / `opposite` / `wealth` / `career` / `related`, from the first group it appears in), `group`, `nameKey` (the layer's name), `natalNameKey`, `flying` |
+| `palaces[].flying` | Stem flying, Lu, Quan, Ke, Ji: `mutagenKey`, `starKey`, `palaceIndex` (null when the star is not on the chart), `selfMutaged` (lands back in the palace) |
+| `birthMutagens` | Birth-year transformations landing in the selected palaces: `mutagenKey`, `starKey`, `palaceIndex` |
+| `scopeMutagens` | Transformations of each layer from decadal down to the chosen one landing in the selected palaces, each with `scope` and `nameKey` (`childhood` for a decadal layer before the first decade); empty at `origin` |
+
+Stem flying is given for every selected palace, not only the target: every palace's stem produces palace
+transformations, what the trine & opposite palaces fly into the target is exactly what reading the group is
+about, and the text writes this line for every palace too.
+
+Abridged (one palace, one transformation per list):
+
+```json
+{
+  "topic": "siblings",
+  "scope": "monthly",
+  "groups": [{ "kind": "surround", "key": "siblingsPalace", "target": 1, "opposite": 7, "wealth": 9, "career": 5 }],
+  "palaces": [{ "index": 1, "role": "target", "group": 0, "nameKey": "siblingsPalace", "natalNameKey": "spiritPalace",
+                "flying": [{ "mutagenKey": "sihuaLu", "starKey": "pojunMaj", "palaceIndex": 3, "selfMutaged": false }] }],
+  "birthMutagens": [{ "mutagenKey": "sihuaQuan", "starKey": "tiantongMaj", "palaceIndex": 2 }],
+  "scopeMutagens": [{ "scope": "yearly", "nameKey": "yearly", "mutagenKey": "sihuaLu", "starKey": "tiantongMaj", "palaceIndex": 2 }]
+}
+```
+
 ## Layers
 
 Two independent switches: **detail** decides how much fact to write, **knowledge depth** how much

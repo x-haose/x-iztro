@@ -156,6 +156,7 @@ test('摘要层要有包且长正文都有摘要，缺了即报错并列出缺�
 test('主题文本与 Rust 快照逐字节相同，主题定义可从包上读到', () => {
   assert.equal(chart.topicToText('romance'), snapshot('topic_knowledge_zh-CN'));
   assert.equal(chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY }), snapshot('topic_summary_zh-CN'));
+  assert.equal(chart.horoscope('2025-1-1', 0).topicToText('romance', 'monthly'), snapshot('topic_monthly_knowledge_zh-CN'));
   const romance = pack.topic('romance')!;
   assert.equal(romance.title, '婚恋');
   assert.deepEqual(romance.surround, [PalaceName.SPOUSE]);

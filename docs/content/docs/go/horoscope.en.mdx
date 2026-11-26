@@ -973,3 +973,19 @@ for _, l := range strings.Split(text, "\n") {
 `ErrInvalidArgument`.
 
 For the pattern hits as text, see `PatternsToText` on [Patterns](/en/docs/go/patterns).
+
+---
+
+## TopicPalaces / TopicToText
+
+```go
+func (h *Horoscope) TopicPalaces(topic, scope string, knowledge Knowledge) (*TopicSelection, error)
+func (h *Horoscope) TopicToText(topic, scope string, opts TextOptions) (string, error)
+```
+
+Each has a `Context` variant. A topic's palaces and text at the `scope` layer: palace names are placed by
+that layer, the trine & opposite are counted from the layer's target palace, and `PalaceBody` /
+`PalaceOriginal` stay on the natal palace; `ScopeMutagens` lists each layer's transformations, decadal down
+to `scope`, landing in the selected palaces. Rules and a text sample: [A topic at one horoscope
+layer](/en/docs/guide/guides/to-text#a-topic-at-one-horoscope-layer). `ScopeOrigin` equals the chart's method of the same name; a `scope` finer than the query
+precision (`Precision`) returns `ErrInvalidArgument`; `opts.Through` has no effect.

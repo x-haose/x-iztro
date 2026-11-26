@@ -941,6 +941,24 @@ pack (only zh-CN has one) raises `IztroError` (`invalid_argument`).
 
 ---
 
+## topic_palaces / topic_to_text
+
+```python
+def topic_palaces(self, topic: str, scope: Scope | ScopeLiteral, *, knowledge: bool | KnowledgePack = True) -> TopicSelection
+def topic_to_text(self, topic: str, scope: Scope | ScopeLiteral, *, knowledge: bool | KnowledgePack = True,
+                  detail: TextDetail = TextDetail.FULL, knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+                  config: PatternConfig | None = None) -> str
+```
+
+A topic's palaces and text at the `scope` layer: palace names are placed by that layer, the trine & opposite
+are counted from the layer's target palace, and `bodyPalace` / `originalPalace` stay on the natal palace;
+`scope_mutagens` lists each layer's transformations, decadal down to `scope`, landing in the selected palaces.
+Rules and a text sample: [A topic at one horoscope layer](/en/docs/guide/guides/to-text#a-topic-at-one-horoscope-layer). `Scope.ORIGIN` equals the chart's method
+of the same name; a `scope` finer than the query precision (`precision()`) raises `IztroError`
+(`invalid_argument`).
+
+---
+
 ## to_dict / to_json
 
 **Purpose** Export the horoscope as JSON matching the field contract of JS iztro.

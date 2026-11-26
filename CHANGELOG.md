@@ -9,6 +9,23 @@
 
 ### 新增
 
+- **在运限某一层读主题**：此前主题只按本命盘选宫，选了流月、流年或大限去读「兄弟」「财运」，读到的仍是本命兄弟宫、财帛宫。
+  现在可以在大限、流年、流月、流日、流时任一层读主题：主题里的宫名按该层的宫名落到盘上（流月兄弟宫即以流月命宫起排的兄弟宫），
+  三方四正以这一宫为本宫起算；`bodyPalace` / `originalPalace` 在任何一层都落在本命那一宫（身宫、来因宫是本命盘上的标记，
+  运限只轮换宫名，不重算它们）。层级不能比运限的查询精度细。
+  - 文本：Rust `HoroscopeRef::topic_to_text` / `text::horoscope_topic_to_text`，Python、JavaScript `Horoscope.topic_to_text` /
+    `topicToText`，Go `Horoscope.TopicToText`，bridge kind `horoscopeTopicToText`。标题写运限时间与命盘，标题下逐层写大限至该层的
+    命宫位置与四化；每宫段落写该层宫名并补本命宫名（`### 本宫 · 流月兄弟 (本命福德 · 癸卯)`），宫内星曜照本命，另写各层落在本宫的
+    四化与流耀；三方四正行用该层宫名、宫干飞化的落宫标明本命；格局取该层视角在选中宫内的命中。`origin` 层与本命主题文本逐字相同，
+    本命主题文本本身不变。
+  - 选中的宫与三类四化：Rust `Astrolabe::topic_palaces` / `HoroscopeRef::topic_palaces`（`TopicSelection`，`to_dto()`），
+    Python `topic_palaces`，Go `TopicPalaces`，JavaScript `topicPalaces`，bridge kind `topicPalaces` / `horoscopeTopicPalaces`。
+    返回各组位置、每个选中宫的角色、该层宫名与本命宫名、宫干飞化（禄权科忌四条，自化单独标出），以及落在选中宫里的生年四化和
+    大限至该层各层的四化（每条标明层级，未起运的大限层为 `childhood`），全部是语言无关标识与宫位索引，供界面高亮、逐步阅读与
+    画飞化连线；与主题文本同一套选宫，`palaces` 的顺序即文本的成段顺序。
+  - 四侧共用用例 `tests/data/topic_palaces_cases.json` 覆盖五个运限层、童限、身宫与来因宫，期望由 Rust 测试按各层宫名另行推得核对；
+    文本快照新增流月层婚恋主题。
+
 - **知识包主题的显示顺序**：主题条目新增可选字段 `order`（0 至 4294967295 的整数）。列出全部主题时按 `order` 升序，
   没有 `order` 的排在最后，相同或都没有时按 slug 的字节序。此前格式里没有主题顺序，各语言按 slug 字母序列出，
   应用只能自己维护一份排序表。键在 JSON 里的书写顺序不算数：JSON 对象成员无序，内核解析与合并、Go 的 map、

@@ -893,6 +893,21 @@ print("\n".join(l for l in month.to_text().splitlines() if l.startswith("#")))
 
 ---
 
+## topic_palaces / topic_to_text
+
+```python
+def topic_palaces(self, topic: str, scope: Scope | ScopeLiteral, *, knowledge: bool | KnowledgePack = True) -> TopicSelection
+def topic_to_text(self, topic: str, scope: Scope | ScopeLiteral, *, knowledge: bool | KnowledgePack = True,
+                  detail: TextDetail = TextDetail.FULL, knowledge_depth: KnowledgeDepth = KnowledgeDepth.FULL,
+                  config: PatternConfig | None = None) -> str
+```
+
+主题在 `scope` 层的选宫与文本：宫名按该层定位、三方四正以该层的本宫起算，`bodyPalace` / `originalPalace` 落在本命那一宫；
+`scope_mutagens` 给大限至该层各层落在选中宫的四化。规则与文本样例见[在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)。
+`Scope.ORIGIN` 等同星盘的同名方法；`scope` 比查询精度（`precision()`）细抛 `IztroError`（`invalid_argument`）。
+
+---
+
 ## to_dict / to_json
 
 **用途**　把运限导出成与 JS iztro 字段契约一致的 JSON。

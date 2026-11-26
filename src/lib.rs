@@ -58,6 +58,10 @@ pub use astro::reverse::{
     BirthCandidate, DEFAULT_REVERSE_LIMIT, ReverseCriteria, ReverseResult, StarPosition,
     reverse_chart, solar_dates_by_bazi,
 };
+pub use astro::topic::{
+    Flight, MutagenLanding, ScopeMutagenLanding, TopicGroup, TopicGroupKind, TopicPalace,
+    TopicRole, TopicSelection,
+};
 pub use data::stars::StarKey;
 pub use data::types::*;
 pub use error::{BridgeError, IztroError};
@@ -85,10 +89,11 @@ pub use pattern::{
 pub use text::{
     KnowledgeDepth, TextDetail, TextOptions, astrolabe_to_text, astrolabe_to_text_with,
     decadal_list_to_text, decadal_list_to_text_with, flanking_palaces_to_text,
-    flanking_palaces_to_text_with, horoscope_to_text, horoscope_to_text_with, monthly_list_to_text,
-    monthly_list_to_text_with, palace_to_text, palace_to_text_with, patterns_to_text,
-    patterns_to_text_with, surrounded_palaces_to_text, surrounded_palaces_to_text_with,
-    topic_to_text, yearly_overview_to_text, yearly_overview_to_text_with,
+    flanking_palaces_to_text_with, horoscope_to_text, horoscope_to_text_with,
+    horoscope_topic_to_text, monthly_list_to_text, monthly_list_to_text_with, palace_to_text,
+    palace_to_text_with, patterns_to_text, patterns_to_text_with, surrounded_palaces_to_text,
+    surrounded_palaces_to_text_with, topic_to_text, yearly_overview_to_text,
+    yearly_overview_to_text_with,
 };
 
 /// 便捷函数：排盘并返回 JSON

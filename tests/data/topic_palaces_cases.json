@@ -1,0 +1,3763 @@
+{
+  "cases": [
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 6,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 2,
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 6,
+            "starKey": "tianjiMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 2,
+            "key": "siblingsPalace",
+            "kind": "surround",
+            "opposite": 4,
+            "target": 10,
+            "wealth": 6
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 11,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "siblingsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "healthPalace",
+            "natalNameKey": "healthPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 11,
+            "nameKey": "soulPalace",
+            "natalNameKey": "soulPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "origin",
+        "scopeMutagens": [],
+        "topic": "siblings"
+      },
+      "name": "本命：兄弟",
+      "topic": "siblings"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 6,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 2,
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 6,
+            "starKey": "tianjiMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 2,
+            "key": "siblingsPalace",
+            "kind": "surround",
+            "opposite": 4,
+            "target": 10,
+            "wealth": 6
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 11,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "siblingsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "healthPalace",
+            "natalNameKey": "healthPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 11,
+            "nameKey": "soulPalace",
+            "natalNameKey": "soulPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "origin",
+        "scopeMutagens": [],
+        "topic": "siblings"
+      },
+      "name": "按农历年月取：origin 层兄弟",
+      "scope": "origin",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "siblings"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 2,
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "palaceIndex": 8,
+            "starKey": "jumenMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 0,
+            "key": "siblingsPalace",
+            "kind": "surround",
+            "opposite": 2,
+            "target": 8,
+            "wealth": 4
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 9,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 8,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "childrenPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "healthPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 0,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "parentsPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              }
+            ],
+            "group": 1,
+            "index": 9,
+            "nameKey": "soulPalace",
+            "natalNameKey": "spousePalace",
+            "role": "related"
+          }
+        ],
+        "scope": "decadal",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "decadal",
+            "palaceIndex": 8,
+            "scope": "decadal",
+            "starKey": "jumenMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 4,
+            "scope": "decadal",
+            "starKey": "taiyangMaj"
+          }
+        ],
+        "topic": "siblings"
+      },
+      "name": "按农历年月取：decadal 层兄弟",
+      "scope": "decadal",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "siblings"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [],
+        "groups": [
+          {
+            "career": 7,
+            "key": "siblingsPalace",
+            "kind": "surround",
+            "opposite": 9,
+            "target": 3,
+            "wealth": 11
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 4,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              }
+            ],
+            "group": 0,
+            "index": 3,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "careerPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              }
+            ],
+            "group": 0,
+            "index": 9,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "spousePalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 11,
+            "nameKey": "healthPalace",
+            "natalNameKey": "soulPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 7,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "wealthPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 1,
+            "index": 4,
+            "nameKey": "soulPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "yearly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 4,
+            "scope": "decadal",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "decadal",
+            "palaceIndex": 3,
+            "scope": "decadal",
+            "starKey": "wenquMin"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "decadal",
+            "palaceIndex": 7,
+            "scope": "decadal",
+            "starKey": "wenchangMin"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "yearly",
+            "palaceIndex": 7,
+            "scope": "yearly",
+            "starKey": "wenchangMin"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "yearly",
+            "palaceIndex": 11,
+            "scope": "yearly",
+            "starKey": "lianzhenMaj"
+          }
+        ],
+        "topic": "siblings"
+      },
+      "name": "按农历年月取：yearly 层兄弟",
+      "scope": "yearly",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "siblings"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 2,
+            "starKey": "tiantongMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 5,
+            "key": "siblingsPalace",
+            "kind": "surround",
+            "opposite": 7,
+            "target": 1,
+            "wealth": 9
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 2,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 1,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 7,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "wealthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              }
+            ],
+            "group": 0,
+            "index": 9,
+            "nameKey": "healthPalace",
+            "natalNameKey": "spousePalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 5,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 2,
+            "nameKey": "soulPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "monthly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "decadal",
+            "palaceIndex": 7,
+            "scope": "decadal",
+            "starKey": "wenchangMin"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "yearly",
+            "palaceIndex": 2,
+            "scope": "yearly",
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "yearly",
+            "palaceIndex": 7,
+            "scope": "yearly",
+            "starKey": "wenchangMin"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "monthly",
+            "palaceIndex": 7,
+            "scope": "monthly",
+            "starKey": "tanlangMaj"
+          }
+        ],
+        "topic": "siblings"
+      },
+      "name": "按农历年月取：monthly 层兄弟",
+      "scope": "monthly",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "siblings"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 6,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 2,
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 6,
+            "starKey": "tianjiMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "palaceIndex": 8,
+            "starKey": "jumenMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 4,
+            "key": "spousePalace",
+            "kind": "surround",
+            "opposite": 6,
+            "target": 0,
+            "wealth": 8
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 2,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "bodyPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 1,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "childrenPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 11,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 0,
+            "nameKey": "spousePalace",
+            "natalNameKey": "parentsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "careerPalace",
+            "natalNameKey": "healthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 8,
+            "nameKey": "surfacePalace",
+            "natalNameKey": "childrenPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 2,
+            "nameKey": "soulPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 2,
+            "index": 1,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 3,
+            "index": 11,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "soulPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "monthly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "decadal",
+            "palaceIndex": 8,
+            "scope": "decadal",
+            "starKey": "jumenMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 4,
+            "scope": "decadal",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "yearly",
+            "palaceIndex": 2,
+            "scope": "yearly",
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "yearly",
+            "palaceIndex": 6,
+            "scope": "yearly",
+            "starKey": "tianjiMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "yearly",
+            "palaceIndex": 11,
+            "scope": "yearly",
+            "starKey": "lianzhenMaj"
+          }
+        ],
+        "topic": "romance"
+      },
+      "name": "流月婚恋：命宫、身宫与子女宫只取本宫",
+      "scope": "monthly",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "romance"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 6,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 6,
+            "starKey": "tianjiMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "palaceIndex": 8,
+            "starKey": "jumenMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 8,
+            "key": "soulPalace",
+            "kind": "surround",
+            "opposite": 10,
+            "target": 4,
+            "wealth": 0
+          },
+          {
+            "career": null,
+            "key": "bodyPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 1,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "spiritPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 6,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "soulPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "surfacePalace",
+            "natalNameKey": "siblingsPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 0,
+            "nameKey": "wealthPalace",
+            "natalNameKey": "parentsPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 8,
+            "nameKey": "careerPalace",
+            "natalNameKey": "childrenPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 1,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 2,
+            "index": 6,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "healthPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "yearly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "decadal",
+            "palaceIndex": 8,
+            "scope": "decadal",
+            "starKey": "jumenMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 4,
+            "scope": "decadal",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "yearly",
+            "palaceIndex": 6,
+            "scope": "yearly",
+            "starKey": "tianjiMaj"
+          }
+        ],
+        "topic": "overall"
+      },
+      "name": "流年总论：身宫落在本命那一宫",
+      "scope": "yearly",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "overall"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "expect": {
+        "birthMutagens": [],
+        "groups": [
+          {
+            "career": 2,
+            "key": "wealthPalace",
+            "kind": "surround",
+            "opposite": 4,
+            "target": 10,
+            "wealth": 6
+          },
+          {
+            "career": null,
+            "key": "propertyPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 5,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "wealthPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": true,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "soulPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "careerPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "soulPalace",
+            "natalNameKey": "spousePalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 1,
+            "index": 5,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "parentsPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "decadal",
+        "scopeMutagens": [],
+        "topic": "wealth"
+      },
+      "name": "按日期取：decadal 层wealth",
+      "scope": "decadal",
+      "target": {
+        "targetDate": "2025-1-1",
+        "targetTimeIndex": 0
+      },
+      "topic": "wealth"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 0,
+            "starKey": "wuquMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 10,
+            "key": "careerPalace",
+            "kind": "surround",
+            "opposite": 0,
+            "target": 6,
+            "wealth": 2
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "careerPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 0,
+            "nameKey": "spousePalace",
+            "natalNameKey": "wealthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "soulPalace",
+            "natalNameKey": "spousePalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "wealthPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "career"
+          }
+        ],
+        "scope": "yearly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 0,
+            "scope": "decadal",
+            "starKey": "wuquMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "yearly",
+            "palaceIndex": 6,
+            "scope": "yearly",
+            "starKey": "pojunMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "yearly",
+            "palaceIndex": 0,
+            "scope": "yearly",
+            "starKey": "wuquMaj"
+          }
+        ],
+        "topic": "career"
+      },
+      "name": "按日期取：yearly 层career",
+      "scope": "yearly",
+      "target": {
+        "targetDate": "2025-1-1",
+        "targetTimeIndex": 0
+      },
+      "topic": "career"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 9,
+            "starKey": "taiyinMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 2,
+            "key": "parentsPalace",
+            "kind": "surround",
+            "opposite": 4,
+            "target": 10,
+            "wealth": 6
+          },
+          {
+            "career": null,
+            "key": "siblingsPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 8,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 9,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "parentsPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": true,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "healthPalace",
+            "natalNameKey": "soulPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "spousePalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": true,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 1,
+            "index": 8,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "careerPalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 9,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 2,
+            "index": 9,
+            "nameKey": "soulPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "monthly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "decadal",
+            "palaceIndex": 9,
+            "scope": "decadal",
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "yearly",
+            "palaceIndex": 8,
+            "scope": "yearly",
+            "starKey": "lianzhenMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "yearly",
+            "palaceIndex": 6,
+            "scope": "yearly",
+            "starKey": "pojunMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "monthly",
+            "palaceIndex": 9,
+            "scope": "monthly",
+            "starKey": "taiyinMaj"
+          }
+        ],
+        "topic": "parents"
+      },
+      "name": "按日期取：monthly 层parents",
+      "scope": "monthly",
+      "target": {
+        "targetDate": "2025-1-1",
+        "targetTimeIndex": 0
+      },
+      "topic": "parents"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 1,
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 9,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "palaceIndex": 11,
+            "starKey": "tiantongMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 9,
+            "key": "healthPalace",
+            "kind": "surround",
+            "opposite": 11,
+            "target": 5,
+            "wealth": 1
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 10,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 5,
+            "nameKey": "healthPalace",
+            "natalNameKey": "parentsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 11,
+            "nameKey": "parentsPalace",
+            "natalNameKey": "healthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 1,
+                "selfMutaged": true,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 1,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "childrenPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 9,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 9,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 1,
+            "index": 10,
+            "nameKey": "soulPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "related"
+          }
+        ],
+        "scope": "daily",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "decadal",
+            "palaceIndex": 1,
+            "scope": "decadal",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "decadal",
+            "palaceIndex": 9,
+            "scope": "decadal",
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "decadal",
+            "palaceIndex": 11,
+            "scope": "decadal",
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "yearly",
+            "palaceIndex": 1,
+            "scope": "yearly",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "monthly",
+            "palaceIndex": 9,
+            "scope": "monthly",
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "monthly",
+            "palaceIndex": 11,
+            "scope": "monthly",
+            "starKey": "tiantongMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "monthly",
+            "palaceIndex": 11,
+            "scope": "monthly",
+            "starKey": "jumenMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "daily",
+            "palaceIndex": 1,
+            "scope": "daily",
+            "starKey": "taiyangMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "daily",
+            "palaceIndex": 9,
+            "scope": "daily",
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "daily",
+            "palaceIndex": 11,
+            "scope": "daily",
+            "starKey": "tiantongMaj"
+          }
+        ],
+        "topic": "health"
+      },
+      "name": "按日期取：daily 层health",
+      "scope": "daily",
+      "target": {
+        "targetDate": "2025-1-1",
+        "targetTimeIndex": 0
+      },
+      "topic": "health"
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "palaceIndex": 0,
+            "starKey": "wuquMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 0,
+            "key": "spousePalace",
+            "kind": "surround",
+            "opposite": 2,
+            "target": 8,
+            "wealth": 4
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 10,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "bodyPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 8,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "childrenPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 7,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": true,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 8,
+            "nameKey": "spousePalace",
+            "natalNameKey": "careerPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "careerPalace",
+            "natalNameKey": "spousePalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": true,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "surfacePalace",
+            "natalNameKey": "soulPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 0,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "wealthPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 1,
+            "index": 10,
+            "nameKey": "soulPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              }
+            ],
+            "group": 3,
+            "index": 7,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "propertyPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "hourly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "decadal",
+            "palaceIndex": 0,
+            "scope": "decadal",
+            "starKey": "wuquMaj"
+          },
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "yearly",
+            "palaceIndex": 8,
+            "scope": "yearly",
+            "starKey": "lianzhenMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "yearly",
+            "palaceIndex": 0,
+            "scope": "yearly",
+            "starKey": "wuquMaj"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "daily",
+            "palaceIndex": 0,
+            "scope": "daily",
+            "starKey": "wuquMaj"
+          },
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "hourly",
+            "palaceIndex": 8,
+            "scope": "hourly",
+            "starKey": "lianzhenMaj"
+          }
+        ],
+        "topic": "romance"
+      },
+      "name": "按日期取：hourly 层romance",
+      "scope": "hourly",
+      "target": {
+        "targetDate": "2025-1-1",
+        "targetTimeIndex": 0
+      },
+      "topic": "romance"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "2020-5-5",
+        "timeIndex": 6
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 9,
+            "starKey": "taiyinMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 2,
+            "key": "parentsPalace",
+            "kind": "surround",
+            "opposite": 4,
+            "target": 10,
+            "wealth": 6
+          },
+          {
+            "career": null,
+            "key": "siblingsPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 8,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "soulPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 9,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 10,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 5,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 0,
+            "index": 10,
+            "nameKey": "parentsPalace",
+            "natalNameKey": "parentsPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": true,
+                "starKey": "ziweiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 5,
+                "selfMutaged": false,
+                "starKey": "zuofuMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              }
+            ],
+            "group": 0,
+            "index": 4,
+            "nameKey": "healthPalace",
+            "natalNameKey": "healthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "lianzhenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 6,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "childrenPalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 1,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 0,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 9,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              }
+            ],
+            "group": 0,
+            "index": 2,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "friendsPalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": true,
+                "starKey": "lianzhenMaj"
+              }
+            ],
+            "group": 1,
+            "index": 8,
+            "nameKey": "siblingsPalace",
+            "natalNameKey": "siblingsPalace",
+            "role": "related"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 9,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 11,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 2,
+            "index": 9,
+            "nameKey": "soulPalace",
+            "natalNameKey": "soulPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "decadal",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "nameKey": "childhood",
+            "palaceIndex": 9,
+            "scope": "decadal",
+            "starKey": "taiyinMaj"
+          }
+        ],
+        "topic": "parents"
+      },
+      "name": "未起运：童限层父母",
+      "scope": "decadal",
+      "target": {
+        "targetDate": "2021-1-1",
+        "targetTimeIndex": 3
+      },
+      "topic": "parents"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [],
+        "groups": [
+          {
+            "career": 5,
+            "key": "bodyPalace",
+            "kind": "surround",
+            "opposite": 7,
+            "target": 1,
+            "wealth": 9
+          },
+          {
+            "career": null,
+            "key": "originalPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 5,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "spiritPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 1,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 1,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 7,
+            "nameKey": "wealthPalace",
+            "natalNameKey": "wealthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              }
+            ],
+            "group": 0,
+            "index": 9,
+            "nameKey": "spousePalace",
+            "natalNameKey": "spousePalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 5,
+            "nameKey": "surfacePalace",
+            "natalNameKey": "surfacePalace",
+            "role": "career"
+          }
+        ],
+        "scope": "origin",
+        "scopeMutagens": [],
+        "topic": "marks"
+      },
+      "knowledge": {
+        "id": "t",
+        "language": "zh-CN",
+        "schema": 1,
+        "topics": {
+          "marks": {
+            "palaces": [
+              "originalPalace",
+              "spiritPalace"
+            ],
+            "surround": [
+              "bodyPalace"
+            ]
+          }
+        },
+        "version": "1"
+      },
+      "name": "自定义主题：身宫连三方四正、来因宫只取本宫（本命）",
+      "topic": "marks"
+    },
+    {
+      "chart": {
+        "gender": "male",
+        "solarDate": "1997-3-4",
+        "timeIndex": 1
+      },
+      "expect": {
+        "birthMutagens": [
+          {
+            "mutagenKey": "sihuaLu",
+            "palaceIndex": 6,
+            "starKey": "taiyinMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "palaceIndex": 6,
+            "starKey": "tianjiMaj"
+          }
+        ],
+        "groups": [
+          {
+            "career": 5,
+            "key": "bodyPalace",
+            "kind": "surround",
+            "opposite": 7,
+            "target": 1,
+            "wealth": 9
+          },
+          {
+            "career": null,
+            "key": "originalPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 5,
+            "wealth": null
+          },
+          {
+            "career": null,
+            "key": "spiritPalace",
+            "kind": "only",
+            "opposite": null,
+            "target": 6,
+            "wealth": null
+          }
+        ],
+        "palaces": [
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "pojunMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              }
+            ],
+            "group": 0,
+            "index": 1,
+            "nameKey": "childrenPalace",
+            "natalNameKey": "spiritPalace",
+            "role": "target"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wuquMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 7,
+                "selfMutaged": true,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 10,
+                "selfMutaged": false,
+                "starKey": "tianliangMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              }
+            ],
+            "group": 0,
+            "index": 7,
+            "nameKey": "propertyPalace",
+            "natalNameKey": "wealthPalace",
+            "role": "opposite"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 4,
+                "selfMutaged": false,
+                "starKey": "taiyangMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 3,
+                "selfMutaged": false,
+                "starKey": "wenquMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "wenchangMin"
+              }
+            ],
+            "group": 0,
+            "index": 9,
+            "nameKey": "friendsPalace",
+            "natalNameKey": "spousePalace",
+            "role": "wealth"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 2,
+                "selfMutaged": false,
+                "starKey": "tiantongMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 6,
+                "selfMutaged": false,
+                "starKey": "tianjiMaj"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "jumenMaj"
+              }
+            ],
+            "group": 0,
+            "index": 5,
+            "nameKey": "parentsPalace",
+            "natalNameKey": "surfacePalace",
+            "role": "career"
+          },
+          {
+            "flying": [
+              {
+                "mutagenKey": "sihuaLu",
+                "palaceIndex": 7,
+                "selfMutaged": false,
+                "starKey": "tanlangMaj"
+              },
+              {
+                "mutagenKey": "sihuaQuan",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "taiyinMaj"
+              },
+              {
+                "mutagenKey": "sihuaKe",
+                "palaceIndex": 8,
+                "selfMutaged": false,
+                "starKey": "youbiMin"
+              },
+              {
+                "mutagenKey": "sihuaJi",
+                "palaceIndex": 6,
+                "selfMutaged": true,
+                "starKey": "tianjiMaj"
+              }
+            ],
+            "group": 2,
+            "index": 6,
+            "nameKey": "spiritPalace",
+            "natalNameKey": "healthPalace",
+            "role": "related"
+          }
+        ],
+        "scope": "yearly",
+        "scopeMutagens": [
+          {
+            "mutagenKey": "sihuaJi",
+            "nameKey": "decadal",
+            "palaceIndex": 7,
+            "scope": "decadal",
+            "starKey": "wenchangMin"
+          },
+          {
+            "mutagenKey": "sihuaQuan",
+            "nameKey": "yearly",
+            "palaceIndex": 6,
+            "scope": "yearly",
+            "starKey": "tianjiMaj"
+          },
+          {
+            "mutagenKey": "sihuaKe",
+            "nameKey": "yearly",
+            "palaceIndex": 7,
+            "scope": "yearly",
+            "starKey": "wenchangMin"
+          }
+        ],
+        "topic": "marks"
+      },
+      "knowledge": {
+        "id": "t",
+        "language": "zh-CN",
+        "schema": 1,
+        "topics": {
+          "marks": {
+            "palaces": [
+              "originalPalace",
+              "spiritPalace"
+            ],
+            "surround": [
+              "bodyPalace"
+            ]
+          }
+        },
+        "version": "1"
+      },
+      "name": "自定义主题：身宫连三方四正、来因宫只取本宫（流年）",
+      "scope": "yearly",
+      "target": {
+        "targetMonth": 10,
+        "targetYear": 2026
+      },
+      "topic": "marks"
+    }
+  ],
+  "comment": "按主题选宫的四侧共用用例：chart 为阳历排盘入参；有 target 时按运限目标（targetDate/targetTimeIndex 或 targetYear/targetMonth）取运限，在 scope 层选宫，无 target 时按本命选宫；knowledge 为知识包对象，省略取内嵌默认包。expect 是选宫结果（与 bridge kind topicPalaces / horoscopeTopicPalaces 的返回同形），由 Rust tests/topic_palaces.rs 按各层宫名逐项另行推得并核对，UPDATE_TOPIC_CASES=1 重跑该测试写入。由 Rust tests/topic_palaces.rs、Python test_topic.py、Go topic_test.go、JS topic.test.ts 读取。"
+}

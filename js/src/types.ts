@@ -108,6 +108,12 @@ export interface TextOptions extends KnowledgeOptions {
   config?: PatternConfig | undefined;
 }
 
+/** 主题选宫（`topicPalaces`）的选项 */
+export interface TopicPalacesOptions {
+  /** 主题定义的来源；省略取排盘语言的内嵌包 */
+  knowledge?: Knowledge | undefined;
+}
+
 /** 运限语义化文本的选项 */
 export interface HoroscopeTextOptions extends TextOptions {
   /**
@@ -485,4 +491,98 @@ export interface KnowledgeIssue {
   params: Record<string, unknown>;
   /** 带路径的英文说明，供日志；界面应按 `code` 与 `params` 组织文案 */
   message: string;
+}
+
+/** 主题定义里的一组宫落到盘上的位置 */
+export type TopicGroup =
+  | {
+      /** `surround` 的一宫：连同该层的三方四正 */
+      kind: 'surround';
+      /** 主题定义里的宫位标识：宫名标识、`bodyPalace` 或 `originalPalace` */
+      key: string;
+      /** 本宫索引 0-11 */
+      target: number;
+      /** 对宫索引 */
+      opposite: number;
+      /** 财帛位索引 */
+      wealth: number;
+      /** 官禄位索引 */
+      career: number;
+    }
+  | {
+      /** `palaces` 的一宫：只取本宫 */
+      kind: 'only';
+      /** 主题定义里的宫位标识 */
+      key: string;
+      /** 本宫索引 0-11 */
+      target: number;
+      opposite: null;
+      wealth: null;
+      career: null;
+    };
+
+/** 一宫宫干飞出的一化 */
+export interface Flight {
+  /** 四化标识 */
+  mutagenKey: Mutagen;
+  /** 化出的星耀标识 */
+  starKey: string;
+  /** 星所在的宫位索引；星不在盘上时为 null */
+  palaceIndex: number | null;
+  /** 是否自化（落回本宫） */
+  selfMutaged: boolean;
+}
+
+/** 选中的一宫 */
+export interface TopicPalace {
+  /** 宫位索引 0-11 */
+  index: number;
+  /** 角色，取首次出现的那一组 */
+  role: 'target' | 'opposite' | 'wealth' | 'career' | 'related';
+  /** 首次出现的组在 `groups` 里的下标 */
+  group: number;
+  /** 所选层的宫名标识 */
+  nameKey: PalaceName;
+  /** 本命宫名标识 */
+  natalNameKey: PalaceName;
+  /** 宫干飞化，按禄、权、科、忌四条 */
+  flying: Flight[];
+}
+
+/** 生年四化落在选中宫的一条 */
+export interface MutagenLanding {
+  /** 四化标识 */
+  mutagenKey: Mutagen;
+  /** 化出的星耀标识 */
+  starKey: string;
+  /** 星所在的宫位索引 */
+  palaceIndex: number;
+}
+
+/** 运限某层的四化落在选中宫的一条 */
+export interface ScopeMutagenLanding extends MutagenLanding {
+  /** 层级 */
+  scope: Exclude<Scope, 'origin'>;
+  /** 层级名标识：大限层未起运时为 `childhood` */
+  nameKey: 'decadal' | 'childhood' | 'yearly' | 'monthly' | 'daily' | 'hourly';
+}
+
+/**
+ * 一个主题在某一层选中的宫与相关四化（`Astrolabe.topicPalaces`、`Horoscope.topicPalaces`）。
+ * 本命层按本命宫名定位；运限层按该层宫名定位、三方四正以该层的本宫起算；`bodyPalace` / `originalPalace`
+ * 在任何一层都落在本命那一宫。与主题文本同一套选宫。
+ */
+export interface TopicSelection {
+  /** 主题 slug */
+  topic: string;
+  /** 所选层；本命为 origin */
+  scope: Scope;
+  /** 主题定义的各组，先 `surround` 后 `palaces`，各按定义顺序；来因宫不在盘上时不成组 */
+  groups: TopicGroup[];
+  /** 选中的宫，每宫一次，即主题文本的成段顺序 */
+  palaces: TopicPalace[];
+  /** 生年四化落在选中宫的，按禄、权、科、忌 */
+  birthMutagens: MutagenLanding[];
+  /** 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空 */
+  scopeMutagens: ScopeMutagenLanding[];
 }
