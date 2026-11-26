@@ -59,6 +59,12 @@
 
 ### 变更
 
+- **Go 绑定在 arm64 上改用 wazero 解释器**，其余架构仍用编译器：wazero（v1.8.2 至 v1.12.0）的 arm64 编译器在不同的代码形状下
+  会把本库的 wasm 编错，表现为越界访问或越界检查失败而中止（[wazero#2590](https://github.com/wazero/wazero/issues/2590)），
+  同一份 wasm 用解释器或在 amd64 上用编译器都正确。输出不变，arm64 上变慢：每次排盘约 9 毫秒（编译器约 0.2 毫秒），
+  实例化约 40 毫秒；arm64 不再建编译缓存，`CompilationCacheDir` 返回空串。wazero 修复后换回编译器。
+- Go 内嵌的 wasm 编译时把工具链、cargo 缓存与仓库目录重映射成 `/rust`、`/cargo`、`/src`，产物里不再带构建机的本机路径
+  （此前各版本的内嵌 wasm 在 panic 位置串里带构建机目录）。
 - Rust 的 `Config` 多一个公有字段 `void_placement`、`HoroscopeItem` 多一个公有字段 `extra_mutagen`、`YearlyStars` 多
   `pang_jiekong` / `pang_xunkong`：用结构体字面量构造的代码需补上。`Brightness` 新增变体 `Xian2` 并标为 `#[non_exhaustive]`，
   crate 外的 `match` 需加兜底分支。`TopicPalace::flying` 由 `[Flight; 4]` 改为 `Vec<Flight>`（有附加四化星时多于四条）。

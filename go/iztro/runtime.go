@@ -23,8 +23,8 @@ import (
 // 各用一个实例而非共享一个加锁。实例数上限为 GOMAXPROCS——wasm 调用是纯计算，
 // 并发度超过核数只会增加内存占用。
 //
-// 编译产物（机器码）落盘缓存在用户缓存目录下，进程再次启动时直接读取，
-// 省去每次约百毫秒的编译；缓存目录按 wasm 内容哈希分桶，换了 wasm 自然换桶。
+// 执行方式按架构选（runtimeConfig）：arm64 用解释器，其余用编译器。编译器的产物（机器码）落盘缓存在
+// 用户缓存目录下，进程再次启动时直接读取，省去每次约百毫秒的编译；缓存目录按 wasm 内容哈希分桶，换了 wasm 自然换桶。
 
 //go:embed x_iztro.wasm
 var wasmBytes []byte
@@ -96,12 +96,27 @@ func getEngine(ctx context.Context) (*engine, error) {
 	return e, nil
 }
 
+// runtimeConfig 选 wazero 的执行方式：arm64 用解释器，其余架构用 wazero 的默认方式（支持的平台即编译器）。
+// wazero 的 arm64 编译器在不同的代码形状下会把本模块编错，表现为越界访问或越界检查失败，
+// 解释器与 amd64 编译器结果正确（wazero/wazero#2590）。换回编译器的条件：wazero 修复后，
+// arm64 CI 用编译器跑全量 Go 测试通过。解释器在 arm64 上每次排盘约 9ms，实例化约 40ms。
+func runtimeConfig(arch string) wazero.RuntimeConfig {
+	if arch == "arm64" {
+		return wazero.NewRuntimeConfigInterpreter()
+	}
+	return wazero.NewRuntimeConfig()
+}
+
 // newEngine 建立 wazero 运行时并编译 wasm 模块。
 func newEngine(ctx context.Context) (*engine, error) {
-	cfg := wazero.NewRuntimeConfig()
-	cacheDir, cache := compilationCache()
-	if cache != nil {
-		cfg = cfg.WithCompilationCache(cache)
+	cfg := runtimeConfig(runtime.GOARCH)
+	var cacheDir string
+	if runtime.GOARCH != "arm64" {
+		var cache wazero.CompilationCache
+		cacheDir, cache = compilationCache()
+		if cache != nil {
+			cfg = cfg.WithCompilationCache(cache)
+		}
 	}
 	wa := wazero.NewRuntimeWithConfig(ctx, cfg)
 	if _, err := wasi_snapshot_preview1.Instantiate(ctx, wa); err != nil {

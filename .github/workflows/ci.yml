@@ -54,6 +54,12 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: "1.22"
+      - name: 内嵌 wasm 不含构建机的绝对路径
+        run: |
+          if grep -aoE '/(Users|home)/[^"[:space:]]*' go/iztro/x_iztro.wasm | head -5 | grep .; then
+            echo "::error::go/iztro/x_iztro.wasm 含构建机的绝对路径，用 make check-go 重编（带 --remap-path-prefix）"
+            exit 1
+          fi
       - name: Go 绑定金标测试（仓库内嵌 wasm）
         run: cd go/iztro && go test -race ./...
       - name: 下载源码新编的 wasm

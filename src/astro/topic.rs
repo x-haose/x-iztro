@@ -318,9 +318,7 @@ pub(crate) fn select(
         .collect();
     birth_mutagens.sort_by_key(|m| MUTAGEN.iter().position(|x| *x == m.mutagen));
 
-    // 落宫与宫干飞化同一判定：星在该宫的主星、辅星或杂耀里。
-    // 这里不用 `Astrolabe::star` 逐宫查找：wazero（v1.8.2 至 v1.12.0）的 arm64 编译器把那种写法的本循环编成
-    // 越界访问，Go 绑定在 arm64 上即报 out of bounds memory access；同一判定规则的这一写法不受影响
+    // 落宫与宫干飞化（`PalaceData::mutaged_places`）同一判定：星在该宫的主星、辅星或杂耀里
     let mut scope_mutagens = Vec::new();
     for (scope, item) in layers {
         for (star, mutagen) in item.mutagens() {

@@ -167,18 +167,27 @@ initializes and on `Close`. Several goroutines charting at once therefore run ge
 on the same ten-core machine, 8 goroutines running 800 charts finish more than four times faster
 than a single goroutine.
 
-The compiled machine code is cached on disk under the user cache directory (`CompilationCacheDir`
-reports it), bucketed by the hash of the wasm contents, so a new wasm naturally lands in a new
-bucket.
+The execution mode depends on the architecture: **arm64 uses wazero's interpreter, every other
+architecture uses the compiler**. wazero's arm64 compiler miscompiles parts of this module (out-of-bounds
+accesses or failed bounds checks, see [wazero#2590](https://github.com/wazero/wazero/issues/2590)); the
+interpreter is correct but slower. The compiler comes back on arm64 once wazero is fixed and the full test
+suite passes there with it.
 
-Measured magnitudes (Apple M series, 10 cores; the exact figures move with the machine and the size
-of the wasm):
+The compiler's machine code is cached on disk under the user cache directory (`CompilationCacheDir`
+reports it), bucketed by the hash of the wasm contents, so a new wasm naturally lands in a new bucket. On
+arm64 nothing is compiled or cached, and `CompilationCacheDir` returns an empty string.
 
-| Stage | Time |
-| --- | --- |
-| First call, compilation cache **miss** (the wasm has to be compiled) | one or two hundred milliseconds |
-| First call, compilation cache hit | twenty to thirty milliseconds |
-| Steady-state single chart | around half a millisecond |
+Measured magnitudes (Apple M series, 10 cores; the exact figures move with the machine and the size of
+the wasm):
+
+| Stage | Compiler (amd64 and others) | Interpreter (arm64) |
+| --- | --- | --- |
+| First call, compilation cache **miss** (the wasm has to be compiled) | one or two hundred milliseconds | — |
+| First call, compilation cache hit | twenty to thirty milliseconds | — |
+| First call (instantiation) | — | about 40 milliseconds |
+| Steady-state single chart | around half a millisecond | about 9 milliseconds |
+
+The compiler column was measured on the same machine with the compiler forced on.
 
 <Callout type="info" title="The cost is JSON encoding, not the computation">
 Most of that steady-state half millisecond goes on serializing the whole chart to JSON on the wasm
@@ -200,7 +209,7 @@ func CompilationCacheDir(ctx context.Context) (string, error)
 | --- | --- |
 | `Warmup` | Compiles ahead of time and fills the instance pool, moving the cold-start cost into startup. Skipping it is fine — compilation and instantiation are lazy anyway |
 | `Close` | Shuts the runtime down and returns all instance memory. Rarely needed; calling any function in this package afterwards re-initializes it automatically |
-| `CompilationCacheDir` | Returns the compilation cache directory; empty string when the on-disk cache is not enabled |
+| `CompilationCacheDir` | Returns the compilation cache directory; empty string when the on-disk cache is not enabled (including on arm64, which uses the interpreter) |
 
 ```go
 ctx := context.Background()
