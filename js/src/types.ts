@@ -546,7 +546,7 @@ export interface MonthlyListItemData extends HoroscopeItemData {
   isLeapMonth: boolean;
   /** 分段：整月、闰月前半、闰月后半 */
   part: MonthPart;
-  /** 本段覆盖的农历日区间 [起, 止]，含两端 */
+  /** 本项覆盖的农历日区间 [起, 止]，含两端；月柱按节气换时可能只是 part 那一段里的几天 */
   dayRange: [number, number];
 }
 

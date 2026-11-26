@@ -161,9 +161,10 @@ example 2025-1-31 (the 3rd of lunar month 1 of yi si, before the Beginning of Sp
 yearly yi si and monthly wu yin; `exact` gives yearly jia chen and monthly ding chou; `exactMonth` gives
 yearly yi si and monthly ding chou. The natal month pillar follows the month boundary, as under `exact`.
 
-Under `exact` and `exactMonth` the monthly list (`monthly_list` and its text) has one row per lunar month,
-with the stem, branch and mutagens of the segment's first day: when a solar term falls inside a lunar month,
-the stem after it is not in that row, and only a horoscope taken by date shows it.
+Under `exact` and `exactMonth` the monthly list (`monthly_list` and its text) splits a lunar month where a
+solar term falls inside it: one row before the term and one after. `day_range` holds the lunar days a row
+covers, and the day of the term goes to whichever side the month pillar is on at the birth hour. A year
+therefore usually has twenty-odd rows under these two values rather than 12–14.
 
 <Callout>
 This switch also changes **the natal chart's month pillar**, not just horoscopes. Take 2000-8-5 in
@@ -329,7 +330,7 @@ under `nextMonth` it counts as month 5 with Zuofu in Shen.
 
 The month horse uses the same birth month as Zuofu and Youbi (already adjusted for leap months).
 Sources: month horse only — Li Tiebi, *紫微斗数命运学*, p. 20; Xu Quanren, *紫微斗数命理学正解（一）*,
-book pp. 39–40. Both horses — *紫微斗数一本通*, pp. 80, 84, 91; Cai Minghong, *秘仪*, p. 128. The books
+book pp. 39–40. Both horses — *紫微斗数一本通*, pp. 80, 84, 91; Cai Minghong, *秘仪*, book p. 128 / PDF p. 76. The books
 call it 月马; iztro already uses 月马 for Tianma on the monthly horoscope layer, so the natal one is named
 月天马 (en-US `month-horse`) to keep the names apart.
 
@@ -450,15 +451,16 @@ the new stem.
 | --- | --- |
 | `sequence` (default) | From nominal age 1: Soul, Wealth, Health, Spouse, Spirit, Career in turn, each with its own palace stem |
 | `spouse` | Always the Spouse palace: the childhood layer's palace names count from the Spouse palace as its Soul palace, and its mutagens use the Spouse palace stem |
+| `spouseUntilSecondDecade` | The Spouse palace as the Taiji until the second decade: the childhood period as under `spouse`, and the first decade (the one on the Soul palace) also lands on the Spouse palace, with that palace's stem and branch and their mutagens; the layer is still the decadal one |
 
 `spouse` follows Yiting's course, lecture 02, pp. 14–17 (the Spouse palace is the parents' Children
 palace; health questions read the childhood layer's Health palace). The Flying Star school's "read the
-Spouse palace for the young" (Liang Ruoyu, *飞星斗数入门*, p. 44) agrees before the first decade. The
-*梁若瑜飞星派紫微斗数课程*, PDF p. 19, goes further: "the Soul palace has no decade; everything before the second
-decade (Parents or Siblings) should be analysed with the Spouse palace as the Taiji", so the first decade is read
-through the Spouse palace too (in that page's example chart the first span, ages 3–12, is still printed on the
-Soul palace). That is a different convention, not supported by this switch yet, which only changes the years
-before the first decade.
+Spouse palace for the young" (Liang Ruoyu, *飞星斗数入门*, p. 44) agrees before the first decade. `spouseUntilSecondDecade` is the Flying Star school's convention:
+*梁若瑜飞星派紫微斗数课程*, PDF p. 19: "the Soul palace has no decade; everything before the second decade (Parents
+or Siblings) should be analysed with the Spouse palace as the Taiji" (the same idea as "read the Spouse palace for
+the young" in *飞星斗数入门*, p. 44). In that page's example chart, 1987-5-9 in the Chen hour, male, the first span,
+ages 3–12, is printed on the Soul palace; with this value the decadal layer for ages 3–12 lands on the Spouse
+palace. The decadal list still lists each decade by its palace.
 
 ### Minor-limit mutagens: `age_mutagens`
 
@@ -497,7 +499,7 @@ Sources for `scopeSoulPalace`: the Flying Star school takes the yearly mutagens 
 stem (Zhou Xingfei, *梁若瑜飞星派紫微斗数课程*, p. 21: in 2009, a ji chou year, the yearly Soul palace is
 Chou, whose palace stem is xin, so the year flies with xin, not ji); the Heluo school keeps the natal stems
 for every layer (Fangwairen, *河洛紫微斗数*, p. 28); Cai Minghong's first method uses the Taisui palace's natal
-stem for the year (*华山钦天四化紫微斗数飞星秘仪*, book page 50, PDF p. 37). Heluo's "always the natal stems" means each layer's
+stem for the year (*华山钦天四化紫微斗数飞星秘仪*, book p. 50 / PDF p. 37). Heluo's "always the natal stems" means each layer's
 palaces keep their natal stems and no layer stem is raised, which for each layer's mutagens comes to the
 natal stem of its Soul palace — the same value as the Flying Star school.
 
@@ -517,7 +519,7 @@ from the layer's stem; the text's mutagen line notes it ("Mutagen (Stem xin)"); 
 | `douJun` (default) | Month 1 at Dou Jun: count the birth month backwards from the Taisui palace and the birth hour forwards, then one palace on per month |
 | `monthBranch` | Month 1 is always the Yin palace; each month sits in the palace of its month branch (month 2 Mao, month 3 Chen …) |
 
-`monthBranch` is the monthly layer of Cai Minghong's second method (*秘仪*, book pages 51–52, PDF pp. 37–38: when the year uses
+`monthBranch` is the monthly layer of Cai Minghong's second method (*秘仪*, book pp. 51–52 / PDF pp. 37–38: when the year uses
 the year stem's mutagens, the months skip Dou Jun and start month 1 at Yin with the Five Tigers rule; in a
 yi chou year month 1 is wu yin and month 2 ji mao). Cai pairs his first method (the year on natal palace
 stems) with Dou Jun and the second (the year on the year stem) with Yin, and says the two must not be mixed;
@@ -568,10 +570,7 @@ decade from the Parents or Siblings palace (Ling Donglai, *紫微斗数命理学
 decade); separate flow stars on the minor-limit layer (*紫微斗数精成*, p. 433, reads the minor limit against
 the yearly flow stars only, and no other source gives a placement); yearly palace stems raised again from the
 year stem with the Five Tigers rule (Cai Minghong's second method raises the Five Tigers only for the months,
-and calls its yearly mutagens fixed images that do not transform further, with no yearly stem flying); the
-Flying Star school's first decade read through the Spouse palace (stated on PDF p. 19 of the *课程*, a different
-convention from Yiting's, which covers only the years before the first decade; not yet a value of
-`childhood_palace`, see the childhood period above); how the days
+and calls its yearly mutagens fixed images that do not transform further, with no yearly stem flying);  how the days
 of the second half of a leap month join the next month (see the leap-month days above).
 
 ## Charting perspective: `astro_type`

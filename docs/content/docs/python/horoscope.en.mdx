@@ -357,6 +357,10 @@ def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem
 
 The leap month follows the ordinary month of the same number. Each item is computed from the first day of
 its segment (day 16 for a second half).
+When `ChartConfig.horoscope_divide` is `exact` or `exactMonth` (the month pillar changes at solar terms), a segment is split
+again where a term falls inside it, `day_range` covers only the days with the same month pillar, and the day of the
+term goes by the month pillar at the birth hour; a year then usually has twenty-odd items. See
+[Horoscope boundary](/en/docs/guide/guides/config#horoscope-boundary-horoscope_divide).
 
 **Raises** `IztroError` when the year is outside 1–9999, or a segment's target date falls outside the
 supported range (the last months of 9999 fall in the solar year 10000).
@@ -432,7 +436,8 @@ def monthly_list_to_text(
 the lunar month, its first and last solar day, the natal palace the month's Soul palace lands on,
 the stem-branch and where the mutagens land. The data is the same as
 [`monthly_list(year)`](#monthly_list): 12 rows without a leap month; 14 with one, the leap month
-split into two rows, one per half, marked `leap` and carrying its lunar day range. The format is
+split into two rows, one per half, marked `leap` and carrying its lunar day range. Under a month pillar that changes at solar terms the
+rows split again where a term falls, and a row that is not a whole month carries its lunar day range. The format is
 described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries).
 
 **Raises** `IztroError` when the year is outside 1–9999 or a segment's first day falls outside the

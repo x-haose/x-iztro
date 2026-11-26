@@ -140,6 +140,10 @@ monthlyListToText(year: number, options?: KnowledgeOptions): string;
 
 `monthlyList`'s `fixLeap` has nothing to do with the charting switch of the same name: 12 items without a leap
 month; with one, it is split into two halves (14 items), or kept whole (13 items).
+When `ChartConfig.horoscopeDivide` is `exact` or `exactMonth` (the month pillar changes at solar terms), a
+segment is split again where a term falls inside it, `dayRange` covers only the days with the same month pillar,
+and the day of the term goes by the month pillar at the birth hour; a year then usually has twenty-odd items. See
+[Horoscope boundary](/en/docs/guide/guides/config#horoscope-boundary-horoscope_divide).
 
 ```ts
 const d = chart.decadalList()[2]!;

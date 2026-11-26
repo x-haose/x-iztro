@@ -1287,8 +1287,8 @@ pub fn monthly_list_to_text(
 
 /// 指定农历年的流月一览：每个流月一行，写农历月、阳历起止日、流月命宫所在的本命宫、干支与四化落宫。
 /// 闰月按前后半月拆成两行（初一分界下前半月的流月同本月、后半月同下月），月号前加「闰」并注明农历日区间。
-/// 带知识包时表后附四化星的释义（跨行去重）。各行按农历月划分，与 [`Astrolabe::monthly_list`] 一致；
-/// 节气分界下行与节令月不对齐，正月一行可能是上一年的丑月。
+/// 带知识包时表后附四化星的释义（跨行去重）。各行与 [`Astrolabe::monthly_list`] 一一对应：按节气换月柱时
+/// 农历月在交节处拆成两行，不是整月的行在月号后注明农历日区间。
 ///
 /// # Errors
 /// 年份不在 1-9999，或某一段的首日落在支持范围外时返回 [`IztroError`]（同
@@ -1318,13 +1318,19 @@ pub fn monthly_list_to_text_with(
                 .expect("流月列表项的农历日在该月的天数之内");
             format!("{y}-{mo}-{d}")
         };
-        let month = if m.is_leap_month {
-            format!(
+        let whole_month = m.day_range
+            == (
+                1,
+                crate::calendar::month_day_count(year, signed_month)
+                    .expect("流月列表项的月份在该年之内") as u32,
+            );
+        let month = match (m.is_leap_month, whole_month) {
+            (false, true) => m.month.to_string(),
+            (false, false) => format!("{} ({}-{})", m.month, m.day_range.0, m.day_range.1),
+            (true, _) => format!(
                 "{}{}{} ({}-{})",
                 l.leap_month, l.label_sep, m.month, m.day_range.0, m.day_range.1
-            )
-        } else {
-            m.month.to_string()
+            ),
         };
         out.push_str(&format!(
             "| {month} | {} ~ {} | {} | {} | {} |\n",

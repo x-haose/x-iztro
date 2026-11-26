@@ -40,7 +40,8 @@ impl HoroscopeItem {
 
 /// 农历月在流月列表中的分段。
 ///
-/// 闰月在 `fix_leap` 打开时按前后半月拆成两段分别起运限，其余情形整月一段。
+/// 闰月在 `fix_leap` 打开时按前后半月拆成两段分别起运限，其余情形整月一段。月柱按节气换时，
+/// 一段还会在交节处拆成几项，各项同属这一段，实际天数看 `day_range`。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MonthPart {
     /// 整月一段（非闰月，或闰月但不拆分）
@@ -135,7 +136,7 @@ pub struct MonthlyHoroscope {
     pub is_leap_month: bool,
     /// 整月一段，还是闰月的前后半段
     pub part: MonthPart,
-    /// 该段覆盖的农历日区间（含两端）
+    /// 本项覆盖的农历日区间（含两端）；月柱按节气换时可能只是 `part` 那一段里的几天
     pub day_range: (u32, u32),
 }
 

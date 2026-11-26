@@ -340,6 +340,8 @@ def monthly_list(self, year: int, fix_leap: bool = True) -> list[MonthlyListItem
 | 有闰月 | `False` | 13 | 闰月整月一项，`part` 为 `normal` |
 
 闰月排在同月号的常规月之后。每项按该段首日算出（后半段取十六）。
+`ChartConfig.horoscope_divide` 为 `exact` / `exactMonth`（月柱按节气换）时，段内交节处再拆成两项，`day_range` 只覆盖月柱
+不变的那几天，交节当天按出生时辰时的月柱归属，一年通常二十多项；见[运限分界点](/zh/docs/guide/guides/config#运限分界点-horoscope_divide)。
 
 **异常**　年份不在 1–9999，或某一段的目标日期落在支持范围外（9999 年末几个月对应公历 10000 年）时抛 `IztroError`。
 
@@ -408,7 +410,7 @@ def monthly_list_to_text(
 
 **返回值**　`str`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
 干支与四化落宫。与 [`monthly_list(year)`](#monthly_list) 同一套数据：无闰月 12 行；有闰月 14 行，
-闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间；月柱按节气换时交节处再拆行，不是整月的行在月号后注明农历日区间。格式见
 [语义化文本](/zh/docs/guide/guides/to-text#九个入口)。
 
 **异常**　年份不在 1–9999，或某一段的首日落在支持范围外时抛 `IztroError`；`knowledge=True` 而排盘语言没有内嵌包

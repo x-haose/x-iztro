@@ -2724,6 +2724,111 @@
     {
       "chart": {
         "gender": "male",
+        "solarDate": "1987-5-9",
+        "timeIndex": 4
+      },
+      "config": {
+        "childhoodPalace": "spouseUntilSecondDecade"
+      },
+      "expect": {
+        "decadalStemKeys": [
+          "renHeavenly",
+          "guiHeavenly",
+          "jiaHeavenly",
+          "yiHeavenly",
+          "bingHeavenly",
+          "dingHeavenly",
+          "wuHeavenly",
+          "jiHeavenly",
+          "gengHeavenly",
+          "xinHeavenly",
+          "renHeavenly",
+          "guiHeavenly"
+        ],
+        "layers": [
+          {
+            "heavenlyStemKey": "xinHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "jumenMaj",
+              "taiyangMaj",
+              "wenquMin",
+              "wenchangMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "decadal"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 6,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "turn"
+          },
+          {
+            "heavenlyStemKey": "jiaHeavenly",
+            "index": 8,
+            "mutagenStarKeys": [
+              "lianzhenMaj",
+              "pojunMaj",
+              "wuquMaj",
+              "taiyangMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "yearly"
+          },
+          {
+            "heavenlyStemKey": "jiHeavenly",
+            "index": 0,
+            "mutagenStarKeys": [
+              "wuquMaj",
+              "tanlangMaj",
+              "tianliangMaj",
+              "wenquMin"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "monthly"
+          },
+          {
+            "heavenlyStemKey": "wuHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "tanlangMaj",
+              "taiyinMaj",
+              "youbiMin",
+              "tianjiMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "daily"
+          },
+          {
+            "heavenlyStemKey": "renHeavenly",
+            "index": 9,
+            "mutagenStarKeys": [
+              "tianliangMaj",
+              "ziweiMaj",
+              "zuofuMin",
+              "wuquMaj"
+            ],
+            "mutagenStemKey": null,
+            "nameKey": "hourly"
+          }
+        ]
+      },
+      "name": "第二大限前以夫妻宫立太极（第一大限内）",
+      "target": [
+        "1994-6-1",
+        0
+      ]
+    },
+    {
+      "chart": {
+        "gender": "male",
         "solarDate": "1990-5-12",
         "timeIndex": 6
       },

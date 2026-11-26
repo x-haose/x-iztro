@@ -366,7 +366,8 @@ export class Astrolabe {
    * 指定农历年的全部流月，按月份先后排列；每段目标日期取该段首日（后半段取十六）。
    *
    * @param fixLeap 闰月是否拆段，与排盘的同名开关无关：无闰月 12 项；有闰月时拆为前后半月两项（共 14 项），
-   *   不拆则闰月整月一项（共 13 项）。默认 true
+   *   不拆则闰月整月一项（共 13 项）。默认 true。`ChartConfig.horoscopeDivide` 按节气换月柱（exact / exactMonth）时，
+   *   段内交节处再拆成几项，交节当天按出生时辰时的月柱归属
    * @throws IztroError 年份不在 1-9999，或某一段的目标日期落在支持范围外
    */
   monthlyList(year: number, fixLeap = true): MonthlyListItem[] {

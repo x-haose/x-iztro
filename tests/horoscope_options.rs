@@ -1,11 +1,12 @@
 //! 运限流派口径开关的行为测试：每个开关在真实盘上按出处给出的规则或命例核对，默认值的输出由各层金标守。
 //!
-//! 规则出处（页码为 PDF 页号；蔡明宏《秘仪》两页并排扫描，标书页并注 PDF 页）：流月按节气换干、年仍按初一——令东来《紫微斗数命理学》p160–161；
+//! 规则出处（页码为 PDF 页号；蔡明宏《秘仪》两页并排扫描，写作「书页 X / PDF pY」）：流月按节气换干、年仍按初一——令东来《紫微斗数命理学》p160–161；
 //! 大限天干从命宫干连续排——《紫微斗数精成》p398（蒋介石命例）；童限以夫妻宫为太极——依婷系统班 02 讲 p14–17；
+//! 第二大限前都以夫妻宫立太极——周星飞《梁若瑜飞星派紫微斗数课程》p19；
 //! 小限不起四化——精成 p433；流年命宫取小限——《天纪紫微斗数笔记》p13、p35、p59；
-//! 运限四化取该层命宫的宫干——周星飞《梁若瑜飞星派紫微斗数课程》p21（2009 己丑年用丑宫辛干）、
-//! 方外人《河洛紫微斗数》p28、蔡明宏《华山钦天四化紫微斗数飞星秘仪》书页 50（PDF p37，甲法）；
-//! 流月正月固定在寅宫——蔡明宏书页 51–52（PDF p37–38，乙法）；流日初一落在流月命宫的下一宫——《课程》p264；
+//! 运限四化取该层命宫的宫干——《课程》p21（2009 己丑年用丑宫辛干）、
+//! 方外人《河洛紫微斗数》p28、蔡明宏《华山钦天四化紫微斗数飞星秘仪》书页 50 / PDF p37（甲法）；
+//! 流月正月固定在寅宫——蔡明宏书页 51–52 / PDF p37–38（乙法）；流日初一落在流月命宫的下一宫——《课程》p264；
 //! 闰月流日接本月连续数——王亭之《安星法及推断实例》p85；流时按时支落宫——许铨仁《学习紫微斗数的第一本书》p52–53。
 
 use x_iztro::data::stars::StarKey;
@@ -51,6 +52,61 @@ fn layer(h: &HoroscopeData, scope: Scope) -> &HoroscopeItem {
 }
 
 /// 年按正月初一、月按节气：2025-1-31 是乙巳年正月初三，立春（2-3）未到。初一分界的流月是乙巳年正月戊寅；
+/// 月柱按节气换时，流月一览在交节处拆行：各行首尾相接覆盖全年，行内每天的流月干支都等于该行的干支，
+/// 每个农历月至多拆成三行。2015 年二月十七清明（令东来例），二月拆成己卯、庚辰两行。
+#[test]
+fn monthly_list_splits_at_jie() {
+    let chart = solar(
+        "1990-5-12",
+        6,
+        Gender::Male,
+        Config {
+            horoscope_divide: HoroscopeDivide::ExactMonth,
+            ..Config::default()
+        },
+    );
+    let list = chart.monthly_list(2015, true).unwrap();
+    assert!(list.len() > 12, "2015 年各月几乎都交节");
+    let mut prev: Option<(u32, bool, u32)> = None;
+    for m in &list {
+        match prev {
+            Some((month, leap, end)) if month == m.month && leap == m.is_leap_month => {
+                assert_eq!(m.day_range.0, end + 1, "同月各行首尾相接")
+            }
+            _ => assert_eq!(m.day_range.0, 1, "新的一月从初一起"),
+        }
+        prev = Some((m.month, m.is_leap_month, m.day_range.1));
+        for day in m.day_range.0..=m.day_range.1 {
+            let h = chart
+                .horoscope(&solar_of(2015, m.month, day, m.is_leap_month), 6)
+                .unwrap();
+            assert_eq!(
+                (
+                    h.monthly.heavenly_stem,
+                    h.monthly.earthly_branch,
+                    h.monthly.index
+                ),
+                (m.heavenly_stem, m.earthly_branch, m.index),
+                "{}月{day}日",
+                m.month
+            );
+        }
+    }
+    let feb: Vec<_> = list.iter().filter(|m| m.month == 2).collect();
+    assert_eq!(feb.len(), 2);
+    assert_eq!(feb[0].day_range.1, 16);
+    assert_eq!(
+        (feb[0].heavenly_stem, feb[1].heavenly_stem),
+        (HeavenlyStem::Ji, HeavenlyStem::Geng)
+    );
+    for month in 1..=12 {
+        assert!(list.iter().filter(|m| m.month == month).count() <= 3);
+    }
+    // 初一分界不拆
+    let normal = solar("1990-5-12", 6, Gender::Male, Config::default());
+    assert_eq!(normal.monthly_list(2015, true).unwrap().len(), 12);
+}
+
 /// 节气分界连流年也还在甲辰，流月是甲辰年丑月丁丑；exactMonth 流年乙巳、流月丁丑，流月命宫与初一分界相同。
 #[test]
 fn exact_month_splits_month_stem_from_year() {
@@ -550,5 +606,55 @@ fn overview_tables_name_the_mutagen_stem() {
             .yearly_overview_to_text(2009, 2009)
             .unwrap()
             .contains("干) ")
+    );
+}
+
+/// 飞星派「命宫无大限，第二大限前都以夫妻宫立太极」（《课程》p19 例盘：
+/// 1987-5-9 辰时男，木三局，第一大限 3–12 在命宫，第二大限 13–22 在兄弟宫）。
+#[test]
+fn spouse_until_second_decade_covers_first_decade() {
+    let config = |childhood_palace| Config {
+        childhood_palace,
+        ..Config::default()
+    };
+    let chart = solar(
+        "1987-5-9",
+        4,
+        Gender::Male,
+        config(ChildhoodPalace::SpouseUntilSecondDecade),
+    );
+    let soul = chart.palace(Palace::Soul).unwrap();
+    let spouse = chart.palace(Palace::Spouse).unwrap();
+    let siblings = chart.palace(Palace::Siblings).unwrap();
+    assert_eq!(soul.decadal.range, (3, 12), "例盘第一大限在命宫");
+    assert_eq!(siblings.decadal.range, (13, 22), "例盘第二大限在兄弟宫");
+
+    // 虚岁 1（起运前）、虚岁 8（第一大限内）都以夫妻宫立太极，干支取夫妻宫的宫干支
+    for (date, name) in [
+        ("1987-6-1", HoroscopeName::Childhood),
+        ("1994-6-1", HoroscopeName::Decadal),
+    ] {
+        let h = chart.horoscope(date, 0).unwrap();
+        assert_eq!(h.decadal.index, spouse.index, "{date}");
+        assert_eq!(h.decadal.name_key, name, "{date}");
+        assert_eq!(
+            (h.decadal.heavenly_stem, h.decadal.earthly_branch),
+            (spouse.heavenly_stem, spouse.earthly_branch),
+            "{date}"
+        );
+        assert_eq!(h.decadal.palace_names[spouse.index], Palace::Soul, "{date}");
+    }
+    // 第二大限起照常
+    let h = chart.horoscope("2000-6-1", 0).unwrap();
+    assert_eq!(h.decadal.index, siblings.index);
+    // spouse 只改起运之前：第一大限仍在命宫
+    let only_childhood = solar("1987-5-9", 4, Gender::Male, config(ChildhoodPalace::Spouse));
+    assert_eq!(
+        only_childhood
+            .horoscope("1994-6-1", 0)
+            .unwrap()
+            .decadal
+            .index,
+        soul.index
     );
 }

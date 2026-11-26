@@ -695,6 +695,9 @@ const (
 	ChildhoodPalaceSequence = "sequence"
 	// ChildhoodPalaceSpouse 一律落夫妻宫，四化取夫妻宫干
 	ChildhoodPalaceSpouse = "spouse"
+	// ChildhoodPalaceSpouseUntilSecondDecade 第二大限之前一律以夫妻宫立太极：童限与第一大限都落夫妻宫，
+	// 干支与四化取夫妻宫的宫干支
+	ChildhoodPalaceSpouseUntilSecondDecade = "spouseUntilSecondDecade"
 )
 
 // 小限是否起四化（Config.AgeMutagens）。

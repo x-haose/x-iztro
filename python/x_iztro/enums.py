@@ -196,6 +196,8 @@ class ChildhoodPalace(StrEnum):
     """与 iztro 一致：依次落命宫、财帛、疾厄、夫妻、福德、官禄"""
     SPOUSE = "spouse"
     """一律落夫妻宫，四化取夫妻宫干"""
+    SPOUSE_UNTIL_SECOND_DECADE = "spouseUntilSecondDecade"
+    """第二大限之前一律以夫妻宫立太极：童限与第一大限都落夫妻宫，干支与四化取夫妻宫的宫干支"""
 
 
 class AgeMutagens(StrEnum):

@@ -56,7 +56,7 @@ type MonthlyListItem struct {
 	IsLeapMonth bool `json:"isLeapMonth"`
 	// Part 为分段标识（MonthPart* 常量）：整月、闰月前半或闰月后半
 	Part string `json:"part"`
-	// DayRange 为该段覆盖的农历日区间 [起, 止]，含两端
+	// DayRange 为本项覆盖的农历日区间 [起, 止]，含两端；月柱按节气换时可能只是 Part 那一段里的几天
 	DayRange [2]int `json:"dayRange"`
 }
 
@@ -202,6 +202,8 @@ func (a *Astrolabe) yearlyList(ctx context.Context, key string, value any) ([]Ye
 // fixLeap 决定闰月是否拆段，与排盘的 fixLeap 无关（后者管安星，这里管分段）：
 // 为真时闰月拆成前后半月两项（该年共 14 项），为假时闰月整月一项（共 13 项），
 // 无闰月的年份恒为 12 项。传 nil 取内核默认（真），用 Bool(false) 关掉。
+// Config.HoroscopeDivide 按节气换月柱（"exact" / "exactMonth"）时，段内交节处再拆成几项，
+// 交节当天按出生时辰时的月柱归属，每项的 DayRange 只覆盖月柱不变的那几天。
 func (a *Astrolabe) MonthlyList(lunarYear int, fixLeap *bool) ([]MonthlyListItem, error) {
 	return a.MonthlyListContext(context.Background(), lunarYear, fixLeap)
 }

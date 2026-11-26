@@ -780,11 +780,15 @@ pub enum ChildhoodPalace {
     Sequence,
     /// 一律落夫妻宫：童限以夫妻宫为命宫推排宫名，四化取夫妻宫干
     Spouse,
+    /// 第二大限之前一律以夫妻宫立太极：童限同 `Spouse`，第一大限（命宫那一限）的大限层也落夫妻宫，
+    /// 干支与四化取夫妻宫的宫干支
+    SpouseUntilSecondDecade,
 }
 
 keyed_enum!(ChildhoodPalace, "childhoodPalace" {
     Sequence => "sequence",
     Spouse => "spouse",
+    SpouseUntilSecondDecade => "spouseUntilSecondDecade",
 });
 
 /// 小限是否起四化。

@@ -262,7 +262,7 @@ class MonthlyListItem(HoroscopeItem):
     """分段标识（`MonthPart` 枚举值域）：整月、闰月前半、闰月后半"""
 
     day_range: tuple[int, int] = (0, 0)
-    """本段覆盖的农历日区间 (起, 止)，含两端"""
+    """本项覆盖的农历日区间 (起, 止)，含两端；月柱按节气换时可能只是 `part` 那一段里的几天"""
 
     @classmethod
     def _from_dict(cls, d: dict) -> MonthlyListItem:

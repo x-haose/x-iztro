@@ -135,7 +135,7 @@ monthlyListToText(year: number, options?: KnowledgeOptions): string;
 | `YearlyListItem` | `age`、`year` |
 | `MonthlyListItem` | `age`、`year`、`month`、`isLeapMonth`、`part`（`normal` / `first` / `second`）、`dayRange` |
 
-`monthlyList` 的 `fixLeap` 与排盘的同名开关无关：无闰月 12 项；有闰月时拆为前后半月两项（共 14 项），不拆则闰月整月一项（共 13 项）。
+`monthlyList` 的 `fixLeap` 与排盘的同名开关无关：无闰月 12 项；有闰月时拆为前后半月两项（共 14 项），不拆则闰月整月一项（共 13 项）。`ChartConfig.horoscopeDivide` 为 `exact` / `exactMonth`（月柱按节气换）时，段内交节处再拆成两项，`dayRange` 只覆盖月柱不变的那几天，交节当天按出生时辰时的月柱归属，一年通常二十多项；见[运限分界点](/zh/docs/guide/guides/config#运限分界点-horoscope_divide)。
 
 ```ts
 const d = chart.decadalList()[2]!;

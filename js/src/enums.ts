@@ -187,6 +187,8 @@ export const ChildhoodPalace = {
   SEQUENCE: 'sequence',
   /** 一律落夫妻宫，四化取夫妻宫干 */
   SPOUSE: 'spouse',
+  /** 第二大限之前一律以夫妻宫立太极：童限与第一大限都落夫妻宫，干支与四化取夫妻宫的宫干支 */
+  SPOUSE_UNTIL_SECOND_DECADE: 'spouseUntilSecondDecade',
 } as const;
 /** 童限落在哪一宫（`ChartConfig.childhoodPalace`） */
 export type ChildhoodPalace = (typeof ChildhoodPalace)[keyof typeof ChildhoodPalace];

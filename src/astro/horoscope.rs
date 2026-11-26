@@ -289,8 +289,9 @@ pub fn get_horoscope(
     // ---- 5. 大限 ----
     //     虚岁落在某宫大限区间内取该宫，干支取该宫的大限干支（`decadal_stem` 决定天干）；
     //     尚未起运时为童限，落宫由 `childhood_palace` 决定，干支取该宫的本命宫干支
-    let (decadal_palace_idx, is_childhood) = find_decadal_palace(astrolabe, nominal_age);
-    let (decadal_stem, decadal_branch) = if is_childhood {
+    let (decadal_palace_idx, is_childhood, on_palace_stem) =
+        find_decadal_palace(astrolabe, nominal_age);
+    let (decadal_stem, decadal_branch) = if on_palace_stem {
         let p = &astrolabe.palaces[decadal_palace_idx];
         (p.heavenly_stem, p.earthly_branch)
     } else {
@@ -502,15 +503,29 @@ pub fn get_horoscope(
 // 辅助函数
 // ============================================================
 
-/// 查找大限宫位索引，返回 (宫位索引, 是否童限)。
+/// 查找大限宫位索引，返回 (宫位索引, 是否童限, 干支是否取该宫自身的宫干支)。
 ///
-/// 虚岁落在某宫大限区间内取该宫；尚未起运时为童限：`childhood_palace=Sequence` 按虚岁依次映射到
-/// [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]，`Spouse` 一律取夫妻宫。
-fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool) {
+/// 虚岁落在某宫大限区间内取该宫，干支取该宫的大限干支；尚未起运时为童限，干支取所落宫的宫干支：
+/// `childhood_palace=Sequence` 按虚岁依次映射到 [命宫, 财帛, 疾厄, 夫妻, 福德, 官禄]，`Spouse` 一律取夫妻宫。
+/// `SpouseUntilSecondDecade` 另把第一大限（落在命宫的那一限）也换成夫妻宫，干支取夫妻宫的宫干支，层级仍是大限。
+fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool, bool) {
+    let index_of = |name: Palace| {
+        astrolabe
+            .palaces
+            .iter()
+            .find(|p| p.name == name)
+            .map(|p| p.index)
+            .expect("十二宫名齐全")
+    };
+    let spouse_until_second =
+        astrolabe.config.childhood_palace == ChildhoodPalace::SpouseUntilSecondDecade;
     for p in &astrolabe.palaces {
         let (start, end) = p.decadal.range;
         if nominal_age >= start && nominal_age <= end {
-            return (p.index, false);
+            if spouse_until_second && p.name == Palace::Soul {
+                return (index_of(Palace::Spouse), false, true);
+            }
+            return (p.index, false, false);
         }
     }
 
@@ -518,16 +533,9 @@ fn find_decadal_palace(astrolabe: &Astrolabe, nominal_age: u32) -> (usize, bool)
         ChildhoodPalace::Sequence => {
             CHILDHOOD_PALACES[((nominal_age as usize).saturating_sub(1)) % CHILDHOOD_PALACES.len()]
         }
-        ChildhoodPalace::Spouse => Palace::Spouse,
+        ChildhoodPalace::Spouse | ChildhoodPalace::SpouseUntilSecondDecade => Palace::Spouse,
     };
-
-    let idx = astrolabe
-        .palaces
-        .iter()
-        .find(|p| p.name == target_palace)
-        .map(|p| p.index)
-        .unwrap_or(0);
-    (idx, true)
+    (index_of(target_palace), true, true)
 }
 
 /// 查找小限宫位索引
@@ -955,8 +963,12 @@ impl Astrolabe {
     /// 指定农历年的全部流月，按月份先后排列。
     ///
     /// 无闰月返回 12 项；有闰月且 `fix_leap` 为真时，闰月按前后半月拆成两项（共 14 项），
-    /// 为假时闰月整月一项（共 13 项）。每个流月经 [`Astrolabe::horoscope`] 算出，
-    /// 目标日期取该段的首日（后半段取十六）。
+    /// 为假时闰月整月一项（共 13 项）。每项经 [`Astrolabe::horoscope`] 算出，目标日期取该段的首日
+    /// （后半段取十六），时辰取出生时辰。
+    ///
+    /// `horoscope_divide` 按节气换月柱（`Exact` / `ExactMonth`）时，段内交节处再拆成两项（极少数月份
+    /// 一段内交两个节，拆成三项），每项的 `day_range` 是月柱不变的那几天：交节当天按出生时辰时的
+    /// 月柱归前一项或后一项。拆出的各项 `part` 同原段。
     ///
     /// # Errors
     /// 年份不在 1-9999 时返回 [`IztroError::InvalidArgument`]（与 iztro 的前置校验一致）；
@@ -995,24 +1007,54 @@ impl Astrolabe {
                 } else {
                     vec![(MonthPart::Normal, (1, last))]
                 };
-                for (part, day_range) in segments {
-                    let (sy, smo, sd) = calendar::solar_date_of(year, sm, day_range.0 as i64)
-                        .expect("段首日在该农历月的天数之内");
-                    let h = get_horoscope(
-                        self,
-                        &format!("{sy}-{smo}-{sd}"),
-                        time_index,
-                        self.language,
-                    )?;
-                    out.push(MonthlyHoroscope {
-                        base: h.monthly,
-                        age,
-                        year,
-                        month,
-                        is_leap_month: is_leap,
-                        part,
-                        day_range,
-                    });
+                let monthly_at =
+                    |day: u32| -> Result<HoroscopeItem, IztroError> {
+                        let (sy, smo, sd) = calendar::solar_date_of(year, sm, day as i64)
+                            .expect("段内日期在该农历月的天数之内");
+                        Ok(get_horoscope(
+                            self,
+                            &format!("{sy}-{smo}-{sd}"),
+                            time_index,
+                            self.language,
+                        )?
+                        .monthly)
+                    };
+                let pillar = |m: &HoroscopeItem| (m.heavenly_stem, m.earthly_branch);
+                for (part, (first, last)) in segments {
+                    let mut start = first;
+                    let mut monthly = monthly_at(start)?;
+                    loop {
+                        // 月柱按节气换时，段内交节处再拆：月柱只会前进，找出首个月柱不同的日子
+                        let mut end = last;
+                        if self.config.horoscope_divide.month_by_jie()
+                            && pillar(&monthly_at(last)?) != pillar(&monthly)
+                        {
+                            let (mut same, mut changed) = (start, last);
+                            while changed - same > 1 {
+                                let mid = (same + changed) / 2;
+                                if pillar(&monthly_at(mid)?) == pillar(&monthly) {
+                                    same = mid;
+                                } else {
+                                    changed = mid;
+                                }
+                            }
+                            end = same;
+                        }
+                        out.push(MonthlyHoroscope {
+                            base: monthly,
+                            age,
+                            year,
+                            month,
+                            is_leap_month: is_leap,
+                            part,
+                            day_range: (start, end),
+                        });
+                        if end == last {
+                            break;
+                        }
+                        start = end + 1;
+                        monthly = monthly_at(start)?;
+                    }
                 }
             }
         }

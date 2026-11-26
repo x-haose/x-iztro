@@ -359,6 +359,8 @@ pub fn monthly_list(&self, year: i64, fix_leap: bool) -> Result<Vec<MonthlyHoros
 | 有闰月 | `false` | 13 | 闰月整月一项，`part` 为 `Normal` |
 
 闰月排在同月号的常规月之后。每项按该段首日算出（后半段取十六）。
+`horoscope_divide` 为 `exact` / `exactMonth`（月柱按节气换）时，段内交节处再拆成两项，`day_range` 只覆盖月柱
+不变的那几天，交节当天按出生时辰时的月柱归属，一年通常二十多项；见[运限分界点](/zh/docs/guide/guides/config#运限分界点-horoscope_divide)。
 
 **示例**
 
@@ -423,7 +425,7 @@ pub fn monthly_list_to_text_with(&self, year: i64, opts: &TextOptions) -> Result
 
 **返回值**　`Result<String, IztroError>`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、
 流月命宫所在的本命宫、干支与四化落宫。与 [`monthly_list(year, true)`](#monthly_list) 同一套数据：
-无闰月 12 行；有闰月 14 行，闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间。格式见
+无闰月 12 行；有闰月 14 行，闰月按前后半月拆成两行，月号前加「闰」并注明农历日区间；月柱按节气换时交节处再拆行，不是整月的行在月号后注明农历日区间。格式见
 [语义化文本](/zh/docs/guide/guides/to-text#九个入口)。年份不在 1–9999 返回 `IztroError::InvalidArgument`。
 
 定义在 `Astrolabe` 上，按星盘排盘语言输出；要指定语言用自由函数

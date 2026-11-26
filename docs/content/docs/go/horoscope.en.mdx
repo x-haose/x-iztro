@@ -390,6 +390,10 @@ func (a *Astrolabe) MonthlyListContext(ctx context.Context, lunarYear int, fixLe
 
 The leap month follows the ordinary month of the same number. Each item is computed from the first day of
 its segment (day 16 for a second half).
+When `Config.HoroscopeDivide` is `exact` or `exactMonth` (the month pillar changes at solar terms), a segment is split
+again where a term falls inside it, `DayRange` covers only the days with the same month pillar, and the day of the
+term goes by the month pillar at the birth hour; a year then usually has twenty-odd items. See
+[Horoscope boundary](/en/docs/guide/guides/config#horoscope-boundary-horoscope_divide).
 
 **Example**
 
@@ -461,7 +465,8 @@ func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear 
 are the lunar month, its first and last solar day, the natal palace the month's Soul palace lands
 on, the stem-branch and where the mutagens land. The data is the same as
 [`MonthlyList(lunarYear, nil)`](#monthlylist): 12 rows without a leap month; 14 with one, the leap
-month split into two rows, one per half, marked `leap` and carrying its lunar day range. The format
+month split into two rows, one per half, marked `leap` and carrying its lunar day range. Under a month pillar that changes at solar terms the
+rows split again where a term falls, and a row that is not a whole month carries its lunar day range. The format
 is described in [Semantic text](/en/docs/guide/guides/to-text#the-nine-entries). A year outside
 1–9999 returns `ErrInvalidArgument`.
 
