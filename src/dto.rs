@@ -996,3 +996,179 @@ impl HoroscopeData {
             .collect()
     }
 }
+
+// ============================================================
+// 主题选宫
+// ============================================================
+
+/// 主题选宫 DTO（bridge kind `topicPalaces` / `horoscopeTopicPalaces`）：只含语言无关标识与宫位索引，
+/// 与输出语言无关。字段语义见 [`crate::TopicSelection`]。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicSelectionDto {
+    /// 主题 slug
+    pub topic: String,
+    /// 所选层的层级标识（`origin` / `decadal` / `yearly` / `monthly` / `daily` / `hourly`）
+    pub scope: String,
+    /// 主题定义的各组，先 `surround` 后 `palaces`，各按定义顺序
+    pub groups: Vec<TopicGroupDto>,
+    /// 选中的宫，每宫一次，即主题文本的成段顺序
+    pub palaces: Vec<TopicPalaceDto>,
+    /// 宫干飞化所用天干的取法：`natalPalace`（本命各宫宫干，运限各层沿用）
+    pub palace_stem_source: String,
+    /// 运限四化所用天干的取法：`scope`（该层自身的干：大限宫干、流年年干、流月月干……）
+    pub scope_mutagen_stem_source: String,
+    /// 生年四化落在选中宫的，按禄、权、科、忌
+    pub birth_mutagens: Vec<MutagenLandingDto>,
+    /// 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
+    pub scope_mutagens: Vec<ScopeMutagenLandingDto>,
+}
+
+/// 主题的一组宫 DTO。`surround` 组四宫齐全；`only` 组的对宫、财帛位、官禄位为 null。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicGroupDto {
+    /// `surround`（连同三方四正）或 `only`（只取本宫）
+    pub kind: String,
+    /// 主题定义里的宫位标识（宫名标识、`bodyPalace` 或 `originalPalace`）
+    pub key: String,
+    /// 本宫索引（0-11，寅宫为 0）
+    pub target: usize,
+    /// 对宫索引
+    pub opposite: Option<usize>,
+    /// 财帛位索引
+    pub wealth: Option<usize>,
+    /// 官禄位索引
+    pub career: Option<usize>,
+}
+
+/// 选中的一宫 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicPalaceDto {
+    /// 宫位索引
+    pub index: usize,
+    /// 角色：`target` / `opposite` / `wealth` / `career` / `related`，取首次出现的那一组
+    pub role: String,
+    /// 首次出现的组在 `groups` 里的下标
+    pub group: usize,
+    /// 所选层的宫名标识
+    pub name_key: String,
+    /// 本命宫名标识
+    pub natal_name_key: String,
+    /// 宫干飞化所用天干的标识
+    pub stem_key: String,
+    /// 宫干飞化，按禄、权、科、忌四条
+    pub flying: Vec<FlightDto>,
+}
+
+/// 宫干飞出的一化 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FlightDto {
+    /// 四化标识
+    pub mutagen_key: String,
+    /// 化出的星耀标识
+    pub star_key: String,
+    /// 星所在的宫位索引；星不在盘上时为 null
+    pub palace_index: Option<usize>,
+    /// 是否自化（落回本宫）
+    pub self_mutaged: bool,
+}
+
+/// 四化星落在选中宫的一条 DTO（生年四化）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MutagenLandingDto {
+    /// 四化标识
+    pub mutagen_key: String,
+    /// 化出的星耀标识
+    pub star_key: String,
+    /// 星所在的宫位索引
+    pub palace_index: usize,
+}
+
+/// 运限某层的四化星落在选中宫的一条 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScopeMutagenLandingDto {
+    /// 层级标识（`decadal` / `yearly` / `monthly` / `daily` / `hourly`）
+    pub scope: String,
+    /// 层级名标识：大限层未起运时为 `childhood`
+    pub name_key: String,
+    /// 化出这条四化的天干标识
+    pub stem_key: String,
+    /// 四化标识
+    pub mutagen_key: String,
+    /// 化出的星耀标识
+    pub star_key: String,
+    /// 星所在的宫位索引
+    pub palace_index: usize,
+}
+
+impl crate::TopicSelection {
+    /// 转为 DTO
+    pub fn to_dto(&self) -> TopicSelectionDto {
+        let landing = |m: &crate::MutagenLanding| MutagenLandingDto {
+            mutagen_key: m.mutagen.as_key().to_string(),
+            star_key: m.star.as_key().to_string(),
+            palace_index: m.palace,
+        };
+        TopicSelectionDto {
+            topic: self.topic.clone(),
+            scope: self.scope.as_key().to_string(),
+            groups: self
+                .groups
+                .iter()
+                .map(|g| TopicGroupDto {
+                    kind: g.kind.as_key().to_string(),
+                    key: g.key.clone(),
+                    target: g.target,
+                    opposite: g.opposite,
+                    wealth: g.wealth,
+                    career: g.career,
+                })
+                .collect(),
+            palaces: self
+                .palaces
+                .iter()
+                .map(|p| TopicPalaceDto {
+                    index: p.index,
+                    role: p.role.as_key().to_string(),
+                    group: p.group,
+                    name_key: p.name.as_key().to_string(),
+                    natal_name_key: p.natal_name.as_key().to_string(),
+                    stem_key: p.stem.as_key().to_string(),
+                    flying: p
+                        .flying
+                        .iter()
+                        .map(|f| FlightDto {
+                            mutagen_key: f.mutagen.as_key().to_string(),
+                            star_key: f.star.as_key().to_string(),
+                            palace_index: f.palace,
+                            self_mutaged: f.palace == Some(p.index),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            palace_stem_source: self.palace_stem_source.as_key().to_string(),
+            scope_mutagen_stem_source: self.scope_mutagen_stem_source.as_key().to_string(),
+            birth_mutagens: self.birth_mutagens.iter().map(landing).collect(),
+            scope_mutagens: self
+                .scope_mutagens
+                .iter()
+                .map(|s| {
+                    let l = landing(&s.landing);
+                    ScopeMutagenLandingDto {
+                        scope: s.scope.as_key().to_string(),
+                        name_key: s.name.as_key().to_string(),
+                        stem_key: s.stem.as_key().to_string(),
+                        mutagen_key: l.mutagen_key,
+                        star_key: l.star_key,
+                        palace_index: l.palace_index,
+                    }
+                })
+                .collect(),
+        }
+    }
+}

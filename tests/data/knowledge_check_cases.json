@@ -1,5 +1,5 @@
 {
- "comment": "知识包校验的四侧共用用例。cases：每条给出包（pack 为 JSON 值，packJson 为原文）、可选的底包（builtin 为内嵌默认包）与期望的全部问题，params 给出时逐键比对。parseCases：由 JSON 原文构造包后，该星耀条目的 intro（null 为没有）与 combinations 应为给定值，四侧构造出同一份包。由 Rust tests/knowledge_check.rs、Python test_knowledge_check.py、Go knowledge_check_test.go、JS knowledge-check.test.ts 读取。",
+ "comment": "知识包校验的四侧共用用例。cases：每条给出包（pack 为 JSON 值，packJson 为原文）、可选的底包（builtin 为内嵌默认包）与期望的全部问题，params 给出时逐键比对。parseCases：由 JSON 原文构造包后，该星耀条目的 intro（null 为没有）与 combinations 应为给定值，四侧构造出同一份包。topicOrderCases：packs 的第一个构造为底包、其余依次合并为覆盖包，结果的主题按显示顺序应为 topics 给出的 slug 序列。由 Rust tests/knowledge_check.rs、Python test_knowledge_check.py、Go knowledge_check_test.go、JS knowledge-check.test.ts 读取。",
  "cases": [
   {
    "name": "invalid_json: 非法 JSON",
@@ -194,6 +194,154 @@
      }
     }
    ]
+  },
+  {
+   "name": "wrong_type: 主题 order 为小数",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "order": 1.5,
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "topics",
+      "t",
+      "order"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "integer from 0 to 4294967295"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type: 主题 order 为负数",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "order": -1,
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "topics",
+      "t",
+      "order"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "integer from 0 to 4294967295"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type: 主题 order 为超出 32 位",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "order": 4294967296,
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "topics",
+      "t",
+      "order"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "integer from 0 to 4294967295"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type: 主题 order 为字符串",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "t": {
+      "order": "10",
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "level": "error",
+     "path": [
+      "topics",
+      "t",
+      "order"
+     ],
+     "code": "wrong_type",
+     "params": {
+      "expected": "integer from 0 to 4294967295"
+     }
+    }
+   ]
+  },
+  {
+   "name": "wrong_type 反例: 主题 order 取两端 0 与 4294967295",
+   "pack": {
+    "schema": 1,
+    "id": "t",
+    "version": "1",
+    "language": "zh-CN",
+    "topics": {
+     "a": {
+      "order": 0,
+      "palaces": [
+       "soulPalace"
+      ]
+     },
+     "b": {
+      "order": 4294967295,
+      "palaces": [
+       "soulPalace"
+      ]
+     }
+    }
+   },
+   "expect": []
   },
   {
    "name": "wrong_type 反例: 组合映射里的 null 值等同省略",
@@ -1785,6 +1933,213 @@
    "combinations": {
     "tianfuMaj": "x"
    }
+  }
+ ],
+ "topicOrderCases": [
+  {
+   "name": "按 order 升序，与 slug 和书写顺序无关",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "m": {
+       "order": 20
+      },
+      "z": {
+       "order": 10
+      },
+      "a": {
+       "order": 30
+      }
+     }
+    }
+   ],
+   "topics": [
+    "z",
+    "m",
+    "a"
+   ]
+  },
+  {
+   "name": "没有 order 的排在最后，彼此按 slug",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "x": {},
+      "b": {},
+      "y": {
+       "order": 5
+      }
+     }
+    }
+   ],
+   "topics": [
+    "y",
+    "b",
+    "x"
+   ]
+  },
+  {
+   "name": "order 相同按 slug",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "q": {
+       "order": 1
+      },
+      "p": {
+       "order": 1
+      },
+      "r": {
+       "order": 0
+      }
+     }
+    }
+   ],
+   "topics": [
+    "r",
+    "p",
+    "q"
+   ]
+  },
+  {
+   "name": "纯数字 slug：按 order，再按 slug 的字节序，不按数值",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "2": {
+       "order": 1
+      },
+      "10": {
+       "order": 1
+      },
+      "1": {},
+      "a": {}
+     }
+    }
+   ],
+   "topics": [
+    "10",
+    "2",
+    "1",
+    "a"
+   ]
+  },
+  {
+   "name": "取值两端",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "hi": {
+       "order": 4294967295
+      },
+      "none": {},
+      "lo": {
+       "order": 0
+      }
+     }
+    }
+   ],
+   "topics": [
+    "lo",
+    "hi",
+    "none"
+   ]
+  },
+  {
+   "name": "覆盖包改 order、新增带 order 的主题",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "a": {
+       "order": 10
+      },
+      "b": {
+       "order": 20
+      },
+      "c": {
+       "order": 30
+      }
+     }
+    },
+    {
+     "schema": 1,
+     "id": "o",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "c": {
+       "order": 5
+      },
+      "d": {
+       "order": 15
+      }
+     }
+    }
+   ],
+   "topics": [
+    "c",
+    "a",
+    "d",
+    "b"
+   ]
+  },
+  {
+   "name": "覆盖包不写 order 时保留底包的",
+   "packs": [
+    {
+     "schema": 1,
+     "id": "t",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "a": {
+       "order": 20
+      },
+      "b": {
+       "order": 10
+      }
+     }
+    },
+    {
+     "schema": 1,
+     "id": "o",
+     "version": "1",
+     "language": "zh-CN",
+     "topics": {
+      "a": {
+       "title": "改名"
+      }
+     }
+    }
+   ],
+   "topics": [
+    "b",
+    "a"
+   ]
   }
  ]
 }

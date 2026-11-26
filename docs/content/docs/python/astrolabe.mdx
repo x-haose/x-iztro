@@ -714,6 +714,18 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ---
 
+## topic_palaces
+
+```python
+def topic_palaces(self, topic: str, *, knowledge: bool | KnowledgePack = True) -> TopicSelection
+```
+
+主题在本命盘上选中的宫与相关四化：`groups`、`palaces`（含宫干飞化 `flying`）、`birth_mutagens`，`scope_mutagens` 为空。
+与 `topic_to_text` 同一套选宫，`palaces` 的顺序即文本的成段顺序。结构见[选中的宫与三类四化](/zh/docs/guide/guides/to-text#选中的宫与三类四化)；
+Python 侧为 `TopicSelection` 等 dataclass，字段改 snake_case（`name_key`、`self_mutaged`……）。
+
+---
+
 ## to_dict / to_json
 
 **用途**　把星盘导出成与 JS iztro 字段契约一致的 JSON。

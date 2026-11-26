@@ -184,6 +184,17 @@ console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 
 见[格局](/zh/docs/js/patterns#horoscopepatterns)。
 
+## topicPalaces / topicToText
+
+```ts
+topicPalaces(topic: string, scope: Scope, options?: { knowledge?: Knowledge }): TopicSelection;
+topicToText(topic: string, scope: Scope, options?: TextOptions): string;
+```
+
+主题在 `scope` 层的选宫与文本：宫名按该层定位、三方四正以该层的本宫起算，`bodyPalace` / `originalPalace` 落在本命那一宫；
+`scopeMutagens` 给大限至该层各层落在选中宫的四化。规则与文本样例见[在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)。
+`'origin'` 等同星盘的同名方法；`scope` 比查询精度（`precision()`）细抛 `IztroError`。
+
 ## toJSON
 
 ```ts

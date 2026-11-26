@@ -112,7 +112,7 @@ fn builtin_zh_cn_covers_core_entries_with_valid_keys() {
     }
     assert_eq!(p.palaces.len(), 12);
     assert_eq!(p.mutagens.len(), 4);
-    assert_eq!(p.concepts.len(), 50);
+    assert_eq!(p.concepts.len(), 51);
     assert!(
         p.star(StarKey::ZiweiMaj)
             .unwrap()
@@ -279,7 +279,8 @@ fn builtin_summaries_follow_authoring_rules() {
     }
 }
 
-/// 默认包的主题：宫位标识都认得、每个主题至少取一宫，且在测试盘上两种释义深度都渲染得出。
+/// 默认包的主题：宫位标识都认得、每个主题至少取一宫、都写了互不相同的显示顺序，
+/// 且在测试盘上两种释义深度都渲染得出。
 #[test]
 fn builtin_topics_resolve_on_a_chart() {
     use x_iztro::models::astrolabe::PalaceTarget;
@@ -298,6 +299,7 @@ fn builtin_topics_resolve_on_a_chart() {
     .unwrap();
     let full = TextOptions::new().knowledge(p);
     let summary = TextOptions::new().knowledge_summary(p).unwrap();
+    let mut orders = std::collections::BTreeSet::new();
     for (slug, topic) in &p.topics {
         let keys: Vec<&String> = topic
             .surround
@@ -315,6 +317,13 @@ fn builtin_topics_resolve_on_a_chart() {
         assert!(
             topic.title.is_some() && topic.intro.is_some(),
             "topics.{slug}"
+        );
+        let order = topic
+            .order
+            .unwrap_or_else(|| panic!("topics.{slug} 没有 order"));
+        assert!(
+            orders.insert(order),
+            "topics.{slug} 的 order {order} 与其他主题相同"
         );
         for opts in [&full, &summary] {
             chart

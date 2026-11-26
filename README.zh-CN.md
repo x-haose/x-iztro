@@ -110,7 +110,7 @@ JS 项目里 iztro 是原作，依赖也更轻（纯 JavaScript，不用下载 W
 
 ```toml
 [dependencies]
-x-iztro = "0.9"
+x-iztro = "0.10"
 ```
 
 **Python** — 要求 3.10+，零运行时依赖，类型化 API（dataclass + StrEnum）。
@@ -119,14 +119,14 @@ Windows x64，这些平台不需要 Rust 工具链；其余目标（musl/Alpine�
 回落到 sdist 源码编译，需要装一个。
 
 ```bash
-pip install "x-iztro~=0.9.0"
+pip install "x-iztro~=0.10.0"
 ```
 
 **Go** — 无 cgo：Rust 核心以约 1.5 MB 的 WebAssembly 形式内嵌在模块里，
 由纯 Go 运行时 [wazero](https://wazero.io) 驱动。交叉编译照常可用。
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro@v0.9.0
+go get github.com/x-haose/x-iztro/go/iztro@v0.10.0
 ```
 
 **JavaScript / TypeScript** — 同一份 Rust 核心编成 WebAssembly（约 1.7 MB，gzip 后约 0.5 MB），
@@ -134,7 +134,7 @@ ESM 带类型声明，支持 Node.js 22+ 与现代浏览器。Vite、webpack、N
 作为资源产出。`x-iztro/types` 只导出 DTO 类型与枚举、不碰 WebAssembly，给只负责渲染的界面代码用。
 
 ```bash
-npm install x-iztro@0.9
+npm install x-iztro@0.10
 ```
 
 ## 快速开始
@@ -274,7 +274,7 @@ for hit in chart.patterns():
 
 内核只判定事实；怎么解读是门派观点，所以星耀与格局的解读文本、星耀的门派属性
 （阴阳五行、化气、别号）放在可替换的 JSON 包里，不写死在代码里。库内嵌一份
-zh-CN 默认包——全部 162 颗星、64 条格局、12 宫、4 化、50 条术语，长条目另带摘要，释义整理自
+zh-CN 默认包——全部 162 颗星、64 条格局、12 宫、4 化、51 条术语，长条目另带摘要，释义整理自
 [iztro-docs](https://docs.iztro.com)（MIT，Sylar Long）。不认同哪一条，
 就用覆盖包把它换掉。它同时是一份现成的中文 RAG 语料。
 

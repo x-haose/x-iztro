@@ -591,3 +591,34 @@ println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>()
 # 婚恋 · 命盘 2000-8-16 寅时 女
 ## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
 ```
+
+---
+
+## topic_palaces / horoscope_topic_to_text
+
+**用途**　主题在本命盘或运限某一层选中的宫与三类四化（`topic_palaces`），以及运限某一层的主题文本（`horoscope_topic_to_text`）。
+选宫规则见[在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)，结果结构见[选中的宫与三类四化](/zh/docs/guide/guides/to-text#选中的宫与三类四化)。
+
+**签名**
+
+```rust
+impl Astrolabe {
+    pub fn topic_palaces(&self, pack: &KnowledgePack, topic: &str) -> Result<TopicSelection, IztroError>
+}
+impl HoroscopeRef<'_> {
+    pub fn topic_palaces(&self, pack: &KnowledgePack, topic: &str, scope: Scope) -> Result<TopicSelection, IztroError>
+    pub fn topic_to_text(&self, topic: &str, scope: Scope, opts: &TextOptions) -> Result<String, IztroError>
+}
+pub fn horoscope_topic_to_text(
+    horoscope: &HoroscopeRef,
+    topic: &str,
+    scope: Scope,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError>
+```
+
+**返回值**　`TopicSelection` 的字段：`topic`、`scope`、`groups`（`TopicGroup`）、`palaces`（`TopicPalace`，含 `flying: [Flight; 4]`）、
+`birth_mutagens`（`MutagenLanding`）、`scope_mutagens`（`ScopeMutagenLanding`）；`to_dto()` 得到绑定层同形的
+`TopicSelectionDto`。`scope` 比查询精度细、包里没有该主题、主题里有不认识的宫位标识，或文本的 `opts` 没有知识包时返回
+`IztroError::InvalidArgument`。`Scope::Origin` 的文本与 `topic_to_text` 逐字相同。

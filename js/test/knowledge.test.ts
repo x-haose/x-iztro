@@ -76,7 +76,7 @@ test('默认包的元信息与条目', () => {
   assert.equal(pack.palace(PalaceName.SOUL)?.name, '命宫');
   assert.ok(pack.mutagen(Mutagen.JI)?.intro);
   assert.ok(pack.concept('tong-gong') !== undefined);
-  assert.equal(Object.keys(pack.toJSON().concepts as object).length, 50);
+  assert.equal(Object.keys(pack.toJSON().concepts as object).length, 51);
   assert.equal(pack.patterns().length, 64);
   assert.equal(pack.star('nope'), undefined);
   assert.throws(() => KnowledgePack.builtin('en-US'), IztroError);
@@ -156,6 +156,7 @@ test('摘要层要有包且长正文都有摘要，缺了即报错并列出缺�
 test('主题文本与 Rust 快照逐字节相同，主题定义可从包上读到', () => {
   assert.equal(chart.topicToText('romance'), snapshot('topic_knowledge_zh-CN'));
   assert.equal(chart.topicToText('romance', { knowledgeDepth: KnowledgeDepth.SUMMARY }), snapshot('topic_summary_zh-CN'));
+  assert.equal(chart.horoscope('2025-1-1', 0).topicToText('romance', 'monthly'), snapshot('topic_monthly_knowledge_zh-CN'));
   const romance = pack.topic('romance')!;
   assert.equal(romance.title, '婚恋');
   assert.deepEqual(romance.surround, [PalaceName.SPOUSE]);

@@ -19,12 +19,12 @@ happens in the core, with the same rules in every binding.
 | `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | Chart-scoped subsets |
 | `schema` `id` `version` `language` `extends` `source` | Metadata |
 | `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | One entry, `undefined` when missing |
-| `stars()` `patterns()` `topics()` | All entries |
+| `stars()` `patterns()` `topics()` | All entries; topics in display order (ascending `order`, those without one last, ties and those without one by slug) |
 | `starIntro(key)` / `patternIntro(key)` | The reading text |
 
 Entry types: `StarEntry` (`attributes`, `combinations` and `combinationSummaries` default to empty objects),
 `PatternEntry`, `TextEntry` (palaces, mutagens), `ConceptEntry`, `TopicEntry` (`surround` and `palaces` drive the
-palace selection).
+palace selection, `order` is the display order).
 
 ```ts
 const pack = KnowledgePack.builtin();
@@ -35,7 +35,7 @@ console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summar
 ```
 
 ```text
-iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 overall,personality,career,wealth,romance,health,parents,children,siblings,friends,property,travel,spirit
 紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
 ```
 

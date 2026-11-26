@@ -194,6 +194,8 @@ fn packs_without_errors_always_parse() {
         json!(0),
         json!(2),
         json!(1.5),
+        json!(4_294_967_295_u64),
+        json!(4_294_967_296_u64),
         json!(true),
         json!([]),
         json!(["a"]),
@@ -254,7 +256,9 @@ fn packs_without_errors_always_parse() {
         (
             "topics",
             "t",
-            &["title", "surround", "palaces", "intro", "summary", "x"],
+            &[
+                "title", "order", "surround", "palaces", "intro", "summary", "x",
+            ],
         ),
     ];
     for (section, key, fields) in entries {
@@ -324,5 +328,32 @@ fn shared_parse_cases_build_the_same_pack() {
         let star = &pack.stars[case["star"].as_str().unwrap()];
         assert_eq!(star.intro.as_deref(), case["intro"].as_str(), "{name}");
         assert_eq!(json!(star.combinations), case["combinations"], "{name}");
+    }
+}
+
+/// 共用的 topicOrderCases：第一个包为底、其余依次合并，主题的显示顺序四侧一致。
+#[test]
+fn shared_topic_order_cases() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/knowledge_check_cases.json"
+    );
+    let doc: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    for case in doc["topicOrderCases"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let packs: Vec<KnowledgePack> = case["packs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| KnowledgePack::from_value(p).unwrap())
+            .collect();
+        let overlays: Vec<&KnowledgePack> = packs[1..].iter().collect();
+        let merged = packs[0].merged(&overlays);
+        let got: Vec<&str> = merged
+            .topics_in_order()
+            .into_iter()
+            .map(|(slug, _)| slug)
+            .collect();
+        assert_eq!(json!(got), case["topics"], "{name}");
     }
 }

@@ -233,7 +233,7 @@ pub struct QueryInput {
     /// `horoscopeToText` 写到哪一层为止的运限层级标识（`decadal` / `yearly` / `monthly` / `daily` /
     /// `hourly`），小限随流年；空串即写到运限目标的查询精度，比查询精度细报 invalid_argument
     pub through: String,
-    /// `topicToText` 的主题 slug（知识包 `topics` 段的键）
+    /// `topicToText`、`horoscopeTopicToText`、`topicPalaces`、`horoscopeTopicPalaces` 的主题 slug（知识包 `topics` 段的键）
     pub topic: String,
 
     // 反推用
@@ -622,7 +622,11 @@ pub fn query(input: &QueryInput) -> Result<Value, BridgeError> {
         | "monthlyListToText"
         | "patternsToText"
         | "horoscopePatternsToText"
-        | "topicToText" => to_text(input),
+        | "topicToText"
+        | "horoscopeTopicToText" => to_text(input),
+
+        // ---- 主题选宫 ----
+        "topicPalaces" | "horoscopeTopicPalaces" => topic_palaces(input),
 
         // ---- 知识包按盘取材 ----
         "knowledgeForChart" => knowledge_for_chart(input),
@@ -1002,7 +1006,7 @@ fn parse_text_through(s: &str) -> Result<Option<Scope>, BridgeError> {
 /// 语义化文本（to_text）：走完整排盘；给出 `fromStem`/`fromBranch` 时先重排再生成，
 /// 与 patterns/horoscope 的重排语义一致；给出 `knowledge` 时按 `knowledgeDepth` 附按盘取材的释义，
 /// 事实详略按 `detail`，运限文本写到 `through` 这一层为止（不给即写到查询精度，比查询精度细报错）；
-/// `horoscopePatternsToText` 的 `scope` 比查询精度细报错；运限类 kind 的目标见 [`horoscope_at`]，
+/// `horoscopePatternsToText` 与 `horoscopeTopicToText` 的 `scope` 比查询精度细报错；运限类 kind 的目标见 [`horoscope_at`]，
 /// `yearlyOverviewToText` 的农历年区间取 `fromYear` 与 `toYear`，`monthlyListToText` 的农历年份取 `year`
 fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
@@ -1085,6 +1089,17 @@ fn to_text(input: &QueryInput) -> Result<Value, BridgeError> {
             crate::monthly_list_to_text_with(&astrolabe, year, &opts, language)?
         }
         "topicToText" => crate::topic_to_text(&astrolabe, &input.topic, &opts, language)?,
+        "horoscopeTopicToText" => {
+            let scope = parse_scope_key(&input.scope)?;
+            let h = horoscope_at(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                input.target_year,
+                input.target_month,
+            )?;
+            crate::horoscope_topic_to_text(&h, &input.topic, scope, &opts, language)?
+        }
         "patternsToText" => {
             let pattern_config = parse_pattern_config(&input.pattern_config)?;
             let hits = astrolabe.patterns_with(&pattern_config);
@@ -1221,6 +1236,43 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
         }
     };
     serde_json::to_value(hits).map_err(serialize_failed)
+}
+
+/// 主题选宫：`knowledge` 必填（主题定义在包里），`topic` 为主题 slug。`topicPalaces` 按本命盘选宫；
+/// `horoscopeTopicPalaces` 按运限目标（见 [`horoscope_at`]）的 `scope` 层选宫，`scope` 比查询精度细报错。
+/// 给出 `fromStem`/`fromBranch` 时先重排。返回 [`crate::dto::TopicSelectionDto`]
+fn topic_palaces(input: &QueryInput) -> Result<Value, BridgeError> {
+    let language = parse_language(&input.language)?;
+    let config = parse_config(&input.config)?;
+    let Some(pack) = parse_knowledge(&input.knowledge, language)? else {
+        return Err(BridgeError::invalid_argument(
+            "knowledge is required: pass \"builtin\" or a knowledge pack object",
+        ));
+    };
+    let astrolabe = crate::by_solar(
+        &input.solar_date,
+        input.time_index,
+        parse_gender(&input.gender)?,
+        input.fix_leap,
+        language,
+        config,
+    )?;
+    let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
+    let selection = match input.kind.as_str() {
+        "topicPalaces" => astrolabe.topic_palaces(&pack, &input.topic)?,
+        _ => {
+            let scope = parse_scope_key(&input.scope)?;
+            let h = horoscope_at(
+                &astrolabe,
+                &input.target_date,
+                input.target_time_index,
+                input.target_year,
+                input.target_month,
+            )?;
+            h.topic_palaces(&pack, &input.topic, scope)?
+        }
+    };
+    serde_json::to_value(selection.to_dto()).map_err(serialize_failed)
 }
 
 /// 合并知识包：第一个为底包，其余依次覆盖；返回合并后的包对象。

@@ -607,7 +607,7 @@ chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge
 ```text
 # 婚恋 · 命盘 2000-8-16 寅时 女
 
-看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。
+看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫看本人，身宫看后天的着力之处，子女宫是桃花宫位。
 
 ## 夫妻 三方四正
 
@@ -630,6 +630,122 @@ chart.TopicToText("romance", iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge
 这张盘身宫在官禄，已在夫妻宫的三方四正里出现过，「相关宫位」便不再重复。主题文本同样收[分层](#分层)的两个开关：
 婚恋主题完整事实 + 摘要 3,758 字，总览 + 摘要 2,851 字，完整事实 + 全文 11,390 字。
 包里没有该主题、主题里有不认识的宫位标识，或没给知识包，都报 `invalid_argument`。
+
+### 在运限某一层看主题
+
+问「今年的财运」「这个月和兄弟的关系」，要看的是那一层的财帛宫、兄弟宫——盘上标「年财」「月兄」的那一宫，
+连同它在该层的三方四正，再叠上该层的四化与流耀。运限对象的主题文本按所选层选宫：
+
+```python
+h = chart.horoscope_of_month(2026, 10)
+h.topic_to_text("siblings", "monthly")            # 流月兄弟宫连同流月的三方四正
+h.topic_palaces("siblings", "monthly")            # 只要选中的宫与四化，见下
+```
+
+```rust
+let h = chart.horoscope_of_month(2026, 10)?;
+h.topic_to_text("siblings", Scope::Monthly, &TextOptions::new().knowledge(pack))?;
+h.topic_palaces(pack, "siblings", Scope::Monthly)?;
+```
+
+```go
+h, _ := chart.HoroscopeOfMonth(2026, 10)
+h.TopicToText("siblings", iztro.ScopeMonthly, iztro.TextOptions{Knowledge: iztro.BuiltinKnowledge()})
+h.TopicPalaces("siblings", iztro.ScopeMonthly, iztro.BuiltinKnowledge())
+```
+
+```ts
+const h = chart.horoscopeOfMonth(2026, 10);
+h.topicToText('siblings', 'monthly');
+h.topicPalaces('siblings', 'monthly');
+```
+
+选宫规则，五个运限层（大限、流年、流月、流日、流时）相同，层级不能比运限的查询精度细：
+
+- 主题里的宫名标识（`siblingsPalace`、`wealthPalace`……）按该层的宫名落到盘上：流月兄弟宫就是以流月命宫起排的兄弟宫；
+  三方四正以这一宫为本宫起算。
+- `bodyPalace`、`originalPalace` 在任何一层都落在本命那一宫。身宫随出生时辰定、来因宫随生年天干定，都是本命盘上算出的标记；
+  运限只是让十二宫轮流当值、重新命名，不重算这两个标记，也没有「流年身宫」可取。
+- `soulPalace` 是宫名，和其他宫名一样随层走：流年命宫就是这一年的本人。默认包的主题说明里「命宫看本人，身宫看后天的着力之处」
+  在运限层即该层命宫看这一段时间的本人、本命身宫看后天的着力之处。
+- `origin` 层与本命主题文本逐字相同。
+
+文本与本命主题文本同一结构，多了这几处：标题写运限时间；标题下逐层写大限至所选层的命宫位置与四化；每宫段落的标题写该层宫名并在括号里补本命宫名，
+宫内星曜照本命，另写大限至所选层各层落在本宫的四化与流耀；三方四正行用该层宫名，宫干飞化的落宫标明「本命」；格局取该层视角在选中宫内的命中。
+
+```text
+# 兄弟 · 运限 2026 (丙午) · 流月 (己亥) · 命盘 1997-3-4 丑时 男
+…
+## 流年 · 命宫: 本命仆役 (丙午)
+- 四化: 天同化禄→本命田宅, 天机化权→本命疾厄, 文昌化科→本命财帛, 廉贞化忌→本命命宫
+
+## 流月 · 命宫: 本命田宅 (己亥)
+- 四化: 武曲化禄→本命官禄, 贪狼化权→本命财帛, 天梁化科→本命兄弟, 文曲化忌→本命官禄
+
+## 流月兄弟 三方四正
+
+### 本宫 · 流月兄弟 (本命福德 · 癸卯) · 大限 103-112 [身宫]
+- 主星: 空宫
+- 杂耀: 封诰, 空亡
+- 流年流耀: 流喜
+- 三方四正: 对宫 仆役 · 三合 疾厄, 田宅
+- 宫干癸飞化: 破军化禄→本命官禄, 巨门化权→本命子女, 太阴化科→本命疾厄, 贪狼化忌→本命财帛
+…
+```
+
+### 选中的宫与三类四化
+
+`topic_palaces`（Go `TopicPalaces`，JS `topicPalaces`）不出文本，只给选中的宫与读主题要用的三类四化，
+供界面高亮、逐步阅读与画飞化连线；与主题文本同一套选宫，`palaces` 的顺序就是文本的成段顺序。本命盘上也有（`chart.topic_palaces("siblings")`）。
+全部字段是语言无关标识与宫位索引（0-11，寅宫为 0）：
+
+| 字段 | 内容 |
+| --- | --- |
+| `groups` | 主题定义的各组：`kind`（`surround` / `only`）、`key`（主题里的宫位标识）、`target`，`surround` 组另有 `opposite`、`wealth`、`career`（`only` 组为 null）；来因宫不在盘上时不成组 |
+| `palaces` | 选中的宫，每宫一次：`index`、`role`（`target` / `opposite` / `wealth` / `career` / `related`，取首次出现的那一组）、`group`、`nameKey`（该层宫名）、`natalNameKey`、`stemKey`（飞化所用的干）、`flying` |
+| `palaces[].flying` | 宫干飞化，禄权科忌四条：`mutagenKey`、`starKey`、`palaceIndex`（星不在盘上时为 null）、`selfMutaged`（落回本宫即自化） |
+| `birthMutagens` | 生年四化落在选中宫的：`mutagenKey`、`starKey`、`palaceIndex` |
+| `scopeMutagens` | 大限至所选层各层四化落在选中宫的，每条另有 `scope`、`nameKey`（未起运的大限层为 `childhood`）与 `stemKey`（化出它的干）；本命层为空 |
+| `palaceStemSource` | 宫干飞化所用天干的取法，现为 `natalPalace`：本命各宫宫干，运限各层沿用 |
+| `scopeMutagenStemSource` | 运限四化所用天干的取法，现为 `scope`：该层自身的干（大限宫干、流年年干、流月月干……） |
+
+运限层的天干取法各派不一（有的流年重起各宫宫干，有的运限四化取该层命宫的宫干），两个取法字段与每条的 `stemKey`
+标明这一份结果用的是哪一种；取法以后增加时，这两个字段多出新的取值。
+
+宫干飞化对每个选中的宫都给，不只本宫：宫位四化是每一宫的宫干都会产生的，三方四正各宫飞入本宫的禄、忌正是读这一组宫时要看的，
+文本的每宫段落也都写了这一行。
+
+```json
+{
+  "topic": "siblings",
+  "scope": "monthly",
+  "groups": [
+    { "kind": "surround", "key": "siblingsPalace", "target": 1, "opposite": 7, "wealth": 9, "career": 5 },
+    { "kind": "only", "key": "soulPalace", "target": 2, "opposite": null, "wealth": null, "career": null }
+  ],
+  "palaces": [
+    {
+      "index": 1, "role": "target", "group": 0, "nameKey": "siblingsPalace", "natalNameKey": "spiritPalace", "stemKey": "guiHeavenly",
+      "flying": [
+        { "mutagenKey": "sihuaLu", "starKey": "pojunMaj", "palaceIndex": 3, "selfMutaged": false },
+        { "mutagenKey": "sihuaQuan", "starKey": "jumenMaj", "palaceIndex": 8, "selfMutaged": false },
+        { "mutagenKey": "sihuaKe", "starKey": "taiyinMaj", "palaceIndex": 6, "selfMutaged": false },
+        { "mutagenKey": "sihuaJi", "starKey": "tanlangMaj", "palaceIndex": 7, "selfMutaged": false }
+      ]
+    }
+  ],
+  "palaceStemSource": "natalPalace",
+  "scopeMutagenStemSource": "scope",
+  "birthMutagens": [{ "mutagenKey": "sihuaQuan", "starKey": "tiantongMaj", "palaceIndex": 2 }],
+  "scopeMutagens": [
+    { "scope": "decadal", "nameKey": "decadal", "stemKey": "xinHeavenly", "mutagenKey": "sihuaJi", "starKey": "wenchangMin", "palaceIndex": 7 },
+    { "scope": "yearly", "nameKey": "yearly", "stemKey": "bingHeavenly", "mutagenKey": "sihuaLu", "starKey": "tiantongMaj", "palaceIndex": 2 },
+    { "scope": "monthly", "nameKey": "monthly", "stemKey": "jiHeavenly", "mutagenKey": "sihuaQuan", "starKey": "tanlangMaj", "palaceIndex": 7 }
+  ]
+}
+```
+
+（`palaces` 只列了第一宫，`scopeMutagens` 省略了一条。）
 
 ## 分层
 

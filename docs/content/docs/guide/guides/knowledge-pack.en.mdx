@@ -42,7 +42,7 @@ enters into it.
 | `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
-| `concepts` | 50 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations …) |
+| `concepts` | 51 | Glossary and basic concepts (same palace, the palace in question, the Body palace, six-harmony branches, the surrounded set, flying-star transformations, brightness …) |
 | `topics` | 13 | Reading topics: which palaces each kind of question looks at — see [Topics](#topics) |
 
 The content comes from the 学习 (Learn) pages of
@@ -157,36 +157,44 @@ palace groups: those in `surround` are taken together with their trine & opposit
 "topics": {
   "romance": {
     "title": "婚恋",
+    "order": 50,
     "surround": ["spousePalace"],
     "palaces": ["soulPalace", "bodyPalace", "childrenPalace"],
-    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫、身宫看本人，子女宫是桃花宫位。"
+    "intro": "看婚恋：夫妻宫是择偶观与对感情的态度，其三方四正（官禄、迁移、福德）一并会照；命宫看本人，身宫看后天的着力之处，子女宫是桃花宫位。"
   }
 }
 ```
 
 The default pack's 13 topics:
 
-| slug | Topic | With trine & opposite | Palace only |
-| --- | --- | --- | --- |
-| `overall` | 总论 overall | soul | body, spirit |
-| `personality` | 性格 personality | — | soul, surface, spirit, body |
-| `wealth` | 财运 wealth | wealth | property |
-| `career` | 事业 career | career | — |
-| `romance` | 婚恋 romance | spouse | soul, body, children |
-| `children` | 子女 children | children | soul |
-| `parents` | 父母 parents | parents | siblings, soul |
-| `siblings` | 兄弟 siblings | siblings | soul |
-| `friends` | 交友 friends | friends | soul |
-| `property` | 田宅 property | property | wealth |
-| `travel` | 迁移 travel | surface | — |
-| `spirit` | 精神 spirit | spirit | soul, body |
-| `health` | 健康 health | health | soul |
+| `order` | slug | Topic | With trine & opposite | Palace only |
+| --- | --- | --- | --- | --- |
+| 10 | `overall` | 总论 overall | soul | body, spirit |
+| 20 | `personality` | 性格 personality | — | soul, surface, spirit, body |
+| 30 | `career` | 事业 career | career | — |
+| 40 | `wealth` | 财运 wealth | wealth | property |
+| 50 | `romance` | 婚恋 romance | spouse | soul, body, children |
+| 60 | `health` | 健康 health | health | soul |
+| 70 | `parents` | 父母 parents | parents | siblings, soul |
+| 80 | `children` | 子女 children | children | soul |
+| 90 | `siblings` | 兄弟 siblings | siblings | soul |
+| 100 | `friends` | 交友 friends | friends | soul |
+| 110 | `property` | 田宅 property | property | wealth |
+| 120 | `travel` | 迁移 travel | surface | — |
+| 130 | `spirit` | 精神 spirit | spirit | soul, body |
 
 The choices follow the default pack's palace readings: accumulated wealth is read in the property
 palace, the relationship with the mother in the siblings palace, romance in the children palace.
 Topics read the natal palaces; questions about a period use the horoscope text. To disagree with a
 topic's palaces, rewrite `surround` / `palaces` as a whole in an overlay (arrays are replaced
 wholesale), or add topics of your own.
+
+`order` sets the display order of topics: ascending `order`, topics without one last, ties and
+topics without one by slug; the order in which keys are written in the JSON does not count. The
+calls that list every topic return them in this order: Rust `topics_in_order`, Python and
+TypeScript `topics()`, Go `TopicSlugs`. The default pack numbers its topics in steps of 10, so an
+overlay that gives a new topic `"order": 35` places it between career and wealth; an overlay can also
+move an existing topic by changing just its `order`.
 
 ## Reading a pack
 
@@ -714,13 +722,14 @@ voice" (§8); the spec does not ask user packs to adopt it, so it is not checked
 
 ## Merge rules
 
-Starting from the base pack, each section (`stars`, `patterns`, `palaces`, `mutagens`, `concepts`)
-is merged key by key:
+Starting from the base pack, each section (`stars`, `patterns`, `palaces`, `mutagens`, `concepts`,
+`topics`) is merged key by key:
 
 - For an entry present in the overlay, its **non-null fields** replace the corresponding fields of
   the same-keyed base entry; fields it does not mention are kept
 - `attributes` and `combinations` merge the same way, field by field and sub-key by sub-key
-- Array fields (`aliases`, `quotes`) are replaced wholesale, never merged element by element
+- Array fields (`aliases`, `quotes`, a topic's `surround` / `palaces`) are replaced wholesale, never
+  merged element by element
 - Keys the base does not have are added
 - Writing a field explicitly as `null` does **not** delete the base content (absent and null mean
   the same thing); to delete, replace the whole pack

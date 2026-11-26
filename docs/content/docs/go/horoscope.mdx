@@ -310,7 +310,7 @@ func (a *Astrolabe) YearlyOverviewToTextWithContext(ctx context.Context, fromYea
 | --- | --- | --- | --- | --- |
 | `fromYear` | `int` | 是 | — | 起始农历年份，1–9999，含 |
 | `toYear` | `int` | 是 | — | 截止农历年份，1–9999，含；不早于 `fromYear` |
-| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各年四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `YearlyOverviewToText` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各年四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 不影响输出，但 `Detail`、`Through` 的取值照样校验（`Through` 为 `ScopeOrigin` 或不是层级标识、`Detail` 不认识时报 `ErrInvalidArgument`）；零值 `TextOptions{}` 等同 `YearlyOverviewToText` |
 
 **返回值**　`string`——`# 流年一览 <起始年>-<截止年>` 标题加一张表，一年一行，列为年份、干支、正月初一的阳历日期、虚岁、
 大限与小限所在的本命宫、流年命宫所在的本命宫与流年四化落宫。各年与
@@ -435,7 +435,7 @@ func (a *Astrolabe) MonthlyListToTextWithContext(ctx context.Context, lunarYear 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 | --- | --- | --- | --- | --- |
 | `lunarYear` | `int` | 是 | — | 农历年份，1–9999 |
-| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各月四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 对它不起作用；零值 `TextOptions{}` 等同 `MonthlyListToText` |
+| `opts` | [`TextOptions`](/zh/docs/go/knowledge#textoptions) | 是 | — | 输出选项。`Knowledge` 字段给释义材料来源，给出时表后附各月四化星的释义，同一颗星只出一次；`KnowledgeDepth` 取摘要层或全文；`Detail`、`Through`、`PatternConfig` 不影响输出，但 `Detail`、`Through` 的取值照样校验（`Through` 为 `ScopeOrigin` 或不是层级标识、`Detail` 不认识时报 `ErrInvalidArgument`）；零值 `TextOptions{}` 等同 `MonthlyListToText` |
 
 **返回值**　`string`——`# 流月一览 <农历年>` 标题加一张表，列为农历月、阳历起止日、流月命宫所在的本命宫、
 干支与四化落宫。与 [`MonthlyList(lunarYear, nil)`](#monthlylist) 同一套数据：无闰月 12 行；有闰月 14 行，
@@ -924,3 +924,17 @@ for _, l := range strings.Split(text, "\n") {
 ```
 
 `BuiltinKnowledge()` 用在没有内嵌包的语言（目前只有 zh-CN 有）的盘上返回 `ErrInvalidArgument`。
+
+---
+
+## TopicPalaces / TopicToText
+
+```go
+func (h *Horoscope) TopicPalaces(topic, scope string, knowledge Knowledge) (*TopicSelection, error)
+func (h *Horoscope) TopicToText(topic, scope string, opts TextOptions) (string, error)
+```
+
+另有 `Context` 变体。主题在 `scope` 层的选宫与文本：宫名按该层定位、三方四正以该层的本宫起算，`PalaceBody` / `PalaceOriginal`
+落在本命那一宫；`ScopeMutagens` 给大限至该层各层落在选中宫的四化。规则与文本样例见[在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)。
+`ScopeOrigin` 等同星盘的同名方法；`scope` 比查询精度（`Precision`）细返回 `ErrInvalidArgument`；`opts.Through` 不影响输出，
+但取值照样校验：`ScopeOrigin` 或不是层级标识报 `ErrInvalidArgument`。

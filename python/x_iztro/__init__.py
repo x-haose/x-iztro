@@ -71,6 +71,14 @@ from x_iztro.models import (
     PatternHit,
     PatternStar,
 )
+from x_iztro.topic import (
+    Flight,
+    MutagenLanding,
+    ScopeMutagenLanding,
+    TopicGroup,
+    TopicPalace,
+    TopicSelection,
+)
 
 # 枚举与常量
 from x_iztro.enums import (
@@ -182,6 +190,12 @@ __all__ = [
     "PatternConfig",
     "PatternHit",
     "PatternStar",
+    "TopicSelection",
+    "TopicGroup",
+    "TopicPalace",
+    "Flight",
+    "MutagenLanding",
+    "ScopeMutagenLanding",
     "KnowledgePack",
     "KnowledgeIssue",
     "BirthCandidate",

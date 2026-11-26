@@ -24,6 +24,9 @@ import type {
   MonthlyListItemData,
   PatternConfig,
   PatternHitData,
+  TextOptions,
+  TopicPalacesOptions,
+  TopicSelection,
   YearlyDecStar,
   YearlyListItemData,
 } from './types.js';
@@ -391,6 +394,42 @@ export class Horoscope {
       },
       astrolabe,
     ) as string;
+  }
+
+  /**
+   * 主题在 `scope` 层选中的宫：宫名按该层定位、三方四正以该层的本宫起算（`bodyPalace` / `originalPalace`
+   * 落在本命那一宫），每宫的角色与宫干飞化，落在这些宫里的生年四化，以及大限至该层各层落在这些宫里的四化。
+   * origin 等同 `Astrolabe.topicPalaces`。
+   *
+   * @param topic 主题 slug
+   * @throws IztroError scope 不是层级标识或比查询精度细，或同 `Astrolabe.topicPalaces`
+   */
+  topicPalaces(topic: string, scope: Scope, options: TopicPalacesOptions = {}): TopicSelection {
+    return horoscopeQuery(this, 'horoscopeTopicPalaces', {
+      topic,
+      scope,
+      knowledge: options.knowledge === undefined ? true : options.knowledge,
+    }) as TopicSelection;
+  }
+
+  /**
+   * 主题在 `scope` 层的语义化文本：选宫同 `topicPalaces`。标题写运限时间与命盘，标题下逐层写大限至该层的
+   * 命宫位置与四化；每宫段落写该层宫名并补本命宫名，宫内星曜照本命，另写各层落在本宫的四化与流耀；
+   * 格局取该层视角在选中宫内的命中。origin 与 `Astrolabe.topicToText` 逐字相同。
+   * 主题定义与释义都取自 knowledge，省略时取排盘语言的内嵌包。
+   *
+   * @throws IztroError scope 不是层级标识或比查询精度细、包里没有该主题、主题里有不认识的宫位标识、
+   *   knowledge 为 false 或排盘语言没有内嵌包，或 summary 而包缺摘要
+   */
+  topicToText(topic: string, scope: Scope, options: TextOptions = {}): string {
+    return horoscopeQuery(this, 'horoscopeTopicToText', {
+      topic,
+      scope,
+      knowledge: options.knowledge === undefined ? true : options.knowledge,
+      detail: options.detail,
+      knowledgeDepth: options.knowledgeDepth,
+      patternConfig: options.config,
+    }) as string;
   }
 
   /** 宫位查询的 scope 须是层级标识，且不比查询精度细；报错正文与内核同类校验相同 */

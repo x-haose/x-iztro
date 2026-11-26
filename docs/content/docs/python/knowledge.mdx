@@ -48,7 +48,7 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 | `to_json(**kwargs)` | JSON 文本，`kwargs` 透传给 `json.dumps` |
 | `merged(*overlays)` | 叠加覆盖包，返回新包 |
 | `star(key)` / `pattern(key)` / `palace(key)` / `mutagen(key)` / `concept(slug)` / `topic(slug)` | 取单条条目，没有返回 `None` |
-| `stars()` / `patterns()` / `topics()` | 全部星耀 / 格局 / 主题条目 |
+| `stars()` / `patterns()` / `topics()` | 全部星耀 / 格局 / 主题条目；主题按显示顺序（`order` 升序，没有的在最后，相同或都没有时按 slug） |
 | `star_intro(key)` / `pattern_intro(key)` | 直接取解读正文 |
 | `for_astrolabe(chart, config=None)` / `for_horoscope(horoscope, config=None)` | 按盘取材，返回只含该盘相关条目的子包 |
 
@@ -82,7 +82,7 @@ intro = pack.star_intro(MajorStar.ZIWEI)
 
 `TextEntry`（宫位、四化）：`key`、`name`、`intro`、`summary`。
 `TopicEntry`（主题）：`slug`、`title`、`surround`（连同三方四正一起取的宫位标识，`list[str] | None`）、
-`palaces`（只取本宫的宫位标识，可含 `bodyPalace` / `originalPalace`）、`intro`、`summary`，
+`palaces`（只取本宫的宫位标识，可含 `bodyPalace` / `originalPalace`）、`intro`、`summary`、`order`（显示顺序，`int | None`），
 [`Astrolabe.topic_to_text`](/zh/docs/python/astrolabe#topic_to_text) 按它选宫。
 `ConceptEntry`（术语）：`slug`、`title`、`intro`。
 

@@ -100,6 +100,7 @@ let intro = pack.star_intro(StarKey::ZiweiMaj);
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `title` | `Option<String>` | 显示名 |
+| `order` | `Option<u32>` | 显示顺序，[`topics_in_order`](#star--pattern--palace--mutagen--topic--topics_in_order) 按它排列；`None` 排在全部有值的主题之后 |
 | `surround` | `Option<Vec<String>>` | 连同各自三方四正一起取的宫位标识，按出现顺序渲染 |
 | `palaces` | `Option<Vec<String>>` | 只取本宫的宫位标识（可含 `bodyPalace` / `originalPalace`），排在 `surround` 各组之后 |
 | `intro` | `Option<String>` | 这个主题看什么、为什么取这些宫 |
@@ -377,9 +378,9 @@ impl KnowledgePack {
 
 ---
 
-## star / pattern / palace / mutagen / topic
+## star / pattern / palace / mutagen / topic / topics_in_order
 
-**用途**　按语言无关标识（主题按 slug）取条目。
+**用途**　按语言无关标识（主题按 slug）取条目；按显示顺序列出全部主题。
 
 **签名**
 
@@ -390,12 +391,15 @@ impl KnowledgePack {
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
     pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
+    pub fn topics_in_order(&self) -> Vec<(&str, &TopicEntry)>
 }
 ```
 
 **返回值**　包里没有该条目时为 `None`。前四个方法都是在对应 `BTreeMap` 上按
 `as_key()` 取值，等价于自己写 `pack.stars.get(key.as_key())`；
 术语没有专门的方法，直接 `pack.concepts.get(slug)`。
+`topics_in_order` 返回全部主题的 slug 与条目，按显示顺序：`order` 升序，没有 `order` 的在最后，相同或都没有时按 slug。
+直接迭代 `pack.topics` 得到的是 slug 的字典序，不是显示顺序。
 
 **示例**
 

@@ -259,6 +259,20 @@ A topic missing from the pack, or a palace key the topic names but the core does
 
 ---
 
+## topicPalaces
+
+```ts
+topicPalaces(topic: string, options?: { knowledge?: Knowledge }): TopicSelection;
+```
+
+The palaces a topic selects on the natal chart with their transformations: `groups`, `palaces` (with stem
+flying in `flying`) and `birthMutagens`; `scopeMutagens` is empty. Same selection as `topicToText`, and the
+order of `palaces` is the text's section order; `knowledge` defaults to the chart language's bundled pack.
+Shape: [Selected palaces and three kinds of transformations](/en/docs/guide/guides/to-text#selected-palaces-and-three-kinds-of-transformations); the `TopicSelection` type is also
+exported from `x-iztro/types`.
+
+---
+
 ## toJSON
 
 ```ts

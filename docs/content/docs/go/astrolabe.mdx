@@ -732,6 +732,20 @@ fmt.Println(strings.Join(heads, " "))
 
 ---
 
+## TopicPalaces
+
+```go
+func (a *Astrolabe) TopicPalaces(topic string, knowledge Knowledge) (*TopicSelection, error)
+func (a *Astrolabe) TopicPalacesContext(ctx context.Context, topic string, knowledge Knowledge) (*TopicSelection, error)
+```
+
+主题在本命盘上选中的宫与相关四化：`Groups`、`Palaces`（含宫干飞化 `Flying`）、`BirthMutagens`，`ScopeMutagens` 为空。
+与 `TopicToText` 同一套选宫，`Palaces` 的顺序即文本的成段顺序。结构见[选中的宫与三类四化](/zh/docs/guide/guides/to-text#选中的宫与三类四化)；
+可能为空的索引（`TopicGroup.Opposite` 等、`Flight.PalaceIndex`）是 `*int`，因为 0（寅宫）是有效索引。
+零值 `Knowledge`、包里没有该主题、主题里有不认识的宫位标识返回 `ErrInvalidArgument`。
+
+---
+
 ## 与 JSON 的关系
 
 `Astrolabe` 及其下的所有类型都带 `json` 标签，标签名与 JS iztro 的字段契约一致。

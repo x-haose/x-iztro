@@ -115,7 +115,7 @@ must agree to the field.
 
 ```toml
 [dependencies]
-x-iztro = "0.9"
+x-iztro = "0.10"
 ```
 
 **Python** — 3.10+, zero runtime dependencies, typed API (dataclasses +
@@ -124,7 +124,7 @@ universal2 and Windows x64 — no Rust toolchain needed there. Other targets
 (musl/Alpine, 32-bit) fall back to the sdist and compile with one.
 
 ```bash
-pip install "x-iztro~=0.9.0"
+pip install "x-iztro~=0.10.0"
 ```
 
 **Go** — no cgo: the Rust core ships inside the module as a ~1.5 MB
@@ -132,7 +132,7 @@ WebAssembly blob run by [wazero](https://wazero.io), a pure-Go runtime.
 Cross-compilation works as usual.
 
 ```bash
-go get github.com/x-haose/x-iztro/go/iztro@v0.9.0
+go get github.com/x-haose/x-iztro/go/iztro@v0.10.0
 ```
 
 **JavaScript / TypeScript** — the same Rust core compiled to WebAssembly
@@ -142,7 +142,7 @@ asset on their own. `x-iztro/types` exports the DTO types and enums without
 touching the WebAssembly, for UI code that only renders charts.
 
 ```bash
-npm install x-iztro@0.9
+npm install x-iztro@0.10
 ```
 
 ## Quick start
@@ -348,7 +348,7 @@ Details: [documentation](https://x-iztro.x-haose.com/en/docs/guide/guides/revers
 The core only judges facts; how to *interpret* them differs by school (a
 lineage of tradition). So reading texts and school-specific star attributes
 live in a swappable JSON pack, not in the code. A default pack ships inside —
-all 162 stars, 64 patterns, 12 palaces, 4 transformations, 50 glossary entries,
+all 162 stars, 64 patterns, 12 palaces, 4 transformations, 51 glossary entries,
 the longer ones with summaries, readings adapted from
 [iztro-docs](https://docs.iztro.com) (MIT, Sylar Long) — and any entry can be
 replaced with an overlay pack. It doubles as a ready-made RAG

@@ -15,6 +15,9 @@
 //! 事实与解读同处一屏。
 
 use crate::astro::builder::parse_solar_date;
+use crate::astro::topic::{
+    TopicGroupKind, TopicRole, TopicSelection, layers_through, select as select_topic,
+};
 use crate::data::constants::CHINESE_TIME;
 use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::{HOROSCOPE_SCOPES, Language, Mutagen, Palace, Scope};
@@ -25,8 +28,8 @@ use crate::i18n::{
     translate_gender, translate_heavenly_stem, translate_lunar_date_body, translate_mutagen,
     translate_palace, translate_pattern, translate_star,
 };
-use crate::knowledge::KnowledgePack;
-use crate::models::astrolabe::{Astrolabe, PalaceRef, PalaceTarget};
+use crate::knowledge::{KnowledgePack, TopicEntry};
+use crate::models::astrolabe::{Astrolabe, PalaceRef};
 use crate::models::flanking::FlankingPalaces;
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
 use crate::models::palace::PalaceData;
@@ -548,32 +551,106 @@ fn note(out: &mut String, heading: &str, body: &str) {
 // 宫位段
 // ============================================================
 
-/// 某宫的三方四正行：对宫与三合两宫（财帛位、官禄位）的宫名，几何取自内核
-fn surround_line(astrolabe: &Astrolabe, p: &PalaceData, l: &Labels, lang: Language) -> String {
+/// 运限层的宫位段落参照：宫名按该层，另写大限至该层各层落在本宫的四化与流耀
+struct Frame<'h> {
+    /// 所选层的层级标签（大限、童限、流年……）
+    label: &'static str,
+    /// 所选层按宫位索引排列的十二宫名
+    names: &'h [Palace],
+    /// 大限至所选层各层，按层级先后
+    layers: Vec<&'h HoroscopeItem>,
+}
+
+impl Frame<'_> {
+    /// 宫位索引在该层的宫名
+    fn name(&self, index: usize) -> Palace {
+        self.names[index]
+    }
+}
+
+/// 某宫的三方四正行：对宫与三合两宫（财帛位、官禄位）的宫名，几何取自内核；
+/// 有 `frame` 时宫名按该层
+fn surround_line(
+    astrolabe: &Astrolabe,
+    p: &PalaceData,
+    frame: Option<&Frame>,
+    l: &Labels,
+    lang: Language,
+) -> String {
     let sp = astrolabe
         .palace(p.index)
         .expect("宫位索引来自本盘")
         .surrounded_palaces();
+    let name = |q: &PalaceData| translate_palace(frame.map_or(q.name, |f| f.name(q.index)), lang);
     format!(
         "- {}: {} {}{FIELD_SEP}{} {}{LIST_SEP}{}\n",
         l.surround,
         l.opposite,
-        translate_palace(sp.opposite.name, lang),
+        name(sp.opposite),
         l.trine,
-        translate_palace(sp.wealth.name, lang),
-        translate_palace(sp.career.name, lang)
+        name(sp.wealth),
+        name(sp.career)
     )
 }
 
-/// 某宫的宫干飞化行：四化星与其落宫
-fn flying_line(astrolabe: &Astrolabe, p: &PalaceData, l: &Labels, lang: Language) -> String {
+/// 某宫的宫干飞化行：四化星与其落宫；有 `frame` 时落宫标明「本命」参照系
+fn flying_line(
+    astrolabe: &Astrolabe,
+    p: &PalaceData,
+    frame: Option<&Frame>,
+    l: &Labels,
+    lang: Language,
+) -> String {
     let stars = p.mutagen_stars(&MUTAGEN);
     format!(
         "- {}: {}\n",
         l.stem_flying
             .replace("{}", translate_heavenly_stem(p.heavenly_stem, lang)),
-        mutagen_stars_with_places(astrolabe, &stars, false, l, lang)
+        mutagen_stars_with_places(astrolabe, &stars, frame.is_some(), l, lang)
     )
+}
+
+/// 运限各层落在本宫的四化与流耀：每层至多两行（`- 大限四化: 天机化权`、`- 流年流耀: 流羊`），
+/// 该层在本宫没有的不写
+fn layer_lines(p: &PalaceData, frame: &Frame, l: &Labels, lang: Language) -> String {
+    let mut out = String::new();
+    for item in &frame.layers {
+        let label = l.scope_label(item.name_key);
+        let mutagens: Vec<String> = item
+            .mutagen
+            .iter()
+            .zip(MUTAGEN)
+            .filter(|(star, _)| p.has(&[**star]))
+            .map(|(star, m)| {
+                format!(
+                    "{}{}{}",
+                    translate_star(*star, lang),
+                    l.label_sep,
+                    mutagen_mark(l, m, lang)
+                )
+            })
+            .collect();
+        if !mutagens.is_empty() {
+            out.push_str(&format!(
+                "- {label}{}{}: {}\n",
+                l.label_sep,
+                l.mutagen_fly,
+                mutagens.join(LIST_SEP)
+            ));
+        }
+        if let Some(stars) = item.stars.as_ref().and_then(|g| g.get(p.index))
+            && !stars.is_empty()
+        {
+            let names: Vec<&str> = stars.iter().map(|s| translate_star(s.key, lang)).collect();
+            out.push_str(&format!(
+                "- {label}{}{}: {}\n",
+                l.label_sep,
+                l.scope_stars,
+                names.join(LIST_SEP)
+            ));
+        }
+    }
+    out
 }
 
 /// 某宫的十二神行：四组各一位，标组名
@@ -596,13 +673,31 @@ fn gods_line(p: &PalaceData, l: &Labels, lang: Language) -> String {
 }
 
 /// 一宫的标题行：`### 命宫 (癸丑) · 大限 3-12 [身宫]`；`role` 给出时写在宫名前
-/// （三方四正文本里标明本宫/对宫/财帛位/官禄位）
-fn palace_heading(p: &PalaceData, role: Option<&str>, l: &Labels, lang: Language) -> String {
+/// （三方四正文本里标明本宫/对宫/财帛位/官禄位）。有 `frame` 时宫名写该层的、括号里补本命宫名：
+/// `### 本宫 · 流月兄弟 (本命田宅 · 丙子) · 大限 34-43`
+fn palace_heading(
+    p: &PalaceData,
+    role: Option<&str>,
+    frame: Option<&Frame>,
+    l: &Labels,
+    lang: Language,
+) -> String {
     let role = role.map(|r| format!("{r}{FIELD_SEP}")).unwrap_or_default();
+    let stem_branch = stem_branch(p.heavenly_stem, p.earthly_branch, l, lang);
+    let name = match frame {
+        None => format!("{} ({stem_branch})", translate_palace(p.name, lang)),
+        Some(f) => format!(
+            "{}{}{} ({}{}{}{FIELD_SEP}{stem_branch})",
+            f.label,
+            l.label_sep,
+            translate_palace(f.name(p.index), lang),
+            l.natal,
+            l.label_sep,
+            translate_palace(p.name, lang),
+        ),
+    };
     format!(
-        "### {role}{} ({}){FIELD_SEP}{} {}-{}{}\n",
-        translate_palace(p.name, lang),
-        stem_branch(p.heavenly_stem, p.earthly_branch, l, lang),
+        "### {role}{name}{FIELD_SEP}{} {}-{}{}\n",
         l.decadal,
         p.decadal.range.0,
         p.decadal.range.1,
@@ -610,11 +705,13 @@ fn palace_heading(p: &PalaceData, role: Option<&str>, l: &Labels, lang: Language
     )
 }
 
-/// 一宫的事实行：主星（空宫写明）、辅星、杂耀；完整层另有三方四正、宫干飞化、十二神、小限
+/// 一宫的事实行：主星（空宫写明）、辅星、杂耀，有 `frame` 时接运限各层的四化与流耀；
+/// 完整层另有三方四正、宫干飞化、十二神、小限
 fn palace_facts(
     astrolabe: &Astrolabe,
     p: &PalaceData,
     detail: TextDetail,
+    frame: Option<&Frame>,
     l: &Labels,
     lang: Language,
 ) -> String {
@@ -630,11 +727,14 @@ fn palace_facts(
     if let Some(s) = star_list(&p.adjective_stars, l, lang) {
         out.push_str(&format!("- {}: {s}\n", l.adjective_stars));
     }
+    if let Some(f) = frame {
+        out.push_str(&layer_lines(p, f, l, lang));
+    }
     if detail == TextDetail::Overview {
         return out;
     }
-    out.push_str(&surround_line(astrolabe, p, l, lang));
-    out.push_str(&flying_line(astrolabe, p, l, lang));
+    out.push_str(&surround_line(astrolabe, p, frame, l, lang));
+    out.push_str(&flying_line(astrolabe, p, frame, l, lang));
     out.push_str(&gods_line(p, l, lang));
     out.push_str(&format!(
         "- {}: {}\n",
@@ -679,17 +779,18 @@ fn palace_notes(p: &PalaceData, notes: Notes, l: &Labels, lang: Language) -> Str
     out
 }
 
-/// 一宫的段落：标题（可带角色）、按详略写事实，带包时加释义
+/// 一宫的段落：标题（可带角色）、按详略写事实，带包时加释义；`frame` 见 [`palace_heading`]
 fn palace_section(
     astrolabe: &Astrolabe,
     p: &PalaceData,
     role: Option<&str>,
+    frame: Option<&Frame>,
     opts: &TextOptions,
     l: &Labels,
     lang: Language,
 ) -> String {
-    let mut out = palace_heading(p, role, l, lang);
-    out.push_str(&palace_facts(astrolabe, p, opts.detail, l, lang));
+    let mut out = palace_heading(p, role, frame, l, lang);
+    out.push_str(&palace_facts(astrolabe, p, opts.detail, frame, l, lang));
     if let Some(notes) = opts.notes() {
         let text = palace_notes(p, notes, l, lang);
         if !text.is_empty() {
@@ -970,6 +1071,7 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
                 astrolabe,
                 &astrolabe.palaces[i],
                 None,
+                None,
                 opts,
                 &l,
                 lang,
@@ -1001,7 +1103,7 @@ pub fn palace_to_text(palace: &PalaceRef, lang: Language) -> String {
 /// 单宫文本，带包时附该宫星耀释义
 pub fn palace_to_text_with(palace: &PalaceRef, opts: &TextOptions, lang: Language) -> String {
     let l = labels(lang);
-    palace_section(palace.astrolabe(), palace, None, opts, &l, lang)
+    palace_section(palace.astrolabe(), palace, None, None, opts, &l, lang)
 }
 
 /// 三方四正的语义化文本：本宫、对宫、财帛位、官禄位各一段
@@ -1032,6 +1134,7 @@ pub fn surrounded_palaces_to_text_with(
             sp.astrolabe(),
             p,
             Some(role),
+            None,
             opts,
             &l,
             lang,
@@ -1062,6 +1165,7 @@ pub fn flanking_palaces_to_text_with(
             f.astrolabe(),
             p,
             Some(role),
+            None,
             opts,
             &l,
             lang,
@@ -1470,6 +1574,16 @@ fn horoscope_title(
     l: &Labels,
     lang: Language,
 ) -> String {
+    format!(
+        "# {} {}\n",
+        l.doc_horoscope,
+        horoscope_when(horoscope, through, l, lang)
+    )
+}
+
+/// 运限写到 `through` 层时的时间写法，规则见 [`horoscope_title`]：`2025-1-1 (二〇二四年腊月初二)`、
+/// `2025 (乙巳) · 流月 (甲申)`、`2027 (丁未)`
+fn horoscope_when(horoscope: &HoroscopeData, through: Scope, l: &Labels, lang: Language) -> String {
     let yearly = &horoscope.yearly;
     let year = format!(
         "{} ({})",
@@ -1477,13 +1591,11 @@ fn horoscope_title(
         stem_branch(yearly.heavenly_stem, yearly.earthly_branch, l, lang)
     );
     match through {
-        Scope::Daily | Scope::Hourly => format!(
-            "# {} {} ({})\n",
-            l.doc_horoscope, horoscope.solar_date, horoscope.lunar_date
-        ),
+        Scope::Daily | Scope::Hourly => {
+            format!("{} ({})", horoscope.solar_date, horoscope.lunar_date)
+        }
         Scope::Monthly => format!(
-            "# {} {year}{FIELD_SEP}{} ({})\n",
-            l.doc_horoscope,
+            "{year}{FIELD_SEP}{} ({})",
             l.monthly,
             stem_branch(
                 horoscope.monthly.heavenly_stem,
@@ -1492,9 +1604,7 @@ fn horoscope_title(
                 lang
             )
         ),
-        Scope::Origin | Scope::Decadal | Scope::Yearly => {
-            format!("# {} {year}\n", l.doc_horoscope)
-        }
+        Scope::Origin | Scope::Decadal | Scope::Yearly => year,
     }
 }
 
@@ -1722,103 +1832,60 @@ pub fn yearly_overview_to_text_with(
 // 主题
 // ============================================================
 
-/// 一组三方四正：本宫、对宫、财帛位、官禄位各一段，跳过 `rendered` 里已经写过的宫并记下新写的；
-/// 四宫都已写过返回 `None`
-fn surround_group(
-    astrolabe: &Astrolabe,
-    index: usize,
-    rendered: &mut Vec<usize>,
-    opts: &TextOptions,
-    l: &Labels,
-    lang: Language,
-) -> Option<String> {
-    let sp = astrolabe
-        .surrounded_palaces(index)
-        .expect("宫位索引来自本盘");
-    let mut body = String::new();
-    for (role, p) in [
-        (l.target_palace, sp.target),
-        (l.opposite_palace, sp.opposite),
-        (l.wealth_palace, sp.wealth),
-        (l.career_palace, sp.career),
-    ] {
-        if rendered.contains(&p.index) {
-            continue;
-        }
-        rendered.push(p.index);
-        body.push('\n');
-        body.push_str(&palace_section(astrolabe, p, Some(role), opts, l, lang));
-    }
-    if body.is_empty() {
-        return None;
-    }
-    Some(format!(
-        "## {} {}\n{body}",
-        translate_palace(sp.target.name, lang),
-        l.surround
-    ))
-}
-
-/// 主题的语义化文本：按知识包里该主题的定义选宫——`surround` 的各宫连同三方四正各成一组，
-/// `palaces` 的各宫只取本宫、归入「相关宫位」一节，同一宫只出一次——每宫一段，详略与释义深度随
-/// `opts`；主题说明写在标题下（摘要层取摘要），文末附落在选中宫内的格局与四化释义。
-/// 主题定义与释义都取自 `opts` 的知识包。
-///
-/// # Errors
-/// `opts` 没有知识包、包里没有名为 `topic` 的主题、或主题里有不认识的宫位标识时返回
-/// [`IztroError::InvalidArgument`]。
-pub fn topic_to_text(
-    astrolabe: &Astrolabe,
-    topic: &str,
-    opts: &TextOptions,
-    lang: Language,
-) -> Result<String, IztroError> {
-    let notes = opts.notes().ok_or_else(|| {
+/// 主题文本要求带知识包：主题定义在包里
+fn topic_notes<'a>(opts: &TextOptions<'a>) -> Result<Notes<'a>, IztroError> {
+    opts.notes().ok_or_else(|| {
         IztroError::InvalidArgument(
             "topic text requires a knowledge pack: topics are defined in the pack".to_string(),
         )
-    })?;
-    let entry = notes.pack.topic(topic).ok_or_else(|| {
-        let known: Vec<&str> = notes.pack.topics.keys().map(String::as_str).collect();
-        IztroError::InvalidArgument(format!(
-            "unknown topic '{topic}': the pack defines {}",
-            if known.is_empty() {
-                "no topics".to_string()
-            } else {
-                known.join(", ")
-            }
-        ))
-    })?;
-    // 宫位标识落到盘上的索引；来因宫不在盘上时没有对应的宫，略过
-    let indexes = |keys: &Option<Vec<String>>| -> Result<Vec<usize>, IztroError> {
-        let mut out = Vec::new();
-        for key in keys.iter().flatten() {
-            let target = PalaceTarget::from_key(key).ok_or_else(|| {
-                IztroError::InvalidArgument(format!(
-                    "topic '{topic}' has an invalid palace key '{key}': expected a palace name key like 'soulPalace', or 'bodyPalace'/'originalPalace'"
-                ))
-            })?;
-            if let Some(p) = astrolabe.palace(target) {
-                out.push(p.index);
-            }
-        }
-        Ok(out)
-    };
-    let surround = indexes(&entry.surround)?;
-    let singles = indexes(&entry.palaces)?;
+    })
+}
 
+/// 主题文本的主体，按 `selection` 成段：`surround` 各组连同三方四正各成一节，`palaces` 各宫归入
+/// 「相关宫位」一节，同一宫只出一次；主题说明写在标题下（摘要层取摘要），文末附落在选中宫内的格局与
+/// 四化释义。`horoscope` 给出时是 `selection.scope` 层的主题文本：标题写运限时间，标题下逐层写大限至
+/// 该层的命宫位置与四化，宫位段落按该层宫名并附各层落在本宫的四化与流耀，格局取该层视角的命中。
+fn topic_text(
+    astrolabe: &Astrolabe,
+    horoscope: Option<&HoroscopeData>,
+    selection: &TopicSelection,
+    entry: &TopicEntry,
+    notes: Notes,
+    opts: &TextOptions,
+    lang: Language,
+) -> String {
     let l = labels(lang);
+    let layers: Vec<&HoroscopeItem> = horoscope.map_or_else(Vec::new, |h| {
+        layers_through(h, selection.scope)
+            .into_iter()
+            .map(|(_, item)| item)
+            .collect()
+    });
+    let frame = layers.last().map(|item| Frame {
+        label: l.scope_label(item.name_key),
+        names: &item.palace_names,
+        layers: layers.clone(),
+    });
+    let frame = frame.as_ref();
     let hour = by_key(CHINESE_TIME[astrolabe.time_index as usize], lang);
     // 各节以换行结尾、节与节之间空一行
     let mut sections: Vec<String> = Vec::new();
-    let mut head = format!(
-        "# {} · {} {} {} {}\n",
-        entry.title.as_deref().unwrap_or(topic),
+    let title = entry.title.as_deref().unwrap_or(&selection.topic);
+    let chart = format!(
+        "{} {} {} {}",
         l.doc_chart,
         astrolabe.solar_date,
         hour,
         translate_gender(astrolabe.gender, lang),
     );
+    let mut head = match horoscope {
+        None => format!("# {title}{FIELD_SEP}{chart}\n"),
+        Some(h) => format!(
+            "# {title}{FIELD_SEP}{} {}{FIELD_SEP}{chart}\n",
+            l.doc_horoscope,
+            horoscope_when(h, selection.scope, &l, lang)
+        ),
+    };
     let description = match notes.depth {
         KnowledgeDepth::Full => entry.intro.as_deref(),
         KnowledgeDepth::Summary => entry.brief(),
@@ -1830,39 +1897,74 @@ pub fn topic_to_text(
     }
     sections.push(head);
 
-    let mut rendered: Vec<usize> = Vec::new();
-    for index in surround {
-        if let Some(group) = surround_group(astrolabe, index, &mut rendered, opts, &l, lang) {
-            sections.push(group);
-        }
+    for item in &layers {
+        let label = l.scope_label(item.name_key);
+        let mut s = scope_heading(label, item, astrolabe, &l, lang);
+        s.push_str(&scope_mutagen_line(astrolabe, item, &l, lang));
+        sections.push(s);
     }
+
     let mut related = String::new();
-    for index in singles {
-        if rendered.contains(&index) {
+    for (g, group) in selection.groups.iter().enumerate() {
+        let mut body = String::new();
+        for p in selection.palaces.iter().filter(|p| p.group == g) {
+            let role = match p.role {
+                TopicRole::Target => Some(l.target_palace),
+                TopicRole::Opposite => Some(l.opposite_palace),
+                TopicRole::Wealth => Some(l.wealth_palace),
+                TopicRole::Career => Some(l.career_palace),
+                TopicRole::Related => None,
+            };
+            let section = palace_section(
+                astrolabe,
+                &astrolabe.palaces[p.index],
+                role,
+                frame,
+                opts,
+                &l,
+                lang,
+            );
+            let out = match group.kind {
+                TopicGroupKind::Surround => &mut body,
+                TopicGroupKind::Only => &mut related,
+            };
+            out.push('\n');
+            out.push_str(&section);
+        }
+        if body.is_empty() {
             continue;
         }
-        rendered.push(index);
-        related.push('\n');
-        related.push_str(&palace_section(
-            astrolabe,
-            &astrolabe.palaces[index],
-            None,
-            opts,
-            &l,
-            lang,
-        ));
+        let name = match frame {
+            None => translate_palace(astrolabe.palaces[group.target].name, lang).to_string(),
+            Some(f) => format!(
+                "{}{}{}",
+                f.label,
+                l.label_sep,
+                translate_palace(f.name(group.target), lang)
+            ),
+        };
+        sections.push(format!("## {name} {}\n{body}", l.surround));
     }
     if !related.is_empty() {
         sections.push(format!("## {}\n{related}", l.related_palaces));
     }
 
-    let hits: Vec<PatternHit> = astrolabe
-        .patterns_with(&opts.effective_pattern_config())
+    let config = opts.effective_pattern_config();
+    let (hits, names): (Vec<PatternHit>, Vec<Palace>) = match (horoscope, layers.last()) {
+        (Some(h), Some(item)) => (
+            patterns_through(astrolabe, h, selection.scope, selection.scope, &config),
+            item.palace_names.clone(),
+        ),
+        _ => (
+            astrolabe.patterns_with(&config),
+            astrolabe.palaces.iter().map(|p| p.name).collect(),
+        ),
+    };
+    let hits: Vec<PatternHit> = hits
         .into_iter()
-        .filter(|h| rendered.contains(&h.palace))
+        .filter(|h| selection.contains(h.palace))
         .collect();
     if !hits.is_empty() {
-        let names: Vec<Palace> = astrolabe.palaces.iter().map(|p| p.name).collect();
         let mut out = format!("## {}\n", l.sec_patterns);
         out.push_str(&pattern_list(&hits, &names, &l, lang));
         let text = pattern_notes(&hits, notes, &mut Vec::new(), &l, lang);
@@ -1876,7 +1978,57 @@ pub fn topic_to_text(
     if !text.is_empty() {
         sections.push(text);
     }
-    Ok(sections.join("\n"))
+    sections.join("\n")
+}
+
+/// 主题的语义化文本（本命）：按知识包里该主题的定义选宫（[`Astrolabe::topic_palaces`] 同一套选宫）——
+/// `surround` 的各宫连同三方四正各成一组，`palaces` 的各宫只取本宫、归入「相关宫位」一节，同一宫只出一次——
+/// 每宫一段，详略与释义深度随 `opts`；主题说明写在标题下（摘要层取摘要），文末附落在选中宫内的格局与四化释义。
+/// 主题定义与释义都取自 `opts` 的知识包。
+///
+/// # Errors
+/// `opts` 没有知识包、包里没有名为 `topic` 的主题、或主题里有不认识的宫位标识时返回
+/// [`IztroError::InvalidArgument`]。
+pub fn topic_to_text(
+    astrolabe: &Astrolabe,
+    topic: &str,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError> {
+    let notes = topic_notes(opts)?;
+    let entry = crate::astro::topic::entry(notes.pack, topic)?;
+    let selection = select_topic(astrolabe, &[], topic, entry)?;
+    Ok(topic_text(
+        astrolabe, None, &selection, entry, notes, opts, lang,
+    ))
+}
+
+/// 主题在运限 `scope` 层的语义化文本：选宫同 [`HoroscopeRef::topic_palaces`]——宫名按该层定位、
+/// 三方四正以该层的本宫起算，`bodyPalace` / `originalPalace` 落在本命那一宫。标题写运限时间（同运限文本，
+/// 写到 `scope` 层）与命盘；标题下逐层写大限至该层的命宫位置与四化；每宫段落的标题写该层宫名并补本命宫名，
+/// 宫内星曜照本命，另写大限至该层各层落在本宫的四化与流耀，三方四正行用该层宫名、宫干飞化的落宫标明本命；
+/// 格局取该层视角在选中宫内的命中。`Scope::Origin` 与 [`topic_to_text`] 逐字相同。
+///
+/// # Errors
+/// `scope` 比查询精度（[`HoroscopeRef::precision`]）细，或同 [`topic_to_text`]，返回
+/// [`IztroError::InvalidArgument`]。
+pub fn horoscope_topic_to_text(
+    horoscope: &HoroscopeRef,
+    topic: &str,
+    scope: Scope,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError> {
+    horoscope.check_within_precision(scope, "scope")?;
+    let notes = topic_notes(opts)?;
+    let entry = crate::astro::topic::entry(notes.pack, topic)?;
+    let astrolabe = horoscope.astrolabe();
+    let layers = layers_through(horoscope.data(), scope);
+    let selection = select_topic(astrolabe, &layers, topic, entry)?;
+    let data = (scope != Scope::Origin).then(|| horoscope.data());
+    Ok(topic_text(
+        astrolabe, data, &selection, entry, notes, opts, lang,
+    ))
 }
 
 // ============================================================
@@ -1955,6 +2107,19 @@ impl Astrolabe {
 }
 
 impl HoroscopeRef<'_> {
+    /// 主题在 `scope` 层的文本（按星盘排盘语言）；[`horoscope_topic_to_text`] 的便捷形态
+    ///
+    /// # Errors
+    /// 同 [`horoscope_topic_to_text`]。
+    pub fn topic_to_text(
+        &self,
+        topic: &str,
+        scope: Scope,
+        opts: &TextOptions,
+    ) -> Result<String, IztroError> {
+        horoscope_topic_to_text(self, topic, scope, opts, self.astrolabe().language)
+    }
+
     /// 运限的语义化文本（按星盘排盘语言），写到查询精度（[`Self::precision`]）为止；
     /// [`horoscope_to_text_with`] 的便捷形态
     pub fn to_text(&self) -> String {

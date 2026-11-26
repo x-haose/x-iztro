@@ -26,6 +26,7 @@ from x_iztro.palace import Palace
 from x_iztro.pattern import PatternConfig, PatternHit
 from x_iztro.star_object import Star
 from x_iztro.surpalaces import FlankingPalaces, SurroundedPalaces
+from x_iztro.topic import TopicSelection
 
 
 
@@ -373,6 +374,24 @@ class Astrolabe:
             detail=str(detail),
             knowledge_depth=str(knowledge_depth),
             pattern_config=_pattern_config(config),
+        )
+
+    def topic_palaces(
+        self, topic: str, *, knowledge: bool | KnowledgePack = True
+    ) -> TopicSelection:
+        """
+        主题在本命盘上选中的宫：各组位置、每宫的角色与宫干飞化，以及落在这些宫里的生年四化。
+        与 `topic_to_text` 同一套选宫，`palaces` 的顺序即文本的成段顺序。
+
+        Args:
+            topic: 主题 slug
+            knowledge: 主题定义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+
+        Raises:
+            IztroError: 包里没有该主题、主题里有不认识的宫位标识，或 `knowledge=True` 而排盘语言没有内嵌包
+        """
+        return TopicSelection._from_dict(
+            self._context_query("topicPalaces", topic=topic, knowledge=knowledge)
         )
 
     def __str__(self) -> str:

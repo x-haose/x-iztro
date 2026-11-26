@@ -639,3 +639,37 @@ println!("{}", text.lines().filter(|l| l.starts_with("## ")).collect::<Vec<_>>()
 # 婚恋 · 命盘 2000-8-16 寅时 女
 ## 夫妻 三方四正 ## 相关宫位 ## 格局 ## 四化释义
 ```
+
+---
+
+## topic_palaces / horoscope_topic_to_text
+
+**Purpose**　The palaces a topic selects on the natal chart or at one horoscope layer, with three kinds of
+transformations (`topic_palaces`), and a topic's text at one horoscope layer (`horoscope_topic_to_text`). The
+selection rules are in [A topic at one horoscope layer](/en/docs/guide/guides/to-text#a-topic-at-one-horoscope-layer), the result's shape in
+[Selected palaces and three kinds of transformations](/en/docs/guide/guides/to-text#selected-palaces-and-three-kinds-of-transformations).
+
+**Signature**
+
+```rust
+impl Astrolabe {
+    pub fn topic_palaces(&self, pack: &KnowledgePack, topic: &str) -> Result<TopicSelection, IztroError>
+}
+impl HoroscopeRef<'_> {
+    pub fn topic_palaces(&self, pack: &KnowledgePack, topic: &str, scope: Scope) -> Result<TopicSelection, IztroError>
+    pub fn topic_to_text(&self, topic: &str, scope: Scope, opts: &TextOptions) -> Result<String, IztroError>
+}
+pub fn horoscope_topic_to_text(
+    horoscope: &HoroscopeRef,
+    topic: &str,
+    scope: Scope,
+    opts: &TextOptions,
+    lang: Language,
+) -> Result<String, IztroError>
+```
+
+**Returns**　`TopicSelection` has `topic`, `scope`, `groups` (`TopicGroup`), `palaces` (`TopicPalace`, with
+`flying: [Flight; 4]`), `birth_mutagens` (`MutagenLanding`) and `scope_mutagens` (`ScopeMutagenLanding`);
+`to_dto()` gives `TopicSelectionDto`, the shape the bindings return. A `scope` finer than the query precision,
+an unknown topic, an unknown palace key in the topic, or text `opts` without a pack is
+`IztroError::InvalidArgument`. The text at `Scope::Origin` is identical to `topic_to_text`.

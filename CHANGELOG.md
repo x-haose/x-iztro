@@ -7,6 +7,53 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-27
+
+### 新增
+
+- **在运限某一层读主题**：此前主题只按本命盘选宫，选了流月、流年或大限去读「兄弟」「财运」，读到的仍是本命兄弟宫、财帛宫。
+  现在可以在大限、流年、流月、流日、流时任一层读主题：主题里的宫名按该层的宫名落到盘上（流月兄弟宫即以流月命宫起排的兄弟宫），
+  三方四正以这一宫为本宫起算；`bodyPalace` / `originalPalace` 在任何一层都落在本命那一宫（身宫、来因宫是本命盘上的标记，
+  运限只轮换宫名，不重算它们）。层级不能比运限的查询精度细。
+  - 文本：Rust `HoroscopeRef::topic_to_text` / `text::horoscope_topic_to_text`，Python、JavaScript `Horoscope.topic_to_text` /
+    `topicToText`，Go `Horoscope.TopicToText`，bridge kind `horoscopeTopicToText`。标题写运限时间与命盘，标题下逐层写大限至该层的
+    命宫位置与四化；每宫段落写该层宫名并补本命宫名（`### 本宫 · 流月兄弟 (本命福德 · 癸卯)`），宫内星曜照本命，另写各层落在本宫的
+    四化与流耀；三方四正行用该层宫名、宫干飞化的落宫标明本命；格局取该层视角在选中宫内的命中。`origin` 层与本命主题文本逐字相同，
+    本命主题文本本身不变。
+  - 选中的宫与三类四化：Rust `Astrolabe::topic_palaces` / `HoroscopeRef::topic_palaces`（`TopicSelection`，`to_dto()`），
+    Python `topic_palaces`，Go `TopicPalaces`，JavaScript `topicPalaces`，bridge kind `topicPalaces` / `horoscopeTopicPalaces`。
+    返回各组位置、每个选中宫的角色、该层宫名与本命宫名、宫干飞化（禄权科忌四条，自化单独标出），以及落在选中宫里的生年四化和
+    大限至该层各层的四化（每条标明层级，未起运的大限层为 `childhood`），全部是语言无关标识与宫位索引，供界面高亮、逐步阅读与
+    画飞化连线；与主题文本同一套选宫，`palaces` 的顺序即文本的成段顺序。天干取法标明在结果里：`palaceStemSource`（宫干飞化，现为本命宫干 `natalPalace`）、
+    `scopeMutagenStemSource`（运限四化，现为该层自身的干 `scope`），每宫与每条运限四化另带所用天干的 `stemKey`。
+  - 四侧共用用例 `tests/data/topic_palaces_cases.json` 覆盖五个运限层、童限、身宫与来因宫，期望由 Rust 测试按各层宫名另行推得核对；
+    文本快照新增流月层婚恋主题。
+
+- **知识包主题的显示顺序**：主题条目新增可选字段 `order`（0 至 4294967295 的整数）。列出全部主题时按 `order` 升序，
+  没有 `order` 的排在最后，相同或都没有时按 slug 的字节序。此前格式里没有主题顺序，各语言按 slug 字母序列出，
+  应用只能自己维护一份排序表。键在 JSON 里的书写顺序不算数：JSON 对象成员无序，内核解析与合并、Go 的 map、
+  JavaScript 对纯数字键的属性排序都会重排。`order` 是普通标量字段，覆盖包可以单独改某个主题的位置，或给新增的主题插位。
+  Rust 新增 `KnowledgePack::topics_in_order`，Go 新增 `TopicEntry.Order`（`*uint32`）与 `KnowledgePack.TopicSlugs`，
+  Python、JavaScript 的 `TopicEntry` 新增 `order`；`order` 不是 0 至 4294967295 的整数时校验报 `wrong_type`（error）。
+  默认包 13 个主题按总论、性格、事业、财运、婚恋、健康、父母、子女、兄弟、交友、田宅、迁移、精神以 10 为步长编号。
+- **默认包术语「亮度」**（`concepts.liang-du`）：亮度概念的由来、四级（庙旺利陷）与七级（庙旺得利平不陷）两种分法、
+  庙最亮陷最暗，以及亮度如何影响星曜的表现。取自同一锁定 commit 的 iztro-docs《学习》星曜篇「星曜的亮度」一节，
+  按默认包的口吻改写，`source.adapted` 已注明；该节的亮度表由内核排盘给出，不收。默认包术语由 50 条增至 51 条。
+
+### 变更（breaking）
+
+逐条的改法见[从 0.9 升级到 0.10](https://x-iztro.x-haose.com/zh/docs/guide/about/upgrade-0-10)。
+
+- Python、JavaScript 的 `KnowledgePack.topics()` 按上述显示顺序返回，此前按 slug 字母序；没有写 `order` 的包结果不变。
+  默认包因此按总论、性格、事业……的顺序返回。
+- Rust 的 `TopicEntry` 多一个公有字段 `order`：用结构体字面量构造它的代码需补上该字段或 `..Default::default()`。
+  Go 的 `TopicEntry` 多一个字段 `Order`，不带字段名的结构体字面量需补上。
+
+### 变更
+
+- 默认包婚恋、精神两个主题的说明由「命宫、身宫看本人」改为「命宫看本人，身宫看后天的着力之处」，与总论、性格两条一致：
+  在运限层读主题时命宫随层、身宫留在本命，两宫不再写成同一个角色。主题文本的标题下说明随之改变。
+
 ## [0.9.0] - 2026-11-23
 
 ### 变更（breaking）
@@ -561,6 +608,7 @@
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
 [Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.9.0...HEAD
+[0.10.0]: https://github.com/x-haose/x-iztro/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/x-haose/x-iztro/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/x-haose/x-iztro/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/x-haose/x-iztro/compare/v0.7.0...v0.7.1

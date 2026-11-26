@@ -14,23 +14,17 @@ import pytest
 
 from x_iztro import IztroError, KnowledgeIssue, KnowledgeIssueCode, KnowledgePack
 
-PARSE_CASES = json.loads(
+_SHARED = json.loads(
     (Path(__file__).resolve().parents[2] / "tests" / "data" / "knowledge_check_cases.json").read_text(
         encoding="utf-8"
     )
-)["parseCases"]
+)
+PARSE_CASES = _SHARED["parseCases"]
+TOPIC_ORDER_CASES = _SHARED["topicOrderCases"]
 
 # packJson 用例给的是 JSON 原文，适用于收文本的入口（Rust check_json、Go CheckKnowledgePack）；
 # Python 的 check 收对象，非法 JSON 在 json.loads 阶段就报 JSONDecodeError
-CASES = [
-    c
-    for c in json.loads(
-        (Path(__file__).resolve().parents[2] / "tests" / "data" / "knowledge_check_cases.json").read_text(
-            encoding="utf-8"
-        )
-    )["cases"]
-    if "pack" in c
-]
+CASES = [c for c in _SHARED["cases"] if "pack" in c]
 
 
 def _shape(issue: KnowledgeIssue, with_params: bool) -> dict[str, Any]:
@@ -114,3 +108,10 @@ def test_non_finite_numbers_are_rejected_like_javascript() -> None:
         with pytest.raises(IztroError) as e:
             call()
         assert e.value.code == "invalid_argument"
+
+
+@pytest.mark.parametrize("case", TOPIC_ORDER_CASES, ids=[c["name"] for c in TOPIC_ORDER_CASES])
+def test_shared_topic_order_case(case: dict[str, Any]) -> None:
+    base, *overlays = case["packs"]
+    pack = KnowledgePack.from_dict(base).merged(*overlays)
+    assert [t.slug for t in pack.topics()] == case["topics"]

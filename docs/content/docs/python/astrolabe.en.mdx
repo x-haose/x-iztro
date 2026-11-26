@@ -753,6 +753,20 @@ print(" ".join(l for l in text.splitlines() if l.startswith("## ")))
 
 ---
 
+## topic_palaces
+
+```python
+def topic_palaces(self, topic: str, *, knowledge: bool | KnowledgePack = True) -> TopicSelection
+```
+
+The palaces a topic selects on the natal chart with their transformations: `groups`, `palaces` (with stem
+flying in `flying`) and `birth_mutagens`; `scope_mutagens` is empty. Same selection as `topic_to_text`, and
+the order of `palaces` is the text's section order. Shape: [Selected palaces and three kinds of
+transformations](/en/docs/guide/guides/to-text#selected-palaces-and-three-kinds-of-transformations); in Python these are `TopicSelection` and other dataclasses with snake_case fields
+(`name_key`, `self_mutaged` …).
+
+---
+
 ## to_dict / to_json
 
 **Purpose** Export the chart as JSON matching the field contract of JS iztro.

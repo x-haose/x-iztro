@@ -8,6 +8,8 @@ pub mod horoscope;
 pub mod palace;
 pub mod query;
 pub mod reverse;
+/// 按主题选宫（本命与各运限层）
+pub mod topic;
 
 pub mod rearrange;
 /// 三方四正（结构定义在 [`crate::models::surpalaces`]，此处转发以保持路径稳定）

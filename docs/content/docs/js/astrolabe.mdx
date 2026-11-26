@@ -251,6 +251,18 @@ console.log(text.split('\n').filter((l) => l.startsWith('#')).join('\n'));
 
 ---
 
+## topicPalaces
+
+```ts
+topicPalaces(topic: string, options?: { knowledge?: Knowledge }): TopicSelection;
+```
+
+主题在本命盘上选中的宫与相关四化：`groups`、`palaces`（含宫干飞化 `flying`）、`birthMutagens`，`scopeMutagens` 为空。
+与 `topicToText` 同一套选宫，`palaces` 的顺序即文本的成段顺序；`knowledge` 默认取排盘语言的内嵌包。
+结构见[选中的宫与三类四化](/zh/docs/guide/guides/to-text#选中的宫与三类四化)，类型 `TopicSelection` 也从 `x-iztro/types` 导出。
+
+---
+
 ## toJSON
 
 ```ts
