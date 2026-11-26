@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-27
+
 ### 新增
 
 - **在运限某一层读主题**：此前主题只按本命盘选宫，选了流月、流年或大限去读「兄弟」「财运」，读到的仍是本命兄弟宫、财帛宫。
@@ -38,11 +40,19 @@
   庙最亮陷最暗，以及亮度如何影响星曜的表现。取自同一锁定 commit 的 iztro-docs《学习》星曜篇「星曜的亮度」一节，
   按默认包的口吻改写，`source.adapted` 已注明；该节的亮度表由内核排盘给出，不收。默认包术语由 50 条增至 51 条。
 
-### 变更
+### 变更（breaking）
+
+逐条的改法见[从 0.9 升级到 0.10](https://x-iztro.x-haose.com/zh/docs/guide/about/upgrade-0-10)。
 
 - Python、JavaScript 的 `KnowledgePack.topics()` 按上述显示顺序返回，此前按 slug 字母序；没有写 `order` 的包结果不变。
   默认包因此按总论、性格、事业……的顺序返回。
 - Rust 的 `TopicEntry` 多一个公有字段 `order`：用结构体字面量构造它的代码需补上该字段或 `..Default::default()`。
+  Go 的 `TopicEntry` 多一个字段 `Order`，不带字段名的结构体字面量需补上。
+
+### 变更
+
+- 默认包婚恋、精神两个主题的说明由「命宫、身宫看本人」改为「命宫看本人，身宫看后天的着力之处」，与总论、性格两条一致：
+  在运限层读主题时命宫随层、身宫留在本命，两宫不再写成同一个角色。主题文本的标题下说明随之改变。
 
 ## [0.9.0] - 2026-11-23
 
@@ -598,6 +608,7 @@
 - 排盘入口 Result 化：非法输入返回带分类码的错误而非 panic。
 
 [Unreleased]: https://github.com/x-haose/x-iztro/compare/v0.9.0...HEAD
+[0.10.0]: https://github.com/x-haose/x-iztro/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/x-haose/x-iztro/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/x-haose/x-iztro/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/x-haose/x-iztro/compare/v0.7.0...v0.7.1

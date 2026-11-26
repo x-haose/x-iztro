@@ -1,0 +1,75 @@
+---
+title: 从 0.9 升级到 0.10
+description: 0.10 的主题列表改按显示顺序返回，主题条目多一个 order 字段：受影响的写法与各语言前后对照。
+---
+
+*适合：列出或构造知识包主题的开发者*
+
+0.10 给知识包主题加了显示顺序（`order`），并新增在运限某一层读主题的接口。新接口都是加法；不兼容的只有下面两处，
+不碰主题列表、也不用结构体字面量构造主题条目的代码不受影响。
+
+```toml
+x-iztro = "0.10"
+```
+
+```bash
+pip install "x-iztro~=0.10.0"
+go get github.com/x-haose/x-iztro/go/iztro@v0.10.0
+npm install x-iztro@0.10
+```
+
+## 主题列表按显示顺序返回
+
+**受影响**：Python 与 JavaScript 的 `KnowledgePack.topics()`。0.9 按 slug 字母序返回，0.10 按显示顺序返回：
+`order` 从小到大，没写 `order` 的排在最后，`order` 相同或都没写时按 slug。没写 `order` 的自定义包，结果与 0.9 相同；
+默认包按总论、性格、事业、财运、婚恋、健康、父母、子女、兄弟、交友、田宅、迁移、精神返回。
+
+Rust 与 Go 没有改变原有接口的顺序：Rust 的 `pack.topics` 仍是按 slug 排序的 `BTreeMap`，Go 的 `Topics` 仍是 map；
+要显示顺序，改用新增的 `topics_in_order()` 与 `TopicSlugs()`。
+
+**改法**：自己维护过一份主题排序表的，删掉它，直接用 `topics()`（Rust `topics_in_order()`、Go `TopicSlugs()`）。
+依赖字母序的代码（例如拿下标定位某个主题）改成按 slug 取：`topic(slug)`。
+
+```ts title="JavaScript 0.9"
+const ORDER = ['overall', 'personality', 'career' /* … */];
+const topics = pack.topics().sort((a, b) => ORDER.indexOf(a.slug) - ORDER.indexOf(b.slug));
+```
+
+```ts title="JavaScript 0.10"
+const topics = pack.topics();
+```
+
+自己的包要指定顺序，给主题写 `order`。默认包以 10 为步长编号，覆盖包写 `"order": 35` 就排在事业与财运之间，
+见[知识包 · 主题](/zh/docs/guide/guides/knowledge-pack#主题)。
+
+## 主题条目多一个字段
+
+**受影响**：用结构体字面量构造主题条目的 Rust 与 Go 代码。
+
+| 语言 | 0.10 的字段 | 改法 |
+| --- | --- | --- |
+| Rust | `TopicEntry.order: Option<u32>` | 字面量补 `order`，或用 `..Default::default()` |
+| Go | `TopicEntry.Order *uint32` | 不带字段名的字面量改成带字段名 |
+| Python | `TopicEntry.order: int \| None`，排在最后一个字段 | 不用改 |
+| JavaScript / TypeScript | `TopicEntry.order?: number` | 不用改 |
+
+```rust title="Rust 0.10"
+let topic = TopicEntry {
+    title: Some("学业".into()),
+    order: Some(35),
+    surround: Some(vec!["careerPalace".into()]),
+    ..TopicEntry::default()
+};
+```
+
+`order` 不是 0 至 4294967295 的整数时，校验报 `wrong_type`（error），构造包即拒绝。
+
+## 会改变输出的内容
+
+- 默认包婚恋、精神两个主题的说明改为「命宫看本人，身宫看后天的着力之处」，主题文本标题下的说明随之改变。
+- 默认包多了术语「亮度」（`concepts.liang-du`），术语由 50 条增至 51 条。
+
+新增的在运限某一层读主题（`topic_palaces`、运限的 `topic_to_text`）见
+[转文本 · 在运限某一层看主题](/zh/docs/guide/guides/to-text#在运限某一层看主题)。
+
+完整变更见 [CHANGELOG](https://github.com/x-haose/x-iztro/blob/main/CHANGELOG.md)。
