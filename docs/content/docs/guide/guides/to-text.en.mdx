@@ -775,6 +775,7 @@ language-independent key or a palace index (0-11, Yin palace is 0):
 | `palaces[].flying` | Stem flying in Lu, Quan, Ke, Ji order, each transformation's slot star before its extra mutagen stars (four entries under the default table): `mutagenKey`, `starKey`, `palaceIndex` (null when the star is not on the chart), `selfMutaged` (lands back in the palace) |
 | `birthMutagens` | Birth-year transformations landing in the selected palaces: `mutagenKey`, `starKey`, `palaceIndex` |
 | `scopeMutagens` | Transformations of each layer from decadal down to the chosen one landing in the selected palaces, each with `scope`, `nameKey` (`childhood` for a decadal layer before the first decade) and `stemKey` (the stem that produced it); empty at `origin` |
+| `patterns` | The hits listed one by one in the topic text's patterns section: seen from the chosen layer, with the forming palace among the selected ones; each has `key`, `scope`, `palaceIndex`, `palaceNameKey` (the layer's name), `variant`, `broken`, `stars` (`key`, `palaceIndex`, `brightnessKey`, `mutagenKey`). The pattern criteria take the same parameter as the text (Rust `topic_palaces_with`, Go `TopicPalacesWith`, the `config` option in Python and JavaScript) |
 | `palaceStemSource` | Where the stems for stem flying come from; currently `natalPalace`: the natal palace stems, kept at every layer |
 | `scopeMutagenStemSource` | Where the stems for layer transformations come from; currently `scope`: the layer's own stem (decadal palace stem, year stem, month stem …) |
 

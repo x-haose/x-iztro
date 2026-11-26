@@ -26,23 +26,37 @@ const CASES = (
   }
 ).cases;
 
-function select(c: Case): TopicSelection {
+function selectAndText(c: Case): [TopicSelection, string] {
   const chart = astro.bySolar(c.chart.solarDate, c.chart.timeIndex, c.chart.gender);
   const knowledge = c.knowledge === undefined ? true : KnowledgePack.fromObject(c.knowledge);
   const t = c.target;
-  if (t === undefined) return chart.topicPalaces(c.topic, { knowledge });
+  if (t === undefined) return [chart.topicPalaces(c.topic, { knowledge }), chart.topicToText(c.topic, { knowledge })];
   const h =
     t.targetDate !== undefined
       ? chart.horoscope(t.targetDate, t.targetTimeIndex)
       : t.targetMonth !== undefined
         ? chart.horoscopeOfMonth(t.targetYear!, t.targetMonth)
         : chart.horoscopeOfYear(t.targetYear!);
-  return h.topicPalaces(c.topic, c.scope!, { knowledge });
+  return [h.topicPalaces(c.topic, c.scope!, { knowledge }), h.topicToText(c.topic, c.scope!, { knowledge })];
+}
+
+/** 主题文本「格局」一节的逐条行 */
+function textPatternLines(text: string): string[] {
+  const at = text.indexOf('\n## 格局\n');
+  if (at < 0) return [];
+  const out: string[] = [];
+  for (const line of text.slice(at + '\n## 格局\n'.length).split('\n')) {
+    if (!line.startsWith('- **')) break;
+    out.push(line);
+  }
+  return out;
 }
 
 for (const c of CASES) {
   test(`主题选宫: ${c.name}`, () => {
-    assert.deepEqual(select(c), c.expect);
+    const [selection, text] = selectAndText(c);
+    assert.deepEqual(selection, c.expect);
+    assert.equal(textPatternLines(text).length, selection.patterns.length);
   });
 }
 

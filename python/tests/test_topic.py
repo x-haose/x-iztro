@@ -21,25 +21,47 @@ CASES = json.loads(
 )["cases"]
 
 
-def _select(case: dict[str, Any]) -> TopicSelection:
+def _select_and_text(case: dict[str, Any]) -> tuple[TopicSelection, str]:
     c = case["chart"]
     chart = Astro().by_solar(c["solarDate"], c["timeIndex"], c["gender"])
     knowledge = KnowledgePack.from_dict(case["knowledge"]) if "knowledge" in case else True
     target = case.get("target")
+    topic = case["topic"]
     if target is None:
-        return chart.topic_palaces(case["topic"], knowledge=knowledge)
+        return (
+            chart.topic_palaces(topic, knowledge=knowledge),
+            chart.topic_to_text(topic, knowledge=knowledge),
+        )
     if "targetDate" in target:
         h = chart.horoscope(target["targetDate"], target["targetTimeIndex"])
     elif "targetMonth" in target:
         h = chart.horoscope_of_month(target["targetYear"], target["targetMonth"])
     else:
         h = chart.horoscope_of_year(target["targetYear"])
-    return h.topic_palaces(case["topic"], case["scope"], knowledge=knowledge)
+    return (
+        h.topic_palaces(topic, case["scope"], knowledge=knowledge),
+        h.topic_to_text(topic, case["scope"], knowledge=knowledge),
+    )
+
+
+def _text_pattern_lines(text: str) -> list[str]:
+    """主题文本「格局」一节的逐条行"""
+    if "\n## 格局\n" not in text:
+        return []
+    lines = text.split("\n## 格局\n", 1)[1].split("\n")
+    out = []
+    for line in lines:
+        if not line.startswith("- **"):
+            break
+        out.append(line)
+    return out
 
 
 @pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
 def test_shared_case(case: dict[str, Any]) -> None:
-    assert _select(case) == TopicSelection._from_dict(case["expect"])
+    selection, text = _select_and_text(case)
+    assert selection == TopicSelection._from_dict(case["expect"])
+    assert len(_text_pattern_lines(text)) == len(selection.patterns)
 
 
 def test_scope_finer_than_precision_is_rejected() -> None:

@@ -1968,25 +1968,15 @@ fn topic_text(
         sections.push(format!("## {}\n{related}", l.related_palaces));
     }
 
-    let config = opts.effective_pattern_config();
-    let (hits, names): (Vec<PatternHit>, Vec<Palace>) = match (horoscope, layers.last()) {
-        (Some(h), Some(item)) => (
-            patterns_through(astrolabe, h, selection.scope, selection.scope, &config),
-            item.palace_names.clone(),
-        ),
-        _ => (
-            astrolabe.patterns_with(&config),
-            astrolabe.palaces.iter().map(|p| p.name).collect(),
-        ),
+    let names: Vec<Palace> = match layers.last() {
+        Some(item) => item.palace_names.clone(),
+        None => astrolabe.palaces.iter().map(|p| p.name).collect(),
     };
-    let hits: Vec<PatternHit> = hits
-        .into_iter()
-        .filter(|h| selection.contains(h.palace))
-        .collect();
+    let hits = &selection.patterns;
     if !hits.is_empty() {
         let mut out = format!("## {}\n", l.sec_patterns);
-        out.push_str(&pattern_list(&hits, &names, &l, lang));
-        let text = pattern_notes(&hits, notes, &mut Vec::new(), &l, lang);
+        out.push_str(&pattern_list(hits, &names, &l, lang));
+        let text = pattern_notes(hits, notes, &mut Vec::new(), &l, lang);
         if !text.is_empty() {
             out.push('\n');
             out.push_str(&text);
@@ -2016,7 +2006,13 @@ pub fn topic_to_text(
 ) -> Result<String, IztroError> {
     let notes = topic_notes(opts)?;
     let entry = crate::astro::topic::entry(notes.pack, topic)?;
-    let selection = select_topic(astrolabe, &[], topic, entry)?;
+    let selection = select_topic(
+        astrolabe,
+        None,
+        topic,
+        entry,
+        &opts.effective_pattern_config(),
+    )?;
     Ok(topic_text(
         astrolabe, None, &selection, entry, notes, opts, lang,
     ))
@@ -2042,8 +2038,13 @@ pub fn horoscope_topic_to_text(
     let notes = topic_notes(opts)?;
     let entry = crate::astro::topic::entry(notes.pack, topic)?;
     let astrolabe = horoscope.astrolabe();
-    let layers = layers_through(horoscope.data(), scope);
-    let selection = select_topic(astrolabe, &layers, topic, entry)?;
+    let selection = select_topic(
+        astrolabe,
+        Some((horoscope.data(), scope)),
+        topic,
+        entry,
+        &opts.effective_pattern_config(),
+    )?;
     let data = (scope != Scope::Origin).then(|| horoscope.data());
     Ok(topic_text(
         astrolabe, data, &selection, entry, notes, opts, lang,

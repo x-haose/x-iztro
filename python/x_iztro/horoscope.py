@@ -695,6 +695,7 @@ class Horoscope:
         scope: Scope | ScopeLiteral,
         *,
         knowledge: bool | KnowledgePack = True,
+        config: PatternConfig | None = None,
     ) -> TopicSelection:
         """
         主题在 `scope` 层选中的宫：宫名按该层定位、三方四正以该层的本宫起算（`bodyPalace` /
@@ -705,12 +706,13 @@ class Horoscope:
             topic: 主题 slug
             scope: 运限层级
             knowledge: 主题定义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+            config: 格局判定口径，与 `topic_to_text(config=)` 同一参数；None 取默认口径
 
         Raises:
             ValueError: 本运限不是由星盘发起
             IztroError: `scope` 比查询精度（`precision()`）细，或同 `Astrolabe.topic_palaces`
         """
-        from x_iztro.pattern import _scope_key
+        from x_iztro.pattern import _pattern_config, _scope_key
 
         return TopicSelection._from_dict(
             self._context_query(
@@ -719,6 +721,7 @@ class Horoscope:
                 topic=topic,
                 scope=_scope_key(scope),
                 knowledge=knowledge,
+                pattern_config=_pattern_config(config),
             )
         )
 

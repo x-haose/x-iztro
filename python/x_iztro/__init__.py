@@ -77,6 +77,8 @@ from x_iztro.topic import (
     ScopeMutagenLanding,
     TopicGroup,
     TopicPalace,
+    TopicPattern,
+    TopicPatternStar,
     TopicSelection,
 )
 
@@ -202,6 +204,8 @@ __all__ = [
     "TopicSelection",
     "TopicGroup",
     "TopicPalace",
+    "TopicPattern",
+    "TopicPatternStar",
     "Flight",
     "MutagenLanding",
     "ScopeMutagenLanding",

@@ -79,6 +79,36 @@ type ScopeMutagenLanding struct {
 	PalaceIndex int `json:"palaceIndex"`
 }
 
+// TopicPatternStar 为参与成格的一颗星。
+type TopicPatternStar struct {
+	// Key 为星耀标识
+	Key string `json:"key"`
+	// PalaceIndex 为落宫索引
+	PalaceIndex int `json:"palaceIndex"`
+	// BrightnessKey 为亮度标识，无亮度为空串
+	BrightnessKey string `json:"brightnessKey,omitempty"`
+	// MutagenKey 为判定视角下的四化标识，无四化为空串
+	MutagenKey string `json:"mutagenKey,omitempty"`
+}
+
+// TopicPattern 为主题选中宫内的一次格局命中（语言无关；译名见 PatternHit）。
+type TopicPattern struct {
+	// Key 为格局标识
+	Key string `json:"key"`
+	// Scope 为判定视角：ScopeOrigin 或运限层级
+	Scope string `json:"scope"`
+	// PalaceIndex 为成格宫的索引，必为选中宫之一
+	PalaceIndex int `json:"palaceIndex"`
+	// PalaceNameKey 为成格宫在所选层的宫名标识
+	PalaceNameKey string `json:"palaceNameKey"`
+	// Variant 为多口径格局命中的口径，单口径为空串
+	Variant string `json:"variant,omitempty"`
+	// Broken 为「破格 / 加杀平常」的条件是否触发
+	Broken bool `json:"broken"`
+	// Stars 为参与成格的星与落宫
+	Stars []TopicPatternStar `json:"stars"`
+}
+
 // TopicSelection 为一个主题在某一层选中的宫与相关四化。
 type TopicSelection struct {
 	// Topic 为主题 slug
@@ -97,6 +127,8 @@ type TopicSelection struct {
 	BirthMutagens []MutagenLanding `json:"birthMutagens"`
 	// ScopeMutagens 为大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
 	ScopeMutagens []ScopeMutagenLanding `json:"scopeMutagens"`
+	// Patterns 为所选层视角成格、成格宫在选中宫内的格局命中，即主题文本「格局」一节逐条所列
+	Patterns []TopicPattern `json:"patterns"`
 }
 
 // TopicPalaces 返回主题在本命盘上选中的宫：各组位置、每宫的角色与宫干飞化，以及落在这些宫里的生年四化。
@@ -108,12 +140,25 @@ func (a *Astrolabe) TopicPalaces(topic string, knowledge Knowledge) (*TopicSelec
 
 // TopicPalacesContext 为 TopicPalaces 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (a *Astrolabe) TopicPalacesContext(ctx context.Context, topic string, knowledge Knowledge) (*TopicSelection, error) {
+	return a.TopicPalacesWithContext(ctx, topic, knowledge, nil)
+}
+
+// TopicPalacesWith 同 TopicPalaces，格局按 config 口径判定（nil 取默认口径）；与同一口径的 TopicToText 取同一批格局。
+func (a *Astrolabe) TopicPalacesWith(topic string, knowledge Knowledge, config *PatternConfig) (*TopicSelection, error) {
+	return a.TopicPalacesWithContext(context.Background(), topic, knowledge, config)
+}
+
+// TopicPalacesWithContext 为 TopicPalacesWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (a *Astrolabe) TopicPalacesWithContext(ctx context.Context, topic string, knowledge Knowledge, config *PatternConfig) (*TopicSelection, error) {
 	if a == nil {
 		return nil, invalidArgument("topicPalaces: nil astrolabe")
 	}
 	payload := a.textPayload("topicPalaces")
 	payload["topic"] = topic
 	knowledge.apply(payload)
+	if config != nil {
+		payload["patternConfig"] = config
+	}
 	var out TopicSelection
 	if err := utilQueryContext(ctx, payload, &out); err != nil {
 		return nil, err
@@ -130,6 +175,16 @@ func (h *Horoscope) TopicPalaces(topic, scope string, knowledge Knowledge) (*Top
 
 // TopicPalacesContext 为 TopicPalaces 的 Context 变体；ctx 用于取消等待 wasm 实例。
 func (h *Horoscope) TopicPalacesContext(ctx context.Context, topic, scope string, knowledge Knowledge) (*TopicSelection, error) {
+	return h.TopicPalacesWithContext(ctx, topic, scope, knowledge, nil)
+}
+
+// TopicPalacesWith 同 TopicPalaces，格局按 config 口径判定（nil 取默认口径）；与同一口径的 TopicToText 取同一批格局。
+func (h *Horoscope) TopicPalacesWith(topic, scope string, knowledge Knowledge, config *PatternConfig) (*TopicSelection, error) {
+	return h.TopicPalacesWithContext(context.Background(), topic, scope, knowledge, config)
+}
+
+// TopicPalacesWithContext 为 TopicPalacesWith 的 Context 变体；ctx 用于取消等待 wasm 实例。
+func (h *Horoscope) TopicPalacesWithContext(ctx context.Context, topic, scope string, knowledge Knowledge, config *PatternConfig) (*TopicSelection, error) {
 	if h == nil || h.astrolabe == nil {
 		return nil, invalidArgument("horoscopeTopicPalaces: horoscope must be created by Astrolabe.Horoscope")
 	}
@@ -138,6 +193,9 @@ func (h *Horoscope) TopicPalacesContext(ctx context.Context, topic, scope string
 	payload["topic"] = topic
 	payload["scope"] = scope
 	knowledge.apply(payload)
+	if config != nil {
+		payload["patternConfig"] = config
+	}
 	var out TopicSelection
 	if err := utilQueryContext(ctx, payload, &out); err != nil {
 		return nil, err

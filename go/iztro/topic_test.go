@@ -57,9 +57,13 @@ func TestTopicPalacesSharedCases(t *testing.T) {
 			knowledge = KnowledgeFrom(pack)
 		}
 		var got *TopicSelection
+		var text string
 		switch {
 		case c.Target == nil:
 			got, err = chart.TopicPalaces(c.Topic, knowledge)
+			if err == nil {
+				text, err = chart.TopicToText(c.Topic, TextOptions{Knowledge: knowledge})
+			}
 		default:
 			var h *Horoscope
 			switch {
@@ -74,6 +78,9 @@ func TestTopicPalacesSharedCases(t *testing.T) {
 				t.Fatalf("%s: %v", c.Name, err)
 			}
 			got, err = h.TopicPalaces(c.Topic, c.Scope, knowledge)
+			if err == nil {
+				text, err = h.TopicToText(c.Topic, c.Scope, TextOptions{Knowledge: knowledge})
+			}
 		}
 		if err != nil {
 			t.Fatalf("%s: %v", c.Name, err)
@@ -81,7 +88,26 @@ func TestTopicPalacesSharedCases(t *testing.T) {
 		if !reflect.DeepEqual(*got, c.Expect) {
 			t.Errorf("%s:\n got %+v\nwant %+v", c.Name, *got, c.Expect)
 		}
+		if n := len(textPatternLines(text)); n != len(got.Patterns) {
+			t.Errorf("%s: 主题文本格局一节 %d 条，结构化结果 %d 条", c.Name, n, len(got.Patterns))
+		}
 	}
+}
+
+// textPatternLines 为主题文本「格局」一节的逐条行。
+func textPatternLines(text string) []string {
+	_, rest, ok := strings.Cut(text, "\n## 格局\n")
+	if !ok {
+		return nil
+	}
+	var out []string
+	for _, line := range strings.Split(rest, "\n") {
+		if !strings.HasPrefix(line, "- **") {
+			break
+		}
+		out = append(out, line)
+	}
+	return out
 }
 
 func TestTopicPalacesScopeFinerThanPrecision(t *testing.T) {

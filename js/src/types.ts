@@ -165,6 +165,8 @@ export interface TextOptions extends KnowledgeOptions {
 export interface TopicPalacesOptions {
   /** 主题定义的来源；省略取排盘语言的内嵌包 */
   knowledge?: Knowledge | undefined;
+  /** 格局判定口径，与 `topicToText` 的 `config` 同形态；省略取默认口径 */
+  config?: PatternConfig | undefined;
 }
 
 /** 运限语义化文本的选项 */
@@ -633,6 +635,36 @@ export interface ScopeMutagenLanding extends MutagenLanding {
   stemKey: HeavenlyStem;
 }
 
+/** 参与成格的一颗星 */
+export interface TopicPatternStar {
+  /** 星耀标识 */
+  key: string;
+  /** 落宫索引 0-11 */
+  palaceIndex: number;
+  /** 亮度标识，无亮度时没有该键 */
+  brightnessKey?: Brightness;
+  /** 判定视角下的四化标识，无四化时没有该键 */
+  mutagenKey?: Mutagen;
+}
+
+/** 主题选中宫内的一次格局命中（语言无关；译名见 `PatternHit`） */
+export interface TopicPattern {
+  /** 格局标识 */
+  key: string;
+  /** 判定视角：本命为 origin，运限为该层 */
+  scope: Scope;
+  /** 成格宫的索引，必为选中宫之一 */
+  palaceIndex: number;
+  /** 成格宫在所选层的宫名标识 */
+  palaceNameKey: PalaceName;
+  /** 多口径格局命中的口径，单口径时没有该键 */
+  variant?: string;
+  /** 「破格 / 加杀平常」的条件是否触发 */
+  broken: boolean;
+  /** 参与成格的星与落宫 */
+  stars: TopicPatternStar[];
+}
+
 /**
  * 一个主题在某一层选中的宫与相关四化（`Astrolabe.topicPalaces`、`Horoscope.topicPalaces`）。
  * 本命层按本命宫名定位；运限层按该层宫名定位、三方四正以该层的本宫起算；`bodyPalace` / `originalPalace`
@@ -655,4 +687,6 @@ export interface TopicSelection {
   birthMutagens: MutagenLanding[];
   /** 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空 */
   scopeMutagens: ScopeMutagenLanding[];
+  /** 所选层视角成格、成格宫在选中宫内的格局命中，即主题文本「格局」一节逐条所列 */
+  patterns: TopicPattern[];
 }

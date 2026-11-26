@@ -7,8 +7,9 @@
 use serde_json::{Value, json};
 use x_iztro::data::stars::MUTAGEN;
 use x_iztro::{
-    Astrolabe, Config, Gender, HoroscopeRef, KnowledgePack, Language, Palace, PalaceTarget, Scope,
-    StemSource, TextDetail, TextOptions, TopicGroupKind, TopicSelection, by_solar,
+    Astrolabe, Config, Gender, HoroscopeRef, KnowledgePack, Language, Palace, PalaceTarget,
+    PatternConfig, Scope, StemSource, TextDetail, TextOptions, TopicGroupKind, TopicSelection,
+    by_solar, patterns_at, translate_pattern,
 };
 
 const CASES: &str = concat!(
@@ -219,6 +220,73 @@ fn verify_by_hand(case: &Value, chart: &Astrolabe, pack: &KnowledgePack, got: &T
         (StemSource::NatalPalace, StemSource::Scope),
         "{name}: 天干取法"
     );
+
+    // 格局：该层视角的命中（只读大限时去掉要读更细一层的）里成格宫在选中宫内的
+    let config = PatternConfig::default();
+    let mut want_hits = match &h {
+        Some(h) if scope != Scope::Origin => patterns_at(chart, h.data(), scope, &config),
+        _ => chart.patterns_with(&config),
+    };
+    if scope == Scope::Decadal {
+        want_hits.retain(|hit| !hit.key.needs_finer_layer());
+    }
+    want_hits.retain(|hit| want_order.contains(&hit.palace));
+    assert_eq!(got.patterns, want_hits, "{name}: 格局");
+}
+
+/// 主题文本「格局」一节逐条所列的格局名，按出现顺序；没有这一节为空
+fn text_pattern_names(text: &str) -> Vec<String> {
+    let Some(start) = text.find("\n## 格局\n") else {
+        return Vec::new();
+    };
+    text[start + "\n## 格局\n".len()..]
+        .lines()
+        .take_while(|line| line.starts_with("- **"))
+        .map(|line| line["- **".len()..line[4..].find("**").unwrap() + 4].to_string())
+        .collect()
+}
+
+/// 结构化结果的格局与主题文本「格局」一节逐条对应：默认包全部主题 × 本命与五个运限层 × 几张盘。
+#[test]
+fn selection_patterns_match_topic_text_section() {
+    let pack = KnowledgePack::builtin(Language::ZhCN).unwrap();
+    let opts = TextOptions::new().knowledge(pack);
+    let mut with_hits = 0;
+    for (date, time, gender) in [
+        ("2000-8-16", 2, "female"),
+        ("1997-3-4", 1, "male"),
+        ("1985-6-10", 8, "female"),
+        ("1964-11-2", 6, "male"),
+    ] {
+        let c = chart(&json!({"solarDate": date, "timeIndex": time, "gender": gender}));
+        let h = c.horoscope("2026-11-20", 5).unwrap();
+        for (slug, _) in pack.topics_in_order() {
+            for scope in [
+                Scope::Origin,
+                Scope::Decadal,
+                Scope::Yearly,
+                Scope::Monthly,
+                Scope::Daily,
+                Scope::Hourly,
+            ] {
+                let got = h.topic_palaces(pack, slug, scope).unwrap();
+                let text = h.topic_to_text(slug, scope, &opts).unwrap();
+                let want: Vec<String> = got
+                    .patterns
+                    .iter()
+                    .map(|hit| translate_pattern(hit.key, Language::ZhCN).to_string())
+                    .collect();
+                assert_eq!(
+                    text_pattern_names(&text),
+                    want,
+                    "{date} {slug} {}",
+                    scope.as_key()
+                );
+                with_hits += usize::from(!want.is_empty());
+            }
+        }
+    }
+    assert!(with_hits > 0, "用例里须有带格局的主题");
 }
 
 #[test]

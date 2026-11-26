@@ -1131,6 +1131,45 @@ pub struct TopicSelectionDto {
     pub birth_mutagens: Vec<MutagenLandingDto>,
     /// 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
     pub scope_mutagens: Vec<ScopeMutagenLandingDto>,
+    /// 所选层视角成格、成格宫在选中宫内的格局命中，即主题文本「格局」一节逐条所列
+    pub patterns: Vec<TopicPatternDto>,
+}
+
+/// 主题选中宫内的一次格局命中 DTO：只含语言无关标识与宫位索引（译名见 [`PatternHitDto`]）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicPatternDto {
+    /// 格局标识
+    pub key: String,
+    /// 判定视角（`origin` 或运限层级标识）
+    pub scope: String,
+    /// 成格宫的索引，必为选中宫之一
+    pub palace_index: usize,
+    /// 成格宫在所选层的宫名标识
+    pub palace_name_key: String,
+    /// 多口径格局命中的口径，单口径省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variant: Option<String>,
+    /// 「破格 / 加杀平常」的条件是否触发
+    pub broken: bool,
+    /// 参与成格的星与落宫
+    pub stars: Vec<TopicPatternStarDto>,
+}
+
+/// 参与成格的一颗星 DTO。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicPatternStarDto {
+    /// 星耀标识
+    pub key: String,
+    /// 落宫索引
+    pub palace_index: usize,
+    /// 亮度标识，无亮度时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub brightness_key: Option<String>,
+    /// 判定视角下的四化标识，无四化时省略
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mutagen_key: Option<String>,
 }
 
 /// 主题的一组宫 DTO。`surround` 组四宫齐全；`only` 组的对宫、财帛位、官禄位为 null。
@@ -1262,6 +1301,35 @@ impl crate::TopicSelection {
                 .collect(),
             palace_stem_source: self.palace_stem_source.as_key().to_string(),
             scope_mutagen_stem_source: self.scope_mutagen_stem_source.as_key().to_string(),
+            patterns: self
+                .patterns
+                .iter()
+                .map(|h| TopicPatternDto {
+                    key: h.key.as_key().to_string(),
+                    scope: h.scope.as_key().to_string(),
+                    palace_index: h.palace,
+                    palace_name_key: self
+                        .palaces
+                        .iter()
+                        .find(|p| p.index == h.palace)
+                        .expect("格局命中只取成格宫在选中宫内的")
+                        .name
+                        .as_key()
+                        .to_string(),
+                    variant: h.variant.map(str::to_string),
+                    broken: h.broken,
+                    stars: h
+                        .stars
+                        .iter()
+                        .map(|s| TopicPatternStarDto {
+                            key: s.star.as_key().to_string(),
+                            palace_index: s.palace,
+                            brightness_key: s.brightness.map(|b| b.as_key().to_string()),
+                            mutagen_key: s.mutagen.map(|m| m.as_key().to_string()),
+                        })
+                        .collect(),
+                })
+                .collect(),
             birth_mutagens: self.birth_mutagens.iter().map(landing).collect(),
             scope_mutagens: self
                 .scope_mutagens

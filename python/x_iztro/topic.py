@@ -141,6 +141,61 @@ class ScopeMutagenLanding:
 
 
 @dataclass(frozen=True, slots=True)
+class TopicPatternStar:
+    """参与成格的一颗星"""
+
+    key: str
+    """星耀标识"""
+    palace_index: int
+    """落宫索引"""
+    brightness_key: str | None
+    """亮度标识，无亮度为 None"""
+    mutagen_key: str | None
+    """判定视角下的四化标识，无四化为 None"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> TopicPatternStar:
+        return cls(
+            key=d["key"],
+            palace_index=d["palaceIndex"],
+            brightness_key=d.get("brightnessKey"),
+            mutagen_key=d.get("mutagenKey"),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TopicPattern:
+    """主题选中宫内的一次格局命中（语言无关；译名见 `PatternHit`）"""
+
+    key: str
+    """格局标识（`PatternKey` 枚举值域）"""
+    scope: str
+    """判定视角：`origin` 或运限层级标识"""
+    palace_index: int
+    """成格宫的索引，必为选中宫之一"""
+    palace_name_key: str
+    """成格宫在所选层的宫名标识"""
+    variant: str | None
+    """多口径格局命中的口径，单口径为 None"""
+    broken: bool
+    """「破格 / 加杀平常」的条件是否触发"""
+    stars: list[TopicPatternStar]
+    """参与成格的星与落宫"""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> TopicPattern:
+        return cls(
+            key=d["key"],
+            scope=d["scope"],
+            palace_index=d["palaceIndex"],
+            palace_name_key=d["palaceNameKey"],
+            variant=d.get("variant"),
+            broken=d["broken"],
+            stars=[TopicPatternStar._from_dict(s) for s in d["stars"]],
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class TopicSelection:
     """一个主题在某一层选中的宫与相关四化"""
 
@@ -160,6 +215,8 @@ class TopicSelection:
     """生年四化落在选中宫的，按禄、权、科、忌"""
     scope_mutagens: list[ScopeMutagenLanding]
     """大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空"""
+    patterns: list[TopicPattern]
+    """所选层视角成格、成格宫在选中宫内的格局命中，即主题文本「格局」一节逐条所列"""
 
     @classmethod
     def _from_dict(cls, d: dict) -> TopicSelection:
@@ -172,4 +229,5 @@ class TopicSelection:
             scope_mutagen_stem_source=d["scopeMutagenStemSource"],
             birth_mutagens=[MutagenLanding._from_dict(m) for m in d["birthMutagens"]],
             scope_mutagens=[ScopeMutagenLanding._from_dict(m) for m in d["scopeMutagens"]],
+            patterns=[TopicPattern._from_dict(p) for p in d["patterns"]],
         )

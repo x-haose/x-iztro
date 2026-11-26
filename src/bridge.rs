@@ -1240,7 +1240,8 @@ fn patterns(input: &QueryInput) -> Result<Value, BridgeError> {
 
 /// 主题选宫：`knowledge` 必填（主题定义在包里），`topic` 为主题 slug。`topicPalaces` 按本命盘选宫；
 /// `horoscopeTopicPalaces` 按运限目标（见 [`horoscope_at`]）的 `scope` 层选宫，`scope` 比查询精度细报错。
-/// 给出 `fromStem`/`fromBranch` 时先重排。返回 [`crate::dto::TopicSelectionDto`]
+/// 格局按 `patternConfig` 口径判定（与 to_text 同一入参）；给出 `fromStem`/`fromBranch` 时先重排。
+/// 返回 [`crate::dto::TopicSelectionDto`]
 fn topic_palaces(input: &QueryInput) -> Result<Value, BridgeError> {
     let language = parse_language(&input.language)?;
     let config = parse_config(&input.config)?;
@@ -1249,6 +1250,7 @@ fn topic_palaces(input: &QueryInput) -> Result<Value, BridgeError> {
             "knowledge is required: pass \"builtin\" or a knowledge pack object",
         ));
     };
+    let pattern_config = parse_pattern_config(&input.pattern_config)?;
     let astrolabe = crate::by_solar(
         &input.solar_date,
         input.time_index,
@@ -1259,7 +1261,7 @@ fn topic_palaces(input: &QueryInput) -> Result<Value, BridgeError> {
     )?;
     let astrolabe = apply_rearrange(astrolabe, &input.from_stem, &input.from_branch)?;
     let selection = match input.kind.as_str() {
-        "topicPalaces" => astrolabe.topic_palaces(&pack, &input.topic)?,
+        "topicPalaces" => astrolabe.topic_palaces_with(&pack, &input.topic, &pattern_config)?,
         _ => {
             let scope = parse_scope_key(&input.scope)?;
             let h = horoscope_at(
@@ -1269,7 +1271,7 @@ fn topic_palaces(input: &QueryInput) -> Result<Value, BridgeError> {
                 input.target_year,
                 input.target_month,
             )?;
-            h.topic_palaces(&pack, &input.topic, scope)?
+            h.topic_palaces_with(&pack, &input.topic, scope, &pattern_config)?
         }
     };
     serde_json::to_value(selection.to_dto()).map_err(serialize_failed)

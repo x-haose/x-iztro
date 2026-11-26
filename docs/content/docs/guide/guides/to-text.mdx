@@ -706,6 +706,7 @@ h.topicPalaces('siblings', 'monthly');
 | `palaces[].flying` | 宫干飞化，按禄权科忌，每类先四槽之星、后附加四化星（默认四化表下即四条）：`mutagenKey`、`starKey`、`palaceIndex`（星不在盘上时为 null）、`selfMutaged`（落回本宫即自化） |
 | `birthMutagens` | 生年四化落在选中宫的：`mutagenKey`、`starKey`、`palaceIndex` |
 | `scopeMutagens` | 大限至所选层各层四化落在选中宫的，每条另有 `scope`、`nameKey`（未起运的大限层为 `childhood`）与 `stemKey`（化出它的干）；本命层为空 |
+| `patterns` | 主题文本「格局」一节逐条所列的命中：所选层视角成格、成格宫在选中宫内；每条 `key`、`scope`、`palaceIndex`、`palaceNameKey`（该层宫名）、`variant`、`broken`、`stars`（`key`、`palaceIndex`、`brightnessKey`、`mutagenKey`）。格局口径与文本同一参数（Rust `topic_palaces_with`，Go `TopicPalacesWith`，Python、JavaScript 的 `config`） |
 | `palaceStemSource` | 宫干飞化所用天干的取法，现为 `natalPalace`：本命各宫宫干，运限各层沿用 |
 | `scopeMutagenStemSource` | 运限四化所用天干的取法，现为 `scope`：该层自身的干（大限宫干、流年年干、流月月干……） |
 

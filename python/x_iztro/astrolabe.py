@@ -377,7 +377,11 @@ class Astrolabe:
         )
 
     def topic_palaces(
-        self, topic: str, *, knowledge: bool | KnowledgePack = True
+        self,
+        topic: str,
+        *,
+        knowledge: bool | KnowledgePack = True,
+        config: PatternConfig | None = None,
     ) -> TopicSelection:
         """
         主题在本命盘上选中的宫：各组位置、每宫的角色与宫干飞化，以及落在这些宫里的生年四化。
@@ -386,12 +390,20 @@ class Astrolabe:
         Args:
             topic: 主题 slug
             knowledge: 主题定义的来源：True 取排盘语言的内嵌包，或给 KnowledgePack
+            config: 格局判定口径，与 `topic_to_text(config=)` 同一参数；None 取默认口径
 
         Raises:
             IztroError: 包里没有该主题、主题里有不认识的宫位标识，或 `knowledge=True` 而排盘语言没有内嵌包
         """
+        from x_iztro.pattern import _pattern_config
+
         return TopicSelection._from_dict(
-            self._context_query("topicPalaces", topic=topic, knowledge=knowledge)
+            self._context_query(
+                "topicPalaces",
+                topic=topic,
+                knowledge=knowledge,
+                pattern_config=_pattern_config(config),
+            )
         )
 
     def __str__(self) -> str:

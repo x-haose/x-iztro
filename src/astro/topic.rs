@@ -14,6 +14,7 @@ use crate::error::IztroError;
 use crate::knowledge::{KnowledgePack, TopicEntry};
 use crate::models::astrolabe::{Astrolabe, PalaceTarget};
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
+use crate::pattern::{PatternConfig, PatternHit, patterns_through};
 
 /// 四化所用天干的取法。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -158,6 +159,9 @@ pub struct TopicSelection {
     pub birth_mutagens: Vec<MutagenLanding>,
     /// 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
     pub scope_mutagens: Vec<ScopeMutagenLanding>,
+    /// 所选层视角成格、且成格宫在选中宫内的格局命中，按格局引擎的输出顺序；即主题文本「格局」一节逐条所列。
+    /// 本命层取本命格局；运限层只取该层视角的命中，只读大限时不含要读更细一层的格局（风云际会）
+    pub patterns: Vec<PatternHit>,
 }
 
 impl TopicSelection {
@@ -204,16 +208,20 @@ pub(crate) fn layers_through(
         .collect()
 }
 
-/// 按主题定义选宫。`layers` 为大限至所选层各层（本命为空），宫名按最后一层定位。
+/// 按主题定义选宫。`horoscope` 给出时在其 `Scope` 层选宫（宫名按该层定位，四化取大限至该层），
+/// 不给或该层为本命时按本命；格局按 `config` 口径判定。
 ///
 /// # Errors
 /// 主题里有不认识的宫位标识时返回 [`IztroError::InvalidArgument`]。
 pub(crate) fn select(
     astrolabe: &Astrolabe,
-    layers: &[(Scope, &HoroscopeItem)],
+    horoscope: Option<(&HoroscopeData, Scope)>,
     topic: &str,
     entry: &TopicEntry,
+    config: &PatternConfig,
 ) -> Result<TopicSelection, IztroError> {
+    let layers = horoscope.map_or_else(Vec::new, |(h, scope)| layers_through(h, scope));
+    let layers = layers.as_slice();
     let layer = layers.last().map(|(_, item)| *item);
     let locate = |key: &str| -> Result<Option<usize>, IztroError> {
         let target = PalaceTarget::from_key(key).ok_or_else(|| {
@@ -339,15 +347,28 @@ pub(crate) fn select(
         }
     }
 
+    let scope = layers.last().map_or(Scope::Origin, |(s, _)| *s);
+    let hits = match horoscope {
+        Some((h, _)) if scope != Scope::Origin => {
+            patterns_through(astrolabe, h, scope, scope, config)
+        }
+        _ => astrolabe.patterns_with(config),
+    };
+    let patterns = hits
+        .into_iter()
+        .filter(|h| palaces.iter().any(|p| p.index == h.palace))
+        .collect();
+
     Ok(TopicSelection {
         topic: topic.to_string(),
-        scope: layers.last().map_or(Scope::Origin, |(s, _)| *s),
+        scope,
         groups,
         palaces,
         palace_stem_source: StemSource::NatalPalace,
         scope_mutagen_stem_source: StemSource::Scope,
         birth_mutagens,
         scope_mutagens,
+        patterns,
     })
 }
 
@@ -362,7 +383,20 @@ impl Astrolabe {
         pack: &KnowledgePack,
         topic: &str,
     ) -> Result<TopicSelection, IztroError> {
-        select(self, &[], topic, entry(pack, topic)?)
+        self.topic_palaces_with(pack, topic, &PatternConfig::default())
+    }
+
+    /// 同 [`Self::topic_palaces`]，格局按 `config` 口径判定；与同一口径的主题文本取同一批格局。
+    ///
+    /// # Errors
+    /// 同 [`Self::topic_palaces`]。
+    pub fn topic_palaces_with(
+        &self,
+        pack: &KnowledgePack,
+        topic: &str,
+        config: &PatternConfig,
+    ) -> Result<TopicSelection, IztroError> {
+        select(self, None, topic, entry(pack, topic)?, config)
     }
 }
 
@@ -379,8 +413,27 @@ impl HoroscopeRef<'_> {
         topic: &str,
         scope: Scope,
     ) -> Result<TopicSelection, IztroError> {
+        self.topic_palaces_with(pack, topic, scope, &PatternConfig::default())
+    }
+
+    /// 同 [`Self::topic_palaces`]，格局按 `config` 口径判定；与同一口径的主题文本取同一批格局。
+    ///
+    /// # Errors
+    /// 同 [`Self::topic_palaces`]。
+    pub fn topic_palaces_with(
+        &self,
+        pack: &KnowledgePack,
+        topic: &str,
+        scope: Scope,
+        config: &PatternConfig,
+    ) -> Result<TopicSelection, IztroError> {
         self.check_within_precision(scope, "scope")?;
-        let layers = layers_through(self.data(), scope);
-        select(self.astrolabe(), &layers, topic, entry(pack, topic)?)
+        select(
+            self.astrolabe(),
+            Some((self.data(), scope)),
+            topic,
+            entry(pack, topic)?,
+            config,
+        )
     }
 }

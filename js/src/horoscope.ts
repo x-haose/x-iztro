@@ -414,6 +414,7 @@ export class Horoscope {
       topic,
       scope,
       knowledge: options.knowledge === undefined ? true : options.knowledge,
+      patternConfig: options.config,
     }) as TopicSelection;
   }
 

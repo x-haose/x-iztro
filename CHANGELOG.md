@@ -9,6 +9,11 @@
 
 ### 新增
 
+- **主题选宫结果带上格局**：`TopicSelection` 新增 `patterns`，即主题文本「格局」一节逐条所列的那批命中（所选层视角成格、
+  成格宫在选中宫内；只读大限时不含风云际会），文本与结构化结果由同一次选宫产出。每条只含语言无关标识与宫位索引：
+  `key`、`scope`、`palaceIndex`、`palaceNameKey`（所选层的宫名）、`variant`、`broken`、`stars`。格局口径可指定：
+  Rust `Astrolabe::topic_palaces_with` / `HoroscopeRef::topic_palaces_with`，Go `TopicPalacesWith`（另有 Context 变体），
+  Python、JavaScript 的 `topic_palaces` / `topicPalaces` 收 `config`，bridge kind `topicPalaces` / `horoscopeTopicPalaces` 收 `patternConfig`。
 - **附加四化星**：有的流派一干化出多于四颗星（如庚干天同、天相同化忌），四槽的四化表放不下。`Config` 新增
   `extraMutagens`（天干标识 → 四化标识 → 星耀标识列表，如 `{"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}`），
   加在该天干生效的四槽（自定义或默认）之外。附加星与四槽之星同等进入星耀的四化标记、宫干飞化、运限各层的四化、
