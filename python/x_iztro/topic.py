@@ -80,7 +80,7 @@ class TopicPalace:
     stem_key: str
     """宫干飞化所用天干的标识（`HeavenlyStem` 枚举值域），取法见 `TopicSelection.palace_stem_source`"""
     flying: list[Flight]
-    """宫干飞化，按禄、权、科、忌四条"""
+    """宫干飞化，按禄、权、科、忌，每类先四槽之星、后附加四化星（默认四化表下即四条）"""
 
     @classmethod
     def _from_dict(cls, d: dict) -> TopicPalace:

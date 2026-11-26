@@ -49,7 +49,7 @@ type TopicPalace struct {
 	NatalNameKey string `json:"natalNameKey"`
 	// StemKey 为宫干飞化所用天干的标识，取法见 TopicSelection.PalaceStemSource
 	StemKey string `json:"stemKey"`
-	// Flying 为宫干飞化，按禄、权、科、忌四条
+	// Flying 为宫干飞化，按禄、权、科、忌，每类先四槽之星、后附加四化星（默认四化表下即四条）
 	Flying []Flight `json:"flying"`
 }
 

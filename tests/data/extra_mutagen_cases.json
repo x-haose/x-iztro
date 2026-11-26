@@ -1,0 +1,885 @@
+{
+  "cases": [
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "config": {
+        "extraMutagens": {
+          "gengHeavenly": {
+            "sihuaLu": [
+              "tianxiangMaj"
+            ]
+          }
+        }
+      },
+      "name": "庚干附加化禄天相",
+      "palaces": [
+        {
+          "index": 0,
+          "mutagedPlaces": [
+            10,
+            9,
+            2,
+            3
+          ],
+          "mutagenStarKeys": [
+            "tanlangMaj",
+            "taiyinMaj",
+            "youbiMin",
+            "tianjiMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tianjiMaj"
+            ],
+            "sihuaKe": [
+              "youbiMin"
+            ],
+            "sihuaLu": [
+              "tanlangMaj"
+            ],
+            "sihuaQuan": [
+              "taiyinMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 1,
+          "mutagedPlaces": [
+            0,
+            10,
+            1,
+            4
+          ],
+          "mutagenStarKeys": [
+            "wuquMaj",
+            "tanlangMaj",
+            "tianliangMaj",
+            "wenquMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenquMin"
+            ],
+            "sihuaKe": [
+              "tianliangMaj"
+            ],
+            "sihuaLu": [
+              "wuquMaj"
+            ],
+            "sihuaQuan": [
+              "tanlangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": true,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 2,
+          "mutagedPlaces": [
+            1,
+            0,
+            9,
+            11
+          ],
+          "mutagenStarKeys": [
+            "taiyangMaj",
+            "wuquMaj",
+            "taiyinMaj",
+            "tiantongMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tiantongMaj"
+            ],
+            "sihuaKe": [
+              "taiyinMaj"
+            ],
+            "sihuaLu": [
+              "taiyangMaj",
+              "tianxiangMaj"
+            ],
+            "sihuaQuan": [
+              "wuquMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 3,
+          "mutagedPlaces": [
+            11,
+            1,
+            4,
+            6
+          ],
+          "mutagenStarKeys": [
+            "jumenMaj",
+            "taiyangMaj",
+            "wenquMin",
+            "wenchangMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenchangMin"
+            ],
+            "sihuaKe": [
+              "wenquMin"
+            ],
+            "sihuaLu": [
+              "jumenMaj"
+            ],
+            "sihuaQuan": [
+              "taiyangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 4,
+          "mutagedPlaces": [
+            1,
+            4,
+            8,
+            0
+          ],
+          "mutagenStarKeys": [
+            "tianliangMaj",
+            "ziweiMaj",
+            "zuofuMin",
+            "wuquMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wuquMaj"
+            ],
+            "sihuaKe": [
+              "zuofuMin"
+            ],
+            "sihuaLu": [
+              "tianliangMaj"
+            ],
+            "sihuaQuan": [
+              "ziweiMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": true
+          }
+        },
+        {
+          "index": 5,
+          "mutagedPlaces": [
+            6,
+            11,
+            9,
+            10
+          ],
+          "mutagenStarKeys": [
+            "pojunMaj",
+            "jumenMaj",
+            "taiyinMaj",
+            "tanlangMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tanlangMaj"
+            ],
+            "sihuaKe": [
+              "taiyinMaj"
+            ],
+            "sihuaLu": [
+              "pojunMaj"
+            ],
+            "sihuaQuan": [
+              "jumenMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 6,
+          "mutagedPlaces": [
+            8,
+            6,
+            0,
+            1
+          ],
+          "mutagenStarKeys": [
+            "lianzhenMaj",
+            "pojunMaj",
+            "wuquMaj",
+            "taiyangMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "taiyangMaj"
+            ],
+            "sihuaKe": [
+              "wuquMaj"
+            ],
+            "sihuaLu": [
+              "lianzhenMaj"
+            ],
+            "sihuaQuan": [
+              "pojunMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": true
+          }
+        },
+        {
+          "index": 7,
+          "mutagedPlaces": [
+            3,
+            1,
+            4,
+            9
+          ],
+          "mutagenStarKeys": [
+            "tianjiMaj",
+            "tianliangMaj",
+            "ziweiMaj",
+            "taiyinMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "taiyinMaj"
+            ],
+            "sihuaKe": [
+              "ziweiMaj"
+            ],
+            "sihuaLu": [
+              "tianjiMaj"
+            ],
+            "sihuaQuan": [
+              "tianliangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 8,
+          "mutagedPlaces": [
+            11,
+            3,
+            6,
+            8
+          ],
+          "mutagenStarKeys": [
+            "tiantongMaj",
+            "tianjiMaj",
+            "wenchangMin",
+            "lianzhenMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "lianzhenMaj"
+            ],
+            "sihuaKe": [
+              "wenchangMin"
+            ],
+            "sihuaLu": [
+              "tiantongMaj"
+            ],
+            "sihuaQuan": [
+              "tianjiMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": true,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 9,
+          "mutagedPlaces": [
+            9,
+            11,
+            3,
+            11
+          ],
+          "mutagenStarKeys": [
+            "taiyinMaj",
+            "tiantongMaj",
+            "tianjiMaj",
+            "jumenMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "jumenMaj"
+            ],
+            "sihuaKe": [
+              "tianjiMaj"
+            ],
+            "sihuaLu": [
+              "taiyinMaj"
+            ],
+            "sihuaQuan": [
+              "tiantongMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": true,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 10,
+          "mutagedPlaces": [
+            10,
+            9,
+            2,
+            3
+          ],
+          "mutagenStarKeys": [
+            "tanlangMaj",
+            "taiyinMaj",
+            "youbiMin",
+            "tianjiMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tianjiMaj"
+            ],
+            "sihuaKe": [
+              "youbiMin"
+            ],
+            "sihuaLu": [
+              "tanlangMaj"
+            ],
+            "sihuaQuan": [
+              "taiyinMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": true,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 11,
+          "mutagedPlaces": [
+            0,
+            10,
+            1,
+            4
+          ],
+          "mutagenStarKeys": [
+            "wuquMaj",
+            "tanlangMaj",
+            "tianliangMaj",
+            "wenquMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenquMin"
+            ],
+            "sihuaKe": [
+              "tianliangMaj"
+            ],
+            "sihuaLu": [
+              "wuquMaj"
+            ],
+            "sihuaQuan": [
+              "tanlangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        }
+      ]
+    },
+    {
+      "chart": {
+        "gender": "female",
+        "solarDate": "2000-8-16",
+        "timeIndex": 2
+      },
+      "config": {
+        "extraMutagens": {
+          "gengHeavenly": {
+            "sihuaJi": [
+              "tianxiangMaj"
+            ]
+          }
+        }
+      },
+      "name": "庚干天同、天相双忌",
+      "palaces": [
+        {
+          "index": 0,
+          "mutagedPlaces": [
+            10,
+            9,
+            2,
+            3
+          ],
+          "mutagenStarKeys": [
+            "tanlangMaj",
+            "taiyinMaj",
+            "youbiMin",
+            "tianjiMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tianjiMaj"
+            ],
+            "sihuaKe": [
+              "youbiMin"
+            ],
+            "sihuaLu": [
+              "tanlangMaj"
+            ],
+            "sihuaQuan": [
+              "taiyinMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 1,
+          "mutagedPlaces": [
+            0,
+            10,
+            1,
+            4
+          ],
+          "mutagenStarKeys": [
+            "wuquMaj",
+            "tanlangMaj",
+            "tianliangMaj",
+            "wenquMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenquMin"
+            ],
+            "sihuaKe": [
+              "tianliangMaj"
+            ],
+            "sihuaLu": [
+              "wuquMaj"
+            ],
+            "sihuaQuan": [
+              "tanlangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": true,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 2,
+          "mutagedPlaces": [
+            1,
+            0,
+            9,
+            11
+          ],
+          "mutagenStarKeys": [
+            "taiyangMaj",
+            "wuquMaj",
+            "taiyinMaj",
+            "tiantongMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tiantongMaj",
+              "tianxiangMaj"
+            ],
+            "sihuaKe": [
+              "taiyinMaj"
+            ],
+            "sihuaLu": [
+              "taiyangMaj"
+            ],
+            "sihuaQuan": [
+              "wuquMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 3,
+          "mutagedPlaces": [
+            11,
+            1,
+            4,
+            6
+          ],
+          "mutagenStarKeys": [
+            "jumenMaj",
+            "taiyangMaj",
+            "wenquMin",
+            "wenchangMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenchangMin"
+            ],
+            "sihuaKe": [
+              "wenquMin"
+            ],
+            "sihuaLu": [
+              "jumenMaj"
+            ],
+            "sihuaQuan": [
+              "taiyangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 4,
+          "mutagedPlaces": [
+            1,
+            4,
+            8,
+            0
+          ],
+          "mutagenStarKeys": [
+            "tianliangMaj",
+            "ziweiMaj",
+            "zuofuMin",
+            "wuquMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wuquMaj"
+            ],
+            "sihuaKe": [
+              "zuofuMin"
+            ],
+            "sihuaLu": [
+              "tianliangMaj"
+            ],
+            "sihuaQuan": [
+              "ziweiMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": true
+          }
+        },
+        {
+          "index": 5,
+          "mutagedPlaces": [
+            6,
+            11,
+            9,
+            10
+          ],
+          "mutagenStarKeys": [
+            "pojunMaj",
+            "jumenMaj",
+            "taiyinMaj",
+            "tanlangMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tanlangMaj"
+            ],
+            "sihuaKe": [
+              "taiyinMaj"
+            ],
+            "sihuaLu": [
+              "pojunMaj"
+            ],
+            "sihuaQuan": [
+              "jumenMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 6,
+          "mutagedPlaces": [
+            8,
+            6,
+            0,
+            1
+          ],
+          "mutagenStarKeys": [
+            "lianzhenMaj",
+            "pojunMaj",
+            "wuquMaj",
+            "taiyangMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "taiyangMaj"
+            ],
+            "sihuaKe": [
+              "wuquMaj"
+            ],
+            "sihuaLu": [
+              "lianzhenMaj"
+            ],
+            "sihuaQuan": [
+              "pojunMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": true
+          }
+        },
+        {
+          "index": 7,
+          "mutagedPlaces": [
+            3,
+            1,
+            4,
+            9
+          ],
+          "mutagenStarKeys": [
+            "tianjiMaj",
+            "tianliangMaj",
+            "ziweiMaj",
+            "taiyinMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "taiyinMaj"
+            ],
+            "sihuaKe": [
+              "ziweiMaj"
+            ],
+            "sihuaLu": [
+              "tianjiMaj"
+            ],
+            "sihuaQuan": [
+              "tianliangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 8,
+          "mutagedPlaces": [
+            11,
+            3,
+            6,
+            8
+          ],
+          "mutagenStarKeys": [
+            "tiantongMaj",
+            "tianjiMaj",
+            "wenchangMin",
+            "lianzhenMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "lianzhenMaj"
+            ],
+            "sihuaKe": [
+              "wenchangMin"
+            ],
+            "sihuaLu": [
+              "tiantongMaj"
+            ],
+            "sihuaQuan": [
+              "tianjiMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": true,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 9,
+          "mutagedPlaces": [
+            9,
+            11,
+            3,
+            11
+          ],
+          "mutagenStarKeys": [
+            "taiyinMaj",
+            "tiantongMaj",
+            "tianjiMaj",
+            "jumenMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "jumenMaj"
+            ],
+            "sihuaKe": [
+              "tianjiMaj"
+            ],
+            "sihuaLu": [
+              "taiyinMaj"
+            ],
+            "sihuaQuan": [
+              "tiantongMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": true,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 10,
+          "mutagedPlaces": [
+            10,
+            9,
+            2,
+            3
+          ],
+          "mutagenStarKeys": [
+            "tanlangMaj",
+            "taiyinMaj",
+            "youbiMin",
+            "tianjiMaj"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "tianjiMaj"
+            ],
+            "sihuaKe": [
+              "youbiMin"
+            ],
+            "sihuaLu": [
+              "tanlangMaj"
+            ],
+            "sihuaQuan": [
+              "taiyinMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": true,
+            "sihuaQuan": false
+          }
+        },
+        {
+          "index": 11,
+          "mutagedPlaces": [
+            0,
+            10,
+            1,
+            4
+          ],
+          "mutagenStarKeys": [
+            "wuquMaj",
+            "tanlangMaj",
+            "tianliangMaj",
+            "wenquMin"
+          ],
+          "mutagenStars": {
+            "sihuaJi": [
+              "wenquMin"
+            ],
+            "sihuaKe": [
+              "tianliangMaj"
+            ],
+            "sihuaLu": [
+              "wuquMaj"
+            ],
+            "sihuaQuan": [
+              "tanlangMaj"
+            ]
+          },
+          "selfMutaged": {
+            "sihuaJi": false,
+            "sihuaKe": false,
+            "sihuaLu": false,
+            "sihuaQuan": false
+          }
+        }
+      ]
+    }
+  ],
+  "comment": "附加四化星的四侧共用用例：config 为排盘配置（含 extraMutagens），按 chart 阳历排盘后逐宫核对：DTO 的 mutagenStarKeys（四槽，禄权科忌）、各类四化 mutagenStars（四槽之星在前、附加星在后）、mutagedPlaces（四槽之星的落宫索引，星不在盘上为 null）与各类自化 selfMutaged。palaces 由 Rust tests/extra_mutagen_cases.rs 生成并核对，UPDATE_EXTRA_MUTAGEN_CASES=1 重跑该测试写入。由 Rust、Python test_extra_mutagen_cases.py、Go extra_mutagen_cases_test.go、JS extra-mutagen-cases.test.ts 读取。"
+}

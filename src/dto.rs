@@ -19,7 +19,6 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::stars::MUTAGEN;
 use crate::data::types::*;
 use crate::error::BridgeError;
 use crate::i18n::{
@@ -722,8 +721,8 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
         },
         ages: p.ages.clone(),
         mutagen_star_keys: {
-            let stars = p.mutagen_stars(&MUTAGEN);
-            std::array::from_fn(|i| stars[i].as_key().to_string())
+            let table = p.stem_mutagens();
+            table.primary.map(|star| star.as_key().to_string())
         },
         extra_mutagen_star_keys: ExtraMutagenStarKeysDto::from_groups(&p.stem_mutagens().extra),
     }

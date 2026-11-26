@@ -173,7 +173,7 @@ pub fn get_yearly_star_index(param: &StarParam) -> Result<YearlyStars, IztroErro
 | --- | --- |
 | `DailyStar` | `santai` `bazuo` `enguang` `tiangui` |
 | `MonthlyStar` | `jieshen` `tianyao` `tianxing` `yinsha` `tianyue` `tianwu` |
-| `YearlyStars` | 29 fields: `tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `jiekong` `tianshang` `tianshi` `huagai` `xianchi` `guchen` `guasu` `jiesha` `nianjie` `dahao` `hongluan` `tianxi` |
+| `YearlyStars` | 31 fields: `tiancai` `tianshou` `tianchu` `posui` `feilian` `longchi` `fengge` `tianku` `tianxu` `tianguan` `tianfu` `tiande` `yuede` `tiankong` `jielu` `kongwang` `xunkong` `jiekong` `pang_jiekong` `pang_xunkong` `tianshang` `tianshi` `huagai` `xianchi` `guchen` `guasu` `jiesha` `nianjie` `dahao` `hongluan` `tianxi` |
 
 **Example**
 
@@ -464,7 +464,7 @@ data. The charting pipeline uses them internally, and they are reusable in a pip
 | `get_tianshang_tianshi_index` | `gender, yearly_branch, soul_index, algorithm` | `(usize, usize)`, Tianshang then Tianshi |
 | `get_tiancai_index` | `yearly_branch, soul_index` | `usize` |
 | `get_monthly_star_index` | `month_index` | `MonthlyStar { jieshen, tianyao, tianxing, yinsha, tianyue, tianwu }` |
-| `get_yearly_star_index` | `soul_index, body_index, yearly_stem, yearly_branch, gender, algorithm` | `YearlyStars` (the 29 fields above) |
+| `get_yearly_star_index` | `soul_index, body_index, yearly_stem, yearly_branch, gender, algorithm` | `YearlyStars` (the 31 fields above) |
 
 Every field of these structs is a `usize` palace index (0 being the Yin palace);
 `get_tianshang_tianshi_index` returns a bare tuple rather than a named struct.
