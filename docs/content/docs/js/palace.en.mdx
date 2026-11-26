@@ -23,6 +23,7 @@ accept a palace object, an index, a palace key or a palace name in the chart lan
 | `decadal` | `Decadal` | Decadal: `range` (ages) plus stem and branch with keys |
 | `ages` | `readonly number[]` | Nominal ages of the age fortune passing through |
 | `mutagenStarKeys` | `readonly [string, string, string, string]` | The four stars transformed by this palace's stem (lu, quan, ke, ji); follows custom mutagen tables |
+| `extraMutagenStarKeys` | `Partial<Record<Mutagen, readonly string[]>> \| undefined` | Extra stars this palace's stem transforms beyond the four slots: mutagen key → list of star keys; undefined when there are none. The flying methods count them with the slot star of the same transformation: for `fliesTo` and `selfMutaged` a transformation flies in when any one of its stars is in the target palace, and `mutagedPlaces` follows the four slots only |
 
 ---
 

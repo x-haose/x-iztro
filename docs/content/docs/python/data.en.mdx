@@ -284,12 +284,12 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `PalaceName` | **14** | The twelve palaces `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`, plus the two locator marks `BODY` (body palace) and `ORIGINAL` (palace of origin) |
 | `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
 | `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
-| `Brightness` | 7 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN` |
+| `Brightness` | 8 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`, plus `XIAN2` (闲), which iztro lacks and which only appears in custom brightness tables |
 | `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
 | `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
 | `MajorStar` | 14 | The fourteen major stars: `ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
 | `MinorStar` | 14 | The fourteen minor stars: `ZUOFU` `YOUBI` `WENCHANG` `WENQU` `LUCUN` `TIANMA` `QINGYANG` `TUOLUO` `HUOXING` `LINGXING` `TIANKUI` `TIANYUE` `DIKONG` `DIJIE` |
-| `AdjectiveStar` | 43 | Adjective stars, including the Zhongzhou school's `XUNZHONG`; member by member on [Stars](/en/docs/guide/concepts/stars) |
+| `AdjectiveStar` | 45 | Adjective stars, including the Zhongzhou school's `XUNZHONG` and the side voids `PANG_JIEKONG` and `PANG_XUNKONG` placed when Jiekong and Xunkong split into main and side; member by member on [Stars](/en/docs/guide/concepts/stars) |
 | `HoroscopeStar` | 50 | Ten scope stars for each of the five horoscope layers: `YUNLU` `LIULU` `YUELU` `RILU` `SHILU` and so on |
 | `Changsheng12` | 12 | `CHANGSHENG` `MUYU` `GUANDAI` `LINGUAN` `DIWANG` `SHUAI` `BING` `SI` `MU` `JUE` `TAI` `YANG` |
 | `Boshi12` | 12 | `BOSHI` `LISHI` `QINGLONG` `XIAOHAO` `JIANGJUN` `ZHOUSHU` `FEILIAN` `XISHEN` `BINGFU` `DAHAO` `FUBING` `GUANFU` |
@@ -300,6 +300,7 @@ Import them straight from the package root: `from x_iztro import MajorStar, Pala
 | `YearDivide` / `HoroscopeDivide` | 2 each | `NORMAL` `EXACT` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
 | `DayDivide` | 2 | `FORWARD` `CURRENT` |
+| `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
 
 A member's name does not always match its value letter for letter — the value of `Boshi12.FEILIAN` is
 `faylian`, that of `Jiangqian12.XISHEN` is `xiishen`, and that of `Suiqian12.GWANFU` is `gwanfu`.

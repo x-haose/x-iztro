@@ -38,7 +38,7 @@ enters into it.
 
 | Section | Entries | Contents |
 | --- | --- | --- |
-| `stars` | 162 | 14 major, 14 minor, 38 adjective, 46 decorative and 50 flowing stars — every `StarKey` has an entry. The major, minor, adjective and decorative ones carry the card attributes (yin-yang, five elements, dipper, chemistry, career, duty, aliases, element colour, energy colour) plus a body of text; the 14 major stars also carry readings for pairing with each other major star; the flowing-star entries (`category: "flow"`) are cross-references pointing at their natal minor-star counterparts, with the machine-readable table served by `flow_star_counterparts` (Go `FlowStarCounterparts`) |
+| `stars` | 164 | 14 major, 14 minor, 40 adjective, 46 decorative and 50 flowing stars — every `StarKey` has an entry. The major, minor, adjective and decorative ones carry the card attributes (yin-yang, five elements, dipper, chemistry, career, duty, aliases, element colour, energy colour) plus a body of text; the 14 major stars also carry readings for pairing with each other major star; the flowing-star entries (`category: "flow"`) are cross-references pointing at their natal minor-star counterparts, with the machine-readable table served by `flow_star_counterparts` (Go `FlowStarCounterparts`) |
 | `patterns` | 64 | Classical quotations, a prose description of the conditions, and the reading |
 | `palaces` | 12 | What each of the twelve palaces means |
 | `mutagens` | 4 | What Lu, Quan, Ke and Ji each mean |
@@ -360,7 +360,7 @@ Stars work the same way: take each star's `key` from the chart to `pack.star(key
 
 ## Picking by chart
 
-The full pack holds 162 stars and 64 patterns; one chart uses far fewer. `for_astrolabe` cuts a
+The full pack holds 164 stars and 64 patterns; one chart uses far fewer. `for_astrolabe` cuts a
 sub-pack containing only what is on this chart, and `for_horoscope` adds the horoscope scopes'
 material on top:
 

@@ -51,7 +51,7 @@ pub fn by_solar(
 | `gender` | `Gender` | Yes | — | `Gender::Male` or `Gender::Female`. Sets the direction of the decadal scope and of the Changsheng and Boshi gods |
 | `fix_leap` | `bool` | Yes | — | Whether to correct for lunar leap months. When `true`, days after the fifteenth of a leap month count as the next month (except in the late Zi hour, see below) |
 | `language` | `Language` | Yes | — | Output language; affects every translated field in the DTO. The `*_key` fields are unaffected |
-| `config` | `Config` | Yes | — | Charting configuration: six switches plus custom tables. Use `Config::default()` for the defaults |
+| `config` | `Config` | Yes | — | Charting configuration: seven switches plus custom tables (mutagens, extra mutagen stars, brightness). Use `Config::default()` for the defaults; see [Config in depth](/en/docs/guide/guides/config) for each item |
 
 **Return value** `Astrolabe` — a complete chart with the twelve palaces, the four pillars, the soul
 and body stars and the five elements class. The field list is on

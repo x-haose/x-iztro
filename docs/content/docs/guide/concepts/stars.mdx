@@ -73,6 +73,11 @@ description: 三组星耀各自装什么，星耀分八类，亮度与四化标�
 中州派（`algorithm = zhongzhou`）则改安**截空**、**劫杀**、**大耗**、**龙德**，
 不安截路与空亡，杂耀总数由 32 变成 34。见
 [Config 详解](/zh/docs/guide/guides/config#算法派别-algorithm)。
+
+`void_placement = zhengPang` 时截空、旬空各分正傍两宫：两派都在正空安截空、傍空安傍截空
+`pangJiekong`，默认派不再安截路与空亡；旬空的傍空另安傍旬空 `pangXunkong`。
+杂耀总数默认派为 33、中州派为 36。见
+[Config 详解](/zh/docs/guide/guides/config#截空与旬空-void_placement)。
 </Callout>
 
 <Callout type="warn" title="四化只看主星与辅星">
@@ -110,7 +115,10 @@ description: 三组星耀各自装什么，星耀分八类，亮度与四化标�
 | 不 | 不得地 | |
 | 陷 | 落陷 | 最弱 |
 
-同一颗星在不同宫位亮度不同，这由星与地支的固定对照表决定。杂耀通常没有亮度。
+同一颗星在不同宫位亮度不同，这由星与地支的固定对照表决定。默认表不给杂耀亮度。
+
+自定义亮度表另可用一级「闲」（标识 `xian2`，排在平之下、陷之上，英文、韩文记作 `[idle]`、`[한]`），
+也可以给杂耀指定亮度，见 [Config 详解](/zh/docs/guide/guides/config#亮度表)。
 
 <Callout title="非中文盘上的亮度是记号">
 英文、韩文等语言的词表没有亮度译名，输出的是 `[+3]`（庙）到 `[-3]`（陷）的记号。

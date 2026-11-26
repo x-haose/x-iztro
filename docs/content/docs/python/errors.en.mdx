@@ -196,7 +196,7 @@ See [the astrolabe object](/en/docs/python/astrolabe#palace).
 
 ## Configuration-related
 
-The six switches and the two custom tables of `ChartConfig` are all validated during charting, and the
+The switches and the custom tables of `ChartConfig` are all validated during charting, and the
 `code` is `invalid_argument` throughout:
 
 | Situation | Message |
@@ -205,6 +205,8 @@ The six switches and the two custom tables of `ChartConfig` are all validated du
 | An unknown stem key in the mutagen table | `invalid mutagens key 'nope': unknown heavenly stem` |
 | A stem's mutagens are not four entries | `invalid mutagens for 'jiaHeavenly': expected 4 stars (lu, quan, ke, ji), got 1` |
 | A star's brightness table is not twelve entries | `invalid brightness for 'ziweiMaj': expected 12 entries, got 1` |
+| Unknown mutagen key among the extra mutagen stars | `invalid extraMutagens for 'gengHeavenly': invalid mutagen 'nope': expected 'sihuaLu', 'sihuaQuan', 'sihuaKe' or 'sihuaJi'` |
+| A star appears twice within one stem (slots and extra stars together) | `invalid mutagens for 'gengHeavenly': star 'tiantongMaj' appears more than once` |
 
 <Callout type="info">
 The lengths are **strictly** validated: mutagens must be exactly four entries and brightness exactly

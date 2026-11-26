@@ -24,12 +24,12 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 
 | 枚举 | 变体数 | 取标识 | 由标识还原 | key 举例 |
 | --- | --- | --- | --- | --- |
-| `StarKey` | 162 | `as_key()` | `from_key(&str)` | `ziweiMaj`、`yunlu` |
+| `StarKey` | 164 | `as_key()` | `from_key(&str)` | `ziweiMaj`、`yunlu` |
 | `Palace` | 12 | `as_key()` | `from_key(&str)` | `soulPalace`、`wealthPalace` |
 | `HeavenlyStem` | 10 | `as_key()` | `from_key(&str)` | `jiaHeavenly` |
 | `EarthlyBranch` | 12 | `as_key()` | `from_key(&str)` | `ziEarthly` |
 | `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
-| `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
+| `Brightness` | 8 | `as_key()` | `from_key(&str)` | `miao`、`xian2`（闲） |
 | `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
 | `StarType` | 8 | `as_key()` | `from_key(&str)` | `major`、`lucun` |
 | `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`、`decadal` |
@@ -42,6 +42,7 @@ description: 枚举与它们的方法、排盘配置、星耀基础信息、天�
 | `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+| `VoidPlacement` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhengPang` |
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` 一律返回 `Option`，未知标识给 `None`——绑定层据此拒绝非法入参。
@@ -111,7 +112,7 @@ ja-JP Some(ZhCN)
 | `FiveElements` | `Wood` `Metal` `Water` `Fire` `Earth` |
 | `FiveElementsClass` | `Water2nd` `Wood3rd` `Metal4th` `Earth5th` `Fire6th` |
 | `Mutagen` | `Lu` `Quan` `Ke` `Ji` |
-| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` |
+| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` `Xian2`——`Xian2` 是闲（标识 `xian2`），iztro 没有这一级，只出现在自定义亮度表里 |
 | `StarType` | `Major` `Soft` `Tough` `Adjective` `Flower` `Helper` `Lucun` `Tianma` |
 | `Scope` | `Origin` `Decadal` `Yearly` `Monthly` `Daily` `Hourly` |
 | `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
@@ -121,8 +122,8 @@ ja-JP Some(ZhCN)
 | `Palace` | 按 `index()` 序：`Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 
-<Callout type="warn" title="五个枚举是 #[non_exhaustive] 的">
-`IztroError`、`StarType`、`Scope`、`Algorithm`、`AstroType` 标了 `#[non_exhaustive]`，
+<Callout type="warn" title="七个枚举是 #[non_exhaustive] 的">
+`IztroError`、`Brightness`、`StarType`、`Scope`、`Algorithm`、`AstroType`、`VoidPlacement` 标了 `#[non_exhaustive]`，
 crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破坏性变更。
 </Callout>
 
@@ -135,7 +136,7 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 
 ## Config
 
-排盘配置：六个开关加两张可选的自定义表。`Config::default()` 与 JS iztro 的默认配置一致。
+排盘配置：七个开关加可选的自定义表。`Config::default()` 与 JS iztro 的默认配置一致。
 
 | 字段 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
@@ -145,20 +146,23 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 | `day_divide` | `DayDivide` | `Forward` | 晚子时归次日还是归当天 |
 | `algorithm` | `Algorithm` | `Default` | 派别：默认或中州派 |
 | `astro_type` | `AstroType` | `Heaven` | 排盘视角：天盘 / 地盘 / 人盘 |
-| `overrides` | `Option<Arc<TableOverrides>>` | `None` | 自定义四化与亮度表 |
+| `void_placement` | `VoidPlacement` | `Default` | 截空、旬空安一宫（同 iztro）还是各分正空、傍空两宫 |
+| `overrides` | `Option<Arc<TableOverrides>>` | `None` | 自定义四化表、附加四化星与亮度表 |
 
-六个开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
+各开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
 
 ### 序列化
 
 `Config` 的 serde 表示就是绑定层的 config JSON：
 
 - 反序列化是**部分键补丁**：缺省的键取默认值；**未知键报错**（拼错的键不会被静默忽略）；
-- 六个开关取标识（`"yearDivide": "exact"`），自定义表写作 `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}`
+- 开关取标识（`"yearDivide": "exact"`），自定义表写作 `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}`、
+  `"extraMutagens": {"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}`
   与 `"brightness": {"ziweiMaj": ["miao", "", …]}`（十二项按宫位索引、寅宫为 0，空串表示无亮度）；
-- 序列化写出六个开关与已覆盖的表，能被原样反序列化回来，自定义表往返不丢。
+- 同一天干里一颗星在四槽与附加星合计出现两次即报错（见下文 `check`）；
+- 序列化写出七个开关与已覆盖的表，能被原样反序列化回来，自定义表往返不丢。
 
-星盘 DTO 里的 `config` 只记六个开关，不回显自定义表——自定义表是排盘的输入，不是结果。
+星盘 DTO 里的 `config` 只记开关（`voidPlacement` 取默认值时也省略），不回显自定义表——自定义表是排盘的输入，不是结果。
 
 ### 构造方法
 
@@ -167,14 +171,20 @@ crate 外的 `match` 必须带兜底分支。将来新增变体因此不是破�
 | 方法 | 说明 |
 | --- | --- |
 | `with_astro_type(AstroType) -> Config` | 指定排盘视角 |
+| `with_void_placement(VoidPlacement) -> Config` | 指定截空与旬空的安法 |
 | `with_mutagens(HeavenlyStem, [StarKey; 4]) -> Config` | 覆盖某个天干的四化表，顺序为禄、权、科、忌 |
+| `with_extra_mutagens(HeavenlyStem, Mutagen, impl IntoIterator<Item = StarKey>) -> Config` | 设定某个天干某一类四化的附加星，替换该类原有的附加星；空列表即去掉 |
 | `with_brightness(StarKey, [Option<Brightness>; 12]) -> Config` | 覆盖某颗星的十二宫亮度表，索引 0 为寅宫 |
 
 ### 查表方法
 
 | 方法 | 说明 |
 | --- | --- |
-| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | 该天干**实际生效**的四化表：有覆盖用覆盖，否则用默认表 |
+| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | 该天干**实际生效**的四化表四槽：有覆盖用覆盖，否则用默认表 |
+| `extra_mutagens_of(HeavenlyStem) -> &[Vec<StarKey>; 4]` | 该天干的附加四化星，按禄、权、科、忌分组；没有时四组皆空 |
+| `stem_mutagens(HeavenlyStem) -> StemMutagens` | 四槽加附加星；`iter()` 给（星, 四化）序列，`stars_of(Mutagen)` 给某一类的全部星 |
+| `mutagen_of(HeavenlyStem, StarKey) -> Option<Mutagen>` | 该星在该天干化哪一类（含附加星） |
+| `check() -> Result<(), String>` | 校验自定义表：同一天干里一颗星至多出现一次。排盘与反推入口都先调它，不通过即 `InvalidArgument` |
 | `brightness_of(StarKey, usize) -> Option<Brightness>` | 该星在该宫实际生效的亮度；宫位索引越界对 12 取模 |
 
 **示例**
@@ -223,20 +233,24 @@ Some(Miao)
 </Accordion>
 <Accordion title="自定义表会改变哪些结果">
 四化表影响：生年四化标记、宫干飞星族方法、运限各层级的四化、
-`get_mutagen` / `get_mutagens_by_heavenly_stem`。
-亮度表影响：星耀的 `brightness` 字段与 `with_brightness` 判断、`get_brightness`。
+`get_mutagen` / `get_mutagens_by_heavenly_stem`。附加四化星除 `get_mutagens_by_heavenly_stem`
+（只给四槽）外同样进入这些地方，另进入格局判定与文本。
+亮度表影响：星耀（主星、辅星、杂耀）的 `brightness` 字段与 `with_brightness` 判断、`get_brightness`。
 两者都不改变星耀落宫。
 </Accordion>
 </Accordions>
 
 ### TableOverrides
 
-`Config` 里那两张表的载体，一般不必直接构造——用上面两个 `with_*` 即可。
+`Config` 里自定义表的载体，一般不必直接构造——用上面的 `with_*` 即可。
 需要一次塞多条时可以自己建：
 
 | 方法 | 说明 |
 | --- | --- |
 | `set_mutagens(HeavenlyStem, [StarKey; 4])` | 写入某天干的四化表 |
+| `set_extra_mutagens(HeavenlyStem, Mutagen, Vec<StarKey>)` | 写入某天干某一类四化的附加星 |
+| `extra_mutagens_of(HeavenlyStem) -> Option<&[Vec<StarKey>; 4]>` | 取某天干的附加四化星，没有时为 `None` |
+| `check() -> Result<(), String>` | 同 `Config::check` |
 | `set_brightness(StarKey, [Option<Brightness>; 12])` | 写入某星的亮度表 |
 | `mutagens_of(HeavenlyStem) -> Option<&[StarKey; 4]>` | 取被覆盖的四化表，未覆盖为 `None` |
 | `brightness_of(StarKey) -> Option<&[Option<Brightness>; 12]>` | 取被覆盖的亮度表 |
@@ -455,7 +469,7 @@ en-US rat lateRatHour
 
 | 常量 | 长度 | 内容 |
 | --- | --- | --- |
-| `ALL_STARS` | 162 | 全部星耀标识，顺序与 `StarKey` 声明一致 |
+| `ALL_STARS` | 164 | 全部星耀标识，顺序与 `StarKey` 声明一致 |
 | `STARS_WITH_INFO` | 20 | 有 `StarInfo` 记录的那二十颗 |
 
 **示例**
@@ -472,7 +486,7 @@ for star in data::stars::STARS_WITH_INFO {
 **输出**
 
 ```text
-162 20
+164 20
 紫微 天机 太阳 武曲 天同 廉贞 天府 太阴 贪狼 巨门 天相 天梁 七杀 破军 文昌 文曲 火星 铃星 擎羊 陀罗
 ```
 

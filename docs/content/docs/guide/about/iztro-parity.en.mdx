@@ -170,7 +170,7 @@ nothing is truncated. See
 
 ### Override tables are not echoed in the output config
 
-The `config` echoed on the astrolabe holds only the six switches. The override tables are charting
+The `config` echoed on the astrolabe holds only the switches. The override tables are charting
 input, and putting them into the DTO would break the field contract with iztro, so they read back
 empty — keep your own copy if you need a record.
 
@@ -201,7 +201,7 @@ bindings read back from the same files.
 iztro ships facts only; the reading texts for stars and patterns live on its documentation site, not
 in the library. x-iztro turns interpretation into data behind a protocol: a knowledge pack is JSON
 mapping "language-independent key → text and attributes", and one default pack ships inside the
-library (all 162 stars, 64 patterns, 12 palaces, 4 transformations, 51 glossary entries, with readings
+library (all 164 stars, 64 patterns, 12 palaces, 4 transformations, 51 glossary entries, with readings
 taken from the 学习 (Learn) pages of iztro-docs, MIT License, by Sylar Long). Disagree with it and you write an overlay
 pack that merges field by field.
 
@@ -241,9 +241,14 @@ The entry points: `solar_dates_by_bazi` / `reverse_chart` in Rust and Python,
 - **Up-front validation at the entry points**: invalid dates, out-of-range hours and the like return
   an error rather than panicking, with a machine-readable category code. See
   [Error handling](/en/docs/guide/guides/errors).
-- **Custom mutagen and brightness tables**: replace the built-in data wholesale, by key. See
+- **Custom mutagen and brightness tables**: replace the built-in data wholesale, by key; a stem can
+  also be given extra mutagen stars beyond its four slots, adjective stars can be given brightness, and
+  brightness can use the 闲 level iztro lacks. See
   [Config in depth](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables).
-- **`all_keys`**: fetch all 260 translatable keys at once.
+- **Main and side voids for Jiekong and Xunkong**: with `void_placement = zhengPang` each takes a main
+  and a side void palace. See
+  [Config in depth](/en/docs/guide/guides/config#jiekong-and-xunkong-void_placement).
+- **`all_keys`**: fetch all 263 translatable keys at once.
 - **Calendar lookups**: the months of a lunar year, Gregorian ↔ lunar conversion and the stem-branch of a
   lunar year, on the same calendar core as charting. iztro leaves these to its dependency lunar-lite
   (`solar2lunar`, `lunar2solar` and so on) rather than its own API; x-iztro takes integer year, month and day,

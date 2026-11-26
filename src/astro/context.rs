@@ -47,9 +47,18 @@ pub struct AstroContext {
     pub(crate) lunar: Lunar,
 }
 
+/// 校验排盘配置的自定义表（规则见 [`Config::check`]），不合法即 [`IztroError::InvalidArgument`]，
+/// 正文以 `config:` 标明出处。
+pub(crate) fn check_config(config: &Config) -> Result<(), IztroError> {
+    config
+        .check()
+        .map_err(|e| IztroError::InvalidArgument(format!("config: {e}")))
+}
+
 /// 由公历日期推出排盘上下文
 ///
-/// `solar_date` 为 `Y-M-D`（分隔符可为 `-` `/` `.`，可带时间部分），`time_index` 为 0-12；两者的合法性在此校验。
+/// `solar_date` 为 `Y-M-D`（分隔符可为 `-` `/` `.`，可带时间部分），`time_index` 为 0-12；两者与
+/// `config` 自定义表的合法性在此校验。
 pub fn derive(
     solar_date: &str,
     time_index: u8,
@@ -57,6 +66,7 @@ pub fn derive(
     config: &Config,
 ) -> Result<AstroContext, IztroError> {
     validate_time_index(time_index)?;
+    check_config(config)?;
     let (year, month, day) = parse_solar_date(solar_date)?;
 
     let effective_time_index = effective_time_index(config.day_divide, time_index);

@@ -242,11 +242,11 @@ map[female:阴 male:阳]
 | 前缀 | 数量 | 例 |
 | --- | --- | --- |
 | `Palace*` | 12 + 2 | `PalaceSoul`、`PalaceWealth`、`PalaceBody`、`PalaceOriginal` |
-| `Star*` | 162 | `StarZiweiMaj`、`StarLucunMin`、`StarYunlu` |
+| `Star*` | 164 | `StarZiweiMaj`、`StarLucunMin`、`StarYunlu` |
 | `Stem*` | 10 | `StemJia`、`StemGeng` |
 | `Branch*` | 12 | `BranchZi`、`BranchWu` |
 | `Mutagen*` | 4 | `MutagenLu`、`MutagenJi` |
-| `Brightness*` | 7 | `BrightnessMiao`、`BrightnessWang` |
+| `Brightness*` | 8 | `BrightnessMiao`、`BrightnessWang` |
 | `Class*` | 5 | `ClassWater2nd`、`ClassWood3rd`、`ClassMetal4th`、`ClassEarth5th`、`ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`、`ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`、`StarTypeTough` |
@@ -258,7 +258,7 @@ map[female:阴 male:阳]
 字面量（`"male"`、`"zh-CN"`）仍可直接写；`Astrolabe.GenderKey` 与 `Astrolabe.Language` 字段也是这两个类型。
 其余常量是无类型的字符串常量，与 `*Key` 字段直接比较。
 
-配置类另有六组：
+配置类另有七组：
 
 | 前缀 | 取值 |
 | --- | --- |
@@ -268,6 +268,7 @@ map[female:阴 male:阳]
 | `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
 | `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
+| `VoidPlacement*` | `VoidPlacementDefault` / `VoidPlacementZhengPang` |
 
 <Callout type="warn" title="五行局常量的前缀是 Class 不是 FiveElements">
 写 `iztro.ClassWood3rd`，不是 `iztro.FiveElementsWood3rd`——

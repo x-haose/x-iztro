@@ -29,6 +29,7 @@ const h = chart.horoscope('2024-10-1', 0);
 | `heavenlyStem(Key)` / `earthlyBranch(Key)` | 该层干支 / 标识 |
 | `palaceNames` / `palaceNameKeys` | 以该层命宫起排的十二宫名，按宫位索引排列 |
 | `mutagen` / `mutagenStarKeys` | 该层四化星 [禄, 权, 科, 忌] |
+| `extraMutagenStarKeys` | 该层天干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)：四化标识 → 星耀标识列表；没有附加星时为 `undefined`，`hasHoroscopeMutagen` 一并计入 |
 | `stars` | 流耀，十二宫各一组；该层没有流耀时为 `undefined` |
 | `palaceIndexByName(name)` | 宫名在该层所在的宫位索引 |
 

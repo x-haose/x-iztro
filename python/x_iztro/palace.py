@@ -139,6 +139,10 @@ class Palace:
     会反映在这里，飞星判断随之改变。
     """
 
+    extra_mutagen_star_keys: dict[str, list[str]] = field(default_factory=dict)
+    """本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extra_mutagens`）；
+    没有附加星时为空。飞星判断把附加星与同类的四槽之星一并计入。"""
+
     _astrolabe: Astrolabe | None = field(default=None, compare=False, repr=False)
     """宫位所属星盘，由星盘构造时回填"""
 
@@ -248,14 +252,20 @@ class Palace:
         """
         本宫天干在指定四化位上对应的星耀标识。
 
-        顺序与传入顺序一致；查不到对应星耀的四化位会被跳过。
+        顺序与传入顺序一致，每一类先四槽之星、后附加星；查不到对应星耀的四化位会被跳过。
         """
-        out: list[str] = []
+        return [star for group in self._mutagen_groups(mutagens) for star in group]
+
+    def _mutagen_groups(self, mutagens: Mutagen | list[Mutagen]) -> list[list[str]]:
+        """按传入顺序，每一类四化化出的星（四槽之星与附加星）各成一组；查不到的四化位跳过。"""
+        out: list[list[str]] = []
         for m in _as_mutagen_list(mutagens):
             idx = _MUTAGEN_INDEX.get(m)
             if idx is None or idx >= len(self.mutagen_star_keys):
                 continue
-            out.append(self.mutagen_star_keys[idx])
+            out.append(
+                [self.mutagen_star_keys[idx], *self.extra_mutagen_star_keys.get(str(m), [])]
+            )
         return out
 
     def flies_to(
@@ -264,7 +274,9 @@ class Palace:
         mutagens: Mutagen | list[Mutagen],
     ) -> bool:
         """
-        判断本宫天干的指定四化星是否 **全部** 落在目标宫位。
+        判断本宫天干的指定四化是否 **全部** 飞入目标宫位。
+
+        一类四化化出不止一颗星时，其中任一颗在目标宫即算这一类飞入。
 
         Args:
             target: 目标宫位对象、宫位索引，或宫位标识/宫名
@@ -275,10 +287,10 @@ class Palace:
         to = self._resolve_palace(target)
         if to is None:
             return False
-        stars = self.mutagen_stars(mutagens)
-        if not stars:
+        groups = self._mutagen_groups(mutagens)
+        if not groups:
             return False
-        return to.has(stars)
+        return all(to.has_one_of(g) for g in groups)
 
     def flies_one_of_to(
         self,
@@ -317,8 +329,8 @@ class Palace:
         return to.not_have(stars)
 
     def self_mutaged(self, mutagens: Mutagen | list[Mutagen]) -> bool:
-        """判断本宫天干的指定四化星是否 **全部** 落在本宫（自化）"""
-        return self.has(self.mutagen_stars(mutagens))
+        """判断本宫天干的指定四化是否 **全部** 落回本宫（自化）；一类四化有任一颗星在本宫即算"""
+        return all(self.has_one_of(g) for g in self._mutagen_groups(mutagens))
 
     def self_mutaged_one_of(
         self, mutagens: Mutagen | list[Mutagen] | None = None
@@ -350,7 +362,7 @@ class Palace:
             all_palaces: 检索范围；不传则取本宫所属星盘的十二宫
 
         Returns:
-            长度为 4 的列表 [禄飞入宫, 权飞入宫, 科飞入宫, 忌飞入宫]，
+            长度为 4 的列表 [禄飞入宫, 权飞入宫, 科飞入宫, 忌飞入宫]（四槽之星，不含附加星），
             未找到时为 None。
         """
         if all_palaces is None:
@@ -359,7 +371,7 @@ class Palace:
             all_palaces = self._astrolabe.palaces
 
         result: list[Palace | None] = []
-        for star_key in self.mutagen_stars(list(Mutagen)):
+        for star_key in self.mutagen_star_keys:
             result.append(next((p for p in all_palaces if p.has([star_key])), None))
         return result
 
@@ -404,4 +416,7 @@ class Palace:
             decadal=Decadal._from_dict(d["decadal"]),
             ages=list(d["ages"]),
             mutagen_star_keys=list(d["mutagenStarKeys"]),
+            extra_mutagen_star_keys={
+                k: list(v) for k, v in d.get("extraMutagenStarKeys", {}).items()
+            },
         )

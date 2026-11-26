@@ -280,6 +280,9 @@ pub fn not_fly_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) 
 | `flies_one_of_to` | **At least one** of them flies into the target palace |
 | `not_fly_to` | **None** of them flies into the target palace |
 
+When one transformation has more than one star ([extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars)),
+any one of its stars in the target palace counts as that transformation flying in.
+
 **Example**
 
 ```rust
@@ -448,6 +451,8 @@ Wuqu; those four stars sit in the Children, Soul, Career and Wealth palaces resp
 <Callout>
 `mutagen_stars` gives "which stars this palace's stem transforms", unrelated to a star's own
 `mutagen` field (the natal mutagens), which is determined by the birth-year stem.
+With extra mutagen stars, `mutagen_stars` lists each transformation's slot star first and its extra
+stars after it; `mutaged_places` follows the four slots only.
 </Callout>
 
 <Callout type="info" title="mutaged_places takes no arguments">

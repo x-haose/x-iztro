@@ -110,8 +110,8 @@ pub struct TopicPalace {
     pub natal_name: Palace,
     /// 宫干飞化所用的干，取法见 [`TopicSelection::palace_stem_source`]
     pub stem: HeavenlyStem,
-    /// 宫干飞化，按禄、权、科、忌；落宫等于 `index` 即自化
-    pub flying: [Flight; 4],
+    /// 宫干飞化，按禄、权、科、忌，每类先四槽之星、后附加星；落宫等于 `index` 即自化
+    pub flying: Vec<Flight>,
 }
 
 /// 四化星落在选中宫里的一条。
@@ -276,13 +276,15 @@ pub(crate) fn select(
                 continue;
             }
             let data = &astrolabe.palaces[index];
-            let places = data.mutaged_places(&astrolabe.palaces);
-            let stars = data.mutagen_stars(&MUTAGEN);
-            let flying = std::array::from_fn(|k| Flight {
-                mutagen: MUTAGEN[k],
-                star: stars[k],
-                palace: places[k],
-            });
+            let flying = data
+                .stem_mutagens()
+                .iter()
+                .map(|(star, mutagen)| Flight {
+                    mutagen,
+                    star,
+                    palace: astrolabe.palaces.iter().position(|p| p.has(&[star])),
+                })
+                .collect();
             palaces.push(TopicPalace {
                 index,
                 role,
@@ -316,11 +318,11 @@ pub(crate) fn select(
         .collect();
     birth_mutagens.sort_by_key(|m| MUTAGEN.iter().position(|x| *x == m.mutagen));
 
-    // 落宫与宫干飞化（`PalaceData::mutaged_places`）同一判定：星在该宫的主星、辅星或杂耀里
+    // 落宫与宫干飞化同一判定：星在该宫的主星、辅星或杂耀里
     let mut scope_mutagens = Vec::new();
     for (scope, item) in layers {
-        for (star, mutagen) in item.mutagen.iter().zip(MUTAGEN) {
-            if let Some(palace) = astrolabe.palaces.iter().position(|p| p.has(&[*star]))
+        for (star, mutagen) in item.mutagens() {
+            if let Some(palace) = astrolabe.palaces.iter().position(|p| p.has(&[star]))
                 && selected(palace)
             {
                 scope_mutagens.push(ScopeMutagenLanding {
@@ -329,7 +331,7 @@ pub(crate) fn select(
                     stem: item.heavenly_stem,
                     landing: MutagenLanding {
                         mutagen,
-                        star: *star,
+                        star,
                         palace,
                     },
                 });

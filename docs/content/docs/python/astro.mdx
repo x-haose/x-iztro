@@ -24,7 +24,7 @@ astro = Astro()
 
 ## ChartConfig
 
-排盘配置：六个开关加两张可选的自定义表。冻结的 dataclass，全部字段都有默认值，
+排盘配置：七个开关加三张可选的自定义表。冻结的 dataclass，全部字段都有默认值，
 默认值与 JS iztro 一致——`ChartConfig()` 与不传 `config` 等价。
 
 | 字段 | 类型 | 默认 | 取值（对应枚举） |
@@ -35,16 +35,18 @@ astro = Astro()
 | `day_divide` | `str` | `"forward"` | `forward` 晚子时归次日 / `current` 归当天（`DayDivide`） |
 | `algorithm` | `str` | `"default"` | `default` / `zhongzhou`（`Algorithm`） |
 | `astro_type` | `str` | `"heaven"` | `heaven` 天盘 / `earth` 地盘 / `human` 人盘（`AstroType`） |
+| `void_placement` | `str` | `"default"` | `default` 同 iztro / `zhengPang` 截空、旬空各安正空与傍空两宫（`VoidPlacement`） |
 | `mutagens` | `dict[str, list[str]] \| None` | `None` | 天干标识 → 四颗星标识（禄、权、科、忌） |
+| `extra_mutagens` | `dict[str, dict[str, list[str]]] \| None` | `None` | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `dict[str, list[str]] \| None` | `None` | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
 
-六个开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
+各开关的取值语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
 
 **方法**
 
 | 方法 | 说明 |
 | --- | --- |
-| `to_dict() -> dict` | 转成绑定层接受的 camelCase 配置对象；两张表为 `None` 时不出现在结果里 |
+| `to_dict() -> dict` | 转成绑定层接受的 camelCase 配置对象；开关与表里的枚举成员一律落成字符串，表为 `None` 时不出现在结果里 |
 
 **示例**
 
@@ -67,7 +69,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 **输出**
 
 ```text
-{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
 土五局 earth
 ['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
 ```
@@ -80,25 +82,20 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 <Accordion title="按天干、按星整表替换">
 `mutagens` 一次替换某个天干的**全部四位**，`brightness` 一次替换某颗星的**全部十二宫**。
 长度是严格校验：四化必须正好四项、亮度必须正好十二项，多一项少一项都抛 `IztroError`。
-未列出的天干与星仍用默认表。
+未列出的天干与星仍用默认表。`extra_mutagens` 只加不换，加在该干生效的四槽之外；
+同一天干里一颗星在四槽与附加星合计出现两次即抛 `IztroError`。
 </Accordion>
 <Accordion title="只收标识，不收译名">
 两张表的键与值都必须是语言无关标识（`"gengHeavenly"`、`"taiyangMaj"`）。
 传 `"庚"`、`"太阳"` 会报 `invalid mutagens key` 一类错误。
 枚举成员是 `StrEnum`，直接当键用即可，`to_dict` 会把它们转成字符串。
 </Accordion>
-<Accordion title="六个开关的枚举成员不会被 to_dict 转成字符串">
-`to_dict` 只对两张表里的键值做 `str()`，六个开关字段原样带出。
-写 `ChartConfig(astro_type=AstroType.EARTH)` 排盘完全正常（`StrEnum` 与字符串等价），
-只是 `to_dict()` 的结果里那一项会印成 `<AstroType.EARTH: 'earth'>`。
-要把配置落成干净的 JSON，开关传字符串字面量，或自己 `str()` 一遍。
-</Accordion>
 <Accordion title="自定义表不回显在 chart.config 上">
-`chart.config` 由输出 DTO 还原，只含六个开关——两张自定义表是排盘**输入**而非结果，
+`chart.config` 由输出 DTO 还原，只含开关——三张自定义表是排盘**输入**而非结果，
 不进 DTO（这一点与 JS iztro 的字段契约一致）。
 
 但星盘内部保留了你传进来的原件，因此 `chart.rearranged(...)`、`chart.horoscope(...)`、
-to_text 文本投影这些二次计算仍然用得上那两张表，不会静默丢失。
+to_text 文本投影这些二次计算仍然用得上那几张表，不会静默丢失。
 要把配置记录下来，请在自己的调用侧保存 `ChartConfig` 对象。
 </Accordion>
 </Accordions>

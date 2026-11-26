@@ -61,6 +61,7 @@ h = chart.horoscope("2025-6-1", 0)
 | `earthly_branch` / `earthly_branch_key` | `str` | 该层级的地支 |
 | `palace_names` / `palace_name_keys` | `list[str]` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
 | `mutagen` / `mutagen_star_keys` | `list[str]` | 该层级天干引发的四化星，顺序为禄权科忌；`mutagen_star_keys` 是被化四星的星耀标识，与宫位的同名字段同义 |
+| `extra_mutagen_star_keys` | `dict[str, list[str]]` | 该层级天干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)：四化标识 → 星耀标识列表；没有附加星时为空，`has_horoscope_mutagen` 一并计入 |
 | `stars` | `list[list[Star]] \| None` | 该层级的流耀分布；无流耀的层级为 `None` |
 
 `AgeItem` 与 `HoroscopeYearly` 继承 `HoroscopeItem`，各自多一个字段：

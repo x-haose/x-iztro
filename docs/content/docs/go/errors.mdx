@@ -212,7 +212,7 @@ iztro: unknown star key 'nosuch'
 
 ## 配置相关
 
-`Config` 的六个开关与两张自定义表都在排盘时校验，`Code` 均为 `invalid_argument`：
+`Config` 的开关与自定义表都在排盘时校验，`Code` 均为 `invalid_argument`：
 
 | 情形 | 消息主体 |
 | --- | --- |
@@ -220,6 +220,8 @@ iztro: unknown star key 'nosuch'
 | 四化表的天干标识未知 | `invalid mutagens key 'nope': unknown heavenly stem` |
 | 某个天干的四化不是四项 | `invalid mutagens for 'jiaHeavenly': expected 4 stars (lu, quan, ke, ji), got 1` |
 | 某颗星的亮度表不是十二项 | `invalid brightness for 'ziweiMaj': expected 12 entries, got 1` |
+| 附加四化星的四化标识未知 | `invalid extraMutagens for 'gengHeavenly': invalid mutagen 'nope': expected 'sihuaLu', 'sihuaQuan', 'sihuaKe' or 'sihuaJi'` |
+| 同一天干里一颗星出现两次（四槽与附加星合计） | `invalid mutagens for 'gengHeavenly': star 'tiantongMaj' appears more than once` |
 
 <Callout type="info">
 长度是**严格**校验：四化必须正好四项、亮度必须正好十二项，多一项少一项都报错。

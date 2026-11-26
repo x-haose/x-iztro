@@ -2,8 +2,9 @@ package iztro
 
 // 四化的顺序与标识。
 //
-// 天干化出哪四颗星由排盘时的配置决定（Config.Mutagens 可整表替换某个天干），
-// 因此结果由 wasm 侧随盘给出，落在 Palace.MutagenStarKeys 上，本地不留副本。
+// 天干化出哪些星由排盘时的配置决定（Config.Mutagens 可整表替换某个天干的四槽，
+// Config.ExtraMutagens 可在四槽之外加附加星），因此结果由 wasm 侧随盘给出，
+// 落在 Palace.MutagenStarKeys 与 Palace.ExtraMutagenStarKeys 上，本地不留副本。
 
 // mutagenIndex 把四化标识映射到 Palace.MutagenStarKeys 中的位置。
 var mutagenIndex = map[string]int{

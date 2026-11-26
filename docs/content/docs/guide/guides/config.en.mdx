@@ -1,12 +1,12 @@
 ---
 title: Config in depth
-description: What each of the six switches changes, how to pass custom mutagen and brightness tables, and when you would actually notice a difference.
+description: What each of the seven switches changes, how to pass custom mutagen tables, extra mutagen stars and brightness tables, and when you would actually notice a difference.
 ---
 
 *For: developers · Zi Wei enthusiasts (the school differences in the first half need no code)*
 
-Everything charting genuinely disagrees about is gathered into `Config`: six switches, plus two data
-tables that can be replaced wholesale. The defaults match JS iztro exactly, so **passing no config
+Everything charting genuinely disagrees about is gathered into `Config`: seven switches, plus override
+tables that replace or extend the built-in data. The defaults match JS iztro exactly, so **passing no config
 at all gives you the same chart iztro gives**.
 
 | Switch | Accepts | Default | Governs |
@@ -17,9 +17,10 @@ at all gives you the same chart iztro gives**.
 | `day_divide` | `forward` / `current` | `forward` | Whether the late Zi hour counts as today or tomorrow |
 | `algorithm` | `default` / `zhongzhou` | `default` | Algorithm school |
 | `astro_type` | `heaven` / `earth` / `human` | `heaven` | Charting perspective (heaven / earth / human plate) |
+| `void_placement` | `default` / `zhengPang` | `default` | Whether Jiekong and Xunkong take one palace or a main and a side palace (an x-iztro extension) |
 
-There are two override tables besides: `mutagens` (a custom mutagen table) and `brightness` (a
-custom brightness table) — see
+There are three override tables besides: `mutagens` (a custom mutagen table), `extra_mutagens` (extra
+mutagen stars) and `brightness` (a custom brightness table) — see
 [Custom mutagen and brightness tables](#custom-mutagen-and-brightness-tables).
 
 <Callout title="Nominal age">
@@ -191,6 +192,9 @@ them**:
 | How the soul star is looked up | From the **Soul palace branch** | From the **birth-year branch** (so rearranging onto another Soul palace no longer moves it) |
 | The twelve Sui-qian gods | Dahao `dahao` | Suipo `suipo` |
 | Adjective stars | Jielu `jielu`, Kongwang `kongwang` | Jiekong `jiekong`, Jiesha `jieshaAdj`, Dahao `dahao`, Longde `longde` |
+
+The Jielu, Kongwang and Jiekong entries are what you get with `void_placement` at its default; with the
+main/side split both schools place Jiekong and its side palace, see the next section.
 | Tianshang and Tianshi | Tianshang in Friends, Tianshi in Health | Swapped for the other gender polarity, the two stars trading positions |
 
 <Callout type="warn" title="algorithm does not change the mutagen table">
@@ -202,6 +206,41 @@ mutagen table below; do not expect `algorithm` to do it.
 astro.by_solar("1990-11-5", 4, "male", language="en-US",
                config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
 ```
+
+## Jiekong and Xunkong: `void_placement`
+
+Jiekong (截空) spans two adjacent palaces set by the birth-year stem (jia/ji Shen–You, yi/geng
+Wu–Wei, bing/xin Chen–Si, ding/ren Yin–Mao, wu/gui Zi–Chou); Xunkong (旬空) spans the two palaces
+left void by the ten-day cycle the birth year falls in. For both, **a yang year takes the yang palace
+as the main void (正空) and a yin year the yin palace**; the other palace is the side void (傍空)
+(Wang Tingzhi, *安星法及推断实例*, pp. 56–57).
+
+| Value | Jiekong | Xunkong |
+| --- | --- | --- |
+| `default` (default) | Default school: the two palaces get Jielu `jielu` (yang) and Kongwang `kongwang` (yin), with no main/side distinction; Zhongzhou: Jiekong `jiekong` in the main void only | Xunkong `xunkong` in the main void only |
+| `zhengPang` | Both schools: Jiekong `jiekong` in the main void, side Jiekong `pangJiekong` in the side void; the default school no longer places Jielu and Kongwang | Xunkong `xunkong` in the main void, side Xunkong `pangXunkong` in the side void |
+
+**When you would notice a difference**: on every chart. Under the default school Jiekong's two
+palaces are the same two that hold Jielu and Kongwang, only named by main and side; Xunkong gains its
+side palace. The default matches iztro, which has no `zhengPang`.
+
+```python
+from x_iztro.enums import VoidPlacement
+
+astro.by_solar("2000-8-16", 2, "female",
+               config=ChartConfig(void_placement=VoidPlacement.ZHENG_PANG))
+```
+
+```rust
+by_solar("2000-8-16", 2, Gender::Female, true, Language::EnUS,
+    Config::default().with_void_placement(VoidPlacement::ZhengPang))?;
+```
+
+<Callout type="warn" title="How pattern rules read the side voids">
+The pattern engine's "Kongwang stars" set (the breaking condition of patterns such as Ri Yue Jia
+Ming) counts both Jiekong palaces, side Jiekong and side Xunkong included; its "void stars" set (Lu
+Shuai Ma Kun and the like) takes only the main voids of Jiekong and Xunkong.
+</Callout>
 
 ## Charting perspective: `astro_type`
 
@@ -307,11 +346,63 @@ health fortunate C
 A custom mutagen table also changes **every flying-star predicate** — which four stars a palace stem
 flies out comes from the same table.
 
+### Extra mutagen stars
+
+Some schools have a stem transform more than four stars — geng, for one, with both Tiantong and
+Tianxiang taking Hua Ji. The four-slot table holds one star per transformation, so the extra stars go
+in `extra_mutagens` (wire key `extraMutagens`): stem key → mutagen key → list of star keys, added on
+top of the four slots that stem uses (custom or default).
+
+```rust
+let config = Config::default()
+    .with_extra_mutagens(HeavenlyStem::Geng, Mutagen::Ji, [StarKey::TianxiangMaj]);
+```
+
+```python
+cfg = ChartConfig(extra_mutagens={"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}})
+```
+
+```go
+cfg := &iztro.Config{ExtraMutagens: map[string]map[string][]string{
+    "gengHeavenly": {"sihuaJi": {"tianxiangMaj"}},
+}}
+```
+
+```js
+astro.bySolar('2000-8-16', 2, 'female', {
+  config: { extraMutagens: { gengHeavenly: { sihuaJi: ['tianxiangMaj'] } } },
+});
+```
+
+Extra stars count exactly like the slot stars: in the stars' own mutagen marks, palace-stem flights,
+every horoscope scope's mutagens, pattern rules and the text. The four slots themselves do not change —
+`mutagenStarKeys` on palaces and scopes still has four items, and the extra stars are listed separately
+in `extraMutagenStarKeys` (grouped by mutagen, like `{"sihuaJi": ["tianxiangMaj"]}`; the key is absent
+when there are none).
+
+| Method | When one transformation has more than one star |
+| --- | --- |
+| `flies_to` / `self_mutaged` | A transformation counts as flown in when any one of its stars sits in the target palace (or this palace) |
+| `flies_one_of_to` / `self_mutaged_one_of` / `not_fly_to` / `not_self_mutaged` | Checked star by star, extra stars included like slot stars |
+| `mutagen_stars` | For each transformation, the slot star first and then its extra stars |
+| `mutaged_places` | Slots only, still four items in Lu, Quan, Ke, Ji order |
+
+Within one stem a star may appear at most once across the slots and the extra stars: a star carries a
+single mutagen mark, so one star taking both Ji and Ke cannot be marked, and charting fails with
+`invalid_argument`.
+
 ### The brightness table
 
 One star takes twelve brightness values, ordered by slot on the chart (slot 0 is the Yin palace),
 and all twelve must be given; use an empty value (an empty string in Python, Go and JavaScript) where a slot has
-no brightness.
+no brightness. Major, minor and adjective stars all take one; the default table gives adjective stars
+no brightness, so only the adjective stars listed here carry one.
+
+Besides iztro's seven levels (`miao`, `wang`, `de`, `li`, `ping`, `bu`, `xian`) there is an eighth key,
+`xian2` for 闲: in Wang Tingzhi's six levels (*安星法及推断实例*) and the seven levels of chapter 7 of
+*紫微斗数一本通*, 闲 ranks below 平 and above 陷. The key is the pinyin with its tone number (xián),
+kept apart from 陷 (xiàn), whose key is `xian`. The default table never uses it, and the pattern rules'
+sun and moon brightness does not count it as dark.
 
 ```python
 cfg = ChartConfig(brightness={
@@ -323,10 +414,12 @@ cfg = ChartConfig(brightness={
 <Callout type="warn" title="Three hard rules">
 1. **Keys only, never translated names**: `"ziweiMaj"` works, `"emperor"` and `"紫微"` do not.
 2. **Lengths are validated strictly**: a mutagen entry must have 4 items and a brightness entry 12;
-   one too many or too few is an error.
+   one too many or too few is an error. Across the slots and the extra mutagen stars, a star may not
+   appear twice within one stem.
 3. **They are not echoed in the output**: the override tables are charting *input*, not part of the
-   chart, so the `config` echoed on the astrolabe holds only the six switches and both tables read
-   back empty. If you need a record of them, keep your own copy of the config you passed.
+   chart, so the `config` echoed on the astrolabe holds only the switches (`void_placement` is left out
+   at its default too) and all three tables read back empty. If you need a record of them, keep your
+   own copy of the config you passed.
 </Callout>
 
 ## The config travels with the chart

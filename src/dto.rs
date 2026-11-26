@@ -11,7 +11,8 @@
 //!   使消费方能以纯参数（无状态）方式发起运限计算；
 //! - 语言无关标识（星/宫/干支/四化/亮度的 `*key`/`*Key(s)` 字段，取值为
 //!   iztro i18n key），供强类型绑定做跨语言的身份判断与枚举映射；宫位另带
-//!   `mutagenStarKeys`（本宫天干化出的禄权科忌四星），绑定层据此做飞星判断。
+//!   `mutagenStarKeys`（本宫天干化出的禄权科忌四星）与 `extraMutagenStarKeys`
+//!   （四槽之外的附加四化星，只在自定义四化表给了附加星时出现），绑定层据此做飞星判断。
 //!
 //! 出错时三条绑定出口（FFI/wasm/PyO3）返回同一形状的错误 JSON
 //! `{"error": "<描述>", "code": "<分类>"}`，分类取值见 [`crate::error::BridgeError`]。
@@ -35,8 +36,9 @@ use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 
 /// 星耀 DTO。
-/// 主星/辅星的 `brightness` 恒存在（无亮度为空串）；无四化时省略 `mutagen` 键；
-/// 杂耀与运限流耀省略 `brightness` 与 `mutagen`。
+/// 主星/辅星的 `brightness` 恒存在（无亮度为空串）；四化候选星恒带 `mutagen` 键，其余星有四化时才带；
+/// 杂耀有亮度（自定义亮度表列出该星）时才带 `brightness`，运限流耀省略 `brightness`；
+/// 杂耀与流耀省略 `mutagen`。
 /// `key`/`brightnessKey`/`mutagenKey` 为语言无关标识（x-iztro 扩展），
 /// 供强类型绑定做跨语言的身份判断。
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,13 +53,13 @@ pub struct StarDto {
     pub star_type: String,
     /// 作用范围（origin/decadal/yearly/monthly/daily/hourly）
     pub scope: String,
-    /// 亮度显示文本；主星辅星恒有该键（无亮度为空串），杂耀与流耀省略
+    /// 亮度显示文本；主星辅星恒有该键（无亮度为空串），杂耀有亮度时才有，流耀省略
     #[serde(skip_serializing_if = "Option::is_none")]
     pub brightness: Option<String>,
     /// 语言无关亮度标识（"miao" 等），无亮度时省略
     #[serde(skip_serializing_if = "Option::is_none")]
     pub brightness_key: Option<String>,
-    /// 四化显示文本；四化候选星恒有该键（无四化为空串），其余省略
+    /// 四化显示文本；四化候选星恒有该键（无四化为空串），其余星有四化时才有
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mutagen: Option<String>,
     /// 语言无关四化标识（"sihuaLu" 等），无四化时省略
@@ -133,6 +135,44 @@ pub struct PalaceDto {
     /// 取自排盘时生效的四化表（含 `Config` 的自定义覆盖），
     /// 绑定层据此做飞星判断，无须各自再抄一份四化表。
     pub mutagen_star_keys: [String; 4],
+    /// x-iztro 扩展：本宫天干在四槽之外化出的附加星；没有附加星时省略该键
+    #[serde(default, skip_serializing_if = "ExtraMutagenStarKeysDto::is_empty")]
+    pub extra_mutagen_star_keys: ExtraMutagenStarKeysDto,
+}
+
+/// 四槽之外的附加四化星标识，按四化分组，键为四化标识；某类没有附加星时省略该键。
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtraMutagenStarKeysDto {
+    /// 附加的化禄星
+    #[serde(rename = "sihuaLu", default, skip_serializing_if = "Vec::is_empty")]
+    pub lu: Vec<String>,
+    /// 附加的化权星
+    #[serde(rename = "sihuaQuan", default, skip_serializing_if = "Vec::is_empty")]
+    pub quan: Vec<String>,
+    /// 附加的化科星
+    #[serde(rename = "sihuaKe", default, skip_serializing_if = "Vec::is_empty")]
+    pub ke: Vec<String>,
+    /// 附加的化忌星
+    #[serde(rename = "sihuaJi", default, skip_serializing_if = "Vec::is_empty")]
+    pub ji: Vec<String>,
+}
+
+impl ExtraMutagenStarKeysDto {
+    /// 由按禄、权、科、忌分组的附加星构造
+    fn from_groups(groups: &[Vec<crate::data::stars::StarKey>; 4]) -> Self {
+        let keys = |i: usize| groups[i].iter().map(|k| k.as_key().to_string()).collect();
+        ExtraMutagenStarKeysDto {
+            lu: keys(0),
+            quan: keys(1),
+            ke: keys(2),
+            ji: keys(3),
+        }
+    }
+
+    /// 四类都没有附加星
+    pub fn is_empty(&self) -> bool {
+        self.lu.is_empty() && self.quan.is_empty() && self.ke.is_empty() && self.ji.is_empty()
+    }
 }
 
 /// 数字化农历生日 DTO。
@@ -239,7 +279,8 @@ pub struct RawDatesDto {
     pub chinese_date: RawChineseDateDto,
 }
 
-/// 排盘配置 DTO：六个开关，取值为语言无关标识（与 JS iztro 的 config() 取值一致）。
+/// 排盘配置 DTO：开关取值为语言无关标识。前六个与 JS iztro 的 config() 取值一致；
+/// `voidPlacement` 是 x-iztro 扩展，取默认值时省略该键。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigDto {
@@ -255,6 +296,14 @@ pub struct ConfigDto {
     pub algorithm: Algorithm,
     /// 排盘视角
     pub astro_type: AstroType,
+    /// 截空与旬空的安法；默认值时省略
+    #[serde(default, skip_serializing_if = "is_default_void_placement")]
+    pub void_placement: VoidPlacement,
+}
+
+/// `ConfigDto::void_placement` 是否取默认值（取默认值时不写出）
+fn is_default_void_placement(v: &VoidPlacement) -> bool {
+    *v == VoidPlacement::default()
 }
 
 /// 星盘 DTO。
@@ -345,6 +394,9 @@ pub struct HoroscopeScopeDto {
     /// 四化星（禄、权、科、忌）的语言无关标识（StarKey，与 `PalaceDto` 的
     /// mutagenStarKeys 同名同义；单数 mutagenKey 才是四化类型 Mutagen 的标识）
     pub mutagen_star_keys: Vec<String>,
+    /// 该层天干在四槽之外化出的附加星；没有附加星时省略该键
+    #[serde(default, skip_serializing_if = "ExtraMutagenStarKeysDto::is_empty")]
+    pub extra_mutagen_star_keys: ExtraMutagenStarKeysDto,
     /// 流耀在十二宫的分布；无流耀的层级省略该键
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stars: Option<Vec<Vec<StarDto>>>,
@@ -536,6 +588,7 @@ impl From<Config> for ConfigDto {
             day_divide: c.day_divide,
             algorithm: c.algorithm,
             astro_type: c.astro_type,
+            void_placement: c.void_placement,
         }
     }
 }
@@ -585,7 +638,7 @@ fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
                 .unwrap_or_default(),
         ),
         brightness_key: s.brightness.map(|b| b.as_key().to_string()),
-        mutagen: if is_mutagen_candidate(s.key) {
+        mutagen: if is_mutagen_candidate(s.key) || s.mutagen.is_some() {
             Some(
                 s.mutagen
                     .map(|m| translate_mutagen(m, lang).to_string())
@@ -598,15 +651,17 @@ fn primary_star_dto(s: &Star, lang: Language) -> StarDto {
     }
 }
 
-/// 杂耀/流耀条目：仅 name/type/scope 三键。
-fn bare_star_dto(s: &Star) -> StarDto {
+/// 杂耀/流耀条目：key/name/type/scope 四键，有亮度时另带 brightness/brightnessKey。
+fn bare_star_dto(s: &Star, lang: Language) -> StarDto {
     StarDto {
         key: s.key.as_key().to_string(),
         name: s.name.clone(),
         star_type: StarType::as_key(s.star_type).to_string(),
         scope: Scope::as_key(s.scope).to_string(),
-        brightness: None,
-        brightness_key: None,
+        brightness: s
+            .brightness
+            .map(|b| translate_brightness(b, lang).to_string()),
+        brightness_key: s.brightness.map(|b| b.as_key().to_string()),
         mutagen: None,
         mutagen_key: None,
     }
@@ -645,7 +700,11 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
             .iter()
             .map(|s| primary_star_dto(s, lang))
             .collect(),
-        adjective_stars: p.adjective_stars.iter().map(bare_star_dto).collect(),
+        adjective_stars: p
+            .adjective_stars
+            .iter()
+            .map(|s| bare_star_dto(s, lang))
+            .collect(),
         changsheng12: translate_star(p.changsheng12, lang).to_string(),
         changsheng12_key: p.changsheng12.as_key().to_string(),
         boshi12: translate_star(p.boshi12, lang).to_string(),
@@ -666,6 +725,7 @@ fn palace_dto(p: &PalaceData, lang: Language) -> PalaceDto {
             let stars = p.mutagen_stars(&MUTAGEN);
             std::array::from_fn(|i| stars[i].as_key().to_string())
         },
+        extra_mutagen_star_keys: ExtraMutagenStarKeysDto::from_groups(&p.stem_mutagens().extra),
     }
 }
 
@@ -814,10 +874,11 @@ fn scope_dto(item: &HoroscopeItem, lang: Language) -> HoroscopeScopeDto {
             .iter()
             .map(|k| k.as_key().to_string())
             .collect(),
+        extra_mutagen_star_keys: ExtraMutagenStarKeysDto::from_groups(&item.extra_mutagen),
         stars: item.stars.as_ref().map(|groups| {
             groups
                 .iter()
-                .map(|g| g.iter().map(bare_star_dto).collect())
+                .map(|g| g.iter().map(|s| bare_star_dto(s, lang)).collect())
                 .collect()
         }),
     }
@@ -1058,7 +1119,7 @@ pub struct TopicPalaceDto {
     pub natal_name_key: String,
     /// 宫干飞化所用天干的标识
     pub stem_key: String,
-    /// 宫干飞化，按禄、权、科、忌四条
+    /// 宫干飞化，按禄、权、科、忌，每类先四槽之星、后附加星
     pub flying: Vec<FlightDto>,
 }
 

@@ -71,6 +71,7 @@ The return value of a charting entry point.
 | `jiangqian12` / `jiangqian12Key` | string | The twelve Jiang-qian gods |
 | `suiqian12` / `suiqian12Key` | string | The twelve Sui-qian gods |
 | `mutagenStarKeys` | string[4] | Keys of the four stars this palace's stem mutates, in the order Lu, Quan, Ke, Ji; follows a [custom mutagen table](/en/docs/guide/guides/config#custom-mutagen-and-brightness-tables) |
+| `extraMutagenStarKeys` | `{mutagen key: string[]}?` | [Extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars) this palace's stem transforms beyond the four slots; absent when there are none |
 | `decadal` | [Decadal](#decadal) | The decadal this palace governs |
 | `ages` | int[] | Nominal ages (虚岁) at which age fortune passes through this palace |
 
@@ -82,9 +83,9 @@ The return value of a charting entry point.
 | `name` | string | Star name |
 | `type` | string | `major` / `soft` / `tough` / `adjective` / `flower` / `helper` / `lucun` / `tianma` |
 | `scope` | string | `origin` / `decadal` / `yearly` / `monthly` / `daily` / `hourly` |
-| `brightness` | string | Brightness as display text. **Major and minor stars always have this key**, with an empty string where there is no brightness; on adjective and flowing stars the key is absent entirely |
+| `brightness` | string | Brightness as display text. **Major and minor stars always have this key**, with an empty string where there is no brightness; adjective stars have it only when a [custom brightness table](/en/docs/guide/guides/config#the-brightness-table) lists the star, flowing stars never |
 | `brightnessKey` | string? | Brightness key. **Absent** when there is no brightness (not an empty string) |
-| `mutagen` | string | Mutagen as display text. **The 18 mutable stars — the fourteen major stars plus Zuofu, Youbi, Wenchang and Wenqu — always have this key**, with an empty string where there is no mutagen; on every other star the key is absent entirely |
+| `mutagen` | string | Mutagen as display text. **The 18 mutable stars — the fourteen major stars plus Zuofu, Youbi, Wenchang and Wenqu — always have this key**, with an empty string where there is no mutagen; any other star has it only when a custom mutagen table mutates it |
 | `mutagenKey` | string? | Mutagen key. **Absent** when there is no mutagen |
 
 <Callout type="warn" title="Translated fields and key fields default in opposite ways">
@@ -136,16 +137,18 @@ character identical to the top-level `chineseDate` field.
 | `dayDivide` | `forward` / `current` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
 | `astroType` | `heaven` / `earth` / `human` | `heaven` |
+| `voidPlacement` | `default` / `zhengPang` | `default`; at the default the `config` echoed on the astrolabe leaves the key out |
 
-There are two further **input-only** keys, used to replace built-in data tables:
+There are three further **input-only** keys, used to replace or extend built-in data tables:
 
 | Input key | Accepts |
 | --- | --- |
 | `mutagens` | `{stem key: [four star keys]}`, in the order Lu, Quan, Ke, Ji; exactly four required |
+| `extraMutagens` | `{stem key: {mutagen key: [star keys…]}}`, extra stars sharing a transformation beyond the four slots |
 | `brightness` | `{star key: [twelve brightness keys]}`, first item the Yin palace; exactly twelve required, empty string where there is no brightness |
 
 <Callout type="warn">
-These two keys **are not echoed in the astrolabe's `config`**. They are charting input rather than
+These three keys **are not echoed in the astrolabe's `config`**. They are charting input rather than
 part of the chart, and adding them to the DTO would break the field contract with JS iztro. Keep
 your own copy of the config if you need a record.
 </Callout>
@@ -178,6 +181,7 @@ For what they mean, see [Config in depth](/en/docs/guide/guides/config).
 | `palaceNameKeys` | string[12] | The same as keys |
 | `mutagen` | string[4] | Mutagen star names, in the order Lu, Quan, Ke, Ji |
 | `mutagenStarKeys` | string[4] | The same as keys — star keys of the four mutated stars, synonymous with the palace field of the same name; the singular `mutagenKey` is the mutagen type (`sihuaLu` etc.) |
+| `extraMutagenStarKeys` | `{mutagen key: string[]}?` | Extra mutagen stars this scope's stem transforms beyond the four slots, synonymous with the palace field of the same name; absent when there are none |
 | `stars` | [Star](#star)[][12]? | Flowing stars across the twelve palaces (the outer twelve entries are palaces, each inner list that palace's flowing stars); absent on scopes with no flowing stars |
 | `nominalAge` | int? | Nominal age (虚岁); age fortune only |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar)? | Yearly scope only |
@@ -294,7 +298,8 @@ The Soul palace of the same chart (the `palaces` entry whose `index` is 4):
 
 Both Ziwei and Wenqu carry `mutagen: ""` — they are mutable stars that happen not to be mutated on
 this chart, so the key is present with an empty value while `mutagenKey` is absent entirely. The
-five adjective stars do not even have a `brightness` key.
+five adjective stars do not even have a `brightness` key (the default brightness table gives adjective
+stars none).
 
 <Callout type="warn" title="Some en-US names are not English words">
 `considery(Y)` and `disastery` above are the literal en-US renderings of 年解 (`nianjie`) and 灾煞

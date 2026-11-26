@@ -51,21 +51,14 @@ pub fn get_brightness(star: StarKey, palace_index: i32, config: &Config) -> Opti
 
 /// 指定天干下，某颗星化什么；该星不在这个天干的四化表里时返回 `None`。
 ///
-/// `config` 里若有该天干的自定义四化表则以它为准。
+/// `config` 里若有该天干的自定义四化表则以它为准，附加四化星也算在内。
 pub fn get_mutagen(star: StarKey, stem: HeavenlyStem, config: &Config) -> Option<Mutagen> {
-    let position = config.mutagens_of(stem).iter().position(|s| *s == star)?;
-
-    Some(match position {
-        0 => Mutagen::Lu,
-        1 => Mutagen::Quan,
-        2 => Mutagen::Ke,
-        _ => Mutagen::Ji,
-    })
+    config.mutagen_of(stem, star)
 }
 
-/// 指定天干化出的四颗星，顺序为禄、权、科、忌。
+/// 指定天干化出的四颗星（四化表四槽），顺序为禄、权、科、忌。
 ///
-/// `config` 里若有该天干的自定义四化表则以它为准。
+/// `config` 里若有该天干的自定义四化表则以它为准；附加四化星见 [`Config::stem_mutagens`]。
 pub fn get_mutagens_by_heavenly_stem(stem: HeavenlyStem, config: &Config) -> [StarKey; 4] {
     config.mutagens_of(stem)
 }

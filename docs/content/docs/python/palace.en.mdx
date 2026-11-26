@@ -36,6 +36,7 @@ translations.
 | `decadal` | `Decadal` | The decadal: age range plus stem and branch |
 | `ages` | `list[int]` | Nominal ages at which the age scope passes through this palace |
 | `mutagen_star_keys` | `list[str]` | The keys of the four stars transformed by this palace's **own stem**, in the order lu, quan, ke, ji |
+| `extra_mutagen_star_keys` | `dict[str, list[str]]` | Extra stars this palace's stem transforms beyond the four slots: mutagen key → list of star keys; empty when there are none |
 
 <Callout type="info" title="The four groups of gods versus the three star groups">
 Major, minor and adjective stars are **lists** — a palace can hold zero or many.
@@ -49,6 +50,11 @@ It is computed from **the mutagen table in effect at charting time** — a custo
 (`ChartConfig(mutagens=...)`) shows up here, and the flying-star methods read exactly this field.
 The birth-year mutagen is instead a mark stamped on a star's own `mutagen_key` field; the two are not
 the same thing.
+
+When a stem transforms more than four stars ([extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars)), the
+flying-star methods count the extra stars together with the slot star of the same transformation:
+the all-of checks (`flies_to`, `self_mutaged`) treat a transformation as flown in when any one of its stars is in the
+target palace, the rest check star by star, and `mutaged_places` follows the four slots only.
 </Callout>
 
 ---

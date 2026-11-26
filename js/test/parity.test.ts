@@ -30,7 +30,9 @@ import {
   star,
   TextDetail,
   util,
+  VoidPlacement,
   YearDivide,
+  AdjectiveStar,
   type Astrolabe,
   type ChartConfig,
 } from 'x-iztro';
@@ -310,6 +312,37 @@ test('非法覆盖表被拒', () => {
   }
 });
 
+test('附加四化星进入星耀四化、宫干飞化与运限四化', () => {
+  // 与 Rust / Python / Go 同一组断言：庚干四槽之外加天相化忌，天同（疾厄）、天相（财帛）同化忌
+  const a = astro.bySolar('2000-8-16', 2, 'female', {
+    config: { extraMutagens: { [HeavenlyStem.GENG]: { [Mutagen.JI]: [MajorStar.TIANXIANG] } } },
+  });
+  assert.deepEqual(starsWithMutagen(a, Mutagen.JI).sort(), [MajorStar.TIANTONG, MajorStar.TIANXIANG]);
+
+  const spouse = a.palace(PalaceName.SPOUSE)!;
+  assert.equal(spouse.heavenlyStemKey, HeavenlyStem.GENG);
+  assert.deepEqual(spouse.mutagenStars(Mutagen.JI), [MajorStar.TIANTONG, MajorStar.TIANXIANG]);
+  assert.equal(spouse.fliesTo(PalaceName.WEALTH, Mutagen.JI), true);
+  assert.equal(spouse.fliesTo(PalaceName.HEALTH, Mutagen.JI), true);
+  assert.equal(spouse.notFlyTo(PalaceName.WEALTH, Mutagen.JI), false);
+  assert.equal(spouse.mutagedPlaces().length, 4);
+
+  // 2030 年为庚戌年：流年四槽不变，附加星另列
+  const h = a.horoscope('2030-6-1', 0);
+  assert.equal(h.yearly.mutagenStarKeys[3], MajorStar.TIANTONG);
+  assert.deepEqual(h.yearly.extraMutagenStarKeys, { [Mutagen.JI]: [MajorStar.TIANXIANG] });
+  const yearlyName = h.yearly.palaceNameKeys[a.palace(PalaceName.WEALTH)!.index]!;
+  assert.equal(h.hasHoroscopeMutagen(yearlyName, Scope.YEARLY, Mutagen.JI), true);
+});
+
+test('截空、旬空分正傍：多出傍截空、傍旬空，星盘回显该开关', () => {
+  const a = astro.bySolar('2000-8-16', 2, 'female', { config: { voidPlacement: VoidPlacement.ZHENG_PANG } });
+  assert.equal(a.config.voidPlacement, VoidPlacement.ZHENG_PANG);
+  assert.ok(a.star(AdjectiveStar.PANG_JIEKONG));
+  assert.ok(a.star(AdjectiveStar.PANG_XUNKONG));
+  assert.equal(a.star(AdjectiveStar.JIELU), undefined);
+});
+
 // ------ 天盘 / 地盘 / 人盘与重排 ------
 
 const typed = (astroType: AstroType) => astro.bySolar('2000-8-16', 2, 'female', { config: { astroType } });
@@ -498,8 +531,8 @@ test('i18n 反查的限定子串消歧', () => {
 
 test('标识表的规模、次序与逐条可译性', () => {
   const keys = i18n.allKeys();
-  assert.equal(keys.length, 260);
-  assert.equal(new Set(keys).size, 260);
+  assert.equal(keys.length, 263);
+  assert.equal(new Set(keys).size, 263);
   assert.deepEqual(keys.slice(0, 2), ['decadal', 'childhood']);
   assert.deepEqual(keys.slice(-2), ['male', 'female']);
   assert.ok(keys.every((k) => i18n.translate(k) !== undefined));

@@ -170,7 +170,8 @@ impl<'a> PalaceRef<'a> {
         self.astrolabe.surrounded_at(self.palace.index)
     }
 
-    /// 飞化到目标宫：本宫天干的指定四化星是否**全部**落在目标宫内。
+    /// 飞化到目标宫：本宫天干的指定四化是否**全部**飞入目标宫；一类四化化出不止一颗星时，
+    /// 其中任一颗在目标宫即算这一类飞入。
     ///
     /// 目标宫可写索引、宫名、身宫或来因宫；定位不到或四化列表为空时返回 false。
     pub fn flies_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) -> bool {
@@ -200,7 +201,7 @@ impl<'a> PalaceRef<'a> {
         }
     }
 
-    /// 本宫天干四化分别飞入的宫位，依次为禄、权、科、忌；
+    /// 本宫天干四化四槽之星（不含附加星）分别所在的宫位，依次为禄、权、科、忌；
     /// 该四化星不在盘上时对应项为 `None`。
     pub fn mutaged_places(&self) -> Vec<Option<PalaceRef<'a>>> {
         self.palace

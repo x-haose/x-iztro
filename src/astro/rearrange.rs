@@ -11,9 +11,9 @@ use crate::data::earthly_branches::get_earthly_branch_info;
 use crate::data::stars::StarKey;
 use crate::data::types::*;
 use crate::error::IztroError;
-use crate::i18n::translate_star;
 use crate::models::astrolabe::Astrolabe;
 use crate::models::star::Star;
+use crate::star::adjective::make_adj_star;
 use crate::star::decorative::get_changsheng12;
 use crate::star::location::{get_start_index, get_tiancai_index, get_tianshang_tianshi_index};
 use crate::star::major::get_major_stars;
@@ -105,20 +105,23 @@ impl Astrolabe {
             relocate_adjective_star(
                 &mut palace.adjective_stars,
                 StarKey::Tianshang,
-                i == tianshang_index,
+                (i == tianshang_index).then_some(i),
                 self.language,
+                &self.config,
             );
             relocate_adjective_star(
                 &mut palace.adjective_stars,
                 StarKey::Tianshi,
-                i == tianshi_index,
+                (i == tianshi_index).then_some(i),
                 self.language,
+                &self.config,
             );
             relocate_adjective_star(
                 &mut palace.adjective_stars,
                 StarKey::Tiancai,
-                i == tiancai_index,
+                (i == tiancai_index).then_some(i),
                 self.language,
+                &self.config,
             );
 
             palace.name = palace_names[i];
@@ -144,27 +147,28 @@ impl Astrolabe {
     }
 }
 
-/// 让某颗杂耀在本宫「该在就在、不该在就不在」。
+/// 让某颗杂耀在本宫「该在就在、不该在就不在」：`here` 为本宫索引（寅宫为 0）表示该在，`None` 表示不该在。
 ///
-/// 该在却不在时追加到杂耀列表末尾 —— 位置与初次排盘时不同，这是重排的既有行为。
+/// 该在却不在时追加到杂耀列表末尾 —— 位置与初次排盘时不同，这是重排的既有行为；
+/// 亮度按 `config` 的亮度表与本宫位置取。
 fn relocate_adjective_star(
     stars: &mut Vec<Star>,
     key: StarKey,
-    should_be_here: bool,
+    here: Option<usize>,
     lang: Language,
+    config: &Config,
 ) {
-    match (stars.iter().position(|s| s.key == key), should_be_here) {
-        (Some(pos), false) => {
+    match (stars.iter().position(|s| s.key == key), here) {
+        (Some(pos), None) => {
             stars.remove(pos);
         }
-        (None, true) => stars.push(Star {
+        (None, Some(palace_index)) => stars.push(make_adj_star(
             key,
-            name: translate_star(key, lang).to_string(),
-            star_type: StarType::Adjective,
-            scope: Scope::Origin,
-            brightness: None,
-            mutagen: None,
-        }),
+            StarType::Adjective,
+            palace_index,
+            lang,
+            config,
+        )),
         _ => {}
     }
 }

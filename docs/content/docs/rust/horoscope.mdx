@@ -67,7 +67,8 @@ let h = chart.horoscope("2025-6-1", 0)?;
 | `heavenly_stem` | `HeavenlyStem` | 该层级的天干，决定它飞出的四化 |
 | `earthly_branch` | `EarthlyBranch` | 该层级的地支 |
 | `palace_names` | `Vec<Palace>` | 以该层级所在宫为命宫重推的十二宫名，按宫位索引排列 |
-| `mutagen` | `Vec<StarKey>` | 该层级天干引发的四化星，顺序为禄权科忌 |
+| `mutagen` | `Vec<StarKey>` | 该层级天干引发的四化星，顺序为禄权科忌（四化表四槽） |
+| `extra_mutagen` | `[Vec<StarKey>; 4]` | 该层级天干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)，按禄权科忌分组；默认四化表下四组皆空。`mutagens()` 把两者合成（星, 四化）序列 |
 | `stars` | `Option<Vec<Vec<Star>>>` | 该层级的流耀分布；无流耀的层级为 `None` |
 
 `age` 与 `yearly` 不是 `HoroscopeItem` 本身，而是各自多带一项数据的包装：

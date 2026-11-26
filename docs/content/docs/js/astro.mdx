@@ -49,7 +49,7 @@ type WasmSource =
 
 ## ChartConfig
 
-排盘配置：六个开关加两张可选的自定义表。每一项都可省略，省略取与 iztro 一致的默认值，
+排盘配置：七个开关加三张可选的自定义表。每一项都可省略，省略取与 iztro 一致的默认值，
 `{}` 与不传等价。
 
 | 字段 | 类型 | 默认 | 取值 |
@@ -60,10 +60,12 @@ type WasmSource =
 | `dayDivide` | `DayDivide` | `'forward'` | `forward` 晚子时归次日 / `current` 归当天 |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
 | `astroType` | `AstroType` | `'heaven'` | `heaven` 天盘 / `earth` 地盘 / `human` 人盘 |
+| `voidPlacement` | `VoidPlacement` | `'default'` | `default` 同 iztro / `zhengPang` 截空、旬空各安正空与傍空两宫 |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | 天干标识 → 四颗星标识（禄、权、科、忌），按天干整表替换 |
+| `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | 天干标识 → 四化标识 → 附加星标识列表，加在该干四槽之外 |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | 星耀标识 → 十二项亮度标识，索引 0 为寅宫，空串表示该宫无亮度 |
 
-六个开关的语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
+各开关的语义与流派背景见 [Config 详解](/zh/docs/guide/guides/config)。
 
 ```ts
 const earth = astro.bySolar('2000-8-16', 2, 'female', {
@@ -87,11 +89,11 @@ console.log(earth.palace('soulPalace')!.mutagenStarKeys);
 
 <Accordions>
 <Accordion title="只收标识，不收译名">
-两张表的键与值都必须是语言无关标识（`'gengHeavenly'`、`'taiyangMaj'`）。四化必须正好四项、
-亮度必须正好十二项，不对就抛 `IztroError`。
+各表的键与值都必须是语言无关标识（`'gengHeavenly'`、`'taiyangMaj'`）。四化必须正好四项、
+亮度必须正好十二项，同一天干里一颗星在四槽与附加星合计出现两次，都抛 `IztroError`。
 </Accordion>
 <Accordion title="自定义表不回显在 chart.config 上">
-`chart.config` 只含六个开关——两张表是排盘输入，不进 DTO（与 iztro 的字段契约一致）。
+`chart.config` 只含开关（`voidPlacement` 取默认值时也省略）——三张表是排盘输入，不进 DTO（与 iztro 的字段契约一致）。
 星盘内部保留了你传入的原件，`rearranged`、`horoscope`、`toText` 这些再发起的计算仍然用它。
 </Accordion>
 </Accordions>

@@ -1,5 +1,7 @@
 package iztro
 
+import "slices"
+
 // 本文件定义星盘与运限的类型化数据结构。
 // 每个对象携带两层信息：
 //   - 翻译字段（Name、Brightness 等）：按排盘语言本地化的展示文本；
@@ -17,7 +19,7 @@ type Star struct {
 	Type string `json:"type"`
 	// Scope 为作用范围（origin/decadal/yearly/monthly/daily/hourly）
 	Scope string `json:"scope"`
-	// Brightness 为亮度显示文本；无亮度为空串（杂耀与流耀无此字段）
+	// Brightness 为亮度显示文本；无亮度为空串（杂耀只在自定义亮度表列出该星时有亮度，流耀没有）
 	Brightness string `json:"brightness,omitempty"`
 	// BrightnessKey 为语言无关亮度标识（如 BrightnessMiao），无亮度为空串
 	BrightnessKey string `json:"brightnessKey,omitempty"`
@@ -144,6 +146,9 @@ type Palace struct {
 	// MutagenStarKeys 为本宫天干化出的四颗星标识，顺序为禄、权、科、忌。
 	// 取值随排盘配置的自定义四化表变化，飞星判断以它为准。
 	MutagenStarKeys [4]string `json:"mutagenStarKeys"`
+	// ExtraMutagenStarKeys 为本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表
+	// （Config.ExtraMutagens）；没有附加星时为 nil。飞星判断把附加星与同类的四槽之星一并计入。
+	ExtraMutagenStarKeys map[string][]string `json:"extraMutagenStarKeys,omitempty"`
 
 	// astrolabe 为反向引用，由星盘解析后回填，不参与序列化。
 	astrolabe *Astrolabe
@@ -271,32 +276,49 @@ func (p *Palace) SurroundedPalaces() *SurroundedPalaces {
 	return p.astrolabe.SurroundedPalacesByIndex(p.Index)
 }
 
-// MutagenStars 返回本宫天干在指定四化位上对应的星耀标识，顺序与传入一致。
+// MutagenStars 返回本宫天干在指定四化位上对应的星耀标识，顺序与传入一致，
+// 每一类先四槽之星、后附加星。
 func (p *Palace) MutagenStars(mutagenKeys ...string) []string {
+	var out []string
+	for _, group := range p.mutagenGroups(mutagenKeys) {
+		out = append(out, group...)
+	}
+	return out
+}
+
+// mutagenGroups 按传入顺序，把每一类四化化出的星（四槽之星与附加星）各成一组；不认识的四化标识跳过。
+func (p *Palace) mutagenGroups(mutagenKeys []string) [][]string {
 	if p == nil {
 		return nil
 	}
-	out := make([]string, 0, len(mutagenKeys))
+	out := make([][]string, 0, len(mutagenKeys))
 	for _, k := range mutagenKeys {
 		idx, ok := mutagenIndex[k]
 		if !ok || p.MutagenStarKeys[idx] == "" {
 			continue
 		}
-		out = append(out, p.MutagenStarKeys[idx])
+		group := append([]string{p.MutagenStarKeys[idx]}, p.ExtraMutagenStarKeys[k]...)
+		out = append(out, group)
 	}
 	return out
 }
 
-// FliesTo 判断本宫天干的指定四化星是否全部落在目标宫；四化为空时返回 false。
+// FliesTo 判断本宫天干的指定四化是否全部飞入目标宫；一类四化化出不止一颗星时，
+// 其中任一颗在目标宫即算这一类飞入。四化为空时返回 false。
 func (p *Palace) FliesTo(to *Palace, mutagenKeys ...string) bool {
 	if to == nil {
 		return false
 	}
-	stars := p.MutagenStars(mutagenKeys...)
-	if len(stars) == 0 {
+	groups := p.mutagenGroups(mutagenKeys)
+	if len(groups) == 0 {
 		return false
 	}
-	return to.Has(stars...)
+	for _, group := range groups {
+		if !to.HasOneOf(group...) {
+			return false
+		}
+	}
+	return true
 }
 
 // FliesOneOfTo 判断本宫天干的指定四化星是否有任一颗落在目标宫；四化为空时返回 true。
@@ -323,9 +345,14 @@ func (p *Palace) NotFlyTo(to *Palace, mutagenKeys ...string) bool {
 	return to.NotHave(stars...)
 }
 
-// SelfMutaged 判断本宫天干的指定四化星是否全部落在本宫（自化）。
+// SelfMutaged 判断本宫天干的指定四化是否全部落回本宫（自化）；一类四化有任一颗星在本宫即算。
 func (p *Palace) SelfMutaged(mutagenKeys ...string) bool {
-	return p.Has(p.MutagenStars(mutagenKeys...)...)
+	for _, group := range p.mutagenGroups(mutagenKeys) {
+		if !p.HasOneOf(group...) {
+			return false
+		}
+	}
+	return true
 }
 
 // SelfMutagedOneOf 判断本宫是否有指定四化中任一种自化；不传表示检查全部四化。
@@ -338,15 +365,14 @@ func (p *Palace) NotSelfMutaged(mutagenKeys ...string) bool {
 	return p.NotHave(p.MutagenStars(orAllMutagens(mutagenKeys)...)...)
 }
 
-// MutagedPlaces 返回本宫四化分别飞入的宫位，顺序为禄、权、科、忌；
+// MutagedPlaces 返回本宫四化四槽之星（不含附加星）分别所在的宫位，顺序为禄、权、科、忌；
 // 未找到的项为 nil。脱离星盘的宫位返回 nil。
 func (p *Palace) MutagedPlaces() []*Palace {
 	if p == nil || p.astrolabe == nil {
 		return nil
 	}
-	stars := p.MutagenStars(allMutagens[:]...)
-	out := make([]*Palace, 0, len(stars))
-	for _, star := range stars {
+	out := make([]*Palace, 0, len(p.MutagenStarKeys))
+	for _, star := range p.MutagenStarKeys {
 		var found *Palace
 		for i := range p.astrolabe.Palaces {
 			if p.astrolabe.Palaces[i].Has(star) {
@@ -471,7 +497,7 @@ type Astrolabe struct {
 }
 
 // requestConfig 返回发起排盘时传入的原始配置，供运限、重排与 prompt 等
-// 后续调用复用。序列化回来的 Config 只含六个标量键，自定义四化表与亮度表
+// 后续调用复用。序列化回来的 Config 只含开关，自定义四化表、附加四化星与亮度表
 // 不在其中，拿它当入参会静默丢掉覆盖表。
 func (a *Astrolabe) requestConfig() *Config {
 	if a == nil {
@@ -720,6 +746,9 @@ type HoroscopeScope struct {
 	// MutagenStarKeys 为被四化的四颗星的语言无关星耀标识 [禄, 权, 科, 忌]，
 	// 与 Palace.MutagenStarKeys 同名同义；四化类型标识见单数的 Star.MutagenKey
 	MutagenStarKeys []string `json:"mutagenStarKeys"`
+	// ExtraMutagenStarKeys 为该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表
+	// （Config.ExtraMutagens）；没有附加星时为 nil
+	ExtraMutagenStarKeys map[string][]string `json:"extraMutagenStarKeys,omitempty"`
 	// Stars 为流耀在十二宫的分布（无流耀的层级为 nil）
 	Stars [][]Star `json:"stars,omitempty"`
 	// NominalAge 为虚岁（仅小限层级有值）
@@ -928,7 +957,7 @@ func (h *Horoscope) SurroundPalaces(nameKeyOrName string, scope string) (*Surrou
 	return h.astrolabe.SurroundedPalacesByIndex(p.Index), nil
 }
 
-// HasHoroscopeMutagen 判断指定运限层级下某宫是否落有该层级的四化星，报错同 Palace。
+// HasHoroscopeMutagen 判断指定运限层级下某宫是否落有该层级这一类四化的星（四槽之星或附加星），报错同 Palace。
 // scope 为 ScopeOrigin 时恒为 false（本命四化请用 Palace.HasMutagen）。
 func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, mutagenKey string) (bool, error) {
 	p, err := h.Palace(nameKeyOrName, scope)
@@ -940,10 +969,10 @@ func (h *Horoscope) HasHoroscopeMutagen(nameKeyOrName string, scope string, muta
 	if !ok || idx >= len(item.MutagenStarKeys) {
 		return false, nil
 	}
-	starKey := item.MutagenStarKeys[idx]
+	starKeys := append([]string{item.MutagenStarKeys[idx]}, item.ExtraMutagenStarKeys[mutagenKey]...)
 	for _, group := range [][]Star{p.MajorStars, p.MinorStars} {
 		for _, s := range group {
-			if s.Key == starKey {
+			if slices.Contains(starKeys, s.Key) {
 				return true, nil
 			}
 		}

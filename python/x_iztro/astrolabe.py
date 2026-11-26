@@ -208,7 +208,7 @@ class Astrolabe:
     """排盘语言（`Language` 枚举值域）"""
 
     config: ChartConfig
-    """排盘配置（只含六个开关；自定义四化与亮度表见 `_input_config`）"""
+    """排盘配置（只含开关；自定义四化与亮度表见 `_input_config`）"""
 
     _raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
     """绑定层返回的原始 DTO，惰性构建十二宫与 `to_dict` 均取自它"""

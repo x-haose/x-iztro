@@ -122,14 +122,14 @@ fmt.Println(rd.ChineseDate.PillarKeys())
 | `TimeIndex` | `uint8` | 出生时辰索引 |
 | `FixLeap` | `bool` | 排盘时是否修正闰月 |
 | `Language` | `Language` | 盘面语言（`LanguageZhCN` 等） |
-| `Config` | `Config` | 排盘配置，由 DTO 还原的六个开关 |
+| `Config` | `Config` | 排盘配置，由 DTO 还原的开关 |
 
 运限、重排与 Prompt 从这四项重新发起计算，因此不必再传一遍排盘参数。
 
 <Callout type="info" title="Config 字段不回显自定义表">
-`chart.Config` 是从输出 DTO 还原的，只含六个开关；排盘时传进来的自定义四化 / 亮度表
+`chart.Config` 是从输出 DTO 还原的，只含开关；排盘时传进来的自定义四化表、附加四化星与亮度表
 不在里面。但星盘内部保留了调用方给的原件，因此 `Rearranged`、`Horoscope`、
-Prompt 这些二次计算仍然用得上那两张表——不会静默丢失。
+Prompt 这些二次计算仍然用得上那几张表——不会静默丢失。
 </Callout>
 
 </Accordion>

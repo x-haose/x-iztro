@@ -65,6 +65,8 @@ pub fn star_name(key: StarKey) -> &'static str {
         StarKey::Xunkong => "旬空",
         StarKey::Kongwang => "空亡",
         StarKey::Jielu => "截路",
+        StarKey::PangJiekong => "傍截空",
+        StarKey::PangXunkong => "傍旬空",
         StarKey::Yuede => "月徳",
         StarKey::Tianshang => "天傷",
         StarKey::Tianshi => "天使",
@@ -231,6 +233,7 @@ pub fn brightness_name(b: Brightness) -> &'static str {
         Brightness::Ping => "平",
         Brightness::Bu => "不",
         Brightness::Xian => "陥",
+        Brightness::Xian2 => "閑",
     }
 }
 

@@ -37,6 +37,7 @@ Every method on `*Palace` checks for a nil receiver and returns a zero value rat
 | `Decadal` | `Decadal` | The decadal: age range plus stem and branch |
 | `Ages` | `[]int` | Nominal ages at which the age scope passes through this palace |
 | `MutagenStarKeys` | `[4]string` | Keys of the four stars transformed by this palace's **own stem**, in the order lu, quan, ke, ji |
+| `ExtraMutagenStarKeys` | `map[string][]string` | Extra stars this palace's stem transforms beyond the four slots: mutagen key → list of star keys; nil when there are none |
 
 <Callout type="info" title="The four groups of gods versus the three star groups">
 Major, minor and adjective stars are **slices** — a palace can hold zero or many.
@@ -49,6 +50,11 @@ slices.
 It is computed from the mutagen table **in effect when charting** — a custom table
 (`Config.Mutagens`) shows up here, and it is exactly what the flying-star methods read. The natal
 mutagen is a mark on the star's own `MutagenKey` field; the two are not the same thing.
+
+When a stem transforms more than four stars ([extra mutagen stars](/en/docs/guide/guides/config#extra-mutagen-stars)), the
+flying-star methods count the extra stars together with the slot star of the same transformation:
+the all-of checks (`FliesTo`, `SelfMutaged`) treat a transformation as flown in when any one of its stars is in the
+target palace, the rest check star by star, and `MutagedPlaces` follows the four slots only.
 
 ```go
 soul := chart.Palace(iztro.PalaceSoul)

@@ -157,7 +157,7 @@ iztro 的 `kot` 查不到会把入参吐回来；x-iztro 返回
 
 ### 覆盖表不回显在输出的 config 里
 
-星盘上回显的 `config` 只有六个开关。覆盖表是排盘的输入，
+星盘上回显的 `config` 只有开关。覆盖表是排盘的输入，
 放进 DTO 会破坏与 iztro 的字段契约，所以读回来是空的 —— 要留档自己存。
 
 ## 比 iztro 多的
@@ -184,7 +184,7 @@ JavaScript 的 `chart.patterns` / `horoscope.patterns`，
 
 iztro 只给事实，星耀与格局的解读文本在它的文档站上、不在库里。
 x-iztro 把解读做成一份协议化的数据：知识包是「语言无关标识 → 文本与属性」的 JSON，
-库里内嵌一份默认包（全部 162 颗星、64 条格局、12 宫、4 化、51 条术语，
+库里内嵌一份默认包（全部 164 颗星、64 条格局、12 宫、4 化、51 条术语，
 释义取自 iztro-docs 的《学习》各页，MIT License，作者 Sylar Long），
 不认同其中说法可以写覆盖包按字段合并。
 
@@ -219,9 +219,12 @@ JavaScript 的 `solarDatesByBazi` / `reverseChart`。
   喂大模型或直接给人读，见[语义化文本](/zh/docs/guide/guides/to-text)
 - **入口前置校验**：非法日期、越界时辰等在入口返回错误而非 panic，
   且带机器可读的分类码，见[错误处理](/zh/docs/guide/guides/errors)
-- **自定义四化表与亮度表**：按标识整表替换内置数据，
+- **自定义四化表与亮度表**：按标识整表替换内置数据，另可给天干加四槽之外的附加四化星、
+  给杂耀指定亮度、用 iztro 没有的「闲」级亮度，
   见 [Config 详解](/zh/docs/guide/guides/config#自定义四化表与亮度表)
-- **`all_keys`**：一次取全部 260 个可翻译标识
+- **截空、旬空分正傍**：`void_placement = zhengPang` 时两者各安正空、傍空两宫，
+  见 [Config 详解](/zh/docs/guide/guides/config#截空与旬空-void_placement)
+- **`all_keys`**：一次取全部 263 个可翻译标识
 - **历法查询**：农历年的月份表、公历与农历互换、农历年的年干支，与排盘同一份历法内核。
   iztro 把这些交给依赖 lunar-lite（`solar2lunar`、`lunar2solar` 等），不在自己的 API 里；
   x-iztro 的入参是整数年月日，农历换公历时没有这个闰月即报错，而不是像 `lunar2solar` 那样退回常规月。

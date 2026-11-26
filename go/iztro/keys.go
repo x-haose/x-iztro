@@ -59,6 +59,8 @@ const (
 	BrightnessBu = "bu"
 	// BrightnessXian 为陷
 	BrightnessXian = "xian"
+	// BrightnessXian2 为闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里
+	BrightnessXian2 = "xian2"
 )
 
 // 星耀标识（Star.Key，含主星、辅星、杂耀、四组十二神与运限流耀）。
@@ -185,6 +187,10 @@ const (
 	StarKongwang = "kongwang"
 	// StarJielu 为截路
 	StarJielu = "jielu"
+	// StarPangJiekong 为傍截空：截空两宫中的傍空一宫（VoidPlacementZhengPang）
+	StarPangJiekong = "pangJiekong"
+	// StarPangXunkong 为傍旬空：旬空两宫中的傍空一宫（VoidPlacementZhengPang）
+	StarPangXunkong = "pangXunkong"
 	// StarYuede 为月德
 	StarYuede = "yuede"
 	// StarTianshang 为天伤
@@ -597,6 +603,15 @@ const (
 	DayDivideForward = "forward"
 	// DayDivideCurrent 晚子时归当日
 	DayDivideCurrent = "current"
+)
+
+// 截空与旬空的安法（Config.VoidPlacement）。
+const (
+	// VoidPlacementDefault 与 iztro 一致：默认派安截路（阳宫）与空亡（阴宫），中州派只在正空安截空；旬空只安正空
+	VoidPlacementDefault = "default"
+	// VoidPlacementZhengPang 截空、旬空各安正空与傍空两宫：正空安截空、旬空，傍空安傍截空、傍旬空；
+	// 默认派不再安截路、空亡
+	VoidPlacementZhengPang = "zhengPang"
 )
 
 // 算法派别（Config.Algorithm）。

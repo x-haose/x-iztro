@@ -46,9 +46,19 @@ type Config struct {
 	// 地盘以身宫干支、人盘以福德宫干支起五行局重排。
 	AstroType string `json:"astroType,omitempty"`
 
+	// VoidPlacement 为截空与旬空的安法："default" 同 iztro（默认）、"zhengPang" 各安正空与傍空两宫，
+	// 取值见 VoidPlacement* 常量。
+	VoidPlacement string `json:"voidPlacement,omitempty"`
+
 	// Mutagens 为自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
 	// 按天干整表替换默认值，未列出的天干仍用默认表。
 	Mutagens map[string][]string `json:"mutagens,omitempty"`
+
+	// ExtraMutagens 为附加四化星：天干标识 → 四化标识 → 星耀标识列表。
+	// 加在该天干生效的四化（Mutagens 或默认表）之外，与四槽之星同化一类，
+	// 如 {"gengHeavenly": {"sihuaJi": {"tianxiangMaj"}}} 令庚干天同、天相同化忌。
+	// 同一天干里一颗星至多出现一次（四槽与附加星合计），否则排盘报错。
+	ExtraMutagens map[string]map[string][]string `json:"extraMutagens,omitempty"`
 
 	// Brightness 为自定义亮度表：星耀标识 → 十二宫亮度标识（十二项，
 	// 空串表示该宫无亮度，索引 0 为寅宫）。按星耀整表替换默认值。

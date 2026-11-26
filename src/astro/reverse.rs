@@ -14,7 +14,7 @@ use serde::Serialize;
 use crate::astro::builder::{SUPPORTED_YEARS, by_solar, effective_time_index, four_pillars};
 use crate::astro::palace::{get_five_elements_class, get_soul_and_body};
 use crate::calendar::{self, year_pillar};
-use crate::data::stars::StarKey;
+use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::*;
 use crate::error::IztroError;
 use crate::models::astrolabe::Astrolabe;
@@ -22,7 +22,7 @@ use crate::star::location::{
     get_chang_qu_index, get_huo_ling_index, get_kong_jie_index, get_kui_yue_index,
     get_lu_yang_tuo_ma_index, get_luan_xi_index, get_start_index, get_zuo_you_index,
 };
-use crate::utils::{fix_index, get_mutagens_by_heavenly_stem};
+use crate::utils::fix_index;
 
 /// [`ReverseCriteria::limit`] 为 0 时采用的候选数上限。
 pub const DEFAULT_REVERSE_LIMIT: usize = 512;
@@ -174,7 +174,8 @@ pub struct ReverseCriteria {
     pub five_elements_class: Option<FiveElementsClass>,
     /// 星耀落宫条件，全部须同时满足
     pub stars: Vec<StarPosition>,
-    /// 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个
+    /// 生年四化 [禄, 权, 科, 忌] 各自是哪颗星，可只给其中几个；
+    /// 四化表给了附加星时，该类的附加星也算满足
     pub mutagens: [Option<StarKey>; 4],
     /// 候选公历日期所属年份的闭区间（含两端），须落在 1-9999 内
     pub year_range: (i64, i64),
@@ -217,12 +218,14 @@ pub struct ReverseResult {
 /// 候选用同一 `config` 排盘必满足全部条件。
 ///
 /// # Errors
-/// 条件为空、包含流耀、年份范围非法时返回 [`IztroError::InvalidArgument`]。
+/// 条件为空、包含流耀、年份范围非法或 `config` 的自定义四化表不合法（见 [`Config::check`]）时
+/// 返回 [`IztroError::InvalidArgument`]。
 pub fn reverse_chart(
     criteria: &ReverseCriteria,
     config: &Config,
 ) -> Result<ReverseResult, IztroError> {
     validate_criteria(criteria)?;
+    crate::astro::context::check_config(config)?;
     let limit = if criteria.limit == 0 {
         DEFAULT_REVERSE_LIMIT
     } else {
@@ -373,19 +376,25 @@ fn matches_criteria(chart: &Astrolabe, criteria: &ReverseCriteria, config: &Conf
     {
         return false;
     }
-    let mutagens = get_mutagens_by_heavenly_stem(chart.raw_dates.chinese_date.yearly.0, config);
-    for (want, got) in criteria.mutagens.iter().zip(mutagens) {
-        if let Some(star) = want
-            && *star != got
-        {
-            return false;
-        }
+    if !mutagens_match(criteria, chart.raw_dates.chinese_date.yearly.0, config) {
+        return false;
     }
     criteria.stars.iter().all(|p| {
         chart
             .star(p.star)
             .is_some_and(|s| s.palace().earthly_branch == p.branch)
     })
+}
+
+/// 生年四化条件在年干 `stem` 下是否成立：每个给出的四化位，所给的星须是该干化出这一类的星
+/// （四槽之星或附加星）。
+fn mutagens_match(criteria: &ReverseCriteria, stem: HeavenlyStem, config: &Config) -> bool {
+    let table = config.stem_mutagens(stem);
+    criteria
+        .mutagens
+        .iter()
+        .zip(MUTAGEN)
+        .all(|(want, m)| want.is_none_or(|w| table.stars_of(m).any(|s| s == w)))
 }
 
 /// 农历年编号 `year` 下，候选的安星年干支。
@@ -411,13 +420,7 @@ fn year_prefilter(
     config: &Config,
 ) -> bool {
     stems.iter().any(|(stem, branch)| {
-        let mutagens = get_mutagens_by_heavenly_stem(*stem, config);
-        let mutagen_ok = criteria
-            .mutagens
-            .iter()
-            .zip(mutagens)
-            .all(|(want, got)| want.is_none_or(|w| w == got));
-        mutagen_ok
+        mutagens_match(criteria, *stem, config)
             && criteria.stars.iter().all(|p| {
                 let want = branch_to_palace(p.branch);
                 match p.star {

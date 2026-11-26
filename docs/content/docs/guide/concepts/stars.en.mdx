@@ -79,6 +79,12 @@ collapse them into one "Jiekong". The Zhongzhou school (`algorithm = zhongzhou`)
 **Jiekong** (截空), **Jiesha** (劫煞), **Dahao** (大耗) and **Longde** (龙德), and does not place
 Jielu or Kongwang — taking the adjective-star total from 32 to 34. See
 [Config in depth](/en/docs/guide/guides/config#algorithm-school-algorithm).
+
+With `void_placement = zhengPang`, Jiekong and Xunkong each take a main and a side palace: both
+schools place Jiekong in the main void and side Jiekong `pangJiekong` in the side void, the default
+school no longer places Jielu and Kongwang, and Xunkong's side void gets side Xunkong `pangXunkong`.
+The adjective-star total becomes 33 for the default school and 36 for Zhongzhou. See
+[Config in depth](/en/docs/guide/guides/config#jiekong-and-xunkong-void_placement).
 </Callout>
 
 <Callout type="warn" title="Mutagen predicates only look at major and minor stars">
@@ -120,7 +126,11 @@ scale:
 | `[-3]` | 陷 | luoxian (fallen) | Weakest |
 
 The same star has different brightness in different palaces, fixed by a star-against-branch lookup
-table. Adjective stars usually have no brightness at all.
+table. The default table gives adjective stars no brightness.
+
+A custom brightness table can also use an eighth level, 闲 (key `xian2`, ranked below 平 and above 陷,
+written `[idle]` in English and `[한]` in Korean), and can give adjective stars brightness; see
+[Config in depth](/en/docs/guide/guides/config#the-brightness-table).
 
 <Callout title="Brightness in a non-Chinese chart is a mark, not a word">
 The English, Korean and other non-Chinese vocabularies have no brightness translations, so the

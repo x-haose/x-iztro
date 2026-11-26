@@ -214,8 +214,8 @@ pub fn get_adjective_stars(param: &StarParam) -> Result<[Vec<Star>; 12], IztroEr
         luan_xi.tianxi,
         yearly_stars.xianchi,
         &suiqian12,
-        param.config.algorithm,
         param.language,
+        param.config,
     ))
 }
 

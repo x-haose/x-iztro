@@ -22,6 +22,7 @@ const soul = chart.palace(PalaceName.SOUL)!;
 | `decadal` | `Decadal` | 大限：`range`（起止虚岁）、干支与标识 |
 | `ages` | `readonly number[]` | 小限经过的虚岁 |
 | `mutagenStarKeys` | `readonly [string, string, string, string]` | 本宫天干化出的四颗星（禄、权、科、忌），随自定义四化表变化 |
+| `extraMutagenStarKeys` | `Partial<Record<Mutagen, readonly string[]>> \| undefined` | 本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表；没有附加星时为 undefined。飞星方法把它与同类的四槽之星一并计入：`fliesTo`、`selfMutaged` 一类四化有任一颗星在目标宫即算飞入，`mutagedPlaces` 只按四槽 |
 
 ---
 

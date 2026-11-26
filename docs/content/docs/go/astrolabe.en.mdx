@@ -128,15 +128,15 @@ fmt.Println(rd.ChineseDate.PillarKeys())
 | `TimeIndex` | `uint8` | Birth hour index |
 | `FixLeap` | `bool` | Whether leap-month correction was applied when charting |
 | `Language` | `Language` | Chart language (`LanguageZhCN` and friends) |
-| `Config` | `Config` | Charting configuration — the six switches reconstructed from the DTO |
+| `Config` | `Config` | Charting configuration — the switches reconstructed from the DTO |
 
 Horoscopes, re-anchoring and prompts restart their computation from these four, so the charting
 parameters need not be supplied again.
 
 <Callout type="info" title="The Config field does not echo custom tables">
-`chart.Config` is reconstructed from the output DTO and holds the six switches only; the custom
-mutagen and brightness tables passed in when charting are not in it. The chart does keep the caller's
-originals internally, so `Rearranged`, `Horoscope` and the prompts still use those two tables in
+`chart.Config` is reconstructed from the output DTO and holds the switches only; the custom
+mutagen tables, extra mutagen stars and brightness tables passed in when charting are not in it. The
+chart does keep the caller's originals internally, so `Rearranged`, `Horoscope` and the prompts still use those tables in
 their secondary computations — nothing is silently lost.
 </Callout>
 

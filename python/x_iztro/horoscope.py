@@ -81,6 +81,10 @@ class HoroscopeItem:
     stars: list[list[Star]] | None = None
     """流耀，12 个宫位各一组星耀列表，或 None"""
 
+    extra_mutagen_star_keys: dict[str, list[str]] = field(default_factory=dict)
+    """该运限天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extra_mutagens`）；
+    没有附加星时为空"""
+
     def palace_index_by_name(self, name: PalaceName | str) -> int | None:
         """通过宫位标识（或当前语言宫名）查找在该运限中的宫位索引"""
         for i, key in enumerate(self.palace_name_keys):
@@ -106,6 +110,9 @@ class HoroscopeItem:
             mutagen=list(d["mutagen"]),
             mutagen_star_keys=list(d["mutagenStarKeys"]),
             stars=stars,
+            extra_mutagen_star_keys={
+                k: list(v) for k, v in d.get("extraMutagenStarKeys", {}).items()
+            },
         )
 
 
@@ -521,7 +528,7 @@ class Horoscope:
         astrolabe: Astrolabe | None = None,
     ) -> bool:
         """
-        判断指定运限范围下某宫是否有运限四化。
+        判断指定运限范围下某宫是否有该层的这一类四化（四槽之星或附加星任一颗在宫内）。
 
         Args:
             name: 宫位标识
@@ -544,10 +551,11 @@ class Horoscope:
         idx = _MUTAGEN_INDEX.get(mutagen)
         if idx is None or idx >= len(item.mutagen_star_keys):
             return False
-        star_key = item.mutagen_star_keys[idx]
-        return any(
-            s.key == star_key for s in p.major_stars + p.minor_stars
-        )
+        star_keys = {
+            item.mutagen_star_keys[idx],
+            *item.extra_mutagen_star_keys.get(str(mutagen), []),
+        }
+        return any(s.key in star_keys for s in p.major_stars + p.minor_stars)
 
     def has_horoscope_stars(
         self,

@@ -79,6 +79,16 @@ export const DayDivide = {
 /** 晚子时归属（`ChartConfig.dayDivide`）：归次日或归当天 */
 export type DayDivide = (typeof DayDivide)[keyof typeof DayDivide];
 
+/** 截空与旬空的安法（`ChartConfig.voidPlacement`） */
+export const VoidPlacement = {
+  /** 与 iztro 一致：默认派安截路（阳宫）与空亡（阴宫），中州派只在正空安截空；旬空只安正空 */
+  DEFAULT: 'default',
+  /** 截空、旬空各安正空与傍空两宫：正空安截空、旬空，傍空安傍截空、傍旬空；默认派不再安截路、空亡 */
+  ZHENG_PANG: 'zhengPang',
+} as const;
+/** 截空与旬空的安法（`ChartConfig.voidPlacement`） */
+export type VoidPlacement = (typeof VoidPlacement)[keyof typeof VoidPlacement];
+
 /** 天干（对应 `heavenlyStemKey` 字段） */
 export const HeavenlyStem = {
   JIA: 'jiaHeavenly',
@@ -197,6 +207,8 @@ export const Brightness = {
   BU: 'bu',
   /** 陷 */
   XIAN: 'xian',
+  /** 闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里 */
+  XIAN2: 'xian2',
 } as const;
 /** 星耀亮度（对应 `Star.brightnessKey`） */
 export type Brightness = (typeof Brightness)[keyof typeof Brightness];
@@ -389,6 +401,10 @@ export const AdjectiveStar = {
   KONGWANG: 'kongwang',
   /** 截路 */
   JIELU: 'jielu',
+  /** 傍截空：截空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`） */
+  PANG_JIEKONG: 'pangJiekong',
+  /** 傍旬空：旬空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`） */
+  PANG_XUNKONG: 'pangXunkong',
   /** 月德 */
   YUEDE: 'yuede',
   /** 天伤 */

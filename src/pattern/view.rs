@@ -3,7 +3,7 @@
 use crate::data::stars::StarKey;
 use crate::data::types::{Brightness, EarthlyBranch, Mutagen, Palace, Scope, StarType};
 use crate::models::astrolabe::Astrolabe;
-use crate::models::horoscope::HoroscopeData;
+use crate::models::horoscope::{HoroscopeData, HoroscopeItem};
 use crate::models::palace::PalaceData;
 use crate::models::star::Star;
 use crate::utils::fix_index;
@@ -38,15 +38,19 @@ pub const JI6: [StarKey; 6] = [
     StarKey::TianyueMin,
 ];
 
-/// 空亡星：旬空、空亡、截路（默认派）、截空（中州派）。
-pub const KONG_WANG: [StarKey; 4] = [
+/// 空亡星：旬空、空亡、截路（默认派）、截空（中州派），以及截空、旬空分正傍时的傍截空、傍旬空。
+///
+/// 截路、空亡即截空的两宫，故截空两宫都算空亡星，傍空同理。
+pub const KONG_WANG: [StarKey; 6] = [
     StarKey::Xunkong,
     StarKey::Kongwang,
     StarKey::Jielu,
     StarKey::Jiekong,
+    StarKey::PangJiekong,
+    StarKey::PangXunkong,
 ];
 
-/// 空曜：天空、地空、截空、旬空（页面禄衰马困一节原话）。
+/// 空曜：天空、地空、截空、旬空（页面禄衰马困一节原话）；截空、旬空只取正空。
 pub const KONG_YAO: [StarKey; 4] = [
     StarKey::Tiankong,
     StarKey::DikongMin,
@@ -110,8 +114,8 @@ pub struct ChartView<'a> {
     names: [Palace; 12],
     soul: usize,
     body: Option<usize>,
-    /// 运限视角的四化 [禄, 权, 科, 忌]；本命视角为 `None`（读星耀自带的生年四化）
-    scope_mutagen: Option<[StarKey; 4]>,
+    /// 运限视角所在层（读该层四化）；本命视角为 `None`（读星耀自带的生年四化）
+    scope_item: Option<&'a HoroscopeItem>,
     config: PatternConfig,
 }
 
@@ -142,7 +146,7 @@ impl<'a> ChartView<'a> {
                 .position(|p| p.name == Palace::Soul)
                 .unwrap_or(0),
             body: astrolabe.palaces.iter().position(|p| p.is_body_palace),
-            scope_mutagen: None,
+            scope_item: None,
             config: *config,
         }
     }
@@ -189,10 +193,6 @@ impl<'a> ChartView<'a> {
         for (i, n) in item.palace_names.iter().take(12).enumerate() {
             names[i] = *n;
         }
-        let mut mutagen = [StarKey::ZiweiMaj; 4];
-        for (i, m) in item.mutagen.iter().take(4).enumerate() {
-            mutagen[i] = *m;
-        }
         ChartView {
             astrolabe,
             horoscope: Some(horoscope),
@@ -201,7 +201,7 @@ impl<'a> ChartView<'a> {
             names,
             soul: fix_index(item.index as i32, 12),
             body: None,
-            scope_mutagen: Some(mutagen),
+            scope_item: Some(item),
             config: *config,
         }
     }
@@ -465,15 +465,14 @@ impl<'a> ChartView<'a> {
         }
     }
 
-    /// 该视角下某星的四化：本命读生年四化，运限读该层四化。
+    /// 该视角下某星的四化：本命读生年四化，运限读该层四化（四槽与附加星）。
     pub fn mutagen_of(&self, star: &Star) -> Option<Mutagen> {
-        match self.scope_mutagen {
+        match self.scope_item {
             None => star.mutagen,
-            Some(m) => [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji]
-                .into_iter()
-                .zip(m)
-                .find(|(_, k)| *k == star.key)
-                .map(|(mu, _)| mu),
+            Some(item) => item
+                .mutagens()
+                .find(|(k, _)| *k == star.key)
+                .map(|(_, m)| m),
         }
     }
 

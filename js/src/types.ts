@@ -12,6 +12,7 @@ import type {
   Brightness,
   BrightnessSource,
   DayDivide,
+  VoidPlacement,
   EarthlyBranch,
   FiveElementsClass,
   Gender,
@@ -32,7 +33,7 @@ import type {
 import type { KnowledgePack } from './knowledge.js';
 
 /**
- * 排盘配置。六个开关决定算法分界与盘型，两张覆盖表替换内置的四化与亮度数据；
+ * 排盘配置。七个开关决定算法分界、盘型与空曜安法，覆盖表替换或补充内置的四化与亮度数据；
  * 每一项都可省略，省略取与 iztro 一致的默认值。
  */
 export interface ChartConfig {
@@ -48,11 +49,19 @@ export interface ChartConfig {
   algorithm?: Algorithm | undefined;
   /** 排盘视角：heaven=天盘（默认）/ earth=地盘 / human=人盘 */
   astroType?: AstroType | undefined;
+  /** 截空与旬空的安法：default=同 iztro（默认）/ zhengPang=各安正空、傍空两宫 */
+  voidPlacement?: VoidPlacement | undefined;
   /**
    * 自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
    * 按天干整表替换默认值，未列出的天干仍用默认表。
    */
   mutagens?: Partial<Record<HeavenlyStem, readonly [string, string, string, string]>> | undefined;
+  /**
+   * 附加四化星：天干标识 → 四化标识 → 星耀标识列表。加在该天干生效的四化（`mutagens` 或默认表）之外，
+   * 与四槽之星同化一类，如 `{ gengHeavenly: { sihuaJi: ['tianxiangMaj'] } }` 令庚干天同、天相同化忌。
+   * 同一天干里一颗星至多出现一次（四槽与附加星合计），否则排盘报错。
+   */
+  extraMutagens?: Partial<Record<HeavenlyStem, Partial<Record<Mutagen, readonly string[]>>>> | undefined;
   /**
    * 自定义亮度表：星耀标识 → 十二宫亮度标识（十二项，索引 0 为寅宫，空串表示该宫无亮度）。
    * 按星耀整表替换默认值，未列出的星耀仍用默认表。
@@ -60,7 +69,7 @@ export interface ChartConfig {
   brightness?: Partial<Record<string, readonly (Brightness | '')[]>> | undefined;
 }
 
-/** 星盘上记录的排盘配置：六个开关的实际取值（自定义四化与亮度表不回显） */
+/** 星盘上记录的排盘配置：开关的实际取值（自定义四化、附加四化星与亮度表不回显） */
 export interface ChartConfigData {
   /** 年分界点 */
   yearDivide: YearDivide;
@@ -74,6 +83,8 @@ export interface ChartConfigData {
   algorithm: Algorithm;
   /** 排盘视角 */
   astroType: AstroType;
+  /** 截空与旬空的安法；取默认值 default 时省略 */
+  voidPlacement?: VoidPlacement;
 }
 
 /** 格局判定口径。多口径格局一律以 `PatternHit.variant` 报出，这里只放会改变事实判定的开关 */
@@ -134,11 +145,11 @@ export interface StarData {
   type: StarType;
   /** 作用范围 */
   scope: Scope;
-  /** 亮度显示文本（如「庙」）：主星与辅星恒有该键，无亮度为空串；杂耀与流耀没有该键 */
+  /** 亮度显示文本（如「庙」）：主星与辅星恒有该键，无亮度为空串；杂耀只在自定义亮度表列出该星时有该键，流耀没有 */
   brightness?: string;
   /** 语言无关亮度标识，无亮度时没有该键 */
   brightnessKey?: Brightness;
-  /** 四化显示文本（如「禄」）：可被四化的星恒有该键，无四化为空串；其余星没有该键 */
+  /** 四化显示文本（如「禄」）：可被四化的星恒有该键，无四化为空串；其余星有四化时才有该键 */
   mutagen?: string;
   /** 语言无关四化标识，无四化时没有该键 */
   mutagenKey?: Mutagen;
@@ -206,6 +217,8 @@ export interface PalaceData {
   ages: number[];
   /** 本宫天干化出的四颗星标识，顺序为禄、权、科、忌；随自定义四化表变化 */
   mutagenStarKeys: [string, string, string, string];
+  /** 本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时没有该键 */
+  extraMutagenStarKeys?: Partial<Record<Mutagen, string[]>>;
 }
 
 /** 数字化农历生日 */
@@ -352,6 +365,8 @@ export interface HoroscopeItemData {
   mutagen: string[];
   /** 被化的四颗星标识 [禄, 权, 科, 忌] */
   mutagenStarKeys: string[];
+  /** 该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时没有该键 */
+  extraMutagenStarKeys?: Partial<Record<Mutagen, string[]>>;
   /** 流耀：十二宫各一组；该层没有流耀时不出现 */
   stars?: StarData[][];
 }

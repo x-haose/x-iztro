@@ -27,7 +27,7 @@ The exception carries a machine-readable classification in `.code` — see
 
 ## ChartConfig
 
-The charting configuration: six switches plus two optional override tables. It is a frozen dataclass
+The charting configuration: seven switches plus three optional override tables. It is a frozen dataclass
 in which every field has a default, and the defaults match JS iztro — `ChartConfig()` is equivalent to
 passing no `config` at all.
 
@@ -39,17 +39,19 @@ passing no `config` at all.
 | `day_divide` | `str` | `"forward"` | `forward` the late Zi hour belongs to the next day / `current` to the current day (`DayDivide`) |
 | `algorithm` | `str` | `"default"` | `default` / `zhongzhou` (`Algorithm`) |
 | `astro_type` | `str` | `"heaven"` | `heaven` heaven chart / `earth` earth chart / `human` human chart (`AstroType`) |
+| `void_placement` | `str` | `"default"` | `default` as iztro / `zhengPang` Jiekong and Xunkong each take a main and a side void palace (`VoidPlacement`) |
 | `mutagens` | `dict[str, list[str]] \| None` | `None` | Stem key → four star keys (Lu, Quan, Ke, Ji) |
+| `extra_mutagens` | `dict[str, dict[str, list[str]]] \| None` | `None` | Stem key → mutagen key → list of extra star keys, added on top of that stem's four slots |
 | `brightness` | `dict[str, list[str]] \| None` | `None` | Star key → twelve brightness keys; index 0 is the Yin palace, an empty string means no brightness in that palace |
 
-For what the six switches mean and the schools behind them, see
+For what the switches mean and the schools behind them, see
 [Config in depth](/en/docs/guide/guides/config).
 
 **Methods**
 
 | Method | Description |
 | --- | --- |
-| `to_dict() -> dict` | Convert to the camelCase config object the binding layer accepts; either table is omitted from the result when it is `None` |
+| `to_dict() -> dict` | Convert to the camelCase config object the binding layer accepts; enum members in the switches and tables all become strings, and a table is omitted from the result when it is `None` |
 
 **Example**
 
@@ -72,7 +74,7 @@ print(chart.palace("soulPalace").mutagen_star_keys)
 **Output**
 
 ```text
-{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
+{'yearDivide': 'normal', 'horoscopeDivide': 'normal', 'ageDivide': 'normal', 'dayDivide': 'forward', 'algorithm': 'default', 'astroType': 'earth', 'voidPlacement': 'default', 'mutagens': {'gengHeavenly': ['taiyangMaj', 'wuquMaj', 'tianfuMaj', 'tiantongMaj']}}
 earth 5th earth
 ['tiantongMaj', 'tianjiMaj', 'wenchangMin', 'lianzhenMaj']
 ```
@@ -87,7 +89,9 @@ palace-stem mutagens are taken from the bing stem.
 `mutagens` replaces **all four** positions of one stem at a time, and `brightness` replaces **all
 twelve** palaces of one star at a time. The lengths are strictly validated: a mutagen list must be
 exactly four entries and a brightness list exactly twelve, and one entry too many or too few raises
-`IztroError`. Stems and stars you do not list keep the default table.
+`IztroError`. Stems and stars you do not list keep the default table. `extra_mutagens` only adds, on
+top of the four slots the stem uses; a star appearing twice within one stem across the slots and the
+extra stars raises `IztroError`.
 </Accordion>
 <Accordion title="Keys only, never translated names">
 Both the keys and the values of the two tables must be language-independent keys
@@ -95,21 +99,13 @@ Both the keys and the values of the two tables must be language-independent keys
 error. The enum members are `StrEnum`s, so use them as keys directly and `to_dict` converts them to
 strings for you.
 </Accordion>
-<Accordion title="to_dict does not stringify the six switches' enum members">
-`to_dict` applies `str()` only to the keys and values inside the two tables; the six switch fields
-come out as they went in. Writing `ChartConfig(astro_type=AstroType.EARTH)` charts perfectly well
-(a `StrEnum` is equivalent to its string), it is only that the entry in `to_dict()`'s result prints as
-`<AstroType.EARTH: 'earth'>`.
-To serialize the configuration as clean JSON, pass the switches as string literals, or run `str()`
-over them yourself.
-</Accordion>
 <Accordion title="The override tables are not echoed back on chart.config">
-`chart.config` is restored from the output DTO and carries only the six switches — the two override
+`chart.config` is restored from the output DTO and carries only the switches — the three override
 tables are charting **input** rather than result, so they never enter the DTO (matching the field
 contract of JS iztro).
 
 The chart does keep the originals you passed in internally, however, so follow-up computations such as
-`chart.rearranged(...)`, `chart.horoscope(...)` and the to_text projection still use those two tables; they
+`chart.rearranged(...)`, `chart.horoscope(...)` and the to_text projection still use those tables; they
 are not silently dropped.
 To record the configuration, keep your `ChartConfig` object on your own call site.
 </Accordion>

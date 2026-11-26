@@ -4,7 +4,7 @@ description: The i18n module — two-way lookup between keys and translated name
 ---
 
 Every field on a chart carries both a translated name and a `*Key`, so translating by hand is rarely needed;
-these three functions are for when you hold only a key (or only a name in some language). They cover 260 keys.
+these three functions are for when you hold only a key (or only a name in some language). They cover 263 keys.
 
 ```ts
 i18n.translate(key: string, language?: Language): string | undefined; // undefined for an unknown key
@@ -24,7 +24,7 @@ console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'
 
 ```text
 紫微 紫微 soul undefined
-ziweiMaj horse tianmaMin 260
+ziweiMaj horse tianmaMin 263
 ```
 
 There is no global language switch: the language travels with each chart, so charts in different languages

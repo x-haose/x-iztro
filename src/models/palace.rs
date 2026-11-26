@@ -1,5 +1,4 @@
-use crate::data::heavenly_stems::get_heavenly_stem_info;
-use crate::data::stars::StarKey;
+use crate::data::stars::{MUTAGEN, StarKey};
 use crate::data::types::*;
 use crate::models::star::Star;
 
@@ -124,38 +123,40 @@ impl PalaceData {
         true
     }
 
+    /// 本宫天干生效的四化：四槽与附加星。
+    pub fn stem_mutagens(&self) -> StemMutagens {
+        stem_mutagens(self.overrides.as_deref(), self.heavenly_stem)
+    }
+
     /// 本宫天干在指定四化位上对应的星耀。
     ///
-    /// 顺序与传入的 `mutagens` 一致；同一四化重复传入会重复出现。
+    /// 顺序与传入的 `mutagens` 一致，每一类先四槽之星、后附加星；同一四化重复传入会重复出现。
     pub fn mutagen_stars(&self, mutagens: &[Mutagen]) -> Vec<StarKey> {
-        let table = self
-            .overrides
-            .as_ref()
-            .and_then(|t| t.mutagens_of(self.heavenly_stem))
-            .copied()
-            .unwrap_or_else(|| get_heavenly_stem_info(self.heavenly_stem).mutagen);
+        let table = self.stem_mutagens();
         mutagens
             .iter()
-            .map(|m| {
-                table[match m {
-                    Mutagen::Lu => 0,
-                    Mutagen::Quan => 1,
-                    Mutagen::Ke => 2,
-                    Mutagen::Ji => 3,
-                }]
-            })
+            .flat_map(|m| table.stars_of(*m).collect::<Vec<_>>())
             .collect()
     }
 
-    /// 飞化到目标宫：本宫天干的指定四化星是否**全部**落在目标宫内。
+    /// 按传入顺序，每一类四化化出的星（四槽之星与附加星）各成一组。
+    fn mutagen_groups(&self, mutagens: &[Mutagen]) -> Vec<Vec<StarKey>> {
+        let table = self.stem_mutagens();
+        mutagens
+            .iter()
+            .map(|m| table.stars_of(*m).collect())
+            .collect()
+    }
+
+    /// 飞化到目标宫：本宫天干的指定四化是否**全部**飞入目标宫。
     ///
-    /// 四化列表为空时返回 false。
+    /// 一类四化化出不止一颗星时，其中任一颗在目标宫即算这一类飞入。四化列表为空时返回 false。
     pub fn flies_to(&self, target_palace: &PalaceData, mutagens: &[Mutagen]) -> bool {
-        let stars = self.mutagen_stars(mutagens);
-        if stars.is_empty() {
+        let groups = self.mutagen_groups(mutagens);
+        if groups.is_empty() {
             return false;
         }
-        target_palace.has(&stars)
+        groups.iter().all(|g| target_palace.has_one_of(g))
     }
 
     /// 飞化到目标宫：本宫天干的指定四化星是否有**任一颗**落在目标宫内。
@@ -180,9 +181,11 @@ impl PalaceData {
         target_palace.not_have(&stars)
     }
 
-    /// 自化：本宫天干的指定四化星是否**全部**落在本宫内。
+    /// 自化：本宫天干的指定四化是否**全部**落回本宫；一类四化有任一颗星在本宫即算。
     pub fn self_mutaged(&self, mutagens: &[Mutagen]) -> bool {
-        self.has(&self.mutagen_stars(mutagens))
+        self.mutagen_groups(mutagens)
+            .iter()
+            .all(|g| self.has_one_of(g))
     }
 
     /// 自化：本宫天干的指定四化星是否有**任一颗**落在本宫内。
@@ -201,14 +204,18 @@ impl PalaceData {
 
     /// 空列表回退为全部四化，顺序为禄、权、科、忌。
     fn or_all(mutagens: &[Mutagen]) -> &[Mutagen] {
-        const ALL: [Mutagen; 4] = [Mutagen::Lu, Mutagen::Quan, Mutagen::Ke, Mutagen::Ji];
-        if mutagens.is_empty() { &ALL } else { mutagens }
+        if mutagens.is_empty() {
+            &MUTAGEN
+        } else {
+            mutagens
+        }
     }
 
-    /// 获取四化飞入的宫位索引：依次为禄、权、科、忌对应的星所在宫位，
+    /// 获取四化飞入的宫位索引：依次为禄、权、科、忌四槽之星所在宫位（不含附加星），
     /// 未找到的项为 None
     pub fn mutaged_places(&self, all_palaces: &[PalaceData]) -> Vec<Option<usize>> {
-        self.mutagen_stars(Self::or_all(&[]))
+        self.stem_mutagens()
+            .primary
             .iter()
             .map(|star_key| {
                 all_palaces.iter().find_map(|p| {

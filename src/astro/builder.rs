@@ -338,8 +338,8 @@ fn place_stars(
         luan_xi.tianxi,
         yearly_stars.xianchi,
         &suiqian12,
-        config.algorithm,
         language,
+        config,
     );
 
     PlacedStars {

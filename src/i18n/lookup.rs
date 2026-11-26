@@ -87,7 +87,7 @@ const LOOKUP_PALACE_KEYS: [&str; 14] = [
 ];
 
 /// 亮度标识
-const BRIGHTNESSES: [Brightness; 7] = [
+const BRIGHTNESSES: [Brightness; 8] = [
     Brightness::Miao,
     Brightness::Wang,
     Brightness::De,
@@ -95,6 +95,7 @@ const BRIGHTNESSES: [Brightness; 7] = [
     Brightness::Ping,
     Brightness::Bu,
     Brightness::Xian,
+    Brightness::Xian2,
 ];
 
 /// 标识译成指定语言的文本
@@ -158,7 +159,7 @@ pub fn all_keys() -> Vec<&'static str> {
 static ALL_KEYS: LazyLock<Vec<&'static str>> = LazyLock::new(build_all_keys);
 
 fn build_all_keys() -> Vec<&'static str> {
-    let mut keys: Vec<&'static str> = Vec::with_capacity(260);
+    let mut keys: Vec<&'static str> = Vec::with_capacity(263);
 
     // common.json：运限层级、生肖、时辰、星座
     keys.extend(HOROSCOPE_NAMES.iter().map(|(k, _)| *k));

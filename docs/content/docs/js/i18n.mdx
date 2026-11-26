@@ -4,7 +4,7 @@ description: i18n 模块：标识与译名的双向查找。
 ---
 
 星盘对象的每个字段都同时给出译名与 `*Key` 标识，通常不必再手工翻译；这三个函数用于手上只有标识
-（或只有某种语言的译名）、需要换算的场合。覆盖 260 个标识。
+（或只有某种语言的译名）、需要换算的场合。覆盖 263 个标识。
 
 ```ts
 i18n.translate(key: string, language?: Language): string | undefined; // 未知标识为 undefined
@@ -23,7 +23,7 @@ console.log(i18n.keyOf('紫微'), i18n.keyOf('horse'), i18n.keyOf('horse', 'Min'
 
 ```text
 紫微 紫微 soul undefined
-ziweiMaj horse tianmaMin 260
+ziweiMaj horse tianmaMin 263
 ```
 
 没有全局语言开关：语言随每次排盘传入，同一进程里不同语言的盘互不干扰。

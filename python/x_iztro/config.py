@@ -1,7 +1,7 @@
 """
 排盘配置。
 
-六个开关决定算法分界与盘型，两张覆盖表用于替换内置的四化与亮度数据；
+七个开关决定算法分界、盘型与空曜安法，覆盖表用于替换或补充内置的四化与亮度数据；
 取值一律用 `x_iztro.enums` 的枚举成员或等价字符串。
 """
 
@@ -32,10 +32,21 @@ class ChartConfig:
     astro_type: str = "heaven"
     """排盘视角（`AstroType`）：heaven=天盘 / earth=地盘 / human=人盘"""
 
+    void_placement: str = "default"
+    """截空与旬空的安法（`VoidPlacement`）：default=同 iztro / zhengPang=各安正空、傍空两宫"""
+
     mutagens: dict[str, list[str]] | None = None
     """自定义四化表：天干标识 → 四颗星标识（禄、权、科、忌）。
 
     按天干整表替换默认值，未列出的天干仍用默认表；键与值都用语言无关标识。
+    """
+
+    extra_mutagens: dict[str, dict[str, list[str]]] | None = None
+    """附加四化星：天干标识 → 四化标识 → 星耀标识列表。
+
+    加在该天干生效的四化（`mutagens` 或默认表）之外，与四槽之星同化一类，
+    如 `{"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}` 令庚干天同、天相同化忌。
+    同一天干里一颗星至多出现一次（四槽与附加星合计），否则排盘报错。
     """
 
     brightness: dict[str, list[str]] | None = None
@@ -53,10 +64,16 @@ class ChartConfig:
             "dayDivide": str(self.day_divide),
             "algorithm": str(self.algorithm),
             "astroType": str(self.astro_type),
+            "voidPlacement": str(self.void_placement),
         }
         if self.mutagens:
             payload["mutagens"] = {
                 str(k): [str(v) for v in vs] for k, vs in self.mutagens.items()
+            }
+        if self.extra_mutagens:
+            payload["extraMutagens"] = {
+                str(stem): {str(m): [str(v) for v in vs] for m, vs in groups.items()}
+                for stem, groups in self.extra_mutagens.items()
             }
         if self.brightness:
             payload["brightness"] = {
@@ -73,4 +90,5 @@ class ChartConfig:
             day_divide=d["dayDivide"],
             algorithm=d["algorithm"],
             astro_type=d["astroType"],
+            void_placement=d.get("voidPlacement", "default"),
         )

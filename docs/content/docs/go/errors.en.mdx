@@ -224,7 +224,7 @@ accept both a key and a translated name in the chart's current language.
 
 ## Configuration-related
 
-The six switches and the two custom tables on `Config` are all validated during charting, with `Code`
+The switches and the custom tables on `Config` are all validated during charting, with `Code`
 being `invalid_argument` throughout:
 
 | Situation | Message body |
@@ -233,6 +233,8 @@ being `invalid_argument` throughout:
 | Unknown stem key in the mutagen table | `invalid mutagens key 'nope': unknown heavenly stem` |
 | A stem's mutagens are not four entries | `invalid mutagens for 'jiaHeavenly': expected 4 stars (lu, quan, ke, ji), got 1` |
 | A star's brightness table is not twelve entries | `invalid brightness for 'ziweiMaj': expected 12 entries, got 1` |
+| Unknown mutagen key among the extra mutagen stars | `invalid extraMutagens for 'gengHeavenly': invalid mutagen 'nope': expected 'sihuaLu', 'sihuaQuan', 'sihuaKe' or 'sihuaJi'` |
+| A star appears twice within one stem (slots and extra stars together) | `invalid mutagens for 'gengHeavenly': star 'tiantongMaj' appears more than once` |
 
 <Callout type="info">
 The lengths are checked **strictly**: exactly four mutagens and exactly twelve brightness entries, one

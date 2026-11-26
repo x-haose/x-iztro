@@ -262,6 +262,8 @@ pub fn not_fly_to(&self, target: impl Into<PalaceTarget>, mutagens: &[Mutagen]) 
 | `flies_one_of_to` | 列出的四化**至少一个**飞入目标宫 |
 | `not_fly_to` | 列出的四化**一个都不**飞入目标宫 |
 
+一类四化化出不止一颗星时（[附加四化星](/zh/docs/guide/guides/config#附加四化星)），其中任一颗在目标宫即算这一类飞入。
+
 **示例**
 
 ```rust
@@ -422,6 +424,7 @@ println!("{:?}", soul.mutagen_stars(&[Mutagen::Lu, Mutagen::Ji]));
 <Callout>
 `mutagen_stars` 取的是「本宫宫干化出哪几颗星」，与星耀自身的
 `mutagen` 字段（生年四化）无关；后者由出生年干决定。
+有附加四化星时，`mutagen_stars` 每一类先四槽之星、后附加星；`mutaged_places` 只按四槽。
 </Callout>
 
 <Callout type="info" title="mutaged_places 忽略入参">

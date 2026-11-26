@@ -1,7 +1,7 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::data::keyed::keyed_enum;
-use crate::data::stars::StarKey;
+use crate::data::stars::{MUTAGEN, StarKey};
 
 /// 阴阳
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -227,8 +227,23 @@ keyed_enum!(Mutagen, "mutagen" {
     Ji => "sihuaJi",
 });
 
+impl Mutagen {
+    /// 在禄、权、科、忌顺序中的位次（禄为 0）；四化表四槽即按此位次存放。
+    pub fn index(self) -> usize {
+        match self {
+            Mutagen::Lu => 0,
+            Mutagen::Quan => 1,
+            Mutagen::Ke => 2,
+            Mutagen::Ji => 3,
+        }
+    }
+}
+
 /// 星曜亮度
+///
+/// 前七级是 iztro 亮度表的取值；闲是 iztro 没有的一级，只出现在自定义亮度表里。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Brightness {
     /// 庙
     Miao,
@@ -244,6 +259,10 @@ pub enum Brightness {
     Bu,
     /// 陷
     Xian,
+    /// 闲：在王亭之《安星法及推断实例》的六级（庙旺地平闲陷）与《紫微斗数一本通》第七章的七级
+    /// （庙旺地利平闲陷）里都排在平之下、陷之上。标识 `xian2` 是带声调数字的拼音（xián），
+    /// 与陷（xiàn）的 `xian` 区分
+    Xian2,
 }
 
 keyed_enum!(Brightness, "brightness" {
@@ -254,6 +273,7 @@ keyed_enum!(Brightness, "brightness" {
     Ping => "ping",
     Bu => "bu",
     Xian => "xian",
+    Xian2 => "xian2",
 });
 
 /// 星曜类型
@@ -564,55 +584,193 @@ keyed_enum!(DayDivide, "dayDivide" {
     Current => "current",
 });
 
+/// 截空与旬空的安法。
+///
+/// 截空按生年天干占相邻两宫（甲己申酉、乙庚午未、丙辛辰巳、丁壬寅卯、戊癸子丑），
+/// 旬空占生年所在一旬空出的两宫；两者都是阳年以阳宫为正空、阴年以阴宫为正空，另一宫为傍空。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum VoidPlacement {
+    /// 与 iztro 一致：默认派把截空的两宫分别安作截路（阳宫）与空亡（阴宫），中州派只在正空安截空；
+    /// 旬空只在正空安一颗
+    #[default]
+    Default,
+    /// 截空、旬空各安正空、傍空两宫：正空安截空、旬空，傍空安傍截空、傍旬空，不分派别；
+    /// 默认派不再安截路、空亡
+    ZhengPang,
+}
+
+keyed_enum!(VoidPlacement, "voidPlacement" {
+    Default => "default",
+    ZhengPang => "zhengPang",
+});
+
+/// 一个天干化出的四化星。
+///
+/// 禄、权、科、忌四槽各一颗星，即 iztro 的四化表；有的流派一干化出多于四颗星
+/// （如庚干天同、天相同化忌），四槽之外同化一类的星记作附加星。
+/// 同一天干里一颗星至多化一类（[`Config::check`] 校验）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StemMutagens {
+    /// 四槽，顺序为禄、权、科、忌
+    pub primary: [StarKey; 4],
+    /// 四槽之外的附加星，按禄、权、科、忌分组（下标即 [`Mutagen::index`]）；默认四化表没有附加星
+    pub extra: [Vec<StarKey>; 4],
+}
+
+impl StemMutagens {
+    /// 全部（星, 四化）：按禄、权、科、忌，每类先四槽之星、后附加星。
+    pub fn iter(&self) -> impl Iterator<Item = (StarKey, Mutagen)> + '_ {
+        mutagen_pairs(&self.primary, &self.extra)
+    }
+
+    /// 化出指定四化的星：四槽之星在前，附加星在后。
+    pub fn stars_of(&self, mutagen: Mutagen) -> impl Iterator<Item = StarKey> + '_ {
+        std::iter::once(self.primary[mutagen.index()])
+            .chain(self.extra[mutagen.index()].iter().copied())
+    }
+
+    /// 该星在本干化哪一类；不在本干四化里返回 `None`。
+    pub fn mutagen_of(&self, star: StarKey) -> Option<Mutagen> {
+        self.iter().find(|(s, _)| *s == star).map(|(_, m)| m)
+    }
+}
+
+/// 四槽与附加星合成的（星, 四化）序列，顺序同 [`StemMutagens::iter`]。
+///
+/// `primary` 按禄、权、科、忌排列（运限层的四化星即这四项）。
+pub(crate) fn mutagen_pairs<'a>(
+    primary: &'a [StarKey],
+    extra: &'a [Vec<StarKey>; 4],
+) -> impl Iterator<Item = (StarKey, Mutagen)> + 'a {
+    MUTAGEN.iter().enumerate().flat_map(move |(i, &m)| {
+        primary
+            .get(i)
+            .into_iter()
+            .chain(extra[i].iter())
+            .map(move |&s| (s, m))
+    })
+}
+
+/// 没有附加星时的四组空表。
+static NO_EXTRA_MUTAGENS: [Vec<StarKey>; 4] = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
+
 /// 自定义四化与亮度表。
 ///
-/// 紫微斗数流派众多，四化与星耀亮度是分歧最集中的两处。这里按 key **整表替换**
+/// 紫微斗数流派众多，四化与星耀亮度是分歧最集中的两处。四化四槽与亮度按 key **整表替换**
 /// 默认值：给出某个天干的四化就只改那个天干，未给出的天干仍用默认表；亮度同理。
+/// 附加四化星加在该天干生效的四槽（覆盖表或默认表）之外。
 ///
-/// 通过 [`Config::with_mutagens`] / [`Config::with_brightness`] 构造。
+/// 通过 [`Config::with_mutagens`] / [`Config::with_extra_mutagens`] / [`Config::with_brightness`] 构造。
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TableOverrides {
     /// 天干 → 该干化出的四颗星，顺序为禄、权、科、忌
-    mutagens: std::collections::HashMap<HeavenlyStem, [crate::data::stars::StarKey; 4]>,
+    mutagens: HashMap<HeavenlyStem, [StarKey; 4]>,
+    /// 天干 → 四槽之外的附加四化星，按禄、权、科、忌分组
+    extra_mutagens: HashMap<HeavenlyStem, [Vec<StarKey>; 4]>,
     /// 星耀 → 它在十二宫（寅宫为 0）各自的亮度，无亮度的位置为 None
-    brightness: std::collections::HashMap<crate::data::stars::StarKey, [Option<Brightness>; 12]>,
+    brightness: HashMap<StarKey, [Option<Brightness>; 12]>,
 }
 
 impl TableOverrides {
     /// 覆盖某个天干的四化表。
-    pub fn set_mutagens(&mut self, stem: HeavenlyStem, stars: [crate::data::stars::StarKey; 4]) {
+    pub fn set_mutagens(&mut self, stem: HeavenlyStem, stars: [StarKey; 4]) {
         self.mutagens.insert(stem, stars);
     }
 
-    /// 覆盖某颗星的十二宫亮度表。
-    pub fn set_brightness(
+    /// 设定某个天干在某一类四化上的附加星，替换该类原有的附加星；空列表即去掉该类附加星。
+    pub fn set_extra_mutagens(
         &mut self,
-        star: crate::data::stars::StarKey,
-        table: [Option<Brightness>; 12],
+        stem: HeavenlyStem,
+        mutagen: Mutagen,
+        stars: Vec<StarKey>,
     ) {
+        let groups = self.extra_mutagens.entry(stem).or_default();
+        groups[mutagen.index()] = stars;
+        if groups.iter().all(Vec::is_empty) {
+            self.extra_mutagens.remove(&stem);
+        }
+    }
+
+    /// 覆盖某颗星的十二宫亮度表。
+    pub fn set_brightness(&mut self, star: StarKey, table: [Option<Brightness>; 12]) {
         self.brightness.insert(star, table);
     }
 
     /// 取该天干被覆盖的四化表；未覆盖时返回 `None`。
-    pub fn mutagens_of(&self, stem: HeavenlyStem) -> Option<&[crate::data::stars::StarKey; 4]> {
+    pub fn mutagens_of(&self, stem: HeavenlyStem) -> Option<&[StarKey; 4]> {
         self.mutagens.get(&stem)
     }
 
+    /// 取该天干的附加四化星（按禄、权、科、忌分组）；没有附加星时返回 `None`。
+    pub fn extra_mutagens_of(&self, stem: HeavenlyStem) -> Option<&[Vec<StarKey>; 4]> {
+        self.extra_mutagens.get(&stem)
+    }
+
     /// 取该星被覆盖的亮度表；未覆盖时返回 `None`。
-    pub fn brightness_of(
-        &self,
-        star: crate::data::stars::StarKey,
-    ) -> Option<&[Option<Brightness>; 12]> {
+    pub fn brightness_of(&self, star: StarKey) -> Option<&[Option<Brightness>; 12]> {
         self.brightness.get(&star)
     }
 
     /// 是否没有任何覆盖。
     pub fn is_empty(&self) -> bool {
-        self.mutagens.is_empty() && self.brightness.is_empty()
+        self.mutagens.is_empty() && self.extra_mutagens.is_empty() && self.brightness.is_empty()
+    }
+
+    /// 校验四化表：改动过的每个天干里，四槽与附加星合起来一颗星至多出现一次。
+    ///
+    /// 星耀的四化标记只有一个取值，同一天干让一颗星化两类（或同类重复）时无从标记。
+    /// 报错正文带出天干与星的标识。
+    pub fn check(&self) -> Result<(), String> {
+        let mut stems: Vec<HeavenlyStem> = self
+            .mutagens
+            .keys()
+            .chain(self.extra_mutagens.keys())
+            .copied()
+            .collect();
+        stems.sort_by_key(|s| s.index());
+        stems.dedup();
+        for stem in stems {
+            let table = stem_mutagens(Some(self), stem);
+            let mut seen: Vec<StarKey> = Vec::new();
+            for (star, _) in table.iter() {
+                if seen.contains(&star) {
+                    return Err(format!(
+                        "invalid mutagens for '{}': star '{}' appears more than once",
+                        stem.as_key(),
+                        star.as_key()
+                    ));
+                }
+                seen.push(star);
+            }
+        }
+        Ok(())
     }
 }
 
-/// 排盘配置：控制分界点、算法派别与自定义表的全部开关
+/// 该天干生效的四化：四槽取覆盖表或默认表，附加星取覆盖表。
+pub(crate) fn stem_mutagens(
+    overrides: Option<&TableOverrides>,
+    stem: HeavenlyStem,
+) -> StemMutagens {
+    StemMutagens {
+        primary: primary_mutagens(overrides, stem),
+        extra: overrides
+            .and_then(|t| t.extra_mutagens_of(stem))
+            .unwrap_or(&NO_EXTRA_MUTAGENS)
+            .clone(),
+    }
+}
+
+/// 该天干生效的四槽：有覆盖用覆盖，否则用默认表。
+fn primary_mutagens(overrides: Option<&TableOverrides>, stem: HeavenlyStem) -> [StarKey; 4] {
+    overrides
+        .and_then(|t| t.mutagens_of(stem))
+        .copied()
+        .unwrap_or_else(|| crate::data::heavenly_stems::get_heavenly_stem_info(stem).mutagen)
+}
+
+/// 排盘配置：控制分界点、算法派别、空曜安法与自定义表的全部开关
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     /// 年分界点
@@ -627,9 +785,12 @@ pub struct Config {
     pub algorithm: Algorithm,
     /// 排盘视角（天盘/地盘/人盘）
     pub astro_type: AstroType,
+    /// 截空与旬空的安法
+    pub void_placement: VoidPlacement,
     /// 自定义四化与亮度表；`None` 表示全部使用默认表。
     ///
-    /// 属于排盘输入：随 `Config` 的 serde（即绑定线协议）往返；星盘 DTO 的 `config` 只记六个开关。
+    /// 属于排盘输入：随 `Config` 的 serde（即绑定线协议）往返；星盘 DTO 的 `config` 只记开关。
+    /// 排盘入口先经 [`Config::check`] 校验。
     pub overrides: Option<std::sync::Arc<TableOverrides>>,
 }
 
@@ -643,6 +804,7 @@ impl Default for Config {
             day_divide: DayDivide::Forward,
             algorithm: Algorithm::Default,
             astro_type: AstroType::Heaven,
+            void_placement: VoidPlacement::Default,
             overrides: None,
         }
     }
@@ -655,57 +817,87 @@ impl Config {
         self
     }
 
-    /// 在当前配置上覆盖某个天干的四化表。
-    pub fn with_mutagens(
-        mut self,
-        stem: HeavenlyStem,
-        stars: [crate::data::stars::StarKey; 4],
-    ) -> Self {
+    /// 在当前配置上指定截空与旬空的安法。
+    pub fn with_void_placement(mut self, void_placement: VoidPlacement) -> Self {
+        self.void_placement = void_placement;
+        self
+    }
+
+    /// 取出自定义表改写后放回；共享中的表先复制一份。
+    fn edit_tables(mut self, edit: impl FnOnce(&mut TableOverrides)) -> Self {
         let mut tables = self
             .overrides
             .take()
             .map_or_else(TableOverrides::default, |arc| {
                 std::sync::Arc::try_unwrap(arc).unwrap_or_else(|shared| (*shared).clone())
             });
-        tables.set_mutagens(stem, stars);
+        edit(&mut tables);
         self.overrides = Some(std::sync::Arc::new(tables));
         self
+    }
+
+    /// 在当前配置上覆盖某个天干的四化表。
+    pub fn with_mutagens(self, stem: HeavenlyStem, stars: [StarKey; 4]) -> Self {
+        self.edit_tables(|t| t.set_mutagens(stem, stars))
+    }
+
+    /// 在当前配置上设定某个天干在某一类四化上的附加星（替换该类原有的附加星）。
+    ///
+    /// 附加星与四槽之星同化一类，例如庚干的化忌除四槽的天同外再加天相。
+    pub fn with_extra_mutagens(
+        self,
+        stem: HeavenlyStem,
+        mutagen: Mutagen,
+        stars: impl IntoIterator<Item = StarKey>,
+    ) -> Self {
+        let stars: Vec<StarKey> = stars.into_iter().collect();
+        self.edit_tables(|t| t.set_extra_mutagens(stem, mutagen, stars))
     }
 
     /// 在当前配置上覆盖某颗星的十二宫亮度表。
-    pub fn with_brightness(
-        mut self,
-        star: crate::data::stars::StarKey,
-        table: [Option<Brightness>; 12],
-    ) -> Self {
-        let mut tables = self
-            .overrides
-            .take()
-            .map_or_else(TableOverrides::default, |arc| {
-                std::sync::Arc::try_unwrap(arc).unwrap_or_else(|shared| (*shared).clone())
-            });
-        tables.set_brightness(star, table);
-        self.overrides = Some(std::sync::Arc::new(tables));
-        self
+    pub fn with_brightness(self, star: StarKey, table: [Option<Brightness>; 12]) -> Self {
+        self.edit_tables(|t| t.set_brightness(star, table))
     }
 
-    /// 该天干实际生效的四化表：有覆盖用覆盖，否则用默认表。
-    pub fn mutagens_of(&self, stem: HeavenlyStem) -> [crate::data::stars::StarKey; 4] {
+    /// 校验自定义表，规则见 [`TableOverrides::check`]；没有自定义表时恒通过。
+    ///
+    /// # Errors
+    /// 某个天干里一颗星出现不止一次时返回报错正文。
+    pub fn check(&self) -> Result<(), String> {
         self.overrides
-            .as_ref()
-            .and_then(|t| t.mutagens_of(stem))
-            .copied()
-            .unwrap_or_else(|| crate::data::heavenly_stems::get_heavenly_stem_info(stem).mutagen)
+            .as_deref()
+            .map_or(Ok(()), TableOverrides::check)
+    }
+
+    /// 该天干实际生效的四槽：有覆盖用覆盖，否则用默认表。附加星见 [`Config::stem_mutagens`]。
+    pub fn mutagens_of(&self, stem: HeavenlyStem) -> [StarKey; 4] {
+        primary_mutagens(self.overrides.as_deref(), stem)
+    }
+
+    /// 该天干实际生效的附加四化星，按禄、权、科、忌分组；没有附加星时四组皆空。
+    pub fn extra_mutagens_of(&self, stem: HeavenlyStem) -> &[Vec<StarKey>; 4] {
+        self.overrides
+            .as_deref()
+            .and_then(|t| t.extra_mutagens_of(stem))
+            .unwrap_or(&NO_EXTRA_MUTAGENS)
+    }
+
+    /// 该天干实际生效的全部四化星：四槽加附加星。
+    pub fn stem_mutagens(&self, stem: HeavenlyStem) -> StemMutagens {
+        stem_mutagens(self.overrides.as_deref(), stem)
+    }
+
+    /// 指定天干下某颗星化哪一类（含附加星）；不在该干四化里返回 `None`。
+    pub fn mutagen_of(&self, stem: HeavenlyStem, star: StarKey) -> Option<Mutagen> {
+        mutagen_pairs(&self.mutagens_of(stem), self.extra_mutagens_of(stem))
+            .find(|(s, _)| *s == star)
+            .map(|(_, m)| m)
     }
 
     /// 该星在指定宫位实际生效的亮度：有覆盖用覆盖，否则用默认表。
     ///
     /// `palace_index` 为盘上位置（寅宫为 0），越界会对 12 取模。
-    pub fn brightness_of(
-        &self,
-        star: crate::data::stars::StarKey,
-        palace_index: usize,
-    ) -> Option<Brightness> {
+    pub fn brightness_of(&self, star: StarKey, palace_index: usize) -> Option<Brightness> {
         let index = palace_index % 12;
         if let Some(table) = self.overrides.as_ref().and_then(|t| t.brightness_of(star)) {
             return table[index];
@@ -716,7 +908,8 @@ impl Config {
 
 /// `Config` 线协议的部分键补丁：缺省键取默认值，未知键报错（拼错的键不会被静默忽略）。
 ///
-/// 六个开关取语言无关标识；`mutagens` 为天干标识 → 四化星标识（禄、权、科、忌四项），
+/// 七个开关取语言无关标识；`mutagens` 为天干标识 → 四化星标识（禄、权、科、忌四项），
+/// `extraMutagens` 为天干标识 → 四化标识 → 附加星标识列表，
 /// `brightness` 为星耀标识 → 十二宫亮度标识（按宫位索引、寅宫为 0，空串表示该宫无亮度）。
 #[derive(Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
@@ -727,12 +920,14 @@ struct ConfigPatch {
     day_divide: Option<DayDivide>,
     algorithm: Option<Algorithm>,
     astro_type: Option<AstroType>,
+    void_placement: Option<VoidPlacement>,
     mutagens: Option<BTreeMap<String, Vec<String>>>,
+    extra_mutagens: Option<BTreeMap<String, BTreeMap<String, Vec<String>>>>,
     brightness: Option<BTreeMap<String, Vec<String>>>,
 }
 
 impl ConfigPatch {
-    /// 在默认配置上打补丁；自定义表里任一标识非法或项数不对即报错，报错带出所在的键。
+    /// 在默认配置上打补丁；自定义表里任一标识非法、项数不对或同一天干里星有重复即报错，报错带出所在的键。
     fn into_config(self) -> Result<Config, String> {
         let defaults = Config::default();
         let mut config = Config {
@@ -742,20 +937,26 @@ impl ConfigPatch {
             day_divide: self.day_divide.unwrap_or(defaults.day_divide),
             algorithm: self.algorithm.unwrap_or(defaults.algorithm),
             astro_type: self.astro_type.unwrap_or(defaults.astro_type),
+            void_placement: self.void_placement.unwrap_or(defaults.void_placement),
             overrides: None,
         };
-        for (stem_key, star_keys) in self.mutagens.unwrap_or_default() {
-            let stem = HeavenlyStem::from_key(&stem_key).ok_or_else(|| {
-                format!("invalid mutagens key '{stem_key}': unknown heavenly stem")
-            })?;
-            let stars: [StarKey; 4] = star_keys
+        let parse_stem = |table: &str, stem_key: &str| {
+            HeavenlyStem::from_key(stem_key)
+                .ok_or_else(|| format!("invalid {table} key '{stem_key}': unknown heavenly stem"))
+        };
+        let parse_stars = |table: &str, stem_key: &str, star_keys: &[String]| {
+            star_keys
                 .iter()
                 .map(|key| {
                     StarKey::from_key(key).ok_or_else(|| {
-                        format!("invalid mutagens for '{stem_key}': unknown star '{key}'")
+                        format!("invalid {table} for '{stem_key}': unknown star '{key}'")
                     })
                 })
-                .collect::<Result<Vec<_>, _>>()?
+                .collect::<Result<Vec<_>, _>>()
+        };
+        for (stem_key, star_keys) in self.mutagens.unwrap_or_default() {
+            let stem = parse_stem("mutagens", &stem_key)?;
+            let stars: [StarKey; 4] = parse_stars("mutagens", &stem_key, &star_keys)?
                 .try_into()
                 .map_err(|got: Vec<StarKey>| {
                     format!(
@@ -764,6 +965,23 @@ impl ConfigPatch {
                     )
                 })?;
             config = config.with_mutagens(stem, stars);
+        }
+        for (stem_key, groups) in self.extra_mutagens.unwrap_or_default() {
+            let stem = parse_stem("extraMutagens", &stem_key)?;
+            for (mutagen_key, star_keys) in groups {
+                let mutagen = Mutagen::from_key(&mutagen_key).ok_or_else(|| {
+                    format!(
+                        "invalid extraMutagens for '{stem_key}': {}",
+                        crate::data::keyed::unknown_key_message(
+                            "mutagen",
+                            &mutagen_key,
+                            Mutagen::KEYS
+                        )
+                    )
+                })?;
+                let stars = parse_stars("extraMutagens", &stem_key, &star_keys)?;
+                config = config.with_extra_mutagens(stem, mutagen, stars);
+            }
         }
         for (star_key, brightness_keys) in self.brightness.unwrap_or_default() {
             let star = StarKey::from_key(&star_key)
@@ -785,12 +1003,13 @@ impl ConfigPatch {
             }
             config = config.with_brightness(star, table);
         }
+        config.check()?;
         Ok(config)
     }
 }
 
 /// 反序列化即绑定层的 config JSON：部分键补丁，缺省键取默认值，未知键报错；
-/// `mutagens` / `brightness` 的写法同序列化输出。
+/// `mutagens` / `extraMutagens` / `brightness` 的写法同序列化输出。
 impl<'de> serde::Deserialize<'de> for Config {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         ConfigPatch::deserialize(deserializer)?
@@ -799,7 +1018,7 @@ impl<'de> serde::Deserialize<'de> for Config {
     }
 }
 
-/// 序列化写出六个开关与已覆盖的自定义表（键按标识排序），可被反序列化原样还原。
+/// 序列化写出七个开关与已覆盖的自定义表（键按标识排序），可被反序列化原样还原。
 impl serde::Serialize for Config {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeMap;
@@ -810,6 +1029,7 @@ impl serde::Serialize for Config {
         map.serialize_entry("dayDivide", &self.day_divide)?;
         map.serialize_entry("algorithm", &self.algorithm)?;
         map.serialize_entry("astroType", &self.astro_type)?;
+        map.serialize_entry("voidPlacement", &self.void_placement)?;
         if let Some(tables) = self.overrides.as_deref() {
             if !tables.mutagens.is_empty() {
                 let mutagens: BTreeMap<&str, &[StarKey; 4]> = tables
@@ -818,6 +1038,22 @@ impl serde::Serialize for Config {
                     .map(|(stem, stars)| (stem.as_key(), stars))
                     .collect();
                 map.serialize_entry("mutagens", &mutagens)?;
+            }
+            if !tables.extra_mutagens.is_empty() {
+                let extra: BTreeMap<&str, BTreeMap<&str, &Vec<StarKey>>> = tables
+                    .extra_mutagens
+                    .iter()
+                    .map(|(stem, groups)| {
+                        let groups = MUTAGEN
+                            .iter()
+                            .zip(groups)
+                            .filter(|(_, stars)| !stars.is_empty())
+                            .map(|(m, stars)| (m.as_key(), stars))
+                            .collect();
+                        (stem.as_key(), groups)
+                    })
+                    .collect();
+                map.serialize_entry("extraMutagens", &extra)?;
             }
             if !tables.brightness.is_empty() {
                 let brightness: BTreeMap<&str, Vec<&str>> = tables
@@ -965,6 +1201,64 @@ mod tests {
         assert_eq!(json["brightness"]["ziweiMaj"][1], "");
         let back: Config = serde_json::from_value(json).unwrap();
         assert_eq!(back, config);
+    }
+
+    /// 空曜安法、附加四化星与闲级亮度随序列化往返；附加星按四化标识分组写出，空组不写。
+    #[test]
+    fn config_roundtrip_keeps_void_placement_and_extra_mutagens() {
+        let mut brightness = [None; 12];
+        brightness[3] = Some(Brightness::Xian2);
+        let config = Config::default()
+            .with_void_placement(VoidPlacement::ZhengPang)
+            .with_extra_mutagens(HeavenlyStem::Geng, Mutagen::Ji, [StarKey::TianxiangMaj])
+            .with_extra_mutagens(HeavenlyStem::Geng, Mutagen::Lu, [])
+            .with_brightness(StarKey::Hongluan, brightness);
+        let json = serde_json::to_value(&config).unwrap();
+        assert_eq!(json["voidPlacement"], "zhengPang");
+        assert_eq!(
+            json["extraMutagens"],
+            serde_json::json!({"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}})
+        );
+        assert_eq!(json["brightness"]["hongluan"][3], "xian2");
+        let back: Config = serde_json::from_value(json).unwrap();
+        assert_eq!(back, config);
+        assert_eq!(
+            back.stem_mutagens(HeavenlyStem::Geng)
+                .stars_of(Mutagen::Ji)
+                .collect::<Vec<_>>(),
+            [StarKey::TiantongMaj, StarKey::TianxiangMaj]
+        );
+    }
+
+    /// 附加四化星的天干、四化标识非法，或同一天干里星有重复时，报错指出所在的键。
+    #[test]
+    fn config_rejects_malformed_extra_mutagens() {
+        let err = serde_json::from_str::<Config>(
+            r#"{"extraMutagens":{"gengHeavenly":{"sihuaXx":["tianxiangMaj"]}}}"#,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("sihuaXx"), "{err}");
+        let err = serde_json::from_str::<Config>(
+            r#"{"extraMutagens":{"geng":{"sihuaJi":["tianxiangMaj"]}}}"#,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("'geng'"), "{err}");
+        // 天同已在庚干四槽化忌
+        let err = serde_json::from_str::<Config>(
+            r#"{"extraMutagens":{"gengHeavenly":{"sihuaKe":["tiantongMaj"]}}}"#,
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("'gengHeavenly': star 'tiantongMaj' appears more than once"),
+            "{err}"
+        );
+        // 附加星互相重复同样拒绝
+        let err = serde_json::from_str::<Config>(
+            r#"{"extraMutagens":{"gengHeavenly":{"sihuaJi":["tianxiangMaj","tianxiangMaj"]}}}"#,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("tianxiangMaj"), "{err}");
     }
 
     /// 自定义表的项数或标识不对时，报错指出是哪一个键。

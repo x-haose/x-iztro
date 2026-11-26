@@ -117,16 +117,16 @@ translated field. For English pillar names run the keys through
 | `time_index` | `int` | Birth hour index |
 | `fix_leap` | `bool` | Whether leap-month correction was applied when charting |
 | `language` | `str` | Output language |
-| `config` | `ChartConfig` | Charting configuration — the six switches, restored from the DTO |
+| `config` | `ChartConfig` | Charting configuration — the switches, restored from the DTO |
 
 Horoscopes, re-anchoring and prompts restart their computation from these four, so the charting
 parameters need not be supplied again.
 
 <Callout type="info" title="config does not echo the override tables">
-`chart.config` is restored from the output DTO and carries only the six switches; the custom mutagen
-and brightness tables passed in at charting time are not in it.
+`chart.config` is restored from the output DTO and carries only the switches; the custom mutagen
+tables, extra mutagen stars and brightness tables passed in at charting time are not in it.
 The chart does keep the caller's originals internally, however, so follow-up computations such as
-`rearranged`, `horoscope` and prompt generation still use those two tables — they are not silently
+`rearranged`, `horoscope` and prompt generation still use those tables — they are not silently
 dropped.
 </Callout>
 
@@ -834,8 +834,8 @@ neither recurse nor lose fields.
 </Callout>
 
 <Callout type="info" title="The override tables are not in the export">
-`config` echoes only the six switches. The custom mutagen and brightness tables passed in at charting
-time are **input** rather than result and do not enter the DTO — matching the field contract of JS
+`config` echoes only the switches. The custom mutagen tables, extra mutagen stars and brightness tables
+passed in at charting time are **input** rather than result and do not enter the DTO — matching the field contract of JS
 iztro. To record which tables were used, keep your `ChartConfig` on your own call site.
 </Callout>
 

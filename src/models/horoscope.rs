@@ -20,10 +20,19 @@ pub struct HoroscopeItem {
     pub earthly_branch: EarthlyBranch,
     /// 以该运限所在宫位为命宫推排的十二宫名（按宫位索引排列）
     pub palace_names: Vec<Palace>,
-    /// 该运限天干引发的四化星 [禄, 权, 科, 忌]
+    /// 该运限天干引发的四化星 [禄, 权, 科, 忌]（四化表四槽）
     pub mutagen: Vec<StarKey>,
+    /// 该运限天干四槽之外的附加四化星，按禄、权、科、忌分组；默认四化表下四组皆空
+    pub extra_mutagen: [Vec<StarKey>; 4],
     /// 流耀在十二宫的分布（无流耀的层级为 None）
     pub stars: Option<Vec<Vec<Star>>>,
+}
+
+impl HoroscopeItem {
+    /// 该运限天干化出的全部（星, 四化）：按禄、权、科、忌，每类先四槽之星、后附加星。
+    pub fn mutagens(&self) -> impl Iterator<Item = (StarKey, Mutagen)> + '_ {
+        crate::data::types::mutagen_pairs(&self.mutagen, &self.extra_mutagen)
+    }
 }
 
 /// 农历月在流月列表中的分段。

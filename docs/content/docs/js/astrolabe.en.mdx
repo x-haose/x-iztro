@@ -26,7 +26,7 @@ const chart = astro.bySolar('2000-8-16', 2, 'female');
 | `fiveElementsClass` / `fiveElementsClassKey` | `string` / `FiveElementsClass` | Five Elements class / key |
 | `earthlyBranchOfSoulPalace(Key)` / `earthlyBranchOfBodyPalace(Key)` | `string` | Branches of the Soul and Body palaces / keys |
 | `timeIndex`, `fixLeap`, `language` | — | Charting input |
-| `config` | `ChartConfigData` | The values of the six switches |
+| `config` | `ChartConfigData` | The values of the switches; `voidPlacement` is left out at its default |
 | `palaces` | `readonly Palace[]` | The twelve palaces, index 0 is Yin, 11 is Chou |
 
 `palaces` is indexed by palace position, not by palace name; get the Soul palace with `chart.palace('soulPalace')`.

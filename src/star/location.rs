@@ -180,8 +180,12 @@ pub struct YearlyStars {
     pub kongwang: usize,
     /// 旬空宫位索引
     pub xunkong: usize,
-    /// 截空宫位索引（中州派）
+    /// 截空正空宫位索引：阳年取截路一宫、阴年取空亡一宫
     pub jiekong: usize,
+    /// 截空傍空宫位索引：截路、空亡两宫中不是正空的一宫
+    pub pang_jiekong: usize,
+    /// 旬空傍空宫位索引：旬空两宫中不是正空（`xunkong`）的一宫
+    pub pang_xunkong: usize,
     /// 天伤宫位索引
     pub tianshang: usize,
     /// 天使宫位索引
@@ -555,18 +559,23 @@ pub fn get_yearly_star_index(
     let kongwang_table: [EarthlyBranch; 5] = [You, Wei, Si, Mao, Chou];
     let kongwang = eb2pi(kongwang_table[stem_idx % 5]);
 
-    // 旬空：从年支宫位起，加上年干到癸干的距离再进一位
+    // 旬空两宫：从年支宫位起，加上年干到癸干的距离再进一位即前一宫，后一宫紧随其后
     let xunkong_raw = fix_index(eb2pi(yearly_branch) as i32 + 9 - stem_idx as i32 + 1, 12);
-    // 旬空落宫的奇偶须与年支索引的奇偶一致，不一致时进一位
+    let xunkong_next = fix_index(xunkong_raw as i32 + 1, 12);
+    // 正空落宫的奇偶须与年支索引的奇偶一致（阳年阳宫），另一宫为傍空
     let branch_is_yang = yearly_branch.index().is_multiple_of(2);
-    let xunkong = if yearly_branch.index() % 2 != xunkong_raw % 2 {
-        fix_index(xunkong_raw as i32 + 1, 12)
+    let (xunkong, pang_xunkong) = if yearly_branch.index() % 2 != xunkong_raw % 2 {
+        (xunkong_next, xunkong_raw)
     } else {
-        xunkong_raw
+        (xunkong_raw, xunkong_next)
     };
 
-    // 劫空：地支为偶(阳)用截路，奇(阴)用空亡
-    let jiekong = if branch_is_yang { jielu } else { kongwang };
+    // 截空：地支为偶(阳)以截路一宫为正空，奇(阴)以空亡一宫为正空，另一宫为傍空
+    let (jiekong, pang_jiekong) = if branch_is_yang {
+        (jielu, kongwang)
+    } else {
+        (kongwang, jielu)
+    };
 
     let (tianshang, tianshi) =
         get_tianshang_tianshi_index(gender, yearly_branch, soul_index, algorithm);
@@ -603,6 +612,8 @@ pub fn get_yearly_star_index(
         kongwang,
         xunkong,
         jiekong,
+        pang_jiekong,
+        pang_xunkong,
         tianshang,
         tianshi,
         huagai: hx.huagai,

@@ -272,12 +272,12 @@ print(c.five_elements_class)
 | `PalaceName` | **14** | 十二宫 `SOUL` `SIBLINGS` `SPOUSE` `CHILDREN` `WEALTH` `HEALTH` `SURFACE` `FRIENDS` `CAREER` `PROPERTY` `SPIRIT` `PARENTS`，外加两个定位标记 `BODY`（身宫）`ORIGINAL`（来因宫） |
 | `FiveElementsClass` | 5 | `WATER_2` `WOOD_3` `METAL_4` `EARTH_5` `FIRE_6` |
 | `Mutagen` | 4 | `LU` `QUAN` `KE` `JI` |
-| `Brightness` | 7 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN` |
+| `Brightness` | 8 | `MIAO` `WANG` `DE` `LI` `PING` `BU` `XIAN`，外加 iztro 没有的 `XIAN2`（闲），只出现在自定义亮度表里 |
 | `StarType` | 8 | `MAJOR` `SOFT` `TOUGH` `ADJECTIVE` `FLOWER` `HELPER` `LUCUN` `TIANMA` |
 | `Scope` | 6 | `ORIGIN` `DECADAL` `YEARLY` `MONTHLY` `DAILY` `HOURLY` |
 | `MajorStar` | 14 | 十四主星，`ZIWEI` `TIANJI` `TAIYANG` `WUQU` `TIANTONG` `LIANZHEN` `TIANFU` `TAIYIN` `TANLANG` `JUMEN` `TIANXIANG` `TIANLIANG` `QISHA` `POJUN` |
 | `MinorStar` | 14 | 十四辅星，`ZUOFU` `YOUBI` `WENCHANG` `WENQU` `LUCUN` `TIANMA` `QINGYANG` `TUOLUO` `HUOXING` `LINGXING` `TIANKUI` `TIANYUE` `DIKONG` `DIJIE` |
-| `AdjectiveStar` | 43 | 杂耀，含中州派的 `XUNZHONG`（旬中）；成员对照见[星耀](/zh/docs/guide/concepts/stars) |
+| `AdjectiveStar` | 45 | 杂耀，含中州派的 `XUNZHONG`（旬中）与截空、旬空分正傍时的 `PANG_JIEKONG`（傍截空）、`PANG_XUNKONG`（傍旬空）；成员对照见[星耀](/zh/docs/guide/concepts/stars) |
 | `HoroscopeStar` | 50 | 五个运限层级各十颗流耀，`YUNLU` `LIULU` `YUELU` `RILU` `SHILU` 等 |
 | `Changsheng12` | 12 | `CHANGSHENG` `MUYU` `GUANDAI` `LINGUAN` `DIWANG` `SHUAI` `BING` `SI` `MU` `JUE` `TAI` `YANG` |
 | `Boshi12` | 12 | `BOSHI` `LISHI` `QINGLONG` `XIAOHAO` `JIANGJUN` `ZHOUSHU` `FEILIAN` `XISHEN` `BINGFU` `DAHAO` `FUBING` `GUANFU` |
@@ -288,6 +288,7 @@ print(c.five_elements_class)
 | `YearDivide` / `HoroscopeDivide` | 各 2 | `NORMAL` `EXACT` |
 | `AgeDivide` | 2 | `NORMAL` `BIRTHDAY` |
 | `DayDivide` | 2 | `FORWARD` `CURRENT` |
+| `VoidPlacement` | 2 | `DEFAULT` `ZHENG_PANG` |
 
 成员名与它的取值不总是拼音对应——`Boshi12.FEILIAN` 的值是 `faylian`，
 `Jiangqian12.XISHEN` 的值是 `xiishen`，`Suiqian12.GWANFU` 的值是 `gwanfu`。

@@ -9,7 +9,7 @@ import { MUTAGEN_ORDER, Scope, type EarthlyBranch, type HeavenlyStem, type Month
 import { invalidArgument } from './errors.js';
 import { horoscopeContext, horoscopeContexts, horoscopeQuery, type HoroscopeTarget } from './internal.js';
 import type { Astrolabe } from './astrolabe.js';
-import type { Palace } from './palace.js';
+import { copyExtraMutagens, type Palace } from './palace.js';
 import { PatternHit } from './pattern.js';
 import { Star, starIdentifiers } from './star-object.js';
 import type { SurroundedPalaces } from './surpalaces.js';
@@ -77,6 +77,8 @@ export class HoroscopeItem {
    * 单数的 `mutagenKey` 才是四化类型 `Mutagen` 的标识。
    */
   readonly mutagenStarKeys: readonly string[];
+  /** 该层天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；没有附加星时为 undefined */
+  readonly extraMutagenStarKeys: Readonly<Partial<Record<Mutagen, readonly string[]>>> | undefined;
   /** 流耀：十二宫各一组；该层没有流耀时为 undefined */
   readonly stars: readonly (readonly Star[])[] | undefined;
 
@@ -92,6 +94,7 @@ export class HoroscopeItem {
     this.palaceNameKeys = [...data.palaceNameKeys];
     this.mutagen = [...data.mutagen];
     this.mutagenStarKeys = [...data.mutagenStarKeys];
+    this.extraMutagenStarKeys = copyExtraMutagens(data.extraMutagenStarKeys);
     this.stars = data.stars?.map((group) => group.map((s) => new Star(s)));
   }
 
@@ -316,7 +319,7 @@ export class Horoscope {
   }
 
   /**
-   * 指定运限层级下某宫是否有该层的运限四化（看主星与辅星）；origin 恒为 false。
+   * 指定运限层级下某宫是否有该层这一类四化的星（四槽之星或附加星，看主星与辅星）；origin 恒为 false。
    *
    * @throws IztroError 同 `palace`
    */
@@ -327,7 +330,9 @@ export class Horoscope {
     const p = this.palace(name, scope, astrolabe);
     if (item === undefined || p === undefined) return false;
     const starKey = item.mutagenStarKeys[MUTAGEN_ORDER.indexOf(mutagen)];
-    return starKey !== undefined && [...p.majorStars, ...p.minorStars].some((s) => s.key === starKey);
+    if (starKey === undefined) return false;
+    const starKeys = [starKey, ...(item.extraMutagenStarKeys?.[mutagen] ?? [])];
+    return [...p.majorStars, ...p.minorStars].some((s) => starKeys.includes(s.key));
   }
 
   /**

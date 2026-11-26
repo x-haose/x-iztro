@@ -38,11 +38,45 @@
   庙最亮陷最暗，以及亮度如何影响星曜的表现。取自同一锁定 commit 的 iztro-docs《学习》星曜篇「星曜的亮度」一节，
   按默认包的口吻改写，`source.adapted` 已注明；该节的亮度表由内核排盘给出，不收。默认包术语由 50 条增至 51 条。
 
+- **附加四化星**：有的流派一干化出多于四颗星（如庚干天同、天相同化忌），四槽的四化表放不下。`Config` 新增
+  `extraMutagens`（天干标识 → 四化标识 → 星耀标识列表，如 `{"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}`），
+  加在该天干生效的四槽（自定义或默认）之外。附加星与四槽之星同等进入星耀的四化标记、宫干飞化、运限各层的四化、
+  格局判定、文本（生年四化、宫干飞化、各层四化与一览表）、主题选宫的飞化与四化落宫，以及反推的生年四化条件。
+  四槽结构与 DTO 的四化数组不变；宫位与运限层另有 `extraMutagenStarKeys`（按四化分组），只在有附加星时出现。
+  一类四化化出不止一颗星时，`flies_to` / `self_mutaged` 有任一颗落在目标宫即算这一类飞入，`mutaged_places` 只按四槽。
+  同一天干里一颗星在四槽与附加星合计至多出现一次，否则排盘与反推报 `invalid_argument`（四槽本身有重复的自定义表也一并拒绝）。
+  Rust `Config::with_extra_mutagens` / `stem_mutagens` / `mutagen_of` / `check`、`StemMutagens`、`HoroscopeItem::extra_mutagen`
+  与 `mutagens()`；Python `ChartConfig.extra_mutagens`，Go `Config.ExtraMutagens`，JavaScript `ChartConfig.extraMutagens`。
+- **截空、旬空分正傍**：`Config` 新增开关 `voidPlacement`（Rust `void_placement: VoidPlacement`）。默认 `default` 与 iztro 相同；
+  `zhengPang` 时截空、旬空各安正空、傍空两宫（阳年阳宫为正空、阴年阴宫为正空，王亭之《安星法及推断实例》p56–57）：
+  两派都在正空安截空、傍空安新星「傍截空」（`pangJiekong`），默认派不再安截路、空亡；旬空的傍空安新星「傍旬空」（`pangXunkong`）。
+  格局引擎的空亡星集合把两颗傍空星算上，空曜集合只取正空。星盘 DTO 的 `config` 只在取非默认值时带这个键。
+  新星曜六种语言都有译名，默认知识包补两条只述安放事实的对照性条目（`source.adapted` 已注明），星耀标识由 162 个增至 164 个、
+  可翻译标识由 260 个增至 263 个。
+- **亮度「闲」**：亮度新增一级 `xian2`（闲，王亭之《安星法及推断实例》六级、《紫微斗数一本通》第七章七级里排在平之下、陷之上），
+  标识取带声调数字的拼音以与陷（`xian`）区分。iztro 没有这一级，默认亮度表不出现，只能经自定义亮度表使用；
+  格局判定的日月明暗不把它算作「暗」。Python `Brightness.XIAN2`，Go `BrightnessXian2`，JavaScript `Brightness.XIAN2`。
+- **杂耀可带亮度**：自定义亮度表对杂耀同样生效（含重排时随命宫挪位的天伤、天使、天才）。默认亮度表不给杂耀亮度，
+  因此默认输出不变；杂耀有亮度时 DTO 才带 `brightness` / `brightnessKey`，文本随之写出亮度。
+
 ### 变更
 
 - Python、JavaScript 的 `KnowledgePack.topics()` 按上述显示顺序返回，此前按 slug 字母序；没有写 `order` 的包结果不变。
   默认包因此按总论、性格、事业……的顺序返回。
 - Rust 的 `TopicEntry` 多一个公有字段 `order`：用结构体字面量构造它的代码需补上该字段或 `..Default::default()`。
+- Rust 的 `Config` 多一个公有字段 `void_placement`、`HoroscopeItem` 多一个公有字段 `extra_mutagen`、`YearlyStars` 多
+  `pang_jiekong` / `pang_xunkong`：用结构体字面量构造的代码需补上。`Brightness` 新增变体 `Xian2` 并标为 `#[non_exhaustive]`，
+  crate 外的 `match` 需加兜底分支。`TopicPalace::flying` 由 `[Flight; 4]` 改为 `Vec<Flight>`（有附加四化星时多于四条）。
+  `star::adjective::get_adjective_stars` 的末两个参数由 `algorithm, lang` 改为 `lang, config`。
+- DTO 里非四化候选星（十四主星与左辅右弼文昌文曲之外）在自定义四化表让它化出四化时，`mutagen` 译文键随 `mutagenKey` 一起出现，
+  此前只有标识没有译文。默认四化表只化四化候选星，默认输出不变。
+
+### 修正
+
+- **斗君的生月按星盘的 `fix_leap` 取**：推流月宫（斗君）时生月一律按「闰月十六起作下月」，不看星盘的 `fix_leap`；
+  `fix_leap=false` 的盘本命按闰月整月本月安星，流月却按下月起，两处口径不一。现在 `fix_leap=false` 时闰月整月按本月计，
+  与本命一致；只影响 `fix_leap=false` 且生在闰月十六日及以后的盘，这些盘的流月宫（及其下的流日、流时宫）顺移一宫。
+  `fix_leap=true`（默认）的盘不变，与 iztro 一致。
 
 ## [0.9.0] - 2026-11-23
 

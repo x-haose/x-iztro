@@ -71,6 +71,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `jiangqian12` / `jiangqian12Key` | string | 将前十二神 |
 | `suiqian12` / `suiqian12Key` | string | 岁前十二神 |
 | `mutagenStarKeys` | string[4] | 本宫宫干化出的四颗星标识，顺序为禄、权、科、忌；受[自定义四化表](/zh/docs/guide/guides/config#自定义四化表与亮度表)影响 |
+| `extraMutagenStarKeys` | `{四化标识: string[]}?` | 本宫宫干在四槽之外化出的[附加四化星](/zh/docs/guide/guides/config#附加四化星)；没有附加星时缺省 |
 | `decadal` | [Decadal](#decadal-大限) | 该宫掌管的大限 |
 | `ages` | int[] | 小限经过该宫的虚岁列表 |
 
@@ -82,9 +83,9 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `name` | string | 星名 |
 | `type` | string | `major` / `soft` / `tough` / `adjective` / `flower` / `helper` / `lucun` / `tianma` |
 | `scope` | string | `origin` / `decadal` / `yearly` / `monthly` / `daily` / `hourly` |
-| `brightness` | string | 亮度显示文本。**主星与辅星恒有这个键**，无亮度时为空串；杂耀与流耀整个键缺省 |
+| `brightness` | string | 亮度显示文本。**主星与辅星恒有这个键**，无亮度时为空串；杂耀只在[自定义亮度表](/zh/docs/guide/guides/config#亮度表)列出该星时才有，流耀整个键缺省 |
 | `brightnessKey` | string? | 亮度标识。无亮度时**缺省**（不是空串） |
-| `mutagen` | string | 四化显示文本。**十四主星与左辅右弼文昌文曲这 18 颗四化候选星恒有这个键**，无四化时为空串；其余星整个键缺省 |
+| `mutagen` | string | 四化显示文本。**十四主星与左辅右弼文昌文曲这 18 颗四化候选星恒有这个键**，无四化时为空串；其余星只在自定义四化表让它化出四化时才有 |
 | `mutagenKey` | string? | 四化标识。无四化时**缺省** |
 
 <Callout type="warn" title="翻译字段与标识字段的缺省规则相反">
@@ -135,16 +136,18 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `dayDivide` | `forward` / `current` | `forward` |
 | `algorithm` | `default` / `zhongzhou` | `default` |
 | `astroType` | `heaven` / `earth` / `human` | `heaven` |
+| `voidPlacement` | `default` / `zhengPang` | `default`；取默认值时星盘回显的 `config` 不带这个键 |
 
-另有两个**只进不出**的输入键，用于替换内置数据表：
+另有三个**只进不出**的输入键，用于替换或补充内置数据表：
 
 | 输入键 | 取值 |
 | --- | --- |
 | `mutagens` | `{天干标识: [四个星耀标识]}`，顺序为禄权科忌，必须四项 |
+| `extraMutagens` | `{天干标识: {四化标识: [星耀标识…]}}`，四槽之外同化一类的附加星 |
 | `brightness` | `{星耀标识: [十二个亮度标识]}`，第一项是寅宫，必须十二项，无亮度处传空串 |
 
 <Callout type="warn">
-这两个键**不会回显在星盘的 `config` 里** —— 它们是排盘的输入配置，
+这三个键**不会回显在星盘的 `config` 里** —— 它们是排盘的输入配置，
 不属于排盘结果，加进 DTO 会破坏与 JS iztro 的字段契约。
 要留档就自己存那份配置。
 </Callout>
@@ -177,6 +180,7 @@ description: Astrolabe、Palace、Star、Horoscope 每一个字段的类型与�
 | `palaceNameKeys` | string[12] | 同上的 key 形式 |
 | `mutagen` | string[4] | 四化星名，顺序为禄、权、科、忌 |
 | `mutagenStarKeys` | string[4] | 同上的 key 形式，与宫位的同名字段同义——被化的四颗星的星耀标识；单数 `mutagenKey` 才是四化类型（`sihuaLu` 等） |
+| `extraMutagenStarKeys` | `{四化标识: string[]}?` | 该层天干在四槽之外化出的附加四化星，与宫位的同名字段同义；没有附加星时缺省 |
 | `stars` | [Star](#star-星耀)[][12]? | 流耀在十二宫的分布（外层十二项对应宫位，内层是该宫的流耀列表），无流耀的层级缺省 |
 | `nominalAge` | int? | 虚岁，仅小限有 |
 | `yearlyDecStar` | [YearlyDecStar](#yearlydecstar-流年十二神)? | 仅流年有 |
@@ -283,7 +287,7 @@ Rust 里 `age` 与 `yearly` 的通用字段收在 `.base` 下（`AgeItem { base,
 ```
 
 紫微与文曲都有 `mutagen: ""` —— 它们是四化候选星，这一盘上没被化到，
-所以键在但值为空，`mutagenKey` 则整个缺省。五颗杂耀连 `brightness` 键都没有。
+所以键在但值为空，`mutagenKey` 则整个缺省。五颗杂耀连 `brightness` 键都没有（默认亮度表不给杂耀亮度）。
 
 ## `*Key` 字段是什么
 

@@ -298,6 +298,7 @@ pub fn get_horoscope(
         (d.heavenly_stem, d.earthly_branch)
     };
     let decadal_mutagen = astrolabe.config.mutagens_of(decadal_stem).to_vec();
+    let decadal_extra_mutagen = astrolabe.config.extra_mutagens_of(decadal_stem).clone();
     let decadal_palace_names = get_palace_names(decadal_palace_idx).to_vec();
     let decadal_stars = get_horoscope_stars(decadal_stem, decadal_branch, Scope::Decadal, language);
 
@@ -314,6 +315,7 @@ pub fn get_horoscope(
         earthly_branch: decadal_branch,
         palace_names: decadal_palace_names,
         mutagen: decadal_mutagen,
+        extra_mutagen: decadal_extra_mutagen,
         stars: Some(decadal_stars.to_vec()),
     };
 
@@ -322,6 +324,7 @@ pub fn get_horoscope(
     let age_stem = astrolabe.palaces[age_palace_idx].heavenly_stem;
     let age_branch = astrolabe.palaces[age_palace_idx].earthly_branch;
     let age_mutagen = astrolabe.config.mutagens_of(age_stem).to_vec();
+    let age_extra_mutagen = astrolabe.config.extra_mutagens_of(age_stem).clone();
     let age_palace_names = get_palace_names(age_palace_idx).to_vec();
 
     let age = AgeItem {
@@ -333,6 +336,7 @@ pub fn get_horoscope(
             earthly_branch: age_branch,
             palace_names: age_palace_names,
             mutagen: age_mutagen,
+            extra_mutagen: age_extra_mutagen,
             stars: None,
         },
         nominal_age,
@@ -341,6 +345,7 @@ pub fn get_horoscope(
     // ---- 7. 流年（含按目标年支起的岁前/将前十二神） ----
     let yearly_index = earthly_branch_to_palace_index(target_year_branch);
     let yearly_mutagen = astrolabe.config.mutagens_of(target_year_stem).to_vec();
+    let yearly_extra_mutagen = astrolabe.config.extra_mutagens_of(target_year_stem).clone();
     let yearly_palace_names = get_palace_names(yearly_index).to_vec();
     let yearly_stars = get_horoscope_stars(
         target_year_stem,
@@ -360,6 +365,7 @@ pub fn get_horoscope(
             earthly_branch: target_year_branch,
             palace_names: yearly_palace_names,
             mutagen: yearly_mutagen,
+            extra_mutagen: yearly_extra_mutagen,
             stars: Some(yearly_stars.to_vec()),
         },
         yearly_dec_star: YearlyDecStar {
@@ -369,7 +375,9 @@ pub fn get_horoscope(
     };
 
     // ---- 8. 流月 ----
-    let leap_addition = if birthday_is_leap && birthday_lunar_day > 15 {
+    //     斗君 = 流年宫逆数生月、顺数生时；生月按星盘的 `fix_leap` 取：打开时闰月十六起作下月，
+    //     关闭时闰月整月按本月
+    let leap_addition = if birthday_is_leap && astrolabe.fix_leap && birthday_lunar_day > 15 {
         1
     } else {
         0
@@ -389,6 +397,10 @@ pub fn get_horoscope(
         12,
     );
     let monthly_mutagen = astrolabe.config.mutagens_of(target_month_stem).to_vec();
+    let monthly_extra_mutagen = astrolabe
+        .config
+        .extra_mutagens_of(target_month_stem)
+        .clone();
     let monthly_palace_names = get_palace_names(monthly_index).to_vec();
     let monthly_stars = get_horoscope_stars(
         target_month_stem,
@@ -405,12 +417,14 @@ pub fn get_horoscope(
         earthly_branch: target_month_branch,
         palace_names: monthly_palace_names,
         mutagen: monthly_mutagen,
+        extra_mutagen: monthly_extra_mutagen,
         stars: Some(monthly_stars.to_vec()),
     };
 
     // ---- 9. 流日 ----
     let daily_index = fix_index(monthly_index as i32 + target_lunar_day as i32 - 1, 12);
     let daily_mutagen = astrolabe.config.mutagens_of(target_day_stem).to_vec();
+    let daily_extra_mutagen = astrolabe.config.extra_mutagens_of(target_day_stem).clone();
     let daily_palace_names = get_palace_names(daily_index).to_vec();
     let daily_stars =
         get_horoscope_stars(target_day_stem, target_day_branch, Scope::Daily, language);
@@ -423,6 +437,7 @@ pub fn get_horoscope(
         earthly_branch: target_day_branch,
         palace_names: daily_palace_names,
         mutagen: daily_mutagen,
+        extra_mutagen: daily_extra_mutagen,
         stars: Some(daily_stars.to_vec()),
     };
 
@@ -430,6 +445,7 @@ pub fn get_horoscope(
     let target_hour_branch_index = fix_index(time_index as i32, 12) as i32;
     let hourly_index = fix_index(daily_index as i32 + target_hour_branch_index, 12);
     let hourly_mutagen = astrolabe.config.mutagens_of(target_time_stem).to_vec();
+    let hourly_extra_mutagen = astrolabe.config.extra_mutagens_of(target_time_stem).clone();
     let hourly_palace_names = get_palace_names(hourly_index).to_vec();
     let hourly_stars = get_horoscope_stars(
         target_time_stem,
@@ -446,6 +462,7 @@ pub fn get_horoscope(
         earthly_branch: target_time_branch,
         palace_names: hourly_palace_names,
         mutagen: hourly_mutagen,
+        extra_mutagen: hourly_extra_mutagen,
         stars: Some(hourly_stars.to_vec()),
     };
 
@@ -558,7 +575,7 @@ impl HoroscopeData {
 
     /// 检查指定运限的四化星是否在指定宫位中
     ///
-    /// 检查该运限天干的四化对应星耀是否出现在目标宫位的主星或辅星中。
+    /// 检查该运限天干化出该类四化的星（四槽之星与附加星）是否有一颗出现在目标宫位的主星或辅星中。
     pub fn has_horoscope_mutagen(
         &self,
         name: Palace,
@@ -577,18 +594,16 @@ impl HoroscopeData {
             Some(p) => p,
             None => return false,
         };
-        let mutagen_index = match mutagen {
-            Mutagen::Lu => 0,
-            Mutagen::Quan => 1,
-            Mutagen::Ke => 2,
-            Mutagen::Ji => 3,
-        };
-        let star_key = scope_item.mutagen[mutagen_index];
-        palace
-            .major_stars
-            .iter()
-            .chain(palace.minor_stars.iter())
-            .any(|s| s.key == star_key)
+        scope_item
+            .mutagens()
+            .filter(|(_, m)| *m == mutagen)
+            .any(|(star_key, _)| {
+                palace
+                    .major_stars
+                    .iter()
+                    .chain(palace.minor_stars.iter())
+                    .any(|s| s.key == star_key)
+            })
     }
 
     /// 检查大限和流年的流耀是否包含指定星耀
@@ -727,6 +742,7 @@ impl Astrolabe {
                         earthly_branch: branch,
                         palace_names: get_palace_names(p.index).to_vec(),
                         mutagen: get_mutagens_by_heavenly_stem(stem, &self.config).to_vec(),
+                        extra_mutagen: self.config.extra_mutagens_of(stem).clone(),
                         stars: Some(
                             get_horoscope_stars(stem, branch, Scope::Decadal, self.language)
                                 .to_vec(),
@@ -1363,5 +1379,30 @@ mod tests {
                 &astrolabe
             ));
         }
+    }
+
+    /// 斗君所用的生月按星盘的 `fix_leap` 取：闰四月二十出生，`fix_leap` 打开时生月作五月，
+    /// 关闭时整月按四月，流月宫因此差一宫（逆数生月少一格即顺移一宫）；闰月前半月两者相同。
+    #[test]
+    fn dou_jun_birth_month_follows_fix_leap() {
+        let flow_month = |lunar_date: &str, leap: LeapMonth| {
+            let chart = crate::by_lunar(
+                lunar_date,
+                5,
+                Gender::Male,
+                leap,
+                Language::ZhCN,
+                Config::default(),
+            )
+            .unwrap();
+            chart.horoscope("2030-6-1", 0).unwrap().monthly.index
+        };
+        let fixed = flow_month("2020-4-20", LeapMonth::LeapFixed);
+        let whole = flow_month("2020-4-20", LeapMonth::Leap);
+        assert_eq!(whole, fix_index(fixed as i32 + 1, 12));
+        assert_eq!(
+            flow_month("2020-4-10", LeapMonth::LeapFixed),
+            flow_month("2020-4-10", LeapMonth::Leap)
+        );
     }
 }

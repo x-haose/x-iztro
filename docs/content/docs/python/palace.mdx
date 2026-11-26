@@ -34,6 +34,7 @@ soul = chart.palace("soulPalace")
 | `decadal` | `Decadal` | 大限：岁数区间与宫干支 |
 | `ages` | `list[int]` | 小限经过本宫的虚岁列表 |
 | `mutagen_star_keys` | `list[str]` | 本宫**宫干**化出的四颗星标识，顺序为禄、权、科、忌 |
+| `extra_mutagen_star_keys` | `dict[str, list[str]]` | 本宫宫干在四槽之外化出的附加星：四化标识 → 星耀标识列表；没有附加星时为空 |
 
 <Callout type="info" title="四组十二神与三组星耀的区别">
 主星、辅星、杂耀是**列表**，一宫可以有零到多颗。
@@ -45,6 +46,9 @@ soul = chart.palace("soulPalace")
 它由**排盘时生效的**四化表算得——自定义四化表（`ChartConfig(mutagens=...)`）
 会反映在这里，飞星族方法读的正是它。
 生年四化是打在星耀自身 `mutagen_key` 字段上的标记，两者不是一回事。
+
+一干化出的星多于四颗（[附加四化星](/zh/docs/guide/guides/config#附加四化星)）时，飞星族方法把附加星与同类的四槽之星一并计入：
+全称判断（`flies_to`、`self_mutaged`）一类四化有任一颗星落在目标宫即算这一类飞入，其余逐颗判断；`mutaged_places` 只按四槽。
 </Callout>
 
 ---

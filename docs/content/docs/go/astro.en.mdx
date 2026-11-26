@@ -166,7 +166,9 @@ type Config struct {
     DayDivide       string
     Algorithm       string
     AstroType       string
+    VoidPlacement   string
     Mutagens        map[string][]string
+    ExtraMutagens   map[string]map[string][]string
     Brightness      map[string][]string
 }
 ```
@@ -179,7 +181,9 @@ type Config struct {
 | `DayDivide` | `"forward"` / `"current"` | `"forward"` | Whether the late Zi hour belongs to the next day or the current one |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | The algorithm school |
 | `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | The charting perspective |
+| `VoidPlacement` | `"default"` / `"zhengPang"` | `"default"` | Whether Jiekong and Xunkong take one palace (as iztro) or a main and a side void palace each |
 | `Mutagens` | Stem key → four star keys | — | A custom mutagen table, replacing the whole table for a stem |
+| `ExtraMutagens` | Stem key → mutagen key → list of star keys | — | Extra mutagen stars, added on top of the stem's four slots |
 | `Brightness` | Star key → twelve brightness keys | — | A custom brightness table, replacing the whole table for a star |
 
 **Example**
@@ -203,7 +207,8 @@ wood 3rd
 Every value set has matching constants, so you need not write the strings by hand:
 `YearDivideNormal` / `YearDivideExact`, `HoroscopeDivideNormal` / `HoroscopeDivideExact`,
 `AgeDivideNormal` / `AgeDivideBirthday`, `DayDivideForward` / `DayDivideCurrent`,
-`AlgorithmDefault` / `AlgorithmZhongzhou`, `AstroHeaven` / `AstroEarth` / `AstroHuman`.
+`AlgorithmDefault` / `AlgorithmZhongzhou`, `AstroHeaven` / `AstroEarth` / `AstroHuman`,
+`VoidPlacementDefault` / `VoidPlacementZhengPang`.
 
 **Edge cases and pitfalls**
 
@@ -212,10 +217,11 @@ Every value set has matching constants, so you need not write the strings by han
 `Mutagens["jiaHeavenly"]` must give all four entries (Lu, Quan, Ke, Ji) and
 `Brightness["ziweiMaj"]` all twelve; one entry too many or too few and charting fails
 (an `*Error` whose `Code` is `invalid_argument`). Stems and stars not listed keep the default table.
-Both tables accept keys and values as keys only, never as translated names.
+`ExtraMutagens` only adds; a star appearing twice within one stem across the slots and the extra
+stars fails the same way. Every table accepts keys and values as keys only, never as translated names.
 </Accordion>
 <Accordion title="Custom tables are not echoed back on chart.Config">
-`chart.Config` is reconstructed from the output DTO and holds the six switches only — the two custom
+`chart.Config` is reconstructed from the output DTO and holds the switches only — the three custom
 tables are charting **input** rather than result and do not enter the DTO (matching the field
 contract of JS iztro).
 

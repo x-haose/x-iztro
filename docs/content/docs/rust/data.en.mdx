@@ -26,12 +26,12 @@ string in any language and the predicates agree.
 
 | Enum | Variants | To key | From key | Example keys |
 | --- | --- | --- | --- | --- |
-| `StarKey` | 162 | `as_key()` | `from_key(&str)` | `ziweiMaj`, `yunlu` |
+| `StarKey` | 164 | `as_key()` | `from_key(&str)` | `ziweiMaj`, `yunlu` |
 | `Palace` | 12 | `as_key()` | `from_key(&str)` | `soulPalace`, `wealthPalace` |
 | `HeavenlyStem` | 10 | `as_key()` | `from_key(&str)` | `jiaHeavenly` |
 | `EarthlyBranch` | 12 | `as_key()` | `from_key(&str)` | `ziEarthly` |
 | `Mutagen` | 4 | `as_key()` | `from_key(&str)` | `sihuaLu` |
-| `Brightness` | 7 | `as_key()` | `from_key(&str)` | `miao` |
+| `Brightness` | 8 | `as_key()` | `from_key(&str)` | `miao`, `xian2` (闲) |
 | `FiveElementsClass` | 5 | `as_key()` | `from_key(&str)` | `water2nd` |
 | `StarType` | 8 | `as_key()` | `from_key(&str)` | `major`, `lucun` |
 | `Scope` | 6 | `as_key()` | `from_key(&str)` | `origin`, `decadal` |
@@ -44,6 +44,7 @@ string in any language and the predicates agree.
 | `DayDivide` | 2 | `as_key()` | `from_key(&str)` | `forward` / `current` |
 | `Algorithm` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhongzhou` |
 | `AstroType` | 3 | `as_key()` | `from_key(&str)` | `heaven` / `earth` / `human` |
+| `VoidPlacement` | 2 | `as_key()` | `from_key(&str)` | `default` / `zhengPang` |
 | `LeapMonth` | 3 | `as_key()` | `from_key(&str)` | `notLeap` / `leap` / `leapFixed` |
 
 `from_key` always returns an `Option`, giving `None` for an unknown key — which is how the bindings
@@ -116,7 +117,7 @@ stars correspond one-to-one with their keys.
 | `FiveElements` | `Wood` `Metal` `Water` `Fire` `Earth` |
 | `FiveElementsClass` | `Water2nd` `Wood3rd` `Metal4th` `Earth5th` `Fire6th` |
 | `Mutagen` | `Lu` `Quan` `Ke` `Ji` |
-| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` |
+| `Brightness` | `Miao` `Wang` `De` `Li` `Ping` `Bu` `Xian` `Xian2` — `Xian2` is 闲 (key `xian2`), a level iztro lacks that only appears in custom brightness tables |
 | `StarType` | `Major` `Soft` `Tough` `Adjective` `Flower` `Helper` `Lucun` `Tianma` |
 | `Scope` | `Origin` `Decadal` `Yearly` `Monthly` `Daily` `Hourly` |
 | `HoroscopeName` | `Decadal` `Childhood` `Age` `Yearly` `Monthly` `Daily` `Hourly` |
@@ -126,8 +127,8 @@ stars correspond one-to-one with their keys.
 | `Palace` | In `index()` order: `Soul` `Parents` `Spirit` `Property` `Career` `Friends` `Surface` `Health` `Wealth` `Children` `Spouse` `Siblings` |
 | `PalaceTarget` | `Index(usize)` `Name(Palace)` `Body` `Original` |
 
-<Callout type="warn" title="Five of the enums are #[non_exhaustive]">
-`IztroError`, `StarType`, `Scope`, `Algorithm` and `AstroType` are marked `#[non_exhaustive]`, so a
+<Callout type="warn" title="Seven of the enums are #[non_exhaustive]">
+`IztroError`, `Brightness`, `StarType`, `Scope`, `Algorithm`, `AstroType` and `VoidPlacement` are marked `#[non_exhaustive]`, so a
 `match` outside the crate must carry a catch-all arm. Adding variants later is therefore not a
 breaking change.
 </Callout>
@@ -142,7 +143,7 @@ layer of its own, only a display name for the decadal scope — before the decad
 
 ## Config
 
-The charting configuration: six switches plus two optional custom tables. `Config::default()` matches
+The charting configuration: seven switches plus optional custom tables. `Config::default()` matches
 the JS iztro defaults.
 
 | Field | Type | Default | Description |
@@ -153,9 +154,10 @@ the JS iztro defaults.
 | `day_divide` | `DayDivide` | `Forward` | Whether the late Zi hour belongs to the next day or the current one |
 | `algorithm` | `Algorithm` | `Default` | The school: default or Zhongzhou |
 | `astro_type` | `AstroType` | `Heaven` | The charting perspective: heaven / earth / human chart |
-| `overrides` | `Option<Arc<TableOverrides>>` | `None` | Custom mutagen and brightness tables |
+| `void_placement` | `VoidPlacement` | `Default` | Whether Jiekong and Xunkong take one palace (as iztro) or a main and a side void palace each |
+| `overrides` | `Option<Arc<TableOverrides>>` | `None` | Custom mutagen tables, extra mutagen stars and brightness tables |
 
-The meaning of the six switches and the schools behind them are on
+The meaning of the switches and the schools behind them are on
 [Config in depth](/en/docs/guide/guides/config).
 
 ### Serialization
@@ -164,15 +166,17 @@ The serde form of `Config` is the binding layer's config JSON:
 
 - Deserialization is a **partial patch**: missing keys take their defaults, and **unknown keys are an error**
   (a misspelled key is never silently ignored);
-- the six switches take their keys (`"yearDivide": "exact"`); the custom tables are written as
-  `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}` and
+- the switches take their keys (`"yearDivide": "exact"`); the custom tables are written as
+  `"mutagens": {"gengHeavenly": ["taiyangMaj", "wuquMaj", "tiantongMaj", "taiyinMaj"]}`,
+  `"extraMutagens": {"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}}` and
   `"brightness": {"ziweiMaj": ["miao", "", …]}` (twelve entries by palace index with Yin = 0; an empty string
   means no brightness);
-- serialization writes the six switches and every overridden table, and deserializes back unchanged — the
+- a star appearing twice within one stem across the slots and the extra stars is an error (see `check` below);
+- serialization writes the seven switches and every overridden table, and deserializes back unchanged — the
   custom tables survive the round trip.
 
-The `config` inside the chart DTO records only the six switches and does not echo the custom tables: they are
-an input to charting, not part of the result.
+The `config` inside the chart DTO records only the switches (`voidPlacement` is left out at its default) and
+does not echo the custom tables: they are an input to charting, not part of the result.
 
 ### Construction methods
 
@@ -181,14 +185,20 @@ The fields are all `pub` and can be set directly; the chained form is less work:
 | Method | Description |
 | --- | --- |
 | `with_astro_type(AstroType) -> Config` | Set the charting perspective |
+| `with_void_placement(VoidPlacement) -> Config` | Set how Jiekong and Xunkong are placed |
 | `with_mutagens(HeavenlyStem, [StarKey; 4]) -> Config` | Override one stem's mutagen table, in the order lu, quan, ke, ji |
+| `with_extra_mutagens(HeavenlyStem, Mutagen, impl IntoIterator<Item = StarKey>) -> Config` | Set one stem's extra stars for one transformation, replacing any it had; an empty list removes them |
 | `with_brightness(StarKey, [Option<Brightness>; 12]) -> Config` | Override one star's twelve-palace brightness table, index 0 being the Yin palace |
 
 ### Lookup methods
 
 | Method | Description |
 | --- | --- |
-| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | The mutagen table **actually in effect** for that stem: the override if there is one, the default table otherwise |
+| `mutagens_of(HeavenlyStem) -> [StarKey; 4]` | The four slots **actually in effect** for that stem: the override if there is one, the default table otherwise |
+| `extra_mutagens_of(HeavenlyStem) -> &[Vec<StarKey>; 4]` | That stem's extra mutagen stars, grouped lu, quan, ke, ji; all four empty when there are none |
+| `stem_mutagens(HeavenlyStem) -> StemMutagens` | Slots plus extra stars; `iter()` yields (star, mutagen) pairs, `stars_of(Mutagen)` every star of one transformation |
+| `mutagen_of(HeavenlyStem, StarKey) -> Option<Mutagen>` | Which transformation that star takes under that stem (extra stars included) |
+| `check() -> Result<(), String>` | Validate the custom tables: a star appears at most once within a stem. The charting and reverse-lookup entry points call it first and fail with `InvalidArgument` otherwise |
 | `brightness_of(StarKey, usize) -> Option<Brightness>` | The brightness actually in effect for that star in that palace; out-of-range palace indices are taken modulo 12 |
 
 **Example**
@@ -239,22 +249,26 @@ loop, write `cfg.clone()` — cloning an `Arc` bumps a reference count rather th
 </Accordion>
 <Accordion title="What the custom tables change">
 The mutagen table affects: the natal mutagen marks, the palace-stem flying-star methods, the mutagens
-of every horoscope layer, and `get_mutagen` / `get_mutagens_by_heavenly_stem`.
-The brightness table affects: a star's `brightness` field, the `with_brightness` predicate, and
-`get_brightness`.
+of every horoscope layer, and `get_mutagen` / `get_mutagens_by_heavenly_stem`. Extra mutagen stars reach
+the same places except `get_mutagens_by_heavenly_stem` (slots only), plus pattern rules and the text.
+The brightness table affects: a star's (major, minor or adjective) `brightness` field, the
+`with_brightness` predicate, and `get_brightness`.
 Neither changes where any star lands.
 </Accordion>
 </Accordions>
 
 ### TableOverrides
 
-The carrier of those two tables inside `Config`. There is usually no need to build one directly — the
-two `with_*` methods above are enough. Build one yourself when you need to load several entries at
+The carrier of the custom tables inside `Config`. There is usually no need to build one directly — the
+`with_*` methods above are enough. Build one yourself when you need to load several entries at
 once:
 
 | Method | Description |
 | --- | --- |
 | `set_mutagens(HeavenlyStem, [StarKey; 4])` | Write one stem's mutagen table |
+| `set_extra_mutagens(HeavenlyStem, Mutagen, Vec<StarKey>)` | Write one stem's extra stars for one transformation |
+| `extra_mutagens_of(HeavenlyStem) -> Option<&[Vec<StarKey>; 4]>` | Get one stem's extra mutagen stars, `None` when there are none |
+| `check() -> Result<(), String>` | Same as `Config::check` |
 | `set_brightness(StarKey, [Option<Brightness>; 12])` | Write one star's brightness table |
 | `mutagens_of(HeavenlyStem) -> Option<&[StarKey; 4]>` | Get the overridden mutagen table, `None` when not overridden |
 | `brightness_of(StarKey) -> Option<&[Option<Brightness>; 12]>` | Get the overridden brightness table |
@@ -481,7 +495,7 @@ Zi-hour stem of a jia day jia
 
 | Constant | Length | Contents |
 | --- | --- | --- |
-| `ALL_STARS` | 162 | Every star key, in the order `StarKey` declares them |
+| `ALL_STARS` | 164 | Every star key, in the order `StarKey` declares them |
 | `STARS_WITH_INFO` | 20 | The twenty stars that have a `StarInfo` entry |
 
 **Example**
@@ -498,7 +512,7 @@ for star in data::stars::STARS_WITH_INFO {
 **Output**
 
 ```text
-162 20
+164 20
 emperor advisor sun warrior fortunate judge empress moon wolf advocator minister sage marshal rebel scholar artist impulsive spark driven tangled
 ```
 

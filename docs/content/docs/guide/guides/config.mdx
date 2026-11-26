@@ -1,11 +1,11 @@
 ---
 title: Config 详解
-description: 六个开关分别改变什么、自定义四化表与亮度表怎么传、什么时候会看出差别。
+description: 七个开关分别改变什么、自定义四化表、附加四化星与亮度表怎么传、什么时候会看出差别。
 ---
 
 *适合：开发者 · 命理爱好者（前半页的流派差异不需要会写代码）*
 
-排盘中真正有分歧的地方都收在 `Config` 里：六个开关，外加两张可整表替换的数据表。
+排盘中真正有分歧的地方都收在 `Config` 里：七个开关，外加可替换或补充内置数据的覆盖表。
 默认值与 JS iztro 完全一致，所以**不传配置就能得到与 iztro 相同的盘**。
 
 | 开关 | 取值 | 默认 | 管什么 |
@@ -16,8 +16,9 @@ description: 六个开关分别改变什么、自定义四化表与亮度表怎�
 | `day_divide` | `forward` / `current` | `forward` | 晚子时算今天还是明天 |
 | `algorithm` | `default` / `zhongzhou` | `default` | 算法派别 |
 | `astro_type` | `heaven` / `earth` / `human` | `heaven` | 排盘视角（天盘/地盘/人盘） |
+| `void_placement` | `default` / `zhengPang` | `default` | 截空、旬空安一宫还是分正傍两宫（x-iztro 扩展） |
 
-另有两张覆盖表：`mutagens`（自定义四化表）与 `brightness`（自定义亮度表），
+另有三张覆盖表：`mutagens`（自定义四化表）、`extra_mutagens`（附加四化星）与 `brightness`（自定义亮度表），
 见[自定义四化表与亮度表](#自定义四化表与亮度表)。
 
 ## 怎么传
@@ -170,6 +171,8 @@ x-iztro 复刻了 iztro 内部的一处细节：依赖年支的东西并非全�
 | 命主怎么查 | 按**命宫地支** | 按**生年地支**（因此换命宫重排时命主不再变） |
 | 岁前十二神 | 大耗 `dahao` | 岁破 `suipo` |
 | 杂耀 | 截路 `jielu`、空亡 `kongwang` | 截空 `jiekong`、劫杀 `jieshaAdj`、大耗 `dahao`、龙德 `longde` |
+
+截路、空亡与截空这一行是 `void_placement` 取默认值时的情形；分正傍时两派都安截空与傍截空，见下一节。
 | 天伤天使 | 天伤在仆役、天使在疾厄 | 阴阳男女互换，两星位置对调 |
 
 <Callout type="warn" title="algorithm 不改四化表">
@@ -180,6 +183,37 @@ x-iztro 复刻了 iztro 内部的一处细节：依赖年支的东西并非全�
 ```python
 astro.by_solar("1990-11-5", 4, "male", config=ChartConfig(algorithm=Algorithm.ZHONGZHOU))
 ```
+
+## 截空与旬空 `void_placement`
+
+截空按生年天干占相邻两宫（甲己申酉、乙庚午未、丙辛辰巳、丁壬寅卯、戊癸子丑），
+旬空占生年所在一旬空出的两宫。两者都是**阳年以阳宫为正空、阴年以阴宫为正空**，另一宫为傍空
+（王亭之《安星法及推断实例》p56–57）。
+
+| 取值 | 截空 | 旬空 |
+| --- | --- | --- |
+| `default`（默认） | 默认派：两宫分别安截路 `jielu`（阳宫）、空亡 `kongwang`（阴宫），不分正傍；中州派：只在正空安截空 `jiekong` | 只在正空安旬空 `xunkong` |
+| `zhengPang` | 两派都在正空安截空 `jiekong`、傍空安傍截空 `pangJiekong`；默认派不再安截路、空亡 | 正空安旬空 `xunkong`，傍空安傍旬空 `pangXunkong` |
+
+**什么时候会看出差别**：每张盘都会。默认派下截空的两宫与截路、空亡是同两宫，只是改用正傍命名；
+旬空则多出傍空一宫。默认值与 iztro 一致，iztro 没有 `zhengPang`。
+
+```python
+from x_iztro.enums import VoidPlacement
+
+astro.by_solar("2000-8-16", 2, "female",
+               config=ChartConfig(void_placement=VoidPlacement.ZHENG_PANG))
+```
+
+```rust
+by_solar("2000-8-16", 2, Gender::Female, true, Language::ZhCN,
+    Config::default().with_void_placement(VoidPlacement::ZhengPang))?;
+```
+
+<Callout type="warn" title="格局判定怎么看傍空">
+格局引擎的「空亡星」集合（日月夹命等格的破格条件）把截空两宫都算上，傍截空、傍旬空在其中；
+「空曜」集合（禄衰马困一类）只取截空、旬空的正空。
+</Callout>
 
 ## 排盘视角 `astro_type`
 
@@ -276,10 +310,57 @@ cfg := &iztro.Config{Mutagens: map[string][]string{
 
 自定义四化表同时改变**全部飞星判断** —— 宫干化出哪四颗星走的是同一张表。
 
+### 附加四化星
+
+有的流派一干化出多于四颗星，例如庚干天同、天相同化忌。四槽表一类只放一颗星，
+多出来的星写在 `extra_mutagens`（线协议 `extraMutagens`）里：天干标识 → 四化标识 → 星耀标识列表，
+加在该天干生效的四槽（自定义的或默认的）之外。
+
+```rust
+let config = Config::default()
+    .with_extra_mutagens(HeavenlyStem::Geng, Mutagen::Ji, [StarKey::TianxiangMaj]);
+```
+
+```python
+cfg = ChartConfig(extra_mutagens={"gengHeavenly": {"sihuaJi": ["tianxiangMaj"]}})
+```
+
+```go
+cfg := &iztro.Config{ExtraMutagens: map[string]map[string][]string{
+    "gengHeavenly": {"sihuaJi": {"tianxiangMaj"}},
+}}
+```
+
+```js
+astro.bySolar('2000-8-16', 2, 'female', {
+  config: { extraMutagens: { gengHeavenly: { sihuaJi: ['tianxiangMaj'] } } },
+});
+```
+
+附加星与四槽之星同等对待：星耀的四化标记、宫干飞化、运限各层的四化、格局判定与文本都把它算进去。
+四槽本身不变——宫位与运限的 `mutagenStarKeys` 仍是四项，附加星另列在 `extraMutagenStarKeys`
+（`{"sihuaJi": ["tianxiangMaj"]}` 这样按四化分组，没有附加星时这个键不出现）。
+
+| 方法 | 一类四化化出不止一颗星时 |
+| --- | --- |
+| `flies_to` / `self_mutaged` | 每一类四化里有任一颗星落在目标宫（或本宫）即算这一类飞入 |
+| `flies_one_of_to` / `self_mutaged_one_of` / `not_fly_to` / `not_self_mutaged` | 逐颗星判断，附加星与四槽之星一样计入 |
+| `mutagen_stars` | 每一类先四槽之星、后附加星 |
+| `mutaged_places` | 只按四槽，仍是禄权科忌四项 |
+
+同一天干里一颗星至多出现一次（四槽与附加星合计）：星耀只有一个四化标记，
+一颗星既化忌又化科无从标记，排盘报 `invalid_argument`。
+
 ### 亮度表
 
 一颗星配十二个亮度，按盘上位置排列（第一项是寅宫），必须给满十二项；
-该位置无亮度时用空值（Python / Go / JavaScript 传空串）。
+该位置无亮度时用空值（Python / Go / JavaScript 传空串）。主星、辅星、杂耀都可以给；
+默认表不给杂耀亮度，只有列在这里的杂耀才带亮度。
+
+亮度标识在 iztro 的七级（`miao` 庙、`wang` 旺、`de` 得、`li` 利、`ping` 平、`bu` 不、`xian` 陷）之外
+另有一级 `xian2` 闲：王亭之《安星法及推断实例》的六级与《紫微斗数一本通》第七章的七级里，
+闲都排在平之下、陷之上。标识取带声调数字的拼音（xián），与陷（xiàn）的 `xian` 区分。
+默认表不出现闲；格局判定的日月明暗不把闲算作「暗」。
 
 ```python
 cfg = ChartConfig(brightness={
@@ -290,9 +371,10 @@ cfg = ChartConfig(brightness={
 
 <Callout type="warn" title="三条硬规则">
 1. **只收标识，不收译名**：`"ziweiMaj"` 可以，`"紫微"` 不行。
-2. **长度严格校验**：四化表必须 4 项、亮度表必须 12 项，多一项少一项都会报错。
+2. **长度严格校验**：四化表必须 4 项、亮度表必须 12 项，多一项少一项都会报错；
+   附加四化星与四槽合起来，同一天干里一颗星不能出现两次。
 3. **不回显在输出里**：覆盖表是排盘的输入，不属于排盘结果，
-   星盘上回显的 `config` 只有六个开关，两张表读回来是空的。
+   星盘上回显的 `config` 只有开关（`void_placement` 取默认值时也不回显），三张表读回来是空的。
    自己要留档就自己存那份配置。
 </Callout>
 

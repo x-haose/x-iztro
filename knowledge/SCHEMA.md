@@ -66,7 +66,7 @@ i18n 的
 
 | 类别                 | 值域大小 | 例                                                  |
 |----------------------|----------|-----------------------------------------------------|
-| 星耀（`StarKey`）    | 162      | `ziweiMaj`、`wenchangMin`、`hongluan`、`changsheng` |
+| 星耀（`StarKey`）    | 164      | `ziweiMaj`、`wenchangMin`、`hongluan`、`changsheng` |
 | 格局（`PatternKey`） | 64       | `zi_fu_tong_gong`、`huo_tan`                        |
 | 宫位（`Palace`）     | 12       | `soulPalace`、`wealthPalace`                        |
 | 四化（`Mutagen`）    | 4        | `sihuaLu`、`sihuaQuan`、`sihuaKe`、`sihuaJi`        |
@@ -245,7 +245,7 @@ i18n 的
 
 内嵌默认包 `src/data/knowledge/iztro_docs.zh-CN.json`（仅 zh-CN）：
 
-- 内容：162 颗星（主星 14 颗含双星组合解读、辅星 14、杂耀 38、神煞 46、流耀 50）、64 条格局（引文/条件/解读）、12 宫、4 化、51 条术语、13 个主题；
+- 内容：164 颗星（主星 14 颗含双星组合解读、辅星 14、杂耀 40、神煞 46、流耀 50）、64 条格局（引文/条件/解读）、12 宫、4 化、51 条术语、13 个主题；
   每个主题都写 `order`，以 10 为步长（总论、性格、事业、财运、婚恋、健康、父母、子女、兄弟、交友、田宅、迁移、精神），
   覆盖包可用两者之间的值插入自己的主题；
   正文较长的条目带摘要（§5.1），整包可用于摘要层；

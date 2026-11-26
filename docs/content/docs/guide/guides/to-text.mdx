@@ -703,7 +703,7 @@ h.topicPalaces('siblings', 'monthly');
 | --- | --- |
 | `groups` | 主题定义的各组：`kind`（`surround` / `only`）、`key`（主题里的宫位标识）、`target`，`surround` 组另有 `opposite`、`wealth`、`career`（`only` 组为 null）；来因宫不在盘上时不成组 |
 | `palaces` | 选中的宫，每宫一次：`index`、`role`（`target` / `opposite` / `wealth` / `career` / `related`，取首次出现的那一组）、`group`、`nameKey`（该层宫名）、`natalNameKey`、`stemKey`（飞化所用的干）、`flying` |
-| `palaces[].flying` | 宫干飞化，禄权科忌四条：`mutagenKey`、`starKey`、`palaceIndex`（星不在盘上时为 null）、`selfMutaged`（落回本宫即自化） |
+| `palaces[].flying` | 宫干飞化，按禄权科忌，每类先四槽之星、后附加四化星（默认四化表下即四条）：`mutagenKey`、`starKey`、`palaceIndex`（星不在盘上时为 null）、`selfMutaged`（落回本宫即自化） |
 | `birthMutagens` | 生年四化落在选中宫的：`mutagenKey`、`starKey`、`palaceIndex` |
 | `scopeMutagens` | 大限至所选层各层四化落在选中宫的，每条另有 `scope`、`nameKey`（未起运的大限层为 `childhood`）与 `stemKey`（化出它的干）；本命层为空 |
 | `palaceStemSource` | 宫干飞化所用天干的取法，现为 `natalPalace`：本命各宫宫干，运限各层沿用 |

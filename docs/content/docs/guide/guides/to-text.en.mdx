@@ -772,7 +772,7 @@ language-independent key or a palace index (0-11, Yin palace is 0):
 | --- | --- |
 | `groups` | The topic's groups: `kind` (`surround` / `only`), `key` (the palace key in the topic), `target`; `surround` groups also have `opposite`, `wealth`, `career` (null for `only`); an Original palace not on the chart forms no group |
 | `palaces` | Each selected palace once: `index`, `role` (`target` / `opposite` / `wealth` / `career` / `related`, from the first group it appears in), `group`, `nameKey` (the layer's name), `natalNameKey`, `stemKey` (the stem that flies), `flying` |
-| `palaces[].flying` | Stem flying, Lu, Quan, Ke, Ji: `mutagenKey`, `starKey`, `palaceIndex` (null when the star is not on the chart), `selfMutaged` (lands back in the palace) |
+| `palaces[].flying` | Stem flying in Lu, Quan, Ke, Ji order, each transformation's slot star before its extra mutagen stars (four entries under the default table): `mutagenKey`, `starKey`, `palaceIndex` (null when the star is not on the chart), `selfMutaged` (lands back in the palace) |
 | `birthMutagens` | Birth-year transformations landing in the selected palaces: `mutagenKey`, `starKey`, `palaceIndex` |
 | `scopeMutagens` | Transformations of each layer from decadal down to the chosen one landing in the selected palaces, each with `scope`, `nameKey` (`childhood` for a decadal layer before the first decade) and `stemKey` (the stem that produced it); empty at `origin` |
 | `palaceStemSource` | Where the stems for stem flying come from; currently `natalPalace`: the natal palace stems, kept at every layer |

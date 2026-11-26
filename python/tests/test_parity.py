@@ -679,8 +679,8 @@ def test_all_keys_covers_every_category():
     from x_iztro.i18n import all_keys, translate
 
     keys = all_keys()
-    assert len(keys) == 260
-    assert len(set(keys)) == 260
+    assert len(keys) == 263
+    assert len(set(keys)) == 263
     # 次序即反查次序：common.json 打头、性别收尾
     assert keys[:2] == ["decadal", "childhood"]
     assert keys[-2:] == ["male", "female"]
@@ -832,6 +832,50 @@ def test_config_enums_cover_all_switches():
 # ============================================================
 # 自定义四化表贯穿全链路
 # ============================================================
+
+
+def test_extra_mutagens_apply_to_stars_flights_and_horoscope():
+    """与 Rust / Go / JS 同一组断言：庚干四槽之外加天相化忌，天同（疾厄）、天相（财帛）同化忌。"""
+    chart = Astro().by_solar(
+        "2000-8-16",
+        2,
+        "female",
+        config=ChartConfig(
+            extra_mutagens={HeavenlyStem.GENG: {Mutagen.JI: [MajorStar.TIANXIANG]}}
+        ),
+    )
+    assert sorted(_stars_with_mutagen(chart, Mutagen.JI)) == [
+        MajorStar.TIANTONG,
+        MajorStar.TIANXIANG,
+    ]
+
+    spouse = chart.palace(PalaceName.SPOUSE)
+    assert spouse.heavenly_stem_key == HeavenlyStem.GENG
+    assert spouse.mutagen_stars(Mutagen.JI) == [MajorStar.TIANTONG, MajorStar.TIANXIANG]
+    assert spouse.flies_to(PalaceName.WEALTH, Mutagen.JI) is True
+    assert spouse.flies_to(PalaceName.HEALTH, Mutagen.JI) is True
+    assert spouse.not_fly_to(PalaceName.WEALTH, Mutagen.JI) is False
+    assert len(spouse.mutaged_places()) == 4
+
+    horoscope = chart.horoscope("2030-6-1", 0)
+    assert horoscope.yearly.mutagen_star_keys[3] == MajorStar.TIANTONG
+    assert horoscope.yearly.extra_mutagen_star_keys == {Mutagen.JI: [MajorStar.TIANXIANG]}
+    wealth = chart.palace(PalaceName.WEALTH)
+    yearly_name = horoscope.yearly.palace_name_keys[wealth.index]
+    assert horoscope.has_horoscope_mutagen(yearly_name, Scope.YEARLY, Mutagen.JI) is True
+
+
+def test_void_placement_zheng_pang_survives_round_trip():
+    """截空、旬空分正傍：盘上多出傍截空、傍旬空，星盘回显的配置带上该开关。"""
+    from x_iztro.enums import AdjectiveStar, VoidPlacement
+
+    chart = Astro().by_solar(
+        "2000-8-16", 2, "female", config=ChartConfig(void_placement=VoidPlacement.ZHENG_PANG)
+    )
+    assert chart.config.void_placement == VoidPlacement.ZHENG_PANG
+    for key in (AdjectiveStar.PANG_JIEKONG, AdjectiveStar.PANG_XUNKONG):
+        assert chart.star(key) is not None
+    assert chart.star(AdjectiveStar.JIELU) is None
 
 
 def _custom_chart() -> Astrolabe:

@@ -235,3 +235,185 @@ fn test_overrides_absent_from_serialized_dto() {
     assert!(!json.contains("overrides"));
     assert!(!json.contains("mutagens"));
 }
+
+/// 庚干四槽之外加天相化忌：天同、天相同化忌。
+fn geng_double_ji() -> Config {
+    Config::default().with_extra_mutagens(HeavenlyStem::Geng, Mutagen::Ji, [StarKey::TianxiangMaj])
+}
+
+#[test]
+fn test_extra_mutagens_mark_natal_stars() {
+    let chart = by_solar(
+        BIRTH,
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        geng_double_ji(),
+    )
+    .unwrap();
+
+    let mut ji = stars_with_mutagen(&chart, Mutagen::Ji);
+    ji.sort_by_key(|k| k.as_key());
+    assert_eq!(ji, [StarKey::TiantongMaj, StarKey::TianxiangMaj]);
+    // 四槽不变：DTO 的四化数组与工具函数仍是四颗
+    assert_eq!(
+        get_mutagens_by_heavenly_stem(HeavenlyStem::Geng, &chart.config)[3],
+        StarKey::TiantongMaj
+    );
+    assert_eq!(
+        get_mutagen(StarKey::TianxiangMaj, HeavenlyStem::Geng, &chart.config),
+        Some(Mutagen::Ji)
+    );
+}
+
+#[test]
+fn test_extra_mutagens_apply_to_flying_horoscope_and_text() {
+    let chart = by_solar(
+        BIRTH,
+        2,
+        Gender::Female,
+        true,
+        Language::ZhCN,
+        geng_double_ji(),
+    )
+    .unwrap();
+    let tianxiang = chart.star(StarKey::TianxiangMaj).unwrap().palace().index;
+    let tiantong = chart.star(StarKey::TiantongMaj).unwrap().palace().index;
+    assert_ne!(tianxiang, tiantong, "取样盘的天同、天相不同宫");
+
+    // 宫干飞化：庚干宫的化忌同时飞入天同、天相两宫，四槽之外的星排在同类四槽之星之后
+    let geng = chart
+        .palaces
+        .iter()
+        .find(|p| p.heavenly_stem == HeavenlyStem::Geng)
+        .unwrap();
+    assert_eq!(
+        geng.mutagen_stars(&[Mutagen::Ji]),
+        [StarKey::TiantongMaj, StarKey::TianxiangMaj]
+    );
+    assert!(geng.flies_to(&chart.palaces[tianxiang], &[Mutagen::Ji]));
+    assert!(geng.flies_to(&chart.palaces[tiantong], &[Mutagen::Ji]));
+    let places = geng.mutaged_places(&chart.palaces);
+    assert_eq!(places.len(), 4, "四化落宫只按四槽");
+    assert_eq!(places[3], Some(tiantong));
+
+    // 运限：2030 年为庚戌年，流年四槽不变，附加星另列
+    let h = chart.horoscope("2030-6-1", 0).unwrap();
+    assert_eq!(h.yearly.mutagen[3], StarKey::TiantongMaj);
+    assert_eq!(h.yearly.extra_mutagen[3], [StarKey::TianxiangMaj]);
+    let tianxiang_name = chart.palaces[tianxiang].name;
+    let yearly_name = h.yearly.palace_names[tianxiang];
+    assert!(
+        h.has_horoscope_mutagen(yearly_name, Scope::Yearly, Mutagen::Ji)
+            .unwrap()
+    );
+    assert!(
+        h.patterns(Scope::Yearly).is_ok(),
+        "附加星参与运限视角的格局判定"
+    );
+    let view = x_iztro::pattern::view::ChartView::at(
+        &chart,
+        h.data(),
+        Scope::Yearly,
+        &x_iztro::PatternConfig::default(),
+    );
+    let star = view.find(tianxiang, StarKey::TianxiangMaj).unwrap();
+    assert_eq!(view.mutagen_of(star), Some(Mutagen::Ji));
+
+    // DTO：四槽数组原样，附加星只在新增的键里
+    let dto = serde_json::to_value(h.data().to_dto(Language::ZhCN)).unwrap();
+    assert_eq!(
+        dto["yearly"]["mutagenStarKeys"].as_array().unwrap().len(),
+        4
+    );
+    assert_eq!(
+        dto["yearly"]["extraMutagenStarKeys"],
+        serde_json::json!({"sihuaJi": ["tianxiangMaj"]})
+    );
+    if h.decadal.heavenly_stem != HeavenlyStem::Geng {
+        assert!(dto["decadal"].get("extraMutagenStarKeys").is_none());
+    }
+    let chart_dto = serde_json::to_value(chart.to_dto()).unwrap();
+    assert_eq!(
+        chart_dto["palaces"][geng.index]["extraMutagenStarKeys"],
+        serde_json::json!({"sihuaJi": ["tianxiangMaj"]})
+    );
+
+    // 文本：生年四化行与流年四化行都写出天相化忌
+    let natal_text = chart.to_text();
+    let birth_line = natal_text
+        .lines()
+        .find(|l| l.starts_with("- 生年四化: "))
+        .unwrap();
+    assert!(
+        birth_line.contains("天同化忌") && birth_line.contains("天相化忌"),
+        "{birth_line}"
+    );
+    let palace_text = chart.palace(tianxiang_name).unwrap().to_text();
+    assert!(palace_text.contains("天相(庙)化忌"), "{palace_text}");
+    let h_text = h.to_text();
+    assert!(h_text.contains("天相化忌"), "{h_text}");
+}
+
+#[test]
+fn test_extra_mutagens_rejected_when_star_repeats_in_stem() {
+    // 天同已在庚干四槽化忌，再列为附加的化禄星即重复
+    let config = Config::default().with_extra_mutagens(
+        HeavenlyStem::Geng,
+        Mutagen::Lu,
+        [StarKey::TiantongMaj],
+    );
+    let err = by_solar(BIRTH, 2, Gender::Female, true, Language::ZhCN, config).unwrap_err();
+    assert!(
+        matches!(err, x_iztro::IztroError::InvalidArgument(_)),
+        "{err}"
+    );
+    assert!(err.to_string().contains("tiantongMaj"), "{err}");
+}
+
+#[test]
+fn test_custom_brightness_applies_to_adjective_stars() {
+    // 红鸾子宫（索引 10）为庙，其余各宫为闲
+    let mut table = [Some(Brightness::Xian2); 12];
+    table[10] = Some(Brightness::Miao);
+    let config = Config::default().with_brightness(StarKey::Hongluan, table);
+    let chart = by_solar(BIRTH, 2, Gender::Female, true, Language::ZhCN, config).unwrap();
+    let hongluan = chart.star(StarKey::Hongluan).unwrap();
+    let index = hongluan.palace().index;
+    let want = table[index].unwrap();
+    assert_eq!(hongluan.brightness, Some(want));
+
+    let dto = serde_json::to_value(chart.to_dto()).unwrap();
+    let star = dto["palaces"][index]["adjectiveStars"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["key"] == "hongluan")
+        .unwrap();
+    assert_eq!(star["brightnessKey"], want.as_key());
+    assert_eq!(
+        star["brightness"],
+        x_iztro::translate_brightness(want, Language::ZhCN)
+    );
+
+    // 默认配置下杂耀不带亮度键
+    let default_dto = serde_json::to_value(
+        by_solar(
+            BIRTH,
+            2,
+            Gender::Female,
+            true,
+            Language::ZhCN,
+            Config::default(),
+        )
+        .unwrap()
+        .to_dto(),
+    )
+    .unwrap();
+    for p in default_dto["palaces"].as_array().unwrap() {
+        for s in p["adjectiveStars"].as_array().unwrap() {
+            assert!(s.get("brightness").is_none() && s.get("brightnessKey").is_none());
+        }
+    }
+}

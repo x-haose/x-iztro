@@ -486,22 +486,21 @@ fn reading_order(astrolabe: &Astrolabe) -> Vec<usize> {
 /// 四化星落的是本命宫位，须标明参照系
 fn mutagen_stars_with_places(
     astrolabe: &Astrolabe,
-    stars: &[StarKey],
+    stars: impl IntoIterator<Item = (StarKey, Mutagen)>,
     natal_frame: bool,
     l: &Labels,
     lang: Language,
 ) -> String {
     stars
-        .iter()
-        .zip(MUTAGEN)
+        .into_iter()
         .map(|(star, m)| {
             let mut t = format!(
                 "{}{}{}",
-                translate_star(*star, lang),
+                translate_star(star, lang),
                 l.label_sep,
                 mutagen_mark(l, m, lang)
             );
-            if let Some(place) = astrolabe.star(*star).map(|s| s.palace().name) {
+            if let Some(place) = astrolabe.star(star).map(|s| s.palace().name) {
                 t.push_str(ARROW);
                 if natal_frame {
                     t.push_str(l.natal);
@@ -601,12 +600,17 @@ fn flying_line(
     l: &Labels,
     lang: Language,
 ) -> String {
-    let stars = p.mutagen_stars(&MUTAGEN);
     format!(
         "- {}: {}\n",
         l.stem_flying
             .replace("{}", translate_heavenly_stem(p.heavenly_stem, lang)),
-        mutagen_stars_with_places(astrolabe, &stars, frame.is_some(), l, lang)
+        mutagen_stars_with_places(
+            astrolabe,
+            p.stem_mutagens().iter(),
+            frame.is_some(),
+            l,
+            lang
+        )
     )
 }
 
@@ -617,14 +621,12 @@ fn layer_lines(p: &PalaceData, frame: &Frame, l: &Labels, lang: Language) -> Str
     for item in &frame.layers {
         let label = l.scope_label(item.name_key);
         let mutagens: Vec<String> = item
-            .mutagen
-            .iter()
-            .zip(MUTAGEN)
-            .filter(|(star, _)| p.has(&[**star]))
+            .mutagens()
+            .filter(|(star, _)| p.has(&[*star]))
             .map(|(star, m)| {
                 format!(
                     "{}{}{}",
-                    translate_star(*star, lang),
+                    translate_star(star, lang),
                     l.label_sep,
                     mutagen_mark(l, m, lang)
                 )
@@ -1011,11 +1013,11 @@ pub fn astrolabe_to_text_with(astrolabe: &Astrolabe, opts: &TextOptions, lang: L
     out.push_str(&positions);
     out.push('\n');
     // 生年四化由本命年干决定，年干即四柱年柱的天干
-    let birth_stars = astrolabe.config.mutagens_of(cd.yearly.0);
+    let birth_stars = astrolabe.config.stem_mutagens(cd.yearly.0);
     out.push_str(&format!(
         "- {}: {}\n",
         l.birth_mutagen,
-        mutagen_stars_with_places(astrolabe, &birth_stars, false, &l, lang)
+        mutagen_stars_with_places(astrolabe, birth_stars.iter(), false, &l, lang)
     ));
     sections.push(std::mem::take(&mut out));
 
@@ -1212,12 +1214,12 @@ pub fn decadal_list_to_text_with(
             d.year_range.0,
             d.year_range.1,
             stem_branch(d.heavenly_stem, d.earthly_branch, &l, lang),
-            mutagen_stars_with_places(astrolabe, &d.mutagen, true, &l, lang),
+            mutagen_stars_with_places(astrolabe, d.mutagens(), true, &l, lang),
         ));
     }
 
     out.push_str(&mutagen_star_notes(
-        list.iter().map(|d| d.mutagen.as_slice()),
+        list.iter().flat_map(|d| d.mutagens()),
         opts,
         &l,
         lang,
@@ -1226,8 +1228,8 @@ pub fn decadal_list_to_text_with(
 }
 
 /// 一览表后的四化星释义一节：各行的四化星按出现先后去重；不带知识包或无材料返回空串
-fn mutagen_star_notes<'s>(
-    rows: impl Iterator<Item = &'s [StarKey]>,
+fn mutagen_star_notes(
+    rows: impl Iterator<Item = (StarKey, Mutagen)>,
     opts: &TextOptions,
     l: &Labels,
     lang: Language,
@@ -1237,13 +1239,13 @@ fn mutagen_star_notes<'s>(
     };
     let mut seen: Vec<StarKey> = Vec::new();
     let mut text = String::new();
-    for key in rows.flatten() {
-        if seen.contains(key) {
+    for (key, _) in rows {
+        if seen.contains(&key) {
             continue;
         }
-        seen.push(*key);
-        if let Some(reading) = notes.star(*key) {
-            note(&mut text, translate_star(*key, lang), reading);
+        seen.push(key);
+        if let Some(reading) = notes.star(key) {
+            note(&mut text, translate_star(key, lang), reading);
         }
     }
     if text.is_empty() {
@@ -1311,12 +1313,12 @@ pub fn monthly_list_to_text_with(
             solar(m.day_range.1),
             translate_palace(astrolabe.palaces[m.index].name, lang),
             stem_branch(m.heavenly_stem, m.earthly_branch, &l, lang),
-            mutagen_stars_with_places(astrolabe, &m.mutagen, true, &l, lang),
+            mutagen_stars_with_places(astrolabe, m.mutagens(), true, &l, lang),
         ));
     }
 
     out.push_str(&mutagen_star_notes(
-        list.iter().map(|m| m.mutagen.as_slice()),
+        list.iter().flat_map(|m| m.mutagens()),
         opts,
         &l,
         lang,
@@ -1386,7 +1388,7 @@ fn scope_mutagen_line(
     format!(
         "- {}: {}\n",
         l.mutagen_fly,
-        mutagen_stars_with_places(astrolabe, &item.mutagen, true, l, lang)
+        mutagen_stars_with_places(astrolabe, item.mutagens(), true, l, lang)
     )
 }
 
@@ -1815,12 +1817,12 @@ pub fn yearly_overview_to_text_with(
             h.age.nominal_age,
             palace(h.age.index),
             palace(h.yearly.index),
-            mutagen_stars_with_places(astrolabe, &h.yearly.mutagen, true, &l, lang),
+            mutagen_stars_with_places(astrolabe, h.yearly.mutagens(), true, &l, lang),
         ));
     }
 
     out.push_str(&mutagen_star_notes(
-        years.iter().map(|(_, h)| h.yearly.mutagen.as_slice()),
+        years.iter().flat_map(|(_, h)| h.yearly.mutagens()),
         opts,
         &l,
         lang,

@@ -155,7 +155,9 @@ type Config struct {
     DayDivide       string
     Algorithm       string
     AstroType       string
+    VoidPlacement   string
     Mutagens        map[string][]string
+    ExtraMutagens   map[string]map[string][]string
     Brightness      map[string][]string
 }
 ```
@@ -168,7 +170,9 @@ type Config struct {
 | `DayDivide` | `"forward"` / `"current"` | `"forward"` | 晚子时归次日还是当日 |
 | `Algorithm` | `"default"` / `"zhongzhou"` | `"default"` | 算法派别 |
 | `AstroType` | `"heaven"` / `"earth"` / `"human"` | `"heaven"` | 排盘视角 |
+| `VoidPlacement` | `"default"` / `"zhengPang"` | `"default"` | 截空、旬空安一宫（同 iztro）还是各分正空、傍空两宫 |
 | `Mutagens` | 天干标识 → 四星标识 | — | 自定义四化表，按天干整表替换 |
+| `ExtraMutagens` | 天干标识 → 四化标识 → 星耀标识列表 | — | 附加四化星，加在该干四槽之外 |
 | `Brightness` | 星耀标识 → 十二项亮度标识 | — | 自定义亮度表，按星耀整表替换 |
 
 **示例**
@@ -192,7 +196,8 @@ fmt.Println(chart.FiveElementsClass)
 每组取值都有对应的常量，不必手写字符串：
 `YearDivideNormal` / `YearDivideExact`、`HoroscopeDivideNormal` / `HoroscopeDivideExact`、
 `AgeDivideNormal` / `AgeDivideBirthday`、`DayDivideForward` / `DayDivideCurrent`、
-`AlgorithmDefault` / `AlgorithmZhongzhou`、`AstroHeaven` / `AstroEarth` / `AstroHuman`。
+`AlgorithmDefault` / `AlgorithmZhongzhou`、`AstroHeaven` / `AstroEarth` / `AstroHuman`、
+`VoidPlacementDefault` / `VoidPlacementZhengPang`。
 
 **边界与陷阱**
 
@@ -201,14 +206,15 @@ fmt.Println(chart.FiveElementsClass)
 `Mutagens["jiaHeavenly"]` 必须给满四项（禄权科忌），
 `Brightness["ziweiMaj"]` 必须给满十二项，多一项少一项都排盘报错
 （`*Error`，`Code` 为 `invalid_argument`）。未列出的天干与星耀仍用默认表。
-两张表的键与值都只收标识，不收译名。
+`ExtraMutagens` 只加不换；同一天干里一颗星在四槽与附加星合计出现两次同样报错。
+各表的键与值都只收标识，不收译名。
 </Accordion>
 <Accordion title="自定义表不回显在 chart.Config 上">
-`chart.Config` 由输出 DTO 还原，只含六个开关——两张自定义表是排盘**输入**而非结果，
+`chart.Config` 由输出 DTO 还原，只含开关——三张自定义表是排盘**输入**而非结果，
 不进 DTO（这一点与 JS iztro 的字段契约一致）。
 
 但星盘内部保留了你传进来的原件，因此 `Rearranged`、`Horoscope`、ToText
-这些二次计算仍然用得上那两张表，不会静默丢失。
+这些二次计算仍然用得上那几张表，不会静默丢失。
 要把配置记录下来，请在自己的调用侧保存 `*Config`。
 
 ```go

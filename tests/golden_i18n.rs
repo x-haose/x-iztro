@@ -19,6 +19,9 @@ const KOT_GOLDEN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/i18n
 /// iztro 表缺条目，iztro 哪天补上会立刻暴露。
 const IZTRO_MISSING_EN: &str = "childhood";
 
+/// x-iztro 扩展的可翻译标识，iztro 表里没有：亮度「闲」与截空、旬空分正傍时的傍截空、傍旬空。
+const X_IZTRO_EXTENSION_KEYS: [&str; 3] = ["xian2", "pangJiekong", "pangXunkong"];
+
 fn load() -> Value {
     let raw =
         fs::read_to_string(GOLDEN).expect("缺少 i18n_table.json，先跑 node generate_i18n.mjs");
@@ -39,6 +42,13 @@ fn key_set_matches_js() {
         .cloned()
         .collect();
     let got: BTreeSet<String> = all_keys().into_iter().map(String::from).collect();
+    let extension: BTreeSet<String> = X_IZTRO_EXTENSION_KEYS.map(String::from).into();
+    assert!(
+        want.is_disjoint(&extension),
+        "iztro 表已收录 x-iztro 扩展标识：{:?}",
+        want.intersection(&extension).collect::<Vec<_>>()
+    );
+    let want: BTreeSet<String> = want.union(&extension).cloned().collect();
 
     let missing: Vec<_> = want.difference(&got).collect();
     let extra: Vec<_> = got.difference(&want).collect();
@@ -47,7 +57,23 @@ fn key_set_matches_js() {
         missing.is_empty() && extra.is_empty(),
         "标识集合不一致\n  Rust 缺: {missing:?}\n  Rust 多: {extra:?}"
     );
-    assert_eq!(got.len(), 260, "标识总数应为 260");
+    assert_eq!(got.len(), 263, "标识总数应为 iztro 的 260 加扩展 3");
+}
+
+/// 扩展标识六种语言都有译文，且译文反查回原标识（不与 iztro 标识的译文同形）。
+#[test]
+fn extension_keys_translate_and_resolve_back() {
+    for key in X_IZTRO_EXTENSION_KEYS {
+        for code in ["zh-CN", "zh-TW", "en-US", "ja-JP", "ko-KR", "vi-VN"] {
+            let text =
+                translate_key(key, lang_of(code)).unwrap_or_else(|| panic!("{key}/{code}: 无译文"));
+            assert_eq!(
+                key_of(text),
+                Some(key),
+                "{key}/{code}: 「{text}」反查不回原标识"
+            );
+        }
+    }
 }
 
 #[test]

@@ -109,15 +109,15 @@ print(rd.chinese_date.pillar_keys())
 | `time_index` | `int` | 出生时辰索引 |
 | `fix_leap` | `bool` | 排盘时是否修正闰月 |
 | `language` | `str` | 输出语言 |
-| `config` | `ChartConfig` | 排盘配置，由 DTO 还原的六个开关 |
+| `config` | `ChartConfig` | 排盘配置，由 DTO 还原的开关 |
 
 运限、重排与 Prompt 从这四项重新发起计算，因此不必再传一遍排盘参数。
 
 <Callout type="info" title="config 字段不回显自定义表">
-`chart.config` 是从输出 DTO 还原的，只含六个开关；
-排盘时传进来的自定义四化 / 亮度表不在里面。
+`chart.config` 是从输出 DTO 还原的，只含开关；
+排盘时传进来的自定义四化表、附加四化星与亮度表不在里面。
 但星盘内部保留了调用方给的原件，因此 `rearranged`、`horoscope`、
-Prompt 这些二次计算仍然用得上那两张表——不会静默丢失。
+Prompt 这些二次计算仍然用得上那几张表——不会静默丢失。
 </Callout>
 
 </Accordion>
@@ -790,7 +790,7 @@ True {
 </Callout>
 
 <Callout type="info" title="自定义表不在导出里">
-`config` 只回显六个开关。排盘时传的自定义四化 / 亮度表是**输入**而非结果，
+`config` 只回显开关。排盘时传的自定义四化表、附加四化星与亮度表是**输入**而非结果，
 不进 DTO——这一点与 JS iztro 的字段契约一致。要记录用了哪张表，
 请在自己的调用侧保存 `ChartConfig`。
 </Callout>

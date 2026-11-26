@@ -51,7 +51,7 @@ type WasmSource =
 
 ## ChartConfig
 
-Chart configuration: six switches plus two optional override tables. Every field is optional and defaults
+Chart configuration: seven switches plus three optional override tables. Every field is optional and defaults
 to iztro's value, so `{}` is the same as passing nothing.
 
 | Field | Type | Default | Values |
@@ -62,7 +62,9 @@ to iztro's value, so `{}` is the same as passing nothing.
 | `dayDivide` | `DayDivide` | `'forward'` | `forward` late Rat hour belongs to the next day / `current` to the same day |
 | `algorithm` | `Algorithm` | `'default'` | `default` / `zhongzhou` |
 | `astroType` | `AstroType` | `'heaven'` | `heaven` / `earth` / `human` chart |
+| `voidPlacement` | `VoidPlacement` | `'default'` | `default` as iztro / `zhengPang` Jiekong and Xunkong each take a main and a side void palace |
 | `mutagens` | `Partial<Record<HeavenlyStem, [string, string, string, string]>>` | — | stem key → four star keys (lu, quan, ke, ji), replacing that stem's row |
+| `extraMutagens` | `Partial<Record<HeavenlyStem, Partial<Record<Mutagen, string[]>>>>` | — | stem key → mutagen key → list of extra star keys, added on top of that stem's four slots |
 | `brightness` | `Partial<Record<string, (Brightness \| '')[]>>` | — | star key → twelve brightness keys, index 0 is Yin, empty string for none |
 
 The meaning of each switch and its school background are in [Configuration](/en/docs/guide/guides/config).
@@ -89,11 +91,12 @@ console.log(earth.palace('soulPalace')!.mutagenStarKeys);
 
 <Accordions>
 <Accordion title="Keys only, never translated names">
-Both tables take language-independent keys as keys and values (`'gengHeavenly'`, `'taiyangMaj'`). Mutagen rows
-must have exactly four entries and brightness rows exactly twelve; anything else throws `IztroError`.
+Every table takes language-independent keys as keys and values (`'gengHeavenly'`, `'taiyangMaj'`). Mutagen rows
+must have exactly four entries and brightness rows exactly twelve, and a star may appear only once within a stem
+across the slots and the extra stars; anything else throws `IztroError`.
 </Accordion>
 <Accordion title="The override tables are not echoed in chart.config">
-`chart.config` holds the six switches only — the tables are chart input and stay out of the DTO (as in iztro's
+`chart.config` holds the switches only (`voidPlacement` is left out at its default) — the tables are chart input and stay out of the DTO (as in iztro's
 field contract). The chart keeps your original object internally, so `rearranged`, `horoscope` and `toText`
 still use it.
 </Accordion>

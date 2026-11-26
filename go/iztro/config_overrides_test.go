@@ -1,6 +1,7 @@
 package iztro
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -236,5 +237,71 @@ func TestCustomMutagensDoNotLeakToOtherStems(t *testing.T) {
 	}
 	if got != MutagenJi {
 		t.Errorf("默认表下天同在庚干化 %s，期望忌", got)
+	}
+}
+
+// TestExtraMutagensApply 校验附加四化星进入星耀四化标注、宫干飞化与运限四化；
+// 与 Rust、Python、JS 同一组断言：庚干四槽之外加天相化忌，天同（疾厄）、天相（财帛）同化忌。
+func TestExtraMutagensApply(t *testing.T) {
+	config := &Config{ExtraMutagens: map[string]map[string][]string{
+		StemGeng: {MutagenJi: {StarTianxiangMaj}},
+	}}
+	chart, err := BySolar(overridesBirth, 2, GenderFemale, true, LanguageZhCN, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ji := starsWithMutagen(chart, MutagenJi)
+	slices.Sort(ji)
+	assertKeyList(t, "化忌", ji, []string{StarTiantongMaj, StarTianxiangMaj})
+
+	spouse := chart.Palace(PalaceSpouse)
+	if spouse.HeavenlyStemKey != StemGeng {
+		t.Fatalf("夫妻宫干 %s，期望庚", spouse.HeavenlyStemKey)
+	}
+	assertKeyList(t, "庚宫化忌星", spouse.MutagenStars(MutagenJi), []string{StarTiantongMaj, StarTianxiangMaj})
+	for _, target := range []string{PalaceWealth, PalaceHealth} {
+		if !spouse.FliesTo(chart.Palace(target), MutagenJi) {
+			t.Errorf("庚宫化忌应飞入 %s", target)
+		}
+	}
+	if spouse.NotFlyTo(chart.Palace(PalaceWealth), MutagenJi) {
+		t.Error("NotFlyTo 应为 false")
+	}
+	if n := len(spouse.MutagedPlaces()); n != 4 {
+		t.Errorf("MutagedPlaces 共 %d 项，期望四槽 4 项", n)
+	}
+
+	// 2030 年为庚戌年：流年四槽不变，附加星另列
+	h, err := chart.Horoscope("2030-6-1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Yearly.MutagenStarKeys[3] != StarTiantongMaj {
+		t.Errorf("流年化忌四槽 %s，期望天同", h.Yearly.MutagenStarKeys[3])
+	}
+	assertKeyList(t, "流年附加化忌", h.Yearly.ExtraMutagenStarKeys[MutagenJi], []string{StarTianxiangMaj})
+	yearlyName := h.Yearly.PalaceNameKeys[chart.Palace(PalaceWealth).Index]
+	ok, err := h.HasHoroscopeMutagen(yearlyName, ScopeYearly, MutagenJi)
+	if err != nil || !ok {
+		t.Errorf("流年化忌应落在天相所在宫：%v, %v", ok, err)
+	}
+}
+
+// TestVoidPlacementZhengPang 校验截空、旬空分正傍：盘上多出傍截空、傍旬空，星盘回显的配置带上该开关。
+func TestVoidPlacementZhengPang(t *testing.T) {
+	chart, err := BySolar(overridesBirth, 2, GenderFemale, true, LanguageZhCN, &Config{VoidPlacement: VoidPlacementZhengPang})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if chart.Config.VoidPlacement != VoidPlacementZhengPang {
+		t.Errorf("回显的 VoidPlacement 为 %q", chart.Config.VoidPlacement)
+	}
+	for _, key := range []string{StarPangJiekong, StarPangXunkong} {
+		if s, _ := chart.Star(key); s == nil {
+			t.Errorf("%s 应在盘上", key)
+		}
+	}
+	if s, _ := chart.Star(StarJielu); s != nil {
+		t.Error("分正傍时默认派不安截路")
 	}
 }

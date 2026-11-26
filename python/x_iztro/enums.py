@@ -96,6 +96,15 @@ class DayDivide(StrEnum):
     CURRENT = "current"
 
 
+class VoidPlacement(StrEnum):
+    """截空与旬空的安法（`ChartConfig.void_placement`）"""
+
+    DEFAULT = "default"
+    """与 iztro 一致：默认派安截路（阳宫）与空亡（阴宫），中州派只在正空安截空；旬空只安正空"""
+    ZHENG_PANG = "zhengPang"
+    """截空、旬空各安正空与傍空两宫：正空安截空、旬空，傍空安傍截空、傍旬空；默认派不再安截路、空亡"""
+
+
 class HeavenlyStem(StrEnum):
     """天干（对应 `heavenly_stem_key` 字段）"""
 
@@ -222,6 +231,8 @@ class Brightness(StrEnum):
     """不"""
     XIAN = "xian"
     """陷"""
+    XIAN2 = "xian2"
+    """闲（xián）：排在平之下、陷之上；iztro 无此级，只出现在自定义亮度表里"""
 
 
 class StarType(StrEnum):
@@ -408,6 +419,10 @@ class AdjectiveStar(StrEnum):
     """空亡"""
     JIELU = "jielu"
     """截路"""
+    PANG_JIEKONG = "pangJiekong"
+    """傍截空：截空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`）"""
+    PANG_XUNKONG = "pangXunkong"
+    """傍旬空：旬空两宫中的傍空一宫（`VoidPlacement.ZHENG_PANG`）"""
     YUEDE = "yuede"
     """月德"""
     TIANSHANG = "tianshang"

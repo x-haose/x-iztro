@@ -28,15 +28,15 @@ func Translate(key string, language Language) (string, error)
 | `key` | `string` | Yes | — | A language-independent key |
 | `language` | `Language` | Yes | — | Target language |
 
-Covering 260 keys across twelve categories:
+Covering 263 keys across twelve categories:
 
 | Category | Count | Examples |
 | --- | --- | --- |
-| Stars | 162 | `ziweiMaj`, `changsheng`, `yunlu` |
+| Stars | 164 | `ziweiMaj`, `changsheng`, `yunlu` |
 | Palaces (including the Body palace and the palace of origin) | 14 | `soulPalace`, `wealthPalace`, `bodyPalace`, `originalPalace` |
 | Heavenly stems | 10 | `jiaHeavenly` |
 | Earthly branches | 12 | `ziEarthly` |
-| Brightness | 7 | `miao`, `wang` |
+| Brightness | 8 | `miao`, `wang` |
 | Mutagens | 4 | `sihuaLu` |
 | Five elements class | 5 | `water2nd` |
 | Gender | 2 | `male`, `female` |
@@ -137,7 +137,7 @@ for stems and branches, `Palace` for palaces, `Hour` for hours. When the filter 
 result is an empty string; it does not fall back to the unfiltered result.
 </Accordion>
 <Accordion title="It is a full-table scan">
-`KeyOf` walks 260 keys × 6 languages and makes one wasm round trip.
+`KeyOf` walks 263 keys × 6 languages and makes one wasm round trip.
 Do not put it in an inner loop over every palace and star — use the `*Key` fields that come with the
 data there.
 </Accordion>
@@ -147,7 +147,7 @@ data there.
 
 ## AllKeys
 
-**Purpose** Get all 260 translatable keys.
+**Purpose** Get all 263 translatable keys.
 
 **Signature**
 
@@ -171,7 +171,7 @@ fmt.Println(len(keys), keys[:4], first)
 **Output**
 
 ```text
-260 [decadal childhood yearly monthly] decadal
+263 [decadal childhood yearly monthly] decadal
 ```
 
 To iterate the keys of one category, the constants in `keys.go` or `GetConstants()` are simpler.

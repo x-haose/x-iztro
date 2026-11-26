@@ -25,7 +25,7 @@ const chart = astro.bySolar('2000-8-16', 2, 'female');
 | `fiveElementsClass` / `fiveElementsClassKey` | `string` / `FiveElementsClass` | 五行局 / 标识 |
 | `earthlyBranchOfSoulPalace(Key)` / `earthlyBranchOfBodyPalace(Key)` | `string` | 命宫、身宫地支 / 标识 |
 | `timeIndex`、`fixLeap`、`language` | — | 排盘入参 |
-| `config` | `ChartConfigData` | 六个开关的实际取值 |
+| `config` | `ChartConfigData` | 开关的实际取值；`voidPlacement` 取默认值时省略 |
 | `palaces` | `readonly Palace[]` | 十二宫，索引 0 为寅宫、11 为丑宫 |
 
 `palaces` 的索引是宫位索引而非宫名顺序，取命宫用 `chart.palace('soulPalace')`。

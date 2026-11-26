@@ -251,11 +251,11 @@ directly against the `*Key` fields on the data objects.
 | Prefix | Count | Examples |
 | --- | --- | --- |
 | `Palace*` | 12 + 2 | `PalaceSoul`, `PalaceWealth`, `PalaceBody`, `PalaceOriginal` |
-| `Star*` | 162 | `StarZiweiMaj`, `StarLucunMin`, `StarYunlu` |
+| `Star*` | 164 | `StarZiweiMaj`, `StarLucunMin`, `StarYunlu` |
 | `Stem*` | 10 | `StemJia`, `StemGeng` |
 | `Branch*` | 12 | `BranchZi`, `BranchWu` |
 | `Mutagen*` | 4 | `MutagenLu`, `MutagenJi` |
-| `Brightness*` | 7 | `BrightnessMiao`, `BrightnessWang` |
+| `Brightness*` | 8 | `BrightnessMiao`, `BrightnessWang` |
 | `Class*` | 5 | `ClassWater2nd`, `ClassWood3rd`, `ClassMetal4th`, `ClassEarth5th`, `ClassFire6th` |
 | `Scope*` | 6 | `ScopeOrigin`, `ScopeDecadal` |
 | `StarType*` | 8 | `StarTypeMajor`, `StarTypeTough` |
@@ -268,7 +268,7 @@ rejects any other string passed by mistake, while literals (`"male"`, `"zh-CN"`)
 `Astrolabe.GenderKey` and `Astrolabe.Language` are of these types too. The remaining constants are
 untyped string constants that compare directly with the `*Key` fields.
 
-The configuration values add six more groups:
+The configuration values add seven more groups:
 
 | Prefix | Values |
 | --- | --- |
@@ -278,6 +278,7 @@ The configuration values add six more groups:
 | `DayDivide*` | `DayDivideForward` / `DayDivideCurrent` |
 | `Algorithm*` | `AlgorithmDefault` / `AlgorithmZhongzhou` |
 | `Astro*` | `AstroHeaven` / `AstroEarth` / `AstroHuman` |
+| `VoidPlacement*` | `VoidPlacementDefault` / `VoidPlacementZhengPang` |
 
 <Callout type="warn" title="The five elements class constants are prefixed Class, not FiveElements">
 Write `iztro.ClassWood3rd`, not `iztro.FiveElementsWood3rd` — the latter does not exist and will not

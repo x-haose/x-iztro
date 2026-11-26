@@ -47,7 +47,7 @@ pub fn by_solar(
 | `gender` | `Gender` | 是 | — | `Gender::Male` 或 `Gender::Female`。决定大限顺逆与长生、博士十二神的排列方向 |
 | `fix_leap` | `bool` | 是 | — | 是否调整农历闰月。为 `true` 时闰月十六日起按下月算（晚子时除外，见下） |
 | `language` | `Language` | 是 | — | 输出语言，影响 DTO 中所有译名字段；`*_key` 标识字段不受影响 |
-| `config` | `Config` | 是 | — | 排盘配置，六个开关加自定义表。取默认值用 `Config::default()` |
+| `config` | `Config` | 是 | — | 排盘配置，七个开关加自定义表（四化、附加四化星、亮度）。取默认值用 `Config::default()`，各项见 [Config 详解](/zh/docs/guide/guides/config) |
 
 **返回值**　`Astrolabe`——十二宫、四柱、命主身主、五行局俱全的完整星盘。字段清单见[数据结构](/zh/docs/guide/data-model)。
 

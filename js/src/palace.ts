@@ -69,6 +69,11 @@ export class Palace {
    * 取自排盘时生效的四化表，自定义四化表（`ChartConfig.mutagens`）会反映在这里，飞星判断随之改变。
    */
   readonly mutagenStarKeys: readonly [string, string, string, string];
+  /**
+   * 本宫天干在四槽之外化出的附加星：四化标识 → 星耀标识列表（`ChartConfig.extraMutagens`）；
+   * 没有附加星时为 undefined。飞星判断把附加星与同类的四槽之星一并计入。
+   */
+  readonly extraMutagenStarKeys: Readonly<Partial<Record<Mutagen, readonly string[]>>> | undefined;
 
   /** 由内核 DTO 构造；挂到星盘上的宫位由星盘构造时回填所属星盘 */
   constructor(data: PalaceData) {
@@ -95,6 +100,7 @@ export class Palace {
     this.decadal = { ...data.decadal, range: [data.decadal.range[0], data.decadal.range[1]] };
     this.ages = [...data.ages];
     this.mutagenStarKeys = [...data.mutagenStarKeys];
+    this.extraMutagenStarKeys = copyExtraMutagens(data.extraMutagenStarKeys);
   }
 
   // ------ 星耀判断 ------
@@ -171,24 +177,20 @@ export class Palace {
 
   // ------ 四化飞星 ------
 
-  /** 本宫天干在指定四化位上的星耀标识，顺序同传入顺序 */
+  /** 本宫天干在指定四化位上的星耀标识，顺序同传入顺序，每一类先四槽之星、后附加星 */
   mutagenStars(mutagens: Mutagen | readonly Mutagen[]): string[] {
-    const list = typeof mutagens === 'string' ? [mutagens] : mutagens;
-    const out: string[] = [];
-    for (const m of list) {
-      const idx = MUTAGEN_ORDER.indexOf(m);
-      const key = idx < 0 ? undefined : this.mutagenStarKeys[idx];
-      if (key !== undefined) out.push(key);
-    }
-    return out;
+    return this.#mutagenGroups(mutagens).flat();
   }
 
-  /** 本宫天干的指定四化星是否 **全部** 落在目标宫位；四化列表为空时为 false */
+  /**
+   * 本宫天干的指定四化是否 **全部** 飞入目标宫位；一类四化化出不止一颗星时，其中任一颗在目标宫即算这一类飞入。
+   * 四化列表为空时为 false
+   */
   fliesTo(target: PalaceTarget, mutagens: Mutagen | readonly Mutagen[]): boolean {
     const to = this.#resolve(target);
     if (to === undefined) return false;
-    const stars = this.mutagenStars(mutagens);
-    return stars.length > 0 && to.has(stars);
+    const groups = this.#mutagenGroups(mutagens);
+    return groups.length > 0 && groups.every((g) => to.hasOneOf(g));
   }
 
   /** 本宫天干的指定四化星是否有 **任意一颗** 落在目标宫位；四化列表为空时为 true */
@@ -207,9 +209,9 @@ export class Palace {
     return stars.length === 0 || to.notHave(stars);
   }
 
-  /** 本宫天干的指定四化星是否 **全部** 落在本宫（自化） */
+  /** 本宫天干的指定四化是否 **全部** 落回本宫（自化）；一类四化有任一颗星在本宫即算 */
   selfMutaged(mutagens: Mutagen | readonly Mutagen[]): boolean {
-    return this.has(this.mutagenStars(mutagens));
+    return this.#mutagenGroups(mutagens).every((g) => this.hasOneOf(g));
   }
 
   /** 本宫是否有指定四化中任一种自化；不传或传空表示检查全部四化 */
@@ -223,14 +225,26 @@ export class Palace {
   }
 
   /**
-   * 本宫天干四化分别飞入哪些宫位：[禄, 权, 科, 忌]，找不到的为 undefined。
+   * 本宫天干四化四槽之星（不含附加星）分别所在的宫位：[禄, 权, 科, 忌]，找不到的为 undefined。
    *
    * @param allPalaces 检索范围；不传取所属星盘的十二宫，脱离星盘且不传时返回空数组
    */
   mutagedPlaces(allPalaces?: readonly Palace[]): (Palace | undefined)[] {
     const palaces = allPalaces ?? palaceCharts.get(this)?.palaces;
     if (palaces === undefined) return [];
-    return this.mutagenStars(MUTAGEN_ORDER).map((key) => palaces.find((p) => p.has([key])));
+    return this.mutagenStarKeys.map((key) => palaces.find((p) => p.has([key])));
+  }
+
+  /** 按传入顺序，每一类四化化出的星（四槽之星与附加星）各成一组；不认识的四化跳过 */
+  #mutagenGroups(mutagens: Mutagen | readonly Mutagen[]): string[][] {
+    const list = typeof mutagens === 'string' ? [mutagens] : mutagens;
+    const out: string[][] = [];
+    for (const m of list) {
+      const idx = MUTAGEN_ORDER.indexOf(m);
+      const key = idx < 0 ? undefined : this.mutagenStarKeys[idx];
+      if (key !== undefined) out.push([key, ...(this.extraMutagenStarKeys?.[m] ?? [])]);
+    }
+    return out;
   }
 
   #resolve(target: PalaceTarget): Palace | undefined {
@@ -249,6 +263,14 @@ export class Palace {
     }
     return chart;
   }
+}
+
+/** 复制 DTO 的附加四化星；DTO 没有该键时为 undefined */
+export function copyExtraMutagens(
+  extra: Partial<Record<Mutagen, readonly string[]>> | undefined,
+): Partial<Record<Mutagen, readonly string[]>> | undefined {
+  if (extra === undefined) return undefined;
+  return Object.fromEntries(Object.entries(extra).map(([m, stars]) => [m, [...stars]]));
 }
 
 /** 空值回退为全部四化，顺序为禄、权、科、忌 */
