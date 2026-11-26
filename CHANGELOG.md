@@ -22,7 +22,8 @@
     Python `topic_palaces`，Go `TopicPalaces`，JavaScript `topicPalaces`，bridge kind `topicPalaces` / `horoscopeTopicPalaces`。
     返回各组位置、每个选中宫的角色、该层宫名与本命宫名、宫干飞化（禄权科忌四条，自化单独标出），以及落在选中宫里的生年四化和
     大限至该层各层的四化（每条标明层级，未起运的大限层为 `childhood`），全部是语言无关标识与宫位索引，供界面高亮、逐步阅读与
-    画飞化连线；与主题文本同一套选宫，`palaces` 的顺序即文本的成段顺序。
+    画飞化连线；与主题文本同一套选宫，`palaces` 的顺序即文本的成段顺序。天干取法标明在结果里：`palaceStemSource`（宫干飞化，现为本命宫干 `natalPalace`）、
+    `scopeMutagenStemSource`（运限四化，现为该层自身的干 `scope`），每宫与每条运限四化另带所用天干的 `stemKey`。
   - 四侧共用用例 `tests/data/topic_palaces_cases.json` 覆盖五个运限层、童限、身宫与来因宫，期望由 Rust 测试按各层宫名另行推得核对；
     文本快照新增流月层婚恋主题。
 

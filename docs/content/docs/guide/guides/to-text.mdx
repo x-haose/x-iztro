@@ -665,7 +665,9 @@ h.topicPalaces('siblings', 'monthly');
 - 主题里的宫名标识（`siblingsPalace`、`wealthPalace`……）按该层的宫名落到盘上：流月兄弟宫就是以流月命宫起排的兄弟宫；
   三方四正以这一宫为本宫起算。
 - `bodyPalace`、`originalPalace` 在任何一层都落在本命那一宫。身宫随出生时辰定、来因宫随生年天干定，都是本命盘上算出的标记；
-  运限只是让十二宫轮流当值、重新命名，不重算这两个标记，也没有「流年身宫」可取。主题取它们是为了看本人，本命的那一宫正是本人。
+  运限只是让十二宫轮流当值、重新命名，不重算这两个标记，也没有「流年身宫」可取。
+- `soulPalace` 是宫名，和其他宫名一样随层走：流年命宫就是这一年的本人。主题说明里的「命宫、身宫看本人」在运限层读作
+  该层命宫看这一段时间的本人、本命身宫看本人的后天趋势。
 - `origin` 层与本命主题文本逐字相同。
 
 文本与本命主题文本同一结构，多了这几处：标题写运限时间；标题下逐层写大限至所选层的命宫位置与四化；每宫段落的标题写该层宫名并在括号里补本命宫名，
@@ -700,10 +702,15 @@ h.topicPalaces('siblings', 'monthly');
 | 字段 | 内容 |
 | --- | --- |
 | `groups` | 主题定义的各组：`kind`（`surround` / `only`）、`key`（主题里的宫位标识）、`target`，`surround` 组另有 `opposite`、`wealth`、`career`（`only` 组为 null）；来因宫不在盘上时不成组 |
-| `palaces` | 选中的宫，每宫一次：`index`、`role`（`target` / `opposite` / `wealth` / `career` / `related`，取首次出现的那一组）、`group`、`nameKey`（该层宫名）、`natalNameKey`、`flying` |
+| `palaces` | 选中的宫，每宫一次：`index`、`role`（`target` / `opposite` / `wealth` / `career` / `related`，取首次出现的那一组）、`group`、`nameKey`（该层宫名）、`natalNameKey`、`stemKey`（飞化所用的干）、`flying` |
 | `palaces[].flying` | 宫干飞化，禄权科忌四条：`mutagenKey`、`starKey`、`palaceIndex`（星不在盘上时为 null）、`selfMutaged`（落回本宫即自化） |
 | `birthMutagens` | 生年四化落在选中宫的：`mutagenKey`、`starKey`、`palaceIndex` |
-| `scopeMutagens` | 大限至所选层各层四化落在选中宫的，每条另有 `scope` 与 `nameKey`（未起运的大限层为 `childhood`）；本命层为空 |
+| `scopeMutagens` | 大限至所选层各层四化落在选中宫的，每条另有 `scope`、`nameKey`（未起运的大限层为 `childhood`）与 `stemKey`（化出它的干）；本命层为空 |
+| `palaceStemSource` | 宫干飞化所用天干的取法，现为 `natalPalace`：本命各宫宫干，运限各层沿用 |
+| `scopeMutagenStemSource` | 运限四化所用天干的取法，现为 `scope`：该层自身的干（大限宫干、流年年干、流月月干……） |
+
+运限层的天干取法各派不一（有的流年重起各宫宫干，有的运限四化取该层命宫的宫干），两个取法字段与每条的 `stemKey`
+标明这一份结果用的是哪一种；取法以后增加时，这两个字段多出新的取值。
 
 宫干飞化对每个选中的宫都给，不只本宫：宫位四化是每一宫的宫干都会产生的，三方四正各宫飞入本宫的禄、忌正是读这一组宫时要看的，
 文本的每宫段落也都写了这一行。
@@ -718,7 +725,7 @@ h.topicPalaces('siblings', 'monthly');
   ],
   "palaces": [
     {
-      "index": 1, "role": "target", "group": 0, "nameKey": "siblingsPalace", "natalNameKey": "spiritPalace",
+      "index": 1, "role": "target", "group": 0, "nameKey": "siblingsPalace", "natalNameKey": "spiritPalace", "stemKey": "guiHeavenly",
       "flying": [
         { "mutagenKey": "sihuaLu", "starKey": "pojunMaj", "palaceIndex": 3, "selfMutaged": false },
         { "mutagenKey": "sihuaQuan", "starKey": "jumenMaj", "palaceIndex": 8, "selfMutaged": false },
@@ -727,11 +734,13 @@ h.topicPalaces('siblings', 'monthly');
       ]
     }
   ],
+  "palaceStemSource": "natalPalace",
+  "scopeMutagenStemSource": "scope",
   "birthMutagens": [{ "mutagenKey": "sihuaQuan", "starKey": "tiantongMaj", "palaceIndex": 2 }],
   "scopeMutagens": [
-    { "scope": "decadal", "nameKey": "decadal", "mutagenKey": "sihuaJi", "starKey": "wenchangMin", "palaceIndex": 7 },
-    { "scope": "yearly", "nameKey": "yearly", "mutagenKey": "sihuaLu", "starKey": "tiantongMaj", "palaceIndex": 2 },
-    { "scope": "monthly", "nameKey": "monthly", "mutagenKey": "sihuaQuan", "starKey": "tanlangMaj", "palaceIndex": 7 }
+    { "scope": "decadal", "nameKey": "decadal", "stemKey": "xinHeavenly", "mutagenKey": "sihuaJi", "starKey": "wenchangMin", "palaceIndex": 7 },
+    { "scope": "yearly", "nameKey": "yearly", "stemKey": "bingHeavenly", "mutagenKey": "sihuaLu", "starKey": "tiantongMaj", "palaceIndex": 2 },
+    { "scope": "monthly", "nameKey": "monthly", "stemKey": "jiHeavenly", "mutagenKey": "sihuaQuan", "starKey": "tanlangMaj", "palaceIndex": 7 }
   ]
 }
 ```

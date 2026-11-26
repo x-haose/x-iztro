@@ -493,6 +493,9 @@ export interface KnowledgeIssue {
   message: string;
 }
 
+/** 四化所用天干的取法 */
+export type StemSource = 'natalPalace' | 'scope';
+
 /** 主题定义里的一组宫落到盘上的位置 */
 export type TopicGroup =
   | {
@@ -545,6 +548,8 @@ export interface TopicPalace {
   nameKey: PalaceName;
   /** 本命宫名标识 */
   natalNameKey: PalaceName;
+  /** 宫干飞化所用天干的标识，取法见 `TopicSelection.palaceStemSource` */
+  stemKey: HeavenlyStem;
   /** 宫干飞化，按禄、权、科、忌四条 */
   flying: Flight[];
 }
@@ -565,6 +570,8 @@ export interface ScopeMutagenLanding extends MutagenLanding {
   scope: Exclude<Scope, 'origin'>;
   /** 层级名标识：大限层未起运时为 `childhood` */
   nameKey: 'decadal' | 'childhood' | 'yearly' | 'monthly' | 'daily' | 'hourly';
+  /** 化出这条四化的天干标识，取法见 `TopicSelection.scopeMutagenStemSource` */
+  stemKey: HeavenlyStem;
 }
 
 /**
@@ -581,6 +588,10 @@ export interface TopicSelection {
   groups: TopicGroup[];
   /** 选中的宫，每宫一次，即主题文本的成段顺序 */
   palaces: TopicPalace[];
+  /** 宫干飞化所用天干的取法：`natalPalace` 为本命各宫宫干，运限各层沿用 */
+  palaceStemSource: StemSource;
+  /** 运限四化所用天干的取法：`scope` 为该层自身的干（大限宫干、流年年干、流月月干……） */
+  scopeMutagenStemSource: StemSource;
   /** 生年四化落在选中宫的，按禄、权、科、忌 */
   birthMutagens: MutagenLanding[];
   /** 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空 */

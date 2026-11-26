@@ -9,11 +9,26 @@
 
 use crate::data::keyed::keyed_enum;
 use crate::data::stars::{MUTAGEN, StarKey};
-use crate::data::types::{HOROSCOPE_SCOPES, HoroscopeName, Mutagen, Palace, Scope};
+use crate::data::types::{HOROSCOPE_SCOPES, HeavenlyStem, HoroscopeName, Mutagen, Palace, Scope};
 use crate::error::IztroError;
 use crate::knowledge::{KnowledgePack, TopicEntry};
 use crate::models::astrolabe::{Astrolabe, PalaceTarget};
 use crate::models::horoscope::{HoroscopeData, HoroscopeItem, HoroscopeRef};
+
+/// 四化所用天干的取法。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum StemSource {
+    /// 本命盘各宫的宫干，运限各层沿用
+    NatalPalace,
+    /// 该运限层自身的干：大限为大限所在宫的宫干，流年为流年年干，流月、流日、流时为该层的月、日、时干
+    Scope,
+}
+
+keyed_enum!(StemSource, "stem source" {
+    NatalPalace => "natalPalace",
+    Scope => "scope",
+});
 
 /// 主题里的一组宫。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,6 +108,8 @@ pub struct TopicPalace {
     pub name: Palace,
     /// 本命宫名
     pub natal_name: Palace,
+    /// 宫干飞化所用的干，取法见 [`TopicSelection::palace_stem_source`]
+    pub stem: HeavenlyStem,
     /// 宫干飞化，按禄、权、科、忌；落宫等于 `index` 即自化
     pub flying: [Flight; 4],
 }
@@ -115,6 +132,8 @@ pub struct ScopeMutagenLanding {
     pub scope: Scope,
     /// 层级名标识：大限层未起运时为 [`HoroscopeName::Childhood`]
     pub name: HoroscopeName,
+    /// 化出这条四化的干，取法见 [`TopicSelection::scope_mutagen_stem_source`]
+    pub stem: HeavenlyStem,
     /// 四化、星与落宫
     pub landing: MutagenLanding,
 }
@@ -131,6 +150,10 @@ pub struct TopicSelection {
     pub groups: Vec<TopicGroup>,
     /// 选中的宫，每宫一次，按组的顺序、组内按本宫、对宫、财帛位、官禄位；即主题文本的成段顺序
     pub palaces: Vec<TopicPalace>,
+    /// 宫干飞化（[`TopicPalace::flying`]）所用天干的取法；恒为 [`StemSource::NatalPalace`]
+    pub palace_stem_source: StemSource,
+    /// 运限四化（[`Self::scope_mutagens`]）所用天干的取法；恒为 [`StemSource::Scope`]
+    pub scope_mutagen_stem_source: StemSource,
     /// 生年四化落在选中宫的，按禄、权、科、忌
     pub birth_mutagens: Vec<MutagenLanding>,
     /// 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
@@ -266,6 +289,7 @@ pub(crate) fn select(
                 group: g,
                 name: layer.map_or(data.name, |item| item.palace_names[index]),
                 natal_name: data.name,
+                stem: data.heavenly_stem,
                 flying,
             });
         }
@@ -302,6 +326,7 @@ pub(crate) fn select(
                 scope_mutagens.push(ScopeMutagenLanding {
                     scope: *scope,
                     name: item.name_key,
+                    stem: item.heavenly_stem,
                     landing: MutagenLanding {
                         mutagen,
                         star: *star,
@@ -317,6 +342,8 @@ pub(crate) fn select(
         scope: layers.last().map_or(Scope::Origin, |(s, _)| *s),
         groups,
         palaces,
+        palace_stem_source: StemSource::NatalPalace,
+        scope_mutagen_stem_source: StemSource::Scope,
         birth_mutagens,
         scope_mutagens,
     })

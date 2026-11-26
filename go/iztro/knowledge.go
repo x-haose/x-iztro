@@ -195,7 +195,8 @@ type TextOptions struct {
 	// Through 为运限文本写到哪一层为止，更细的层级不写：ScopeDecadal 只写大限，ScopeYearly 写大限、
 	// 小限、流年，ScopeMonthly / ScopeDaily / ScopeHourly 依次各多一层；空串写到运限的查询精度
 	// （Horoscope.Precision）。只写到大限时大限段不列风云际会（它要读小限与流年才判得出）。
-	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin、不是运限层级、比查询精度细的取值报 ErrInvalidArgument
+	// 只对 Horoscope.ToTextWith 起作用；ScopeOrigin、不是运限层级、比查询精度细的取值报 ErrInvalidArgument。
+	// 其余 ToTextWith 家族不影响输出，但 ScopeOrigin 与不是层级标识的取值同样报 ErrInvalidArgument
 	Through string
 	// PatternConfig 为格局判定口径，作用于文本的格局节与格局释义；nil 取内核默认
 	PatternConfig *PatternConfig

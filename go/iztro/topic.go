@@ -47,6 +47,8 @@ type TopicPalace struct {
 	NameKey string `json:"nameKey"`
 	// NatalNameKey 为本命宫名标识
 	NatalNameKey string `json:"natalNameKey"`
+	// StemKey 为宫干飞化所用天干的标识，取法见 TopicSelection.PalaceStemSource
+	StemKey string `json:"stemKey"`
 	// Flying 为宫干飞化，按禄、权、科、忌四条
 	Flying []Flight `json:"flying"`
 }
@@ -67,6 +69,8 @@ type ScopeMutagenLanding struct {
 	Scope string `json:"scope"`
 	// NameKey 为层级名标识：大限层未起运时为 "childhood"
 	NameKey string `json:"nameKey"`
+	// StemKey 为化出这条四化的天干标识，取法见 TopicSelection.ScopeMutagenStemSource
+	StemKey string `json:"stemKey"`
 	// MutagenKey 为四化标识
 	MutagenKey string `json:"mutagenKey"`
 	// StarKey 为化出的星耀标识
@@ -85,6 +89,10 @@ type TopicSelection struct {
 	Groups []TopicGroup `json:"groups"`
 	// Palaces 为选中的宫，每宫一次，即主题文本的成段顺序
 	Palaces []TopicPalace `json:"palaces"`
+	// PalaceStemSource 为宫干飞化所用天干的取法："natalPalace"（本命各宫宫干，运限各层沿用）
+	PalaceStemSource string `json:"palaceStemSource"`
+	// ScopeMutagenStemSource 为运限四化所用天干的取法："scope"（该层自身的干：大限宫干、流年年干、流月月干……）
+	ScopeMutagenStemSource string `json:"scopeMutagenStemSource"`
 	// BirthMutagens 为生年四化落在选中宫的，按禄、权、科、忌
 	BirthMutagens []MutagenLanding `json:"birthMutagens"`
 	// ScopeMutagens 为大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
@@ -140,7 +148,8 @@ func (h *Horoscope) TopicPalacesContext(ctx context.Context, topic, scope string
 // TopicToText 生成主题在 scope 层的语义化文本：选宫同 TopicPalaces。标题写运限时间与命盘，标题下逐层写
 // 大限至该层的命宫位置与四化；每宫段落写该层宫名并补本命宫名，宫内星曜照本命，另写各层落在本宫的四化与流耀；
 // 格局取该层视角在选中宫内的命中。ScopeOrigin 与 Astrolabe.TopicToText 逐字相同。
-// 主题定义与释义取自 opts.Knowledge，零值报 ErrInvalidArgument；opts.Through 不起作用。
+// 主题定义与释义取自 opts.Knowledge，零值报 ErrInvalidArgument；opts.Through 不影响输出，
+// 但取值照样校验：ScopeOrigin 或不是层级标识报 ErrInvalidArgument。
 func (h *Horoscope) TopicToText(topic, scope string, opts TextOptions) (string, error) {
 	return h.TopicToTextContext(context.Background(), topic, scope, opts)
 }

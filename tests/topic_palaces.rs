@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 use x_iztro::data::stars::MUTAGEN;
 use x_iztro::{
     Astrolabe, Config, Gender, HoroscopeRef, KnowledgePack, Language, Palace, PalaceTarget, Scope,
-    TextDetail, TextOptions, TopicGroupKind, TopicSelection, by_solar,
+    StemSource, TextDetail, TextOptions, TopicGroupKind, TopicSelection, by_solar,
 };
 
 const CASES: &str = concat!(
@@ -145,6 +145,7 @@ fn verify_by_hand(case: &Value, chart: &Astrolabe, pack: &KnowledgePack, got: &T
             "{name}: 本命宫名"
         );
         let stem = chart.palaces[p.index].heavenly_stem;
+        assert_eq!(p.stem, stem, "{name}: 宫干飞化取本命宫干");
         for (k, f) in p.flying.iter().enumerate() {
             let star = chart.config.mutagens_of(stem)[k];
             assert_eq!((f.mutagen, f.star), (MUTAGEN[k], star), "{name}: 宫干四化");
@@ -190,7 +191,7 @@ fn verify_by_hand(case: &Value, chart: &Astrolabe, pack: &KnowledgePack, got: &T
                 if let Some(i) = chart.star(*star).map(|x| x.palace().index)
                     && want_order.contains(&i)
                 {
-                    want_scope.push((s, item.name_key, m, *star, i));
+                    want_scope.push((s, item.name_key, item.heavenly_stem, m, *star, i));
                 }
             }
             if s == scope {
@@ -205,6 +206,7 @@ fn verify_by_hand(case: &Value, chart: &Astrolabe, pack: &KnowledgePack, got: &T
             (
                 m.scope,
                 m.name,
+                m.stem,
                 m.landing.mutagen,
                 m.landing.star,
                 m.landing.palace,
@@ -212,6 +214,11 @@ fn verify_by_hand(case: &Value, chart: &Astrolabe, pack: &KnowledgePack, got: &T
         })
         .collect();
     assert_eq!(got_scope, want_scope, "{name}: 运限四化");
+    assert_eq!(
+        (got.palace_stem_source, got.scope_mutagen_stem_source),
+        (StemSource::NatalPalace, StemSource::Scope),
+        "{name}: 天干取法"
+    );
 }
 
 #[test]

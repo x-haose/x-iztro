@@ -59,8 +59,8 @@ pub use astro::reverse::{
     reverse_chart, solar_dates_by_bazi,
 };
 pub use astro::topic::{
-    Flight, MutagenLanding, ScopeMutagenLanding, TopicGroup, TopicGroupKind, TopicPalace,
-    TopicRole, TopicSelection,
+    Flight, MutagenLanding, ScopeMutagenLanding, StemSource, TopicGroup, TopicGroupKind,
+    TopicPalace, TopicRole, TopicSelection,
 };
 pub use data::stars::StarKey;
 pub use data::types::*;

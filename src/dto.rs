@@ -1014,6 +1014,10 @@ pub struct TopicSelectionDto {
     pub groups: Vec<TopicGroupDto>,
     /// 选中的宫，每宫一次，即主题文本的成段顺序
     pub palaces: Vec<TopicPalaceDto>,
+    /// 宫干飞化所用天干的取法：`natalPalace`（本命各宫宫干，运限各层沿用）
+    pub palace_stem_source: String,
+    /// 运限四化所用天干的取法：`scope`（该层自身的干：大限宫干、流年年干、流月月干……）
+    pub scope_mutagen_stem_source: String,
     /// 生年四化落在选中宫的，按禄、权、科、忌
     pub birth_mutagens: Vec<MutagenLandingDto>,
     /// 大限至所选层各层四化落在选中宫的，按层级再按禄、权、科、忌；本命层为空
@@ -1052,6 +1056,8 @@ pub struct TopicPalaceDto {
     pub name_key: String,
     /// 本命宫名标识
     pub natal_name_key: String,
+    /// 宫干飞化所用天干的标识
+    pub stem_key: String,
     /// 宫干飞化，按禄、权、科、忌四条
     pub flying: Vec<FlightDto>,
 }
@@ -1090,6 +1096,8 @@ pub struct ScopeMutagenLandingDto {
     pub scope: String,
     /// 层级名标识：大限层未起运时为 `childhood`
     pub name_key: String,
+    /// 化出这条四化的天干标识
+    pub stem_key: String,
     /// 四化标识
     pub mutagen_key: String,
     /// 化出的星耀标识
@@ -1130,6 +1138,7 @@ impl crate::TopicSelection {
                     group: p.group,
                     name_key: p.name.as_key().to_string(),
                     natal_name_key: p.natal_name.as_key().to_string(),
+                    stem_key: p.stem.as_key().to_string(),
                     flying: p
                         .flying
                         .iter()
@@ -1142,6 +1151,8 @@ impl crate::TopicSelection {
                         .collect(),
                 })
                 .collect(),
+            palace_stem_source: self.palace_stem_source.as_key().to_string(),
+            scope_mutagen_stem_source: self.scope_mutagen_stem_source.as_key().to_string(),
             birth_mutagens: self.birth_mutagens.iter().map(landing).collect(),
             scope_mutagens: self
                 .scope_mutagens
@@ -1151,6 +1162,7 @@ impl crate::TopicSelection {
                     ScopeMutagenLandingDto {
                         scope: s.scope.as_key().to_string(),
                         name_key: s.name.as_key().to_string(),
+                        stem_key: s.stem.as_key().to_string(),
                         mutagen_key: l.mutagen_key,
                         star_key: l.star_key,
                         palace_index: l.palace_index,

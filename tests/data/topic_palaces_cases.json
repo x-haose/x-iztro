@@ -42,6 +42,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -74,7 +75,8 @@
             "index": 10,
             "nameKey": "siblingsPalace",
             "natalNameKey": "siblingsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -107,7 +109,8 @@
             "index": 4,
             "nameKey": "friendsPalace",
             "natalNameKey": "friendsPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -140,7 +143,8 @@
             "index": 6,
             "nameKey": "healthPalace",
             "natalNameKey": "healthPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -173,7 +177,8 @@
             "index": 2,
             "nameKey": "propertyPalace",
             "natalNameKey": "propertyPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -206,10 +211,12 @@
             "index": 11,
             "nameKey": "soulPalace",
             "natalNameKey": "soulPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           }
         ],
         "scope": "origin",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [],
         "topic": "siblings"
       },
@@ -258,6 +265,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -290,7 +298,8 @@
             "index": 10,
             "nameKey": "siblingsPalace",
             "natalNameKey": "siblingsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -323,7 +332,8 @@
             "index": 4,
             "nameKey": "friendsPalace",
             "natalNameKey": "friendsPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -356,7 +366,8 @@
             "index": 6,
             "nameKey": "healthPalace",
             "natalNameKey": "healthPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -389,7 +400,8 @@
             "index": 2,
             "nameKey": "propertyPalace",
             "natalNameKey": "propertyPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -422,10 +434,12 @@
             "index": 11,
             "nameKey": "soulPalace",
             "natalNameKey": "soulPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           }
         ],
         "scope": "origin",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [],
         "topic": "siblings"
       },
@@ -474,6 +488,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -506,7 +521,8 @@
             "index": 8,
             "nameKey": "siblingsPalace",
             "natalNameKey": "childrenPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -539,7 +555,8 @@
             "index": 2,
             "nameKey": "friendsPalace",
             "natalNameKey": "propertyPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -572,7 +589,8 @@
             "index": 4,
             "nameKey": "healthPalace",
             "natalNameKey": "friendsPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -605,7 +623,8 @@
             "index": 0,
             "nameKey": "propertyPalace",
             "natalNameKey": "parentsPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -638,24 +657,28 @@
             "index": 9,
             "nameKey": "soulPalace",
             "natalNameKey": "spousePalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "xinHeavenly"
           }
         ],
         "scope": "decadal",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "decadal",
             "palaceIndex": 8,
             "scope": "decadal",
-            "starKey": "jumenMaj"
+            "starKey": "jumenMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 4,
             "scope": "decadal",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "xinHeavenly"
           }
         ],
         "topic": "siblings"
@@ -694,6 +717,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -726,7 +750,8 @@
             "index": 3,
             "nameKey": "siblingsPalace",
             "natalNameKey": "careerPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "yiHeavenly"
           },
           {
             "flying": [
@@ -759,7 +784,8 @@
             "index": 9,
             "nameKey": "friendsPalace",
             "natalNameKey": "spousePalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "xinHeavenly"
           },
           {
             "flying": [
@@ -792,7 +818,8 @@
             "index": 11,
             "nameKey": "healthPalace",
             "natalNameKey": "soulPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -825,7 +852,8 @@
             "index": 7,
             "nameKey": "propertyPalace",
             "natalNameKey": "wealthPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -858,45 +886,52 @@
             "index": 4,
             "nameKey": "soulPalace",
             "natalNameKey": "friendsPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "bingHeavenly"
           }
         ],
         "scope": "yearly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 4,
             "scope": "decadal",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "decadal",
             "palaceIndex": 3,
             "scope": "decadal",
-            "starKey": "wenquMin"
+            "starKey": "wenquMin",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "decadal",
             "palaceIndex": 7,
             "scope": "decadal",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "yearly",
             "palaceIndex": 7,
             "scope": "yearly",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "yearly",
             "palaceIndex": 11,
             "scope": "yearly",
-            "starKey": "lianzhenMaj"
+            "starKey": "lianzhenMaj",
+            "stemKey": "bingHeavenly"
           }
         ],
         "topic": "siblings"
@@ -941,6 +976,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -973,7 +1009,8 @@
             "index": 1,
             "nameKey": "siblingsPalace",
             "natalNameKey": "spiritPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -1006,7 +1043,8 @@
             "index": 7,
             "nameKey": "friendsPalace",
             "natalNameKey": "wealthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -1039,7 +1077,8 @@
             "index": 9,
             "nameKey": "healthPalace",
             "natalNameKey": "spousePalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "xinHeavenly"
           },
           {
             "flying": [
@@ -1072,7 +1111,8 @@
             "index": 5,
             "nameKey": "propertyPalace",
             "natalNameKey": "surfacePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "dingHeavenly"
           },
           {
             "flying": [
@@ -1105,38 +1145,44 @@
             "index": 2,
             "nameKey": "soulPalace",
             "natalNameKey": "propertyPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "jiaHeavenly"
           }
         ],
         "scope": "monthly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "decadal",
             "palaceIndex": 7,
             "scope": "decadal",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "yearly",
             "palaceIndex": 2,
             "scope": "yearly",
-            "starKey": "tiantongMaj"
+            "starKey": "tiantongMaj",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "yearly",
             "palaceIndex": 7,
             "scope": "yearly",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "monthly",
             "palaceIndex": 7,
             "scope": "monthly",
-            "starKey": "tanlangMaj"
+            "starKey": "tanlangMaj",
+            "stemKey": "jiHeavenly"
           }
         ],
         "topic": "siblings"
@@ -1212,6 +1258,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -1244,7 +1291,8 @@
             "index": 0,
             "nameKey": "spousePalace",
             "natalNameKey": "parentsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -1277,7 +1325,8 @@
             "index": 6,
             "nameKey": "careerPalace",
             "natalNameKey": "healthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -1310,7 +1359,8 @@
             "index": 8,
             "nameKey": "surfacePalace",
             "natalNameKey": "childrenPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -1343,7 +1393,8 @@
             "index": 4,
             "nameKey": "spiritPalace",
             "natalNameKey": "friendsPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -1376,7 +1427,8 @@
             "index": 2,
             "nameKey": "soulPalace",
             "natalNameKey": "propertyPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -1409,7 +1461,8 @@
             "index": 1,
             "nameKey": "siblingsPalace",
             "natalNameKey": "spiritPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -1442,45 +1495,52 @@
             "index": 11,
             "nameKey": "childrenPalace",
             "natalNameKey": "soulPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           }
         ],
         "scope": "monthly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "decadal",
             "palaceIndex": 8,
             "scope": "decadal",
-            "starKey": "jumenMaj"
+            "starKey": "jumenMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 4,
             "scope": "decadal",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "yearly",
             "palaceIndex": 2,
             "scope": "yearly",
-            "starKey": "tiantongMaj"
+            "starKey": "tiantongMaj",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "yearly",
             "palaceIndex": 6,
             "scope": "yearly",
-            "starKey": "tianjiMaj"
+            "starKey": "tianjiMaj",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "yearly",
             "palaceIndex": 11,
             "scope": "yearly",
-            "starKey": "lianzhenMaj"
+            "starKey": "lianzhenMaj",
+            "stemKey": "bingHeavenly"
           }
         ],
         "topic": "romance"
@@ -1543,6 +1603,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -1575,7 +1636,8 @@
             "index": 4,
             "nameKey": "soulPalace",
             "natalNameKey": "friendsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -1608,7 +1670,8 @@
             "index": 10,
             "nameKey": "surfacePalace",
             "natalNameKey": "siblingsPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -1641,7 +1704,8 @@
             "index": 0,
             "nameKey": "wealthPalace",
             "natalNameKey": "parentsPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -1674,7 +1738,8 @@
             "index": 8,
             "nameKey": "careerPalace",
             "natalNameKey": "childrenPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -1707,7 +1772,8 @@
             "index": 1,
             "nameKey": "childrenPalace",
             "natalNameKey": "spiritPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -1740,31 +1806,36 @@
             "index": 6,
             "nameKey": "spiritPalace",
             "natalNameKey": "healthPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "wuHeavenly"
           }
         ],
         "scope": "yearly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "decadal",
             "palaceIndex": 8,
             "scope": "decadal",
-            "starKey": "jumenMaj"
+            "starKey": "jumenMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 4,
             "scope": "decadal",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "yearly",
             "palaceIndex": 6,
             "scope": "yearly",
-            "starKey": "tianjiMaj"
+            "starKey": "tianjiMaj",
+            "stemKey": "bingHeavenly"
           }
         ],
         "topic": "overall"
@@ -1803,6 +1874,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -1835,7 +1907,8 @@
             "index": 10,
             "nameKey": "wealthPalace",
             "natalNameKey": "surfacePalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -1868,7 +1941,8 @@
             "index": 4,
             "nameKey": "spiritPalace",
             "natalNameKey": "soulPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -1901,7 +1975,8 @@
             "index": 6,
             "nameKey": "careerPalace",
             "natalNameKey": "spiritPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -1934,7 +2009,8 @@
             "index": 2,
             "nameKey": "soulPalace",
             "natalNameKey": "spousePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -1967,10 +2043,12 @@
             "index": 5,
             "nameKey": "propertyPalace",
             "natalNameKey": "parentsPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "guiHeavenly"
           }
         ],
         "scope": "decadal",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [],
         "topic": "wealth"
       },
@@ -2006,6 +2084,7 @@
             "wealth": 2
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -2038,7 +2117,8 @@
             "index": 6,
             "nameKey": "careerPalace",
             "natalNameKey": "spiritPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -2071,7 +2151,8 @@
             "index": 0,
             "nameKey": "spousePalace",
             "natalNameKey": "wealthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -2104,7 +2185,8 @@
             "index": 2,
             "nameKey": "soulPalace",
             "natalNameKey": "spousePalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -2137,31 +2219,36 @@
             "index": 10,
             "nameKey": "wealthPalace",
             "natalNameKey": "surfacePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "wuHeavenly"
           }
         ],
         "scope": "yearly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 0,
             "scope": "decadal",
-            "starKey": "wuquMaj"
+            "starKey": "wuquMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "yearly",
             "palaceIndex": 6,
             "scope": "yearly",
-            "starKey": "pojunMaj"
+            "starKey": "pojunMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "yearly",
             "palaceIndex": 0,
             "scope": "yearly",
-            "starKey": "wuquMaj"
+            "starKey": "wuquMaj",
+            "stemKey": "jiaHeavenly"
           }
         ],
         "topic": "career"
@@ -2214,6 +2301,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -2246,7 +2334,8 @@
             "index": 10,
             "nameKey": "parentsPalace",
             "natalNameKey": "surfacePalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -2279,7 +2368,8 @@
             "index": 4,
             "nameKey": "healthPalace",
             "natalNameKey": "soulPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -2312,7 +2402,8 @@
             "index": 6,
             "nameKey": "childrenPalace",
             "natalNameKey": "spiritPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -2345,7 +2436,8 @@
             "index": 2,
             "nameKey": "friendsPalace",
             "natalNameKey": "spousePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -2378,7 +2470,8 @@
             "index": 8,
             "nameKey": "siblingsPalace",
             "natalNameKey": "careerPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -2411,38 +2504,44 @@
             "index": 9,
             "nameKey": "soulPalace",
             "natalNameKey": "friendsPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "dingHeavenly"
           }
         ],
         "scope": "monthly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "decadal",
             "palaceIndex": 9,
             "scope": "decadal",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "yearly",
             "palaceIndex": 8,
             "scope": "yearly",
-            "starKey": "lianzhenMaj"
+            "starKey": "lianzhenMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "yearly",
             "palaceIndex": 6,
             "scope": "yearly",
-            "starKey": "pojunMaj"
+            "starKey": "pojunMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "monthly",
             "palaceIndex": 9,
             "scope": "monthly",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "dingHeavenly"
           }
         ],
         "topic": "parents"
@@ -2497,6 +2596,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -2529,7 +2629,8 @@
             "index": 5,
             "nameKey": "healthPalace",
             "natalNameKey": "parentsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -2562,7 +2663,8 @@
             "index": 11,
             "nameKey": "parentsPalace",
             "natalNameKey": "healthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -2595,7 +2697,8 @@
             "index": 1,
             "nameKey": "propertyPalace",
             "natalNameKey": "childrenPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -2628,7 +2731,8 @@
             "index": 9,
             "nameKey": "siblingsPalace",
             "natalNameKey": "friendsPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "dingHeavenly"
           },
           {
             "flying": [
@@ -2661,80 +2765,92 @@
             "index": 10,
             "nameKey": "soulPalace",
             "natalNameKey": "surfacePalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "wuHeavenly"
           }
         ],
         "scope": "daily",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "decadal",
             "palaceIndex": 1,
             "scope": "decadal",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "decadal",
             "palaceIndex": 9,
             "scope": "decadal",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "decadal",
             "palaceIndex": 11,
             "scope": "decadal",
-            "starKey": "tiantongMaj"
+            "starKey": "tiantongMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "yearly",
             "palaceIndex": 1,
             "scope": "yearly",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "monthly",
             "palaceIndex": 9,
             "scope": "monthly",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "dingHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "monthly",
             "palaceIndex": 11,
             "scope": "monthly",
-            "starKey": "tiantongMaj"
+            "starKey": "tiantongMaj",
+            "stemKey": "dingHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "monthly",
             "palaceIndex": 11,
             "scope": "monthly",
-            "starKey": "jumenMaj"
+            "starKey": "jumenMaj",
+            "stemKey": "dingHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "daily",
             "palaceIndex": 1,
             "scope": "daily",
-            "starKey": "taiyangMaj"
+            "starKey": "taiyangMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "daily",
             "palaceIndex": 9,
             "scope": "daily",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "daily",
             "palaceIndex": 11,
             "scope": "daily",
-            "starKey": "tiantongMaj"
+            "starKey": "tiantongMaj",
+            "stemKey": "gengHeavenly"
           }
         ],
         "topic": "health"
@@ -2795,6 +2911,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -2827,7 +2944,8 @@
             "index": 8,
             "nameKey": "spousePalace",
             "natalNameKey": "careerPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -2860,7 +2978,8 @@
             "index": 2,
             "nameKey": "careerPalace",
             "natalNameKey": "spousePalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -2893,7 +3012,8 @@
             "index": 4,
             "nameKey": "surfacePalace",
             "natalNameKey": "soulPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -2926,7 +3046,8 @@
             "index": 0,
             "nameKey": "spiritPalace",
             "natalNameKey": "wealthPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -2959,7 +3080,8 @@
             "index": 10,
             "nameKey": "soulPalace",
             "natalNameKey": "surfacePalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -2992,45 +3114,52 @@
             "index": 7,
             "nameKey": "childrenPalace",
             "natalNameKey": "propertyPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "yiHeavenly"
           }
         ],
         "scope": "hourly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "decadal",
             "palaceIndex": 0,
             "scope": "decadal",
-            "starKey": "wuquMaj"
+            "starKey": "wuquMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "yearly",
             "palaceIndex": 8,
             "scope": "yearly",
-            "starKey": "lianzhenMaj"
+            "starKey": "lianzhenMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "yearly",
             "palaceIndex": 0,
             "scope": "yearly",
-            "starKey": "wuquMaj"
+            "starKey": "wuquMaj",
+            "stemKey": "jiaHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "daily",
             "palaceIndex": 0,
             "scope": "daily",
-            "starKey": "wuquMaj"
+            "starKey": "wuquMaj",
+            "stemKey": "gengHeavenly"
           },
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "hourly",
             "palaceIndex": 8,
             "scope": "hourly",
-            "starKey": "lianzhenMaj"
+            "starKey": "lianzhenMaj",
+            "stemKey": "bingHeavenly"
           }
         ],
         "topic": "romance"
@@ -3083,6 +3212,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -3115,7 +3245,8 @@
             "index": 10,
             "nameKey": "parentsPalace",
             "natalNameKey": "parentsPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "wuHeavenly"
           },
           {
             "flying": [
@@ -3148,7 +3279,8 @@
             "index": 4,
             "nameKey": "healthPalace",
             "natalNameKey": "healthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "renHeavenly"
           },
           {
             "flying": [
@@ -3181,7 +3313,8 @@
             "index": 6,
             "nameKey": "childrenPalace",
             "natalNameKey": "childrenPalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "jiaHeavenly"
           },
           {
             "flying": [
@@ -3214,7 +3347,8 @@
             "index": 2,
             "nameKey": "friendsPalace",
             "natalNameKey": "friendsPalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "gengHeavenly"
           },
           {
             "flying": [
@@ -3247,7 +3381,8 @@
             "index": 8,
             "nameKey": "siblingsPalace",
             "natalNameKey": "siblingsPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "bingHeavenly"
           },
           {
             "flying": [
@@ -3280,17 +3415,20 @@
             "index": 9,
             "nameKey": "soulPalace",
             "natalNameKey": "soulPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "dingHeavenly"
           }
         ],
         "scope": "decadal",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaLu",
             "nameKey": "childhood",
             "palaceIndex": 9,
             "scope": "decadal",
-            "starKey": "taiyinMaj"
+            "starKey": "taiyinMaj",
+            "stemKey": "dingHeavenly"
           }
         ],
         "topic": "parents"
@@ -3337,6 +3475,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -3369,7 +3508,8 @@
             "index": 1,
             "nameKey": "spiritPalace",
             "natalNameKey": "spiritPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -3402,7 +3542,8 @@
             "index": 7,
             "nameKey": "wealthPalace",
             "natalNameKey": "wealthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -3435,7 +3576,8 @@
             "index": 9,
             "nameKey": "spousePalace",
             "natalNameKey": "spousePalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "xinHeavenly"
           },
           {
             "flying": [
@@ -3468,10 +3610,12 @@
             "index": 5,
             "nameKey": "surfacePalace",
             "natalNameKey": "surfacePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "dingHeavenly"
           }
         ],
         "scope": "origin",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [],
         "topic": "marks"
       },
@@ -3540,6 +3684,7 @@
             "wealth": null
           }
         ],
+        "palaceStemSource": "natalPalace",
         "palaces": [
           {
             "flying": [
@@ -3572,7 +3717,8 @@
             "index": 1,
             "nameKey": "childrenPalace",
             "natalNameKey": "spiritPalace",
-            "role": "target"
+            "role": "target",
+            "stemKey": "guiHeavenly"
           },
           {
             "flying": [
@@ -3605,7 +3751,8 @@
             "index": 7,
             "nameKey": "propertyPalace",
             "natalNameKey": "wealthPalace",
-            "role": "opposite"
+            "role": "opposite",
+            "stemKey": "jiHeavenly"
           },
           {
             "flying": [
@@ -3638,7 +3785,8 @@
             "index": 9,
             "nameKey": "friendsPalace",
             "natalNameKey": "spousePalace",
-            "role": "wealth"
+            "role": "wealth",
+            "stemKey": "xinHeavenly"
           },
           {
             "flying": [
@@ -3671,7 +3819,8 @@
             "index": 5,
             "nameKey": "parentsPalace",
             "natalNameKey": "surfacePalace",
-            "role": "career"
+            "role": "career",
+            "stemKey": "dingHeavenly"
           },
           {
             "flying": [
@@ -3704,31 +3853,36 @@
             "index": 6,
             "nameKey": "spiritPalace",
             "natalNameKey": "healthPalace",
-            "role": "related"
+            "role": "related",
+            "stemKey": "wuHeavenly"
           }
         ],
         "scope": "yearly",
+        "scopeMutagenStemSource": "scope",
         "scopeMutagens": [
           {
             "mutagenKey": "sihuaJi",
             "nameKey": "decadal",
             "palaceIndex": 7,
             "scope": "decadal",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "xinHeavenly"
           },
           {
             "mutagenKey": "sihuaQuan",
             "nameKey": "yearly",
             "palaceIndex": 6,
             "scope": "yearly",
-            "starKey": "tianjiMaj"
+            "starKey": "tianjiMaj",
+            "stemKey": "bingHeavenly"
           },
           {
             "mutagenKey": "sihuaKe",
             "nameKey": "yearly",
             "palaceIndex": 7,
             "scope": "yearly",
-            "starKey": "wenchangMin"
+            "starKey": "wenchangMin",
+            "stemKey": "bingHeavenly"
           }
         ],
         "topic": "marks"
