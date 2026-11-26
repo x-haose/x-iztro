@@ -35,7 +35,7 @@ cargo test --release --test full_domain -- --ignored    # 1-9999 年每天排盘
 # Python 绑定
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
-# Go 用 wasm
+# Go 用 wasm（刷新 go/iztro 内嵌产物用 make check-go：带路径重映射，产物不含本机路径）
 cargo build --release --target wasm32-wasip1
 
 # JS 绑定（js/）：编 wasm32-unknown-unknown 内核、tsc、类型检查测试、node:test、publint + attw
@@ -214,7 +214,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
 ### Go 绑定
 - `go/iztro` 内嵌 `x_iztro.wasm`（wasm32-wasip1），经纯 Go 的 wazero 运行时调用，无 cgo
 - 内存协定见 `src/wasm.rs`：alloc/free + (ptr<<32)|len 打包返回
-- 更新 wasm：`cargo build --release --target wasm32-wasip1 && cp target/wasm32-wasip1/release/x_iztro.wasm go/iztro/`
+- 更新 wasm：`make check-go`（编译时把工具链、cargo 缓存与仓库目录重映射成固定前缀，内嵌产物不带本机路径；
+  手动编译须带同一组 `RUSTFLAGS`，见 Makefile 的 `WASIP1_RUSTFLAGS`）
   **改了 `src/` 就要重跑这步再跑 Go 测试**——Go 侧读的是内嵌的那份，不重建就是拿旧内核测新绑定，
   且症状是静默的：新增 kind 报 unknown、新增入参被无视后返回一份看着正常的结果
 - `examples/go/go.mod` 用 `replace` 指向 `../../go/iztro`；金标测试 `cd go/iztro && go test`

@@ -41,9 +41,14 @@ jobs:
       - name: MSRV 编译检查
         run: cargo check --all-targets
 
+  # amd64 与 arm64 各跑一次：Go 绑定经 wazero 的编译器执行 wasm，两种架构的后端各自生成机器码，
+  # arm64 上的误编译 amd64 测不出来。公开仓库用 GitHub 托管的标准 runner 不计费
   go:
     needs: rust
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
