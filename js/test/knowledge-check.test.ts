@@ -98,6 +98,23 @@ for (const c of PARSE_CASES) {
   });
 }
 
+const TOPIC_ORDER_CASES = (
+  JSON.parse(readFileSync(new URL('../../tests/data/knowledge_check_cases.json', import.meta.url), 'utf8')) as {
+    topicOrderCases: { name: string; packs: object[]; topics: string[] }[];
+  }
+).topicOrderCases;
+
+for (const c of TOPIC_ORDER_CASES) {
+  test(`主题顺序: ${c.name}`, () => {
+    const [base, ...overlays] = c.packs;
+    const pack = KnowledgePack.fromObject(base!).merged(...overlays);
+    assert.deepEqual(
+      pack.topics().map((t) => t.slug),
+      c.topics,
+    );
+  });
+}
+
 test('fromObject 持有规范化后的副本', () => {
   const raw = { schema: 1, id: 't', version: '1', language: 'zh-CN', extra: 1, stars: { ziweiMaj: { intro: 'a' } } };
   const pack = KnowledgePack.fromObject(raw);

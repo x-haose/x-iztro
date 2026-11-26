@@ -348,7 +348,7 @@ Details: [documentation](https://x-iztro.x-haose.com/en/docs/guide/guides/revers
 The core only judges facts; how to *interpret* them differs by school (a
 lineage of tradition). So reading texts and school-specific star attributes
 live in a swappable JSON pack, not in the code. A default pack ships inside —
-all 162 stars, 64 patterns, 12 palaces, 4 transformations, 50 glossary entries,
+all 162 stars, 64 patterns, 12 palaces, 4 transformations, 51 glossary entries,
 the longer ones with summaries, readings adapted from
 [iztro-docs](https://docs.iztro.com) (MIT, Sylar Long) — and any entry can be
 replaced with an overlay pack. It doubles as a ready-made RAG

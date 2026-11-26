@@ -1779,7 +1779,12 @@ pub fn topic_to_text(
         )
     })?;
     let entry = notes.pack.topic(topic).ok_or_else(|| {
-        let known: Vec<&str> = notes.pack.topics.keys().map(String::as_str).collect();
+        let known: Vec<&str> = notes
+            .pack
+            .topics_in_order()
+            .into_iter()
+            .map(|(slug, _)| slug)
+            .collect();
         IztroError::InvalidArgument(format!(
             "unknown topic '{topic}': the pack defines {}",
             if known.is_empty() {

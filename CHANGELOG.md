@@ -7,6 +7,25 @@
 
 ## [Unreleased]
 
+### 新增
+
+- **知识包主题的显示顺序**：主题条目新增可选字段 `order`（0 至 4294967295 的整数）。列出全部主题时按 `order` 升序，
+  没有 `order` 的排在最后，相同或都没有时按 slug 的字节序。此前格式里没有主题顺序，各语言按 slug 字母序列出，
+  应用只能自己维护一份排序表。键在 JSON 里的书写顺序不算数：JSON 对象成员无序，内核解析与合并、Go 的 map、
+  JavaScript 对纯数字键的属性排序都会重排。`order` 是普通标量字段，覆盖包可以单独改某个主题的位置，或给新增的主题插位。
+  Rust 新增 `KnowledgePack::topics_in_order`，Go 新增 `TopicEntry.Order`（`*uint32`）与 `KnowledgePack.TopicSlugs`，
+  Python、JavaScript 的 `TopicEntry` 新增 `order`；`order` 不是 0 至 4294967295 的整数时校验报 `wrong_type`（error）。
+  默认包 13 个主题按总论、性格、事业、财运、婚恋、健康、父母、子女、兄弟、交友、田宅、迁移、精神以 10 为步长编号。
+- **默认包术语「亮度」**（`concepts.liang-du`）：亮度概念的由来、四级（庙旺利陷）与七级（庙旺得利平不陷）两种分法、
+  庙最亮陷最暗，以及亮度如何影响星曜的表现。取自同一锁定 commit 的 iztro-docs《学习》星曜篇「星曜的亮度」一节，
+  按默认包的口吻改写，`source.adapted` 已注明；该节的亮度表由内核排盘给出，不收。默认包术语由 50 条增至 51 条。
+
+### 变更
+
+- Python、JavaScript 的 `KnowledgePack.topics()` 按上述显示顺序返回，此前按 slug 字母序；没有写 `order` 的包结果不变。
+  默认包因此按总论、性格、事业……的顺序返回。
+- Rust 的 `TopicEntry` 多一个公有字段 `order`：用结构体字面量构造它的代码需补上该字段或 `..Default::default()`。
+
 ## [0.9.0] - 2026-11-23
 
 ### 变更（breaking）

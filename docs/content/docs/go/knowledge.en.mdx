@@ -80,14 +80,14 @@ and `Intro`.
 
 ### TopicEntry
 
-A reading topic: `Title`, `Surround` (`[]string`, palace keys taken with their trine & opposite),
+A reading topic: `Title`, `Order` (`*uint32`, display order, nil when not written; see [TopicSlugs](#star--pattern--palace--mutagen--concept--topic--topicslugs)), `Surround` (`[]string`, palace keys taken with their trine & opposite),
 `Palaces` (`[]string`, palace keys taken on their own, `bodyPalace` / `originalPalace` allowed),
 `Intro`, `Summary`; [`TopicToText`](/en/docs/go/astrolabe#topictotext) selects palaces by it.
 
 <Callout type="warn" title="Absent means the zero value">
 The Go side does not use pointers to separate "not written" from "written as empty". An absent field
 is the empty string or nil, so compare against the empty string to tell whether an entry carries
-text.
+text. The one pointer is `TopicEntry.Order`: 0 is a valid order, only nil means not written.
 </Callout>
 
 ---
@@ -302,9 +302,10 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept / Topic
+## Star / Pattern / Palace / Mutagen / Concept / Topic / TopicSlugs
 
-**Purpose**　Look up an entry by language-independent key (glossary entries and topics by slug).
+**Purpose**　Look up an entry by language-independent key (glossary entries and topics by slug); list
+every topic in display order.
 
 **Signature**
 
@@ -315,10 +316,14 @@ func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
 func (p *KnowledgePack) Topic(slug string) *TopicEntry
+func (p *KnowledgePack) TopicSlugs() []string
 ```
 
 **Returns**　`nil` when the pack has no such entry, and `nil` for a nil receiver rather than a
 panic. The pointer is to a copy of the entry, so writing through it does not change the pack.
+`TopicSlugs` returns every topic's slug in display order: ascending `Order`, nil `Order` last, ties
+and nil ones by slug. `range pack.Topics` visits them in random order; use `TopicSlugs` for topic
+buttons and menus.
 
 **Example**
 

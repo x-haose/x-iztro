@@ -243,6 +243,9 @@ pub struct TopicEntry {
     /// 显示名（如「婚恋」）
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    /// 显示顺序，排序规则见 [`KnowledgePack::topics_in_order`]；`None` 排在全部有值的主题之后
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<u32>,
     /// 连同各自三方四正一起取的宫位，宫位标识（`Palace::as_key`），按出现顺序渲染
     #[serde(skip_serializing_if = "Option::is_none")]
     pub surround: Option<Vec<String>>,
@@ -578,6 +581,16 @@ impl KnowledgePack {
     /// 主题条目。
     pub fn topic(&self, slug: &str) -> Option<&TopicEntry> {
         self.topics.get(slug)
+    }
+
+    /// 全部主题，按显示顺序：`order` 升序，没有 `order` 的排在最后；`order` 相同或都没有时按 slug 的字节序。
+    /// 与键在 JSON 里的书写顺序无关。
+    pub fn topics_in_order(&self) -> Vec<(&str, &TopicEntry)> {
+        // BTreeMap 按 slug 字节序迭代，稳定排序保留它作为并列时的次序
+        let mut out: Vec<(&str, &TopicEntry)> =
+            self.topics.iter().map(|(k, e)| (k.as_str(), e)).collect();
+        out.sort_by_key(|(_, e)| (e.order.is_none(), e.order));
+        out
     }
 
     /// 星耀解读正文。

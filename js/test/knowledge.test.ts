@@ -76,7 +76,7 @@ test('默认包的元信息与条目', () => {
   assert.equal(pack.palace(PalaceName.SOUL)?.name, '命宫');
   assert.ok(pack.mutagen(Mutagen.JI)?.intro);
   assert.ok(pack.concept('tong-gong') !== undefined);
-  assert.equal(Object.keys(pack.toJSON().concepts as object).length, 50);
+  assert.equal(Object.keys(pack.toJSON().concepts as object).length, 51);
   assert.equal(pack.patterns().length, 64);
   assert.equal(pack.star('nope'), undefined);
   assert.throws(() => KnowledgePack.builtin('en-US'), IztroError);

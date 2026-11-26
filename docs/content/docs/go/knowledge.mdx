@@ -76,12 +76,12 @@ intro := pack.StarIntro(iztro.StarZiweiMaj)
 
 ### TopicEntry
 
-解读主题：`Title`、`Surround`（`[]string`，连同三方四正一起取的宫位标识）、`Palaces`（`[]string`，只取本宫的宫位标识，
+解读主题：`Title`、`Order`（`*uint32`，显示顺序，nil 为没写，见 [TopicSlugs](#star--pattern--palace--mutagen--concept--topic--topicslugs)）、`Surround`（`[]string`，连同三方四正一起取的宫位标识）、`Palaces`（`[]string`，只取本宫的宫位标识，
 可含 `bodyPalace` / `originalPalace`）、`Intro`、`Summary`；[`TopicToText`](/zh/docs/go/astrolabe#topictotext) 按它选宫。
 
 <Callout type="warn" title="缺省一律是零值">
 Go 侧不用指针区分「没写」与「写了空串」，字段缺省即空串 / nil。
-要判断某条到底有没有正文，比空串即可。
+要判断某条到底有没有正文，比空串即可。唯一的指针是 `TopicEntry.Order`：0 是有效的顺序值，nil 才是没写。
 </Callout>
 
 ---
@@ -292,9 +292,9 @@ iztro: mergeKnowledgePacks: nil overlay pack
 
 ---
 
-## Star / Pattern / Palace / Mutagen / Concept / Topic
+## Star / Pattern / Palace / Mutagen / Concept / Topic / TopicSlugs
 
-**用途**　按语言无关标识（术语与主题按 slug）取条目。
+**用途**　按语言无关标识（术语与主题按 slug）取条目；按显示顺序列出全部主题。
 
 **签名**
 
@@ -305,10 +305,13 @@ func (p *KnowledgePack) Palace(palaceKey string) *TextEntry
 func (p *KnowledgePack) Mutagen(mutagenKey string) *TextEntry
 func (p *KnowledgePack) Concept(slug string) *ConceptEntry
 func (p *KnowledgePack) Topic(slug string) *TopicEntry
+func (p *KnowledgePack) TopicSlugs() []string
 ```
 
 **返回值**　包里没有该条目时返回 `nil`；接收者为 `nil` 时同样返回 `nil`，不会 panic。
 返回的是条目的副本地址，改它不影响包本身。
+`TopicSlugs` 返回全部主题的 slug，按显示顺序：`Order` 升序，`Order` 为 nil 的在最后，相同或都为 nil 时按 slug；
+`range pack.Topics` 的顺序是随机的，列主题按钮、菜单时用它。
 
 **示例**
 

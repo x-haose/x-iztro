@@ -342,6 +342,8 @@ cd tests/golden && npm ci && npm run gen:all       # 逐个生成器见 package.
   `packs_without_errors_always_parse` 守「check 无 error ⇒ 解析成功」，改解析或校验任一侧都要过它。
   各语言的构造入口经 bridge kind `parseKnowledgePack` 取内核解析再序列化的规范包，不各自解析原文
   （Go 的 encoding/json 不分大小写收键，绑定层各自解析会让同一输入在四侧得到不同的包）
+- 主题显示顺序：`order` 升序、没有的在后、并列按 slug 字节序，与键的书写顺序无关（SCHEMA §4.5）。排序在各侧就地做
+  （Rust `topics_in_order`、Python/JS `topics()`、Go `TopicSlugs`），规则改动四处同改，由共用用例的 `topicOrderCases` 守
 - 默认包只有 zh-CN，文本已由教学博客口吻整理改写为第三人称释义口吻（`source.adapted` 注明；
   只换表达不加减命理内容，唯 adapted 里逐条声明的例外：勘正原文笔误、术语依格局篇归一），
   JSON 即源头、直接手改；口吻红线由 `knowledge_pack` 的

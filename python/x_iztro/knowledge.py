@@ -302,6 +302,8 @@ class TopicEntry:
     """这个主题看什么、为什么取这些宫"""
     summary: str | None = None
     """正文的摘要（单段）；正文不超过摘要层上限的条目不写"""
+    order: int | None = None
+    """显示顺序（0 至 4294967295），`KnowledgePack.topics()` 按它排列；None 排在全部有值的主题之后"""
 
     @classmethod
     def _from_dict(cls, slug: str, d: dict) -> TopicEntry:
@@ -312,6 +314,7 @@ class TopicEntry:
             palaces=list(d["palaces"]) if d.get("palaces") is not None else None,
             intro=d.get("intro"),
             summary=d.get("summary"),
+            order=d.get("order"),
         )
 
 
@@ -523,8 +526,12 @@ class KnowledgePack:
         return TopicEntry._from_dict(slug, d) if d is not None else None
 
     def topics(self) -> list[TopicEntry]:
-        """全部主题条目"""
-        return [TopicEntry._from_dict(k, v) for k, v in (self._raw.get("topics") or {}).items()]
+        """
+        全部主题条目，按显示顺序：`order` 升序，没有 `order` 的排在最后；`order` 相同或都没有时按 slug 排
+        （slug 只含 ASCII 字符，按字符比较即字节序）。与键在包里的书写顺序无关。
+        """
+        entries = [TopicEntry._from_dict(k, v) for k, v in (self._raw.get("topics") or {}).items()]
+        return sorted(entries, key=lambda t: (t.order is None, t.order or 0, t.slug))
 
     def stars(self) -> list[StarEntry]:
         """全部星耀条目"""

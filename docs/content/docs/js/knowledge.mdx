@@ -18,11 +18,11 @@ description: KnowledgePack 的构造、查询、合并、按盘取材，以及�
 | `forAstrolabe(chart, config?)` / `forHoroscope(horoscope, config?)` | 按盘取材的子包 |
 | `schema` `id` `version` `language` `extends` `source` | 元信息 |
 | `star(key)` `pattern(key)` `palace(key)` `mutagen(key)` `concept(slug)` `topic(slug)` | 按标识取条目，没有为 `undefined` |
-| `stars()` `patterns()` `topics()` | 全部条目 |
+| `stars()` `patterns()` `topics()` | 全部条目；主题按显示顺序（`order` 升序，没有的在最后，相同或都没有时按 slug） |
 | `starIntro(key)` / `patternIntro(key)` | 解读正文 |
 
 条目类型：`StarEntry`（`attributes`、`combinations`、`combinationSummaries` 缺省为空对象）、
-`PatternEntry`、`TextEntry`（宫位、四化）、`ConceptEntry`、`TopicEntry`（`surround`、`palaces` 决定选宫）。
+`PatternEntry`、`TextEntry`（宫位、四化）、`ConceptEntry`、`TopicEntry`（`surround`、`palaces` 决定选宫，`order` 是显示顺序）。
 
 ```ts
 const pack = KnowledgePack.builtin();
@@ -33,7 +33,7 @@ console.log(ziwei.name, ziwei.category, ziwei.attributes.chemistry, ziwei.summar
 ```
 
 ```text
-iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 career,children,friends,health,overall,parents,personality,property,romance,siblings,spirit,travel,wealth
+iztro-docs 2026-08-19+ec2d58b zh-CN MIT 162 64 overall,personality,career,wealth,romance,health,parents,children,siblings,friends,property,travel,spirit
 紫微 major 尊贵 帝王星，有王者特质：控制欲强、重体面、好为人师、大局观强；得资源能控场规划，否则眼高手低，忌被捧杀。
 ```
 

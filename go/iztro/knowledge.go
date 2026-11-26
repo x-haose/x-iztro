@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -113,6 +114,8 @@ type ConceptEntry struct {
 type TopicEntry struct {
 	// Title 为显示名
 	Title string `json:"title,omitempty"`
+	// Order 为显示顺序，KnowledgePack.TopicSlugs 按它排列；nil 排在全部有值的主题之后
+	Order *uint32 `json:"order,omitempty"`
 	// Surround 为连同各自三方四正一起取的宫位标识，按出现顺序渲染
 	Surround []string `json:"surround,omitempty"`
 	// Palaces 为只取本宫的宫位标识（可含 bodyPalace / originalPalace），排在 Surround 各组之后
@@ -550,6 +553,30 @@ func (p *KnowledgePack) Topic(slug string) *TopicEntry {
 		return &e
 	}
 	return nil
+}
+
+// TopicSlugs 返回全部主题的 slug，按显示顺序：Order 升序，Order 为 nil 的排在最后；
+// Order 相同或都为 nil 时按 slug 的字节序。nil 包返回 nil。
+func (p *KnowledgePack) TopicSlugs() []string {
+	if p == nil {
+		return nil
+	}
+	slugs := make([]string, 0, len(p.Topics))
+	for slug := range p.Topics {
+		slugs = append(slugs, slug)
+	}
+	sort.Slice(slugs, func(i, j int) bool {
+		a, b := p.Topics[slugs[i]].Order, p.Topics[slugs[j]].Order
+		switch {
+		case a != nil && b != nil && *a != *b:
+			return *a < *b
+		case (a == nil) != (b == nil):
+			return a != nil
+		default:
+			return slugs[i] < slugs[j]
+		}
+	})
+	return slugs
 }
 
 // Concept 取术语条目，没有返回 nil。

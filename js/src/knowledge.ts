@@ -125,6 +125,8 @@ export interface TopicEntry {
   slug: string;
   /** 显示名 */
   title?: string;
+  /** 显示顺序（0 至 4294967295），`KnowledgePack.topics()` 按它排列；没有的排在全部有值的主题之后 */
+  order?: number;
   /** 连同各自三方四正一起取的宫位标识，按出现顺序渲染 */
   surround?: string[];
   /** 只取本宫的宫位标识（可含 bodyPalace / originalPalace），排在 surround 各组之后 */
@@ -167,6 +169,16 @@ function section(raw: Raw, name: string): Record<string, Raw> {
 function entryOf(raw: Raw, name: string, key: string): Raw | undefined {
   const sec = section(raw, name);
   return Object.hasOwn(sec, key) ? sec[key] : undefined;
+}
+
+/** 主题的显示顺序：`order` 升序，没有的在后，再按 slug */
+function byDisplayOrder(a: TopicEntry, b: TopicEntry): number {
+  if (a.order !== b.order) {
+    if (a.order === undefined) return 1;
+    if (b.order === undefined) return -1;
+    return a.order - b.order;
+  }
+  return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
 }
 
 function starEntry(key: string, d: Raw): StarEntry {
@@ -349,9 +361,14 @@ export class KnowledgePack {
     return d === undefined ? undefined : { ...d, slug };
   }
 
-  /** 全部主题条目 */
+  /**
+   * 全部主题条目，按显示顺序：`order` 升序，没有 `order` 的排在最后；`order` 相同或都没有时按 slug 排
+   * （slug 只含 ASCII 字符，按 UTF-16 码元比较即字节序）。与包对象的属性顺序无关。
+   */
   topics(): TopicEntry[] {
-    return Object.entries(section(packState(this).raw, 'topics')).map(([slug, d]) => ({ ...d, slug }));
+    return Object.entries(section(packState(this).raw, 'topics'))
+      .map(([slug, d]): TopicEntry => ({ ...d, slug }))
+      .sort(byDisplayOrder);
   }
 
   /** 全部星耀条目 */

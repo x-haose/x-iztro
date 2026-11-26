@@ -51,7 +51,7 @@ pub enum IssueCode {
     /// `schema` 大于本库支持的版本（§7）。params：`value`、`supported`
     SchemaUnsupported,
     /// 字段类型与规范不符（§2、§4 各表的「类型」列）。params：`expected`（`string` / `integer` /
-    /// `object` / `array` / `string or null`）
+    /// `integer from 0 to 4294967295` / `object` / `array` / `string or null`）
     WrongType,
     /// 必须的顶层字段 `id` / `version` / `language` 缺失或为空串（§2「必须」）
     RequiredMissing,
@@ -400,6 +400,8 @@ enum Field {
     Combinations,
     /// 主题的宫位数组
     PalaceTargets,
+    /// 0 至 4294967295 的整数（主题的 `order`，§4.5）
+    U32,
 }
 
 const STAR_FIELDS: &[(&str, Field)] = &[
@@ -440,6 +442,7 @@ const TEXT_ENTRY_FIELDS: &[(&str, Field)] = &[
 const CONCEPT_FIELDS: &[(&str, Field)] = &[("title", Field::Plain), ("intro", Field::Text)];
 const TOPIC_FIELDS: &[(&str, Field)] = &[
     ("title", Field::Plain),
+    ("order", Field::U32),
     ("surround", Field::PalaceTargets),
     ("palaces", Field::PalaceTargets),
     ("intro", Field::Text),
@@ -804,6 +807,14 @@ impl Checker<'_> {
                         Some(_) => {}
                         None => c.report(IssueCode::WrongType, json!({ "expected": "string" })),
                     });
+                }
+            }
+            Field::U32 => {
+                if !v.as_u64().is_some_and(|n| u32::try_from(n).is_ok()) {
+                    self.report(
+                        IssueCode::WrongType,
+                        json!({ "expected": "integer from 0 to 4294967295" }),
+                    );
                 }
             }
         }

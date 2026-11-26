@@ -104,6 +104,7 @@ selects palaces by it.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `title` | `Option<String>` | Display name |
+| `order` | `Option<u32>` | Display order, by which [`topics_in_order`](#star--pattern--palace--mutagen--topic--topics_in_order) sorts; `None` comes after every topic that has one |
 | `surround` | `Option<Vec<String>>` | Palace keys taken with their trine & opposite, rendered in order |
 | `palaces` | `Option<Vec<String>>` | Palace keys taken on their own (`bodyPalace` / `originalPalace` allowed), after the `surround` groups |
 | `intro` | `Option<String>` | What the topic reads and why these palaces |
@@ -391,9 +392,10 @@ already hold a mutable pack and are layering many overlays, to skip the clone.
 
 ---
 
-## star / pattern / palace / mutagen / topic
+## star / pattern / palace / mutagen / topic / topics_in_order
 
-**Purpose**　Look up an entry by language-independent key (a topic by slug).
+**Purpose**　Look up an entry by language-independent key (a topic by slug); list every topic in
+display order.
 
 **Signature**
 
@@ -404,12 +406,16 @@ impl KnowledgePack {
     pub fn palace(&self, palace: Palace) -> Option<&TextEntry>
     pub fn mutagen(&self, mutagen: Mutagen) -> Option<&TextEntry>
     pub fn topic(&self, slug: &str) -> Option<&TopicEntry>
+    pub fn topics_in_order(&self) -> Vec<(&str, &TopicEntry)>
 }
 ```
 
 **Returns**　`None` when the pack has no such entry. The first four look the key up in the corresponding
 `BTreeMap` by `as_key()`, exactly as `pack.stars.get(key.as_key())` would; the glossary has no
 dedicated method, use `pack.concepts.get(slug)`.
+`topics_in_order` returns every topic's slug and entry in display order: ascending `order`, topics
+without one last, ties and topics without one by slug. Iterating `pack.topics` directly gives slug
+order, not display order.
 
 **Example**
 

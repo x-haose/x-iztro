@@ -176,3 +176,36 @@ func TestParseKnowledgePackSharedParseCases(t *testing.T) {
 		}
 	}
 }
+
+// TestSharedTopicOrderCases 第一个包为底、其余依次合并，主题的显示顺序与其他语言一致。
+func TestSharedTopicOrderCases(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "tests", "data", "knowledge_check_cases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		TopicOrderCases []struct {
+			Name   string            `json:"name"`
+			Packs  []json.RawMessage `json:"packs"`
+			Topics []string          `json:"topics"`
+		} `json:"topicOrderCases"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range doc.TopicOrderCases {
+		packs := make([]*KnowledgePack, len(c.Packs))
+		for i, raw := range c.Packs {
+			if packs[i], err = ParseKnowledgePack(raw); err != nil {
+				t.Fatalf("%s: %v", c.Name, err)
+			}
+		}
+		merged, err := packs[0].Merged(packs[1:]...)
+		if err != nil {
+			t.Fatalf("%s: %v", c.Name, err)
+		}
+		if got := merged.TopicSlugs(); !reflect.DeepEqual(got, c.Topics) {
+			t.Errorf("%s: %v", c.Name, got)
+		}
+	}
+}
